@@ -7,6 +7,7 @@ import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
 import { Scene } from '@babylonjs/core/scene'
 import { createIslandLighting, createMeshFactory } from '../island-meshes'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { brinewickRainRoof } from '../second-island/brinewick-market-art'
 import { createFieldScenery } from './field-scenery'
 import type { FieldSite } from './field-site'
 import { createAtmosphere } from '../island-atmosphere'
@@ -34,7 +35,8 @@ function stageAtmosphere(scene: Scene, lighting: ReturnType<typeof createIslandL
   if (entry.landscape || entry.weather) scene.fogMode = Scene.FOGMODE_LINEAR
   if (!entry.landscape && entry.id !== 'biome' && !entry.weather) return
   const { sky, sunlight, shadows } = lighting
-  return createAtmosphere(scene, sky, sunlight, shadows, field?.saltwindSubject ? 3350 : undefined)
+  return createAtmosphere(scene, sky, sunlight, shadows, field?.saltwindSubject ? 3350 : undefined,
+    field?.saltwindSubject ? brinewickRainRoof : undefined)
 }
 
 function stageWeather(entry: Entry, time: number, settings: Values) {

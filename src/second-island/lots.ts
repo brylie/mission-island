@@ -1,5 +1,7 @@
 import type { MapPoint } from './sites.ts'
 
+export const streetCanopy = { widthRatio: .72, depth: 2.85, height: 3.17 }
+
 export const buildings = [
   { site: 'fish-market', kind: 'market', x: -247, z: -132, width: 15.8, depth: 11.4, height: 4.4, facing: 0, wall: '#72a6a1', roof: '#b86351' },
   { site: 'police', kind: 'police', x: -251, z: -69, width: 18, depth: 11.3, height: 5.1, facing: Math.PI, wall: '#668a99', roof: '#38555b' },

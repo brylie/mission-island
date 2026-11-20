@@ -1,3 +1,4 @@
+import { brinewickMarketSubject } from '../second-island/brinewick-market'
 import { longAcreSubject } from '../second-island/long-acre'
 import { falls } from '../terrain'
 import type { Point } from '../world'
@@ -36,10 +37,11 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
 }
 
 export const scenicChoices = [...Object.entries(landscapeViews).map(([id, view]) => [id, view.label]),
-  [longAcreSubject, 'Long Acre Fields pollinators']]
+  [longAcreSubject, 'Long Acre Fields pollinators'],
+  [brinewickMarketSubject, 'Brinewick Fish Market routine']]
 
 export function openFieldView(id: string) {
-  if (id !== longAcreSubject) return false
+  if (id !== longAcreSubject && id !== brinewickMarketSubject) return false
   location.hash = id + '?stage=island'
   return true
 }
