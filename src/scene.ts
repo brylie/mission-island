@@ -25,12 +25,12 @@ import { createIslandWorld } from './island-world'
 import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'
 import { createObjectiveMarker } from './objective-marker'
 import { northernRegions, starterDiscoveries } from './scenery'
-import type { Player, Snapshot } from './protocol'
+import type { Player, Snapshot, Weather } from './protocol'
 import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
 import { flatbedGroundDrive } from './vehicles/flatbed'
 import { createStarterActionEffects } from './starter-action-effects'
 import { createStarterPlaces } from './starter-place-effects'
-import { nightLighting } from './weather'
+import { nightLighting, weatherAt } from './weather'
 import { createShaderReview } from './shader-review'
 import { dryMarketRainAge, marketRunoffAt, marketRunoffPreview } from './market-runoff'
 import { crateStarts, distance, extinguisherStarts, harbor, lookout, town } from './world'
@@ -42,6 +42,10 @@ function waterThreats(state: Snapshot | undefined) {
   const wading = state.players.filter(player => player.connected && !player.seat &&
     (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04)))
   return [...wading, state.skiff]
+}
+
+function sceneWeather(fixed?: Weather, live?: Weather) {
+  return fixed ? { weather: fixed } : { weather: live ?? { hour: 6, rain: 0 }, weatherAt: live && weatherAt }
 }
 
 export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) {
@@ -348,11 +352,12 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const field = review?.view(time)
     const camera = field?.camera ?? normalCamera
     const close = Boolean(field || subject)
-    const weather = field?.weather ?? last?.weather ?? { hour: 6, rain: 0 }
+    const climate = sceneWeather(field?.weather, last?.weather)
+    const { weather } = climate
     const clock = last?.islandTime ?? time
     const timeError = clock - ambientTime
     ambientTime = Math.abs(timeError) > .25 ? clock : ambientTime + delta * (1 + timeError * 4)
-    const frame = { time: field?.time ?? ambientTime, delta, weather, camera: camera.position, threats: waterThreats(last) }
+    const frame = { time: field?.time ?? ambientTime, delta, ...climate, camera: camera.position, threats: waterThreats(last) }
     if (last?.juniper) juniper(last.juniper, time, factor)
     const runoff = field ? marketRunoffPreview(weather.rain, dryMarketRainAge) : marketRunoffAt(clock)
     const livePlayer = !field && subject ? local : undefined

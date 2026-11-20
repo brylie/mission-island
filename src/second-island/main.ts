@@ -11,7 +11,7 @@ import { villageWalks } from './footways'
 import { displayCrewBank } from './crew-bank'
 import { brinewickRainRoof } from './brinewick-market-art'
 import { createHoneyDelivery } from './honey-delivery'
-import { saltwindRainAt, saltwindWeather } from './weather'
+import { saltwindLiveWeather, saltwindRainAt, saltwindWeather } from './weather'
 import { createLandscape } from './landscape'
 import { createChart } from './map'
 import { routes, sampleRoute } from './routes'
@@ -401,7 +401,8 @@ function start() {
     const weather = saltwindWeather(climate.value, sceneTime)
     const light = atmosphere.update(sceneTime, weather, camera.position, !broad, { fogScale: 7 })
     const threats = point.y < waterHeight(point.x, point.z) - .04 ? [point] : []
-    const frame = { time: sceneTime, delta: simulationDelta, weather, camera: camera.position, threats }
+    const frame = { time: sceneTime, delta: simulationDelta, weather, camera: camera.position, threats,
+      weatherAt: climate.value === 'live' ? saltwindLiveWeather : undefined }
     updateScenery(frame, broad, climate.value === 'live' ? saltwindRainAt : undefined)
     updateEffects(frame, point, broad, frozen)
     updateWater(sceneTime, light)

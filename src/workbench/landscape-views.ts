@@ -25,6 +25,11 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
     focus: { x: -39.7, z: 19.2, height: 4.05 },
     alpha: 0.43, beta: Math.PI / 2 + 0.025, radius: 14, hour: 6.4, time: 11,
   },
+  'harbor-gulls': {
+    label: 'Harbor gulls at the pilings',
+    focus: { x: -44.5, z: -34, height: .9 },
+    alpha: -2.41, beta: 1.31, radius: 12.5, hour: 12, time: 33.5,
+  },
   'harbor-sunset': {
     label: 'Harbor sunset',
     focus: { x: -45, z: -12, height: 0.25 },

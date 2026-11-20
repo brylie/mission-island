@@ -11,6 +11,7 @@ export interface WildlifeFrame {
   delta: number
   seek?: boolean
   weather: Weather
+  weatherAt?: (time: number) => Weather
   camera: { x: number; y: number; z: number }
   threats: readonly Point[]
 }

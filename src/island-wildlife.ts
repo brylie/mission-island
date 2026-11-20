@@ -1,3 +1,5 @@
+import { createGullFlock } from './gull-flock'
+import { starterGullPerches } from './gull-sites'
 import { createDriftwoodFish } from './driftwood-fish'
 import type { DriftwoodFrame } from './simulation/driftwood-school'
 import { onBeachTowel } from './worlds/starter/sites'
@@ -97,16 +99,15 @@ export function createStarterWildlife(meshes: MeshFactory) {
     }
   }))
   const tree = islandTrees.find(({ variant, x, z }) => variant % 3 === 0 && x > -14 && x < -5 && z > 13)
-  const landing = { x: -15, z: -24 }
   const roost = tree ? { x: tree.x, z: tree.z, y: groundHeight(tree) + tree.height * 1.025 } : { x: -9, y: 1, z: 20 }
+  const gulls = createGullFlock(meshes, starterGullPerches)
   const flocks = createFlocks(meshes, [
-    { center: { x: -18, y: 7, z: -19 }, landing: { ...landing, y: groundHeight(landing) + .13 },
-      roost, range: 23, color: '#f5e8d2', count: 5 },
     { center: { x: -13, y: 5, z: 24 }, landing: roost, roost, range: 9, color: '#6f677e', count: 3, bat: true },
   ])
   return (frame: WildlifeFrame, school: DriftwoodFrame | undefined) => {
     driftwood(frame, school)
     schools(frame)
     flocks(frame)
+    gulls(frame)
   }
 }

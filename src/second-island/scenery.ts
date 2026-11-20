@@ -1,3 +1,5 @@
+import { createGullFlock } from '../gull-flock'
+import { saltwindGullStops } from '../gull-sites'
 import { createHare } from '../hare'
 import { villageWalks } from './footways'
 import type { ScenerySolids } from './walking'
@@ -334,9 +336,8 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
   solids.add({ x: roostX, z: roostZ, bottom: roostGround, top: roostGround + roostHeight / 2, width: .53, depth: .53, heading: 0 })
   const roost = { x: roostX, y: roostGround + roostHeight * 1.015, z: roostZ }
   const perch = (x: number, z: number) => ({ x, z, y: surfaceHeight(x, z) + .15 })
+  const gulls = createGullFlock(meshes, saltwindGullStops.map(stop => ({ ...stop, y: surfaceHeight(stop.x, stop.z) })))
   const flocks = createFlocks(meshes, [
-    { center: { x: -274, z: -273, y: 12 }, range: 27, count: 4, color: '#f3e7cf',
-      landing: perch(-265, -229), roost: perch(-267.9, -241) },
     { center: { x: -171, z: 224, y: 59 }, range: 22, count: 5, color: '#ae8075',
       landing: perch(-178, 229), roost },
     { center: { x: -114, z: 79, y: 13 }, range: 14, count: 3, color: '#61576c', bat: true,
@@ -363,6 +364,7 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
   }))
   return (frame: WildlifeFrame, overview: boolean) => {
     flocks(frame)
+    gulls(frame)
     schools(frame)
     const { time, camera } = frame
     for (const animal of animals) {
