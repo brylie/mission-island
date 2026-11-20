@@ -102,6 +102,8 @@ Keep chosen graph exports in the project so both the game and the workbench can 
 
 See the [architecture guide](docs/architecture.md) for dependency boundaries and where to add features, assets, or world content.
 
+Use typed traits when entities can share behavior with different tuning or equipment. [Composing behavior with traits](docs/architecture.md#composing-behavior-with-traits)
+
 Babylon.js draws the island and vehicle exteriors. Vite serves the game and its development updates. The host runs the shared simulation at 30 ticks per second. Browsers send inputs and receive snapshots over a same-origin WebSocket. The host assigns vehicle seats, tracks item ownership and fishing rewards, and advances the mission for both players. Cannon-es simulates loose crates on the terrain and on the moving flatbed. The clients render the position and rotation the host sends.
 
 - `src/world.ts` holds island coordinates, buildings and mission locations.
