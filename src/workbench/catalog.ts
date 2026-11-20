@@ -24,6 +24,9 @@ import { footpaths, road, walkways } from '../routes'
 import { buildings, cargoSlots, crateSize, jumpGravity, jumpSpeed, truckBed } from '../world'
 import { createSurfaceShader } from './surface-preview'
 import type { LightingPreset } from './lighting'
+import { buildings as saltwindBuildings, createExterior } from '../second-island/exteriors'
+import { createSaltwindVehicle, vehicleSpecs } from '../second-island/vehicles'
+import type { VehicleId } from '../second-island/vehicles'
 
 type Value = string | number | boolean
 export type Values = Record<string, Value>
@@ -68,6 +71,20 @@ const control = (key: string, label: string, value: string, choices: Record<stri
   ({ type: 'select', key, label, value, choices, rebuild })
 const range = (key: string, label: string, value: number, min: number, max: number, step: number, rebuild = false): Control =>
   ({ type: 'range', key, label, value, min, max, step, rebuild })
+
+const saltwindAssets: Entry[] = [
+  ...(Object.entries(vehicleSpecs) as [VehicleId, typeof vehicleSpecs[VehicleId]][]).map(([id, spec]): Entry => ({
+    id: `saltwind-${id}`, name: spec.name, group: 'Saltwind vehicles', source: 'src/second-island/vehicles.ts',
+    description: `${spec.width} m wide · ${spec.length} m long · +Z forward. Staged exterior.`,
+    create(meshes) { createSaltwindVehicle(meshes, id) },
+  })),
+  ...saltwindBuildings.map((building): Entry => ({
+    id: `saltwind-${building.site}`, name: building.site.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' '),
+    group: 'Saltwind buildings', source: 'src/second-island/exteriors.ts',
+    description: `${building.width} × ${building.depth} m footprint. Front entry faces local +Z.`,
+    create(meshes) { createExterior(meshes, building) },
+  })),
+]
 
 export const entries: Entry[] = [
   {
@@ -402,6 +419,7 @@ export const entries: Entry[] = [
       return water ? ({ time }) => water.pose(time) : undefined
     },
   })),
+  ...saltwindAssets,
 ]
 
 function materialControls(surface: SurfaceName): Control[] {

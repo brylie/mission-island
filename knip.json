@@ -1,5 +1,5 @@
 {
   "$schema": "./node_modules/knip/schema.json",
-  "entry": ["src/workbench/main.ts", "test/**/*.test.mjs"],
+  "entry": ["src/workbench/main.ts", "src/second-island/main.ts", "test/**/*.test.mjs"],
   "project": ["src/**/*.ts", "server/**/*.ts", "test/**/*.mjs"]
 }
