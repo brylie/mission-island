@@ -79,6 +79,14 @@
         </label>
         <label hidden>Shellglass tide (%) <input id="shader-tide" type="range" min="0" max="100" value="32"></label>
         <label hidden>Meadow to hill <input id="shader-meadow-walk" type="range" min="0" max="100" value="0"></label>
+        <div id="shader-study-controls" hidden>
+          <label><span id="shader-response-label"></span><input id="shader-response" type="range" min="0" max="1" step="0.01"></label>
+          <div class="shader-study-actions">
+            <button type="button" id="shader-baseline"></button>
+            <button type="button" id="shader-preset"></button>
+            <a id="shader-workbench" href="workbench.html">Workbench study</a>
+          </div>
+        </div>
         <label><input id="shader-freeze" type="checkbox"> Freeze shader time</label>
         <div>
           <button type="button" id="shader-reset">Reset view</button>

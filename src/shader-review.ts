@@ -4,6 +4,7 @@ import type { Engine } from '@babylonjs/core/Engines/engine'
 import '@babylonjs/core/Engines/Extensions/engine.query'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { Scene } from '@babylonjs/core/scene'
+import { fieldStudyControls } from './interactive-shaders/field-controls'
 import { objectiveLayer } from './objective-marker'
 import { shellglassCycle, shellglassTideAt } from './shellglass-tide'
 import type { ShaderQuality } from './shader-studies'
@@ -40,6 +41,20 @@ function keepCameraAboveTerrain(camera: ArcRotateCamera) {
   }
 }
 
+function createFieldCamera(scene: Scene) {
+  const camera = new ArcRotateCamera('Shader field camera', 0, 1.1, 9, Vector3.Zero(), scene)
+  camera.minZ = .065
+  camera.maxZ = 620
+  camera.lowerRadiusLimit = 1.5
+  camera.layerMask &= ~objectiveLayer
+  camera.lowerBetaLimit = .12
+  camera.upperBetaLimit = Math.PI * .49
+  camera.wheelDeltaPercentage = .06
+  camera.panningSensibility = 0
+  camera.inputs.removeByType('ArcRotateCameraKeyboardMoveInput')
+  return camera
+}
+
 export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engine: Engine, releaseMouse: () => void) {
   const initialSite = new URLSearchParams(location.search).get('shader-review')
   if (initialSite === null) return
@@ -53,16 +68,7 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
   const output = panel.querySelector<HTMLOutputElement>('#shader-timing')!
   const abort = new AbortController()
   const events = { signal: abort.signal }
-  const camera = new ArcRotateCamera('Shader field camera', 0, 1.1, 9, Vector3.Zero(), scene)
-  camera.minZ = .065
-  camera.maxZ = 620
-  camera.lowerRadiusLimit = 1.5
-  camera.layerMask &= ~objectiveLayer
-  camera.lowerBetaLimit = .12
-  camera.upperBetaLimit = Math.PI * .49
-  camera.wheelDeltaPercentage = .06
-  camera.panningSensibility = 0
-  camera.inputs.removeByType('ArcRotateCameraKeyboardMoveInput')
+  const camera = createFieldCamera(scene)
   let stats: Measurement | undefined
   let lastFrameAt = 0
   let site: keyof typeof sites | undefined
@@ -75,6 +81,9 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
     if (gpuSupported) engine.captureGPUFrameTime(false)
     output.value = 'Timing canceled. Hold the view steady and measure again.'
   }
+
+  const studies = fieldStudyControls(panel, siteSelect, cancelMeasurement, events)
+  let extra: ReturnType<typeof studies.select>
 
   function setMeadowTarget() {
     const start = sites.meadow.point
@@ -97,7 +106,8 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
     camera.detachControl()
     const selection = siteSelect.value
     site = Object.hasOwn(sites, selection) ? selection as keyof typeof sites : undefined
-    const view = site ? sites[site] : undefined
+    extra = studies.select(selection)
+    const view = site ? sites[site] : extra
     canvas.toggleAttribute('data-shader-review', Boolean(view))
     meadowWalk.closest('label')!.hidden = site !== 'meadow'
     tidePhase.closest('label')!.hidden = site !== 'shore'
@@ -115,7 +125,7 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
     camera.attachControl(canvas, false)
   }
 
-  siteSelect.value = Object.hasOwn(sites, initialSite) ? initialSite : 'shore'
+  siteSelect.value = [...siteSelect.options].some(option => option.value === initialSite) ? initialSite : 'shore'
   frameSite()
   labelTide()
   panel.hidden = false
@@ -146,15 +156,16 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
   }, events)
 
   return {
-    active: () => Boolean(site),
+    active: () => Boolean(site || extra),
     quality: () => qualitySelect.value as ShaderQuality,
     view(time: number) {
-      if (!site) return
-      const { hour, rain } = sites[site]
+      const view = site ? sites[site] : extra
+      if (!view) return
+      const { hour, rain } = view
       scene.activeCamera = camera
       keepCameraAboveTerrain(camera)
       return { camera, time: freeze.checked || stats ? 7 : time, weather: { hour, rain },
-        tideTime: site === 'shore' ? tideClock() : undefined }
+        tideTime: site === 'shore' ? tideClock() : undefined, inspection: studies.inspection() }
     },
     render() {
       const start = stats ? performance.now() : 0
@@ -182,6 +193,7 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
       abort.abort()
       camera.detachControl()
       camera.dispose()
+      studies.dispose()
       canvas.removeAttribute('data-shader-review')
       panel.hidden = true
     },

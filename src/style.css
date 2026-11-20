@@ -421,3 +421,7 @@ kbd {
 .playfield:has(#island[data-shader-review]) > :is(#markers, .mission, .crew, .prompt, .controls, .charge-meter) {
   display: none;
 }
+
+.shader-study-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 5px; }
+#shader-workbench { color: #bce8d5; }
+#shader-site { max-width: 240px; }
