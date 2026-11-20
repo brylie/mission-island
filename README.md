@@ -16,11 +16,12 @@ Open the **Local** address Vite prints on the laptop. On the other computer, ope
 | Key | Action |
 | --- | --- |
 | **W A S D** or **arrow keys** | Walk relative to the camera. In the truck or skiff, W/S move forward or reverse and A/D steer. |
-| **E** | Pick up, load, unload, deliver, or put down the item shown in the prompt. |
+| **E** | Use the action shown in the prompt. Pick up or deliver cargo, work a farm plot, contribute to a market order, or open the job board. |
 | **F** | Board or leave a stopped truck or skiff. The first player takes the truck wheel. Both skiff seats can paddle. |
 | **Shift** | Hold to sprint on foot or drive slowly and steer gently. |
 | **Space** | Jump on foot or hold to brake while driving. |
 | **Left click** | Reach or use an equipped tool. Hold and release to throw a crate or cast the fishing line. |
+| **Right click** | Hold to raise your right hand while on foot with that hand free. Your crewmate can see the gesture. |
 | **B** | Buy one carrot seed at Seabrook Market. |
 | **1 / 2 / 3** | Equip or stow your fishing rod, hoe, or watering can. |
 | **R** | Keyboard shortcut for spraying the extinguisher. |
@@ -33,13 +34,19 @@ Bring crates to the tail of the truck to set them on the bed. Jump over the low 
 
 Jump onto or over low rocks and crates. The bed or hood gives you a second jump onto the cab roof.
 
-Each crate delivered pays two coins to the crew. Completing the delivery pays three more, and clearing the lookout fire pays four. The truck's headlights and taillights come on around dusk, along with street lamps in the settlements.
+Each starter crate delivered pays two coins per player. Completing the delivery pays three more, and clearing the lookout fire pays four. The truck's headlights and taillights come on around dusk, along with street lamps in the settlements.
 
 The truck has four-wheel suspension and follows the terrain under each wheel. **W** accelerates, **S** brakes when moving forward and then reverses, and **Space** applies the brake without changing direction. Brake lights work in daylight and at night. Cargo and players riding on the bed move with the truck, so slowing down before sharp corners and rough ground helps keep the crates aboard.
 
+### Repeatable orders
+
+After the lookout fire, press **E** at the Harbor Depot job board to take the next crew order. You can read the board from the mission panel anywhere on the island. Deliver seed crates to Island Farm, take beach gear to Driftwood Beach, or fill fish and carrot orders at Seabrook Market. Either player can contribute to an order. You can keep fishing, farming, or exploring while the order is open.
+
+Orders pay each member of the crew who joined the job, including teammates who reconnect after the reservation ends. Four completed orders mark the crew ready for the future second island. Coins are available to spend along the way. See the [crew orders specification](docs/mechanics/crew-orders.md) for payouts and rules.
+
 ### Starting tools and island life
 
-Press **E** at the chest outside your starting cottage to take your tools. While holding a crate, aim toward the truck bed and hold **left click**, then release to throw. A tap makes a short throw.
+Press **E** at the chest outside your starting cottage to take your tools and one free carrot seed. While holding a crate, aim toward the truck bed and hold **left click**, then release to throw. A tap makes a short throw.
 
 Equip the fishing rod and aim into the water from the shore, the harbor dock, or a stopped skiff. Hold **left click**, then release near the top of the rising and falling cast meter to cast farther and improve your odds. When a fish bites, hold **left click** to reel and release when it pulls. Watch line tension and land the fish before it escapes. To take the skiff, walk into the shallows beside the dock and press **F** near it. Both seats can paddle. Return to shallow water and stop before disembarking.
 

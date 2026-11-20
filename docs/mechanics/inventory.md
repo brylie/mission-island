@@ -1,6 +1,6 @@
 # Inventory and starter chests
 
-Each player spawns by a different harbor cottage. Press **E** at your own chest to withdraw or return the starter toolkit. The other chest belongs to your crewmate. The lid opens to show when its toolkit is checked out.
+Each player spawns by a different harbor cottage. Press **E** at your own chest to withdraw or return the starter toolkit. The first visit also gives your profile one carrot seed, which stays with you when you return the toolkit. The other chest belongs to your crewmate. The lid opens to show when its toolkit is checked out.
 
 | Slot | Tool | Left-click action |
 | --- | --- | --- |

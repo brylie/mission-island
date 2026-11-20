@@ -4,6 +4,8 @@ import { actionHint, heldItem, inSkiff } from './actions'
 import { anglerCost, cleanCrewName, defaultAppearance, readAppearance, skinTones, uniforms } from './crew-appearance'
 import type { CrewAppearance } from './crew-appearance'
 import { farm, market } from './farm'
+import { createJobBoard, jobDescription, secondIslandProgress } from './job-board-ui'
+import { activeJob, atJobBoard, deliveryDrop, jobBoard, jobs, secondIslandGoal } from './jobs'
 import { starterTools, toolNames } from './inventory'
 import type { InventoryItem } from './inventory'
 import type { ClientMessage, FishingResult, Input, Player, ServerMessage, Snapshot } from './protocol'
@@ -11,7 +13,7 @@ import { footpaths, road, walkways } from './routes'
 import { northernRegions } from './scenery'
 import { createRenderer } from './scene'
 import { isNight } from './weather'
-import { crewHomes, distance, harbor, lookout, town } from './world'
+import { crewHomes, distance, harbor, lookout } from './world'
 
 function element<T extends HTMLElement>(id: string) {
   const node = document.getElementById(id)
@@ -37,7 +39,9 @@ const progress = element('progress-track')
 const segments = Array.from(progress.children)
 const progressLabel = element('progress-label')
 const missionStep = element('mission-step')
-const reset = element<HTMLButtonElement>('reset')
+const boardButton = element<HTMLButtonElement>('open-job-board')
+const boardDialog = element<HTMLDialogElement>('job-board-dialog')
+const board = createJobBoard(boardDialog, (id) => send({ type: 'take-job', id }))
 const respawn = element<HTMLButtonElement>('respawn')
 const spray = element('spray-control')
 const cameraButton = element<HTMLButtonElement>('camera')
@@ -76,11 +80,10 @@ let snapshot: Snapshot | undefined
 let follow = sessionStorage.getItem('mission-island-follow') !== 'false'
 const keys = new Set<string>()
 let primary = false
+let rightButtonHeld = false
 let wasPointerLocked = false
 const crewKey = 'mission-island-crew'
 const reloadKey = 'mission-island-reloading'
-const nameKey = 'mission-island-crew-name'
-crewName.value = cleanCrewName(localStorage.getItem(nameKey))
 let token = sessionStorage.getItem(crewKey) ?? localStorage.getItem(crewKey) ?? newToken()
 sessionStorage.setItem(crewKey, token)
 if (!localStorage.getItem(crewKey)) localStorage.setItem(crewKey, token)
@@ -210,17 +213,20 @@ function drawMap(state?: Snapshot) {
   for (const { points } of footpaths) drawRoute(points, 2, '#a5a77e')
   for (const { points } of walkways) drawRoute(points, 2, '#c4c9c1')
   drawRoute(road, 4, '#c7bb9a')
+  const drop = state && deliveryDrop(state)
   if (state?.mission === 'fire') dot(lookout.x, lookout.z, '#f7a17d', 6)
-  else {
+  else if (drop) {
     dot(harbor.x, harbor.z, '#fff0ae', 5)
-    dot(town.x, town.z, '#acf3da', 5)
+    dot(drop.x, drop.z, '#acf3da', 5)
   }
   if (!state) return
   ink.fillStyle = '#38433a'
   ink.fillRect(mx(state.truck.x) - 5, mz(state.truck.z) - 4, 10, 8)
   if (state.skiff) dot(state.skiff.x, state.skiff.z, '#fff0ca', 3.5)
   dot(farm.x, farm.z, '#e3ba77', 3.5)
-  dot(market.x, market.z, '#f2d3bc', 3.5)
+  const marketOrder = activeJob(state)?.kind === 'market'
+  dot(market.x, market.z, marketOrder ? '#acf3da' : '#f2d3bc', marketOrder ? 6 : 3.5)
+  if (state.mission === 'complete' && !state.jobs.active) dot(jobBoard.x, jobBoard.z, '#ffd379', 5.5)
   const home = crewHomes[id]
   if (home) dot(home.chest.x, home.chest.z, '#fed487', 3)
   for (const player of state.players) {
@@ -249,47 +255,73 @@ try {
 showNotice()
 drawMap()
 
+function deliveryInstruction(state: Snapshot, drop: { x: number; z: number }, quantity: number) {
+  const loaded = state.items.filter((item) => item.onBed).length
+  const delivered = state.jobs.active?.progress ?? state.items.filter((item) => item.delivered).length
+  if (distance(state.truck, drop) < 11) return 'Carry the crates into the teal drop zone. Press E to deliver.'
+  if (loaded > 0 && loaded + delivered === quantity) return 'Drive to the teal drop zone. Hold Shift on corners and Space to brake.'
+  return loaded > 0 ? `${loaded} in the flatbed. Load or recover the remaining crates.` : 'Pick up crates at Harbor Depot and load the flatbed.'
+}
+
+function missionCard(state: Snapshot) {
+  const job = activeJob(state)
+  const drop = deliveryDrop(state)
+  if (drop) {
+    const quantity = job?.quantity ?? 3
+    const value = state.jobs.active?.progress ?? state.items.filter((item) => item.delivered).length
+    return {
+      label: job ? 'CREW ORDER' : 'MISSION 01 / 02', title: job?.title ?? 'Harbor delivery',
+      detail: job ? jobDescription(job) : 'Bring three supply crates from Harbor Depot to Seabrook.',
+      progress: 'Crates delivered', value, max: quantity, text: `${value} / ${quantity} delivered`,
+      instruction: deliveryInstruction(state, drop, quantity),
+    }
+  }
+  if (state.mission === 'fire') {
+    const value = Math.round((1 - state.fire) * 100)
+    return {
+      label: 'MISSION 02 / 02', title: 'Forest lookout fire', detail: 'Collect extinguishers at Fire Supplies and head to Forest Lookout.',
+      progress: 'Fire extinguished', value, max: 100, text: `${value}% extinguished`, instruction: 'Hold left click near the fire to put it out.',
+    }
+  }
+  if (job?.kind === 'market') {
+    const value = state.jobs.active?.progress ?? 0
+    return {
+      label: 'CREW ORDER', title: job.title, detail: jobDescription(job), progress: 'Goods contributed',
+      value, max: job.quantity, text: `${value} / ${job.quantity} ${job.goods}`, instruction: 'Press E at the market awning to contribute.',
+    }
+  }
+  const completed = Math.min(state.jobs.completed, secondIslandGoal)
+  return {
+    label: 'ISLAND SERVICE', title: 'Choose your next job', detail: 'Visit the job board at Harbor Depot. You can fish, farm, or explore between orders.',
+    progress: 'Second island progress', value: completed, max: secondIslandGoal,
+    text: `${completed} / ${secondIslandGoal}`,
+    instruction: completed === secondIslandGoal ? secondIslandProgress(completed) : 'Complete orders to prepare for the second island.',
+  }
+}
+
 function updateMission(state: Snapshot) {
-  const delivering = state.mission === 'delivery'
-  const finished = state.mission === 'complete'
-  const reached = finished ? 2 : delivering ? 0 : 1
+  const reached = state.mission === 'complete' ? 2 : state.mission === 'fire' ? 1 : 0
   if (live && reached > milestone) {
     milestone = reached
     saveAppearance()
     renderAppearanceOptions()
   }
-  const delivered = state.items.filter((item) => item.delivered).length
-  const loaded = state.items.filter((item) => item.onBed).length
-  const extinguished = Math.round((1 - state.fire) * 100)
-  missionLabel.textContent = delivering ? 'MISSION 01 / 02' : finished ? 'SHIFT COMPLETE' : 'MISSION 02 / 02'
-  missionTitle.textContent = delivering ? 'Harbor delivery' : finished ? 'Nice work, crew!' : 'Forest lookout fire'
-  missionDescription.textContent = delivering
-    ? 'Bring three supply crates from Harbor Depot to Seabrook.'
-    : finished
-      ? 'The supplies arrived and the lookout is safe.'
-      : 'Collect extinguishers at Fire Supplies and head to Forest Lookout.'
-  progress.setAttribute('aria-label', delivering ? 'Crates delivered' : 'Fire extinguished')
-  progress.setAttribute('aria-valuemax', delivering ? '3' : '100')
-  progress.setAttribute('aria-valuenow', String(delivering ? delivered : extinguished))
-  progressLabel.textContent = delivering ? `${delivered} / 3 delivered` : `${extinguished}% extinguished`
-  segments.forEach((segment, index) => segment.classList.toggle('active',
-    delivering ? index < delivered : extinguished >= (index + 1) * 100 / 3))
-  reset.hidden = !finished
-  spray.hidden = delivering || finished
-  let instruction = 'Hold left click near the fire to put it out.'
-  if (finished) instruction = 'Both missions complete.'
-  else if (delivering) {
-    if (distance(state.truck, town) < 11 || delivered > 0) {
-      instruction = 'Carry the crates into the teal drop zone.'
-    } else if (loaded === 3) {
-      instruction = 'Drive to Seabrook. Hold Shift on corners and Space to brake.'
-    } else {
-      instruction = loaded > 0
-        ? `${loaded} in the flatbed. Load or recover the remaining crates.`
-        : 'Pick up crates and load the flatbed.'
-    }
-  }
-  if (missionStep.textContent !== instruction) missionStep.textContent = instruction
+  const card = missionCard(state)
+  missionLabel.textContent = card.label
+  missionTitle.textContent = card.title
+  missionDescription.textContent = card.detail
+  progress.setAttribute('aria-label', card.progress)
+  progress.setAttribute('aria-valuemax', String(card.max))
+  progress.setAttribute('aria-valuenow', String(card.value))
+  progressLabel.textContent = card.text
+  const count = card.max === 100 ? 3 : card.max
+  segments.forEach((segment, index) => {
+    segment.toggleAttribute('hidden', index >= count)
+    segment.classList.toggle('active', card.value >= (index + 1) * card.max / count)
+  })
+  boardButton.hidden = state.mission !== 'complete'
+  spray.hidden = state.mission !== 'fire'
+  if (missionStep.textContent !== card.instruction) missionStep.textContent = card.instruction
 }
 
 function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player | undefined) {
@@ -305,7 +337,8 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
   const balance = `${coins} ${coins === 1 ? 'coin' : 'coins'}`
   if (coinBalance.textContent !== balance) coinBalance.textContent = balance
   const { fish, carrots } = player.goods
-  const contents = [balance, `${player.seeds} seeds`, fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '']
+  const contents = [balance, `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`,
+    fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '']
     .filter(Boolean).join(' · ')
   if (fishingWallet.textContent !== contents) fishingWallet.textContent = contents
   fishingWallet.hidden = !coins && !fish && !carrots && !player.seeds && !player.inventory.length
@@ -361,6 +394,7 @@ function update(state: Snapshot) {
   updateMission(state)
   const player = connected.find((entry) => entry.id === id)
   if (player) updatePersonalDisplay(state, player, earlier)
+  updateBoard(state, player)
   editCrewName.hidden = !player
   if (player) editCrewName.textContent = player.name ? 'Edit name' : 'Set name'
   const [key, action] = player?.charge ? ['', 'Release left click']
@@ -385,7 +419,6 @@ function connect() {
         respawn.disabled = false
         if (renderer) bootMessage.textContent = 'Restoring your crew and map…'
         send({ type: 'appearance', appearance })
-        if (localStorage.getItem(nameKey) !== null) send({ type: 'crew-name', name: crewName.value })
         status.textContent = 'LAN connected'
         light.dataset.online = 'true'
         message = ''
@@ -421,6 +454,16 @@ function connect() {
         actionFeedback = { key: `+${incoming.coins} coins`, label, until: performance.now() + 2400 }
         break
       }
+      case 'order-pay':
+        actionFeedback = { key: `+${incoming.coins} coins`, label: `${jobs[incoming.id].title} complete`, until: performance.now() + 3200 }
+        break
+      case 'starter-seed':
+        actionFeedback = { key: '+1 seed', label: 'Plant it at Island Farm', until: performance.now() + 3200 }
+        break
+      case 'order-unavailable':
+        board.reject()
+        if (snapshot) updateBoard(snapshot)
+        break
     }
   })
   socket.addEventListener('close', () => {
@@ -432,11 +475,14 @@ function connect() {
     buyAngler.disabled = true
     keys.clear()
     primary = false
+    rightButtonHeld = false
     light.dataset.online = 'false'
     status.textContent = 'Reconnecting'
     message ||= 'Reconnecting to the host. The island may reload when it is ready.'
     bootMessage.textContent = message
     showNotice()
+    board.reject()
+    if (snapshot) updateBoard(snapshot)
     setTimeout(connect, 1200)
   })
 }
@@ -471,6 +517,7 @@ function sendInput() {
     careful: shift,
     sprint: shift,
     brake: seat === 'driver' && keys.has('Space'),
+    raiseRightHand: rightButtonHeld,
   }
   send({ type: 'input', input })
 }
@@ -484,7 +531,7 @@ function applyCamera() {
 }
 
 function toggleCamera() {
-  finishPrimary('cancel')
+  cancelMouseActions()
   follow = !follow
   sessionStorage.setItem('mission-island-follow', String(follow))
   applyCamera()
@@ -492,15 +539,32 @@ function toggleCamera() {
   else renderer?.releaseMouse()
 }
 
+function pauseControls() {
+  renderer?.releaseMouse()
+  keys.clear()
+  cancelMouseActions()
+  sendInput()
+}
+
+function updateBoard(state: Snapshot, player = state.players.find((entry) => entry.id === id)) {
+  board.update(state.jobs, Boolean(player && atJobBoard(player) && !player.sleeping && !heldItem(state, player)), live)
+}
+
+function openJobBoard() {
+  if (!snapshot || snapshot.mission !== 'complete' || boardDialog.open || optionsDialog.open) return
+  pauseControls()
+  boardDialog.showModal()
+  updateBoard(snapshot)
+}
+
 function toggleOptions() {
   if (optionsDialog.open) {
     optionsDialog.close()
     return
   }
-  renderer?.releaseMouse()
-  keys.clear()
-  finishPrimary('cancel')
-  sendInput()
+  if (boardDialog.open) return
+  pauseControls()
+  crewName.value = snapshot?.players.find((player) => player.id === id)?.name ?? ''
   optionsDialog.showModal()
 }
 
@@ -513,6 +577,7 @@ function saveMouseOptions() {
 applyCamera()
 window.addEventListener('keydown', (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey) return
+  if (boardDialog.open) return
   if (optionsDialog.open && event.target === crewName) return
   if (event.code === 'KeyO' && !event.repeat) {
     event.preventDefault()
@@ -522,7 +587,7 @@ window.addEventListener('keydown', (event) => {
   if (optionsDialog.open) return
   if (event.code === 'Escape') {
     renderer?.releaseMouse()
-    finishPrimary('cancel')
+    cancelMouseActions()
   }
   if (!keyBindings.has(event.code)) return
   if (event.code === 'Space' && event.target instanceof HTMLButtonElement) return
@@ -533,7 +598,12 @@ window.addEventListener('keydown', (event) => {
   if (event.code === 'KeyC') toggleCamera()
   else if (follow && live && event.key !== 'Shift') renderer?.captureMouse()
   if (live && event.code === 'KeyB') send({ type: 'buy-seed' })
-  if (live && event.code === 'KeyE') send({ type: 'interact' })
+  if (live && event.code === 'KeyE') {
+    const state = snapshot
+    const player = state?.players.find((entry) => entry.id === id)
+    if (state?.mission === 'complete' && !state.jobs.active && player && atJobBoard(player) && !heldItem(state, player)) openJobBoard()
+    else send({ type: 'interact' })
+  }
   if (live && event.code === 'KeyF') send({ type: 'seat' })
   if (live && event.code === 'Space' && !snapshot?.players.find((player) => player.id === id)?.seat) send({ type: 'jump' })
   if (event.code.startsWith('Digit')) {
@@ -550,40 +620,58 @@ function finishPrimary(phase: 'release' | 'cancel') {
   if (live) send({ type: 'primary', phase, aim: aimHeading() })
 }
 
-function beginPrimary(event: MouseEvent) {
-  if (event.button !== 0 || event.ctrlKey || event.metaKey || !live || optionsDialog.open || primary) return
-  const target = event.target
-  const overPlayfield = target instanceof Element && playfield.contains(target) &&
-    !target.closest('button, a, input, select, textarea, dialog')
-  if (document.pointerLockElement !== canvas && !overPlayfield) return
+function setRightButton(held: boolean) {
+  if (rightButtonHeld === held) return
+  rightButtonHeld = held
+  sendInput()
+}
+
+function cancelMouseActions() {
+  finishPrimary('cancel')
+  setRightButton(false)
+}
+
+function overGameplay(target: EventTarget | null) {
+  return document.pointerLockElement === canvas || (target instanceof Element && playfield.contains(target) &&
+    !target.closest('button, a, input, select, textarea, dialog'))
+}
+
+function beginMouseAction(event: MouseEvent) {
+  if (event.ctrlKey || event.metaKey || !live || optionsDialog.open || boardDialog.open || !overGameplay(event.target)) return
+  if (event.button === 2) {
+    setRightButton(true)
+    return
+  }
+  if (event.button !== 0 || primary) return
   primary = true
   sendInput()
   send({ type: 'primary', phase: 'start' })
 }
-function endPrimary(event: MouseEvent) {
+function endMouseAction(event: MouseEvent) {
   if (event.button === 0) finishPrimary('release')
+  if (event.button === 2) setRightButton(false)
 }
-window.addEventListener('pointerdown', beginPrimary, true)
-window.addEventListener('mousedown', beginPrimary, true)
-window.addEventListener('pointerup', endPrimary, true)
-window.addEventListener('mouseup', endPrimary, true)
-window.addEventListener('pointercancel', () => finishPrimary('cancel'))
+window.addEventListener('pointerdown', beginMouseAction, true)
+window.addEventListener('mousedown', beginMouseAction, true)
+window.addEventListener('pointerup', endMouseAction, true)
+window.addEventListener('mouseup', endMouseAction, true)
+window.addEventListener('pointercancel', cancelMouseActions)
+window.addEventListener('contextmenu', (event) => {
+  if (overGameplay(event.target)) event.preventDefault()
+})
 document.addEventListener('pointerlockchange', () => {
   const locked = document.pointerLockElement === canvas
-  if (!locked && wasPointerLocked) finishPrimary('cancel')
+  if (!locked && wasPointerLocked) cancelMouseActions()
   wasPointerLocked = locked
 })
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) return
   keys.clear()
-  finishPrimary('cancel')
+  cancelMouseActions()
   sendInput()
 })
 window.addEventListener('blur', () => {
-  renderer?.releaseMouse()
-  keys.clear()
-  finishPrimary('cancel')
-  sendInput()
+  pauseControls()
 })
 window.addEventListener('pagehide', () => socket.close())
 cameraButton.addEventListener('click', () => {
@@ -597,12 +685,10 @@ editCrewName.addEventListener('click', () => {
   crewName.select()
 })
 function saveCrewName() {
-  crewName.value = cleanCrewName(crewName.value)
-  if ((localStorage.getItem(nameKey) ?? '') === crewName.value) return
-  localStorage.setItem(nameKey, crewName.value)
-  if (live) send({ type: 'crew-name', name: crewName.value })
+  const name = cleanCrewName(crewName.value)
+  const player = snapshot?.players.find((entry) => entry.id === id)
+  if (live && player && name !== player.name) send({ type: 'crew-name', name })
 }
-crewName.addEventListener('change', saveCrewName)
 optionsDialog.addEventListener('close', saveCrewName)
 invertHorizontal.addEventListener('change', saveMouseOptions)
 invertVertical.addEventListener('change', saveMouseOptions)
@@ -616,10 +702,7 @@ for (const select of [uniformSelect, skinSelect]) {
 buyAngler.addEventListener('click', () => {
   if (live && !ownsAngler && coins >= anglerCost) send({ type: 'buy-angler' })
 })
-reset.addEventListener('click', () => {
-  if (live) send({ type: 'reset' })
-  reset.blur()
-})
+boardButton.addEventListener('click', openJobBoard)
 respawn.addEventListener('click', () => {
   if (!live) return
   send({ type: 'respawn' })

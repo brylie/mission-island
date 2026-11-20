@@ -279,6 +279,18 @@ kbd {
 .options-dialog .respawn:disabled { opacity: 0.55; }
 .options-dialog button { display: block; margin: 15px 0 0 auto; padding: 7px 13px; color: var(--cream); background: #31584c; border: 0; border-radius: 5px; font-size: 12px; font-weight: 780; }
 
+.job-board-dialog { width: min(560px, calc(100% - 28px)); max-height: calc(100% - 30px); }
+.job-board-dialog h2 { margin-bottom: 8px; }
+.job-board-dialog p { margin: 0 0 7px; font-size: 13px; line-height: 1.4; }
+.job-board-dialog #board-progress { color: #365d50; font-weight: 750; }
+#job-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 8px; margin: 13px 0 0; padding: 0; list-style: none; }
+#job-list li { display: flex; flex-direction: column; padding: 10px 11px; border: 1px solid #dbcfaf; border-radius: 6px; }
+#job-list .active-job { border-color: #39836a; background: #e9efda; }
+#job-list h3 { margin: 0 0 4px; font-size: 14px; }
+#job-list p { color: var(--muted); }
+#job-list button { align-self: start; margin: auto 0 0; }
+#job-list button:disabled { opacity: 0.55; cursor: default; }
+
 @media (max-width: 830px), (max-height: 570px) {
   .masthead { height: 55px; }
   .brand-icon { width: 33px; height: 33px; }

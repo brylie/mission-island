@@ -4,6 +4,7 @@ import type { ChargeKind } from './charged-actions'
 import type { InventoryItem } from './inventory'
 import type { Goods, PlotStage } from './farm'
 import type { Truck } from './truck-pose'
+import type { JobBoardState, JobId } from './jobs'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
 
 export interface Weather {
@@ -19,6 +20,7 @@ export interface Input {
   careful: boolean
   sprint: boolean
   brake?: boolean
+  raiseRightHand?: boolean
 }
 
 export interface Player extends Pose {
@@ -30,6 +32,7 @@ export interface Player extends Pose {
   onBed: boolean
   truckSurface?: 'bed' | 'hood' | 'roof'
   reaching: boolean
+  rightHandRaised: boolean
   appearance?: CrewAppearance
   connected: boolean
   sleeping: boolean
@@ -39,6 +42,7 @@ export interface Player extends Pose {
   equipped: InventoryItem | null
   goods: Goods
   seeds: number
+  starterSeedClaimed?: boolean
   charge: { kind: ChargeKind; power: number } | null
   casting: { bobber: Point; elapsed: number; power: number; fight?: { progress: number; tension: number; pulling: boolean } } | null
   throwing: boolean
@@ -74,6 +78,7 @@ export interface Snapshot {
   fire: number
   farm: PlotStage[]
   weather: Weather
+  jobs: JobBoardState
 }
 
 export type ServerMessage =
@@ -82,6 +87,8 @@ export type ServerMessage =
   | { type: 'fishing-result'; result: FishingResult }
   | { type: 'market-sale'; coins: number }
   | { type: 'job-pay'; coins: number; job: 'crate' | 'delivery' | 'fire' }
+  | { type: 'order-pay'; coins: number; id: JobId }
+  | { type: 'order-unavailable' | 'starter-seed' }
   | { type: 'full' | 'duplicate' }
 
 export type ClientMessage =
@@ -91,5 +98,6 @@ export type ClientMessage =
   | { type: 'crew-name'; name: string }
   | { type: 'primary'; phase: 'start' | 'release' | 'cancel'; aim?: number }
   | { type: 'equip'; item: InventoryItem }
+  | { type: 'take-job'; id: JobId }
   | { type: 'buy-angler' | 'buy-seed' }
-  | { type: 'interact' | 'seat' | 'jump' | 'reset' | 'respawn' }
+  | { type: 'interact' | 'seat' | 'jump' | 'respawn' }

@@ -18,6 +18,7 @@ import {
 } from './island-assets'
 import { createIslandLighting, createMeshFactory } from './island-meshes'
 import { createIslandWorld } from './island-world'
+import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'
 import { createObjectiveMarker } from './objective-marker'
 import { northernRegions } from './scenery'
 import type { Player, Snapshot } from './protocol'
@@ -43,7 +44,9 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const { water, homeChests, showFarm, boat, buoys, northernScenery, gulls, fishSchools, lights } = createIslandWorld(meshes)
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
-  const dropPad = createObjectiveMarker(meshes, town, 8.3, '#67ecdc')
+  const dropPad = createObjectiveMarker(meshes, town, deliveryRadius * 2, '#67ecdc')
+  const marketPad = createObjectiveMarker(meshes, market, 4.5, '#67ecdc')
+  const boardPad = createObjectiveMarker(meshes, jobBoard, 5.6, sun)
   const firePad = createObjectiveMarker(meshes, lookout, 9.7, '#ff956b')
   const equipmentPad = createObjectiveMarker(meshes, { x: 21, z: 22 }, 5.3, '#ffae77')
 
@@ -72,9 +75,12 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       seats: [new Vector3(-0.44, -0.39, 0.25), new Vector3(0.44, -0.39, 0.25)] }
   })
   const items = [...crateStarts, ...extinguisherStarts].map((_, id) => {
-    const node = createSupply(meshes, id < crateStarts.length ? 'crate' : 'extinguisher')
+    const isCrate = id < crateStarts.length
+    const node = createSupply(meshes, isCrate ? 'crate' : 'extinguisher')
+    const cargoTag = isCrate ? meshes.box(0, 0.26, -0.456, 0.35, 0.12, 0.024, '#fff0bd', node, false) : undefined
+    cargoTag?.setEnabled(false)
     node.setEnabled(false)
-    return node
+    return { node, cargoTag }
   })
 
   const sprays = extinguisherStarts.map(() => createExtinguisherSpray(scene))
@@ -88,6 +94,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     { point: lookout, title: 'Forest Lookout', kind: 'lookout', height: 4.3 },
     { point: farm, title: 'Island Farm', kind: 'farm', height: 1.32 },
     { point: market, title: 'Seabrook Market', kind: 'market', height: 3.32 },
+    { point: jobBoard, title: 'Harbor job board', kind: 'board', height: 2.35 },
     { point: { x: 21, z: 22 }, title: 'Fire Supplies', kind: 'equipment', height: 2.4 },
   ]
   const places = [
@@ -220,7 +227,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         const winding = player.charge?.kind === 'throw' ? player.charge.power : 0
         poseCrew(character, cycles[id], stride, !player.grounded, held?.kind ?? (player.equipped ? 'tool' : undefined),
           Number(Boolean(player.reaching || held?.spraying || player.casting)),
-          wasVisible ? 1 - Math.exp(-delta * 16) : 1, winding, player.throwing)
+          wasVisible ? 1 - Math.exp(-delta * 16) : 1, winding, player.throwing, player.rightHandRaised)
       }
       if (rod && gripIndex >= 0) {
         const { grip, rod } = gear[gripIndex]
@@ -235,8 +242,13 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   }
 
   function updateEquipment(state: Snapshot, factor: number) {
+    const job = activeJob(state)
     for (const item of state.items) {
-      const node = items[item.id]
+      const { node, cargoTag } = items[item.id]
+      if (cargoTag) {
+        cargoTag.setEnabled(job?.kind === 'delivery')
+        if (job?.kind === 'delivery') cargoTag.material = meshes.paint(job.color)
+      }
       const holder = state.players.find((player) => player.id === item.holder)
       const spray = sprays[item.id - crateStarts.length]
       const locked = item.kind === 'extinguisher' && state.mission !== 'fire'
@@ -262,15 +274,19 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   }
 
   function updateLabels(local: Player | undefined, close: boolean, viewport: Viewport) {
+    const job = last && activeJob(last)
+    const drop = last && deliveryDrop(last)
     for (const place of places) {
       const range = close && local ? distance(place.point, local) : 0
       const opacity = Math.min(1, Math.max(0, (80 - range) / 38))
       place.label.hidden = opacity === 0 || (place.mapOnly && close) ||
         Boolean(place.discovery && !local?.discoveries?.includes(place.discovery)) ||
-        (place.kind === 'equipment' && last?.mission !== 'fire')
+        (place.kind === 'equipment' && last?.mission !== 'fire') || (place.kind === 'board' && last?.mission !== 'complete')
       place.label.style.opacity = String(opacity)
       place.label.classList.toggle('place--active',
-        (last?.mission === 'delivery' && (place.kind === 'harbor' || place.kind === 'town')) ||
+        Boolean(drop && (place.kind === 'harbor' || distance(place.point, drop) < 6)) ||
+        (job?.kind === 'market' && place.kind === 'market') ||
+        (last?.mission === 'complete' && !job && place.kind === 'board') ||
         (last?.mission === 'fire' && (place.kind === 'lookout' || place.kind === 'equipment')))
       locate(place.label, viewport, place.point.x, groundHeight(place.point) + place.height, place.point.z)
     }
@@ -301,12 +317,18 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       updateScenery(last, factor, delta)
       updateCharacters(last, factor, delta)
       updateEquipment(last, factor)
-      pickupPad.setEnabled(last.mission === 'delivery')
-      dropPad.setEnabled(last.mission === 'delivery')
+      const drop = deliveryDrop(last)
+      pickupPad.setEnabled(Boolean(drop))
+      dropPad.setEnabled(Boolean(drop))
+      if (drop) dropPad.position.set(drop.x, groundHeight(drop) + 0.095, drop.z)
+      marketPad.setEnabled(activeJob(last)?.kind === 'market')
+      boardPad.setEnabled(last.mission === 'complete' && !last.jobs.active)
       firePad.setEnabled(last.mission === 'fire')
       equipmentPad.setEnabled(last.mission === 'fire')
       fire.pose(time, last.mission === 'fire' ? last.fire : 0)
     } else {
+      marketPad.setEnabled(false)
+      boardPad.setEnabled(false)
       firePad.setEnabled(false)
       equipmentPad.setEnabled(false)
     }

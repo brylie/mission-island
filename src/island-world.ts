@@ -7,6 +7,7 @@ import { createGrassTufts, createGulls, createIslandTerrain } from './island-lan
 import type { MeshFactory } from './island-meshes'
 import { createNorthernScenery } from './island-north'
 import { createFishSchools, createWildflowers } from './island-wildlife'
+import { jobBoard } from './jobs'
 import { footpaths, road, walkways } from './routes'
 import { islandRocks, islandTrees } from './scenery'
 import { createStreetLights } from './street-lights'
@@ -24,6 +25,13 @@ export function createIslandWorld(meshes: MeshFactory) {
   const showFarm = createFarm(meshes)
   showFarm([])
   createMarketAwning(meshes)
+  const boardY = groundHeight(jobBoard)
+  for (const dx of [-0.66, 0.66]) meshes.box(jobBoard.x + dx, boardY + 0.91, jobBoard.z, 0.12, 1.82, 0.13, '#765641')
+  meshes.box(jobBoard.x, boardY + 1.38, jobBoard.z, 1.75, 0.93, 0.14, '#996447')
+  meshes.box(jobBoard.x, boardY + 1.88, jobBoard.z, 1.98, 0.14, 0.45, '#387e76')
+  for (const dx of [-0.52, 0, 0.52]) {
+    meshes.box(jobBoard.x + dx, boardY + 1.38, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
+  }
   createDock(meshes)
   const boat = createHarborBoat(meshes)
   const buoys = boundaryBuoys.map(({ x, z }) => createBuoy(meshes, x, z))

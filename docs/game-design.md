@@ -10,9 +10,9 @@ Ground the game in simple physical behavior. Crates have weight, boats drift aft
 
 ## Play loops
 
-- **Service shifts.** Work together to deliver harbor crates and put out the lookout fire. Future jobs can use the same equipment and vehicle controls for rescues, deliveries, or air missions.
+- **Service shifts.** Work together to deliver harbor crates and put out the lookout fire. After the starter shift, the harbor board offers repeat deliveries to new destinations and market orders for fish and crops. Choosing an order leaves the crew in the world where they were already playing.
 - **Island life.** Take tools from the chest outside your starting house. Fish from the shore, dock, or skiff, or use the shared farm to grow carrots. Sell your catch and crops at Seabrook Market.
-- **Progression.** Farming, fishing, and truck deliveries provide the first income. Each delivered crate earns two coins per crew slot, with three more for finishing the delivery job and four for clearing the lookout fire. Market earnings and crew pay buy seeds and the Harbor angler uniform. Service missions also unlock the delivery and fire uniforms.
+- **Progression.** Farming, fishing, and truck deliveries provide the first income. Each starter crate earns two coins per crew member, with three more for finishing the delivery and four for clearing the lookout fire. Market earnings and crew pay buy seeds and the Harbor angler uniform. Service missions also unlock the delivery and fire uniforms. Completed orders count toward the shared second-island milestone independently of coin balances.
 
 The [roadmap](roadmap.md) records the playtest ideas and future jobs.
 
@@ -22,5 +22,6 @@ The [roadmap](roadmap.md) records the playtest ideas and future jobs.
 - [Charged throws](mechanics/throwing.md)
 - [Fishing and cast timing](mechanics/fishing.md)
 - [Farming and the market](mechanics/farming-and-market.md)
+- [Crew orders and second-island progress](mechanics/crew-orders.md)
 
 Keep tuning values in the mechanic specification when they change. Update the mechanic's playtest cases when interaction rules or the multiplayer state change.

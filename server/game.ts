@@ -10,9 +10,10 @@ import type { ChargeKind } from '../src/charged-actions'
 import { anglerCost, cleanCrewName, readAppearance } from '../src/crew-appearance.ts'
 import { farmPlots, growthSeconds, market, nearbyPlot, saleValue, seedPrice } from '../src/farm.ts'
 import { starterTools } from '../src/inventory.ts'
+import { atJobBoard, deliveryDrop, deliveryRadius, isJobId, jobs, orderContribution } from '../src/jobs.ts'
 import {
   crateSize, crateStarts, distance, extinguisherStarts, jobPay, jumpSpeed, localPoint, lookout, offset,
-  skiffStart, spawns, town, truckStart,
+  skiffStart, spawns, truckSeatSpeed, truckStart,
 } from '../src/world.ts'
 import { truckPoint } from '../src/truck-pose.ts'
 import type { TruckPose } from '../src/truck-pose.ts'
@@ -54,7 +55,7 @@ function readHeading(value: unknown) {
 
 function getInput(raw: unknown): Input {
   if (!raw || typeof raw !== 'object') return stopped
-  const { x, z, spray, aim, careful, sprint, brake } = raw as Partial<Input>
+  const { x, z, spray, aim, careful, sprint, brake, raiseRightHand } = raw as Partial<Input>
   const axis = (value: unknown) => typeof value === 'number' && Number.isFinite(value)
     ? Math.max(-1, Math.min(1, value)) : 0
   return {
@@ -65,6 +66,7 @@ function getInput(raw: unknown): Input {
     careful: careful === true,
     sprint: sprint === true,
     brake: brake === true,
+    raiseRightHand: raiseRightHand === true,
   }
 }
 
@@ -83,11 +85,14 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...structuredClone(save?.world),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
     weather: weatherAt(islandTime),
+    jobs: structuredClone(save?.world.jobs ?? { active: null, completed: 0 }),
   }
+  const jobCrew = new Set(save?.jobCrew ?? save?.crew.filter(({ reserved }) => reserved).map(({ token }) => token))
   state.skiff.speed = 0
   const growth = save?.growth.slice() ?? farmPlots.map(() => 0)
   for (const item of state.items) {
     item.spraying = false
+    if (state.mission === 'complete' && item.kind === 'extinguisher') item.holder = null
     if (save) physics.restore(item)
     else physics.release(item, item)
   }
@@ -102,7 +107,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   function restingPlayer(player: Player) {
     return {
       ...player, name: cleanCrewName(player.name), discoveries: player.discoveries ?? [],
-      connected: false, casting: null, charge: null, reaching: false, throwing: false, sleeping: false,
+      connected: false, casting: null, charge: null, reaching: false, rightHandRaised: false, throwing: false, sleeping: false,
       swimming: player.swimming ?? false, rowing: false,
     }
   }
@@ -117,11 +122,12 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   }
 
   function snapshotForSave(): IslandSave {
-    const { truck, skiff, items, mission, fire, farm } = state
+    const { truck, skiff, items, mission, fire, farm, jobs } = state
     const { x, z, heading } = truck
     return {
       version: 1, islandTime, growth: growth.slice(),
-      world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm }),
+      world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs }),
+      jobCrew: [...jobCrew],
       crew: Array.from(profiles, ([token, player]) => ({
         token, player: structuredClone(restingPlayer(player)), reserved: crew.has(token),
       })),
@@ -148,13 +154,99 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     tell(member, { type: 'fishing-result', result })
   }
 
-  function payCrew(job: 'crate' | 'delivery' | 'fire') {
-    const coins = job === 'delivery' ? jobPay.crate + jobPay.delivery : jobPay[job]
-    for (const member of crew.values()) {
-      member.player.coins += coins
-      tell(member, { type: 'job-pay', coins, job })
+  function enrollConnectedCrew() {
+    jobCrew.clear()
+    for (const [token, member] of crew) {
+      if (member.socket) jobCrew.add(token)
+    }
+  }
+
+  function payCrew(message: Extract<ServerMessage, { type: 'job-pay' | 'order-pay' }>) {
+    for (const token of jobCrew) {
+      const player = profiles.get(token)
+      if (!player) continue
+      player.coins += message.coins
+      const member = crew.get(token)
+      if (member) tell(member, message)
+    }
+  }
+
+  function startJob(member: CrewMember, id: unknown) {
+    if (!isJobId(id) || state.mission !== 'complete' || state.jobs.active || !atJobBoard(member.player) ||
+      member.player.sleeping || heldItem(state, member.player)) {
+      tell(member, { type: 'order-unavailable' })
+      return
+    }
+    const job = jobs[id]
+    state.jobs.active = { id, progress: 0 }
+    enrollConnectedCrew()
+    if (job.kind === 'delivery') {
+      for (const [i, point] of crateStarts.entries()) {
+        const crate = state.items[i]
+        physics.remove(crate)
+        Object.assign(crate, { holder: null, heading: 0, delivered: i >= job.quantity })
+        if (!crate.delivered) physics.release(crate, point)
+      }
     }
     checkpoint?.()
+  }
+
+  function advanceOrder(quantity: number) {
+    const order = state.jobs.active
+    if (!order) return
+    order.progress += quantity
+    const job = jobs[order.id]
+    if (order.progress < job.quantity) return
+    state.jobs.active = null
+    state.jobs.completed++
+    payCrew({ type: 'order-pay', id: order.id, coins: job.coins })
+    jobCrew.clear()
+  }
+
+  function deliverCrate(item: Item) {
+    item.delivered = true
+    if (state.jobs.active) {
+      advanceOrder(1)
+    } else if (state.items.filter((entry) => entry.kind === 'crate').every((crate) => crate.delivered)) {
+      state.mission = 'fire'
+      payCrew({ type: 'job-pay', job: 'delivery', coins: jobPay.crate + jobPay.delivery })
+      enrollConnectedCrew()
+    } else {
+      payCrew({ type: 'job-pay', job: 'crate', coins: jobPay.crate })
+    }
+  }
+
+  function visitMarket(member: CrewMember) {
+    const { player } = member
+    const contribution = orderContribution(state, player.goods)
+    if (contribution) {
+      player.goods[contribution.goods] -= contribution.quantity
+      advanceOrder(contribution.quantity)
+      return
+    }
+    const proceeds = saleValue(player.goods)
+    if (!proceeds) return
+    player.coins += proceeds
+    player.goods = { fish: 0, carrots: 0 }
+    tell(member, { type: 'market-sale', coins: proceeds })
+  }
+
+  function useHomeChest(member: CrewMember) {
+    const { player } = member
+    stopPrimary(member)
+    const firstVisit = !player.starterSeedClaimed
+    if (firstVisit) {
+      player.starterSeedClaimed = true
+      player.seeds++
+      tell(member, { type: 'starter-seed' })
+    }
+    if (!player.inventory.length) {
+      player.inventory = [...starterTools]
+      player.equipped = 'fishing-rod'
+    } else if (!firstVisit) {
+      player.inventory = []
+      stowTool(member)
+    }
   }
 
   function isReadyToCast(member: CrewMember) {
@@ -249,12 +341,9 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     if (item) {
       stopPrimary(member)
       item.holder = null
-      if (item.kind === 'crate' && distance(player, town) < 4.5) {
-        item.delivered = true
-        if (state.items.filter((entry) => entry.kind === 'crate').every((crate) => crate.delivered)) {
-          state.mission = 'fire'
-          payCrew('delivery')
-        } else payCrew('crate')
+      const dropoff = deliveryDrop(state)
+      if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
+        deliverCrate(item)
       } else if (item.kind === 'crate') {
         const slot = byTruckBed(state, player) ? freeBed(state) : undefined
         if (slot === undefined) {
@@ -273,20 +362,9 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       player.sleeping = true
       return
     } else if (atHomeChest(player)) {
-      stopPrimary(member)
-      if (player.inventory.length) {
-        player.inventory = []
-        stowTool(member)
-      } else {
-        player.inventory = [...starterTools]
-        player.equipped = 'fishing-rod'
-      }
+      useHomeChest(member)
     } else if (player.grounded && !player.onBed && distance(player, market) < 2.25) {
-      const proceeds = saleValue(player.goods)
-      if (!proceeds) return
-      player.coins += proceeds
-      player.goods = { fish: 0, carrots: 0 }
-      tell(member, { type: 'market-sale', coins: proceeds })
+      visitMarket(member)
     } else {
       const plot = player.grounded && !player.onBed ? nearbyPlot(player) : -1
       if (state.farm[plot] === 'tilled') {
@@ -316,7 +394,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     const { player } = member
     if (player.seat) {
       const boating = inSkiff(player.seat)
-      if (!boating && Math.abs(state.truck.speed) > 2) return
+      if (!boating && Math.abs(state.truck.speed) > truckSeatSpeed) return
       const side = player.seat === 'driver' ? -1 : 1
       const exit = boating ? skiffExit(state.skiff, player.seat)
         : [offset(state.truck, side * 2.1, 0.9), offset(state.truck, 0, -3.8)]
@@ -337,7 +415,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       updateRiders()
       return
     }
-    if (distance(state.truck, player) >= 4.5 || Math.abs(state.truck.speed) > 2 || !player.grounded || player.onBed || player.truckSurface ||
+    if (distance(state.truck, player) >= 4.5 || Math.abs(state.truck.speed) > truckSeatSpeed || !player.grounded || player.onBed || player.truckSurface ||
       heldItem(state, player)?.kind === 'crate') return
     if (!state.players.some((entry) => entry.seat === 'driver')) player.seat = 'driver'
     else if (!state.players.some((entry) => entry.seat === 'passenger')) player.seat = 'passenger'
@@ -368,25 +446,6 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       player.onBed = false
       player.truckSurface = undefined
       player.swimming = false
-    }
-  }
-
-  function reset() {
-    if (state.mission !== 'complete') return
-    state.truck = physics.parkTruck(truckStart)
-    state.skiff = { ...skiffStart, speed: 0 }
-    state.items = makeItems()
-    for (const item of state.items) physics.release(item, item)
-    state.fire = 1
-    state.mission = 'delivery'
-    for (const member of crew.values()) {
-      const { player } = member
-      Object.assign(player, spawns[player.id], { heading: 0, seat: null, y: groundHeight(spawns[player.id]), grounded: true,
-        onBed: false, truckSurface: undefined, reaching: false, casting: null, throwing: false, rowing: false, sleeping: false, swimming: false })
-      stopPrimary(member)
-      member.verticalSpeed = 0
-      member.reachUntil = 0
-      member.throwUntil = 0
     }
   }
 
@@ -444,7 +503,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     }
     const home = spawns[player.id]
     Object.assign(player, { ...home, y: groundHeight(home), heading: 0, seat: null, grounded: true, onBed: false, truckSurface: undefined,
-      swimming: false, sleeping: false, casting: null, reaching: false, throwing: false, rowing: false })
+      swimming: false, sleeping: false, casting: null, reaching: false, rightHandRaised: false, throwing: false, rowing: false })
     stopPrimary(member)
     member.input = stopped
     member.verticalSpeed = 0
@@ -496,6 +555,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     }
     if (player.charge && input.aim !== undefined && !input.x && !input.z) player.heading = input.aim
     player.reaching = !item && (member.primary?.kind === 'reach' || now < member.reachUntil)
+    player.rightHandRaised = input.raiseRightHand === true && !player.swimming && !player.sleeping &&
+      item?.kind !== 'crate' && !player.throwing
     if (item && (input.spray || (member.primary?.kind === 'spray' && member.primary.itemId === item.id)) &&
       canSpray(state, player, item)) {
       item.spraying = true
@@ -504,7 +565,13 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         state.fire = Math.max(0, state.fire - tickSeconds / 5)
         if (state.fire === 0) {
           state.mission = 'complete'
-          payCrew('fire')
+          payCrew({ type: 'job-pay', job: 'fire', coins: jobPay.fire })
+          jobCrew.clear()
+          for (const tool of state.items.filter(({ kind }) => kind === 'extinguisher')) {
+            tool.holder = null
+            tool.spraying = false
+          }
+          checkpoint?.()
         }
       }
     }
@@ -542,6 +609,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       const { player } = member
       const connected = active(member)
       player.reaching = false
+      player.rightHandRaised = false
       player.throwing = now < member.throwUntil
       if (!connected) stopPrimary(member)
       updateFishing(member, connected && isReadyToCast(member) && (!inSkiff(player.seat) || still))
@@ -592,7 +660,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     const profile = profiles.get(token)
     const member = existing ?? crewMember(profile ? { ...profile, id } : {
       ...spawns[id], id, heading: 0, y: groundHeight(spawns[id]), grounded: true,
-            name: '', discoveries: [], onBed: false, reaching: false, connected: true, sleeping: false, swimming: false,
+        name: '', discoveries: [], onBed: false, reaching: false, rightHandRaised: false, connected: true, sleeping: false, swimming: false,
         seat: null, rowing: false, inventory: [], equipped: null,
         goods: { fish: 0, carrots: 0 }, seeds: 0, charge: null, casting: null, throwing: false, coins: 0, ownsAngler: false },
     )
@@ -601,6 +669,10 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     profiles.set(token, member.player)
     member.socket = socket
     member.player.connected = true
+    if (!jobCrew.has(token) && (state.mission !== 'complete' || state.jobs.active)) {
+      jobCrew.add(token)
+      checkpoint?.()
+    }
     return member
   }
 
@@ -682,9 +754,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
           member.verticalSpeed = jumpSpeed
         }
         break
-      case 'reset':
-        reset()
-        checkpoint?.()
+      case 'take-job':
+        startJob(member, message.id)
         break
       case 'respawn':
         respawn(member)

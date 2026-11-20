@@ -123,7 +123,7 @@ export const entries: Entry[] = [
     id: 'crew', name: 'Crew character', group: 'Crew', source: models, duration: 2.4, headroom: 1.45,
     description: 'Play or scrub the crew poses and compare uniform and skin color choices.',
     controls: [
-      control('state', 'Animation', 'walk', { idle: 'Idle', walk: 'Walk', sprint: 'Sprint', jump: 'Jump', reach: 'Left reach', carry: 'Carry crate', throw: 'Throw crate', spray: 'Use extinguisher' }),
+      control('state', 'Animation', 'walk', { idle: 'Idle', walk: 'Walk', sprint: 'Sprint', jump: 'Jump', reach: 'Left reach', raise: 'Raise right hand', carry: 'Carry crate', throw: 'Throw crate', spray: 'Use extinguisher' }),
       control('uniform', 'Uniform', 'amber', Object.fromEntries(Object.entries(uniforms).map(([id, uniform]) => [id, uniform.name]))),
       control('skin', 'Skin tone', 'light', Object.fromEntries(Object.entries(skinTones).map(([id, tone]) => [id, tone.name]))),
       range('stride', 'Stride length', 1, 0.2, 1.4, 0.05),
@@ -144,7 +144,7 @@ export const entries: Entry[] = [
         const throwing = values.state === 'throw' && time >= 1.12 && time < 1.39
         const carrying = values.state === 'carry' || windup
         const spraying = values.state === 'spray'
-        const reaching = values.state === 'reach' || spraying
+        const reach = values.state === 'reach' ? 1 : spraying ? 0.8 + 0.2 * Math.sin(time * 4) : 0
         const jumpTime = Math.max(0, time - 0.6)
         const elevation = jumping ? Math.max(0, jumpSpeed * jumpTime - jumpGravity / 2 * jumpTime * jumpTime) : 0
         crew.root.position.y = elevation
@@ -153,7 +153,7 @@ export const entries: Entry[] = [
         crew.blink(time)
         const power = windup ? chargePower('throw', time) : 0
         poseCrew(crew, time * (sprinting ? 2.5 : 5 / 3), stride, elevation > 0.08,
-          carrying ? 'crate' : spraying ? 'extinguisher' : undefined, reaching ? 0.8 + 0.2 * Math.sin(time * 4) : 0, 1, power, throwing)
+          carrying ? 'crate' : spraying ? 'extinguisher' : undefined, reach, 1, power, throwing, values.state === 'raise')
         crate.setEnabled(carrying)
         crate.position.y = 1.13 + power * 0.41
         tool.setEnabled(spraying)

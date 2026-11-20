@@ -5,14 +5,16 @@ The six plots at Island Farm are shared. Each player can work any plot, so one c
 | Stage | Action |
 | --- | --- |
 | Grass | Equip the hoe with **2**. Left-click near the plot to till the soil. |
-| Tilled | Press **E** near the plot to plant one purchased carrot seed. |
+| Tilled | Press **E** near the plot to plant a carrot seed. |
 | Planted | Equip the watering can with **3** and left-click to water. |
 | Watered | The carrots ripen after 24 seconds of peak daylight on the host. |
 | Ripe | Press **E** to harvest one carrot. The plot returns to grass. |
 
-The action uses the nearest plot within about two meters. Press **B** at the market awning to buy a seed for one coin. Each planting consumes one seed. Watered plots grow during daylight, and rain waters planted plots. The host resolves simultaneous actions in order, so only the first successful harvest of a ripe plot earns a carrot.
+The action uses the nearest plot within about two meters. Each player's cottage chest provides one starter seed. Press **B** at the market awning to buy more for one coin each. Each planting consumes one seed. Watered plots grow during daylight, and rain waters planted plots. The host resolves simultaneous actions in order, so only the first successful harvest of a ripe plot earns a carrot.
 
 Press **E** at the striped awning at Seabrook Market with your hands free of loose cargo. The market sells all fish and carrots in your inventory for 2 and 3 coins each. Coins belong to the seller. Spend three at **Options → Crew appearance** for the Harbor angler uniform.
+
+During a [market order](crew-orders.md), **E** first offers the requested goods up to the remaining amount. The prompt shows how many will go toward the crew order. Press **E** again to sell remaining goods once the order is filled.
 
 ## Playtest
 

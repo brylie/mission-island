@@ -7,9 +7,9 @@ This is the running record of ideas from the playtests. The [game design](game-d
 | Area | What to try |
 | --- | --- |
 | Co-op | Two browsers share a LAN host. Refresh to pick up development changes. Named saves retain the island and personal progress. |
-| Early jobs | Deliver crates by truck and complete service missions for crew pay. Catch fish or grow carrots and sell them at Seabrook Market. Coins buy seeds and clothing. |
+| Early jobs | The starter shift leads into repeat jobs at the harbor board. Haul seed crates to Island Farm or gear to Driftwood Beach, and fill fish and carrot orders at Seabrook Market. Four completed orders mark the crew ready for the second island. |
 | Crew | Use **Set name** in the crew panel or **Options → Name**. Names appear overhead. Characters blink and have selectable uniforms and skin tones. |
-| Equipment | Each starting cottage has a private chest with a rod, hoe, and watering can. Left click reaches, uses a tool, or charges a throw or cast. |
+| Equipment | Each starting cottage has a private chest with a rod, hoe, watering can, and one starter carrot seed. Left click reaches, uses a tool, or charges a throw or cast. |
 | Fishing | Cast from shore, a dock, or the skiff. Time the meter, then reel between pulls. Line tension can snap the line. |
 | Farming | Till, plant bought seeds, water by hand or rain, and harvest after daylight growth. |
 | Hauling | Walk up to the truck to board. Load physically simulated crates by hand or toss them over the bed lip. Side rails retain cargo during turns. Headlights, taillights, and nearby street lamps come on around dusk. |

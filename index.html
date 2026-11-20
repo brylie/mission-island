@@ -68,11 +68,12 @@
         <div id="mission-progress" class="progress">
           <div id="progress-track" class="progress-track" role="progressbar" aria-label="Crates delivered" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">
             <i></i><i></i><i></i>
+            <i hidden></i>
           </div>
           <span id="progress-label">0 / 3 delivered</span>
         </div>
         <p id="mission-step" class="mission-step">Pick up crates and load the flatbed.</p>
-        <button id="reset" type="button" hidden>Play again <span aria-hidden="true">↻</span></button>
+        <button id="open-job-board" type="button" aria-haspopup="dialog" aria-controls="job-board-dialog" hidden>Harbor job board</button>
       </section>
 
       <aside class="crew" aria-label="Crew and map">
@@ -90,13 +91,14 @@
 
       <div class="prompt" id="prompt" hidden><kbd id="prompt-key"></kbd><span id="prompt-action"></span></div>
       <div class="notice" id="notice" hidden role="status"></div>
-      <footer class="controls" aria-label="Keyboard controls">
+      <footer class="controls" aria-label="Game controls">
         <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Walk / drive</span></div>
         <div><kbd>E</kbd><span>Interact</span></div>
         <div><kbd>F</kbd><span>Enter / exit</span></div>
         <div><kbd>Shift</kbd><span>Sprint / slow drive</span></div>
         <div><kbd>Space</kbd><span>Jump / brake</span></div>
         <div><kbd>Left click</kbd><span>Reach / throw / use tool</span></div>
+        <div><kbd>Right click</kbd><span>Raise right hand</span></div>
         <div id="orbit-control">
           <div class="mouse-look-active"><kbd>Mouse</kbd><span>Look around</span><kbd>Esc</kbd><span>Release</span></div>
           <div class="mouse-look-paused"><kbd>WASD</kbd><span>Resume mouse look</span></div>
@@ -104,6 +106,14 @@
         <div id="spray-control" hidden><kbd>R</kbd><span>Spray</span></div>
       </footer>
     </main>
+
+    <dialog id="job-board-dialog" class="options-dialog job-board-dialog" aria-labelledby="board-title">
+      <h2 id="board-title">Harbor job board</h2>
+      <p id="board-note" role="status"></p>
+      <p id="board-progress"></p>
+      <ul id="job-list"></ul>
+      <form method="dialog"><button type="submit" autofocus>Close</button></form>
+    </dialog>
 
     <dialog id="options-dialog" class="options-dialog" aria-labelledby="options-title">
       <form method="dialog">

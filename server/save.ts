@@ -1,6 +1,8 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { farmPlots } from '../src/farm.ts'
+import { isJobId, jobs } from '../src/jobs.ts'
+import type { JobBoardState } from '../src/jobs.ts'
 import type { Player, Snapshot } from '../src/protocol'
 import { crateStarts, extinguisherStarts, spawns } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
@@ -9,8 +11,9 @@ export type IslandSave = {
   version: 1
   islandTime: number
   growth: number[]
-  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm'> & { truck: Pose }
+  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm'> & { truck: Pose; jobs?: JobBoardState }
   crew: { token: string; player: Player; reserved: boolean }[]
+  jobCrew?: string[]
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -25,11 +28,24 @@ function isPose(value: unknown): value is Record<string, unknown> {
   return isRecord(value) && [value.x, value.z, value.heading].every(isNumber)
 }
 
+function isCrewToken(value: unknown) {
+  return typeof value === 'string' && /^[a-f0-9]{32}$/.test(value)
+}
+
+function isJobBoard(value: unknown, mission: unknown) {
+  if (!isRecord(value) || !isNumber(value.completed) || !Number.isSafeInteger(value.completed) || value.completed < 0) return false
+  const { active } = value
+  return active === null || (mission === 'complete' && isRecord(active) && isJobId(active.id) &&
+    isNumber(active.progress) && Number.isInteger(active.progress) && active.progress >= 0 && active.progress < jobs[active.id].quantity)
+}
+
 function isSave(value: unknown): value is IslandSave {
   if (!isRecord(value) || value.version !== 1 || !isNumber(value.islandTime) || value.islandTime < 0 ||
     !Array.isArray(value.growth) || value.growth.length !== farmPlots.length || !value.growth.every(isNumber) ||
     !Array.isArray(value.crew) || !isRecord(value.world)) return false
   const { world } = value
+  if (world.jobs !== undefined && !isJobBoard(world.jobs, world.mission)) return false
+  if (value.jobCrew !== undefined && (!Array.isArray(value.jobCrew) || !value.jobCrew.every(isCrewToken))) return false
   if (!isPose(world.truck) || !isPose(world.skiff) || !isNumber(world.fire) ||
     !['delivery', 'fire', 'complete'].some((mission) => mission === world.mission) ||
     !Array.isArray(world.farm) || world.farm.length !== farmPlots.length ||
@@ -38,11 +54,12 @@ function isSave(value: unknown): value is IslandSave {
     !world.items.every((item: unknown, id) => isPose(item) && item.id === id && isNumber(item.y) &&
       item.kind === (id < crateStarts.length ? 'crate' : 'extinguisher'))) return false
   return value.crew.every((entry: unknown) => {
-    if (!isRecord(entry) || typeof entry.token !== 'string' || !/^[a-f0-9]{32}$/.test(entry.token) ||
+    if (!isRecord(entry) || !isCrewToken(entry.token) ||
       typeof entry.reserved !== 'boolean' || !isPose(entry.player)) return false
     const player = entry.player
     return isNumber(player.id) && Number.isInteger(player.id) && player.id >= 0 && player.id < spawns.length &&
       [player.y, player.coins, player.seeds].every(isNumber) && Array.isArray(player.inventory) &&
+      (player.starterSeedClaimed === undefined || typeof player.starterSeedClaimed === 'boolean') &&
       isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
   })
 }

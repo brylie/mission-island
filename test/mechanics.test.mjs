@@ -179,6 +179,17 @@ test('named save slots are separate, validated and replaced with full snapshots'
   other.write(save)
   assert.deepEqual(first.load(), save)
   assert.deepEqual(other.load(), save)
+  const legacy = { ...save, world: { ...save.world } }
+  delete legacy.world.jobs
+  delete legacy.jobCrew
+  other.write(legacy)
+  assert.deepEqual(other.load(), legacy)
+  save.world.mission = 'complete'
+  save.world.jobs.active = { id: 'market-fish', progress: 1 }
+  first.write(save)
+  assert.deepEqual(first.load(), save)
+  other.write({ ...save, world: { ...save.world, jobs: { completed: 0, active: { id: 'market-fish', progress: 2 } } } })
+  assert.throws(() => other.load(), /Could not load island save/)
   const filename = join(root, '.mission-island', 'saves', 'weekend.json')
   assert.ok(readFileSync(filename, 'utf8').endsWith('\n'))
   writeFileSync(filename, '{"version":2}')
