@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { canWalkAt } from '../server/movement.ts'
 import { footpaths, shellglassPoint } from '../src/routes.ts'
 import { overlapsProp, starterDiscoveries } from '../src/scenery.ts'
 import { habitatAt, habitatColor } from '../src/second-island/habitats.ts'
@@ -9,6 +10,7 @@ import { groundHeight, nearestRoad, surfaceHeight, waterHeight } from '../src/se
 import { starterFeatures } from '../src/starter-sites.ts'
 import { walkingHeight, waterDepth, waterLevel } from '../src/terrain.ts'
 import { birdActivity, phenomenonStrength, schoolAvoidance } from '../src/wildlife-motion.ts'
+import { spawns } from '../src/world.ts'
 
 function walkSamples(path) {
   return path.flatMap((a, index) => {
@@ -60,6 +62,30 @@ test('the two discovery walks stay above water and avoid sudden steps', () => {
     before = height
   }
   assert.ok(landmarks.find(({ id }) => id === viaductWalk.id).discoverable)
+})
+
+test('each starter site can be approached from the cottage on dry ground', () => {
+  const spacing = .75
+  const start = { x: Math.round(spawns[0].x / spacing) * spacing, z: Math.round(spawns[0].z / spacing) * spacing }
+  const reachable = [start]
+  const key = ({ x, z }) => `${x},${z}`
+  const visited = new Set([key(start)])
+  const steps = [[spacing, 0], [-spacing, 0], [0, spacing], [0, -spacing]]
+  for (let i = 0; i < reachable.length; i++) {
+    const point = reachable[i]
+    const height = walkingHeight(point)
+    for (const [dx, dz] of steps) {
+      const next = { x: point.x + dx, z: point.z + dz }
+      const id = key(next)
+      if (visited.has(id) || !canWalkAt(next, .4, waterLevel) ||
+        Math.abs(walkingHeight(next) - height) > spacing * 1.12) continue
+      visited.add(id)
+      reachable.push(next)
+    }
+  }
+  for (const site of starterFeatures) {
+    assert.ok(reachable.some(({ x, z }) => Math.hypot(x - site.x, z - site.z) < 1.5), site.name)
+  }
 })
 
 test('Saltwind coast, wetland, meadow, woods and bluff produce distinct, gradual terrain colors', () => {

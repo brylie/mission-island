@@ -158,7 +158,8 @@ function start() {
     const target = site?.access ?? landmark
     const nearest = routes.flatMap(({ samples }) => samples).reduce((best, p) =>
       Math.hypot(p.x - target.x, p.z - target.z) < Math.hypot(best.x - target.x, best.z - target.z) ? p : best)
-    setPoint(landmark.id === 'ferry' ? arrival : nearest, Math.atan2(landmark.x - nearest.x, landmark.z - nearest.z))
+    const approach = landmark.id === 'ferry' ? arrival : nearest
+    setPoint(approach, Math.atan2(landmark.x - approach.x, landmark.z - approach.z))
     arm = landmark.id === 'airport' || landmark.id === 'mine' || landmark.id === 'falls' ? 20 : 13
     pitch = .18
     stopTour()
