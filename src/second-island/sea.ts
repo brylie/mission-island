@@ -14,6 +14,7 @@ export function createSoundMaterial(scene: Scene) {
       precision highp float;
       varying vec2 point;
       uniform float time;
+      uniform float light;
       void main() {
         vec2 coast = point / vec2(450.0, 312.0);
         float angle = atan(coast.y, coast.x);
@@ -26,10 +27,12 @@ export function createSoundMaterial(scene: Scene) {
         vec3 blue = mix(vec3(0.26, 0.51, 0.57), vec3(0.49, 0.72, 0.67), 1.0 - smoothstep(0.0, 36.0, depth));
         blue += (ripple * 0.014 + crossWave * 0.011) * fade;
         float swash = (1.0 - smoothstep(0.46, 1.62, abs(depth - 1.9 - ripple * 0.73))) * smoothstep(-0.3, 0.55, crossWave);
-        gl_FragColor = vec4(mix(blue, vec3(0.83, 0.90, 0.82), swash * 0.62), 1.0);
+        vec3 water = mix(blue, vec3(0.83, 0.90, 0.82), swash * 0.62);
+        gl_FragColor = vec4(water * (0.18 + light * 0.82), 0.58 + 0.42 * smoothstep(13.0, 27.0, depth));
       }
     `,
-  }, { attributes: ['position'], uniforms: ['worldViewProjection', 'time'] })
+  }, { attributes: ['position'], uniforms: ['worldViewProjection', 'time', 'light'], needAlphaBlending: true })
+  material.setFloat('light', 1)
   material.setFloat('time', 0)
   return material
 }

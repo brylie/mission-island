@@ -7,6 +7,7 @@ import { actionHint, atHomeDoor } from '../src/actions.ts'
 import { chargePower } from '../src/charged-actions.ts'
 import { farmPlots, market } from '../src/farm.ts'
 import { jobBoard, jobs, secondIslandGoal } from '../src/jobs.ts'
+import { footpaths, shellglassPoint } from '../src/routes.ts'
 import { northernRegions } from '../src/scenery.ts'
 import { groundHeight, grove, maxWadeDepth, waterDepth, waterLevel } from '../src/terrain.ts'
 import { daySeconds, isNight } from '../src/weather.ts'
@@ -136,6 +137,7 @@ test('two connected players must turn in, and a waiting player can cancel', (t) 
   b.request('interact')
   h.advance()
   assert.deepEqual(a.state.weather, b.state.weather)
+  assert.equal(a.state.islandTime, b.state.islandTime)
   assert.equal(b.state.weather.hour, 6)
   assert.equal(b.player.sleeping, false)
   a.request('interact')
@@ -728,4 +730,21 @@ test('crew names and discoveries appear in snapshots and saves', (t) => {
   assert.deepEqual(a.player.discoveries, [region.id])
   assert.deepEqual(b.player.discoveries, [])
   assert.deepEqual(h.game.snapshotForSave().crew[0].player.discoveries, [region.id])
+})
+
+test('discovering Shellglass Point uses the existing per-crew save path', (t) => {
+  const start = footpaths.find(({ name }) => name === 'Driftwood shore walk').points[0]
+  const h = setup(t, { players: [player(0, start), player(1)] })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  h.input(a)
+  h.advance()
+  assert.deepEqual(a.player.discoveries, [])
+  const dx = shellglassPoint.x - start.x, dz = shellglassPoint.z - start.z
+  const length = Math.hypot(dx, dz)
+  h.hold(a, 36, { x: dx / length, z: dz / length })
+  assert.deepEqual(a.player.discoveries, ['shellglass'])
+  assert.deepEqual(b.player.discoveries, [])
+  const resumed = setup(t, { saved: h.game.snapshotForSave() })
+  assert.deepEqual(resumed.join(tokens[0]).player.discoveries, ['shellglass'])
 })

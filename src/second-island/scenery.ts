@@ -4,14 +4,22 @@ import { Matrix } from '@babylonjs/core/Maths/math.vector'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import '@babylonjs/core/Meshes/thinInstanceMesh'
+import { createTree } from '../island-assets'
+import { createPhenomena } from '../island-phenomena'
 import type { MeshFactory } from '../island-meshes'
+import { placeSiteFeatures } from '../site-props'
+import { distanceToRoute } from '../routes'
+import { createFlocks, createSchools } from '../wildlife'
+import type { WildlifeFrame } from '../wildlife'
+import { habitatAt } from './habitats'
 import { islandBuildings, createExterior } from './exteriors'
 import { clearAirfield } from './landscape'
-import { arrival, helipad, lowerLake, pavedYards, roundYards, sites, waterfront } from './sites'
+import { arrival, helipad, lowerLake, pavedYards, roundYards, sites, viaductWalk, waterfront } from './sites'
 import type { MapPoint } from './sites'
-import { groundHeight, nearestRoad, shoreDistance, siteDistance, surfaceHeight, waterHeight } from './terrain'
+import { fallsX, fallsY, groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
 import { createSaltwindVehicle } from './vehicles'
 import type { VehicleId } from './vehicles'
+import { saltwindFeatures } from './site-features'
 
 const cream = '#f5e5c2', slate = '#8a9185', pavement = '#858780'
 
@@ -163,7 +171,7 @@ function rng() {
   }
 }
 
-type Plant = 'fir' | 'alder' | 'reed' | 'flower' | 'shore' | 'crop'
+type Plant = 'fir' | 'alder' | 'reed' | 'flower' | 'shore' | 'crop' | 'fern' | 'heather'
 interface PlantTile { x: number; z: number; matrices: Map<Plant, number[]> }
 
 function createPlants(meshes: MeshFactory) {
@@ -174,7 +182,9 @@ function createPlants(meshes: MeshFactory) {
     const key = `${ix},${iz}`
     const tile = tiles.get(key) ?? { x: ix * 92 + 46, z: iz * 92 + 46, matrices: new Map<Plant, number[]>() }
     const matrices = tile.matrices.get(kind) ?? []
-    const transform = Matrix.Scaling(scale, scale, scale).multiply(Matrix.RotationY(random() * Math.PI * 2))
+    const yaw = random() * Math.PI * 2
+    const breadth = scale * (.82 + random() * .42)
+    const transform = Matrix.Scaling(breadth, scale, breadth).multiply(Matrix.RotationY(yaw))
     transform.setTranslationFromFloats(x, y, z)
     matrices.push(...transform.m)
     tile.matrices.set(kind, matrices)
@@ -182,18 +192,19 @@ function createPlants(meshes: MeshFactory) {
   }
   const clear = (x: number, y: number, z: number, water: number) => y >= water - .05 && !clearAirfield(x, z)
     && nearestRoad(x, z).distance >= 10 && !sites.some((site) => siteDistance(x, z, site) < 3)
+    && distanceToRoute({ x, z }, viaductWalk.path) > 2.2 && Math.hypot(x - viaductWalk.x, z - viaductWalk.z) > 3.5
     && !islandBuildings.some((building) => building.kind === 'cottage' && Math.hypot(x - building.x, z - building.z) < 7)
   for (let i = 0; i < 5600; i++) {
     const x = random() * 912 - 456, z = random() * 660 - 330
     const y = groundHeight(x, z), water = waterHeight(x, z)
     if (!clear(x, y, z, water)) continue
-    const coast = shoreDistance(x, z)
-    const r = random(), scale = .65 + random() * .74
-    if (water > 0 && y - water < 2.1) place('reed', x, y, z, scale)
-    else if (coast < 21) place('shore', x, y, z, scale)
-    else if (y > 25 && r < .80) place(r < .57 ? 'fir' : 'alder', x, y, z, scale)
-    else if (z > 18 && r < .29) place('alder', x, y, z, scale)
-    else if (r < .77) place('flower', x, y, z, scale)
+    const { coast, marsh, woods, bluff } = habitatAt(x, y, z)
+    const r = random(), scale = .68 + random() * .68
+    if (r < coast) place('shore', x, y, z, scale)
+    else if (r < marsh * .81) place(r < marsh * .57 ? 'reed' : 'alder', x, y, z, scale)
+    else if (r < woods * .95) place(r < woods * .62 ? 'fir' : 'fern', x, y, z, scale)
+    else if (r < bluff) place('heather', x, y, z, scale)
+    else if (r < .73) place('flower', x, y, z, scale)
   }
   for (const [cx, cz] of [[-215, 218], [-192, 248], [-72, 243], [98, 236]]) for (let i = 0; i < 75; i++) {
     const angle = random() * Math.PI * 2, range = Math.sqrt(random()) * 34
@@ -214,7 +225,7 @@ function createPlants(meshes: MeshFactory) {
     const sphere = (x: number, y: number, z: number, w: number, h: number, d: number, color: string) =>
       meshes.sphere(x, y, z, w, h, d, color, root, false, 5)
     if (kind === 'fir' || kind === 'alder') {
-      box(0, 1.7, 0, .42, 3.4, .39, '#8e6b4c')
+      box(0, 1.55, 0, .42, 3.7, .39, '#8e6b4c')
       if (kind === 'fir') for (let i = 0; i < 3; i++) {
         const tree = meshes.cylinder(0, 2.55 + i * 1.09, 0, .36, 3.45 - i * .61, 2.13, 8, i % 2 ? '#64875e' : '#507a58', root)
         meshes.shadows.removeShadowCaster(tree)
@@ -222,6 +233,16 @@ function createPlants(meshes: MeshFactory) {
       else {
         sphere(0, 3.97, 0, 3.4, 3.14, 3.17, '#86a364')
         sphere(-.91, 3.48, .3, 2.28, 2.42, 2.39, '#96aa66')
+      }
+    } else if (kind === 'fern') {
+      for (const side of [-1, 1]) for (let i = 0; i < 3; i++) {
+        sphere(side * (.16 + i * .14), .36 - i * .045, (i % 2 - .5) * .24, .27, .13, .42,
+          i % 2 ? '#689763' : '#547d56').rotation.z = side * .37
+      }
+    } else if (kind === 'heather') {
+      for (const side of [-1, 0, 1]) {
+        sphere(side * .24, .16, 0, .45, .39, .42, '#718375')
+        sphere(side * .25, .35 + Math.abs(side) * .07, side * .07, .19, .24, .22, '#ac8396')
       }
     } else {
       const height = kind === 'reed' ? 1.17 : kind === 'crop' ? .71 : .44
@@ -234,7 +255,7 @@ function createPlants(meshes: MeshFactory) {
     return root
   }
   const models = new Map<Plant, Mesh[]>()
-  for (const kind of ['fir', 'alder', 'reed', 'flower', 'shore', 'crop'] as const) {
+  for (const kind of ['fir', 'alder', 'reed', 'flower', 'shore', 'crop', 'fern', 'heather'] as const) {
     const root = prototype(kind)
     models.set(kind, root.getChildMeshes().filter((mesh): mesh is Mesh => mesh instanceof Mesh))
     root.setEnabled(false)
@@ -265,39 +286,53 @@ function createPlants(meshes: MeshFactory) {
 }
 
 function createWildlife(meshes: MeshFactory) {
+  const roostX = -175, roostZ = 221, roostHeight = 6.4
+  const roostGround = groundHeight(roostX, roostZ)
+  createTree(meshes, roostX, roostZ, roostHeight, 0, roostGround)
+  const roost = { x: roostX, y: roostGround + roostHeight * 1.015, z: roostZ }
+  const perch = (x: number, z: number) => ({ x, z, y: surfaceHeight(x, z) + .15 })
+  const flocks = createFlocks(meshes, [
+    { center: { x: -274, z: -273, y: 12 }, range: 27, count: 4, color: '#f3e7cf',
+      landing: perch(-265, -229), roost: perch(-267.9, -241) },
+    { center: { x: -171, z: 224, y: 59 }, range: 22, count: 5, color: '#ae8075',
+      landing: perch(-178, 229), roost },
+    { center: { x: -114, z: 79, y: 13 }, range: 14, count: 3, color: '#61576c', bat: true,
+      landing: perch(-115, 79), roost: perch(-115, 79) },
+  ])
+  const schools = createSchools(meshes, [
+    { swim: (time) => ({ x: -253 + 3 * Math.sin(time * .37), z: -268.5 + 1.5 * Math.cos(time * .37) }),
+      deep: { x: -.15, z: -.99 }, level: 0, isWater: ({ x, z }) => groundHeight(x, z) < -.4 },
+  ])
   const animals = [
-    { name: 'Gulls', x: -270, z: -270, y: 13, span: 32, speed: .42, color: '#f3e7cf', kind: 'bird', count: 3 },
-    { name: 'Forest birds', x: -171, z: 224, y: 54, span: 22, speed: .63, color: '#92655c', kind: 'bird', count: 3 },
     { name: 'Mallards', x: lowerLake.x, z: lowerLake.z, y: lowerLake.y + .24, span: 12, speed: .25, color: '#598978', kind: 'duck', count: 3 },
     { name: 'Hares', x: 48, z: 53, y: 0, span: 6, speed: .83, color: '#ae8e73', kind: 'hare', count: 2 },
     { name: 'Forest hares', x: -190, z: 227, y: 0, span: 6, speed: .75, color: '#ae8e73', kind: 'hare', count: 2 },
-    { name: 'Mullet', x: -253, z: -271, y: -.08, span: 4.8, speed: .55, color: '#addecb', kind: 'fish', count: 5 },
   ].flatMap((animal) => Array.from({ length: animal.count }, (_, index) => {
     const root = new TransformNode(animal.name, meshes.scene)
     const part = (x: number, y: number, z: number, w: number, h: number, d: number, color = animal.color) =>
       meshes.sphere(x, y, z, w, h, d, color, root, false, 6)
     part(0, .05, 0, .33, .25, .78)
-    const wings = animal.kind === 'bird' ? [-1, 1].map((s) => part(s * .43, .07, -.03, .89, .077, .31)) : []
     if (animal.kind === 'duck') part(0, .18, .28, .25, .26, .23, '#426752')
     if (animal.kind === 'hare') {
       part(0, .18, .23, .29, .35, .35)
       for (const side of [-1, 1]) part(side * .071, .39, .19, .08, .28, .095).rotation.x = -.24
     }
-    if (animal.kind === 'fish') part(0, .05, -.42, .10, .12, .28)
-    return { ...animal, root, wings, index }
+    return { ...animal, root, index }
   }))
-  return (time: number, camera: MapPoint, overview: boolean) => {
+  return (frame: WildlifeFrame, overview: boolean) => {
+    flocks(frame)
+    schools(frame)
+    const { time, camera } = frame
     for (const animal of animals) {
-      const { root, index, x, z, span, kind, speed, y, wings } = animal
+      const { root, index, x, z, span, kind, speed, y } = animal
       const visible = !overview && Math.hypot(camera.x - x, camera.z - z) < 117
       root.setEnabled(visible)
       if (!visible) continue
       const angle = time * speed + index * .66, r = span + index * .54
       const px = x + r * Math.cos(angle), pz = z + r * .69 * Math.sin(angle)
       const h = kind === 'hare' ? groundHeight(px, pz) + .16 + Math.abs(Math.sin(time * 5 + index)) * .25 : y
-      root.position.set(px, h + Math.sin(angle * 2 + index) * (kind === 'bird' ? 1.1 : .06), pz)
+      root.position.set(px, h + Math.sin(angle * 2 + index) * .06, pz)
       root.rotation.y = Math.atan2(-Math.sin(angle), Math.cos(angle) * .69)
-      wings.forEach((wing, side) => { wing.rotation.z = Math.sin(time * 7 + index) * (side ? .61 : -.61) })
     }
   }
 }
@@ -305,15 +340,22 @@ function createWildlife(meshes: MeshFactory) {
 export function createScenery(meshes: MeshFactory) {
   buildYards(meshes)
   buildSigns(meshes)
+  placeSiteFeatures(meshes, saltwindFeatures, ({ x, z }) => surfaceHeight(x, z))
   placeVehicles(meshes)
   const waterfront = buildWaterfront(meshes)
   const plants = createPlants(meshes)
   const wildlife = createWildlife(meshes)
+  const phenomena = createPhenomena(meshes.scene, [
+    { ...lowerLake, name: 'Mirror Lake dawn mist', kind: 'mist', extent: 62, seed: 5183 },
+    { name: 'Tarnstep spray', kind: 'spray', x: fallsX(169), y: fallsY(169), z: 169, extent: 7.5, seed: 2962 },
+    { name: 'Sandspit plankton', kind: 'glow', x: -248, y: 0, z: -272, extent: 9.8, seed: 6788 },
+  ])
   meshes.finishScenery()
-  return (time: number, camera: MapPoint, overview: boolean) => {
-    waterfront(time)
-    plants(camera, overview)
-    wildlife(time, camera, overview)
+  return (frame: WildlifeFrame, overview: boolean) => {
+    waterfront(frame.time)
+    plants(frame.camera, overview)
+    wildlife(frame, overview)
+    phenomena(frame)
   }
 }
 

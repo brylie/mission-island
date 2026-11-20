@@ -1,4 +1,4 @@
-import { distanceToRoute, footpaths, road } from './routes.ts'
+import { distanceToRoute, footpaths, road, shellglassPoint } from './routes.ts'
 import { coastRadius, falls, grove, groundHeight, headland, pool, waterDepth } from './terrain.ts'
 import { beach, distance, forest, harbor, island, lookout, town } from './world.ts'
 import type { Point } from './world.ts'
@@ -33,6 +33,11 @@ export const northernRegions = [
 })
 
 export const northernProps = northernRegions.flatMap(({ props }) => props)
+
+export const starterDiscoveries = [
+  ...northernRegions,
+  { id: 'shellglass', name: 'Shellglass Point', site: shellglassPoint },
+]
 
 const random = seededRandom(14757)
 export const islandTrees = Array.from({ length: 92 }, (_, variant) => {

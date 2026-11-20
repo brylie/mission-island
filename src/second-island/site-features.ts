@@ -1,0 +1,31 @@
+import type { SiteFeature } from '../site-props.ts'
+import { viaductWalk } from './sites.ts'
+
+export const saltwindFeatures: readonly SiteFeature[] = [
+  { site: 'ferry', name: 'Quay dispatch shelter', model: 'shelter', color: '#9b6451', x: -264.5, z: -225, scale: 2.1, heading: -Math.PI / 2 },
+  { site: 'brinewick', name: 'Brinewick tide marker', model: 'marker', color: '#4f9392', x: -277, z: -112.8, scale: 1.35 },
+  { site: 'fish-market', name: 'Fish hall net rack', model: 'rack', color: '#768dad', x: -253, z: -123, scale: 1.6 },
+  { site: 'police', name: 'Station notice pennants', model: 'pennant', color: '#6889aa', x: -257, z: -77.2, scale: 1.4 },
+  { site: 'apartments', name: 'Quay apartments herb boxes', model: 'planter', color: '#f3bc72', x: -312.3, z: -134.5, scale: 1.65 },
+  { site: 'grocery', name: 'Grocery produce display', model: 'crates', color: '#8ea456', x: -323.3, z: -83.6, scale: 1.55 },
+  { site: 'barleycross', name: 'Barleycross harvest flags', model: 'pennant', color: '#dba658', x: 148, z: -57.9, scale: 1.55 },
+  { site: 'farmers-market', name: 'Farmers market produce display', model: 'crates', color: '#ce8354', x: 145, z: -41, scale: 1.65 },
+  { site: 'fields', name: 'Long Acre rain barrels', model: 'barrels', color: '#789a83', x: 176.2, z: 34.7, scale: 1.65 },
+  { site: 'school', name: 'Schoolyard reading bench', model: 'bench', color: '#dca752', x: 258.5, z: -41, scale: 1.65, heading: Math.PI / 2 },
+  { site: 'hospital', name: 'Hospital garden planter', model: 'planter', color: '#9fc8a6', x: 126.2, z: 112.8, scale: 1.6 },
+  { site: 'alderwatch', name: 'Alderwatch village bench', model: 'bench', color: '#7f8c6b', x: -40, z: 165.3, scale: 1.55 },
+  { site: 'church', name: 'Chapel garden planter', model: 'planter', color: '#dda2a1', x: -29, z: 181.5, scale: 1.35 },
+  { site: 'cemetery', name: 'Cemetery remembrance bench', model: 'bench', color: '#778678', x: 25, z: 179, scale: 1.5 },
+  { site: 'fire', name: 'Fire station hose rack', model: 'hose', color: '#c5634d', x: -69.6, z: 184.3, scale: 1.7 },
+  { site: 'timber', name: 'Timber scale marker', model: 'marker', color: '#ad9e63', x: -239.4, z: 151.8, scale: 1.7 },
+  { site: 'mine', name: 'Slatecliff survey rack', model: 'rack', color: '#8e9c95', x: 278, z: 176, scale: 1.5 },
+  { site: 'airport', name: 'Hangar windsock service barrels', model: 'barrels', color: '#d18d57', x: 156.3, z: -125.4, scale: 1.45 },
+  { site: 'fishing', name: 'Sandspit float rack', model: 'rack', color: '#d99149', x: -249.1, z: -257.5, heading: Math.PI / 2, scale: 1.23 },
+  { site: 'rescue', name: 'Rescue slip gear shelter', model: 'shelter', color: '#c97653', x: -303.3, z: -224, heading: -Math.PI / 2, scale: 1.65 },
+  { site: 'reedwater', name: 'Reedwater depth gauge', model: 'marker', color: '#7aa89b', x: -354, z: 28.5 },
+  { site: 'mill-bridge', name: 'Mill Bridge approach marker', model: 'marker', color: '#ad8d59', x: -214.6, z: 66.1 },
+  { site: 'tarn-bridge', name: 'Viaduct stone approach rail', model: 'rail', color: '#8c9793', x: -135.5, z: 158.5, heading: Math.PI / 2 },
+  { site: 'lake', name: 'Mirror Lake picnic bench', model: 'bench', color: '#72a997', x: -104, z: 145, heading: Math.PI, scale: 1.25 },
+  { site: 'falls', name: 'Falls survey scope', model: 'scope', color: '#d1aa70', x: -136, z: 190.5, heading: Math.PI / 2, scale: 1.24 },
+  { site: viaductWalk.id, name: 'Viaduct survey table', model: 'marker', color: '#c49b66', x: viaductWalk.x, z: viaductWalk.z, scale: 1.3 },
+]

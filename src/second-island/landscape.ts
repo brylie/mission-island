@@ -1,24 +1,23 @@
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
+import { ribbonGeometry } from '../routes'
+import { habitatColor } from './habitats'
 import { createSoundMaterial } from './sea'
 import { ferryTrack, fishingPier, routes, sampleRoute } from './routes'
 import type { Route } from './routes'
-import { lowerLake, pavedYards, runway, seaLevel, sites, tarn, waterBounds } from './sites'
+import { lowerLake, pavedYards, runway, seaLevel, sites, tarn, viaductWalk, waterBounds } from './sites'
 import { airfieldDistance, bridgeAt, cols, deckPoint, deckSection, fallsX, fallsY, gridStep, groundHeight, heightGrid,
-  nearestRoad, riverY, riverZ, rows, shoreDistance, siteDistance } from './terrain'
+  nearestRoad, riverY, riverZ, rows, shoreDistance, siteDistance, surfaceHeight } from './terrain'
 
 export const palette = {
-  sea: [49, 117, 133], shoal: [101, 170, 162], sand: [221, 188, 130],
-  grass: [155, 172, 107], upland: [101, 141, 101], stone: [156, 147, 128], yard: [186, 166, 129],
+  sea: [49, 117, 133], shoal: [101, 170, 162], yard: [186, 166, 129],
 } as const
 
 function terrainColor(x: number, y: number, z: number) {
-  const coast = shoreDistance(x, z)
   const noise = .97 + .027 * Math.sin(x * .09 + z * .07) + .019 * Math.cos(z * .14 - x * .12)
-  let color: readonly number[] = coast < 13 ? palette.sand : y > 40 ? palette.upland : palette.grass
-  if (y > 56 || (z > 174 && z < 195 && Math.abs(x - fallsX(z)) < 12)) color = palette.stone
-  if (sites.some((site) => !['fields', 'cemetery'].includes(site.id) && siteDistance(x, z, site) <= 0)) color = palette.yard
+  const yard = sites.some((site) => !['fields', 'cemetery'].includes(site.id) && siteDistance(x, z, site) <= 0)
+  const color = yard ? palette.yard : habitatColor(x, y, z)
   return color.map((channel) => channel * noise)
 }
 
@@ -94,8 +93,9 @@ function createWater(meshes: MeshFactory) {
   strip(meshes, 'Tarnstep Falls', stream, '#b5d8d6')
   const foamRoot = new TransformNode('Falls foam', meshes.scene)
   const foam = Array.from({ length: 12 }, (_, i) => meshes.box(0, 0, 0, .24, .075, 1.05 + i % 3 * .35, '#e4ebe1', foamRoot, false))
-  return (time: number) => {
+  return (time: number, light: number) => {
     color.setFloat('time', time)
+    color.setFloat('light', light)
     for (const [i, fleck] of foam.entries()) {
       const z = 196 - (time * 7 + i * 5.79) % 54
       const x = fallsX(z) + ((i * 47 % 71) / 71 - .5) * 5.6
@@ -153,10 +153,14 @@ function addRails(meshes: MeshFactory, route: Route, from: number, to: number) {
     for (let i = 0; i <= count; i++) {
       const sample = sampleRoute(route, from + (to - from) * i / count)
       const p = deckPoint(sample, offset, route)
-      const bottom = groundHeight(p.x, p.z) - .2
-      const height = p.y - bottom
       meshes.box(p.x, p.y + .38, p.z, .22, .80, .22, '#e7d6b2')
-      if (i % 2 === 0 && height > .66) meshes.box(p.x, bottom + height / 2, p.z, .76, height, .88, '#93968a')
+      if (i % 2 === 0 && p.y - groundHeight(p.x, p.z) > .46) {
+        const corners = [-.38, .38].flatMap((dx) =>
+          [-.44, .44].map((dz) => groundHeight(p.x + dx, p.z + dz)))
+        const bottom = Math.min(...corners) - .28
+        const height = p.y - bottom
+        meshes.box(p.x, bottom + height / 2, p.z, .76, height, .88, '#93968a')
+      }
       if (previous) {
         const dx = p.x - previous.x, dy = p.y - previous.y, dz = p.z - previous.z
         const length = Math.hypot(dx, dz)
@@ -193,6 +197,19 @@ export function createLandscape(meshes: MeshFactory) {
   createTerrain(meshes)
   const water = createWater(meshes)
   for (const route of [...routes, ferryTrack, fishingPier]) createRoad(meshes, route)
+  const points = viaductWalk.path.flatMap((point, i, path) => {
+    const next = path[i + 1]
+    if (!next) return [point]
+    const steps = Math.ceil(Math.hypot(point.x - next.x, point.z - next.z) * 2)
+    return Array.from({ length: steps }, (_, s) => ({
+      x: point.x + (next.x - point.x) * s / steps, z: point.z + (next.z - point.z) * s / steps,
+    }))
+  })
+  const trail = ribbonGeometry([points], 1.25, 0)
+  for (let i = 0; i < trail.positions.length; i += 3) {
+    trail.positions[i + 1] = surfaceHeight(trail.positions[i], trail.positions[i + 2]) + .07
+  }
+  meshes.surface('Viaduct survey footpath', trail.positions, trail.indices, '#cbb58a').freezeWorldMatrix()
   createAirstrip(meshes)
   return water
 }

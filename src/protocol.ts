@@ -78,6 +78,7 @@ export interface Snapshot {
   fire: number
   farm: PlotStage[]
   weather: Weather
+  islandTime: number
   jobs: JobBoardState
 }
 

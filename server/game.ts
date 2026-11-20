@@ -18,7 +18,7 @@ import {
 import { truckPoint } from '../src/truck-pose.ts'
 import type { TruckPose } from '../src/truck-pose.ts'
 import { groundHeight, maxWadeDepth, walkingHeight, waterDepth } from '../src/terrain.ts'
-import { northernRegions } from '../src/scenery.ts'
+import { starterDiscoveries } from '../src/scenery.ts'
 import { createCargoPhysics } from './cargo.ts'
 import { canOccupyGround, isInsideTruck, stepPlayer } from './movement.ts'
 import { skiffExit, stepSkiff } from './skiff.ts'
@@ -84,7 +84,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     type: 'state', players: [], skiff: { ...skiffStart, speed: 0 }, items: makeItems(),
     mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...structuredClone(save?.world),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
-    weather: weatherAt(islandTime),
+    weather: weatherAt(islandTime), islandTime,
     jobs: structuredClone(save?.world.jobs ?? { active: null, completed: 0 }),
   }
   const jobCrew = new Set(save?.jobCrew ?? save?.crew.filter(({ reserved }) => reserved).map(({ token }) => token))
@@ -458,6 +458,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       state.weather = weatherAt(islandTime)
       checkpoint?.()
     }
+    state.islandTime = islandTime
     if (!isNight(state.weather.hour)) {
       for (const player of connectedCrew) player.sleeping = false
     }
@@ -547,7 +548,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     const item = heldItem(state, player)
     stepPlayer(member, before, truck, connected ? input : stopped, Boolean(item), tickSeconds, looseCargoTop)
     if (!connected) return
-    for (const region of northernRegions) {
+    for (const region of starterDiscoveries) {
       if (!player.discoveries.includes(region.id) && distance(player, region.site) < 8) {
         player.discoveries.push(region.id)
         checkpoint?.()

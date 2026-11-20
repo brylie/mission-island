@@ -1,6 +1,7 @@
 import { palette } from './landscape'
+import { habitatColor } from './habitats'
 import { ferryTrack, fishingPier, routes } from './routes'
-import { biomes, landmarks, runway, villages, waterBounds } from './sites'
+import { biomes, landmarks, runway, viaductWalk, villages, waterBounds } from './sites'
 import type { MapPoint } from './sites'
 import { groundHeight, waterHeight } from './terrain'
 
@@ -23,7 +24,7 @@ export function createChart(canvas: HTMLCanvasElement, detailed: boolean) {
     const x = minX + (maxX - minX) * px / chart.width, z = maxZ - (maxZ - minZ) * py / chart.height
     const y = groundHeight(x, z), water = waterHeight(x, z)
     const color = y <= water ? (water > 0 || y > -3.1 ? palette.shoal : palette.sea)
-      : y < 7 ? palette.sand : y > 36 ? palette.upland : palette.grass
+      : habitatColor(x, y, z)
     const contour = y > water && Math.floor(y / 8) !== Math.floor(groundHeight(x + 3, z + 2) / 8) ? .89 : 1
     image.data.set([color[0] * contour, color[1] * contour, color[2] * contour, 255], (py * chart.width + px) * 4)
   }
@@ -49,12 +50,26 @@ export function createChart(canvas: HTMLCanvasElement, detailed: boolean) {
 
   return (player: MapPoint, known: Set<string>, selected?: string) => {
     context.drawImage(chart, 0, 0, canvas.width, canvas.height)
+    if (detailed && known.has(viaductWalk.id)) {
+      context.beginPath()
+      viaductWalk.path.forEach((point, i) => {
+        const p = scale(point, canvas)
+        if (i === 0) context.moveTo(p.x, p.z)
+        else context.lineTo(p.x, p.z)
+      })
+      context.lineWidth = 1.6
+      context.strokeStyle = '#f3e0af'
+      context.stroke()
+    }
     if (detailed) {
       context.fillStyle = '#304f47'
-      context.font = 'italic 15px Georgia, serif'
+      context.font = 'italic 600 15px Georgia, serif'
       context.textAlign = 'center'
       for (const biome of biomes) {
         const p = scale(biome, canvas)
+        context.strokeStyle = '#f6ebbd'
+        context.lineWidth = 2
+        context.strokeText(biome.name, p.x, p.z)
         context.fillText(biome.name, p.x, p.z)
       }
       context.beginPath()
@@ -69,7 +84,7 @@ export function createChart(canvas: HTMLCanvasElement, detailed: boolean) {
       context.fillText('▲ N', canvas.width - 29, 25)
     }
     for (const landmark of landmarks) {
-      if (!detailed && !known.has(landmark.id)) continue
+      if ((!detailed || landmark.discoverable) && !known.has(landmark.id)) continue
       const at = scale(landmark, canvas)
       const focus = selected === landmark.id
       const pin = focus ? 7.4 : detailed ? 3.6 : 3.3

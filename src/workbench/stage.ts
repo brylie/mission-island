@@ -132,12 +132,13 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
           const point = { x: Number(settings.x), z: Number(settings.z) }
           center.set(point.x, terrainHeight(point) + 0.25, point.z)
           grid.position.copyFrom(center.subtract(gridOrigin))
-          camera.setTarget(center.clone())
+          // A new focus translates the orbit instead of zooming out to include the old location.
+          camera.setTarget(center.clone(), false, false, true)
         }
         const rain = entry.landscape ? Number(settings.rain) : 0
         const position = camera.globalPosition
         const light = atmosphere?.update(time, { hour: Number(settings.hour), rain }, position, true) ?? 1
-        update?.({ time, rate, seek, lighting, camera: position, light, rain }, settings)
+        update?.({ time, rate, seek, lighting, camera: position, light, rain, delta }, settings)
         layout?.update(delta, time)
         subject.forEach(applyWireframe)
         layout?.meshes().forEach(applyWireframe)

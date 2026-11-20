@@ -85,8 +85,8 @@ void main() {
   gl_FragColor = vec4(color,1.);
 }`
 
-export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: DirectionalLight) {
-  const dome = CreateSphere('Atmospheric sky', { diameter: 1050, segments: 24 }, scene)
+export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: DirectionalLight, diameter = 1050) {
+  const dome = CreateSphere('Atmospheric sky', { diameter, segments: 24 }, scene)
   dome.isPickable = false
   const material = new ShaderMaterial('Island atmosphere', scene, { vertexSource: skyVertex, fragmentSource: skyFragment }, {
     attributes: ['position'], uniforms: ['worldViewProjection', 'sunDir', 'horizon', 'zenith', 'time', 'rain', 'light'],
@@ -110,7 +110,7 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
   const amber = Color3.FromHexString('#ffad7b')
   const white = Color3.FromHexString('#fff3d7')
   return {
-    update(time: number, weather: Weather, camera: Vector3, close: boolean) {
+    update(time: number, weather: Weather, camera: Vector3, close: boolean, fogScale = 1) {
       const theta = (weather.hour - 6) * Math.PI / 12
       sun.set(-Math.cos(theta), Math.sin(theta), -0.24).normalize()
       const light = Math.max(0, Math.min(1, (sun.y + 0.11) * 2.65))
@@ -123,8 +123,8 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
       scene.fogColor.copyFrom(horizon)
       scene.clearColor.set(horizon.r, horizon.g, horizon.b, 1)
       if (close) {
-        scene.fogStart = 36 - weather.rain * 20
-        scene.fogEnd = 135 - weather.rain * 63
+        scene.fogStart = (36 - weather.rain * 20) * fogScale
+        scene.fogEnd = (135 - weather.rain * 63) * fogScale
       }
       dome.position.copyFrom(camera)
       material.setVector3('sunDir', sun)

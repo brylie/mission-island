@@ -4,7 +4,10 @@ import { Engine } from '@babylonjs/core/Engines/engine'
 import { Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { Scene } from '@babylonjs/core/scene'
 import { createCrew, poseCrew } from '../island-assets'
+import { createAtmosphere } from '../island-atmosphere'
 import { createIslandLighting, createMeshFactory } from '../island-meshes'
+import type { Weather } from '../protocol'
+import { weatherAt } from '../weather'
 import { islandBuildings, buildingLocal } from './exteriors'
 import { createLandscape } from './landscape'
 import { createChart } from './map'
@@ -16,6 +19,14 @@ import { dryLandKm2, groundHeight, shoreAccess, surfaceHeight, waterHeight } fro
 import { tour } from './tour'
 import './style.css'
 
+const surveyWeather: Record<string, Weather> = {
+  morning: { hour: 6.8, rain: 0 },
+  daylight: { hour: 13, rain: 0 },
+  rain: { hour: 15, rain: .85 },
+  dusk: { hour: 17.6, rain: 0 },
+  night: { hour: 23, rain: 0 },
+}
+
 function start() {
   const get = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T
   document.title = `${islandName} · Mission Island`
@@ -26,6 +37,7 @@ function start() {
   scene.fogColor.set(.65, .79, .79)
   scene.fogMode = Scene.FOGMODE_LINEAR
   const lighting = createIslandLighting(scene)
+  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, 3350)
   lighting.sunlight.shadowMaxZ = 1400
   lighting.sunlight.shadowOrthoScale = .04
   lighting.shadows.getShadowMap()?.resetRefreshCounter()
@@ -43,6 +55,7 @@ function start() {
 
   const atlas = get<HTMLDialogElement>('atlas')
   const select = get<HTMLSelectElement>('site')
+  const climate = get<HTMLSelectElement>('survey-weather')
   const drawMini = createChart(get<HTMLCanvasElement>('mini'), false)
   const drawMap = createChart(get<HTMLCanvasElement>('map'), true)
   const boot = get('boot'), journey = get('journey'), coordinates = get('coordinates')
@@ -72,7 +85,7 @@ function start() {
     get('stops').append(label)
     return label
   })
-  for (const landmark of landmarks) select.add(new Option(landmark.name, landmark.id))
+  for (const landmark of landmarks) if (!landmark.discoverable) select.add(new Option(landmark.name, landmark.id))
   select.value = 'ferry'
 
   function syncTour() {
@@ -147,6 +160,7 @@ function start() {
       Math.hypot(p.x - target.x, p.z - target.z) < Math.hypot(best.x - target.x, best.z - target.z) ? p : best)
     setPoint(landmark.id === 'ferry' ? arrival : nearest, Math.atan2(landmark.x - nearest.x, landmark.z - nearest.z))
     arm = landmark.id === 'airport' || landmark.id === 'mine' || landmark.id === 'falls' ? 20 : 13
+    pitch = .18
     stopTour()
     setOverview(false)
     place.textContent = landmark.name
@@ -298,11 +312,17 @@ function start() {
     crew.root.rotation.y = yaw
     crew.blink(sceneTime)
     poseCrew(crew, cycle, walking ? Math.min(.85, walking * .1) : 0, false, undefined, 0, Math.min(1, dt * 10))
-    for (const pin of landmarks) if (Math.hypot(point.x - pin.x, point.z - pin.z) <= pin.radius) known.add(pin.id)
+    for (const pin of landmarks) if (!known.has(pin.id) && Math.hypot(point.x - pin.x, point.z - pin.z) <= pin.radius) {
+      known.add(pin.id)
+      if (pin.discoverable) select.add(new Option(pin.name, pin.id))
+    }
     updateCamera(dt)
     const camera = scene.activeCamera ?? follow
-    updateScenery(sceneTime, camera.position, broad)
-    updateWater(sceneTime)
+    const weather = surveyWeather[climate.value] ?? weatherAt(sceneTime + 100)
+    const light = atmosphere.update(sceneTime, weather, camera.position, !broad, 7)
+    const threats = height < waterHeight(point.x, point.z) - .04 ? [point] : []
+    updateScenery({ time: sceneTime, delta: dt, weather, camera: camera.position, threats }, broad)
+    updateWater(sceneTime, light)
     scene.render()
     updateLabels()
     if (sceneTime - lastDraw > .24) {

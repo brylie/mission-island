@@ -27,10 +27,15 @@ export const road = roundCorners([
   { x: -55, z: -11 }, { x: -19, z: -11 }, { x: 10, z: 12 }, { x: 51, z: 12 },
 ], 7)
 
+export const shellglassPoint = { x: 43.2, z: -31.4 }
+
 export const footpaths = [
   { name: 'Lookout trail', width: 3.2, points: roundCorners([{ x: 17, z: 12 }, { x: 20, z: 22 }, lookout], 4) },
   { name: 'Beach trail', width: 2.6, points: roundCorners([{ x: 35, z: 12 }, { x: 33.1, z: 4 }, beach], 4) },
   { name: 'Harbor trail', width: 3.1, points: roundCorners([{ x: -46, z: -11 }, harbor, { x: -44, z: -30 }], 3) },
+  { name: 'Driftwood shore walk', width: 1.1, points: roundCorners([
+    { x: 30.8, z: -24.7 }, { x: 34.7, z: -26.3 }, { x: 39, z: -29.2 }, { x: 42.4, z: -30.7 },
+  ], 1.1) },
 ]
 
 export function distanceToRoute(point: Point, path: readonly Point[]) {

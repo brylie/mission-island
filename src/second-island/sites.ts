@@ -11,6 +11,10 @@ export const helipad = { x: 115, z: 111, radius: 9 }
 export const lowerLake = { x: -82, z: 104, rx: 44, rz: 32, y: 5.8 }
 export const tarn = { x: -123, z: 219, rx: 29, rz: 22, y: 42 }
 const falls = { x: -120, z: 184, y: 25 }
+export const viaductWalk = {
+  id: 'viaduct-shelf', name: 'Viaduct Survey Shelf', x: -140.8, z: 160, radius: 4,
+  path: [{ x: -169, z: 155.25 }, { x: -165, z: 157 }, { x: -159, z: 159 }, { x: -150, z: 159.35 }, { x: -142.5, z: 160 }],
+}
 
 export const villages = [
   { id: 'brinewick', name: 'Brinewick', x: -270, z: -105, detail: 'The ferry, fish market, boat ramp and lifeboat quay.' },
@@ -19,10 +23,10 @@ export const villages = [
 ] as const
 
 export const biomes = [
-  { name: 'Brinewick Coast', x: -300, z: -177, color: '#e5bc81' },
+  { name: 'Brinewick Coast', x: -303, z: -221, color: '#e5bc81' },
   { name: 'Reedwater Valley', x: -239, z: 62, color: '#86a970' },
   { name: 'Barley Meadows', x: 194, z: 18, color: '#afba68' },
-  { name: 'Alder Crown', x: -137, z: 253, color: '#628854' },
+  { name: 'Alder Crown', x: -178, z: 231, color: '#628854' },
   { name: 'East Bluff', x: 300, z: 96, color: '#879659' },
 ] as const
 
@@ -70,7 +74,7 @@ export const waterfront = {
   skiffLaunch: { x: -311, z: -239 },
 }
 
-export const landmarks = [
+export const landmarks: readonly (MapPoint & { id: string; name: string; radius: number; discoverable?: boolean })[] = [
   { id: 'reedwater', name: 'Reedwater Bridge', x: -351, z: 12, radius: 33 },
   { id: 'mill-bridge', name: 'Mill Bridge', x: -204, z: 53, radius: 33 },
   { id: 'tarn-bridge', name: 'Tarnstep Viaduct', x: -124, z: 153, radius: 33 },
@@ -78,6 +82,7 @@ export const landmarks = [
   { id: 'falls', name: 'Tarnstep Falls', x: falls.x, z: falls.z, radius: 47 },
   { id: 'fishing', name: 'Sandspit Fishing Pier', ...waterfront.fishing, radius: 28 },
   { id: 'rescue', name: 'Brinewick Rescue Slip', ...waterfront.rescue, radius: 32 },
+  { ...viaductWalk, discoverable: true },
   ...sites.map(({ id, name, x, z }) => ({ id, name, x, z, radius: 34 })),
   ...villages.map(({ id, name, x, z }) => ({ id, name, x, z, radius: 62 })),
 ]

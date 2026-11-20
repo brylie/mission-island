@@ -1,6 +1,5 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { northernRegions } from './scenery'
-import { groundHeight } from './terrain'
 import { distance } from './world'
 import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
@@ -28,14 +27,6 @@ export function createNorthernScenery(meshes: MeshFactory) {
       }
     }
 
-    const { site } = zone
-    const y = groundHeight(site)
-    for (let i = 0; i < 5; i++) {
-      const angle = i / 5 * Math.PI * 2
-      meshes.sphere(site.x + Math.cos(angle) * 1.5, y + 0.42, site.z + Math.sin(angle) * 1.5,
-        0.7, 1.5, 0.82, '#a49c83', near, false, 4)
-    }
-    meshes.sphere(site.x, y + 0.58, site.z, 0.28, 0.42, 0.3, meshes.paint('#9ef3cb', true), near, false, 4)
     return { ...zone, near, far }
   })
 

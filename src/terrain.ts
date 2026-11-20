@@ -16,7 +16,7 @@ export const pool = { x: 23, z: 112 }
 export const grove = { x: -50, z: 72 }
 export const headland = { x: 39, z: 136 }
 
-export function shoreShape(angle: number) {
+function shoreShape(angle: number) {
   const northern = Math.max(0, Math.sin(angle))
   return (1 + 2.85 * northern ** 2) * (1 + Math.sin(angle * 5 + 0.2) * 0.018 + Math.cos(angle * 9) * 0.013)
 }

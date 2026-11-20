@@ -2,7 +2,6 @@ import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import { CreateLineSystem } from '@babylonjs/core/Meshes/Builders/linesBuilder'
 import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
-import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { seededRandom } from './scenery'
 import { distanceToRoute, footpaths, road, walkways } from './routes'
 import { coastPoint, coastRadius, falls, grove, groundHeight, headland, pool, shoreProfile, streamX, waterLevel } from './terrain'
@@ -96,7 +95,6 @@ export function createIslandTerrain(meshes: MeshFactory) {
     },
   }
 }
-
 export function createGrassTufts(meshes: MeshFactory) {
   const random = seededRandom(82489)
   const positions: number[] = []
@@ -126,27 +124,4 @@ export function createGrassTufts(meshes: MeshFactory) {
   const green = meshes.paint('#618752')
   green.backFaceCulling = false
   meshes.surface('Grass tufts', positions, indices, green).freezeWorldMatrix()
-}
-
-export function createGulls(meshes: MeshFactory) {
-  const plumage = meshes.paint('#e9ede6')
-  plumage.backFaceCulling = false
-  const birds = Array.from({ length: 5 }, () => {
-    const root = new TransformNode('Gull', meshes.scene)
-    const wings = [-1, 1].map((side) => meshes.surface('Gull wing',
-      [0, 0, -0.13, side * 0.48, 0.035, 0.17, side * 1.03, -0.015, -0.17, side * 0.52, -0.015, -0.25],
-      [0, 1, 2, 0, 2, 3], plumage, root))
-    return { root, wings }
-  })
-  return (time: number) => {
-    for (const [i, { root, wings }] of birds.entries()) {
-      const t = time * 0.23 + i * 0.20
-      root.position.set(-23 + Math.cos(t) * (37 + i), 8 + i * 0.45 + Math.sin(t * 2 + i) * 1.45,
-        -22 + Math.sin(t) * 21)
-      root.rotation.y = Math.atan2(-Math.sin(t) * (37 + i), Math.cos(t) * 21)
-      const flap = Math.sin(time * 4.7 + i * 1.7) * (0.23 + 0.14 * Math.sin(time * 0.63 + i))
-      wings[0].rotation.z = -flap
-      wings[1].rotation.z = flap
-    }
-  }
 }

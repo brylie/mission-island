@@ -11,7 +11,7 @@ import { starterTools, toolNames } from './inventory'
 import type { InventoryItem } from './inventory'
 import type { ClientMessage, FishingResult, Input, Player, ServerMessage, Snapshot } from './protocol'
 import { footpaths, road, walkways } from './routes'
-import { northernRegions } from './scenery'
+import { northernRegions, starterDiscoveries } from './scenery'
 import { createRenderer } from './scene'
 import { isNight } from './weather'
 import { crewHomes, distance, harbor, lookout } from './world'
@@ -195,7 +195,9 @@ function drawMap(state?: Snapshot) {
   const local = state?.players.find((player) => player.id === id)
   for (const region of northernRegions) {
     dot(region.at.x, region.at.z, region.color, region.spread * scale * 0.55)
-    if (local?.discoveries?.includes(region.id)) dot(region.site.x, region.site.z, '#e4ffe0', 2.25)
+  }
+  for (const region of starterDiscoveries) if (local?.discoveries?.includes(region.id)) {
+    dot(region.site.x, region.site.z, '#e4ffe0', 2.25)
   }
   ink.lineJoin = 'round'
   ink.lineCap = 'round'
@@ -329,7 +331,7 @@ function updateMission(state: Snapshot) {
 
 function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player | undefined) {
   if (earlier) {
-    const found = northernRegions.find(({ id }) => player.discoveries.includes(id) && !earlier.discoveries?.includes(id))
+    const found = starterDiscoveries.find(({ id }) => player.discoveries.includes(id) && !earlier.discoveries?.includes(id))
     if (found) actionFeedback = { key: '', label: `Discovered ${found.name}`, until: performance.now() + 4200 }
   }
   if (Boolean(player.ownsAngler) !== ownsAngler) {
