@@ -11,31 +11,47 @@ const workwear = {
   rescue: { trousers: '#47383a', shoes: '#252630' },
   angler: { trousers: '#303f50', shoes: '#4d3a30' },
 }
+const everydayBottoms: Record<NonNullable<CrewAppearance['trousers']>, { color: string; cuff?: string }> = {
+  slate: { color: '#36595e' },
+  sand: { color: '#b79669' },
+  'slate-shorts': { color: '#36595e', cuff: '#55747a' },
+  'sand-shorts': { color: '#b79669', cuff: '#d8bb8f' },
+}
 
 export const playerColors = [uniforms.amber.color, uniforms.blue.color]
 export const skiffCrewSeats = [new Vector3(-0.44, -0.39, 0.25), new Vector3(0.44, -0.39, 0.25)]
 
-export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
-  const root = new TransformNode(`Crew ${id + 1}`, scene)
-  const arms: TransformNode[] = []
+function createCrewLegs({ scene, sphere }: Pick<MeshFactory, 'scene' | 'sphere'>, root: TransformNode) {
   const legs: TransformNode[] = []
-  const fabric: Mesh[] = []
-  const accents: Mesh[] = []
-  const skin: Mesh[] = []
   const trousers: Mesh[] = []
   const shoes: Mesh[] = []
-  const bareLimbs: Mesh[] = []
-  const swimLegs: Mesh[] = []
-  const eyes: { mesh: Mesh; height: number }[] = []
+  const bareShins: Mesh[] = []
+  const shorts: Mesh[] = []
+  const rolledHems: Mesh[] = []
   for (const side of [-1, 1]) {
     const leg = new TransformNode('Hip', scene)
     leg.parent = root
     leg.position.set(side * 0.19, 0.68, 0.02)
     trousers.push(sphere(0, -0.27, 0, 0.31, 0.66, 0.32, '#36595e', leg, true, 12))
     shoes.push(sphere(0, -0.54, 0.10, 0.36, 0.28, 0.56, '#294343', leg, true, 12))
-    swimLegs.push(sphere(0, -0.10, 0, 0.297, 0.39, 0.31, cream, leg, true, 12))
-    bareLimbs.push(sphere(0, -0.408, 0.007, 0.20, 0.45, 0.22, cream, leg, true, 12))
+    shorts.push(sphere(0, -0.10, 0, 0.297, 0.39, 0.31, cream, leg, true, 12))
+    rolledHems.push(sphere(0, -0.249, 0, 0.225, 0.103, 0.237, cream, leg, true, 12))
+    bareShins.push(sphere(0, -0.408, 0.007, 0.20, 0.45, 0.22, cream, leg, true, 12))
     legs.push(leg)
+  }
+  return { legs, trousers, shoes, bareShins, shorts, rolledHems }
+}
+
+export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
+  const root = new TransformNode(`Crew ${id + 1}`, scene)
+  const { legs, trousers, shoes, bareShins, shorts, rolledHems } = createCrewLegs({ scene, sphere }, root)
+  const arms: TransformNode[] = []
+  const fabric: Mesh[] = []
+  const accents: Mesh[] = []
+  const skin: Mesh[] = []
+  const bareArms: Mesh[] = []
+  const eyes: { mesh: Mesh; height: number }[] = []
+  for (const side of [-1, 1]) {
     const arm = new TransformNode('Shoulder', scene)
     arm.parent = root
     arm.position.set(side * 0.36, 1.19, 0.03)
@@ -44,7 +60,7 @@ export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
     fabric.push(sleeve)
     const upperArm = sphere(side * 0.071, -0.218, 0.005, 0.183, 0.56, 0.198, cream, arm, true, 12)
     upperArm.rotation.z = sleeve.rotation.z
-    bareLimbs.push(upperArm)
+    bareArms.push(upperArm)
     accents.push(sphere(side * 0.11, -0.44, 0, 0.225, 0.11, 0.24, cream, arm))
     skin.push(sphere(side * 0.12, -0.53, 0.017, 0.205, 0.24, 0.22, cream, arm, true, 10))
     arms.push(arm)
@@ -73,9 +89,10 @@ export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
     const tone = skinTones[appearance.skin === 'default' ? (base === 0 ? 'light' : 'medium') : appearance.skin]
     const outfit = appearance.uniform
     const work = outfit === 'courier' || outfit === 'rescue' || outfit === 'angler' ? workwear[outfit] : undefined
+    const bottoms = everydayBottoms[isEveryday(outfit) ? appearance.trousers ?? 'slate' : 'slate']
     const colors = [
       paint(dye ?? uniform.color), paint(uniform.trim), paint(tone.color),
-      paint(work?.trousers ?? (appearance.trousers === 'sand' ? '#b79669' : '#36595e')),
+      paint(work?.trousers ?? bottoms.color),
       paint(work?.shoes ?? (appearance.shoes === 'brown' ? '#76523a' : '#294343')),
     ]
     for (const [i, parts] of [fabric, accents, skin, trousers, shoes].entries()) {
@@ -83,20 +100,35 @@ export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
     }
     torso.material = colors[0]
     swimSeam.material = colors[1]
-    styleSwimwear(appearance, colors[0], colors[2])
+    const swimming = wearsSwimsuit(appearance)
+    styleBottoms(swimming, swimming ? colors[0] : colors[3], colors[2], bottoms.cuff)
+    styleSkin(appearance, swimming, colors[2])
   }
 
-  function styleSwimwear(appearance: CrewAppearance, cloth: Mesh['material'], tone: Mesh['material']) {
-    const swimming = wearsSwimsuit(appearance)
-    const barefoot = isEveryday(appearance.uniform) && (appearance.shoes === 'bare' || (swimming && !appearance.shoes))
-    for (const part of [...fabric, ...accents, ...trousers]) part.setEnabled(!swimming)
-    for (const shorts of swimLegs) {
-      shorts.material = cloth
-      shorts.setEnabled(swimming)
+  function styleBottoms(swimming: boolean, cloth: Mesh['material'], tone: Mesh['material'], cuff?: string) {
+    const cuffColor = !swimming && cuff ? paint(cuff) : undefined
+    const short = swimming || Boolean(cuffColor)
+    for (const part of trousers) part.setEnabled(!short)
+    for (const leg of shorts) {
+      leg.material = cloth
+      leg.setEnabled(short)
     }
-    for (const limb of bareLimbs) {
-      limb.material = tone
-      limb.setEnabled(swimming)
+    for (const hem of rolledHems) {
+      if (cuffColor) hem.material = cuffColor
+      hem.setEnabled(Boolean(cuffColor))
+    }
+    for (const shin of bareShins) {
+      shin.material = tone
+      shin.setEnabled(short)
+    }
+  }
+
+  function styleSkin(appearance: CrewAppearance, swimming: boolean, tone: Mesh['material']) {
+    const barefoot = isEveryday(appearance.uniform) && (appearance.shoes === 'bare' || (swimming && !appearance.shoes))
+    for (const part of [...fabric, ...accents]) part.setEnabled(!swimming)
+    for (const arm of bareArms) {
+      arm.material = tone
+      arm.setEnabled(swimming)
     }
     for (const shoe of shoes) {
       if (barefoot) shoe.material = tone

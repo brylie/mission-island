@@ -21,7 +21,7 @@ test('players find their own wardrobe, see applied pieces, and recover them afte
     assert.equal(client.messages.at(-1).type, 'open-wardrobe')
   }
   const first = { uniform: 'default', skin: 'warm', shirt: 'blue', hat: 'none', hair: 'short', hairColor: 'black' }
-  const second = { uniform: 'default', skin: 'deep', hat: 'amber', trousers: 'sand', shoes: 'brown', eyes: 'narrow' }
+  const second = { uniform: 'default', skin: 'deep', hat: 'amber', trousers: 'sand-shorts', shoes: 'brown', eyes: 'narrow' }
   a.request('appearance', { appearance: { ...first, shoes: 'constructor', trousers: 42 } })
   b.request('appearance', { appearance: second })
   h.advance()
@@ -128,7 +128,7 @@ test('individual purchases unlock only the buyer’s matching piece and keep the
   const h = setup(t, { players: [player(0, point), player(1, point)], arrange: save => { save.crewCoins = 3 } })
   const a = h.join(tokens[0])
   const b = h.join(tokens[1])
-  const pieces = { uniform: 'default', skin: 'warm', hat: 'amber', trousers: 'sand', shoes: 'brown' }
+  const pieces = { uniform: 'default', skin: 'warm', hat: 'amber', trousers: 'slate-shorts', shoes: 'brown' }
   a.request('appearance', { appearance: { ...pieces, shirt: 'coral' } })
   a.request('buy-clothing', { item: 'constructor' })
   h.advance()
@@ -159,7 +159,7 @@ test('individual purchases unlock only the buyer’s matching piece and keep the
   assert.deepEqual(swimmer.player.ownedClothes, ['lagoon-swimsuit'])
   swimmer.request('appearance', { appearance: { ...pieces, shirt: 'blue' } })
   restarted.advance()
-  assert.equal(swimmer.player.appearance.trousers, 'sand')
+  assert.equal(swimmer.player.appearance.trousers, 'slate-shorts')
   assert.equal(swimmer.player.appearance.shirt, 'blue')
   assert.equal(swimmer.state.crewCoins, 0)
 })

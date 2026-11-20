@@ -47,7 +47,9 @@ At Island Farm, till with the hoe, plant with **E**, then water by hand or wait 
 
 Press **E** at the wardrobe outside your cottage, or open **Options → Crew appearance → Open wardrobe**. Mix everyday pieces and choose face and hair options. Drag the preview to orbit or use **Front** and **Back**. Use **Apply** to show your changes to the crew or **Cancel** to keep wearing your current outfit.
 
-At Seabrook Market, press **E** at the clothing counter beside the striped awning. Buy the Coral shirt for one crew coin, the Lagoon swimsuit for two, or the Harbor angler outfit for three. Each purchase goes into the buyer’s wardrobe and can be worn again for free. Select the swimsuit under **Shirt or swimsuit**. It covers your top and bottoms while worn, and your trousers are ready when you change back.
+Free choices include Amber and Blue shirts and caps, Slate and Sand trousers or shorts, dark and brown deck shoes, bare feet, and a bareheaded look.
+
+At Seabrook Market, press **E** at the clothing counter beside the striped awning. Buy the Coral shirt for one crew coin, the Lagoon swimsuit for two, or the Harbor angler outfit for three. Each purchase goes into the buyer’s wardrobe and can be worn again for free. Select the swimsuit under **Shirt or swimsuit**. It covers your top and bottoms while worn, and your chosen trousers or shorts are ready when you change back.
 
 The delivery and lookout fire missions unlock work outfits for both crewmates. Each player can wear one independently and return to their saved everyday clothes.
 

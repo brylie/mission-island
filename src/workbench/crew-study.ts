@@ -12,14 +12,17 @@ const duration = 2.4
 const skiffPreviewHeight = 0.44
 
 function describeOutfit(appearance: CrewAppearance) {
-  const item = (isEveryday(appearance.uniform) && shopItemFor('shirt', appearance.shirt)) ||
+  const everyday = isEveryday(appearance.uniform)
+  const item = (everyday && shopItemFor('shirt', appearance.shirt)) ||
     shopItemFor('uniform', appearance.uniform)
   if (item) {
     const { name, price } = clothingCatalog[item]
     return `${name} · ${price} ${price === 1 ? 'coin' : 'coins'}`
   }
   const uniform = uniforms[appearance.uniform === 'default' ? 'amber' : appearance.uniform]
-  return uniform.name + ' · ' + (uniform.unlock || 'Starting uniform')
+  if (!everyday) return uniform.name + ' · ' + uniform.unlock
+  const shirt = appearance.shirt ? appearanceParts.shirt.choices[appearance.shirt] : uniform.name
+  return shirt + ' · ' + appearanceParts.trousers.choices[appearance.trousers ?? 'slate']
 }
 
 export const crewStudy: Entry = {
