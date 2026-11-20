@@ -14,7 +14,7 @@ import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutFire } from './fire-effect'
 import { fisherAt, fisherName } from './harbor-fisher'
 import { createIslandCamera } from './island-camera'
-import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, poseSwimming, swimmingHeight } from './assets/crew'
+import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight } from './assets/crew'
 import { createFlatbed, poseFlatbed } from './assets/flatbed'
 import { createSupply } from './assets/props'
 import { poseFloating } from './assets/waterfront'
@@ -78,8 +78,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     line.isPickable = false
     line.isVisible = false
     bobber.isVisible = false
-    return { gear, bobber, linePoints, line, tip: new Vector3(0, -1.425, 0),
-      seats: [new Vector3(-0.44, -0.39, 0.25), new Vector3(0.44, -0.39, 0.25)] }
+    return { gear, bobber, linePoints, line, tip: new Vector3(0, -1.425, 0) }
   })
   const items = [...crateStarts, ...extinguisherStarts].map((_, id) => {
     const isCrate = id < crateStarts.length
@@ -204,7 +203,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     for (const [id, character] of crew.entries()) {
       const node = character.root
       const player = state.players.find((entry) => entry.id === id)
-      const { gear, bobber, line, seats } = skiffGear[id]
+      const { gear, bobber, line } = skiffGear[id]
       const boating = player?.connected && inSkiff(player.seat)
       bobber.isVisible = line.isVisible = Boolean(player?.connected && player.casting)
       if (!player?.connected || (player.seat && !boating)) {
@@ -227,7 +226,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       character.blink(time)
       if (boating) {
         const side = seatIndex === 0 ? -1 : 1
-        Vector3.TransformCoordinatesToRef(seats[seatIndex], boat.computeWorldMatrix(true), node.position)
+        Vector3.TransformCoordinatesToRef(skiffCrewSeats[seatIndex], boat.computeWorldMatrix(true), node.position)
         node.rotation.copyFrom(boat.rotation)
         node.setEnabled(true)
         const stroke = player.rowing ? Math.sin(time * 5.2 + id * 2.2) : 0
