@@ -78,7 +78,10 @@
           <span id="progress-label">0 / 3 delivered</span>
         </div>
         <p id="mission-step" class="mission-step">Pick up crates and load the flatbed.</p>
-        <button id="open-job-board" type="button" aria-haspopup="dialog" aria-controls="job-board-dialog" hidden>Harbor job board</button>
+        <div class="mission-actions">
+          <button id="open-crew-guide" type="button" aria-haspopup="dialog" aria-controls="crew-guide-dialog" disabled>Crew guide</button>
+          <button id="open-job-board" type="button" aria-haspopup="dialog" aria-controls="job-board-dialog" hidden>Harbor job board</button>
+        </div>
       </section>
 
       <aside class="crew" aria-label="Crew and map">
@@ -111,6 +114,34 @@
         <div id="spray-control" hidden><kbd>R</kbd><span>Spray</span></div>
       </footer>
     </main>
+
+    <dialog id="crew-guide-dialog" class="options-dialog crew-guide-dialog" aria-labelledby="guide-title">
+      <h2 id="guide-title">Crew guide</h2>
+      <div id="guide-note">
+        <section>
+          <h3 id="guide-home"></h3>
+          <p>From Seabrook, follow the main road west to Harbor Depot. Look for “Your home” and “Your tool chest” at the cottages on the north side. Press E at your chest to take or store tools. Your first visit includes a carrot seed.</p>
+          <p>At night, press E at your own door. Dawn starts when every connected crewmate turns in. Press E again or walk away to cancel.</p>
+        </section>
+        <section>
+          <h3 id="guide-work-title"></h3>
+          <p id="guide-work"></p>
+          <p id="guide-pay"></p>
+        </section>
+        <section>
+          <h3>Between shifts</h3>
+          <p>The gravel turn east of Harbor Depot leads to the closed ferry terminal. The damaged ramp needs a crew to repair it someday.</p>
+          <p>Take a seed to Island Farm off the beach trail south of Seabrook. Equip the hoe to till a plot, then press E to plant.</p>
+          <p id="guide-lead">Follow the depot trail past the freight yard to the small wooden fishing dock. Mara works there after dawn and heads home at dusk.</p>
+          <button id="toggle-fisher-lead" type="button" aria-controls="guide-lead" aria-expanded="true">Put away Mara’s lead</button>
+        </section>
+      </div>
+      <div id="fisher-conversation" hidden>
+        <p id="fisher-line"></p>
+        <p>“You’ll find me at the small dock most mornings. Pick up the rod from your cottage chest and cast from the dock if you’d like to try your luck.”</p>
+      </div>
+      <form method="dialog"><button type="submit" autofocus>Close</button></form>
+    </dialog>
 
     <dialog id="job-board-dialog" class="options-dialog job-board-dialog" aria-labelledby="board-title">
       <h2 id="board-title">Harbor job board</h2>

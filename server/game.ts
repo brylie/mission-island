@@ -10,6 +10,7 @@ import { biteSeconds, castTravelSeconds, chargePower } from '../src/charged-acti
 import type { ChargeKind } from '../src/charged-actions'
 import { anglerCost, cleanCrewName, readAppearance } from '../src/crew-appearance.ts'
 import { farmPlots, growthSeconds, market, nearbyPlot, saleValue, seedPrice } from '../src/farm.ts'
+import { atFisher } from '../src/harbor-fisher.ts'
 import { starterTools } from '../src/inventory.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, isJobId, jobs, orderContribution } from '../src/jobs.ts'
 import {
@@ -327,6 +328,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       player.sleeping = false
       return
     }
+    const ownDoor = atHomeDoor(player)
     const item = heldItem(state, player)
     if (item) {
       stopPrimary(member)
@@ -345,13 +347,13 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       } else {
         item.y = groundHeight(item) + 0.04
       }
-    } else if (isNight(state.weather.hour) && atHomeDoor(player)) {
+    } else if (ownDoor && isNight(state.weather.hour)) {
       stopPrimary(member)
       player.casting = null
       member.input = stopped
       player.sleeping = true
       return
-    } else if (atHomeChest(player)) {
+    } else if (!ownDoor && atHomeChest(player)) {
       useHomeChest(member)
     } else if (player.grounded && !player.onBed && distance(player, market) < 2.25) {
       visitMarket(member)
@@ -370,7 +372,11 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         return
       }
       const nearby = nearbyItem(state, player)
-      if (!nearby) return
+      if (!nearby) {
+        if (ownDoor) tell(member, { type: 'crew-note' })
+        else if (atFisher(player, state.weather.hour)) tell(member, { type: 'fisher-chat' })
+        return
+      }
       stopPrimary(member)
       stowTool(member)
       nearby.holder = player.id
@@ -650,8 +656,9 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       socket.close()
       return
     }
-    const id = spawns.findIndex((_, index) => !state.players.some((player) => player.id === index))
     const profile = profiles.get(token)
+    const open = spawns.flatMap((_, index) => state.players.some((player) => player.id === index) ? [] : [index])
+    const id = profile && open.includes(profile.id) ? profile.id : open[0]
     const member = existing ?? crewMember(profile ? { ...profile, id } : {
       ...spawns[id], id, heading: 0, y: groundHeight(spawns[id]), grounded: true,
         name: '', discoveries: [], onBed: false, reaching: false, rightHandRaised: false, connected: true, sleeping: false, swimming: false,

@@ -12,12 +12,13 @@ import { juniperCenter, juniperLayout } from '../src/juniper-habitat.ts'
 import { actionHint, atHomeDoor } from '../src/actions.ts'
 import { chargePower } from '../src/charged-actions.ts'
 import { farmPlots, market } from '../src/farm.ts'
+import { fisherAt } from '../src/harbor-fisher.ts'
 import { jobBoard, jobs, secondIslandGoal } from '../src/jobs.ts'
 import { footpaths, shellglassPoint } from '../src/routes.ts'
 import { northernRegions } from '../src/scenery.ts'
-import { groundHeight, grove, maxWadeDepth, waterDepth, waterLevel } from '../src/terrain.ts'
+import { groundHeight, grove, maxWadeDepth, walkingHeight, waterDepth, waterLevel } from '../src/terrain.ts'
 import { daySeconds, isNight } from '../src/weather.ts'
-import { crewHomes, jobPay, lookout, offset, skiffStart, spawns, town, truckStart } from '../src/world.ts'
+import { crewHomes, ferryTerminal, jobPay, lookout, offset, skiffStart, spawns, town, truckStart } from '../src/world.ts'
 
 const tokens = ['a'.repeat(32), 'b'.repeat(32), 'c'.repeat(32)]
 
@@ -562,6 +563,44 @@ test('a solo delivery credits the bank while a crewmate is offline across a host
   assert.equal(returning.state.lastStarterPay, 'delivery')
 })
 
+test('each cottage has its own daytime welcome note and keeps its owner across a rejoin', (t) => {
+  const h = setup(t, { players: [player(0, door(0)), player(1, door(1))] })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  for (const client of [a, b]) {
+    assert.deepEqual(actionHint(client.state, client.player), ['E', 'Read your welcome note'])
+    client.request('interact')
+    assert.deepEqual(client.messages.at(-1), { type: 'crew-note' })
+    client.close()
+  }
+  h.elapse(12_100)
+  const resumed = setup(t, { saved: h.game.snapshotForSave() })
+  assert.equal(resumed.join(tokens[1]).player.id, 1)
+  assert.equal(resumed.join(tokens[0]).player.id, 0)
+})
+
+test('Mara moves between walkable stops and either crewmate can talk at the fishing dock', (t) => {
+  for (const hour of [0, 18.25, ...Array.from({ length: 26 }, (_, index) => 6 + index / 100)]) {
+    assert.ok(canWalkAt(fisherAt(hour), .25, waterLevel - maxWadeDepth))
+  }
+  const dock = fisherAt(8)
+  const h = setup(t, {
+    players: [player(0, dock, { y: walkingHeight(dock) }), player(1, dock, { y: walkingHeight(dock) })],
+    arrange(save) { save.islandTime = daySeconds * 2 / 24 },
+  })
+  for (const token of tokens.slice(0, 2)) {
+    const client = h.join(token)
+    assert.deepEqual(actionHint(client.state, client.player), ['E', 'Talk to Mara'])
+    client.request('interact')
+    assert.deepEqual(client.messages.at(-1), { type: 'fisher-chat' })
+  }
+  const approach = footpaths.find(({ name }) => name === 'Ferry approach').points
+  assert.deepEqual(approach.at(-1), ferryTerminal)
+  for (let z = approach[0].z; z > ferryTerminal.z + 1; z -= .5) {
+    assert.ok(canWalkAt({ x: ferryTerminal.x, z }, .5, waterLevel - maxWadeDepth))
+  }
+})
+
 test('an older completed shift pools legacy wallets and keeps its order and farm on rejoining', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'mission-island-bank-'))
   t.after(() => rmSync(root, { recursive: true, force: true }))
@@ -572,14 +611,17 @@ test('an older completed shift pools legacy wallets and keeps its order and farm
   save.version = 1
   delete save.crewCoins
   save.crew = [13, 9].map((coins, id) => ({
-    token: tokens[id], player: player(id, door(id), { coins, starterSeedClaimed: true }), reserved: id === 0,
+    token: tokens[id], player: player(id, door(id), { coins, starterSeedClaimed: true, lastStarterPay: id === 0 ? 'delivery' : 'fire' }), reserved: id === 0,
   }))
   file.write(save)
   const h = setup(t, { saved: file.load() })
   const returning = tokens.slice(0, 2).map(h.join)
   for (const client of returning) {
+    client.request('interact')
+    h.advance()
+    assert.deepEqual(client.messages.at(-1), { type: 'crew-note' })
     assert.equal(client.state.crewCoins, 22)
-    assert.equal(client.state.lastStarterPay, undefined)
+    assert.equal(client.state.lastStarterPay, 'fire')
     assert.deepEqual(client.state.jobs, save.world.jobs)
     assert.equal(client.state.farm[0], 'watered')
   }
@@ -591,6 +633,7 @@ test('an older completed shift pools legacy wallets and keeps its order and farm
   file.write(h.game.snapshotForSave())
   const migrated = file.load()
   assert.equal(migrated.version, 2)
+  assert.equal(migrated.lastStarterPay, 'fire')
   assert.ok(migrated.crew.every(({ player }) => !('coins' in player)))
   assert.equal(createGame({ save: migrated }).crewCoins, 22)
   assert.deepEqual(newcomer.state.jobs, save.world.jobs)

@@ -4,6 +4,7 @@ import { actionHint, heldItem, inSkiff } from './actions'
 import { readStorage, writeStorage } from './browser-storage'
 import { anglerCost, cleanCrewName, defaultAppearance, readAppearance, skinTones, uniforms } from './crew-appearance'
 import type { CrewAppearance } from './crew-appearance'
+import { createCrewGuide } from './crew-guide-ui'
 import { farm, market } from './farm'
 import { createJobBoard, jobDescription, secondIslandProgress } from './job-board-ui'
 import { activeJob, atJobBoard, deliveryDrop, jobBoard, jobs, secondIslandGoal } from './jobs'
@@ -15,7 +16,7 @@ import { northernRegions, starterDiscoveries } from './scenery'
 import { createRenderer } from './scene'
 import { bindPlaytestCopy } from './playtest-link'
 import { isNight } from './weather'
-import { crewHomes, distance, harbor, lookout, starterPay } from './world'
+import { crewHomes, distance, ferryTerminal, harbor, lookout, starterPay } from './world'
 
 function element<T extends HTMLElement>(id: string) {
   const node = document.getElementById(id)
@@ -44,6 +45,12 @@ const missionStep = element('mission-step')
 const boardButton = element<HTMLButtonElement>('open-job-board')
 const boardDialog = element<HTMLDialogElement>('job-board-dialog')
 const board = createJobBoard(boardDialog, (id) => send({ type: 'take-job', id }))
+const guideButton = element<HTMLButtonElement>('open-crew-guide')
+const guideDialog = element<HTMLDialogElement>('crew-guide-dialog')
+const guide = createCrewGuide(guideDialog, (dismissed) => {
+  leadDismissed = dismissed
+  writeStorage('localStorage', leadKey(), dismissed ? 'yes' : null)
+})
 const respawn = element<HTMLButtonElement>('respawn')
 const spray = element('spray-control')
 const cameraButton = element<HTMLButtonElement>('camera')
@@ -90,6 +97,8 @@ const savedToken = readStorage('localStorage', crewKey)
 let token = readStorage('sessionStorage', crewKey) ?? savedToken ?? newToken()
 writeStorage('sessionStorage', crewKey, token)
 if (!savedToken) writeStorage('localStorage', crewKey, token)
+const leadKey = () => `mission-island-fisher-lead-${token}`
+let leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
 let editingName: { id: number; token: string; name: string } | undefined
 let appearance: CrewAppearance = defaultAppearance
 let milestone = 0
@@ -231,6 +240,7 @@ function drawMap(state?: Snapshot) {
   ink.fillRect(mx(state.truck.x) - 5, mz(state.truck.z) - 4, 10, 8)
   if (state.skiff) dot(state.skiff.x, state.skiff.z, '#fff0ca', 3.5)
   dot(farm.x, farm.z, '#e3ba77', 3.5)
+  dot(ferryTerminal.x, ferryTerminal.z, '#d7a07d', 3.5)
   const marketOrder = activeJob(state)?.kind === 'market'
   dot(market.x, market.z, marketOrder ? '#acf3da' : '#f2d3bc', marketOrder ? 6 : 3.5)
   if (state.mission === 'complete' && !state.jobs.active) dot(jobBoard.x, jobBoard.z, '#ffd379', 5.5)
@@ -402,7 +412,11 @@ function update(state: Snapshot) {
 
   updateMission(state)
   const player = connected.find((entry) => entry.id === id)
-  if (player) updatePersonalDisplay(state, player, earlier)
+  if (player) {
+    updatePersonalDisplay(state, player, earlier)
+    guide.update(state, player)
+  }
+  guideButton.disabled = !player
   updateBoard(state, player)
   editCrewName.hidden = !player
   if (player) editCrewName.textContent = player.name ? 'Edit name' : 'Set name'
@@ -449,6 +463,7 @@ function connect() {
       case 'duplicate':
         token = newToken()
         writeStorage('sessionStorage', crewKey, token)
+        leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
         break
       case 'fishing-result': {
         const [key, label] = feedbackText[incoming.result]
@@ -463,6 +478,12 @@ function connect() {
           until: performance.now() + 3200 }
         break
       }
+      case 'crew-note':
+        openGuide()
+        break
+      case 'fisher-chat':
+        openGuide(true)
+        break
       case 'order-pay':
         actionFeedback = { key: `+${incoming.coins} coins`, label: `${jobs[incoming.id].title} complete · Crew bank`, until: performance.now() + 3200 }
         break
@@ -508,7 +529,7 @@ function aimHeading() {
 }
 
 function equip(item: InventoryItem) {
-  if (live && !optionsDialog.open) send({ type: 'equip', item })
+  if (live && !modalOpen()) send({ type: 'equip', item })
 }
 
 function sendInput() {
@@ -560,10 +581,22 @@ function updateBoard(state: Snapshot, player = state.players.find((entry) => ent
 }
 
 function openJobBoard() {
-  if (!snapshot || snapshot.mission !== 'complete' || boardDialog.open || optionsDialog.open) return
+  if (!snapshot || snapshot.mission !== 'complete' || modalOpen()) return
   pauseControls()
   boardDialog.showModal()
   updateBoard(snapshot)
+}
+
+function modalOpen() {
+  return optionsDialog.open || boardDialog.open || guideDialog.open
+}
+
+function openGuide(talking = false) {
+  if (!snapshot || modalOpen()) return
+  const player = snapshot.players.find((entry) => entry.id === id)
+  if (!player) return
+  pauseControls()
+  guide.open(snapshot, player, talking, leadDismissed)
 }
 
 function toggleOptions() {
@@ -571,7 +604,7 @@ function toggleOptions() {
     optionsDialog.close()
     return
   }
-  if (boardDialog.open) return
+  if (modalOpen()) return
   pauseControls()
   const player = live ? snapshot?.players.find((entry) => entry.id === id) : undefined
   editingName = player && { id: player.id, token, name: player.name }
@@ -589,7 +622,7 @@ function saveMouseOptions() {
 applyCamera()
 window.addEventListener('keydown', (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey) return
-  if (boardDialog.open) return
+  if (boardDialog.open || guideDialog.open) return
   if (optionsDialog.open && event.target === crewName) return
   if (event.code === 'KeyO' && !event.repeat) {
     event.preventDefault()
@@ -649,7 +682,7 @@ function overGameplay(target: EventTarget | null) {
 }
 
 function beginMouseAction(event: MouseEvent) {
-  if (event.ctrlKey || event.metaKey || !live || optionsDialog.open || boardDialog.open || !overGameplay(event.target)) return
+  if (event.ctrlKey || event.metaKey || !live || modalOpen() || !overGameplay(event.target)) return
   if (event.button === 2) {
     setRightButton(true)
     return
@@ -717,6 +750,7 @@ buyAngler.addEventListener('click', () => {
   if (live && !ownsAngler && coins >= anglerCost) send({ type: 'buy-angler' })
 })
 boardButton.addEventListener('click', openJobBoard)
+guideButton.addEventListener('click', () => openGuide())
 respawn.addEventListener('click', () => {
   if (!live) return
   send({ type: 'respawn' })
@@ -739,7 +773,7 @@ if (import.meta.hot) {
     try {
       renderer = module.createRenderer(canvas, markers)
       renderer.setMouseInversion(invertHorizontal.checked, invertVertical.checked)
-      if (optionsDialog.open) renderer.releaseMouse()
+      if (modalOpen()) renderer.releaseMouse()
       if (snapshot) renderer.update(snapshot, id, follow)
       if (!socket) {
         bootMessage.textContent = 'Connecting to the host…'

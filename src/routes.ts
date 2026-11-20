@@ -1,4 +1,4 @@
-import { beach, distance, harbor, lookout } from './world.ts'
+import { beach, distance, ferryTerminal, harbor, lookout } from './world.ts'
 import type { Point } from './world.ts'
 
 function lerp(a: Point, b: Point, t: number): Point {
@@ -38,6 +38,8 @@ export const footpaths: Footpath[] = [
   { name: 'Lookout trail', surface: 'gravel', width: 3.2, points: roundCorners([{ x: 17, z: 12 }, { x: 20, z: 22 }, lookout], 4) },
   { name: 'Beach trail', surface: 'pavement', width: 2.6, points: roundCorners([{ x: 35, z: 12 }, { x: 33.1, z: 4 }, { x: 29.6, z: -24.7 }, beach], 4) },
   { name: 'Harbor trail', surface: 'gravel', width: 3.1, points: roundCorners([{ x: -46, z: -11 }, harbor, { x: -44, z: -30 }], 3) },
+  { name: 'Ferry approach', surface: 'gravel', width: 5,
+    points: [{ x: ferryTerminal.x, z: -14 }, ferryTerminal] },
   { name: 'Splitstone strand', surface: 'desire', width: .85, points: roundCorners([
     { x: 41.7, z: -30.2 }, { x: 44.1, z: -29.05 }, { x: 45.85, z: -28.25 },
   ], 1) },

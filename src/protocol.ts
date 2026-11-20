@@ -92,7 +92,7 @@ export type ServerMessage =
   | { type: 'market-sale'; coins: number }
   | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
   | { type: 'order-pay'; coins: number; id: JobId }
-  | { type: 'order-unavailable' | 'starter-seed' }
+  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'fisher-chat' }
   | { type: 'full' | 'duplicate' }
 
 export type ClientMessage =

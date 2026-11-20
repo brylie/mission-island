@@ -9,6 +9,7 @@ import { createGrassTufts, createIslandTerrain } from './island-landscape'
 import type { MeshFactory } from './island-meshes'
 import { createNorthernScenery } from './island-north'
 import { createPhenomena } from './island-phenomena'
+import { createFerryTerminal } from './island-terminal'
 import { createStarterWildlife, createUnderstory, createWildflowers } from './island-wildlife'
 import { jobBoard } from './jobs'
 import { footpaths, road, walkways } from './routes'
@@ -48,6 +49,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     meshes.box(jobBoard.x + dx, boardY + 1.38, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
   }
   createDock(meshes)
+  createFerryTerminal(meshes)
   placeSiteFeatures(meshes, (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site), walkingHeight)
   for (const point of shellRocks) {
     const { size, heading } = point
