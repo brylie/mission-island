@@ -1,19 +1,24 @@
 import assert from 'node:assert/strict'
 import { Buffer } from 'node:buffer'
 import { EventEmitter } from 'node:events'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { test } from 'node:test'
 import { canWalkAt } from '../server/movement.ts'
 import { createGame } from '../server/game.ts'
+import { islandSaveFile } from '../server/save.ts'
 import { juniperCenter, juniperLayout } from '../src/juniper-habitat.ts'
 import { actionHint, atHomeDoor } from '../src/actions.ts'
 import { chargePower } from '../src/charged-actions.ts'
 import { farmPlots, market } from '../src/farm.ts'
+import { fisherAt } from '../src/harbor-fisher.ts'
 import { jobBoard, jobs, secondIslandGoal } from '../src/jobs.ts'
 import { footpaths, shellglassPoint } from '../src/routes.ts'
 import { northernRegions } from '../src/scenery.ts'
-import { groundHeight, grove, maxWadeDepth, waterDepth, waterLevel } from '../src/terrain.ts'
+import { groundHeight, grove, maxWadeDepth, walkingHeight, waterDepth, waterLevel } from '../src/terrain.ts'
 import { daySeconds, isNight } from '../src/weather.ts'
-import { crewHomes, jobPay, lookout, offset, skiffStart, spawns, town, truckStart } from '../src/world.ts'
+import { crewHomes, ferryTerminal, jobPay, lookout, offset, skiffStart, spawns, town, truckStart } from '../src/world.ts'
 
 const tokens = ['a'.repeat(32), 'b'.repeat(32), 'c'.repeat(32)]
 
@@ -476,6 +481,8 @@ test('delivering all crates and spraying the fire unlocks repeatable jobs withou
   assert.equal(a.state.fire, 0)
   assert.equal(a.player.coins, jobPay.crate * 3 + jobPay.delivery + jobPay.fire)
   assert.equal(b.player.coins, a.player.coins)
+  assert.equal(a.player.lastStarterPay, 'fire')
+  assert.equal(b.player.lastStarterPay, 'fire')
   assert.equal(a.state.items[3].holder, null)
   const before = a.player
   a.request('reset')
@@ -521,6 +528,8 @@ test('a saved job stays payable after a crewmate’s reservation expires, includ
   a.request('interact')
   h.advance()
   assert.equal(b.player.coins, jobPay.crate)
+  assert.equal(a.player.lastStarterPay, 'crate')
+  assert.equal(b.player.lastStarterPay, 'crate')
   b.close()
   h.elapse(12_100)
   assert.equal(h.game.snapshotForSave().crew[1].reserved, false)
@@ -535,7 +544,77 @@ test('a saved job stays payable after a crewmate’s reservation expires, includ
   assert.equal(driver.state.mission, 'fire')
   assert.equal(resumed.game.snapshotForSave().crew[1].player.coins, 3 * jobPay.crate + jobPay.delivery)
   assert.deepEqual(resumed.game.snapshotForSave().jobCrew, [tokens[0]])
-  assert.equal(resumed.join(tokens[1]).player.coins, driver.player.coins)
+  const returning = resumed.join(tokens[1])
+  assert.equal(returning.player.coins, driver.player.coins)
+  assert.equal(returning.player.lastStarterPay, 'delivery')
+})
+
+test('each cottage has its own daytime welcome note and keeps its owner across a rejoin', (t) => {
+  const h = setup(t, { players: [player(0, door(0)), player(1, door(1))] })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  for (const client of [a, b]) {
+    assert.deepEqual(actionHint(client.state, client.player), ['E', 'Read your welcome note'])
+    client.request('interact')
+    assert.deepEqual(client.messages.at(-1), { type: 'crew-note' })
+    client.close()
+  }
+  h.elapse(12_100)
+  const resumed = setup(t, { saved: h.game.snapshotForSave() })
+  assert.equal(resumed.join(tokens[1]).player.id, 1)
+  assert.equal(resumed.join(tokens[0]).player.id, 0)
+})
+
+test('Mara moves between walkable stops and either crewmate can talk at the fishing dock', (t) => {
+  for (const hour of [0, 18.25, ...Array.from({ length: 26 }, (_, index) => 6 + index / 100)]) {
+    assert.ok(canWalkAt(fisherAt(hour), .25, waterLevel - maxWadeDepth))
+  }
+  const dock = fisherAt(8)
+  const h = setup(t, {
+    players: [player(0, dock, { y: walkingHeight(dock) }), player(1, dock, { y: walkingHeight(dock) })],
+    arrange(save) { save.islandTime = daySeconds * 2 / 24 },
+  })
+  for (const token of tokens.slice(0, 2)) {
+    const client = h.join(token)
+    assert.deepEqual(actionHint(client.state, client.player), ['E', 'Talk to Mara'])
+    client.request('interact')
+    assert.deepEqual(client.messages.at(-1), { type: 'fisher-chat' })
+  }
+  const approach = footpaths.find(({ name }) => name === 'Ferry approach').points
+  assert.deepEqual(approach.at(-1), ferryTerminal)
+  for (let z = approach[0].z; z > ferryTerminal.z + 1; z -= .5) {
+    assert.ok(canWalkAt({ x: ferryTerminal.x, z }, .5, waterLevel - maxWadeDepth))
+  }
+})
+
+test('an older completed shift keeps its order, farm and wallets when crew open onboarding', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'mission-island-guide-'))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const file = islandSaveFile(root, 5173)
+  const save = createGame().snapshotForSave()
+  Object.assign(save.world, { mission: 'complete', fire: 0, jobs: { active: { id: 'market-carrots', progress: 1 }, completed: 2 } })
+  save.world.farm[0] = 'watered'
+  save.crew = [13, 9].map((coins, id) => ({
+    token: tokens[id], player: player(id, door(id), { coins, starterSeedClaimed: true }), reserved: true,
+  }))
+  file.write(save)
+  const h = setup(t, { saved: file.load() })
+  const returning = tokens.slice(0, 2).map(h.join)
+  for (const [id, client] of returning.entries()) {
+    client.request('interact')
+    h.advance()
+    assert.deepEqual(client.messages.at(-1), { type: 'crew-note' })
+    assert.equal(client.player.coins, save.crew[id].player.coins)
+    assert.equal(client.player.lastStarterPay, undefined)
+    assert.deepEqual(client.state.jobs, save.world.jobs)
+    assert.equal(client.state.farm[0], 'watered')
+  }
+  returning[1].close()
+  h.elapse(12_100)
+  const newcomer = h.join(tokens[2])
+  assert.deepEqual(actionHint(newcomer.state, newcomer.player), ['E', 'Take tools and a carrot seed'])
+  assert.equal(newcomer.player.coins, 0)
+  assert.deepEqual(newcomer.state.jobs, save.world.jobs)
 })
 
 test('the harbor board offers a new cargo and destination without moving either crew member or vehicle', (t) => {

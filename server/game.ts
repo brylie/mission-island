@@ -10,11 +10,12 @@ import { biteSeconds, castTravelSeconds, chargePower } from '../src/charged-acti
 import type { ChargeKind } from '../src/charged-actions'
 import { anglerCost, cleanCrewName, readAppearance } from '../src/crew-appearance.ts'
 import { farmPlots, growthSeconds, market, nearbyPlot, saleValue, seedPrice } from '../src/farm.ts'
+import { atFisher } from '../src/harbor-fisher.ts'
 import { starterTools } from '../src/inventory.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, isJobId, jobs, orderContribution } from '../src/jobs.ts'
 import {
-  crateSize, crateStarts, distance, extinguisherStarts, jobPay, jumpSpeed, localPoint, lookout, offset,
-  skiffStart, spawns, truckSeatSpeed, truckStart,
+  crateSize, crateStarts, distance, extinguisherStarts, jumpSpeed, localPoint, lookout, offset,
+  skiffStart, spawns, starterPay, truckSeatSpeed, truckStart,
 } from '../src/world.ts'
 import { truckPoint } from '../src/truck-pose.ts'
 import type { TruckPose } from '../src/truck-pose.ts'
@@ -171,6 +172,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       const player = profiles.get(token)
       if (!player) continue
       player.coins += message.coins
+      if (message.type === 'job-pay') player.lastStarterPay = message.job
       const member = crew.get(token)
       if (member) tell(member, message)
     }
@@ -214,10 +216,10 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       advanceOrder(1)
     } else if (state.items.filter((entry) => entry.kind === 'crate').every((crate) => crate.delivered)) {
       state.mission = 'fire'
-      payCrew({ type: 'job-pay', job: 'delivery', coins: jobPay.crate + jobPay.delivery })
+      payCrew({ type: 'job-pay', job: 'delivery', coins: starterPay.delivery.coins })
       enrollConnectedCrew()
     } else {
-      payCrew({ type: 'job-pay', job: 'crate', coins: jobPay.crate })
+      payCrew({ type: 'job-pay', job: 'crate', coins: starterPay.crate.coins })
     }
   }
 
@@ -342,6 +344,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       player.sleeping = false
       return
     }
+    const ownDoor = atHomeDoor(player)
     const item = heldItem(state, player)
     if (item) {
       stopPrimary(member)
@@ -360,13 +363,13 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       } else {
         item.y = groundHeight(item) + 0.04
       }
-    } else if (isNight(state.weather.hour) && atHomeDoor(player)) {
+    } else if (ownDoor && isNight(state.weather.hour)) {
       stopPrimary(member)
       player.casting = null
       member.input = stopped
       player.sleeping = true
       return
-    } else if (atHomeChest(player)) {
+    } else if (!ownDoor && atHomeChest(player)) {
       useHomeChest(member)
     } else if (player.grounded && !player.onBed && distance(player, market) < 2.25) {
       visitMarket(member)
@@ -385,7 +388,11 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         return
       }
       const nearby = nearbyItem(state, player)
-      if (!nearby) return
+      if (!nearby) {
+        if (ownDoor) tell(member, { type: 'crew-note' })
+        else if (atFisher(player, state.weather.hour)) tell(member, { type: 'fisher-chat' })
+        return
+      }
       stopPrimary(member)
       stowTool(member)
       nearby.holder = player.id
@@ -571,7 +578,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         state.fire = Math.max(0, state.fire - tickSeconds / 5)
         if (state.fire === 0) {
           state.mission = 'complete'
-          payCrew({ type: 'job-pay', job: 'fire', coins: jobPay.fire })
+          payCrew({ type: 'job-pay', job: 'fire', coins: starterPay.fire.coins })
           jobCrew.clear()
           for (const tool of state.items.filter(({ kind }) => kind === 'extinguisher')) {
             tool.holder = null
@@ -666,8 +673,9 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       socket.close()
       return
     }
-    const id = spawns.findIndex((_, index) => !state.players.some((player) => player.id === index))
     const profile = profiles.get(token)
+    const open = spawns.flatMap((_, index) => state.players.some((player) => player.id === index) ? [] : [index])
+    const id = profile && open.includes(profile.id) ? profile.id : open[0]
     const member = existing ?? crewMember(profile ? { ...profile, id } : {
       ...spawns[id], id, heading: 0, y: groundHeight(spawns[id]), grounded: true,
         name: '', discoveries: [], onBed: false, reaching: false, rightHandRaised: false, connected: true, sleeping: false, swimming: false,
