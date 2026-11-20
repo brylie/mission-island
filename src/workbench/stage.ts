@@ -1,0 +1,176 @@
+import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera'
+import type { Engine } from '@babylonjs/core/Engines/engine'
+import { Color3, Color4 } from '@babylonjs/core/Maths/math.color'
+import { Vector3 } from '@babylonjs/core/Maths/math.vector'
+import { CreateLineSystem } from '@babylonjs/core/Meshes/Builders/linesBuilder'
+import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
+import { Scene } from '@babylonjs/core/scene'
+import { createIslandLighting, createMeshFactory } from '../island-meshes'
+import { createAtmosphere } from '../island-atmosphere'
+import { createIslandMaterial } from '../materials'
+import { groundHeight as terrainHeight } from '../terrain'
+import type { Entry, Values } from './catalog'
+import { lightingPresets } from './lighting'
+import type { LightingPreset } from './lighting'
+import { findZFightCandidates } from './z-fighting'
+import { createLandscapeLayout } from './landscape-layout'
+
+export interface CameraState {
+  alpha: number
+  beta: number
+  radius: number
+  target: number[]
+}
+
+export type Angle = 'perspective' | 'front' | 'side' | 'top'
+
+export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values,
+  reportError: (error: string) => void) {
+  const scene = new Scene(engine)
+  try {
+    scene.clearColor = Color4.FromHexString('#1b292aff')
+    if (entry.landscape) scene.fogMode = Scene.FOGMODE_LINEAR
+    const { sky, sunlight, shadows } = createIslandLighting(scene)
+    const meshes = createMeshFactory(scene, shadows)
+    const update = entry.create(meshes, values, reportError)
+    meshes.finishScenery({ merge: false })
+    let min = new Vector3(Infinity, Infinity, Infinity)
+    let max = new Vector3(-Infinity, -Infinity, -Infinity)
+    let triangles = 0
+    const subject = [...scene.meshes]
+    const meshCount = subject.filter((mesh) => mesh.isVisible).length
+    for (const mesh of subject) {
+      mesh.computeWorldMatrix(true)
+      const { boundingBox } = mesh.getBoundingInfo()
+      min = Vector3.Minimize(min, boundingBox.minimumWorld)
+      max = Vector3.Maximize(max, boundingBox.maximumWorld)
+      if (mesh.isVisible) triangles += mesh.getTotalIndices() / 3
+    }
+
+    max.y += entry.headroom ?? 0
+    const span = max.subtract(min)
+    const groundHeight = entry.ground?.height ?? 0
+    const subjectHeight = Math.max(0.4, max.y - Math.max(min.y, groundHeight))
+    const center = new Vector3((min.x + max.x) / 2, Math.max(min.y, groundHeight) + subjectHeight * 0.43, (min.z + max.z) / 2)
+    const size = entry.landscape ? 24 : Math.max(span.x, span.z, subjectHeight)
+    if (entry.landscape) {
+      const point = { x: Number(values.x), z: Number(values.z) }
+      center.set(point.x, terrainHeight(point) + 0.25, point.z)
+    }
+    const groundSize = Math.max(14, size * 2.25)
+    const step = size > 45 ? 5 : size > 12 ? 2 : 1
+    const radius = entry.landscape ? 24 : Math.max(3, size * 1.55 + subjectHeight * 0.6)
+    const camera = new ArcRotateCamera('Workbench camera', entry.angle ?? 0.88, 1.1, radius, center.clone(), scene)
+    camera.lowerRadiusLimit = entry.landscape ? 0.55 : Math.max(0.55, size * 0.12)
+    camera.upperRadiusLimit = entry.landscape ? 450 : radius * 5
+    camera.lowerBetaLimit = 0.035
+    camera.upperBetaLimit = Math.PI - 0.06
+    camera.minZ = Math.max(0.025, size / 2000)
+    camera.maxZ = entry.landscape ? 950 : Math.max(600, radius * 8)
+    camera.wheelDeltaPercentage = 0.045
+    camera.panningSensibility = 840 / Math.max(1, size / 5)
+    camera.attachControl(canvas, false)
+    scene.activeCamera = camera
+    const atmosphere = entry.landscape ? createAtmosphere(scene, sky, sunlight) : undefined
+    const layout = entry.landscape ? createLandscapeLayout(meshes, canvas, () => ({
+      x: camera.target.x, z: camera.target.z,
+      yaw: Math.atan2(camera.target.x - camera.globalPosition.x, camera.target.z - camera.globalPosition.z),
+    })) : undefined
+
+    const directions = Array.from({ length: Math.floor(groundSize / step) + 1 }, (_, i) => (i * step) - groundSize / 2)
+    if (!entry.landscape) {
+      const floor = createIslandMaterial(scene, 'Workbench floor', entry.ground?.color ?? '#374a48')
+      const ground = meshes.box(center.x, groundHeight - 0.19, center.z, groundSize, 0.36, groundSize, floor, undefined, false)
+      ground.receiveShadows = true
+    }
+    const gridY = (entry.landscape ? terrainHeight(center) : groundHeight) + 0.005
+    const gridOrigin = center.clone()
+    const half = groundSize / 2
+    const lines = directions.flatMap((offset) => [
+      [new Vector3(center.x + offset, gridY, center.z - half), new Vector3(center.x + offset, gridY, center.z + half)],
+      [new Vector3(center.x - half, gridY, center.z + offset), new Vector3(center.x + half, gridY, center.z + offset)],
+    ])
+    const grid = CreateLineSystem('Preview grid', { lines }, scene)
+    grid.color = Color3.FromHexString('#758d86')
+    grid.alpha = 0.21
+    grid.isPickable = false
+
+    sunlight.position.set(center.x - 14, Math.max(21, size), center.z - 16)
+    sunlight.shadowMaxZ = Math.max(55, size * 4)
+    let lighting: LightingPreset = 'daylight'
+    let wireframe = false
+    function applyWireframe(mesh: AbstractMesh) {
+      if (mesh.material && mesh.material.wireframe !== wireframe) mesh.material.wireframe = wireframe
+    }
+
+    const pointOfView = {
+      perspective: [entry.angle ?? 0.88, 1.1],
+      front: [entry.angle && entry.angle < 0 ? -Math.PI / 2 : Math.PI / 2, Math.PI / 2],
+      side: [0, Math.PI / 2],
+      top: [Math.PI / 2, 0.04],
+    }
+
+    function setView(angle: Angle = entry.topView ? 'top' : 'perspective') {
+      camera.setTarget(center.clone())
+      camera.alpha = pointOfView[angle][0]
+      camera.beta = pointOfView[angle][1]
+      const aspect = engine.getAspectRatio(camera)
+      camera.radius = radius * Math.max(1, 0.92 / Math.max(0.3, aspect))
+      camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0
+      camera.inertialPanningX = camera.inertialPanningY = 0
+    }
+    setView()
+
+    return {
+      meshCount,
+      triangles: Math.round(triangles),
+      step,
+      checkZFighting: () => findZFightCandidates(layout ? [...subject, ...layout.meshes()] : subject, entry.landscape ? camera.target : undefined),
+      draw(time: number, rate: number, seek: boolean, settings: Values, turntable: boolean, delta: number) {
+        if (turntable) camera.alpha += delta * 0.38
+        if (entry.landscape && (center.x !== settings.x || center.z !== settings.z)) {
+          const point = { x: Number(settings.x), z: Number(settings.z) }
+          center.set(point.x, terrainHeight(point) + 0.25, point.z)
+          grid.position.copyFrom(center.subtract(gridOrigin))
+          camera.setTarget(center.clone())
+        }
+        const rain = entry.landscape ? Number(settings.rain) : 0
+        const position = camera.globalPosition
+        const light = atmosphere?.update(time, { hour: Number(settings.hour), rain }, position, true) ?? 1
+        update?.({ time, rate, seek, lighting, camera: position, light, rain }, settings)
+        layout?.update(delta, time)
+        subject.forEach(applyWireframe)
+        layout?.meshes().forEach(applyWireframe)
+        scene.render()
+      },
+      setLighting(preset: LightingPreset) {
+        lighting = preset
+        const { ambient, sun, color, direction } = lightingPresets[preset]
+        sky.intensity = ambient
+        sunlight.intensity = sun
+        sunlight.diffuse = Color3.FromHexString(color)
+        sunlight.direction.copyFrom(direction.normalizeToNew())
+      },
+      setGrid(visible: boolean) { grid.setEnabled(visible) },
+      setWireframe(visible: boolean) { wireframe = visible },
+      setView,
+      getCamera(): CameraState {
+        return { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, target: camera.target.asArray() }
+      },
+      setCamera(saved: CameraState) {
+        camera.setTarget(Vector3.FromArray(saved.target))
+        camera.alpha = saved.alpha
+        camera.beta = saved.beta
+        camera.radius = saved.radius
+      },
+      dispose() {
+        layout?.dispose()
+        camera.detachControl()
+        scene.dispose()
+      },
+    }
+  } catch (error) {
+    scene.dispose()
+    throw error
+  }
+}

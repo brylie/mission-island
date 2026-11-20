@@ -1,0 +1,14 @@
+[tools]
+prek = "0.4.8"
+
+[tasks.setup]
+description = "Install npm dependencies and Git hooks"
+run = "npm ci && prek install"
+
+[tasks.quality]
+description = "Run the local quality gate"
+run = "npm run quality"
+
+[tasks.audit]
+description = "Audit npm dependencies for known vulnerabilities"
+run = "npm run audit"
