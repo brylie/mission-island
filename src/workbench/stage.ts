@@ -48,7 +48,7 @@ function stageWeather(entry: Entry, time: number, settings: Values) {
 function applyStageLighting(sceneLighting: ReturnType<typeof createIslandLighting>, preset: LightingPreset, crew: boolean) {
   const { ambient, sun, color, direction } = lightingPresets[preset]
   const { sky, sunlight, shadows } = sceneLighting
-  sky.intensity = ambient
+  sky.intensity = crew && preset === 'daylight' ? .84 : ambient
   sunlight.intensity = sun
   sunlight.diffuse = Color3.FromHexString(color)
   const key = crew ? new Vector3(direction.x, direction.y, -1.3) : direction

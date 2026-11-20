@@ -23,13 +23,17 @@ The shared crew factory now builds a canvas shirt with a weighted hem, rolled cu
 
 ![In-engine crew fitting at the Workbench, front and rear bareheaded, carrying a crate in uniform, and seated with a paddle.](../images/crew-first-fitting.jpg)
 
-## Current wardrobe fitting
+## Approved silhouette and facial style
 
-![Live front view of the sea-green courier beside the illustrated turnaround in the Asset Workbench.](../images/crew-turnaround-comparison.jpg)
+![Front, side and back comparisons of the revised swept curls. Each pair shows the live model on the left and the illustrated reference on the right.](../images/crew-turnaround-comparison.jpg)
 
 Open **Wardrobe → Crew character → Compare turnaround**. Use **Front** to compare cheek width, the shoulder line and how much trouser shows below the shirt. Use **Side** to compare the nose, the sweep of the fringe and the toe of the boot. **Back** is the view players see on the walk to the harbor. Look for the nape above the collar and clear space between the forearms and the shirt.
 
-The revised shirt hem sits about 0.77 m above the soles. The shoulder, hip and tool-grip pivots stay in their existing positions so the same base can carry a crate, paddle and swim. Try a cap, change the hair and skin colors, then switch to swimwear and bare feet to check the base without its work clothes. The illustrated direction is approved. The playable silhouette is ready for a player review before fitting further outfits.
+The **Swept curls** style has a rolled forelock above one brow, staggered tips at the temples, and overlapping locks sweeping from the crown to the nape. The cap tucks away the lifted locks and leaves the shorter temple and nape hair visible. Keep the crown and nape recognizable at the usual follow distance.
+
+The face uses a slightly raised brow, compact eyes with a warm iris and one small catchlight, a rounded wedge nose, and an off-center smile. The soft and wide smiles each follow the cheeks. Lip color follows skin tone, and a closed blink leaves a short lash line. Compare both smiles and eye shapes in the Workbench across the skin palette under **Daylight** and **Golden hour**.
+
+The revised shirt hem sits about 0.77 m above the soles. The shoulder, hip and tool-grip pivots stay in their existing positions so the same base can carry a crate, paddle and swim. Try a cap, change the hair and skin colors, then switch to swimwear and bare feet to check the base without its work clothes. The approved silhouette is the base for new wardrobe fittings.
 
 ## Review with one playable figure
 

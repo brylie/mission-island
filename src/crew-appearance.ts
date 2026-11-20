@@ -26,7 +26,7 @@ export const hairColors = {
 } as const
 
 export const appearanceParts = {
-  hair: { label: 'Hair', choices: { short: 'Short crop', bare: 'Shaved' } },
+  hair: { label: 'Hair', choices: { short: 'Swept curls', bare: 'Shaved' } },
   hairColor: { label: 'Hair color', choices: { chestnut: 'Chestnut', black: 'Black', blond: 'Honey blond' } },
   eyes: { label: 'Eyes', choices: { round: 'Round', narrow: 'Narrow' } },
   nose: { label: 'Nose', choices: { round: 'Round', small: 'Small' } },

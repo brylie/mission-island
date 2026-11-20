@@ -51,7 +51,11 @@ export function createCrew(meshes: MeshFactory, id: number) {
     const cloth = paint(dye ?? shirt.color), trim = paint(shirt.trim)
     const tone = skinTones[appearance.skin === 'default' ? (base === 0 ? 'light' : 'medium') : appearance.skin].color
     const skin = paint(tone)
-    const warm = paint(Color3.Lerp(Color3.FromHexString(tone), Color3.FromHexString('#aa6250'), .27).toHexString())
+    const complexion = Color3.FromHexString(tone)
+    const warm = paint(Color3.Lerp(complexion, Color3.FromHexString('#aa6250'), .27).toHexString())
+    const lips = paint(new Color3(complexion.r * .62, complexion.g * .57, complexion.b * .56).toHexString())
+    head.smile.material = lips
+    head.grin.material = lips
     for (const mesh of kit.skin) mesh.material = skin
     head.nose.material = warm
     for (const ear of head.earShadows) ear.material = warm
@@ -90,15 +94,24 @@ export function createCrew(meshes: MeshFactory, id: number) {
     head.brim.material = paint(palette.trim)
     hatEquipped = hat !== 'none'
     fitHat()
-    const brow = paint(hairColors[appearance.hairColor ?? 'chestnut'])
+    const browColor = Color3.FromHexString(hairColors[appearance.hairColor ?? 'chestnut'])
+    const brow = paint(browColor.scale(.78).toHexString())
     for (const mesh of head.brows) mesh.material = brow
-    head.nose.scaling.setAll(appearance.nose === 'small' ? .76 : 1)
-    head.mouth.scaling.x = appearance.mouth === 'wide' ? 1.15 : 1
+    const noseSize = appearance.nose === 'small' ? .76 : 1
+    head.nose.scaling.set(noseSize, noseSize * .83, noseSize)
+    const wideSmile = appearance.mouth === 'wide'
+    head.smile.setEnabled(!wideSmile)
+    head.grin.setEnabled(wideSmile)
   }
   function blink(time: number) {
     const phase = (time + 4.1 + id * 1.59) % (5.8 + id * .47)
-    const openness = Math.max(.06, Math.min(1, Math.abs(phase - .11) / .11))
-    for (const eye of head.eyes) eye.scaling.y = openness * (worn?.eyes === 'narrow' ? .72 : 1)
+    const openness = Math.min(1, Math.abs(phase - .11) / .11)
+    const closed = openness < .20
+    for (const { pivot, fill } of head.eyes) {
+      // At full closure only the upper lash is visible.
+      if (fill.isEnabled() === closed) fill.setEnabled(!closed)
+      pivot.scaling.y = Math.max(.20, openness) * (worn?.eyes === 'narrow' ? .72 : 1)
+    }
   }
   setAppearance()
   return { root, arms: kit.arms, legs: kit.legs, setAppearance, blink, setCap }
