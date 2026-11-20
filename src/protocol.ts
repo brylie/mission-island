@@ -1,5 +1,5 @@
 import type { BiomeFrame } from './biome-model'
-import type { Point, Pose } from './world'
+import type { Point, Pose, starterPay } from './world'
 import type { CrewAppearance } from './crew-appearance'
 import type { ChargeKind } from './charged-actions'
 import type { InventoryItem } from './inventory'
@@ -49,6 +49,7 @@ export interface Player extends Pose {
   throwing: boolean
   rowing: boolean
   coins: number
+  lastStarterPay?: keyof typeof starterPay
   ownsAngler: boolean
 }
 
@@ -89,9 +90,9 @@ export type ServerMessage =
   | { type: 'welcome'; id: number }
   | { type: 'fishing-result'; result: FishingResult }
   | { type: 'market-sale'; coins: number }
-  | { type: 'job-pay'; coins: number; job: 'crate' | 'delivery' | 'fire' }
+  | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
   | { type: 'order-pay'; coins: number; id: JobId }
-  | { type: 'order-unavailable' | 'starter-seed' }
+  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'fisher-chat' }
   | { type: 'full' | 'duplicate' }
 
 export type ClientMessage =

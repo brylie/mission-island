@@ -4,7 +4,7 @@ import { farmPlots } from '../src/farm.ts'
 import { isJobId, jobs } from '../src/jobs.ts'
 import type { JobBoardState } from '../src/jobs.ts'
 import type { Player, Snapshot } from '../src/protocol'
-import { crateStarts, extinguisherStarts, spawns } from '../src/world.ts'
+import { crateStarts, extinguisherStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
 
 export type IslandSave = {
@@ -46,6 +46,8 @@ function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] 
   return isNumber(player.id) && Number.isInteger(player.id) && player.id >= 0 && player.id < spawns.length &&
     [player.y, player.coins, player.seeds].every(isNumber) && Array.isArray(player.inventory) &&
     (player.starterSeedClaimed === undefined || typeof player.starterSeedClaimed === 'boolean') &&
+    (player.lastStarterPay === undefined || (typeof player.lastStarterPay === 'string' &&
+      Object.hasOwn(starterPay, player.lastStarterPay))) &&
     isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
 }
 
