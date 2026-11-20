@@ -4,6 +4,10 @@ This pass covers [starter destinations](https://github.com/brylie/mission-island
 
 Coordinates are metres, written (X, Z). Set them in the starter Landscape Workbench. On Saltwind, choose **Site map → Survey location → Inspect site** to begin at the road approach. The map also has clear daylight, dusk, morning, rain, and night presets. Set **Overview** for the whole-island silhouette and switch back for pedestrian-scale details. The Saltwind approach and pad checks extend the [original geometry survey](saltwind-qa.md).
 
+Use **Copy playtest link** once the camera shows the detail you want to inspect. On Starter Island the button is in the Landscape Workbench. The live game also offers it under **Options → Landscape Workbench** in the follow-camera view. On Saltwind it is in the location panel. Open the link in a fresh tab after an edit. It uses the current world geometry with the saved camera, weather and timeline. Press **Play** in the Workbench or **Resume playtest** on Saltwind to restart the clock. Walking also resumes Saltwind.
+
+For a LAN review, open the preview using the laptop’s LAN address before copying. If the browser restricts clipboard access, the button selects the URL for manual copying. The link carries scenery inspection settings. Multiplayer saves, crew inventories and local layout drafts stay with their original session.
+
 ## Starter island
 
 | Destination | Arrival and original cue | Change and placement check |

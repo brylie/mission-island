@@ -1,4 +1,5 @@
 import './style.css'
+import { bindPlaytestCopy, landscapeLink, readLandscapeView } from '../playtest-link'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { readStorage, writeStorage } from '../browser-storage'
@@ -53,7 +54,14 @@ function readSavedView(): Partial<SavedView> {
   }
 }
 
+const shared = location.hash === '#landscape' ? readLandscapeView(new URLSearchParams(location.search)) : undefined
 const saved = readSavedView()
+if (shared) {
+  saved.id = 'landscape'
+  saved.camera = shared.camera
+  saved.options = { ...saved.options, landscape: { x: shared.focus[0], z: shared.focus[1], hour: shared.hour, rain: shared.rain } }
+  Object.assign(saved, { time: shared.time, playing: false, grid: shared.grid, wireframe: shared.wireframe, turntable: false })
+}
 let entries = initialEntries
 let createPreviewStage = createStage
 const requested = () => location.hash.slice(1)
@@ -267,6 +275,7 @@ function loadAsset(camera?: CameraState) {
   element('asset-description').textContent = asset.description
   element('source-file').textContent = asset.source
   element('asset-inspector').hidden = !asset.controls?.length
+  element('playtest-tools').hidden = !asset.landscape
   lightSelect.disabled = Boolean(asset.landscape)
   playback.hidden = !asset.duration
   slider.max = String(asset.duration ?? 0)
@@ -357,6 +366,13 @@ element('reset').addEventListener('click', () => {
   renderAssetControls()
   rebuild(stage?.getCamera())
   remember()
+})
+
+bindPlaytestCopy(() => {
+  const camera = stage?.getCamera()
+  if (!camera || !asset.landscape) return
+  return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? .8 },
+    hour: Number(values.hour), rain: Number(values.rain), time, grid: grid.checked, wireframe: wireframe.checked })
 })
 
 let resize: ResizeObserver | undefined

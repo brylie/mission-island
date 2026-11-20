@@ -62,3 +62,6 @@ figcaption, .map-note { color: #d8ceb7; font-size: .76rem; margin-top: .6rem; li
   .keys { display: none; }
   .atlas-content { grid-template-columns: minmax(0, 1fr); gap: .7rem; }
 }
+
+#copy-status:not(:empty) { display: block; margin-top: .35rem; font-size: .78rem; }
+#playtest-url { width: 100%; margin-top: .35rem; }

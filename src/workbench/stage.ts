@@ -19,6 +19,7 @@ export interface CameraState {
   alpha: number
   beta: number
   radius: number
+  fov?: number
   target: number[]
 }
 
@@ -156,13 +157,14 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       setWireframe(visible: boolean) { wireframe = visible },
       setView,
       getCamera(): CameraState {
-        return { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, target: camera.target.asArray() }
+        return { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, fov: camera.fov, target: camera.target.asArray() }
       },
       setCamera(saved: CameraState) {
         camera.setTarget(Vector3.FromArray(saved.target))
         camera.alpha = saved.alpha
         camera.beta = saved.beta
         camera.radius = saved.radius
+        camera.fov = saved.fov ?? .8
       },
       dispose() {
         layout?.dispose()

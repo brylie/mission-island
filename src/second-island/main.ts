@@ -18,6 +18,7 @@ import { arrival, islandName, landmarks, sites, villages, waterfront, waterBound
 import type { MapPoint } from './sites'
 import { dryLandKm2, groundHeight, waterHeight } from './terrain'
 import { tour } from './tour'
+import { bindPlaytestCopy, readSaltwindView, saltwindLink } from '../playtest-link'
 import './style.css'
 
 const surveyWeather: Record<string, Weather> = {
@@ -69,6 +70,16 @@ function start() {
   get('map-scale').textContent = `${area} km² of dry land · North is +Z · 1 unit = 1 metre`
   const known = new Set<string>(['ferry'])
   const keys = new Set<string>()
+  const shared = readSaltwindView(new URLSearchParams(location.search))
+  const resume = get<HTMLButtonElement>('resume-preview')
+  let frozen = Boolean(shared), speed = shared?.speed ?? 0, inspectedSite = ''
+  let fixedEye = shared?.eye
+  function resumePreview() {
+    fixedEye = undefined
+    frozen = false
+    resume.hidden = true
+  }
+  resume.addEventListener('click', resumePreview)
   const point = placeWalker(arrival)
   let yaw = 0, orbit = 0, pitch = .48, arm = 12, cycle = 0, sceneTime = 0, lastDraw = -1
   let broad = false, stop = 0, playing = false, leg = 0, progress = 0, drag: PointerEvent | undefined
@@ -91,6 +102,7 @@ function start() {
   select.value = 'ferry'
 
   function syncTour() {
+    inspectedSite = ''
     place.textContent = tour[stop].name
     direction.textContent = playing ? `Following the road to ${tour[stop + 1].name}. Walk at any time to take over.` : tour[stop].detail
     stage.textContent = playing ? 'Guided tour' : 'Development preview'
@@ -117,6 +129,7 @@ function start() {
   }
 
   function reset() {
+    resumePreview()
     setPoint(arrival, 0)
     arm = 12
     pitch = .48
@@ -157,6 +170,7 @@ function start() {
   get('inspect').addEventListener('click', () => {
     const landmark = landmarks.find(({ id }) => id === select.value)
     if (!landmark) return
+    resumePreview()
     const site = sites.find(({ id }) => id === landmark.id)
     const walk = villageWalks.find(({ name }) => name === landmark.id)
     const target = walk?.points.at(-1) ?? site?.access ?? landmark
@@ -170,13 +184,12 @@ function start() {
     pitch = .18
     stopTour()
     setOverview(false)
-    place.textContent = landmark.name
-    stage.textContent = 'Site inspection'
-    direction.textContent = site?.assets ?? 'Walk from the access point to survey the landmark.'
+    showSite(landmark.id)
     atlas.close()
     canvas.focus()
   })
   tourButton.addEventListener('click', () => {
+    resumePreview()
     if (playing) { stopTour(); return }
     if (stop === tour.length - 1) reset()
     playing = true
@@ -185,15 +198,16 @@ function start() {
     canvas.focus()
   })
   window.addEventListener('keydown', (event) => {
-    if (atlas.open || event.ctrlKey || event.metaKey || event.altKey || event.target instanceof HTMLSelectElement) return
+    if (atlas.open || event.ctrlKey || event.metaKey || event.altKey || event.target instanceof HTMLSelectElement || event.target instanceof HTMLInputElement) return
     const key = event.key.toLowerCase()
     if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'].includes(key)) {
       event.preventDefault()
+      resumePreview()
       keys.add(key)
     }
     if (key === ' ' && (event.target === canvas || event.target === document.body)) {
       event.preventDefault()
-      if (!event.repeat) { stopTour(); jump = true }
+      if (!event.repeat) { resumePreview(); stopTour(); jump = true }
     }
     if (key === 'c' && !event.repeat) setOverview(!broad)
     if (key === 'm' && !event.repeat) openMap()
@@ -207,6 +221,7 @@ function start() {
   })
   canvas.addEventListener('pointermove', (event) => {
     if (!drag || drag.pointerId !== event.pointerId || broad) return
+    fixedEye = undefined
     orbit -= (event.clientX - drag.clientX) * .005
     pitch = Math.max(.08, Math.min(1.22, pitch + (event.clientY - drag.clientY) * .004))
     drag = event
@@ -214,6 +229,7 @@ function start() {
   canvas.addEventListener('lostpointercapture', () => { drag = undefined })
   canvas.addEventListener('wheel', (event) => {
     event.preventDefault()
+    fixedEye = undefined
     arm = Math.max(3.4, Math.min(38, arm + event.deltaY * .018))
   }, { passive: false })
 
@@ -258,6 +274,11 @@ function start() {
     const distance = playing ? 30 : arm, angle = playing ? .58 : pitch
     const trailing = Math.cos(angle) * distance
     subject.set(point.x, point.y + (playing ? 3.7 : 1.6), point.z)
+    if (fixedEye) {
+      follow.position.copyFromFloats(fixedEye[0], fixedEye[1], fixedEye[2])
+      follow.setTarget(subject)
+      return
+    }
     const x = point.x - Math.sin(orbit) * trailing, z = point.z - Math.cos(orbit) * trailing
     const y = Math.max(point.y + 1.3 + Math.sin(angle) * distance, groundHeight(x, z) + 1.5)
     cameraGoal.set(x, y, z)
@@ -306,20 +327,57 @@ function start() {
   resize()
   setOverview(false)
   syncTour()
+  function showSite(id: string) {
+    const landmark = landmarks.find(pin => pin.id === id)
+    if (!landmark) return
+    inspectedSite = id
+    if (![...select.options].some(option => option.value === id)) select.add(new Option(landmark.name, id))
+    known.add(id)
+    select.value = id
+    place.textContent = landmark.name
+    stage.textContent = 'Site inspection'
+    direction.textContent = sites.find(site => site.id === id)?.assets ?? 'Walk from the access point to survey the landmark.'
+  }
+  if (shared) {
+    Object.assign(point, shared.point)
+    yaw = shared.yaw
+    orbit = shared.orbit
+    pitch = shared.pitch
+    arm = shared.arm
+    cycle = shared.cycle
+    sceneTime = shared.time
+    climate.value = shared.weather
+    stop = Math.min(shared.tour.stop, tour.length - 1)
+    const segment = tour[stop + 1]?.legs[shared.tour.leg]
+    if (segment) {
+      leg = shared.tour.leg
+      progress = Math.min(shared.tour.progress, Math.abs(segment.to - segment.from))
+      playing = shared.tour.playing
+    }
+    syncTour()
+    updateCamera(1)
+    setOverview(shared.overview)
+    showSite(shared.site)
+    resume.hidden = false
+  }
+  bindPlaytestCopy(() => saltwindLink(location.href, { point, yaw, orbit, pitch, arm, cycle, speed, time: sceneTime,
+    eye: follow.position.asArray(), tour: { stop, leg, progress, playing }, weather: climate.value, overview: broad, site: inspectedSite }))
   updateCamera(1)
   engine.runRenderLoop(() => {
     const dt = Math.min(.065, engine.getDeltaTime() / 1000)
-    sceneTime += dt
-    const walking = atlas.open ? 0 : walk(dt)
-    if (playing) advance(dt)
-    cycle += dt * walking / 2.8
+    const simulationDelta = frozen ? 0 : dt
+    sceneTime += simulationDelta
+    if (!frozen) speed = atlas.open ? 0 : walk(dt)
+    const walking = speed
+    if (playing && !frozen) advance(dt)
+    cycle += simulationDelta * walking / 2.8
     crew.root.setEnabled(!broad && !playing)
     crew.root.position.set(point.x, point.y + (point.swimming ? .036 * Math.sin(sceneTime * Math.PI * 1.25) : .02), point.z)
     crew.root.rotation.x = 0
     crew.root.rotation.y = yaw
     crew.blink(sceneTime)
     if (point.swimming) poseSwimming(crew, sceneTime, Math.min(1, walking / 3.8))
-    else poseCrew(crew, cycle, walking ? Math.min(.85, walking * .1) : 0, !point.grounded, undefined, 0, Math.min(1, dt * 10))
+    else poseCrew(crew, cycle, walking ? Math.min(.85, walking * .1) : 0, !point.grounded, undefined, 0, frozen ? 1 : Math.min(1, dt * 10))
     for (const pin of landmarks) if (!known.has(pin.id) && Math.hypot(point.x - pin.x, point.z - pin.z) <= pin.radius) {
       known.add(pin.id)
       if (pin.discoverable) select.add(new Option(pin.name, pin.id))
@@ -329,7 +387,7 @@ function start() {
     const weather = surveyWeather[climate.value] ?? weatherAt(sceneTime + 100)
     const light = atmosphere.update(sceneTime, weather, camera.position, !broad, 7)
     const threats = point.y < waterHeight(point.x, point.z) - .04 ? [point] : []
-    updateScenery({ time: sceneTime, delta: dt, weather, camera: camera.position, threats }, broad)
+    updateScenery({ time: sceneTime, delta: simulationDelta, weather, camera: camera.position, threats }, broad)
     updateWater(sceneTime, light)
     scene.render()
     updateLabels()

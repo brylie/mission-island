@@ -127,12 +127,12 @@ export const entries: Entry[] = [
     ],
     create(meshes) {
       const world = createIslandWorld(meshes)
-      return ({ time, delta, camera, light, rain }, settings) => {
+      return ({ time, delta, rate, camera, light, rain }, settings) => {
         world.northernScenery.update(camera, true)
         poseFloating(world.boat, time)
         world.buoys.forEach((buoy, index) => poseFloating(buoy, time, index * 1.67))
         const weather = { hour: Number(settings.hour), rain }
-        const frame = { time, delta, weather, camera, threats: [] }
+        const frame = { time, delta: delta * rate, weather, camera, threats: [] }
         world.wildlife(frame)
         world.phenomena(frame)
         world.lights(camera, nightLighting(Number(settings.hour)))

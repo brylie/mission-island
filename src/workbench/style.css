@@ -193,3 +193,6 @@ input[type="color"] { width: 34px; height: 25px; padding: 2px; background: #2636
   .workspace { height: 65dvh; min-height: 420px; }
   .inspector { padding-top: 16px; }
 }
+
+#copy-status:not(:empty) { display: block; margin-top: .35rem; font-size: .78rem; }
+#playtest-url { width: 100%; margin-top: .35rem; }

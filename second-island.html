@@ -28,6 +28,10 @@
           <button id="tour" class="primary" type="button">Start tour</button>
           <button id="reset" type="button">Return to ferry</button>
         </div>
+        <button type="button" id="copy-playtest">Copy playtest link</button>
+          <span id="copy-status" role="status"></span>
+          <input id="playtest-url" type="url" readonly hidden aria-label="Playtest link" />
+        <button type="button" id="resume-preview" hidden>Resume playtest</button>
         <div class="stops" id="stops" aria-label="Tour stops"></div>
       </section>
       <button class="chart" id="mini-button" type="button" aria-label="Open the Saltwind site map" hidden>

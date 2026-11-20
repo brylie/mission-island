@@ -6,6 +6,7 @@ import type { Viewport } from '@babylonjs/core/Maths/math.viewport'
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { Scene } from '@babylonjs/core/scene'
 import { createAtmosphere } from './island-atmosphere'
+import { landscapeLink } from './playtest-link'
 import { inSkiff } from './actions'
 import { castTravelSeconds } from './charged-actions'
 import { farm, market } from './farm'
@@ -363,6 +364,12 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       last = snapshot
       viewer = id
       follow = trackPlayer
+    },
+    playtestLink() {
+      const camera = islandCamera.inspectionCamera()
+      if (!camera || !last) return
+      return landscapeLink(location.href, { focus: [camera.target[0], camera.target[2]], camera, ...last.weather,
+        time: time % 84, grid: false, wireframe: false })
     },
     walkInput: (x: number, z: number) => islandCamera.walkInput(x, z),
     aimHeading: islandCamera.aimHeading,

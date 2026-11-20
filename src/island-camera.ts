@@ -210,6 +210,13 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       scene.fogEnd = 155
       return follow
     },
+    inspectionCamera() {
+      if (!tracking) return
+      const offset = follow.position.subtract(target)
+      const radius = offset.length()
+      return { target: target.asArray(), alpha: Math.atan2(offset.z, offset.x), beta: Math.acos(offset.y / radius),
+        radius, fov: follow.fov }
+    },
     walkInput(x: number, z: number) {
       if (!tracking || wasSeated || (!x && !z)) return { x, z }
       const yaw = aimHeading()

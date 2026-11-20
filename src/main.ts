@@ -13,6 +13,7 @@ import type { ClientMessage, FishingResult, Input, Player, ServerMessage, Snapsh
 import { footpaths, road, walkways } from './routes'
 import { northernRegions, starterDiscoveries } from './scenery'
 import { createRenderer } from './scene'
+import { bindPlaytestCopy } from './playtest-link'
 import { isNight } from './weather'
 import { crewHomes, distance, harbor, lookout } from './world'
 
@@ -573,6 +574,7 @@ function toggleOptions() {
   const player = live ? snapshot?.players.find((entry) => entry.id === id) : undefined
   editingName = player && { id: player.id, token, name: player.name }
   crewName.value = editingName?.name ?? ''
+  element('playtest-tools').hidden = !renderer?.playtestLink()
   optionsDialog.showModal()
 }
 
@@ -686,6 +688,7 @@ cameraButton.addEventListener('click', () => {
   toggleCamera()
   cameraButton.blur()
 })
+bindPlaytestCopy(() => renderer?.playtestLink())
 optionsButton.addEventListener('click', toggleOptions)
 editCrewName.addEventListener('click', () => {
   if (!optionsDialog.open) toggleOptions()

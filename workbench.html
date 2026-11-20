@@ -68,6 +68,11 @@
             <label><input id="turntable" type="checkbox" /> Turntable</label>
           </div>
         </section>
+        <section id="playtest-tools" hidden>
+          <button type="button" id="copy-playtest">Copy playtest link</button>
+          <span id="copy-status" role="status"></span>
+          <input id="playtest-url" type="url" readonly hidden aria-label="Playtest link" />
+        </section>
         <section id="asset-inspector" hidden>
           <div class="section-heading"><h2>Asset settings</h2><button type="button" id="reset" class="reset">Reset</button></div>
           <div id="asset-controls"></div>
