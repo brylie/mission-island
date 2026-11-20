@@ -179,3 +179,16 @@ test('hares and foxes cross low props and take detours around taller or lengthwi
     }
   }
 })
+
+test('coastal populations are bounded, shareable, and optional in older recipe files', () => {
+  const coastal = presets['Coastal meadow']
+  assert.deepEqual(recipeFromLink(new URL(biomeLink('http://localhost', coastal)).searchParams), coastal)
+  const edited = readRecipe({ ...coastal, foxgloves: 200, oystercatchers: -3 })
+  assert.equal(edited.foxgloves, 32)
+  assert.equal(edited.oystercatchers, 0)
+  const legacy = { ...meadow }
+  delete legacy.foxgloves
+  delete legacy.oystercatchers
+  assert.deepEqual(parseRecipeFile(JSON.stringify({ version: 1, recipe: legacy })), meadow)
+  assert.throws(() => parseRecipeFile(JSON.stringify({ version: 1, recipe: { ...legacy, oystercatchers: '5' } })))
+})

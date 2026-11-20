@@ -31,5 +31,5 @@ export function createFoxglove(meshes: MeshFactory, seed: number) {
     bell.rotation.x = .16 - .63 * t
     bell.scaling.scaleInPlace(1.44 - 1.05 * t)
   }
-  return (time: number) => { stem.rotation.z = .026 * Math.sin(time * 1.6 + turn) }
+  return { root, sway(time: number) { stem.rotation.z = .026 * Math.sin(time * 1.6 + turn) } }
 }

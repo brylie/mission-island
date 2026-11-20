@@ -10,8 +10,8 @@ export const coastalModelStudies: Entry[] = [
     description: 'Study the leaf rosette and the taper from open bells to buds. Change the specimen to compare its habit.',
     controls: [range('seed', 'Specimen', 7, 1, 25, 1, true)],
     create(meshes, values) {
-      const sway = createFoxglove(meshes, Number(values.seed))
-      return ({ time }) => sway(time)
+      const plant = createFoxglove(meshes, Number(values.seed))
+      return ({ time }) => plant.sway(time)
     },
   },
   {
@@ -19,7 +19,7 @@ export const coastalModelStudies: Entry[] = [
     description: 'Compare the dark hood, pale belly and chisel bill. Scrub the timeline to follow a shore probe.',
     controls: [{ type: 'checkbox', key: 'feeding', label: 'Probe for food', value: true }],
     create(meshes) {
-      const pose = createOystercatcher(meshes)
+      const { pose } = createOystercatcher(meshes)
       return ({ time }, values) => pose(time, Boolean(values.feeding))
     },
   },

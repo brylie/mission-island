@@ -57,6 +57,16 @@ The cargo trial steps the actual Cannon simulation at the server’s fixed rate.
 
 Further work can add named plant species backed by shared generators, production villager schedules and friendship once those systems exist, collision updates for edited scenery, and a versioned catalog of approved material and building recipes. Each can use the existing subject, field site and setup-link conventions.
 
+## Walk the coastal meadow
+
+Open **Ecology → Biome Composer**, select **Coastal meadow** and choose **Apply**. The crew member starts at the edge of a 16 m clearing with 12 foxgloves and five oystercatchers. Click or Tab to the viewport and hold **W/A/S/D** to walk relative to the camera. Drag to orbit and scroll to change distance. Clear **Walk the clearing** to return to the overview.
+
+Move toward the birds and watch the wary count rise as they stop probing and walk away. Change **Foxglove stems** (0–32) and **Oystercatchers** (0–12) separately. The seed keeps plant and bird starting locations comparable across counts. A population edit rebuilds the habitat and keeps the walker's position. **Copy recipe link** and **Export JSON** include both counts.
+
+![Third-person walk between foxglove patches with oystercatchers ahead and the live frame-time readout.](images/coastal-meadow-walk.jpg)
+
+For a laptop performance check, hold the same view for a few seconds each at 0/0, 12/5 and 32/12. **Field observations** shows the observed frame rate, milliseconds per frame and active meshes. Record the viewport size and browser with the readings. Repeat while walking through the densest patch to check for stutter during movement.
+
 ## Fish schooling trial
 
 In **Ecology → Biome Composer**, choose **Open fish schooling trial**. Six fish cruise in an isolated pool. Watch the default crossing, then choose **Wading player** or **Paddled skiff** and replay the same seed. A click on the water redirects the actor. With the canvas focused, tap **W/A/S/D** to direct it two metres relative to the current view. Press **Space** to pause or resume.

@@ -1,6 +1,8 @@
 import type { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { createCrewHair } from './crew-hair'
+import { coastalProfile } from './coastal-profiles'
 import type { MeshFactory } from '../island-meshes'
 import { defaultAppearance, skinTones, uniforms } from '../crew-appearance'
 import type { CrewAppearance } from '../crew-appearance'
@@ -10,7 +12,8 @@ const cream = '#fff3d0'
 export const playerColors = [uniforms.amber.color, uniforms.blue.color]
 export const skiffCrewSeats = [new Vector3(-0.44, -0.39, 0.25), new Vector3(0.44, -0.39, 0.25)]
 
-export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
+export function createCrew(meshes: MeshFactory, id: number) {
+  const { scene, sphere, box, paint } = meshes
   const root = new TransformNode(`Crew ${id + 1}`, scene)
   const arms: TransformNode[] = []
   const legs: TransformNode[] = []
@@ -18,38 +21,82 @@ export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
   const accents: Mesh[] = []
   const skin: Mesh[] = []
   const eyes: { mesh: Mesh; height: number }[] = []
+  // Stacked cross-sections keep hems and soles level while giving the cheeks, jacket and boots soft edges.
+  function upright(parent: TransformNode, name: string, color: string,
+    sections: [height: number, backOffset: number, halfWidth: number, halfDepth: number][], sides = 12) {
+    const mesh = coastalProfile(meshes, parent, name, color, sections, sides, .73)
+    mesh.rotation.x = -Math.PI / 2
+    return mesh
+  }
   for (const side of [-1, 1]) {
     const leg = new TransformNode('Hip', scene)
     leg.parent = root
-    leg.position.set(side * 0.19, 0.68, 0.02)
-    sphere(0, -0.27, 0, 0.31, 0.66, 0.32, '#36595e', leg, true, 12)
-    sphere(0, -0.54, 0.10, 0.36, 0.28, 0.56, '#294343', leg, true, 12)
+    leg.position.set(side * .18, .68, .02)
+    upright(leg, 'Twill trousers', '#374f5d', [
+      [-.46, 0, .127, .137], [-.39, 0, .141, .143], [-.19, .008, .149, .157], [.065, .018, .155, .155],
+    ])
+    upright(leg, 'Turned trouser hem', '#526673', [[-.463, 0, .134, .147], [-.399, 0, .146, .152]])
+    upright(leg, 'Leather boot', '#654c3b', [
+      [-.638, -.065, .143, .219], [-.594, -.068, .149, .222], [-.548, -.060, .145, .208],
+      [-.505, -.009, .123, .145], [-.411, .006, .116, .125],
+    ])
+    upright(leg, 'Deck sole', '#453f37', [[-.679, -.066, .142, .215], [-.642, -.066, .149, .222]])
     legs.push(leg)
     const arm = new TransformNode('Shoulder', scene)
     arm.parent = root
-    arm.position.set(side * 0.36, 1.19, 0.03)
-    const sleeve = sphere(side * 0.075, -0.22, 0, 0.27, 0.58, 0.28, cream, arm, true, 12)
-    sleeve.rotation.z = side * 0.18
+    arm.position.set(side * .36, 1.19, .03)
+    const sleevePivot = new TransformNode('Sleeve seam', scene)
+    sleevePivot.parent = arm
+    sleevePivot.rotation.z = side * .20
+    sleevePivot.position.x = side * .017
+    const sleeve = upright(sleevePivot, 'Cut sleeve', cream, [
+      [-.399, 0, .102, .108], [-.22, 0, .108, .122], [-.064, .004, .136, .143], [.012, .014, .106, .110], [.044, .014, .052, .063],
+    ])
     fabric.push(sleeve)
-    accents.push(sphere(side * 0.11, -0.44, 0, 0.225, 0.11, 0.24, cream, arm))
-    skin.push(sphere(side * 0.12, -0.53, 0.017, 0.205, 0.24, 0.22, cream, arm, true, 10))
+    const cuff = upright(sleevePivot, 'Turned sleeve cuff', cream, [[-.434, 0, .108, .12], [-.363, 0, .114, .127]])
+    accents.push(cuff)
+    skin.push(sphere(side * .115, -.499, .018, .158, .211, .175, cream, arm, true, 8))
+    skin.push(sphere(side * .057, -.503, .070, .077, .101, .081, cream, arm, true, 6))
     arms.push(arm)
   }
-  fabric.push(sphere(0, 0.98, 0, 0.82, 0.79, 0.59, cream, root, true, 16))
-  accents.push(sphere(0, 1.23, 0.167, 0.38, 0.12, 0.31, cream, root))
-  accents.push(sphere(-0.163, 1.107, 0.245, 0.16, 0.138, 0.082, cream, root))
-
-  skin.push(sphere(0, 1.46, 0.046, 0.56, 0.56, 0.55, cream, root, true, 18))
-  skin.push(sphere(0, 1.455, 0.303, 0.13, 0.112, 0.12, cream, root, false, 10))
+  fabric.push(upright(root, 'Canvas chore shirt', cream, [
+    [.65, .015, .301, .207], [.682, .015, .331, .228], [.87, .011, .327, .216],
+    [1.09, 0, .348, .213], [1.185, .005, .355, .194], [1.252, .002, .204, .146],
+  ], 16))
+  fabric.push(upright(root, 'Shirt collar band', cream, [[1.231, 0, .169, .137], [1.278, 0, .148, .131]]))
   for (const side of [-1, 1]) {
-    skin.push(sphere(side * 0.264, 1.46, 0.066, 0.12, 0.17, 0.1, cream, root))
-    const white = sphere(side * 0.105, 1.511, 0.296, 0.093, 0.11, 0.048, '#fff4e2', root, false, 10)
-    const pupil = sphere(side * 0.105, 1.507, 0.319, 0.049, 0.065, 0.027, '#3c3931', root, false, 10)
-    eyes.push({ mesh: white, height: white.scaling.y }, { mesh: pupil, height: pupil.scaling.y })
+    const collar = box(side * .073, 1.205, .152, .112, .105, .046, cream, root)
+    collar.rotation.z = -side * .44
+    accents.push(collar)
   }
-  sphere(0, 1.366, 0.296, 0.135, 0.025, 0.033, '#754d43', root, false, 10)
-  const cap = sphere(0, 1.712, 0.016, 0.61, 0.31, 0.6, cream, root, true, 16)
-  const brim = sphere(0, 1.654, 0.185, 0.615, 0.068, 0.53, cream, root, true, 16)
+  fabric.push(box(-.164, 1.043, .201, .120, .113, .035, cream, root))
+  accents.push(box(-.164, 1.098, .212, .132, .026, .035, cream, root))
+  for (const y of [.82, .945, 1.067]) accents.push(sphere(.009, y, .215, .033, .033, .017, cream, root, false, 4))
+  skin.push(upright(root, 'Neck', cream, [[1.225, -.012, .129, .113], [1.348, -.012, .124, .125]]))
+  skin.push(upright(root, 'Cheeks and chin', cream, [
+    [1.296, -.073, .126, .138], [1.327, -.059, .186, .168], [1.417, -.040, .229, .19],
+    [1.515, -.030, .245, .196], [1.621, -.019, .246, .199], [1.696, -.005, .218, .181], [1.739, 0, .153, .139],
+  ], 20))
+  skin.push(coastalProfile(meshes, root, 'Wedge nose', cream, [
+    [.205, 1.49, .029, .061], [.246, 1.47, .045, .040], [.274, 1.456, .031, .022],
+  ]))
+  const hair = '#493932'
+  for (const side of [-1, 1]) {
+    skin.push(sphere(side * .235, 1.469, .012, .085, .132, .099, cream, root, true, 8))
+    const white = sphere(side * .095, 1.527, .216, .087, .068, .032, '#fff3df', root, false, 8)
+    const pupil = sphere(side * .093, 1.526, .233, .049, .055, .016, '#49372f', root, false, 8)
+    const brow = sphere(side * .095, 1.587, .216, .098, .024, .025, hair, root, false, 6)
+    brow.rotation.z = side * .07
+    eyes.push({ mesh: white, height: white.scaling.y }, { mesh: pupil, height: pupil.scaling.y })
+    const cheekSmile = sphere(side * .032, 1.385, .235, .072, .015, .019, '#865548', root, false, 6)
+    cheekSmile.rotation.z = side * .14
+  }
+  const fitHair = createCrewHair(meshes, root)
+  fitHair(true)
+  const cap = upright(root, 'Canvas cap', cream, [
+    [1.636, .007, .255, .222], [1.668, .007, .27, .233], [1.757, .018, .239, .208], [1.814, .020, .132, .12],
+  ], 16)
+  const brim = sphere(0, 1.65, .189, .463, .039, .302, cream, root, true, 10)
   fabric.push(cap)
   accents.push(brim)
 
@@ -72,7 +119,7 @@ export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
     for (const { mesh, height } of eyes) mesh.scaling.y = height * openness
   }
   setAppearance()
-  return { root, arms, legs, setAppearance, blink, setCap(visible: boolean) { cap.setEnabled(visible); brim.setEnabled(visible) } }
+  return { root, arms, legs, setAppearance, blink, setCap(visible: boolean) { cap.setEnabled(visible); brim.setEnabled(visible); fitHair(visible) } }
 }
 
 export function poseCrew(crew: ReturnType<typeof createCrew>, cycle: number, stride: number, airborne: boolean,

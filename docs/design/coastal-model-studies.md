@@ -36,4 +36,4 @@ These are Workbench counts before island batching. Repeating every bell, cork or
 4. Save a close view and a measured play-distance view in the same lighting. Record mesh and triangle counts. Orbit behind and below the asset to inspect normals and joints. Run **Check z-fighting**, investigate the reported pairs, then review in motion.
 5. Before placing it on an island, test it with its neighbors. Put the plant in a patch, the bird at a waterline, the shed beside a crew member and a path, or the tug next to a crate. Check scale, visibility, collisions and performance in that context.
 
-This pass establishes a repeatable level of detail for isolated models. Island placement, a population performance test, wildlife navigation and driveable tug handling are separate integration work.
+The [Coastal meadow Composer preset](../workbench.md#walk-the-coastal-meadow) now puts these flowers and birds together around the playable crew. Compare population costs there before choosing island densities. Island placement and driveable tug handling are separate integration work.
