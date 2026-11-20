@@ -97,7 +97,7 @@ Choose a workspace or search across the entire catalog. For supported subjects, 
 - Check each prop variant, compare road and trail widths, and inspect the same geometry used in the game. Use the Texture gallery to compare surface presets and noise families. The material panels use physical descriptions such as grain spacing, chip relief, pitting, or oxidation. The water preview animates on the timeline, and the shader drafts have a separate preview.
 - Edit a shared asset or shader file while its preview is open. Vite refreshes the scene and keeps the selected asset, camera, and controls. The inspector shows the relevant source file.
 
-Shared model factories live in `src/island-assets.ts`. Add or extend a preview in `src/workbench/catalog.ts`. The shader drafts live in `src/workbench/surface.frag.glsl` and `src/workbench/surface.vert.glsl`. The workbench is available from the development server.
+Shared model factories live in `src/assets/`. Add or extend a preview in the matching `src/workbench/` study module. The shader drafts live in `src/workbench/surface.frag.glsl` and `src/workbench/surface.vert.glsl`. The workbench is available from the development server.
 
 The [Landscape Workbench](http://localhost:5173/workbench.html#landscape) loads the real island scenery. **Scenic view** frames Pinewoods at sunrise, the harbor at sunset, or Fernfall and pauses the timeline for repeatable comparisons. Open [Pinewoods sunrise](http://localhost:5173/workbench.html?view=pinewoods-sunrise#landscape) directly, then toggle **Volumetric sunlight** or adjust **Sun shaft intensity** to compare the lighting in place. The game uses the 100% setting.
 
@@ -149,12 +149,14 @@ Babylon.js draws the island and vehicle exteriors. Vite serves the game and its 
 - `src/routes.ts` defines road, walkway, and trail centerlines used to draw the terrain and minimap.
 - `src/protocol.ts` defines what clients and the host exchange.
 - `src/actions.ts` shares proximity rules between the game and its prompts.
-- `server/game.ts` owns movement, seats, equipment and mission progress.
-- `server/cargo.ts` simulates crate gravity and collisions with the terrain and moving flatbed.
+- `server/game.ts` sequences the simulation and routes commands to the owning feature. `server/multiplayer.ts` wires it to Vite, WebSockets and saves.
+- `src/simulation/cargo.ts` simulates crate gravity and collisions with the terrain and moving flatbed.
 - `server/skiff.ts` applies paddling, steering, shoreline clearance, and disembarkation.
 - `src/scene.ts` builds the exterior models and camera.
 
 Babylon.js keeps the main development workflow in Vite. Bevy also runs in a browser, with Rust gameplay changes going through a WebAssembly build. See the [Babylon.js Vite guide](https://doc.babylonjs.com/guidedLearning/usingVite/) and [Bevy's WebAssembly examples](https://github.com/bevyengine/bevy/blob/main/examples/README.md#wasm).
+
+See the [architecture guide](docs/architecture.md) for dependency boundaries and where to add features, assets, or world content.
 
 ## Future vehicles and missions
 

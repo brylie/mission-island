@@ -1,8 +1,9 @@
 import { Quaternion } from '@babylonjs/core/Maths/math.vector'
-import { createCargoPhysics } from '../../server/cargo'
-import { castPoint, catchChance, stepFight } from '../../server/fishing'
+import { createCargoPhysics } from '../simulation/cargo'
+import { castPoint, catchChance, stepFight } from '../simulation/fishing'
 import { castTravelSeconds, biteSeconds } from '../charged-actions'
-import { createFlatbed, createSupply } from '../island-assets'
+import { createFlatbed } from '../assets/flatbed'
+import { createSupply } from '../assets/props'
 import type { Item } from '../protocol'
 import { groundHeight, waterLevel } from '../terrain'
 import { crateSize, dockEndZ, harborDock, truckStart } from '../world'
@@ -14,7 +15,7 @@ const hz = 30
 
 export const mechanicStudies: Entry[] = [
   {
-    id: 'cast-trial', name: 'Fishing cast & reel', group: 'Fishing', source: 'server/fishing.ts', duration: 27,
+    id: 'cast-trial', name: 'Fishing cast & reel', group: 'Fishing', source: 'src/simulation/fishing.ts', duration: 27,
     description: 'Compare cast strength and reeling strategies from the end of the harbor dock. Each trial includes a bite.',
     fieldSite: () => ({ name: 'Harbor dock', offset: { ...dock, y: waterLevel } }),
     readout: 'Fishing trial', controls: [
@@ -46,7 +47,7 @@ export const mechanicStudies: Entry[] = [
     },
   },
   {
-    id: 'cargo-trial', name: 'Throw into flatbed', group: 'Physics', source: 'server/cargo.ts', duration: 3,
+    id: 'cargo-trial', name: 'Throw into flatbed', group: 'Physics', source: 'src/simulation/cargo.ts', duration: 3,
     description: 'Replay a crate throw against the parked truck using the multiplayer cargo physics.',
     fieldSite: () => ({ name: 'Harbor Depot', offset: { ...truckStart, y: 0 } }), readout: 'Cargo trial',
     controls: [{ key: 'power', type: 'range', label: 'Throw strength (%)', min: 0, max: 100, step: 5, value: 55, rebuild: true }],

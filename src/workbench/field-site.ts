@@ -1,5 +1,5 @@
 import type { Point } from '../world'
-import type { SiteFeature } from '../site-props'
+import type { SiteFeature } from '../worlds/site-feature'
 
 // Offset from the isolated subject's authored coordinates into the live island scene.
 export interface FieldSite {

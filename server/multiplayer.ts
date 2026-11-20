@@ -1,0 +1,89 @@
+import type { IncomingMessage } from 'node:http'
+import type { Duplex } from 'node:stream'
+import type { Plugin, ViteDevServer } from 'vite'
+import { WebSocketServer } from 'ws'
+import type { WebSocket } from 'ws'
+import { createGame, tickSeconds } from './game.ts'
+import { islandSaveFile } from './save.ts'
+import { createSocketSessions } from './socket-sessions.ts'
+
+function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middlewares: ViteDevServer['middlewares'], root: string, port: number) {
+  const archive = islandSaveFile(root, port, process.env.MISSION_ISLAND_SAVE)
+  let saveFailed = false
+  function checkpoint() {
+    if (!archive) return
+    try {
+      archive.write(game.snapshotForSave())
+      saveFailed = false
+    } catch (error) {
+      if (!saveFailed) console.error('Could not save Mission Island:', error)
+      saveFailed = true
+    }
+  }
+  const game = createGame({ save: archive?.load(), checkpoint })
+  // Saltwind's survey can read the same bank without reserving a Starter Island crew slot.
+  middlewares.use('/api/crew-bank', (request, response) => {
+    response.setHeader('Cache-Control', 'no-store')
+    if (request.method !== 'GET') {
+      response.writeHead(405, { Allow: 'GET' }).end()
+      return
+    }
+    response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ crewCoins: game.crewCoins }))
+  })
+  const sessions = createSocketSessions(game)
+  const sockets = new WebSocketServer({ noServer: true, maxPayload: 256 })
+  const live = new Set<WebSocket>()
+  const timer = setInterval(sessions.tick, tickSeconds * 1000)
+  const saving = archive && setInterval(checkpoint, 2000)
+  const heartbeat = setInterval(() => {
+    for (const socket of sockets.clients) {
+      if (!live.delete(socket)) socket.terminate()
+      else socket.ping()
+    }
+  }, 10_000)
+  sockets.on('connection', (socket) => {
+    live.add(socket)
+    socket.on('pong', () => live.add(socket))
+    socket.on('close', () => live.delete(socket))
+    sessions.connect(socket)
+  })
+  server.on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
+    if (request.url !== '/play') return
+    const origin = request.headers.origin
+    if (origin !== undefined && origin !== `http://${request.headers.host}` &&
+      origin !== `https://${request.headers.host}`) {
+      socket.destroy()
+      return
+    }
+    sockets.handleUpgrade(request, socket, head, (ws) => sockets.emit('connection', ws))
+  })
+  server.on('close', () => {
+    clearInterval(timer)
+    clearInterval(heartbeat)
+    clearInterval(saving)
+    checkpoint()
+    for (const socket of sockets.clients) socket.terminate()
+    sockets.close()
+  })
+}
+
+function serveLanInvites(server: Pick<ViteDevServer, 'middlewares' | 'resolvedUrls'>) {
+  server.middlewares.use('/api/lan-invite', (_request, response) => {
+    response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+    response.end(JSON.stringify(server.resolvedUrls?.network ?? []))
+  })
+}
+
+export function multiplayer(): Plugin {
+  return {
+    name: 'mission-island-multiplayer',
+    configureServer(server) {
+      serveLanInvites(server)
+      if (server.httpServer) attachGame(server.httpServer, server.middlewares, server.config.root, server.config.server.port ?? 5173)
+    },
+    configurePreviewServer(server) {
+      serveLanInvites(server)
+      attachGame(server.httpServer, server.middlewares, server.config.root, server.config.preview.port ?? 5173)
+    },
+  }
+}

@@ -1,9 +1,9 @@
 import { habitatNavigation } from './biome-navigation'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import { createTree, createRock } from './island-assets'
+import { createTree, createRock } from './assets/props'
 import { createHare } from './hare'
 import type { MeshFactory } from './island-meshes'
-import { placeSiteFeatures } from './site-props'
+import { placeSiteFeatures } from './assets/site-props'
 import { biomeFrame, type BiomeFrame, type populate } from './biome-model'
 import type { Point } from './world'
 

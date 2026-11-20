@@ -1,10 +1,10 @@
-import type { Input, Player } from '../src/protocol.ts'
-import { overlapsProp, propTop } from '../src/scenery.ts'
-import { groundHeight, maxWadeDepth, walkingHeight, waterLevel, withinSkiffBoundary } from '../src/terrain.ts'
-import { truckPoint, truckSurface } from '../src/truck-pose.ts'
-import type { TruckPose } from '../src/truck-pose.ts'
-import { buildings, chestSize, crewHomes, jumpGravity, localPoint, offset, onDock, truckBed, truckHood, truckRoof, truckSideRails, truckTailLip } from '../src/world.ts'
-import type { Point, Pose } from '../src/world.ts'
+import type { Input, Player } from '../protocol.ts'
+import { overlapsProp, propTop } from '../scenery.ts'
+import { groundHeight, maxWadeDepth, walkingHeight, waterLevel, withinSkiffBoundary } from '../terrain.ts'
+import { truckPoint, truckSurface } from '../truck-pose.ts'
+import type { TruckPose } from '../truck-pose.ts'
+import { buildings, chestSize, crewHomes, jumpGravity, localPoint, offset, onDock, truckBed, truckHood, truckRoof, truckSideRails, truckTailLip } from '../world.ts'
+import type { Point, Pose } from '../world.ts'
 
 function clearFixedWalls(point: Point, radius: number) {
   return buildings.every((building) =>

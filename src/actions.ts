@@ -6,7 +6,7 @@ import { isNight } from './weather.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, orderContribution } from './jobs.ts'
 import { atFisher, fisherName } from './harbor-fisher.ts'
 
-export function heldItem(state: Snapshot, player: Player) {
+export function heldItem(state: Pick<Snapshot, 'items'>, player: Player) {
   return state.items.find((item) => item.holder === player.id)
 }
 

@@ -1,5 +1,5 @@
-import { starterFeatures } from '../starter-sites.ts'
-import type { SiteFeature } from '../site-props'
+import { starterFeatures } from '../worlds/starter/sites.ts'
+import type { SiteFeature } from '../worlds/site-feature'
 import { readStorage, writeStorage } from '../browser-storage.ts'
 import type { Values } from './subject'
 

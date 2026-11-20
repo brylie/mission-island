@@ -1,7 +1,7 @@
 import './style.css'
 import { createVariationLibrary } from './variations'
 import { readSubjectLink, subjectLink } from './subject-link'
-import { starterFeatures } from '../starter-sites'
+import { starterFeatures } from '../worlds/starter/sites'
 import { editedFeature, readSiteDrafts, saveSiteDraft } from './site-drafts'
 import { workspaceOf } from './library'
 import { createLibraryPanel } from './library-panel'
