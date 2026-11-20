@@ -13,6 +13,7 @@ import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { readStorage, writeStorage } from '../browser-storage'
 import { entries as initialEntries } from './catalog'
 import type { Control, Values } from './subject'
+import type { FieldSite } from './field-site'
 import { createStage } from './stage'
 import type { Angle, CameraState } from './stage'
 import { landscapeViews } from './landscape-views'
@@ -275,15 +276,25 @@ function refreshActions() {
   }
 }
 
+function fieldSite() {
+  return onIsland ? asset.fieldSite?.(values) : undefined
+}
+
+function cameraAtSameSite(previous?: FieldSite) {
+  const next = fieldSite()
+  if (previous?.offset.x === next?.offset.x && previous?.offset.y === next?.offset.y && previous?.offset.z === next?.offset.z) {
+    return stage?.getCamera()
+  }
+}
+
 function setOption(control: Control, value: Values[string], save = true) {
-  const oldSite = onIsland ? asset.fieldSite?.(values) : undefined
+  const oldSite = fieldSite()
   values[control.key] = value
   if (asset.actions) refreshActions()
   zFightingResult.replaceChildren()
   seek = true
   if (control.rebuild) {
-    const nextSite = onIsland ? asset.fieldSite?.(values) : undefined
-    rebuild(oldSite?.offset.x === nextSite?.offset.x && oldSite?.offset.z === nextSite?.offset.z ? stage?.getCamera() : undefined)
+    rebuild(cameraAtSameSite(oldSite))
     showFieldSwitch()
   }
   if (save) remember()
@@ -315,7 +326,7 @@ function rebuild(camera?: CameraState) {
   checkZFighting.disabled = true
   reportError('')
   try {
-    stage = createPreviewStage(engine, canvas, asset, values, reportError, draft, onIsland ? asset.fieldSite?.(values) : undefined)
+    stage = createPreviewStage(engine, canvas, asset, values, reportError, draft, fieldSite())
     checkZFighting.disabled = false
     if (camera) stage.setCamera(camera)
     applyDisplay()
@@ -592,11 +603,13 @@ for (const button of document.querySelectorAll<HTMLButtonElement>('[data-angle]'
   })
 }
 element('reset').addEventListener('click', () => {
+  const oldSite = fieldSite()
   const clockStart = values.clockStart
   values = restoreOptions(asset.controls)
   if (asset.landscape && typeof clockStart === 'number') values.clockStart = clockStart
   optionsByAsset[asset.id] = values
-  rebuild(asset.landscape ? undefined : stage?.getCamera())
+  rebuild(asset.landscape ? undefined : cameraAtSameSite(oldSite))
+  showFieldSwitch()
   renderAssetControls()
   remember()
 })

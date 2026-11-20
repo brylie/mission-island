@@ -4,6 +4,7 @@ import { walkingHeight } from '../terrain'
 import type { Entry, Values } from './subject'
 
 const job = jobs['market-fish']
+const maxApproachDistance = 4
 const counter = { x: 40.5, z: 6.8 }
 const withinReach = (v: Values) => Number(v.distance) <= 2.5
 const contribution = (v: Values) => orderContribution(
@@ -16,7 +17,7 @@ export const conversationStudy: Entry = {
   readout: 'Conversation rehearsal', duration: 6,
   fieldSite: () => ({ name: 'Seabrook Market', offset: { ...counter, y: walkingHeight(counter) } }),
   controls: [
-    { type: 'range', key: 'distance', label: 'Distance to shopkeeper (m)', min: 1, max: 4, step: .1, value: 1.5 },
+    { type: 'range', key: 'distance', label: 'Distance to shopkeeper (m)', min: 1, max: maxApproachDistance, step: .1, value: 1.5 },
     { type: 'number', key: 'fish', label: 'Fish in hand', min: 0, max: 5, step: 1, value: 1 },
     { type: 'number', key: 'delivered', label: 'Fish delivered', min: 0, max: job.quantity, step: 1, value: 0 },
     { type: 'select', key: 'phase', label: 'Conversation state', value: 'ready',
@@ -36,6 +37,8 @@ export const conversationStudy: Entry = {
   create(meshes, _values, _error, observe) {
     const shopper = createCrew(meshes, 0), keeper = createCrew(meshes, 1)
     keeper.setAppearance({ uniform: 'angler', skin: 'warm' })
+    // The stage measures the actors before playback applies the selected distance.
+    shopper.root.position.z = maxApproachDistance
     shopper.root.rotation.y = Math.PI
     return ({ time }, v) => {
       shopper.root.position.z = Number(v.distance)
