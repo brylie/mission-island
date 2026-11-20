@@ -857,13 +857,22 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
   })
 }
 
+function serveLanInvites(server: Pick<ViteDevServer, 'middlewares' | 'resolvedUrls'>) {
+  server.middlewares.use('/api/lan-invite', (_request, response) => {
+    response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+    response.end(JSON.stringify(server.resolvedUrls?.network ?? []))
+  })
+}
+
 export function multiplayer(): Plugin {
   return {
     name: 'mission-island-multiplayer',
     configureServer(server) {
+      serveLanInvites(server)
       if (server.httpServer) attachGame(server.httpServer, server.middlewares, server.config.root, server.config.server.port ?? 5173)
     },
     configurePreviewServer(server) {
+      serveLanInvites(server)
       attachGame(server.httpServer, server.middlewares, server.config.root, server.config.preview.port ?? 5173)
     },
   }

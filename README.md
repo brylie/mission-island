@@ -13,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-Open the **Local** address Vite prints on the laptop. On the other computer, open the **Network** address it prints. Keep both computers on the same local network. The second computer only needs a keyboard and a browser with WebGL. The crew card shows when both players have joined. If the LAN address is unreachable, check that both machines can talk on the network and that the laptop's firewall allows incoming connections to Node.
+Open the **Local** address Vite prints on the laptop. In **Options → Invite a crewmate**, choose **Copy LAN link** and open the link on the other computer. The link includes this game’s port. Keep both computers on the same local network. The second computer only needs a keyboard and a browser with WebGL. The crew card shows when both players have joined. If the LAN address is unreachable, check that both machines can talk on the network and that the laptop's firewall allows incoming connections to Node.
 
 | Key | Action |
 | --- | --- |
@@ -58,7 +58,7 @@ At Island Farm, till with the hoe, plant with **E**, water with the watering can
 
 Keep the Micro Machines feel from island view with strong silhouettes, readable paint colors, and a compact layout. Use the third-person view to judge human-scale details like a believable grip on a tool, faces, steps, rail joints, and the waterline of a boat. The Pinewoods climbs gently away from the flatter roads and mission yards. Wildflowers and fish schools add life with small shared meshes and a few moving groups.
 
-Use **Set name** in the crew panel to edit the name above your character. The [game design document](docs/game-design.md) covers the direction and mechanic specifications. The [roadmap](docs/roadmap.md) keeps the playable features and future playtest ideas together.
+On your first visit, enter a game name or choose **Skip for now** to play as Crew 1 or Crew 2. The host saves your name and shows it above your character. Use the crew panel or **Options → Crew appearance** to change it later. The [game design document](docs/game-design.md) covers the direction and mechanic specifications. The [roadmap](docs/roadmap.md) keeps the playable features and future playtest ideas together.
 
 
 The market sells carrot seeds for one coin each. Sell fish or carrots at the awning with **E**. Plant seeds in tilled ground, then water them by hand or wait for a shower. Watered carrots grow in daylight. The shared island clock runs one day every eight real minutes. At night, press **E** at your cottage door. Dawn begins when every connected player turns in. Press **E** again or walk away to cancel while waiting.
@@ -167,6 +167,8 @@ Keep the walk-up boarding and exterior camera for every vehicle. When the island
 Each new mission can start with one destination, one vehicle and a shared objective you can playtest together.
 
 ## Quality checks
+
+GitHub Actions runs the same prek hooks on pull requests into `main` and pushes to `main`. Open **CI → Quality and tests** on a pull request to see the test results, coverage, build, and dependency audit.
 
 With Mise installed, trust this checkout's configuration and run the setup task. Mise supplies the pinned prek version.
 

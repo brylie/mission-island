@@ -115,6 +115,19 @@
       </footer>
     </main>
 
+    <dialog id="join-name-dialog" class="options-dialog" aria-labelledby="join-name-title">
+      <form method="dialog" id="join-name-form">
+        <h2 id="join-name-title">What would you like your game name to be?</h2>
+        <label for="join-name">Game name</label>
+        <input id="join-name" type="text" maxlength="24" autocomplete="nickname" autofocus required aria-describedby="join-name-help" />
+        <p id="join-name-help">Your crewmate will see this name above your character. You can change it in Options.</p>
+        <div class="join-name-actions">
+          <button type="submit">Save name</button>
+          <button type="button" id="skip-join-name">Skip for now</button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="crew-guide-dialog" class="options-dialog crew-guide-dialog" aria-labelledby="guide-title">
       <h2 id="guide-title">Crew guide</h2>
       <div id="guide-note">
@@ -166,6 +179,15 @@
           <label><span>Skin tone</span><select id="skin-tone"></select></label>
           <p id="uniform-progress" aria-live="polite"></p>
           <div class="outfit-shop"><span id="coin-balance">Crew bank · Connecting…</span><button id="buy-angler" type="button" disabled>Buy Harbor angler</button></div>
+        </fieldset>
+        <fieldset class="lan-invite">
+          <legend>Invite a crewmate</legend>
+          <div>
+            <input id="lan-address" type="url" readonly aria-label="LAN game address" />
+            <select id="lan-networks" aria-label="LAN game address" hidden></select>
+            <button id="copy-lan" type="button" disabled>Copy LAN link</button>
+          </div>
+          <span id="lan-status" role="status"></span>
         </fieldset>
         <fieldset id="playtest-tools" hidden><legend>Landscape Workbench</legend><button type="button" id="copy-playtest">Copy playtest link</button>
           <span id="copy-status" role="status"></span>
