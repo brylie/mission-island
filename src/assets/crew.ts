@@ -1,4 +1,5 @@
 import type { Mesh } from '@babylonjs/core/Meshes/mesh'
+import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import { defaultAppearance, skinTones, uniforms } from '../crew-appearance'
@@ -7,6 +8,7 @@ import { waterLevel } from '../terrain'
 const cream = '#fff3d0'
 
 export const playerColors = [uniforms.amber.color, uniforms.blue.color]
+export const skiffCrewSeats = [new Vector3(-0.44, -0.39, 0.25), new Vector3(0.44, -0.39, 0.25)]
 
 export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
   const root = new TransformNode(`Crew ${id + 1}`, scene)
@@ -35,11 +37,6 @@ export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
   }
   fabric.push(sphere(0, 0.98, 0, 0.82, 0.79, 0.59, cream, root, true, 16))
   accents.push(sphere(0, 1.23, 0.167, 0.38, 0.12, 0.31, cream, root))
-  for (const side of [-1, 1]) {
-    const strap = sphere(side * 0.179, 1.014, -0.248, 0.12, 0.49, 0.12, cream, root)
-    strap.rotation.z = -side * 0.17
-    accents.push(strap)
-  }
   accents.push(sphere(-0.163, 1.107, 0.245, 0.16, 0.138, 0.082, cream, root))
 
   skin.push(sphere(0, 1.46, 0.046, 0.56, 0.56, 0.55, cream, root, true, 18))
