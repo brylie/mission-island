@@ -3,7 +3,7 @@ import { landscapeDuration } from '../playtest-link'
 import { createJuniperHabitat } from '../juniper-habitat'
 import { poseFloating } from '../assets/waterfront'
 import { createIslandWorld } from '../island-world'
-import { falls } from '../terrain'
+import { falls, tidePool } from '../terrain'
 import { nightLighting } from '../weather'
 import { dryMarketRainAge, marketRunoffPreview } from '../market-runoff'
 import { draftFeatures } from './site-drafts'
@@ -12,6 +12,7 @@ import { range, type Entry } from './subject'
 export const landscapeStudy: Entry = {
   id: 'landscape', name: 'Landscape Workbench', group: 'Island', source: 'src/island-world.ts',
   description: 'Focus on map coordinates in metres, orbit and pan, and inspect scenery under different skies.',
+  readout: 'Shellglass tide',
   landscape: true, duration: landscapeDuration, angle: -Math.PI / 2,
   controls: [
     { type: 'number', key: 'x', label: 'Focus X (m)', value: falls.x, min: -500, max: 500, step: 0.1 },
@@ -23,7 +24,7 @@ export const landscapeStudy: Entry = {
     { type: 'checkbox', key: 'sunShafts', label: 'Volumetric sunlight', value: true },
     range('shaftIntensity', 'Sun shaft intensity (%)', 100, 0, 150, 5),
   ],
-  create(meshes) {
+  create(meshes, _values, _reportError, observe) {
     const school = previewDriftwood()
     const world = createIslandWorld(meshes, { features: draftFeatures() })
     let habitat = createJuniperHabitat()
@@ -43,6 +44,10 @@ export const landscapeStudy: Entry = {
       world.marketShower(frame.time, camera, marketRunoffPreview(rain, Number(settings.marketRainAge)))
       world.lights(camera, nightLighting(Number(settings.hour)))
       world.water.pose(time, light, rain)
+      const tide = world.shellglass(frame, light)
+      observe(Math.hypot(camera.x - tidePool.x, camera.z - tidePool.z) < 27
+        ? `${tide.phase} · ${Math.round(tide.fraction * 100)}% of cycle`
+        : '')
     }
   },
 }
