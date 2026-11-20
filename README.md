@@ -2,6 +2,8 @@
 
 A two-player browser game about running an island service crew. Load a flatbed with supplies at Harbor Depot, drive to Seabrook and unload together. Then pick up extinguishers and deal with a fire at Forest Lookout.
 
+The [design handbook](docs/README.md) brings together the creative direction, inspirations, progression, gameplay rules, and open design questions.
+
 ## Play on your local network
 
 On the host laptop, use Node.js 22.13 or newer and run these commands in the project folder.
