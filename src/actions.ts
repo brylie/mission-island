@@ -1,6 +1,7 @@
 import type { Item, Player, Snapshot } from './protocol'
 import { market, nearbyPlot, saleValue, seedPrice } from './farm.ts'
-import { cargoSlots, crewHomes, distance, lookout, offset, town } from './world.ts'
+import { cargoSlots, crateSize, crewHomes, distance, lookout, town, truckBed } from './world.ts'
+import { truckPoint } from './truck-pose.ts'
 import { isNight } from './weather.ts'
 
 export function heldItem(state: Snapshot, player: Player) {
@@ -19,13 +20,13 @@ export function nearbyItem(state: Snapshot, player: Player) {
 
 export function freeBed(state: Snapshot) {
   return cargoSlots.find((slot) => {
-    const position = offset(state.truck, 0, slot)
+    const position = truckPoint(state.truck, 0, truckBed.top + crateSize / 2, slot)
     return !state.items.some((item) => item.onBed && distance(item, position) < 0.93)
   })
 }
 
 export function byTruckBed(state: Snapshot, player: Player) {
-  return distance(offset(state.truck, 0, -1.7), player) < 3.5
+  return distance(truckPoint(state.truck, 0, truckBed.top, truckBed.center), player) < 3.5
 }
 
 export function canSpray(state: Snapshot, player: Player, item?: Item) {

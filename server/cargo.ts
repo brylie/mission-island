@@ -1,10 +1,12 @@
 import { Body, Box, Heightfield, SAPBroadphase, Sphere, Vec3, World } from 'cannon-es'
-import type { Item } from '../src/protocol.ts'
-import { buildings, chestSize, crateSize, crateStarts, crewHomes, dockEndZ, harborDock,
-  localPoint, truckBed, truckSideRails, truckTailLip } from '../src/world.ts'
-import type { Point, Pose } from '../src/world.ts'
+import type { Input, Item } from '../src/protocol.ts'
+import { buildings, chestSize, crateSize, crateStarts, crewHomes, dockEndZ, harborDock, truckBed } from '../src/world.ts'
+import type { Point } from '../src/world.ts'
+import { truckPoint, truckSurface } from '../src/truck-pose.ts'
+import type { Truck, TruckPose } from '../src/truck-pose.ts'
 import { islandRocks, islandTrees, northernProps, treeTrunkRadius } from '../src/scenery.ts'
 import { coastPoint, groundHeight, maxWadeDepth, shoreProfile, waterDepth, waterLevel } from '../src/terrain.ts'
+import { createTruckPhysics } from './truck.ts'
 
 export function createCargoPhysics() {
   const world = new World({ gravity: new Vec3(0, -9.82, 0) })
@@ -63,20 +65,7 @@ export function createCargoPhysics() {
     world.addBody(body)
   }
 
-  const truck = new Body({ type: Body.KINEMATIC })
-  truck.addShape(new Box(new Vec3(truckBed.width / 2, 0.095, truckBed.length / 2)),
-    new Vec3(0, truckBed.top - 0.095, truckBed.center))
-  truck.addShape(new Box(new Vec3(1.18, 0.84, 0.8)), new Vec3(0, 1.5, 1.05))
-  truck.addShape(new Box(new Vec3(1.14, 0.25, 2.85)), new Vec3(0, 0.74, 0))
-  // Each side board has gaps smaller than a crate, so a box represents the rail as a whole.
-  for (const side of [-1, 1]) {
-    const { x, thickness, height } = truckSideRails
-    truck.addShape(new Box(new Vec3(thickness / 2, height / 2, truckBed.length / 2)),
-      new Vec3(side * x, truckBed.top + height / 2, truckBed.center))
-  }
-  truck.addShape(new Box(new Vec3(truckBed.width / 2, truckTailLip.height / 2, truckTailLip.thickness / 2)),
-    new Vec3(0, truckBed.top + truckTailLip.height / 2, truckTailLip.z))
-  world.addBody(truck)
+  const truck = createTruckPhysics(world)
 
   const half = crateSize / 2
   const crates = crateStarts.map(() => new Body({
@@ -115,6 +104,17 @@ export function createCargoPhysics() {
     body.angularVelocity.set(0.16, 0.32 + power * 0.52, 0.18)
   }
 
+  function load(item: Item, pose: TruckPose, slot: number) {
+    const point = truckPoint(pose, 0, truckBed.top + half + 0.035, slot)
+    item.heading = pose.heading
+    release(item, point, point.y, true)
+    const body = crates[item.id]
+    body.quaternion.setFromEuler(pose.pitch, pose.heading, pose.roll, 'YXZ')
+    const { x, y, z, w } = body.quaternion
+    item.rotation = { x, y, z, w }
+    truck.matchBedMotion(body)
+  }
+
   function restore(item: Item) {
     if (item.kind !== 'crate' || item.holder !== null || item.delivered) return
     const rotation = item.rotation
@@ -125,16 +125,11 @@ export function createCargoPhysics() {
     }
   }
 
-  function step(items: Item[], before: Pose, after: Pose, dt: number) {
-    const beforeHeight = groundHeight(before)
-    const afterHeight = groundHeight(after)
-    truck.position.set(before.x, beforeHeight, before.z)
-    truck.quaternion.setFromEuler(0, before.heading, 0)
-    truck.velocity.set((after.x - before.x) / dt, (afterHeight - beforeHeight) / dt, (after.z - before.z) / dt)
-    truck.angularVelocity.set(0, (after.heading - before.heading) / dt, 0)
-    truck.aabbNeedsUpdate = true
+  function step(items: Item[], before: Truck, input: Input, dt: number) {
+    truck.applyInput(input, dt)
     world.step(dt / 2)
     world.step(dt / 2)
+    const after = truck.finishStep(before)
 
     for (const item of items) {
       if (item.kind !== 'crate' || item.holder !== null || item.delivered) continue
@@ -143,16 +138,17 @@ export function createCargoPhysics() {
         release(item, crateStarts[item.id])
         continue
       }
-      const relative = localPoint(after, position)
-      const bedClearance = position.y - afterHeight - truckBed.top
+      const relative = truckSurface(after, position, truckBed.top)
+      const bedClearance = position.y - relative.y
       const onBed = bedClearance > 0.22 && bedClearance < 0.76 &&
-        Math.abs(velocity.y - truck.velocity.y) < 1.9 &&
+        Math.abs(velocity.y - (after.y - before.y) / dt) < 1.9 &&
         Math.abs(relative.x) < truckBed.width / 2 + 0.24 &&
         Math.abs(relative.z - truckBed.center) < truckBed.length / 2 + 0.22
       const { x, y, z, w } = quaternion
       Object.assign(item, position, { onBed, rotation: { x, y, z, w } })
     }
+    return after
   }
 
-  return { release, launch, remove, restore, step }
+  return { release, launch, load, remove, restore, step, parkTruck: truck.park }
 }

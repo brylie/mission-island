@@ -1,6 +1,8 @@
 import type { Input, Player } from '../src/protocol.ts'
 import { overlapsProp, propTop } from '../src/scenery.ts'
 import { groundHeight, maxWadeDepth, walkingHeight, waterLevel, withinSkiffBoundary } from '../src/terrain.ts'
+import { truckPoint, truckSurface } from '../src/truck-pose.ts'
+import type { TruckPose } from '../src/truck-pose.ts'
 import { buildings, chestSize, crewHomes, jumpGravity, localPoint, offset, onDock, truckBed, truckHood, truckRoof, truckSideRails, truckTailLip } from '../src/world.ts'
 import type { Point, Pose } from '../src/world.ts'
 
@@ -30,18 +32,18 @@ type Platform = keyof typeof platforms
 type Motor = { player: Pick<Player, 'x' | 'z' | 'y' | 'heading' | 'grounded' | 'onBed' | 'swimming' | 'truckSurface'>; verticalSpeed: number }
 type ExtraSurface = (point: Point, padding: number) => number
 
-function truckPlatform(truck: Pose, point: Point, clearance: number) {
-  const local = localPoint(truck, point)
-  const base = groundHeight(truck)
-  return (Object.keys(platforms) as Platform[]).find((surface) => {
+function truckPlatform(truck: TruckPose, point: Point, clearance: number) {
+  for (const surface of Object.keys(platforms) as Platform[]) {
     const { top, width, center, length } = platforms[surface]
-    return clearance >= base + top - 0.025 && Math.abs(local.x) <= width / 2 + 0.04 &&
-      Math.abs(local.z - center) <= length / 2 + 0.04
-  })
+    const local = truckSurface(truck, point, top)
+    if (clearance >= local.y - 0.025 && Math.abs(local.x) <= width / 2 + 0.04 &&
+      Math.abs(local.z - center) <= length / 2 + 0.04) return { surface, height: local.y }
+  }
 }
 
-function truckOverlap(truck: Pose, point: Point, feet: number) {
-  const local = localPoint(truck, point)
+function truckOverlap(truck: TruckPose, point: Point, clearance: number) {
+  const local = truckSurface(truck, point, 0)
+  const feet = clearance - local.y
   if (feet >= truckRoof.top - 0.025) return 0
   if (feet >= truckHood.top - 0.025 && local.z >= truckRoof.center + truckRoof.length / 2) return 0
   const front = feet >= truckBed.top - 0.015 ? local.z - 0.08 : Infinity
@@ -59,7 +61,7 @@ function truckOverlap(truck: Pose, point: Point, feet: number) {
 }
 
 function moveHorizontally(
-  player: Motor['player'], truck: Pose, input: Input, carrying: boolean, dt: number, clearance: number,
+  player: Motor['player'], truck: TruckPose, input: Input, carrying: boolean, dt: number, clearance: number,
   extra: ExtraSurface,
 ) {
   if (!input.x && !input.z) return
@@ -68,7 +70,6 @@ function moveHorizontally(
   const wading = 1 - 0.48 * Math.min(1, depth / maxWadeDepth)
   const pace = player.swimming ? 3.8 : (carrying ? 6.5 : 8) * (input.sprint ? 1.55 : 1) * wading
   const walk = offset(player, 0, pace * dt)
-  const feetAboveTruck = clearance - groundHeight(truck)
   const canWalk = (point: Point) => {
     if (!withinSkiffBoundary(point) || !clearFixedWalls(point, 0.4)) return false
     const originHeight = player.swimming ? waterLevel - 0.52 : Math.max(player.y, walkingHeight(player))
@@ -77,23 +78,23 @@ function moveHorizontally(
     if (player.grounded && !player.truckSurface && rise > maxRise) return false
     const top = Math.max(propTop(point, 0.18), extra(point, 0.18))
     if (top > clearance + 0.055 && top >= Math.max(propTop(player, 0.18), extra(player, 0.18))) return false
-    const overlap = truckOverlap(truck, point, feetAboveTruck)
-    return overlap <= 0 || overlap < truckOverlap(truck, player, feetAboveTruck)
+    const overlap = truckOverlap(truck, point, clearance)
+    return overlap <= 0 || overlap < truckOverlap(truck, player, clearance)
   }
   if (canWalk({ x: walk.x, z: player.z })) player.x = walk.x
   if (canWalk({ x: player.x, z: walk.z })) player.z = walk.z
 }
 
 export function stepPlayer(
-  motion: Motor, before: Pose, truck: Pose, input: Input, carrying: boolean, dt: number, extra: ExtraSurface = () => -Infinity,
+  motion: Motor, before: TruckPose, truck: TruckPose, input: Input, carrying: boolean, dt: number, extra: ExtraSurface = () => -Infinity,
 ) {
   const { player } = motion
   const riding = player.truckSurface ?? (player.onBed ? 'bed' : undefined)
   if (riding) {
-    const local = localPoint(before, player)
-    Object.assign(player, offset(truck, local.x, local.z))
+    const height = platforms[riding].top
+    const local = truckSurface(before, player, height)
+    Object.assign(player, truckPoint(truck, local.x, height, local.z))
     player.heading += truck.heading - before.heading
-    player.y = groundHeight(truck) + platforms[riding].top
   }
   const nextFeet = player.y + motion.verticalSpeed * dt
   const clearance = Math.max(player.y, nextFeet)
@@ -102,7 +103,7 @@ export function stepPlayer(
   const platform = truckPlatform(truck, player, clearance)
   const ground = walkingHeight(player)
   const object = Math.max(propTop(player, 0), extra(player, 0))
-  const deck = platform ? groundHeight(truck) + platforms[platform].top : -Infinity
+  const deck = platform?.height ?? -Infinity
   const floor = Math.max(ground, object <= clearance + 0.055 ? object : -Infinity, deck)
   player.swimming = !platform && floor < waterLevel - maxWadeDepth && (player.grounded || clearance <= waterLevel + 0.25)
   if (player.swimming) {
@@ -115,7 +116,7 @@ export function stepPlayer(
   }
   const stepDown = player.grounded && floor >= player.y - 0.32
   const landed = motion.verticalSpeed <= 0 && (stepDown || nextFeet <= floor)
-  player.truckSurface = landed && floor === deck ? platform : undefined
+  player.truckSurface = landed && floor === deck ? platform?.surface : undefined
   player.onBed = player.truckSurface === 'bed'
   player.grounded = landed
   player.y = landed ? floor : nextFeet

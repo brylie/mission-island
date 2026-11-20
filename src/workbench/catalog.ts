@@ -78,6 +78,7 @@ export const entries: Entry[] = [
       range('steering', 'Steering angle', 28, -45, 45, 1),
       { type: 'checkbox', key: 'cargo', label: 'Show bed cargo', value: false },
       { type: 'checkbox', key: 'lights', label: 'Running lights', value: false },
+      { type: 'checkbox', key: 'brake', label: 'Brake lights', value: false },
     ],
     create(meshes) {
       const truck = createFlatbed(meshes)
@@ -90,7 +91,7 @@ export const entries: Entry[] = [
       return ({ time }, values) => {
         const turn = Number(values.steering) * Math.PI / 180
         poseFlatbed(truck, values.state === 'parked' ? 0 : time * Math.PI * 4, values.state === 'turning' ? turn : 0)
-        truck.setLights(values.lights ? 1 : 0)
+        truck.setLights(values.lights ? 1 : 0, Boolean(values.brake))
         for (const crate of crates) crate.setEnabled(Boolean(values.cargo))
       }
     },

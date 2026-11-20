@@ -12,9 +12,10 @@ import { farmPlots, growthSeconds, market, nearbyPlot, saleValue, seedPrice } fr
 import { starterTools } from '../src/inventory.ts'
 import {
   crateSize, crateStarts, distance, extinguisherStarts, jobPay, jumpSpeed, localPoint, lookout, offset,
-  skiffStart, spawns, town, truckBed, truckStart,
+  skiffStart, spawns, town, truckStart,
 } from '../src/world.ts'
-import type { Pose } from '../src/world'
+import { truckPoint } from '../src/truck-pose.ts'
+import type { TruckPose } from '../src/truck-pose.ts'
 import { groundHeight, maxWadeDepth, walkingHeight, waterDepth } from '../src/terrain.ts'
 import { northernRegions } from '../src/scenery.ts'
 import { createCargoPhysics } from './cargo.ts'
@@ -53,7 +54,7 @@ function readHeading(value: unknown) {
 
 function getInput(raw: unknown): Input {
   if (!raw || typeof raw !== 'object') return stopped
-  const { x, z, spray, aim, careful, sprint } = raw as Partial<Input>
+  const { x, z, spray, aim, careful, sprint, brake } = raw as Partial<Input>
   const axis = (value: unknown) => typeof value === 'number' && Number.isFinite(value)
     ? Math.max(-1, Math.min(1, value)) : 0
   return {
@@ -63,6 +64,7 @@ function getInput(raw: unknown): Input {
     aim: readHeading(aim),
     careful: careful === true,
     sprint: sprint === true,
+    brake: brake === true,
   }
 }
 
@@ -75,20 +77,20 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const crew = new Map<string, CrewMember>()
   const profiles = new Map<string, Player>()
   let islandTime = save?.islandTime ?? 0
+  const physics = createCargoPhysics()
   const state: Snapshot = {
-    type: 'state', players: [], truck: { ...truckStart }, skiff: { ...skiffStart, speed: 0 }, items: makeItems(),
+    type: 'state', players: [], skiff: { ...skiffStart, speed: 0 }, items: makeItems(),
     mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...structuredClone(save?.world),
+    truck: physics.parkTruck(save?.world.truck ?? truckStart),
     weather: weatherAt(islandTime),
   }
   state.skiff.speed = 0
   const growth = save?.growth.slice() ?? farmPlots.map(() => 0)
-  const physics = createCargoPhysics()
   for (const item of state.items) {
     item.spraying = false
     if (save) physics.restore(item)
     else physics.release(item, item)
   }
-  let speed = 0
 
   function crewMember(player: Player): CrewMember {
     return {
@@ -116,9 +118,10 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
 
   function snapshotForSave(): IslandSave {
     const { truck, skiff, items, mission, fire, farm } = state
+    const { x, z, heading } = truck
     return {
       version: 1, islandTime, growth: growth.slice(),
-      world: structuredClone({ truck, skiff, items, mission, fire, farm }),
+      world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm }),
       crew: Array.from(profiles, ([token, player]) => ({
         token, player: structuredClone(restingPlayer(player)), reserved: crew.has(token),
       })),
@@ -258,8 +261,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
           const drop = canOccupyGround(item, crateSize / 2, -0.10) && !isInsideTruck(state.truck, item) ? item : player
           physics.release(item, drop, item.y)
         } else {
-          item.heading = state.truck.heading
-          physics.release(item, offset(state.truck, 0, slot), groundHeight(state.truck) + truckBed.top + crateSize / 2 + 0.035, true)
+          physics.load(item, state.truck, slot)
         }
       } else {
         item.y = groundHeight(item) + 0.04
@@ -314,7 +316,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     const { player } = member
     if (player.seat) {
       const boating = inSkiff(player.seat)
-      if (!boating && Math.abs(speed) > 2) return
+      if (!boating && Math.abs(state.truck.speed) > 2) return
       const side = player.seat === 'driver' ? -1 : 1
       const exit = boating ? skiffExit(state.skiff, player.seat)
         : [offset(state.truck, side * 2.1, 0.9), offset(state.truck, 0, -3.8)]
@@ -335,7 +337,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       updateRiders()
       return
     }
-    if (distance(state.truck, player) >= 4.5 || Math.abs(speed) > 2 || !player.grounded || player.onBed || player.truckSurface ||
+    if (distance(state.truck, player) >= 4.5 || Math.abs(state.truck.speed) > 2 || !player.grounded || player.onBed || player.truckSurface ||
       heldItem(state, player)?.kind === 'crate') return
     if (!state.players.some((entry) => entry.seat === 'driver')) player.seat = 'driver'
     else if (!state.players.some((entry) => entry.seat === 'passenger')) player.seat = 'passenger'
@@ -357,12 +359,11 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         player.grounded = true
         player.onBed = false
         player.truckSurface = undefined
-      player.swimming = false
+        player.swimming = false
         continue
       }
-      Object.assign(player, offset(state.truck, player.seat === 'driver' ? -0.65 : 0.65, 1.05))
+      Object.assign(player, truckPoint(state.truck, player.seat === 'driver' ? -0.65 : 0.65, 0, 1.05))
       player.heading = state.truck.heading
-      player.y = groundHeight(state.truck)
       player.grounded = true
       player.onBed = false
       player.truckSurface = undefined
@@ -372,13 +373,12 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
 
   function reset() {
     if (state.mission !== 'complete') return
-    state.truck = { ...truckStart }
+    state.truck = physics.parkTruck(truckStart)
     state.skiff = { ...skiffStart, speed: 0 }
     state.items = makeItems()
     for (const item of state.items) physics.release(item, item)
     state.fire = 1
     state.mission = 'delivery'
-    speed = 0
     for (const member of crew.values()) {
       const { player } = member
       Object.assign(player, spawns[player.id], { heading: 0, seat: null, y: groundHeight(spawns[player.id]), grounded: true,
@@ -453,24 +453,6 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     checkpoint?.()
   }
 
-  function moveTruck(driving: Input) {
-    const cruiseSpeed = driving.careful ? 6.2 : 13
-    const targetSpeed = driving.z >= 0 ? driving.z * cruiseSpeed : driving.z * 5
-    const acceleration = (driving.z === 0 ? 4.5 : 3) * tickSeconds
-    speed += Math.max(-acceleration, Math.min(acceleration, targetSpeed - speed))
-    const { truck } = state
-    const before = { ...truck }
-    const steering = driving.careful ? 0.53 : 1.62
-    const heading = truck.heading + driving.x * Math.min(Math.abs(speed) / 3, 1) *
-      Math.sign(speed) * steering * tickSeconds
-    const candidate = { ...offset({ ...truck, heading }, 0, speed * tickSeconds), heading }
-    if (canOccupyGround(offset(candidate, 0, 1.85), 1.3, -0.085) &&
-      canOccupyGround(offset(candidate, 0, -1.85), 1.3, -0.085)) Object.assign(truck, candidate)
-    else speed = 0
-    physics.step(state.items, before, truck, tickSeconds)
-    return before
-  }
-
   function updateFishing(member: CrewMember, allowed: boolean) {
     const { player } = member
     if (!allowed) {
@@ -500,7 +482,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     }
   }
 
-  function walkCrew(member: CrewMember, before: Pose, connected: boolean, now: number) {
+  function walkCrew(member: CrewMember, before: TruckPose, connected: boolean, now: number) {
     const { player, input } = member
     const { truck } = state
     const item = heldItem(state, player)
@@ -546,7 +528,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     const members = [...crew.values()]
     const active = (member: CrewMember) => Boolean(member.socket && member.lastInput >= now - 400)
     const driver = members.find((member) => member.player.seat === 'driver')
-    const before = moveTruck(driver && active(driver) ? driver.input : stopped)
+    const before = state.truck
+    state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds)
     const rowers = members.filter((member) => inSkiff(member.player.seat) && active(member))
     const still = stepSkiff(state.skiff, rowers.map((member) => member.input), tickSeconds)
     updateRiders()

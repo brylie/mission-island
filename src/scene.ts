@@ -22,6 +22,7 @@ import { createObjectiveMarker } from './objective-marker'
 import { northernRegions } from './scenery'
 import type { Player, Snapshot } from './protocol'
 import { groundHeight, walkingHeight, waterLevel } from './terrain'
+import { wheelRadius } from './truck-pose'
 import { nightLighting } from './weather'
 import {
   beach, crateStarts, distance, extinguisherStarts, forest, harbor, lookout, town,
@@ -141,18 +142,14 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       const withdrawn = state.players.find((player) => player.id === i)?.inventory.length
       hinge.rotation.x += ((withdrawn ? 0.9 : 0) - hinge.rotation.x) * factor
     }
-    const wasDriving = truck.isEnabled()
-    const { x, z } = truck.position
-    const heading = truck.rotation.y
-    moveTo(truck, state.truck, groundHeight(state.truck) + 0.06, factor)
-    truck.position.y = Math.max(truck.position.y, groundHeight(truck.position) + 0.06)
-    const dx = truck.position.x - x
-    const dz = truck.position.z - z
-    if (wasDriving && Math.hypot(dx, dz) < 4) {
-      wheelRotation += (dx * Math.sin(heading) + dz * Math.cos(heading)) / 0.48
-    }
-    const steering = wasDriving && delta > 0 ? (truck.rotation.y - heading) / delta * 0.27 : 0
-    poseFlatbed(flatbed, wheelRotation, Math.max(-0.45, Math.min(0.45, steering)))
+    const pose = state.truck
+    const snap = !truck.isEnabled() || Math.hypot(truck.position.x - pose.x, truck.position.z - pose.z) > 14
+    const blend = snap ? 1 : factor
+    moveTo(truck, pose, pose.y, factor)
+    truck.rotation.x += (pose.pitch - truck.rotation.x) * blend
+    truck.rotation.z += (pose.roll - truck.rotation.z) * blend
+    if (!snap) wheelRotation += pose.speed * delta / wheelRadius
+    poseFlatbed(flatbed, wheelRotation, pose.steering, pose.suspension, blend)
   }
 
   function updateFishingLine(player: Player, kit: typeof skiffGear[number], gripIndex: number) {
@@ -320,7 +317,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     northernScenery.update(camera.position, Boolean(subject))
     const weather = last?.weather ?? { hour: 6, rain: 0 }
     const strength = nightLighting(weather.hour)
-    flatbed.setLights(truck.isEnabled() ? strength : 0)
+    flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
     lights(camera.position, strength)
     const light = atmosphere.update(time, weather, camera.position, Boolean(subject))
     water.pose(time, light, weather.rain)

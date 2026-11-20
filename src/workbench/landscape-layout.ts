@@ -4,6 +4,7 @@ import { createCrew, createFlatbed, createSupply, poseCrew } from '../island-ass
 import type { MeshFactory } from '../island-meshes'
 import { walkingHeight } from '../terrain'
 import { crateSize, distance, jumpSpeed, truckStart } from '../world'
+import { parkedTruckPose } from '../truck-pose'
 import type { Point, Pose } from '../world'
 
 const store = 'mission-island-landscape-layout'
@@ -45,7 +46,9 @@ function nodeFor(meshes: MeshFactory, placement: Placement) {
   } else if (placement.kind === 'truck') {
     const truck = createFlatbed(meshes)
     truck.root.parent = root
-    root.rotation.y = truckStart.heading
+    const pose = parkedTruckPose({ ...placement, heading: truckStart.heading })
+    root.position.y = pose.y
+    root.rotation.set(pose.pitch, pose.heading, pose.roll)
   }
   return { placement, root, motor, crew, stride: 0 }
 }
@@ -160,9 +163,10 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
       }
       const truck = objects.find(({ placement }) => placement.kind === 'truck')
       const pose: Pose = truck ? { ...truck.placement, heading: truckStart.heading } : { x: 1000, z: 1000, heading: 0 }
+      const truckPose = parkedTruckPose(pose)
       carriedTime += delta
       while (carriedTime >= 1 / 30) {
-        stepPlayer(current.motor, pose, pose, input, false, 1 / 30, draftedSurface)
+        stepPlayer(current.motor, truckPose, truckPose, input, false, 1 / 30, draftedSurface)
         carriedTime -= 1 / 30
       }
       const { player } = current.motor

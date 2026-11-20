@@ -11,6 +11,7 @@ import { surfaces } from './materials'
 import { treeTrunkRadius } from './scenery'
 import { waterLevel } from './terrain'
 import { laneMarkings, ribbonGeometry } from './routes'
+import { wheelAxles, wheelRadius, wheelTrack } from './truck-pose'
 import { chestSize, crateSize, harborDock, houseRoofRise, skiffStart, truckBed, truckSideRails, truckTailLip } from './world'
 import type { buildings, Point } from './world'
 
@@ -67,7 +68,14 @@ export function createFlatbed({ scene, box, cylinder, paint, paintSurface }: Mes
   beam.diffuse = Color3.FromHexString('#ffe9ad')
   beam.range = 28
   beam.setEnabled(false)
-  const lamps: { mesh: Mesh; lit: Material; unlit: Material }[] = []
+  const brakeBeam = new SpotLight('Flatbed brake lights', new Vector3(0, 0.57, -3.12),
+    new Vector3(0, -0.28, -1), 1.5, 1.4, scene)
+  brakeBeam.parent = truck
+  brakeBeam.diffuse = Color3.FromHexString('#ff391f')
+  brakeBeam.range = 5
+  brakeBeam.intensity = 2.2
+  brakeBeam.setEnabled(false)
+  const lamps: { mesh: Mesh; lit: Material; unlit: Material; braking?: Material }[] = []
   const wheels: { axle: TransformNode; spin: TransformNode; steering: boolean }[] = []
   // The deck overhang keeps the joined side faces at distinct depths.
   box(0, 0.68, 0, truckBed.width - 0.16, 0.53, 5.7, '#374848', truck).name = 'Chassis'
@@ -81,12 +89,13 @@ export function createFlatbed({ scene, box, cylinder, paint, paintSurface }: Mes
     const tail = paint('#be5848')
     lamps.push(
       { mesh: box(side * 0.86, 1.08, 2.9, 0.47, 0.25, 0.09, head, truck), unlit: head, lit: paint('#fff3b0', true) },
-      { mesh: box(side * 0.89, 0.57, -3.065, 0.33, 0.17, 0.042, tail, truck), unlit: tail, lit: paint('#ff6c51', true) },
+      { mesh: box(side * 0.89, 0.57, -3.065, 0.33, 0.17, 0.042, tail, truck),
+        unlit: tail, lit: paint('#c83832', true), braking: paint('#ff7763', true) },
     )
-    for (const z of [-1.89, 1.87]) {
+    for (const z of wheelAxles) {
       const axle = new TransformNode('Wheel steering', scene)
       axle.parent = truck
-      axle.position.set(side * 1.2, 0.48, z)
+      axle.position.set(side * wheelTrack, wheelRadius, z)
       const spin = new TransformNode('Wheel spin', scene)
       spin.parent = axle
       cylinder(0, 0, 0, 0.96, 0.96, 0.46, 14, '#253834', spin).rotation.z = Math.PI / 2
@@ -125,19 +134,23 @@ export function createFlatbed({ scene, box, cylinder, paint, paintSurface }: Mes
   box(0, 0.56, -2.94, 2.52, 0.24, 0.2, paintSurface('metal', surfaces.metal.color), truck)
   return {
     root: truck, wheels,
-    setLights(strength: number) {
+    setLights(strength: number, braking = false) {
       const lit = strength > 0.04
       beam.setEnabled(lit)
       beam.intensity = strength * 2.3
-      for (const lamp of lamps) lamp.mesh.material = lit ? lamp.lit : lamp.unlit
+      brakeBeam.setEnabled(braking)
+      for (const lamp of lamps) lamp.mesh.material = braking && lamp.braking ? lamp.braking : lit ? lamp.lit : lamp.unlit
     },
   }
 }
 
-export function poseFlatbed(truck: ReturnType<typeof createFlatbed>, rotation: number, steering: number) {
-  for (const wheel of truck.wheels) {
+export function poseFlatbed(truck: ReturnType<typeof createFlatbed>, rotation: number, steering: number,
+  suspension?: number[], blend = 1,
+) {
+  for (const [index, wheel] of truck.wheels.entries()) {
     wheel.spin.rotation.x = rotation
     wheel.axle.rotation.y = wheel.steering ? steering : 0
+    wheel.axle.position.y += ((suspension?.[index] ?? wheelRadius) - wheel.axle.position.y) * blend
   }
 }
 

@@ -19,7 +19,7 @@ Open the **Local** address Vite prints on the laptop. On the other computer, ope
 | **E** | Pick up, load, unload, deliver, or put down the item shown in the prompt. |
 | **F** | Board or leave a stopped truck or skiff. The first player takes the truck wheel. Both skiff seats can paddle. |
 | **Shift** | Hold to sprint on foot or drive slowly and steer gently. |
-| **Space** | Jump while on foot. |
+| **Space** | Jump on foot or hold to brake while driving. |
 | **Left click** | Reach or use an equipped tool. Hold and release to throw a crate or cast the fishing line. |
 | **B** | Buy one carrot seed at Seabrook Market. |
 | **1 / 2 / 3** | Equip or stow your fishing rod, hoe, or watering can. |
@@ -34,6 +34,8 @@ Bring crates to the tail of the truck to set them on the bed. Jump over the low 
 Jump onto or over low rocks and crates. The bed or hood gives you a second jump onto the cab roof.
 
 Each crate delivered pays two coins to the crew. Completing the delivery pays three more, and clearing the lookout fire pays four. The truck's headlights and taillights come on around dusk, along with street lamps in the settlements.
+
+The truck has four-wheel suspension and follows the terrain under each wheel. **W** accelerates, **S** brakes when moving forward and then reverses, and **Space** applies the brake without changing direction. Brake lights work in daylight and at night. Cargo and players riding on the bed move with the truck, so slowing down before sharp corners and rough ground helps keep the crates aboard.
 
 ### Starting tools and island life
 

@@ -3,12 +3,13 @@ import { join } from 'node:path'
 import { farmPlots } from '../src/farm.ts'
 import type { Player, Snapshot } from '../src/protocol'
 import { crateStarts, extinguisherStarts, spawns } from '../src/world.ts'
+import type { Pose } from '../src/world.ts'
 
 export type IslandSave = {
   version: 1
   islandTime: number
   growth: number[]
-  world: Pick<Snapshot, 'truck' | 'skiff' | 'items' | 'mission' | 'fire' | 'farm'>
+  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm'> & { truck: Pose }
   crew: { token: string; player: Player; reserved: boolean }[]
 }
 

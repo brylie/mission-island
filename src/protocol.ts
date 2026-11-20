@@ -3,6 +3,7 @@ import type { CrewAppearance } from './crew-appearance'
 import type { ChargeKind } from './charged-actions'
 import type { InventoryItem } from './inventory'
 import type { Goods, PlotStage } from './farm'
+import type { Truck } from './truck-pose'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
 
 export interface Weather {
@@ -17,6 +18,7 @@ export interface Input {
   aim?: number
   careful: boolean
   sprint: boolean
+  brake?: boolean
 }
 
 export interface Player extends Pose {
@@ -65,7 +67,7 @@ export type Mission = 'delivery' | 'fire' | 'complete'
 export interface Snapshot {
   type: 'state'
   players: Player[]
-  truck: Pose
+  truck: Truck
   skiff: Skiff
   items: Item[]
   mission: Mission

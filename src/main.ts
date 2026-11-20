@@ -282,7 +282,7 @@ function updateMission(state: Snapshot) {
     if (distance(state.truck, town) < 11 || delivered > 0) {
       instruction = 'Carry the crates into the teal drop zone.'
     } else if (loaded === 3) {
-      instruction = 'Drive to Seabrook. Hold Shift on corners.'
+      instruction = 'Drive to Seabrook. Hold Shift on corners and Space to brake.'
     } else {
       instruction = loaded > 0
         ? `${loaded} in the flatbed. Load or recover the remaining crates.`
@@ -461,8 +461,8 @@ function sendInput() {
   const pressed = (key: string, alias: string) => Number(keys.has(key) || keys.has(alias))
   const x = pressed('KeyD', 'ArrowRight') - pressed('KeyA', 'ArrowLeft')
   const z = pressed('KeyW', 'ArrowUp') - pressed('KeyS', 'ArrowDown')
-  const seated = snapshot?.players.some((player) => player.id === id && player.seat)
-  const direction = follow && !seated ? renderer?.walkInput(x, z) : undefined
+  const seat = snapshot?.players.find((player) => player.id === id)?.seat
+  const direction = follow && !seat ? renderer?.walkInput(x, z) : undefined
   const shift = keys.has('ShiftLeft') || keys.has('ShiftRight')
   const input: Input = {
     ...(direction ?? { x, z }),
@@ -470,6 +470,7 @@ function sendInput() {
     aim: aimHeading(),
     careful: shift,
     sprint: shift,
+    brake: seat === 'driver' && keys.has('Space'),
   }
   send({ type: 'input', input })
 }
@@ -534,7 +535,7 @@ window.addEventListener('keydown', (event) => {
   if (live && event.code === 'KeyB') send({ type: 'buy-seed' })
   if (live && event.code === 'KeyE') send({ type: 'interact' })
   if (live && event.code === 'KeyF') send({ type: 'seat' })
-  if (live && event.code === 'Space') send({ type: 'jump' })
+  if (live && event.code === 'Space' && !snapshot?.players.find((player) => player.id === id)?.seat) send({ type: 'jump' })
   if (event.code.startsWith('Digit')) {
     const slot = starterTools[Number(event.code.slice(-1)) - 1]
     if (slot) equip(slot)

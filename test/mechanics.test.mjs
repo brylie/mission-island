@@ -13,8 +13,9 @@ import { castPeakSeconds, chargePower, throwSeconds } from '../src/charged-actio
 import { cleanCrewName, readAppearance } from '../src/crew-appearance.ts'
 import { northernProps } from '../src/scenery.ts'
 import { boundaryBuoys, buoyBoundaryPoint, coastPoint, groundHeight, offshoreLimitMetres, withinSkiffBoundary } from '../src/terrain.ts'
+import { parkedTruckPose, truckPoint } from '../src/truck-pose.ts'
 import { daylight, daySeconds, isNight, nextDawn, nightLighting, weatherAt } from '../src/weather.ts'
-import { crateSize, jumpSpeed, offset, skiffStart, truckBed, truckRoof, truckStart } from '../src/world.ts'
+import { crateSize, jumpSpeed, localPoint, offset, skiffStart, truckBed, truckRoof, truckStart } from '../src/world.ts'
 
 test('weather completes a shared day, has dry nights, and skips from either side of midnight', () => {
   assert.deepEqual(weatherAt(0), { hour: 6, rain: 0 })
@@ -77,7 +78,8 @@ test('expanded ground supports crates and northern scenery blocks crew movement'
   const ground = groundHeight(p)
   const crate = { id: 0, kind: 'crate', holder: null, heading: 0, delivered: false }
   physics.release(crate, p, ground + 2)
-  for (let i = 0; i < 120; i++) physics.step([crate], truckStart, truckStart, 1 / 30)
+  let truck = physics.parkTruck(truckStart)
+  for (let i = 0; i < 120; i++) truck = physics.step([crate], truck, { x: 0, z: 0 }, 1 / 30)
   assert.ok(Math.hypot(crate.x - p.x, crate.z - p.z) < 1, JSON.stringify(crate))
   assert.ok(Math.abs(crate.y - ground - crateSize / 2) < 0.13)
   const rock = northernProps.find(({ tree }) => !tree)
@@ -85,14 +87,34 @@ test('expanded ground supports crates and northern scenery blocks crew movement'
   assert.equal(canOccupyGround(rock, 0.4, -2), false)
 })
 
+test('the truck collides with buildings and stops at deep water', () => {
+  const physics = createCargoPhysics()
+  function drive(start) {
+    let truck = physics.parkTruck(start)
+    for (let i = 0; i < 100; i++) truck = physics.step([], truck, { x: 0, z: 1 }, 1 / 30)
+    return truck
+  }
+  const wall = drive({ x: -50, z: -12, heading: Math.PI })
+  assert.ok(wall.z < -16 && wall.z > -17.1 && Math.abs(wall.speed) < 0.1)
+
+  const start = coastPoint(-2.2, 0.915)
+  const coast = coastPoint(-2.2)
+  const heading = Math.atan2(coast.x - start.x, coast.z - start.z)
+  const shore = drive({ ...start, heading })
+  const front = groundHeight(offset(shore, 0, 1.9))
+  assert.ok(front >= -0.27 && front < -0.19)
+  assert.ok(Math.abs(shore.speed) < 0.15)
+})
+
 test('the truck rear lip is jumpable and its side rail blocks an attempted entry', () => {
   const dt = 1 / 30
+  const pose = parkedTruckPose(truckStart)
   function jump(lateral, forward, direction) {
     const motion = {
       player: { ...offset(truckStart, lateral, forward), y: 0, heading: 0, grounded: false, onBed: false },
       verticalSpeed: jumpSpeed,
     }
-    for (let i = 0; i < 30; i++) stepPlayer(motion, truckStart, truckStart,
+    for (let i = 0; i < 30; i++) stepPlayer(motion, pose, pose,
       i < 15 ? direction : { x: 0, z: 0 }, false, dt)
     return motion.player
   }
@@ -102,34 +124,38 @@ test('the truck rear lip is jumpable and its side rail blocks an attempted entry
 
 test('a second jump reaches the truck roof and stays on it as the truck moves', () => {
   const dt = 1 / 30
+  const pose = parkedTruckPose(truckStart)
   const motion = {
     player: { ...offset(truckStart, 0, -0.55), y: truckBed.top, heading: truckStart.heading,
       grounded: false, onBed: false, swimming: false },
     verticalSpeed: jumpSpeed,
   }
   for (let i = 0; i < 36; i++) {
-    stepPlayer(motion, truckStart, truckStart, { x: i < 11 ? 1 : 0, z: 0 }, false, dt)
+    stepPlayer(motion, pose, pose, { x: i < 11 ? 1 : 0, z: 0 }, false, dt)
   }
   assert.equal(motion.player.truckSurface, 'roof')
   assert.equal(motion.player.y, truckRoof.top)
-  const before = motion.player.x
-  const moved = { ...truckStart, x: truckStart.x + 0.8 }
-  stepPlayer(motion, truckStart, moved, { x: 0, z: 0 }, false, dt)
-  assert.ok(Math.abs(motion.player.x - before - 0.8) < 1e-9)
-  assert.equal(motion.player.y, truckRoof.top)
+  const local = localPoint(pose, motion.player)
+  const moved = { ...pose, x: pose.x + 0.8, pitch: -0.2, roll: 0.12 }
+  const expected = truckPoint(moved, local.x, truckRoof.top, local.z)
+  stepPlayer(motion, pose, moved, { x: 0, z: 0 }, false, dt)
+  assert.ok(Math.abs(motion.player.x - expected.x) < 1e-9)
+  assert.ok(Math.abs(motion.player.y - expected.y) < 1e-9)
+  assert.equal(motion.player.truckSurface, 'roof')
 })
 
 test('a crate blocks a walking player and supports a player landing from a jump', () => {
   const dt = 1 / 30
+  const pose = parkedTruckPose(truckStart)
   const top = (point, margin) => Math.abs(point.x - 20.9) < crateSize / 2 + margin &&
     Math.abs(point.z + 18) < crateSize / 2 + margin ? crateSize : -Infinity
   const motion = { player: { x: 19.5, z: -18, y: 0, heading: 0, grounded: true, onBed: false, swimming: false }, verticalSpeed: 0 }
-  for (let i = 0; i < 12; i++) stepPlayer(motion, truckStart, truckStart, { x: 1, z: 0 }, false, dt, top)
+  for (let i = 0; i < 12; i++) stepPlayer(motion, pose, pose, { x: 1, z: 0 }, false, dt, top)
   assert.ok(motion.player.x < 20.45)
   motion.player.grounded = false
   motion.verticalSpeed = jumpSpeed
   for (let i = 0; i < 40; i++) {
-    stepPlayer(motion, truckStart, truckStart, { x: motion.player.x < 20.75 ? 1 : 0, z: 0 }, false, dt, top)
+    stepPlayer(motion, pose, pose, { x: motion.player.x < 20.75 ? 1 : 0, z: 0 }, false, dt, top)
   }
   assert.ok(Math.abs(motion.player.y - crateSize) < 0.02)
   assert.equal(motion.player.grounded, true)
