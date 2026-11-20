@@ -32,7 +32,7 @@ export function fieldStudyControls(panel: HTMLElement, siteSelect: HTMLSelectEle
       baseline.textContent = selected.baseline
       preset.textContent = selected.preset
       workbench.href = 'workbench.html#' + selected.id
-      input.value = String(selected.value)
+      input.value = String(selected.fieldDefault ?? selected.value)
       return selected.field
     },
     inspection(): StudyInspection | undefined {

@@ -5,11 +5,12 @@ import type { ShaderQuality } from '../shader-studies'
 import { coastRadius, groundHeight, tidePool, waterDepth, waterLevel } from '../terrain'
 import { onBeachTowel } from '../worlds/starter/sites'
 import { daylight, nightLighting } from '../weather'
-import { harborDock, skiffStart } from '../world'
+import { harborDock } from '../world'
 import type { Pose } from '../world'
 import { interactiveStudies, type StudyId } from './catalog'
-import { boatInStudy, demonstrationLamp, studyBuilders } from './effects'
+import { demonstrationLamp, studyBuilders } from './effects'
 import type { Effect, EffectFrame, Place } from './render'
+import { skiffStudyPose, wakeStrength } from './skiff-wake'
 import { createFootprintTrail } from './vegetation'
 
 export const studioPiling = { x: harborDock.x - 1.6, z: -34 }
@@ -44,12 +45,11 @@ function sameSiteAsCamera(camera: EffectFrame['camera'], origin: Place, range: n
   return Math.abs(camera.y - origin.y) < range * .75 && Math.hypot(camera.x - origin.x, camera.z - origin.z) < range
 }
 
-function naturalResponses(frame: EffectFrame, { runoff, snapshot }: WorldSignals): Record<StudyId, number> {
+function naturalResponses(frame: EffectFrame, { runoff, snapshot }: WorldSignals): Record<Exclude<StudyId, 'skiff-wake'>, number> {
   const { rain, hour } = frame.weather
   const day = daylight(hour)
   const night = nightLighting(hour)
   return {
-    'skiff-wake': Math.min(1, Math.abs(snapshot?.skiff.speed ?? 0) / 5.8),
     'wading-rings': .23,
     'seabed-caustics': day * (1 - rain * .93) * .74,
     'water-rain-rings': rain,
@@ -102,11 +102,27 @@ export function createIslandShaderEffects(meshes: MeshFactory, includeCottage: b
     return { id: study.id, origin, effect }
   })
   const walkers = entries.find(({ id }) => id === 'sand-footprints')!
+  const wake = entries.find(({ id }) => id === 'skiff-wake')!
   const tracks = walkers.effect as ReturnType<typeof createFootprintTrail>
   const secondTracks = createFootprintTrail(meshes, walkers.origin, false)
   const secondRipple = studyBuilders['wading-rings'](meshes, { ...tidePool, y: waterLevel }, false)
   const lastWaders = new Map<number, { point: Pose; time: number; strength: number }>()
   let trailDemo = false
+
+  function updateWake(frame: EffectFrame, signals: WorldSignals) {
+    const inspection = signals.inspection
+    const demo = inspection?.id === 'skiff-wake' ? skiffStudyPose(wake.origin, frame.time, inspection.value) : undefined
+    if (demo) setSurfaceOrigin(skiff, demo, skiff.position.y)
+    const vessel = demo ?? signals.snapshot?.skiff
+    const pose = demo ?? signals.skiffPose ?? vessel
+    const strength = vessel && pose && signals.quality !== 'off' ? wakeStrength(vessel, pose) : 0
+    const visible = Boolean(strength && pose && sameSiteAsCamera(frame.camera, { ...pose, y: wake.origin.y }, 46))
+    wake.effect.root.setEnabled(visible)
+    if (!visible || !pose || !vessel) return
+    const heading = pose.heading + (vessel.speed < 0 ? Math.PI : 0)
+    setSurfaceOrigin(wake.effect.root, { ...pose, heading }, wake.origin.y)
+    wake.effect.pose(frame, strength)
+  }
 
   function updateTrails(frame: EffectFrame, signals: WorldSignals) {
     const demo = signals.inspection?.id === 'sand-footprints'
@@ -156,17 +172,13 @@ export function createIslandShaderEffects(meshes: MeshFactory, includeCottage: b
   return (frame: EffectFrame, signals: WorldSignals) => {
     const responses = naturalResponses(frame, signals)
     const live = signals.quality !== 'off'
+    updateWake(frame, signals)
     updateTrails(frame, signals)
     updateWaders(frame, signals)
     for (const { id, origin, effect } of entries) {
-      if (id === 'sand-footprints' || id === 'wading-rings') continue
+      if (id === 'skiff-wake' || id === 'sand-footprints' || id === 'wading-rings') continue
       const selected = signals.inspection?.id === id
       const response = live ? selected ? signals.inspection!.value : responses[id] : 0
-      if (id === 'skiff-wake') {
-        const boat = selected ? boatInStudy(origin) : signals.skiffPose ?? skiffStart
-        setSurfaceOrigin(effect.root, boat, origin.y)
-        if (selected) setSurfaceOrigin(skiff, boat, skiff.position.y)
-      }
       const detail = studyDetail(id, frame, signals, origin, selected)
       const active = (response > .001 || baseVisible.has(id) || (id === 'streetlamp-droplets' && live && detail > .02))
         && studyIsPlaced(id, includeCottage, selected, signals)

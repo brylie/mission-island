@@ -26,6 +26,7 @@ interface Study {
   baseline: string
   preset: string
   value: number
+  fieldDefault?: number
   field: FieldView
   camera: { radius: number; beta: number; alpha: number; height: number }
 }
@@ -43,8 +44,9 @@ const timber = 'Harbor Road'
 
 const water = {
   'skiff-wake': {
-    name: 'Skiff wake', description: 'Follow the twin crests and churning prop wash as the skiff gains speed.',
+    name: 'Skiff wake', description: 'Follow the twin crests and churning water as the skiff gains speed.',
     control: 'Skiff speed', baseline: 'At rest', preset: 'Under way', value: .82,
+    fieldDefault: 0,
     field: view(dock, -48, -41, .1, 14, -2.33, .76, 12),
     camera: camera(13, .73, -2.33),
   },

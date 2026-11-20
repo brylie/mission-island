@@ -14,7 +14,7 @@ The field links open the same shader at a Starter Island site. **Field view** li
 
 | Studio setup | Comparison | Game view and live cue |
 | --- | --- | --- |
-| [Skiff wake][skiff-wake] | **At rest** / **Under way** lengthens the crests and strengthens the center wash. | [Harbor Dock](http://127.0.0.1:5248/?shader-review=skiff-wake) · The wake follows skiff speed and heading. |
+| [Skiff wake][skiff-wake] | **At rest** holds the skiff still. **Under way** replays a short pass and brings up the wake as it gains speed. | [Harbor Dock](http://127.0.0.1:5248/?shader-review=skiff-wake) · The field view opens at rest. In live play, the wake requires both motion and water. |
 | [Wading ripples][wading-rings] | **Quiet water** / **Brisk wade** increases the radiating impulses. | [Shellglass](http://127.0.0.1:5248/?shader-review=wading-rings) · Swim or wade to drive the rings. |
 | [Seabed caustics][seabed-caustics] | **Overcast bed** / **Clear shallows** reveals converging light bands on the bed. | [Shellglass](http://127.0.0.1:5248/?shader-review=seabed-caustics) · The light fades in deep water and clouds. |
 | [Raindrop impacts][water-rain-rings] | **Dry surface** / **Steady shower** adds independently timed drop rings. | [Mirror Pool](http://127.0.0.1:5248/?shader-review=water-rain-rings) · Live rain controls ring density. |

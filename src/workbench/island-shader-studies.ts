@@ -2,8 +2,9 @@ import { createCrew } from '../assets/crew'
 import { createHarborBoat } from '../assets/waterfront'
 import type { MeshFactory } from '../island-meshes'
 import { interactiveStudies, type StudyId } from '../interactive-shaders/catalog'
-import { boatInStudy, demonstrationLamp, studyBuilders } from '../interactive-shaders/effects'
+import { demonstrationLamp, studyBuilders } from '../interactive-shaders/effects'
 import type { EffectFrame, Place } from '../interactive-shaders/render'
+import { movingWakeStrength, skiffStudyPose } from '../interactive-shaders/skiff-wake'
 import { createOceanMaterial } from '../ocean'
 import { seededRandom } from '../seeded-random'
 import { range, type Entry } from './subject'
@@ -13,7 +14,7 @@ const waterStudies = new Set<StudyId>(['skiff-wake', 'wading-rings', 'seabed-cau
 const wetOrigin: Partial<Record<StudyId, number>> = { 'streetlamp-droplets': 2.59, 'window-parallax': 1.31 }
 
 function waterSample(meshes: MeshFactory, id: StudyId) {
-  const width = id === 'moon-glitter' ? 23 : id === 'skiff-wake' ? 15 : 12
+  const width = id === 'moon-glitter' ? 23 : id === 'skiff-wake' ? 28 : 12
   const depth = id === 'moon-glitter' ? 29 : id === 'skiff-wake' ? 17 : 12
   const clear = id === 'seabed-caustics'
   const water = createOceanMaterial(meshes.scene, 'preview')
@@ -39,12 +40,6 @@ function waterSample(meshes: MeshFactory, id: StudyId) {
 }
 
 function placeStudioContext(meshes: MeshFactory, id: StudyId) {
-  if (id === 'skiff-wake') {
-    const boat = createHarborBoat(meshes)
-    const rest = boatInStudy(studioBase)
-    boat.position.set(rest.x, 0, rest.z)
-    boat.rotation.y = rest.heading
-  }
   if (id === 'wading-rings') {
     const crew = createCrew(meshes, 0)
     crew.root.position.y = -.34
@@ -115,11 +110,19 @@ export const islandShaderStudies: Entry[] = interactiveStudies.map(study => ({
     const origin: Place = { ...studioBase, y: wetOrigin[study.id] ?? 0 }
     if (study.id === 'fernfall-rainbow') origin.y = 1.65
     const effect = studyBuilders[study.id](meshes, origin, true)
-    if (study.id === 'skiff-wake') {
-      const rest = boatInStudy(origin)
-      effect.root.position.set(rest.x, origin.y, rest.z)
-      effect.root.rotation.y = rest.heading
+    const skiff = study.id === 'skiff-wake' ? createHarborBoat(meshes) : undefined
+    const poseSkiff = (time: number, response: number) => {
+      if (!skiff) return response
+      const pose = skiffStudyPose(origin, time, response)
+      const strength = movingWakeStrength(pose.speed)
+      for (const root of [skiff, effect.root]) {
+        root.position.set(pose.x, origin.y, pose.z)
+        root.rotation.y = pose.heading
+      }
+      effect.root.setEnabled(strength > 0)
+      return strength
     }
+    if (skiff) poseSkiff(0, 0)
     const water = waterStudies.has(study.id) ? waterSample(meshes, study.id) : undefined
     placeStudioContext(meshes, study.id)
     const weather = { hour: study.field.hour, rain: Math.min(.22, study.field.rain) }
@@ -128,7 +131,7 @@ export const islandShaderStudies: Entry[] = interactiveStudies.map(study => ({
     return ({ time, camera, light }, values) => {
       const frame = { time, camera, light, weather, lamp }
       water?.(frame)
-      effect.pose(frame, Number(values.response), detail)
+      effect.pose(frame, poseSkiff(time, Number(values.response)), detail)
     }
   },
 }))
