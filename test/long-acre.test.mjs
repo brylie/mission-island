@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { daySeconds } from '../src/weather.ts'
-import { honeyAction, honeyReward, honeyStops, pollinatorsAt } from '../src/second-island/long-acre.ts'
+import { hiveEntrances, honeyAction, honeyReward, honeyStops, pollinatorsAt } from '../src/second-island/long-acre.ts'
 
 const dry = { hour: 10.5, rain: 0 }
 const rain = { hour: 10.5, rain: .82 }
@@ -31,6 +31,27 @@ test('a seek or late arrival reproduces the same bee positions, and another day 
   const oncoming = (time) => time < 5 ? 0 : .82
   assert.ok(pollinatorsAt(6, rain, oncoming).bees.some(bee => bee.activity === 'flight'))
   assert.ok(pollinatorsAt(9, rain, oncoming).bees.every(bee => bee.activity === 'resting'))
+})
+
+test('dry foragers complete staggered round trips through their own hive entrances', () => {
+  const frames = Array.from({ length: 640 }, (_, frame) => pollinatorsAt(frame / 20, dry, steadyDry).bees)
+  const returns = frames[0].map((_, i) => {
+    const samples = frames.map(bees => bees[i])
+    const approaching = samples.findIndex(bee => bee.activity === 'flight' && bee.hivebound)
+    const landed = samples.findIndex((bee, frame) => frame > approaching && bee.activity === 'landing' && bee.hivebound)
+    const inside = samples.findIndex((bee, frame) => frame > landed && bee.activity === 'resting')
+    const departing = samples.findIndex((bee, frame) => frame > inside && bee.activity === 'landing' && !bee.hivebound)
+    assert.ok(approaching >= 0 && landed > approaching && inside > landed && departing > inside)
+    const entrance = hiveEntrances[i % hiveEntrances.length]
+    assert.ok(Math.abs(samples[landed].x - entrance.x) <= .12 && samples[landed].z > entrance.z)
+    assert.ok(samples[inside].z < entrance.z)
+    assert.ok(samples.slice(departing).some(bee => bee.activity === 'feeding'))
+    assert.ok(samples.every((bee, frame) => frame === 0 ||
+      Math.hypot(bee.x - samples[frame - 1].x, bee.z - samples[frame - 1].z) < .25))
+    return approaching
+  })
+  assert.equal(new Set(returns).size, returns.length)
+  assert.ok(frames.some(bees => bees.some(bee => bee.activity === 'feeding') && bees.some(bee => bee.hivebound)))
 })
 
 test('the one-jar trial requires the field kit, fills at the extractor, and can pay only once at market', () => {

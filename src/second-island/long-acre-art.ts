@@ -5,7 +5,7 @@ import type { MeshFactory } from '../island-meshes'
 import { createIslandMaterial } from '../materials'
 import type { WildlifeFrame } from '../wildlife'
 import type { createCrew } from '../assets/crew'
-import { apiary, flowerBeds, flowerOffsets, hiveEntrances, honeyReward, honeyStops, pollinatorsAt } from './long-acre'
+import { apiary, beeCount, flowerBeds, flowerOffsets, hiveEntrances, honeyReward, honeyStops, pollinatorsAt } from './long-acre'
 import type { HoneyOrder } from './long-acre'
 import type { MapPoint } from './sites'
 import { groundHeight, surfaceHeight } from './terrain'
@@ -67,7 +67,7 @@ function buildApiary(meshes: MeshFactory) {
     for (const y of [.52, .77, 1.0]) meshes.box(0, y, 0, .79, .24, .70, i ? '#c6b984' : '#d9cda3', root)
     for (const y of [.64, .884]) meshes.box(0, y, .352, .755, .036, .033, '#969479', root)
     meshes.box(0, .482, .401, .59, .043, .154, wood, root)
-    meshes.box(0, .518, .356, .37, .031, .024, '#4b4b3a', root)
+    meshes.box(0, .536, .356, .37, .065, .024, '#4b4b3a', root)
     for (const x of [-.41, .41]) meshes.box(x, .78, 0, .042, .078, .33, darkWood, root)
     const roof = meshes.box(0, 1.16, 0, .95, .117, .86, i ? '#6f9180' : '#557b73', root)
     roof.rotation.x = .076
@@ -144,7 +144,7 @@ export function createLongAcreGarden(meshes: MeshFactory, solids?: ScenerySolids
     meshes.sphere(0, height + .017, 0, .087, .061, .086, j === 1 ? '#935b37' : '#e9ac53', root, false, 5)
     return root
   }))
-  const bees = Array.from({ length: 6 }, (_, i) => {
+  const bees = Array.from({ length: beeCount }, (_, i) => {
     const root = onGround(meshes, 'Honeybee ' + (i + 1), hiveEntrances[i % 2])
     root.position.y += .54
     meshes.sphere(0, 0, 0, .082, .074, .142, '#dfaa36', root, false, 5)
@@ -162,7 +162,8 @@ export function createLongAcreGarden(meshes: MeshFactory, solids?: ScenerySolids
     const { phase, bees: motion } = pollinatorsAt(frame.time, frame.weather, rainAt)
     for (const [i, { root, wings }] of bees.entries()) {
       const sample = motion[i]
-      root.setEnabled(sample.activity !== 'resting' || i < 2)
+      root.setEnabled(sample.activity !== 'resting')
+      if (sample.activity === 'resting') continue
       root.position.set(sample.x, surfaceHeight(sample.x, sample.z) + sample.height, sample.z)
       root.rotation.y = sample.yaw
       for (const [side, wing] of wings.entries()) {
@@ -175,7 +176,11 @@ export function createLongAcreGarden(meshes: MeshFactory, solids?: ScenerySolids
       if (fed) visiting++
       root.rotation.z = (fed ? .095 : 0) + Math.sin(frame.time * 2.1 + i * .72 + j) * (frame.weather.rain > .3 ? .037 : .019)
     }))
-    return { phase, visiting, flying: motion.filter(bee => bee.activity === 'flight').length }
+    return {
+      phase, visiting,
+      flying: motion.filter(bee => bee.activity === 'flight').length,
+      hivebound: motion.filter(bee => bee.hivebound).length,
+    }
   }
 }
 
