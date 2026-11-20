@@ -100,9 +100,16 @@ function createDrainage(meshes: MeshFactory) {
     rivet.rotation.x = Math.PI / 2
   }
   between(meshes, { x: spout.x + .028, y: 2.79, z: gutterZ }, spout, .096, .060, '#a77354')
+  const linkLength = .267
+  const firstLinkY = spout.y - .25
+  const hanger = between(meshes, { ...spout, y: spout.y + .012 },
+    { ...spout, y: firstLinkY + linkLength / 2 - .016 }, .031, .030, '#876951')
+  hanger.name = 'Rain chain hanger'
+  const collar = meshes.cylinder(spout.x, spout.y - .035, spout.z, .065, .050, .049, 9, '#aa805d')
+  collar.name = 'Rain chain collar'
   for (let link = 0; link < 9; link++) {
-    const y = spout.y - .25 - link * .265
-    meshes.box(spout.x, y, spout.z, .023, .267, .022, '#876951')
+    const y = firstLinkY - link * .265
+    meshes.box(spout.x, y, spout.z, .023, linkLength, .022, '#876951')
     if (link % 2 === 0) meshes.cylinder(spout.x, y - .058, spout.z, .090, .051, .062, 9, link === 4 ? '#759184' : '#aa805d')
   }
 
