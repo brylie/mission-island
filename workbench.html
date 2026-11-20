@@ -34,6 +34,7 @@
         <div class="viewport" id="viewport">
           <canvas id="stage" tabindex="0" aria-label="3D asset preview. Drag to orbit, scroll to zoom, or right-drag to pan."></canvas>
           <div class="viewport-note" aria-hidden="true"><span>DRAG</span> Orbit <span>SCROLL</span> Zoom <span>RIGHT-DRAG</span> Pan</div>
+          <aside id="biome-field" aria-label="Field observations" hidden><strong>Field observations</strong><p id="biome-observations"></p></aside>
           <div class="stage-error" id="stage-error" role="alert" hidden></div>
         </div>
 
@@ -68,13 +69,20 @@
             <label><input id="turntable" type="checkbox" /> Turntable</label>
           </div>
         </section>
+        <section id="biome-presets" hidden>
+          <h2>Starting habitat</h2>
+          <div class="row"><select id="biome-preset" aria-label="Starting habitat"></select><button type="button" id="biome-apply">Apply</button></div>
+          <div class="layout-actions recipe-files"><button type="button" id="biome-import">Open JSON</button><button type="button" id="biome-export">Export JSON</button></div>
+          <input id="biome-file" type="file" accept=".json,application/json" hidden />
+          <p id="biome-file-status" class="codex-note" role="status"></p>
+        </section>
         <section id="playtest-tools" hidden>
           <button type="button" id="copy-playtest">Copy playtest link</button>
           <span id="copy-status" role="status"></span>
           <input id="playtest-url" type="url" readonly hidden aria-label="Playtest link" />
         </section>
         <section id="asset-inspector" hidden>
-          <div class="section-heading"><h2>Asset settings</h2><button type="button" id="reset" class="reset">Reset</button></div>
+          <div class="section-heading"><h2 id="settings-heading">Asset settings</h2><button type="button" id="reset" class="reset">Reset</button></div>
           <div id="asset-controls"></div>
         </section>
         <section id="landscape-layout" hidden>

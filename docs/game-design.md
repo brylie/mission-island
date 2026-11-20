@@ -29,6 +29,8 @@ Use rules to produce variation in familiar places and activities. A ferry termin
 
 Use repeatable seeds or saved outcomes for generated details that affect traversal or progression. The host owns shared conditions, events, and accepted orders so both players can resume the same situation after a reconnect. Use the Workbenches to compare seeds and conditions and replay a particular result during QA.
 
+The Biome Composer models a small food web in isolation. Clover feeds hares, foxes pursue exposed hares, and tussocks and terrain features offer refuge. Rain changes shelter choices and available forage. A recipe records the ground surface, ingredient counts, weather, hour and placement seed. Designers can compare a single change at the same point on the timeline before adopting a recipe or a behavior on an island.
+
 ## Play loops
 
 - **Service shifts.** Work together to deliver harbor crates and put out the lookout fire. After the starter shift, the harbor board offers repeat deliveries to new destinations and market orders for fish and crops. Choosing an order leaves the crew in the world where they were already playing.

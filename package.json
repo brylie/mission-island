@@ -9,7 +9,7 @@
     "lint": "eslint . --max-warnings 0",
     "check:unused": "knip",
     "test": "node --experimental-strip-types --test test/*.test.mjs",
-    "coverage": "node --experimental-strip-types --test --experimental-test-coverage --test-coverage-include=\"server/*.ts\" --test-coverage-include=\"src/{actions,charged-actions,crew-appearance,farm,jobs,terrain,truck-pose,weather}.ts\" --test-coverage-include=src/second-island/walking.ts --test-coverage-lines=81 --test-coverage-functions=81 --test-coverage-branches=81 test/*.test.mjs",
+    "coverage": "node --experimental-strip-types --test --experimental-test-coverage --test-coverage-include=\"server/*.ts\" --test-coverage-include=\"src/{actions,charged-actions,crew-appearance,farm,jobs,terrain,truck-pose,weather}.ts\" --test-coverage-include=src/second-island/walking.ts --test-coverage-include=\"src/workbench/biome-{model,recipe}.ts\" --test-coverage-lines=81 --test-coverage-functions=81 --test-coverage-branches=81 test/*.test.mjs",
     "quality": "npm run lint && npm run check:unused && npm run coverage && npm run build",
     "audit": "npm audit --audit-level=high",
     "build": "npm run check && vite build",

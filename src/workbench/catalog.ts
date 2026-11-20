@@ -1,3 +1,4 @@
+import { biomeEntry } from './biome-preview'
 import { createLookoutFire } from '../fire-effect'
 import { createExtinguisherSpray } from '../extinguisher-spray'
 import {
@@ -115,6 +116,7 @@ export const entries: Entry[] = [
       }
     },
   },
+  biomeEntry,
   {
     id: 'landscape', name: 'Landscape Workbench', group: 'World', source: 'src/island-world.ts',
     description: 'Focus on map coordinates in metres, orbit and pan, and inspect scenery under different skies.',

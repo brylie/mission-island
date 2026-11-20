@@ -1,3 +1,4 @@
+import { createHare } from '../hare'
 import { villageWalks } from './footways'
 import type { ScenerySolids } from './walking'
 import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture'
@@ -345,14 +346,10 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
     { name: 'Hares', x: 48, z: 53, y: 0, span: 6, speed: .83, color: '#ae8e73', kind: 'hare', count: 2 },
     { name: 'Forest hares', x: -190, z: 227, y: 0, span: 6, speed: .75, color: '#ae8e73', kind: 'hare', count: 2 },
   ].flatMap((animal) => Array.from({ length: animal.count }, (_, index) => {
-    const root = new TransformNode(animal.name, meshes.scene)
-    const part = (x: number, y: number, z: number, w: number, h: number, d: number, color = animal.color) =>
-      meshes.sphere(x, y, z, w, h, d, color, root, false, 6)
-    part(0, .05, 0, .33, .25, .78)
-    if (animal.kind === 'duck') part(0, .18, .28, .25, .26, .23, '#426752')
-    if (animal.kind === 'hare') {
-      part(0, .18, .23, .29, .35, .35)
-      for (const side of [-1, 1]) part(side * .071, .39, .19, .08, .28, .095).rotation.x = -.24
+    const root = animal.kind === 'hare' ? createHare(meshes, animal.name, animal.color) : new TransformNode(animal.name, meshes.scene)
+    if (animal.kind === 'duck') {
+      meshes.sphere(0, .05, 0, .33, .25, .78, animal.color, root, false, 6)
+      meshes.sphere(0, .18, .28, .25, .26, .23, '#426752', root, false, 6)
     }
     return { ...animal, root, index }
   }))

@@ -1,4 +1,6 @@
 import './style.css'
+import { bindBiomeRecipes } from './biome-files'
+import { biomeLink, codex, readRecipe, recipeFromLink } from './biome-recipe'
 import { bindPlaytestCopy, landscapeLink, readLandscapeView } from '../playtest-link'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
@@ -56,6 +58,11 @@ function readSavedView(): Partial<SavedView> {
 
 const shared = location.hash === '#landscape' ? readLandscapeView(new URLSearchParams(location.search)) : undefined
 const saved = readSavedView()
+const sharedRecipe = location.hash === '#biome' ? recipeFromLink(new URLSearchParams(location.search)) : undefined
+if (sharedRecipe) {
+  saved.options = { ...saved.options, biome: sharedRecipe }
+  Object.assign(saved, { id: 'biome', camera: undefined, time: 0, playing: true })
+}
 if (shared) {
   saved.id = 'landscape'
   saved.camera = shared.camera
@@ -92,6 +99,10 @@ function remember() {
     grid: grid.checked, wireframe: wireframe.checked, turntable: turntable.checked,
   }
   writeStorage('sessionStorage', storeKey, JSON.stringify(view))
+  if (asset.id === 'biome' && new URLSearchParams(location.search).has('recipe')) {
+    const link = biomeLink(location.href, readRecipe(values))
+    if (link !== location.href) history.replaceState(null, '', link)
+  }
 }
 
 function restoreOptions(controls: readonly Control[] = [], previous: Values = {}): Values {
@@ -149,7 +160,17 @@ function selectLibraryAsset() {
 
 function renderAssetControls() {
   inspector.replaceChildren()
+  let group = ''
   for (const control of asset.controls ?? []) {
+    const organism = asset.id === 'biome' ? codex.find(item => item.key === control.key) : undefined
+    const heading = organism?.group ?? 'Conditions'
+    if (asset.id === 'biome' && heading !== group) {
+      group = heading
+      const title = document.createElement('h3')
+      title.className = 'codex-group'
+      title.textContent = group
+      inspector.append(title)
+    }
     const row = document.createElement('label')
     const name = document.createElement('span')
     name.textContent = control.label
@@ -186,10 +207,10 @@ function renderAssetControls() {
           input.value = String(values[control.key])
           input.addEventListener('input', () => {
             const next = input.valueAsNumber
-            if (Number.isFinite(next) && next >= control.min && next <= control.max) setOption(control, next, false)
+            if (!control.rebuild && Number.isFinite(next) && next >= control.min && next <= control.max) setOption(control, next, false)
           })
           input.addEventListener('change', () => {
-            const next = input.valueAsNumber
+            const next = control.step === 1 ? Math.round(input.valueAsNumber) : input.valueAsNumber
             input.value = String(Number.isFinite(next) ? Math.max(control.min, Math.min(control.max, next)) : values[control.key])
             setOption(control, input.valueAsNumber)
           })
@@ -222,6 +243,14 @@ function renderAssetControls() {
       }
     }
     inspector.append(row)
+    if (organism) {
+      const note = document.createElement('p')
+      note.className = 'codex-note'
+      note.id = 'note-' + organism.key
+      note.textContent = organism.note
+      row.querySelector('input')?.setAttribute('aria-describedby', note.id)
+      inspector.append(note)
+    }
   }
 }
 
@@ -275,8 +304,15 @@ function loadAsset(camera?: CameraState) {
   element('asset-description').textContent = asset.description
   element('source-file').textContent = asset.source
   element('asset-inspector').hidden = !asset.controls?.length
-  element('playtest-tools').hidden = !asset.landscape
-  lightSelect.disabled = Boolean(asset.landscape)
+  const biome = asset.id === 'biome'
+  element('biome-presets').hidden = element('biome-field').hidden = !biome
+  element('settings-heading').textContent = biome ? 'Habitat codex' : 'Asset settings'
+  element('copy-playtest').textContent = biome ? 'Copy recipe link' : 'Copy playtest link'
+  element('copy-status').textContent = ''
+  element('playtest-url').hidden = true
+  element('playtest-tools').hidden = !asset.landscape && !biome
+  lightSelect.disabled = Boolean(asset.landscape) || biome
+  lightSelect.closest('label')!.hidden = biome
   playback.hidden = !asset.duration
   slider.max = String(asset.duration ?? 0)
   time = Math.min(time, asset.duration ?? 0)
@@ -368,7 +404,16 @@ element('reset').addEventListener('click', () => {
   remember()
 })
 
+bindBiomeRecipes(() => readRecipe(values), recipe => {
+  if (asset.id !== 'biome') return
+  optionsByAsset.biome = { ...recipe }
+  time = 0
+  loadAsset(stage?.getCamera())
+  remember()
+})
+
 bindPlaytestCopy(() => {
+  if (asset.id === 'biome') return biomeLink(location.href, readRecipe(values))
   const camera = stage?.getCamera()
   if (!camera || !asset.landscape) return
   return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? .8 },

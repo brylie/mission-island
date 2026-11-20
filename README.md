@@ -99,6 +99,10 @@ The [Landscape Workbench](http://localhost:5173/workbench.html#landscape) loads 
 
 Use **Layout draft** to place a test player, truck, crate, rock, or tree at the camera focus. Select a test player and focus the canvas to walk or jump using the game's terrain and collision rules. Move or remove selected objects, save the layout in the browser, or export the coordinates as JSON.
 
+The [Biome Composer](http://localhost:5173/workbench.html#biome) stages a 16 m habitat using island assets. Choose a starting habitat and press **Apply**, then use the codex to set the number of each plant, animal and shelter. **Copy recipe link** reopens the composition from the beginning on any browser that can reach the server. Use the LAN address when sharing between computers. Use **Export JSON** to keep a versioned recipe in source control and **Open JSON** to edit it again.
+
+For a controlled comparison, open **Meadow edge**, pause at 60 seconds and read **Field observations**. Set tussocks, pines, logs and boulders to zero while keeping the seed and playback time fixed. Compare escapes and close encounters. Restore cover, remove the fox, and raise rain above 65% to watch hares seek logs and trees. The timeline replays the whole trial under the selected conditions.
+
 ### Z-fighting QA check
 
 Run this check on new or changed geometry, especially stacked trim, rails, roof joints, decals, and intersecting paths.

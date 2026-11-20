@@ -28,6 +28,7 @@ export type Angle = 'perspective' | 'front' | 'side' | 'top'
 export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values,
   reportError: (error: string) => void) {
   const scene = new Scene(engine)
+  const biome = entry.id === 'biome'
   try {
     scene.clearColor = Color4.FromHexString('#1b292aff')
     if (entry.landscape) scene.fogMode = Scene.FOGMODE_LINEAR
@@ -60,7 +61,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     }
     const groundSize = Math.max(14, size * 2.25)
     const step = size > 45 ? 5 : size > 12 ? 2 : 1
-    const radius = entry.landscape ? 24 : Math.max(3, size * 1.55 + subjectHeight * 0.6)
+    const radius = entry.landscape ? 24 : biome ? size * 1.15 : Math.max(3, size * 1.55 + subjectHeight * 0.6)
     const camera = new ArcRotateCamera('Workbench camera', entry.angle ?? 0.88, 1.1, radius, center.clone(), scene)
     camera.lowerRadiusLimit = entry.landscape ? 0.55 : Math.max(0.55, size * 0.12)
     camera.upperRadiusLimit = entry.landscape ? 450 : radius * 5
@@ -72,7 +73,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     camera.panningSensibility = 840 / Math.max(1, size / 5)
     camera.attachControl(canvas, false)
     scene.activeCamera = camera
-    const atmosphere = entry.landscape ? createAtmosphere(scene, sky, sunlight) : undefined
+    const atmosphere = entry.landscape || biome ? createAtmosphere(scene, sky, sunlight) : undefined
     const layout = entry.landscape ? createLandscapeLayout(meshes, canvas, () => ({
       x: camera.target.x, z: camera.target.z,
       yaw: Math.atan2(camera.target.x - camera.globalPosition.x, camera.target.z - camera.globalPosition.z),
@@ -97,7 +98,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     grid.isPickable = false
 
     sunlight.position.set(center.x - 14, Math.max(21, size), center.z - 16)
-    sunlight.shadowMaxZ = Math.max(55, size * 4)
+    sunlight.shadowMaxZ = Math.max(biome ? 160 : 55, size * 4)
     let lighting: LightingPreset = 'daylight'
     let wireframe = false
     function applyWireframe(mesh: AbstractMesh) {
@@ -136,7 +137,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
           // A new focus translates the orbit instead of zooming out to include the old location.
           camera.setTarget(center.clone(), false, false, true)
         }
-        const rain = entry.landscape ? Number(settings.rain) : 0
+        const rain = biome ? Number(settings.rain) / 100 : entry.landscape ? Number(settings.rain) : 0
         const position = camera.globalPosition
         const light = atmosphere?.update(time, { hour: Number(settings.hour), rain }, position, true) ?? 1
         update?.({ time, rate, seek, lighting, camera: position, light, rain, delta }, settings)
