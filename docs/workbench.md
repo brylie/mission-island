@@ -27,6 +27,8 @@ Scroll or pinch over the photo to zoom toward a detail, then drag to pan. The **
 
 The Workbench remembers the reference and its framing per asset in this browser. Hide it with **Reference image**, or select **Remove** to forget it. **Copy setup link** includes the visible photo crop alongside the camera and asset settings so a teammate can open the comparison on another computer.
 
+For the player model, open **Wardrobe → Crew character → Compare turnaround**, or use the [crew fitting shortcut](http://localhost:5173/workbench.html#crew?fitting=turnaround) on the default development port. **Front**, **Side** and **Back** frame the corresponding figure in the concept sheet and turn the model to match. Each starts with the same bareheaded courier in daylight. You can then orbit, try another outfit or scrub a pose beside the drawing. Under **Zoom and pan**, choose **Fit** to see the full sheet. Use **Copy setup link** after making adjustments to share that exact view.
+
 ### Prepare a comparison link from the command line
 
 Choose the asset in the Library and use its address or **Copy setup link** to include the model camera and settings. The asset ID follows the first `#` (for example, `clover`). Find a Commons file page showing the feature you want to study and check the credit and license on that page. From the checkout, run the following with the host and port your reviewer can reach.

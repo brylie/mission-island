@@ -1,40 +1,72 @@
-import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import type { Mesh } from '@babylonjs/core/Meshes/mesh'
+import { Color3 } from '@babylonjs/core/Maths/math.color'
+import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
-import { coastalProfile } from './coastal-profiles'
+import { sweptDetail } from './crew-shapes'
 
-// A continuous hairline rises at the forehead and dips at the nape. The locks tuck under a work cap.
-export function createCrewHair(meshes: MeshFactory, root: TransformNode) {
-  const hair = '#493932', vertices: number[] = [], indices: number[] = []
-  const sides = 24
-  for (const [row, [width, depth, height, dip]] of [
-    [.244, .207, 1.609, .149], [.255, .218, 1.658, .099], [.248, .216, 1.704, .046],
-    [.208, .184, 1.754, 0], [.116, .111, 1.781, 0], [.004, .004, 1.789, 0],
+export function createCrewHair(meshes: MeshFactory, head: TransformNode) {
+  const root = new TransformNode('Hair fitting', meshes.scene)
+  root.parent = head
+  const color = '#50382f', vertices: number[] = [], faces: number[] = [], sides = 36
+  for (const [row, [width, depth, y, dip]] of [
+    [.285, .243, .375, .226], [.292, .256, .434, .162], [.29, .253, .49, .092],
+    [.251, .218, .538, .033], [.177, .165, .563, .009], [.073, .072, .571, 0], [.002, .002, .572, 0],
   ].entries()) {
-    for (let i = 0; i < sides; i++) {
-      const a = i * 2 * Math.PI / sides, forward = Math.sin(a)
-      const side = Math.cos(a), t = (1 - forward) / 2
-      const hairline = height - dip * (t + .18 * Math.abs(side) ** 12 + .052 * Math.sin(5 * a + .4))
-      vertices.push(width * Math.sign(side) * Math.abs(side) ** .73, hairline,
-        .015 + depth * Math.sign(forward) * Math.abs(forward) ** .73)
+    for (let i = 0;i < sides;i++) {
+      const a = i * 2 * Math.PI / sides, u = Math.cos(a), v = Math.sin(a)
+      const line = (1 - v) / 2 + .16 * Math.abs(u) ** 8 + .052 * Math.sin(5 * a + .5)
+      const part = .043 * Math.max(0, v) ** 4 * (1.0 + .64 * u) * (dip / .226)
+      vertices.push(width * u, y - dip * line + part, depth * v - .003)
       if (row === 0) continue
       const b = (row - 1) * sides + i, c = (row - 1) * sides + (i + 1) % sides
-      indices.push(b, c, b + sides, c, c + sides, b + sides)
+      faces.push(b, c, b + sides, c, c + sides, b + sides)
     }
   }
-  const scalp = meshes.surface('Hairline and nape', vertices, indices, hair, root)
+  const scalp = meshes.surface('Tapered hairline', vertices, faces, color, root)
   meshes.shadows.addShadowCaster(scalp, false)
-  const locks = [-1, 0, 1].map((i) => {
-    const lock = coastalProfile(meshes, root, 'Swept forelock', i === 0 ? '#624838' : '#503a2e', [
-      [-.12, .011, .025, .023], [-.06, .024, .062, .055], [.032, .023, .075, .058],
-      [.112, -.012, .056, .041], [.17, -.062, .009, .009],
-    ])
-    lock.position.set(i * .089 - .011, 1.719 + .025 * i, .134 - .034 * Math.abs(i))
-    lock.rotation.y = -.66 + .12 * i
-    return lock
-  })
-  return (wearingCap: boolean) => {
-    scalp.scaling.set(wearingCap ? .95 : 1, wearingCap ? .82 : 1, wearingCap ? .92 : 1)
-    scalp.position.y = wearingCap ? 1.49 * .18 : 0
-    for (const lock of locks) lock.setEnabled(!wearingCap)
+  const sidesAndBack: Mesh[] = []
+  // Sweep the side and nape locks round the skull; each pointed tip lifts off the next mass.
+  for (let i = 0;i < 7;i++) {
+    const a = -.09 - i * (Math.PI - .18) / 6, c = Math.cos(a), s = Math.sin(a)
+    const point = (angle: number, y: number, radius: number, w: number, d: number): [number, number, number, number, number] =>
+      [Math.cos(angle) * radius, y, Math.sin(angle) * radius * .89, w, d]
+    const low = .156 + .095 * Math.abs(c)
+    sidesAndBack.push(sweptDetail(meshes, root, 'Wind-combed lock', color, [
+      point(a + .39, .443, .237, .018, .018), point(a + .25, .377, .269, .062, .038),
+      point(a + .04, low + .052, .279, .071, .046), point(a - .19, low - .022, .264, .044, .031), point(a - .34, low + .001, .249, .004, .005),
+    ], [c, .15, s]))
+  }
+  const fringe = [
+    sweptDetail(meshes, root, 'Lifted forelock', color, [
+      [.092, .454, .112, .018, .014], [.087, .531, .142, .074, .045], [.023, .564, .169, .082, .058],
+      [-.053, .533, .205, .076, .056], [-.102, .438, .244, .068, .049], [-.157, .365, .237, .058, .038], [-.214, .358, .197, .040, .027], [-.238, .387, .174, .004, .006],
+    ], [0, .55, .84], 14),
+    sweptDetail(meshes, root, 'Side part', color, [
+      [.033, .493, .08, .012, .008], [.134, .51, .119, .067, .048], [.208, .456, .153, .072, .05],
+      [.243, .381, .128, .064, .044], [.273, .333, .090, .047, .030], [.288, .330, .051, .024, .022], [.285, .351, .028, .004, .004],
+    ], [.6, .13, .8], 14),
+    sweptDetail(meshes, root, 'Parting curl', color, [
+      [.115, .506, .112, .006, .008], [.073, .543, .177, .044, .030], [.016, .521, .223, .061, .043],
+      [-.018, .461, .250, .057, .038], [-.009, .406, .253, .033, .027], [.013, .391, .245, .006, .007],
+    ], [0, .28, .96], 12),
+    sweptDetail(meshes, root, 'Lift at the crown', color, [
+      [.034, .532, -.013, .009, .008], [-.06, .569, -.002, .050, .034], [-.128, .581, -.029, .057, .042],
+      [-.165, .603, -.061, .031, .026], [-.158, .627, -.089, .004, .005],
+    ], [-.2, .92, -.2], 12),
+    sweptDetail(meshes, root, 'Crown wave', color, [
+      [.112, .484, -.09, .012, .009], [.024, .541, -.077, .081, .041], [-.093, .539, -.064, .092, .055],
+      [-.173, .483, -.099, .075, .047], [-.224, .449, -.127, .042, .031], [-.243, .46, -.134, .004, .004],
+    ], [-.3, .93, -.2], 14),
+  ]
+  return (hex: string, shaved: boolean, cap: boolean) => {
+    root.setEnabled(!shaved)
+    root.scaling.set(cap ? .94 : 1, cap ? .79 : 1, cap ? .92 : 1)
+    root.position.y = cap ? .037 : 0
+    const pigment = Color3.FromHexString(hex)
+    scalp.material = meshes.paint(pigment.scale(.88).toHexString())
+    for (const [i, lock] of [...sidesAndBack, ...fringe].entries()) {
+      lock.material = meshes.paint(pigment.scale([1.04, .97, 1.12][i % 3]).toHexString())
+    }
+    for (const mesh of fringe) mesh.setEnabled(!cap)
   }
 }

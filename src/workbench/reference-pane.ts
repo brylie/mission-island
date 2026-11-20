@@ -1,3 +1,4 @@
+import { openCrewFitting, turnaroundUrl } from './crew-fitting'
 import { createPhotoControls } from './reference-controls'
 import { encodeCrop, fitCrop, readCrop } from './reference-crop'
 import { readStorage, writeStorage } from '../browser-storage'
@@ -13,9 +14,27 @@ function savedReference(key: string) {
   }
 }
 
+function loadReference(img: HTMLImageElement, ref: NonNullable<ReturnType<typeof readReference>>, width: number) {
+  if (ref.commons) {
+    img.sizes = Math.max(1, width) + 'px'
+    const detail = new URL(ref.image)
+    detail.searchParams.set('width', '1920')
+    img.srcset = ref.image + ' 960w, ' + detail.href + ' 1920w'
+  }
+  img.src = ref.image
+}
+
+function setComparisonTools(pane: HTMLElement, editor: HTMLDetailsElement, fitting: boolean) {
+  pane.classList.toggle('crew-comparison', fitting)
+  pane.querySelector<HTMLElement>('#turnaround-angles')!.hidden = !fitting
+  pane.querySelector<HTMLDetailsElement>('#photo-controls')!.open = !fitting
+  editor.open = !fitting
+}
+
 export function createReferencePane() {
   const pane = document.querySelector<HTMLElement>('#asset-reference')!
   const toggle = document.querySelector<HTMLButtonElement>('#reference-toggle')!
+  const editor = pane.querySelector<HTMLDetailsElement>('#reference-editor')!
   const form = pane.querySelector('form')!
   const input = form.querySelector<HTMLInputElement>('#reference-url')!
   const descriptionInput = form.querySelector<HTMLInputElement>('#reference-description')!
@@ -33,7 +52,7 @@ export function createReferencePane() {
   })
   window.addEventListener('pagehide', () => { if (pending !== undefined) remember() })
 
-  function display(open: boolean, crop = controls.crop) {
+  function display(open: boolean, crop = controls.crop, focalX?: number) {
     controls.reset(crop)
     pane.hidden = !open
     toggle.setAttribute('aria-expanded', String(open))
@@ -42,11 +61,11 @@ export function createReferencePane() {
     input.setCustomValidity('')
     status.textContent = ''
     picture.replaceChildren()
-    source.hidden = true
+    setComparisonTools(pane, editor, subject === 'crew' && address === turnaroundUrl)
     remove.hidden = !address
     const ref = readReference(address)
+    source.hidden = !open || !ref
     if (!open || !ref) return
-    source.hidden = false
     source.href = ref.source
     source.textContent = ref.commons ? 'File & license ↗' : 'Open source ↗'
     const img = new Image()
@@ -55,23 +74,19 @@ export function createReferencePane() {
     status.textContent = 'Loading reference…'
     img.onload = () => {
       if (img.parentElement !== picture) return
-      controls.attach(img)
       status.textContent = 'Reference photo loaded.'
+      controls.attach(img, focalX)
+      focalX = undefined
     }
     img.onerror = () => {
       if (img.parentElement !== picture) return
       controls.reset(controls.crop)
+      editor.open = true
       img.remove()
       status.textContent = 'Image could not load. Open the source or try another URL.'
     }
     picture.append(img)
-    if (ref.commons) {
-      img.sizes = Math.max(1, picture.clientWidth) + 'px'
-      const detail = new URL(ref.image)
-      detail.searchParams.set('width', '1920')
-      img.srcset = ref.image + ' 960w, ' + detail.href + ' 1920w'
-    }
-    img.src = ref.image
+    loadReference(img, ref, picture.clientWidth)
   }
   function savePreference() {
     window.clearTimeout(pending)
@@ -88,7 +103,7 @@ export function createReferencePane() {
   toggle.addEventListener('click', () => {
     display(pane.hidden)
     remember()
-    if (!pane.hidden) input.focus()
+    if (!pane.hidden) (editor.open ? input : editor.querySelector('summary'))?.focus()
   })
   pane.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return
@@ -129,6 +144,8 @@ export function createReferencePane() {
       address = saved.address
       description = saved.description
       const { open, crop } = saved
+      document.getElementById('crew-fitting')!.hidden = id !== 'crew'
+      const focalX = openCrewFitting()
       const hash = location.hash
       const params = new URLSearchParams(hash.slice(hash.indexOf('?') + 1))
       const linked = params.get('ref')
@@ -142,7 +159,7 @@ export function createReferencePane() {
         }
         address = ref.source
         description = referenceDescription(params.get('refAlt'))
-        display(true, readCrop(params.get('crop')))
+        display(true, readCrop(params.get('crop')), focalX)
         remember()
       } else {
         display(open, crop)

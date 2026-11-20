@@ -1,125 +1,107 @@
-import type { Mesh } from '@babylonjs/core/Meshes/mesh'
+import { Color3 } from '@babylonjs/core/Maths/math.color'
+import { createCrewClothes } from './crew-clothes'
+import { createCrewHead } from './crew-head'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import { createCrewHair } from './crew-hair'
-import { coastalProfile } from './coastal-profiles'
 import type { MeshFactory } from '../island-meshes'
-import { defaultAppearance, skinTones, uniforms } from '../crew-appearance'
+import { appearancePartKeys, defaultAppearance, everydayColors, hairColors, isEveryday, shirtColor, skinTones, uniformPalette, uniforms, wearsSwimsuit } from '../crew-appearance'
 import type { CrewAppearance } from '../crew-appearance'
 import { waterLevel } from '../terrain'
-const cream = '#fff3d0'
+const workwear = {
+  courier: { trousers: '#414e64', shoes: '#75533d' },
+  rescue: { trousers: '#47383a', shoes: '#252630' },
+  angler: { trousers: '#303f50', shoes: '#4d3a30' },
+}
 
 export const playerColors = [uniforms.amber.color, uniforms.blue.color]
 export const skiffCrewSeats = [new Vector3(-0.44, -0.39, 0.25), new Vector3(0.44, -0.39, 0.25)]
 
-export function createCrew(meshes: MeshFactory, id: number) {
-  const { scene, sphere, box, paint } = meshes
-  const root = new TransformNode(`Crew ${id + 1}`, scene)
-  const arms: TransformNode[] = []
-  const legs: TransformNode[] = []
-  const fabric: Mesh[] = []
-  const accents: Mesh[] = []
-  const skin: Mesh[] = []
-  const eyes: { mesh: Mesh; height: number }[] = []
-  // Stacked cross-sections keep hems and soles level while giving the cheeks, jacket and boots soft edges.
-  function upright(parent: TransformNode, name: string, color: string,
-    sections: [height: number, backOffset: number, halfWidth: number, halfDepth: number][], sides = 12) {
-    const mesh = coastalProfile(meshes, parent, name, color, sections, sides, .73)
-    mesh.rotation.x = -Math.PI / 2
-    return mesh
-  }
-  for (const side of [-1, 1]) {
-    const leg = new TransformNode('Hip', scene)
-    leg.parent = root
-    leg.position.set(side * .18, .68, .02)
-    upright(leg, 'Twill trousers', '#374f5d', [
-      [-.46, 0, .127, .137], [-.39, 0, .141, .143], [-.19, .008, .149, .157], [.065, .018, .155, .155],
-    ])
-    upright(leg, 'Turned trouser hem', '#526673', [[-.463, 0, .134, .147], [-.399, 0, .146, .152]])
-    upright(leg, 'Leather boot', '#654c3b', [
-      [-.638, -.065, .143, .219], [-.594, -.068, .149, .222], [-.548, -.060, .145, .208],
-      [-.505, -.009, .123, .145], [-.411, .006, .116, .125],
-    ])
-    upright(leg, 'Deck sole', '#453f37', [[-.679, -.066, .142, .215], [-.642, -.066, .149, .222]])
-    legs.push(leg)
-    const arm = new TransformNode('Shoulder', scene)
-    arm.parent = root
-    arm.position.set(side * .36, 1.19, .03)
-    const sleevePivot = new TransformNode('Sleeve seam', scene)
-    sleevePivot.parent = arm
-    sleevePivot.rotation.z = side * .20
-    sleevePivot.position.x = side * .017
-    const sleeve = upright(sleevePivot, 'Cut sleeve', cream, [
-      [-.399, 0, .102, .108], [-.22, 0, .108, .122], [-.064, .004, .136, .143], [.012, .014, .106, .110], [.044, .014, .052, .063],
-    ])
-    fabric.push(sleeve)
-    const cuff = upright(sleevePivot, 'Turned sleeve cuff', cream, [[-.434, 0, .108, .12], [-.363, 0, .114, .127]])
-    accents.push(cuff)
-    skin.push(sphere(side * .115, -.499, .018, .158, .211, .175, cream, arm, true, 8))
-    skin.push(sphere(side * .057, -.503, .070, .077, .101, .081, cream, arm, true, 6))
-    arms.push(arm)
-  }
-  fabric.push(upright(root, 'Canvas chore shirt', cream, [
-    [.65, .015, .301, .207], [.682, .015, .331, .228], [.87, .011, .327, .216],
-    [1.09, 0, .348, .213], [1.185, .005, .355, .194], [1.252, .002, .204, .146],
-  ], 16))
-  fabric.push(upright(root, 'Shirt collar band', cream, [[1.231, 0, .169, .137], [1.278, 0, .148, .131]]))
-  for (const side of [-1, 1]) {
-    const collar = box(side * .073, 1.205, .152, .112, .105, .046, cream, root)
-    collar.rotation.z = -side * .44
-    accents.push(collar)
-  }
-  fabric.push(box(-.164, 1.043, .201, .120, .113, .035, cream, root))
-  accents.push(box(-.164, 1.098, .212, .132, .026, .035, cream, root))
-  for (const y of [.82, .945, 1.067]) accents.push(sphere(.009, y, .215, .033, .033, .017, cream, root, false, 4))
-  skin.push(upright(root, 'Neck', cream, [[1.225, -.012, .129, .113], [1.348, -.012, .124, .125]]))
-  skin.push(upright(root, 'Cheeks and chin', cream, [
-    [1.296, -.073, .126, .138], [1.327, -.059, .186, .168], [1.417, -.040, .229, .19],
-    [1.515, -.030, .245, .196], [1.621, -.019, .246, .199], [1.696, -.005, .218, .181], [1.739, 0, .153, .139],
-  ], 20))
-  skin.push(coastalProfile(meshes, root, 'Wedge nose', cream, [
-    [.205, 1.49, .029, .061], [.246, 1.47, .045, .040], [.274, 1.456, .031, .022],
-  ]))
-  const hair = '#493932'
-  for (const side of [-1, 1]) {
-    skin.push(sphere(side * .235, 1.469, .012, .085, .132, .099, cream, root, true, 8))
-    const white = sphere(side * .095, 1.527, .216, .087, .068, .032, '#fff3df', root, false, 8)
-    const pupil = sphere(side * .093, 1.526, .233, .049, .055, .016, '#49372f', root, false, 8)
-    const brow = sphere(side * .095, 1.587, .216, .098, .024, .025, hair, root, false, 6)
-    brow.rotation.z = side * .07
-    eyes.push({ mesh: white, height: white.scaling.y }, { mesh: pupil, height: pupil.scaling.y })
-    const cheekSmile = sphere(side * .032, 1.385, .235, .072, .015, .019, '#865548', root, false, 6)
-    cheekSmile.rotation.z = side * .14
-  }
-  const fitHair = createCrewHair(meshes, root)
-  fitHair(true)
-  const cap = upright(root, 'Canvas cap', cream, [
-    [1.636, .007, .255, .222], [1.668, .007, .27, .233], [1.757, .018, .239, .208], [1.814, .020, .132, .12],
-  ], 16)
-  const brim = sphere(0, 1.65, .189, .463, .039, .302, cream, root, true, 10)
-  fabric.push(cap)
-  accents.push(brim)
+function legPalette(appearance: CrewAppearance) {
+  const job = appearance.uniform === 'courier' || appearance.uniform === 'rescue' || appearance.uniform === 'angler' ? workwear[appearance.uniform] : undefined
+  const trouserColor = job?.trousers ?? (appearance.trousers === 'sand' ? '#b79669' : '#405464')
+  const shoeColor = job?.shoes ?? (appearance.shoes === 'brown' ? '#76523a' : '#394847')
+  return { trouserColor, shoeColor }
+}
 
+export function createCrew(meshes: MeshFactory, id: number) {
+  const root = new TransformNode(`Crew ${id + 1}`, meshes.scene)
+  const kit = createCrewClothes(meshes, root)
+  const head = createCrewHead(meshes, root, kit.skin)
+  const { paint } = meshes
+  let showCap = true, hatEquipped = true
   let worn: CrewAppearance | undefined
-  let lastDye: string | undefined
-  function setAppearance(appearance = defaultAppearance, dye?: string) {
-    if (worn?.uniform === appearance.uniform && worn.skin === appearance.skin && lastDye === dye) return
-    lastDye = dye
-    worn = appearance
-    const uniform = uniforms[appearance.uniform === 'default' ? (id === 0 ? 'amber' : 'blue') : appearance.uniform]
-    const tone = skinTones[appearance.skin === 'default' ? (id === 0 ? 'light' : 'medium') : appearance.skin]
-    const colors = [paint(dye ?? uniform.color), paint(uniform.trim), paint(tone.color)]
-    for (const [i, parts] of [fabric, accents, skin].entries()) {
-      for (const part of parts) part.material = colors[i]
+  let lastBase = id, lastDye: string | undefined
+
+  function fitHat() {
+    const visible = showCap && hatEquipped
+    head.cap.setEnabled(visible)
+    head.brim.setEnabled(visible)
+    head.hair(hairColors[worn?.hairColor ?? 'chestnut'], worn?.hair === 'bare', visible)
+  }
+  function setCap(visible: boolean) {
+    if (showCap === visible) return
+    showCap = visible
+    fitHat()
+  }
+  function dress(appearance: CrewAppearance, base: number, dye?: string) {
+    const everyday = isEveryday(appearance.uniform)
+    const swim = wearsSwimsuit(appearance)
+    const bare = everyday && (appearance.shoes === 'bare' || (swim && !appearance.shoes))
+    const shirt = shirtColor(appearance, base)
+    const cloth = paint(dye ?? shirt.color), trim = paint(shirt.trim)
+    const tone = skinTones[appearance.skin === 'default' ? (base === 0 ? 'light' : 'medium') : appearance.skin].color
+    const skin = paint(tone)
+    const warm = paint(Color3.Lerp(Color3.FromHexString(tone), Color3.FromHexString('#aa6250'), .27).toHexString())
+    for (const mesh of kit.skin) mesh.material = skin
+    head.nose.material = warm
+    for (const ear of head.earShadows) ear.material = warm
+    const { trouserColor, shoeColor } = legPalette(appearance)
+    const canvas = Color3.FromHexString(dye ?? shirt.color)
+    kit.yoke.material = paint(canvas.scale(.81).toHexString())
+    kit.yoke.setEnabled(!swim)
+    kit.torso.setEnabled(!swim)
+    kit.torso.material = cloth
+    kit.inset.setEnabled(!swim)
+    kit.swimSeam.position.z = .156
+    kit.swimSeam.material = trim
+    kit.swimSeam.setEnabled(swim)
+    for (const mesh of kit.cloth) { mesh.material = mesh.name === 'Folded canvas collar' ? paint(canvas.scale(.90).toHexString()) : cloth; mesh.setEnabled(!swim) }
+    for (const mesh of kit.trim) { mesh.material = trim; mesh.setEnabled(!swim) }
+    for (const mesh of kit.trousers) { mesh.material = paint(trouserColor); mesh.setEnabled(!swim) }
+    const sole = paint(Color3.FromHexString(shoeColor).scale(.67).toHexString())
+    for (const mesh of kit.shoes) {
+      mesh.material = mesh.name === 'Boot outsole' ? sole : paint(shoeColor)
+      mesh.setEnabled(!bare)
     }
+    for (const mesh of kit.bareFeet) { mesh.material = skin; mesh.setEnabled(bare) }
+    for (const mesh of kit.swimCloth) { mesh.material = cloth; mesh.setEnabled(swim) }
+    for (const mesh of kit.bareLimbs) { mesh.material = skin; mesh.setEnabled(swim) }
+  }
+  function setAppearance(appearance = defaultAppearance, { dye, base = id }: { dye?: string; base?: number } = {}) {
+    if (worn?.uniform === appearance.uniform && worn.skin === appearance.skin && lastBase === base &&
+      lastDye === dye && appearancePartKeys.every(key => worn?.[key] === appearance[key])) return
+    worn = appearance
+    lastBase = base
+    lastDye = dye
+    dress(appearance, base, dye)
+    const hat = isEveryday(appearance.uniform) ? appearance.hat ?? (wearsSwimsuit(appearance) ? 'none' : undefined) : undefined
+    const palette = hat && hat !== 'none' ? everydayColors[hat] : uniformPalette(appearance.uniform, base)
+    head.cap.material = paint(dye ?? palette.color)
+    head.brim.material = paint(palette.trim)
+    hatEquipped = hat !== 'none'
+    fitHat()
+    const brow = paint(hairColors[appearance.hairColor ?? 'chestnut'])
+    for (const mesh of head.brows) mesh.material = brow
+    head.nose.scaling.setAll(appearance.nose === 'small' ? .76 : 1)
+    head.mouth.scaling.x = appearance.mouth === 'wide' ? 1.15 : 1
   }
   function blink(time: number) {
-    const phase = (time + 4.1 + id * 1.59) % (5.8 + id * 0.47)
-    const openness = Math.max(0.08, Math.min(1, Math.abs(phase - 0.11) / 0.11))
-    for (const { mesh, height } of eyes) mesh.scaling.y = height * openness
+    const phase = (time + 4.1 + id * 1.59) % (5.8 + id * .47)
+    const openness = Math.max(.06, Math.min(1, Math.abs(phase - .11) / .11))
+    for (const eye of head.eyes) eye.scaling.y = openness * (worn?.eyes === 'narrow' ? .72 : 1)
   }
   setAppearance()
-  return { root, arms, legs, setAppearance, blink, setCap(visible: boolean) { cap.setEnabled(visible); brim.setEnabled(visible); fitHair(visible) } }
+  return { root, arms: kit.arms, legs: kit.legs, setAppearance, blink, setCap }
 }
 
 export function poseCrew(crew: ReturnType<typeof createCrew>, cycle: number, stride: number, airborne: boolean,

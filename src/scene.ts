@@ -9,11 +9,12 @@ import { createAtmosphere } from './island-atmosphere'
 import { landscapeLink } from './playtest-link'
 import { inSkiff } from './actions'
 import { castTravelSeconds } from './charged-actions'
-import { farm, market } from './farm'
+import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutFire } from './fire-effect'
 import { fisherAt, fisherName } from './harbor-fisher'
 import { createIslandCamera } from './island-camera'
+import { hideLandmark, landmarks } from './island-landmarks'
 import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight } from './assets/crew'
 import { createFlatbed, poseFlatbed } from './assets/flatbed'
 import { createSupply } from './assets/props'
@@ -28,9 +29,7 @@ import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
 import { flatbedGroundDrive } from './vehicles/flatbed'
 import { nightLighting } from './weather'
 import { marketRunoffAt } from './market-runoff'
-import {
-  beach, cottageDoor, crateStarts, crewHomes, distance, extinguisherStarts, ferryTerminal, forest, harbor, lookout, town,
-} from './world'
+import { crateStarts, distance, extinguisherStarts, harbor, lookout, town } from './world'
 import type { Pose } from './world'
 
 const sun = '#ffd56b'
@@ -65,7 +64,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   })
   const cycles = crew.map(() => 0)
   const fisher = createCrew(meshes, playerColors.length)
-  fisher.setAppearance({ uniform: 'angler', skin: 'warm' }, '#b9664a')
+  fisher.setAppearance({ uniform: 'angler', skin: 'warm' }, { dye: '#b9664a' })
   fisher.root.setEnabled(false)
   let fisherCycle = 0
   const farmTools = crew.map((character) => createFarmTools(meshes, character))
@@ -92,22 +91,6 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const sprays = extinguisherStarts.map(() => createExtinguisherSpray(scene))
   const fire = createLookoutFire(scene, lookout.x, lookout.z)
 
-  const landmarks = [
-    { point: { x: harbor.x + 1.3, z: harbor.z - 5 }, title: 'Harbor Depot', kind: 'harbor', height: 4 },
-    { point: town, title: 'Seabrook', kind: 'town', height: 2.6 },
-    { point: forest, title: 'Pinewoods', kind: 'forest', height: 7 },
-    { point: beach, title: 'Driftwood Beach', kind: 'beach', height: 2.2 },
-    { point: lookout, title: 'Forest Lookout', kind: 'lookout', height: 4.3 },
-    { point: farm, title: 'Island Farm', kind: 'farm', height: 1.32 },
-    { point: market, title: 'Seabrook Market', kind: 'market', height: 3.32 },
-    { point: jobBoard, title: 'Harbor job board', kind: 'board', height: 2.35 },
-    { point: { x: 21, z: 22 }, title: 'Fire Supplies', kind: 'equipment', height: 2.4 },
-    { point: ferryTerminal, title: 'Ferry terminal · Closed', kind: 'ferry', height: 2.1 },
-    ...crewHomes.flatMap((home, owner) => [
-      { point: cottageDoor(home), title: `Your home · ${home.name}`, kind: 'home', height: 2.5, owner },
-      { point: home.chest, title: 'Your tool chest', kind: 'chest', height: 0.95, owner },
-    ]),
-  ]
   const places = [
     ...landmarks.map((place) => ({ ...place, discovery: '', mapOnly: false })),
     ...starterDiscoveries.map((region) => ({ point: region.site, title: region.name, kind: 'discovery',
@@ -222,7 +205,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       hoe.setEnabled(!boating && player.equipped === 'hoe')
       can.setEnabled(!boating && player.equipped === 'watering-can')
       const wasVisible = node.isEnabled()
-      character.setAppearance(player.appearance)
+      character.setAppearance(player.appearance, { base: player.appearanceBase })
       character.blink(time)
       if (boating) {
         const side = seatIndex === 0 ? -1 : 1
@@ -301,8 +284,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       const range = close && local ? distance(place.point, local) : 0
       const opacity = Math.min(1, Math.max(0, (80 - range) / 38))
       place.label.hidden = opacity === 0 || (place.mapOnly && close) ||
-        ('owner' in place && (place.owner !== local?.id || (place.kind === 'chest' && (!close || range > 12)))) ||
-        (place.kind === 'ferry' && close && range > 38) ||
+        hideLandmark(place, local?.id, close, range) ||
         Boolean(place.discovery && !local?.discoveries?.includes(place.discovery)) ||
         (place.kind === 'equipment' && last?.mission !== 'fire') || (place.kind === 'board' && last?.mission !== 'complete')
       place.label.style.opacity = String(opacity)

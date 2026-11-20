@@ -23,6 +23,14 @@ The shared crew factory now builds a canvas shirt with a weighted hem, rolled cu
 
 ![In-engine crew fitting at the Workbench, front and rear bareheaded, carrying a crate in uniform, and seated with a paddle.](../images/crew-first-fitting.jpg)
 
+## Current wardrobe fitting
+
+![Live front view of the sea-green courier beside the illustrated turnaround in the Asset Workbench.](../images/crew-turnaround-comparison.jpg)
+
+Open **Wardrobe → Crew character → Compare turnaround**. Use **Front** to compare cheek width, the shoulder line and how much trouser shows below the shirt. Use **Side** to compare the nose, the sweep of the fringe and the toe of the boot. **Back** is the view players see on the walk to the harbor. Look for the nape above the collar and clear space between the forearms and the shirt.
+
+The revised shirt hem sits about 0.77 m above the soles. The shoulder, hip and tool-grip pivots stay in their existing positions so the same base can carry a crate, paddle and swim. Try a cap, change the hair and skin colors, then switch to swimwear and bare feet to check the base without its work clothes. The illustrated direction is approved. The playable silhouette is ready for a player review before fitting further outfits.
+
 ## Review with one playable figure
 
 1. Open **Wardrobe → Crew character** in the Asset Workbench. Save the current front, side and rear views. Compare one proposed base in the same light and camera, first bareheaded, then with the existing cap. Use the third-person rear view for the deciding shot.

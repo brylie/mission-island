@@ -12,7 +12,9 @@ The six plots at Island Farm are shared. Each player can work any plot, so one c
 
 The action uses the nearest plot within about two meters. Each player's cottage chest provides one starter seed. Press **B** at the market awning to buy more for one coin each. Each planting consumes one seed. Watered plots grow during daylight, and rain waters planted plots. The host resolves simultaneous actions in order, so only the first successful harvest of a ripe plot earns a carrot.
 
-Press **E** at the striped awning at Seabrook Market with your hands free of loose cargo. The market sells all fish and carrots in your inventory for 2 and 3 coins each. Each sale deposits its proceeds once in the crew bank. Either player can spend three shared coins at **Options → Crew appearance** for the Harbor angler uniform.
+Press **E** at the striped awning at Seabrook Market with your hands free of loose cargo. The market sells all fish and carrots in your inventory for 2 and 3 coins each. Each sale deposits its proceeds once in the crew bank.
+
+The clothing counter beside the awning sells individual pieces and the Harbor angler outfit. Purchases use the crew bank and go into the buyer’s own wardrobe. The host checks the buyer’s position, ownership, and the balance before spending any coins. If both players try to buy the three-coin outfit with only three coins left, only the first purchase succeeds.
 
 During a [market order](crew-orders.md), **E** first offers the requested goods up to the remaining amount. The prompt shows how many will go toward the crew order. Press **E** again to sell remaining goods once the order is filled.
 
