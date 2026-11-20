@@ -1,4 +1,7 @@
 import './style.css'
+import { bindBiomeRecipes } from './biome-files'
+import { biomeLink, codex, readRecipe, recipeFromLink } from '../biome-recipe'
+import { bindPlaytestCopy, landscapeLink, landscapeWindow, readLandscapeView } from '../playtest-link'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { readStorage, writeStorage } from '../browser-storage'
@@ -60,7 +63,20 @@ function readSavedView(): Partial<SavedView> {
   }
 }
 
+const shared = location.hash === '#landscape' ? readLandscapeView(new URLSearchParams(location.search)) : undefined
 const saved = readSavedView()
+const sharedRecipe = location.hash === '#biome' ? recipeFromLink(new URLSearchParams(location.search)) : undefined
+if (sharedRecipe) {
+  saved.options = { ...saved.options, biome: sharedRecipe }
+  Object.assign(saved, { id: 'biome', camera: undefined, time: 0, playing: true })
+}
+if (shared) {
+  const timeline = landscapeWindow(shared.time)
+  saved.id = 'landscape'
+  saved.camera = shared.camera
+  saved.options = { ...saved.options, landscape: { x: shared.focus[0], z: shared.focus[1], hour: shared.hour, rain: shared.rain, clockStart: timeline.start } }
+  Object.assign(saved, { time: timeline.time, playing: false, grid: shared.grid, wireframe: shared.wireframe, turntable: false })
+}
 const draft = createLandscapeDraft(readStorage('localStorage', draftStorageKey))
 let entries = initialEntries
 let createPreviewStage = createStage
@@ -93,6 +109,10 @@ function remember() {
     grid: grid.checked, wireframe: wireframe.checked, turntable: turntable.checked,
   }
   writeStorage('sessionStorage', storeKey, JSON.stringify(view))
+  if (asset.id === 'biome' && new URLSearchParams(location.search).has('recipe')) {
+    const link = biomeLink(location.href, readRecipe(values))
+    if (link !== location.href) history.replaceState(null, '', link)
+  }
 }
 
 function restoreOptions(controls: readonly Control[] = [], previous: Values = {}): Values {
@@ -150,7 +170,17 @@ function selectLibraryAsset() {
 
 function renderAssetControls() {
   inspector.replaceChildren()
+  let group = ''
   for (const control of asset.controls ?? []) {
+    const organism = asset.id === 'biome' ? codex.find(item => item.key === control.key) : undefined
+    const heading = organism?.group ?? 'Conditions'
+    if (asset.id === 'biome' && heading !== group) {
+      group = heading
+      const title = document.createElement('h3')
+      title.className = 'codex-group'
+      title.textContent = group
+      inspector.append(title)
+    }
     const row = document.createElement('label')
     const name = document.createElement('span')
     name.textContent = control.label
@@ -191,10 +221,10 @@ function renderAssetControls() {
           input.value = String(values[control.key])
           input.addEventListener('input', () => {
             const next = input.valueAsNumber
-            if (Number.isFinite(next) && next >= control.min && next <= control.max) setOption(control, next, false)
+            if (!control.rebuild && Number.isFinite(next) && next >= control.min && next <= control.max) setOption(control, next, false)
           })
           input.addEventListener('change', () => {
-            const next = input.valueAsNumber
+            const next = control.step === 1 ? Math.round(input.valueAsNumber) : input.valueAsNumber
             input.value = String(Number.isFinite(next) ? Math.max(control.min, Math.min(control.max, next)) : values[control.key])
             setOption(control, input.valueAsNumber)
           })
@@ -227,6 +257,14 @@ function renderAssetControls() {
       }
     }
     inspector.append(row)
+    if (organism) {
+      const note = document.createElement('p')
+      note.className = 'codex-note'
+      note.id = 'note-' + organism.key
+      note.textContent = organism.note
+      row.querySelector('input')?.setAttribute('aria-describedby', note.id)
+      inspector.append(note)
+    }
   }
 }
 
@@ -279,14 +317,26 @@ function rebuild(camera?: CameraState) {
 }
 
 function loadAsset(camera?: CameraState) {
-  values = restoreOptions(asset.controls, optionsByAsset[asset.id])
+  const previous = optionsByAsset[asset.id]
+  values = restoreOptions(asset.controls, previous)
+  if (asset.landscape && typeof previous?.clockStart === 'number' && Number.isFinite(previous.clockStart)) {
+    values.clockStart = previous.clockStart
+  }
   optionsByAsset[asset.id] = values
   element('asset-group').textContent = asset.group
   element('asset-title').textContent = asset.name
   element('asset-description').textContent = asset.description
   element('source-file').textContent = asset.source
   element('asset-inspector').hidden = !asset.controls?.length
-  element('lighting-row').hidden = Boolean(asset.landscape)
+  const biome = asset.id === 'biome'
+  element('biome-presets').hidden = element('biome-field').hidden = !biome
+  element('settings-heading').textContent = biome ? 'Habitat codex' : 'Asset settings'
+  element('copy-playtest').textContent = biome ? 'Copy recipe link' : 'Copy playtest link'
+  element('copy-status').textContent = ''
+  element('playtest-url').hidden = true
+  element('playtest-tools').hidden = !asset.landscape && !biome
+  lightSelect.disabled = Boolean(asset.landscape) || biome
+  element('lighting-row').hidden = Boolean(asset.landscape) || biome
   element('landscape-view-row').hidden = !asset.landscape
   playback.hidden = !asset.duration
   slider.max = String(asset.duration ?? 0)
@@ -314,7 +364,10 @@ function restoreStudy(shot: LandscapeShot, framingOnly = false) {
     wireframe.checked = shot.wireframe
   }
   playing = turntable.checked = false
-  seekTo(shot.time)
+  const clock = Number(shot.options.clockStart ?? 0) + shot.time
+  const timeline = landscapeWindow(clock)
+  values.clockStart = timeline.start
+  seekTo(timeline.time)
   stage?.setCamera(shot.camera, values)
   renderAssetControls()
   applyDisplay()
@@ -373,7 +426,7 @@ function openLandscapeView(id: string) {
   const view = landscapeViews[id]
   Object.assign(values, {
     x: view.focus.x, z: view.focus.z, focusHeight: view.focus.height,
-    hour: view.hour, rain: 0, sunShafts: true, shaftIntensity: 100,
+    hour: view.hour, rain: 0, clockStart: 0, sunShafts: true, shaftIntensity: 100,
   })
   stage?.setLandscapeView(view)
   grid.checked = wireframe.checked = turntable.checked = false
@@ -460,11 +513,29 @@ for (const button of document.querySelectorAll<HTMLButtonElement>('[data-angle]'
   })
 }
 element('reset').addEventListener('click', () => {
+  const clockStart = values.clockStart
   values = restoreOptions(asset.controls)
+  if (asset.landscape && typeof clockStart === 'number') values.clockStart = clockStart
   optionsByAsset[asset.id] = values
   rebuild(asset.landscape ? undefined : stage?.getCamera())
   renderAssetControls()
   remember()
+})
+
+bindBiomeRecipes(() => readRecipe(values), recipe => {
+  if (asset.id !== 'biome') return
+  optionsByAsset.biome = { ...recipe }
+  time = 0
+  loadAsset(stage?.getCamera())
+  remember()
+})
+
+bindPlaytestCopy(() => {
+  if (asset.id === 'biome') return biomeLink(location.href, readRecipe(values))
+  const camera = stage?.getCamera()
+  if (!camera || !asset.landscape) return
+  return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? .8 },
+    hour: Number(values.hour), rain: Number(values.rain), time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
 })
 
 let resize: ResizeObserver | undefined

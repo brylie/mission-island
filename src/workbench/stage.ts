@@ -8,7 +8,7 @@ import { Scene } from '@babylonjs/core/scene'
 import { createIslandLighting, createMeshFactory } from '../island-meshes'
 import { createAtmosphere } from '../island-atmosphere'
 import { createIslandMaterial } from '../materials'
-import { groundHeight as terrainHeight } from '../terrain'
+import { groundHeight as terrainHeight, waterLevel } from '../terrain'
 import type { Entry, Values } from './catalog'
 import { lightingPresets } from './lighting'
 import type { LightingPreset } from './lighting'
@@ -21,6 +21,7 @@ export interface CameraState {
   alpha: number
   beta: number
   radius: number
+  fov?: number
   target: number[]
 }
 
@@ -29,11 +30,12 @@ export type Angle = 'perspective' | 'front' | 'side' | 'top'
 export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values,
   reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>) {
   const scene = new Scene(engine)
+  const biome = entry.id === 'biome'
   try {
     scene.clearColor = Color4.FromHexString('#1b292aff')
     if (entry.landscape) scene.fogMode = Scene.FOGMODE_LINEAR
     const { sky, sunlight, shadows } = createIslandLighting(scene)
-    const atmosphere = entry.landscape ? createAtmosphere(scene, sky, sunlight, shadows) : undefined
+    const atmosphere = entry.landscape || biome ? createAtmosphere(scene, sky, sunlight, shadows) : undefined
     const firstSubjectMesh = scene.meshes.length
     const meshes = createMeshFactory(scene, shadows)
     const update = entry.create(meshes, values, reportError)
@@ -60,11 +62,11 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     let focusHeight = Number(values.focusHeight ?? 0.25)
     if (entry.landscape) {
       const point = { x: Number(values.x), z: Number(values.z) }
-      center.set(point.x, terrainHeight(point) + focusHeight, point.z)
+      center.set(point.x, Math.max(waterLevel, terrainHeight(point)) + focusHeight, point.z)
     }
     const groundSize = Math.max(14, size * 2.25)
     const step = size > 45 ? 5 : size > 12 ? 2 : 1
-    const radius = entry.landscape ? 24 : Math.max(3, size * 1.55 + subjectHeight * 0.6)
+    const radius = entry.landscape ? 24 : biome ? size * 1.15 : Math.max(3, size * 1.55 + subjectHeight * 0.6)
     const camera = new ArcRotateCamera('Workbench camera', entry.angle ?? 0.88, 1.1, radius, center.clone(), scene)
     camera.lowerRadiusLimit = entry.landscape ? 0.55 : Math.max(0.55, size * 0.12)
     camera.upperRadiusLimit = entry.landscape ? 450 : radius * 5
@@ -87,7 +89,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       const ground = meshes.box(center.x, groundHeight - 0.19, center.z, groundSize, 0.36, groundSize, floor, undefined, false)
       ground.receiveShadows = true
     }
-    const gridY = (entry.landscape ? terrainHeight(center) : groundHeight) + 0.005
+    const gridY = (entry.landscape ? Math.max(waterLevel, terrainHeight(center)) : groundHeight) + 0.005
     const gridOrigin = new Vector3(center.x, gridY, center.z)
     const half = groundSize / 2
     const lines = directions.flatMap((offset) => [
@@ -100,7 +102,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     grid.isPickable = false
 
     sunlight.position.set(center.x - 14, Math.max(21, size), center.z - 16)
-    sunlight.shadowMaxZ = Math.max(55, size * 4)
+    sunlight.shadowMaxZ = Math.max(biome ? 160 : 55, size * 4)
     let lighting: LightingPreset = 'daylight'
     let wireframe = false
     function applyWireframe(mesh: AbstractMesh) {
@@ -120,6 +122,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       camera.alpha = saved.alpha
       camera.beta = saved.beta
       camera.radius = saved.radius
+      camera.fov = saved.fov ?? .8
       camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0
       camera.inertialPanningX = camera.inertialPanningY = 0
     }
@@ -136,10 +139,10 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       const height = Number(settings.focusHeight ?? 0.25)
       if (center.x === point.x && center.z === point.z && focusHeight === height) return
       focusHeight = height
-      const ground = terrainHeight(point)
+      const ground = Math.max(waterLevel, terrainHeight(point))
       center.set(point.x, ground + height, point.z)
       grid.position.set(point.x - gridOrigin.x, ground + 0.005 - gridOrigin.y, point.z - gridOrigin.z)
-      camera.setTarget(center.clone())
+      camera.setTarget(center.clone(), false, false, true)
     }
     setView()
 
@@ -157,12 +160,12 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       draw(time: number, rate: number, seek: boolean, settings: Values, turntable: boolean, delta: number) {
         if (turntable) camera.alpha += delta * 0.38
         if (entry.landscape) updateLandscapeFocus(settings)
-        const rain = entry.landscape ? Number(settings.rain) : 0
+        const rain = biome ? Number(settings.rain) / 100 : entry.landscape ? Number(settings.rain) : 0
         const shaftIntensity = settings.sunShafts === false ? 0 : Number(settings.shaftIntensity ?? 100) / 100
         camera.getViewMatrix()
         const position = camera.globalPosition
-        const light = atmosphere?.update(time, { hour: Number(settings.hour), rain }, position, true, shaftIntensity) ?? 1
-        update?.({ time, rate, seek, lighting, camera: position, light, rain }, settings)
+        const light = atmosphere?.update(time, { hour: Number(settings.hour), rain }, position, true, { shaftIntensity }) ?? 1
+        update?.({ time, rate, seek, lighting, camera: position, light, rain, delta }, settings)
         layout?.update(delta, time)
         subject.forEach(applyWireframe)
         layout?.meshes().forEach(applyWireframe)
@@ -184,7 +187,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         setCamera({ alpha, beta, radius, target: center.asArray() })
       },
       getCamera(): CameraState {
-        return { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, target: camera.target.asArray() }
+        return { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, fov: camera.fov, target: camera.target.asArray() }
       },
       setCamera,
       dispose() {

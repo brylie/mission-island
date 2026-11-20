@@ -1,16 +1,14 @@
-import { distanceToRoute, footpaths, road } from './routes.ts'
+import { seededRandom } from './seeded-random.ts'
+import { ridgeViewpoint } from './starter-sites.ts'
+import { starterPropTop } from './starter-colliders.ts'
+import { distanceToRoute, footpaths, road, shellglassPoint, splitstone } from './routes.ts'
 import { coastRadius, falls, grove, groundHeight, headland, pool, waterDepth } from './terrain.ts'
 import { beach, distance, forest, harbor, island, lookout, town } from './world.ts'
 import type { Point } from './world.ts'
 
 export const treeTrunkRadius = 0.265
 
-export function seededRandom(seed: number) {
-  return () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0
-    return seed / 4294967296
-  }
-}
+export { seededRandom }
 
 const northernRandom = seededRandom(41132)
 export const northernRegions = [
@@ -28,11 +26,17 @@ export const northernRegions = [
       (region.id === 'fernfall' && Math.abs(point.x - falls.x) < 5)) continue
     props.push({ ...point, y: groundHeight(point), size: 0.8 + northernRandom() * 1.35, angle, index, tree: region.trees })
   }
-  const site = { x: region.at.x + (region.id === 'pool' ? 21 : -5), z: region.at.z - 6 }
+  const site = region.id === 'ridge' ? ridgeViewpoint : { x: region.at.x + (region.id === 'pool' ? 21 : -5), z: region.at.z - 6 }
   return { ...region, props, site }
 })
 
 export const northernProps = northernRegions.flatMap(({ props }) => props)
+
+export const starterDiscoveries = [
+  ...northernRegions,
+  { id: 'shellglass', name: 'Shellglass Tide Pool', site: shellglassPoint },
+  { id: 'splitstone', name: 'Splitstone Narrows', site: splitstone },
+]
 
 const random = seededRandom(14757)
 export const islandTrees = Array.from({ length: 92 }, (_, variant) => {
@@ -62,7 +66,14 @@ export const islandRocks = Array.from({ length: 82 }, (_, index) => {
   footpaths.every(({ points, width }) => distanceToRoute(rock, points) >= width / 2 + rock.size * 0.56 + 0.5),
 )
 
+// Embedded stones flank the spring outlet, ledges and plunge pool.
+for (const [x, z, size, angle] of [[9.7, 80.7, 1.65, .8], [9.2, 82.6, 1.45, -.5], [12.55, 83.8, 1.9, .3],
+  [10.63, 85.2, 1.25, 1.5], [14.06, 86.6, 1.7, .75], [12.16, 88.3, 1.15, -.8], [16.8, 90.2, 1.06, .8]]) {
+  islandRocks.push({ x, z, size, angle, light: false, ground: groundHeight({ x, z }) - size * .08 })
+}
+
 export function overlapsProp(point: Point, padding: number) {
+  if (starterPropTop(point, padding) > -Infinity) return true
   const trunk = treeTrunkRadius + padding
   if (islandTrees.some((tree) => (point.x - tree.x) ** 2 + (point.z - tree.z) ** 2 < trunk ** 2)) return true
   if (point.z > 40 && northernProps.some((prop) => {
@@ -91,7 +102,7 @@ function rockTop(point: Point, rock: Point, angle: number, width: number, depth:
 }
 
 export function propTop(point: Point, padding: number) {
-  let top = -Infinity
+  let top = starterPropTop(point, padding)
   for (const tree of islandTrees) {
     if (distance(point, tree) < treeTrunkRadius + padding) top = Math.max(top, groundHeight(tree) + tree.height / 2)
   }

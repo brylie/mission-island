@@ -1,8 +1,10 @@
-import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { onBeachTowel } from './starter-sites'
 import type { MeshFactory } from './island-meshes'
-import { seededRandom } from './scenery'
-import { coastRadius, groundHeight, shoreShape, waterLevel } from './terrain'
-import { island } from './world'
+import { distanceToRoute, footpaths, road } from './routes'
+import { islandTrees, seededRandom } from './scenery'
+import { coastPoint, coastRadius, groundHeight, grove, pool, waterDepth, waterLevel } from './terrain'
+import { createFlocks, createSchools } from './wildlife'
+import type { WildlifeFrame } from './wildlife'
 
 export function createWildflowers(meshes: MeshFactory) {
   const random = seededRandom(64286)
@@ -17,7 +19,7 @@ export function createWildflowers(meshes: MeshFactory) {
   for (const [x, z] of [[-31, 18], [-17, 29], [28, -25], [37, -23]]) {
     for (let i = 0; i < 23; i++) {
       const point = { x: x + (random() - 0.5) * 11, z: z + (random() - 0.5) * 7 }
-      if (coastRadius(point) > 0.93) continue
+      if (coastRadius(point) > 0.93 || onBeachTowel(point)) continue
       const y = groundHeight(point)
       const angle = random() * Math.PI
       const height = 0.19 + random() * 0.28
@@ -38,42 +40,65 @@ export function createWildflowers(meshes: MeshFactory) {
   }
 }
 
-export function createFishSchools(meshes: MeshFactory) {
-  const fishColor = meshes.paint('#6daca9')
-  fishColor.backFaceCulling = false
-  const schools = [-2.32, -0.89, 1.19].map((angle) => {
-    const root = new TransformNode('Fish school', meshes.scene)
+export function createUnderstory(meshes: MeshFactory) {
+  for (const habitat of [
+    { name: 'Juniper fern fans', x: grove.x + 2, z: grove.z + 1, radius: 12, height: .53, bend: .5, color: '#72925d', seed: 1632 },
+    { name: 'Mirror Pool rushes', x: pool.x, z: pool.z, radius: 16, height: 1.25, bend: .17, color: '#7b9362', seed: 2833 },
+    { name: 'Driftwood marram', x: 37, z: -32, radius: 4.4, height: .45, bend: .24, color: '#a3a677', seed: 3301 },
+  ]) {
+    const random = seededRandom(habitat.seed)
     const positions: number[] = []
-    const indices: number[] = []
-    for (let i = 0; i < 6; i++) {
-      const x = (i % 3 - 1) * 0.66
-      const z = -Math.floor(i / 3) * 0.94 - Math.abs(x) * 0.43
-      const scale = 0.68 + (i % 4) * 0.1
-      const base = positions.length / 3
-      const fish = [
-        [0, 0, 0.39], [0.095, 0, 0.035], [0, 0.12, 0.02], [-0.095, 0, 0.035], [0, -0.085, 0.02],
-        [0, 0, -0.29], [0, 0.105, -0.44], [0, -0.096, -0.44],
-      ]
-      positions.push(...fish.flatMap(([dx, dy, dz]) => [x + dx * scale, dy * scale, z + dz * scale]))
-      indices.push(...[0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1, 5, 2, 1, 5, 3, 2, 5, 4, 3, 5, 1, 4,
-        5, 6, 7].map((vertex) => base + vertex))
+    for (let i = 0; i < 105; i++) {
+      const angle = random() * Math.PI * 2
+      const radius = habitat.radius * (.68 + random() * .5)
+      const point = { x: habitat.x + radius * Math.cos(angle), z: habitat.z + radius * Math.sin(angle) }
+      if (onBeachTowel(point) || waterDepth(point) > .04 || distanceToRoute(point, road) < 4.3 ||
+        footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + .68)) continue
+      const y = groundHeight(point) - .025, scale = .66 + random() * .82
+      for (let leaf = 0; leaf < 5; leaf++) {
+        const theta = angle + leaf * 2.34 + random() * .26
+        const height = habitat.height * scale * (.7 + random() * .4)
+        const bend = habitat.bend * scale * (.6 + random() * .6)
+        const x = Math.cos(theta) * bend, z = Math.sin(theta) * bend
+        const wide = .03 + bend * .1
+        const wx = Math.sin(theta) * wide, wz = -Math.cos(theta) * wide
+        const root = [point.x + x * .07, y, point.z + z * .07]
+        const left = [point.x + x * .42 - wx, y + height * .63, point.z + z * .42 - wz]
+        const right = [point.x + x * .42 + wx, y + height * .63, point.z + z * .42 + wz]
+        const tip = [point.x + x, y + height, point.z + z]
+        positions.push(...root, ...left, ...right, ...left, ...tip, ...right)
+      }
     }
-    meshes.surface('Silver shallows fish', positions, indices, fishColor, root)
-    return { root, angle }
-  })
-  function coastalPosition(angle: number, phase: number) {
-    const path = angle + 0.135 * Math.sin(phase)
-    const radius = shoreShape(path) * (1.037 + 0.008 * Math.cos(phase))
-    return { x: Math.cos(path) * island.width / 2 * radius, z: Math.sin(path) * island.length / 2 * radius }
+    const paint = meshes.paint(habitat.color)
+    paint.backFaceCulling = false
+    meshes.surface(habitat.name, positions, Array.from({ length: positions.length / 3 }, (_, i) => i), paint).freezeWorldMatrix()
   }
-  return (time: number) => {
-    for (const { root, angle } of schools) {
-      const phase = time * 0.19 + angle
-      const here = coastalPosition(angle, phase)
-      const ahead = coastalPosition(angle, phase + 0.01)
-      root.position.set(here.x, waterLevel - 0.22 + Math.sin(time * 2 + angle) * 0.035, here.z)
-      root.rotation.y = Math.atan2(ahead.x - here.x, ahead.z - here.z)
-      root.rotation.z = Math.sin(time * 6 + angle) * 0.07
+}
+
+export function createStarterWildlife(meshes: MeshFactory) {
+  const schools = createSchools(meshes, [-2.17, -0.89, 1.19].map((angle) => {
+    const off = coastPoint(angle)
+    const length = Math.hypot(off.x, off.z)
+    return {
+      swim(time: number) {
+        const phase = time * .18 + angle
+        return coastPoint(angle + .115 * Math.sin(phase), 1.042 + .007 * Math.cos(phase))
+      },
+      deep: { x: off.x / length, z: off.z / length },
+      level: waterLevel,
+      isWater: (point) => waterDepth(point) > .36,
     }
+  }))
+  const tree = islandTrees.find(({ variant, x, z }) => variant % 3 === 0 && x > -14 && x < -5 && z > 13)
+  const landing = { x: -15, z: -24 }
+  const roost = tree ? { x: tree.x, z: tree.z, y: groundHeight(tree) + tree.height * 1.025 } : { x: -9, y: 1, z: 20 }
+  const flocks = createFlocks(meshes, [
+    { center: { x: -18, y: 7, z: -19 }, landing: { ...landing, y: groundHeight(landing) + .13 },
+      roost, range: 23, color: '#f5e8d2', count: 5 },
+    { center: { x: -13, y: 5, z: 24 }, landing: roost, roost, range: 9, color: '#6f677e', count: 3, bat: true },
+  ])
+  return (frame: WildlifeFrame) => {
+    schools(frame)
+    flocks(frame)
   }
 }

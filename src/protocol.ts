@@ -1,3 +1,4 @@
+import type { BiomeFrame } from './biome-model'
 import type { Point, Pose } from './world'
 import type { CrewAppearance } from './crew-appearance'
 import type { ChargeKind } from './charged-actions'
@@ -69,6 +70,7 @@ export interface Item extends Pose {
 export type Mission = 'delivery' | 'fire' | 'complete'
 
 export interface Snapshot {
+  juniper: BiomeFrame
   type: 'state'
   players: Player[]
   truck: Truck
@@ -78,6 +80,7 @@ export interface Snapshot {
   fire: number
   farm: PlotStage[]
   weather: Weather
+  islandTime: number
   jobs: JobBoardState
 }
 

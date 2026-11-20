@@ -1,3 +1,4 @@
+import { starterSolids } from '../src/starter-colliders.ts'
 import { Body, Box, Heightfield, SAPBroadphase, Sphere, Vec3, World } from 'cannon-es'
 import type { Input, Item } from '../src/protocol.ts'
 import { buildings, chestSize, crateSize, crateStarts, crewHomes, dockEndZ, harborDock, truckBed } from '../src/world.ts'
@@ -26,6 +27,14 @@ export function createCargoPhysics() {
   const ground = new Body({ position: new Vec3(west, 0, north), shape: new Heightfield(heights, { elementSize: 1 }) })
   ground.quaternion.setFromEuler(-Math.PI / 2, 0, 0)
   world.addBody(ground)
+  for (const solid of starterSolids) {
+    const body = new Body({
+      position: new Vec3(solid.x, (solid.top + solid.floor) / 2, solid.z),
+      shape: new Box(new Vec3(solid.halfWidth, (solid.top - solid.floor) / 2, solid.halfDepth)),
+    })
+    body.quaternion.setFromEuler(0, solid.heading, 0)
+    world.addBody(body)
+  }
   for (const building of buildings) {
     world.addBody(new Body({
       position: new Vec3(building.x, building.h / 2, building.z),

@@ -6,9 +6,9 @@ import { landscapeShotLink, parseLandscapeShot } from '../src/workbench/landscap
 const shot = {
   version: 1,
   name: 'Pinewoods · dawn & mist',
-  camera: { alpha: 0.43, beta: 1.59, radius: 14, target: [-39.7, 4.05, 19.2] },
+  camera: { alpha: 0.43, beta: 1.59, radius: 14, fov: .64, target: [-39.7, 4.05, 19.2] },
   time: 11.25,
-  options: { x: -39.7, z: 19.2, focusHeight: 4.05, hour: 6.4, rain: 0, sunShafts: true, shaftIntensity: 125 },
+  options: { clockStart: 192, x: -39.7, z: 19.2, focusHeight: 4.05, hour: 6.4, rain: 0, sunShafts: true, shaftIntensity: 125 },
   grid: false,
   wireframe: true,
 }
@@ -24,6 +24,8 @@ test('landscape shot links reject malformed versions and out-of-bounds cameras',
   for (const payload of [
     'not JSON',
     JSON.stringify({ ...shot, version: 2 }),
+    JSON.stringify({ ...shot, options: { clockStart: -1 } }),
+    JSON.stringify({ ...shot, camera: { ...shot.camera, fov: 4 } }),
     JSON.stringify({ ...shot, camera: { ...shot.camera, radius: 0 } }),
     JSON.stringify({ ...shot, camera: { ...shot.camera, target: [1, 2] } }),
     JSON.stringify({ ...shot, camera: { ...shot.camera, target: [1, null, 3] } }),

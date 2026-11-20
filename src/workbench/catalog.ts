@@ -1,8 +1,11 @@
+import { landscapeDuration } from '../playtest-link'
+import { createJuniperHabitat } from '../juniper-habitat'
+import { biomeEntry } from './biome-preview'
 import { createLookoutFire } from '../fire-effect'
 import { createExtinguisherSpray } from '../extinguisher-spray'
 import {
   createBuoy, createCrew, createDock, createFlatbed, createHarborBoat, createHomeChest, createHouse,
-  createRoad, createRock, createSupply, createTrail, createTree, createUmbrella, poseCrew, poseFlatbed, poseFloating,
+  createRoad, createRock, createSupply, createSidewalk, createTrail, createTree, createUmbrella, poseCrew, poseSwimming, poseFlatbed, poseFloating,
   umbrellaColors,
 } from '../island-assets'
 import { createFarm } from '../island-farm'
@@ -24,6 +27,10 @@ import { footpaths, road, walkways } from '../routes'
 import { buildings, cargoSlots, crateSize, jumpGravity, jumpSpeed, truckBed } from '../world'
 import { createSurfaceShader } from './surface-preview'
 import type { LightingPreset } from './lighting'
+import { createExterior } from '../second-island/exteriors'
+import { buildings as saltwindBuildings } from '../second-island/lots'
+import { createSaltwindVehicle, vehicleSpecs } from '../second-island/vehicles'
+import type { VehicleId } from '../second-island/vehicles'
 
 type Value = string | number | boolean
 export type Values = Record<string, Value>
@@ -40,7 +47,8 @@ interface Playback {
   rate: number
   seek: boolean
   lighting: LightingPreset
-  camera: Point
+  camera: Point & { y: number }
+  delta: number
   light: number
   rain: number
 }
@@ -69,6 +77,20 @@ const control = (key: string, label: string, value: string, choices: Record<stri
 const range = (key: string, label: string, value: number, min: number, max: number, step: number, rebuild = false): Control =>
   ({ type: 'range', key, label, value, min, max, step, rebuild })
 
+const saltwindAssets: Entry[] = [
+  ...(Object.entries(vehicleSpecs) as [VehicleId, typeof vehicleSpecs[VehicleId]][]).map(([id, spec]): Entry => ({
+    id: `saltwind-${id}`, name: spec.name, group: 'Saltwind vehicles', source: 'src/second-island/vehicles.ts',
+    description: `${spec.width} m wide · ${spec.length} m long · +Z forward. Staged exterior.`,
+    create(meshes) { createSaltwindVehicle(meshes, id) },
+  })),
+  ...saltwindBuildings.map((building): Entry => ({
+    id: `saltwind-${building.site}`, name: building.site.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' '),
+    group: 'Saltwind buildings', source: 'src/second-island/exteriors.ts',
+    description: `${building.width} × ${building.depth} m footprint. Front entry faces local +Z.`,
+    create(meshes) { createExterior(meshes, building) },
+  })),
+]
+
 export const entries: Entry[] = [
   {
     id: 'flatbed', name: 'Flatbed truck', group: 'Vehicles', source: models, duration: 4,
@@ -96,10 +118,11 @@ export const entries: Entry[] = [
       }
     },
   },
+  biomeEntry,
   {
     id: 'landscape', name: 'Landscape Workbench', group: 'World', source: 'src/island-world.ts',
     description: 'Focus on map coordinates in metres, orbit and pan, and inspect scenery under different skies.',
-    landscape: true, duration: 84, angle: -Math.PI / 2,
+    landscape: true, duration: landscapeDuration, angle: -Math.PI / 2,
     controls: [
       { type: 'number', key: 'x', label: 'Focus X (m)', value: falls.x, min: -500, max: 500, step: 0.1 },
       { type: 'number', key: 'z', label: 'Focus Z (m)', value: falls.z, min: -500, max: 500, step: 0.1 },
@@ -111,12 +134,20 @@ export const entries: Entry[] = [
     ],
     create(meshes) {
       const world = createIslandWorld(meshes)
-      return ({ time, camera, light, rain }, settings) => {
+      let habitat = createJuniperHabitat()
+      let previousSky = ''
+      return ({ time, delta, rate, camera, light, rain, seek }, settings) => {
         world.northernScenery.update(camera, true)
         poseFloating(world.boat, time)
         world.buoys.forEach((buoy, index) => poseFloating(buoy, time, index * 1.67))
-        world.gulls(time)
-        world.fishSchools(time)
+        const weather = { hour: Number(settings.hour), rain }
+        const frame = { time: Number(settings.clockStart ?? 0) + time, delta: delta * rate, seek, weather, camera, threats: [] }
+        const sky = weather.hour + '/' + rain
+        if (previousSky !== sky) habitat = createJuniperHabitat()
+        previousSky = sky
+        world.juniper(habitat(time, weather, []), time)
+        world.wildlife(frame)
+        world.phenomena(frame)
         world.lights(camera, nightLighting(Number(settings.hour)))
         world.water.pose(time, light, rain)
       }
@@ -126,7 +157,7 @@ export const entries: Entry[] = [
     id: 'crew', name: 'Crew character', group: 'Crew', source: models, duration: 2.4, headroom: 1.45,
     description: 'Play or scrub the crew poses and compare uniform and skin color choices.',
     controls: [
-      control('state', 'Animation', 'walk', { idle: 'Idle', walk: 'Walk', sprint: 'Sprint', jump: 'Jump', reach: 'Left reach', raise: 'Raise right hand', carry: 'Carry crate', throw: 'Throw crate', spray: 'Use extinguisher' }),
+      control('state', 'Animation', 'walk', { idle: 'Idle', walk: 'Walk', sprint: 'Sprint', jump: 'Jump', swim: 'Swim', tread: 'Tread water', reach: 'Left reach', raise: 'Raise right hand', carry: 'Carry crate', throw: 'Throw crate', spray: 'Use extinguisher' }),
       control('uniform', 'Uniform', 'amber', Object.fromEntries(Object.entries(uniforms).map(([id, uniform]) => [id, uniform.name]))),
       control('skin', 'Skin tone', 'light', Object.fromEntries(Object.entries(skinTones).map(([id, tone]) => [id, tone.name]))),
       range('stride', 'Stride length', 1, 0.2, 1.4, 0.05),
@@ -155,7 +186,9 @@ export const entries: Entry[] = [
         crew.setAppearance(readAppearance(values))
         crew.blink(time)
         const power = windup ? chargePower('throw', time) : 0
-        poseCrew(crew, time * (sprinting ? 2.5 : 5 / 3), stride, elevation > 0.08,
+        crew.root.rotation.x = 0
+        if (values.state === 'swim' || values.state === 'tread') poseSwimming(crew, time, Number(values.state === 'swim'))
+        else poseCrew(crew, time * (sprinting ? 2.5 : 5 / 3), stride, elevation > 0.08,
           carrying ? 'crate' : spraying ? 'extinguisher' : undefined, reach, 1, power, throwing, values.state === 'raise')
         crate.setEnabled(carrying)
         crate.position.y = 1.13 + power * 0.41
@@ -318,15 +351,15 @@ export const entries: Entry[] = [
   },
   {
     id: 'trail', name: 'Footpaths', group: 'Routes', source: 'src/routes.ts',
-    description: 'Check the rounded path geometry used by the lookout, beach, and harbor trails.',
+    description: 'Compare the beach pavement, worn attraction paths, and gravel trails.',
     ground: { height: 0, color: surfaces.grass.color },
     controls: [
-      control('route', 'Path', '0', { 0: 'Lookout', 1: 'Beach', 2: 'Harbor' }, true),
+      control('route', 'Path', '0', Object.fromEntries(footpaths.map((path, i) => [i, path.name])), true),
       range('width', 'Width multiplier', 1, 0.5, 1.8, 0.05, true),
     ],
     create(meshes, values) {
       const path = footpaths[Number(values.route)]
-      createTrail(meshes, path.name, path.points, path.width * Number(values.width))
+      createTrail(meshes, path.name, path.points, path.width * Number(values.width), path.surface)
     },
   },
   {
@@ -336,7 +369,7 @@ export const entries: Entry[] = [
     controls: [control('route', 'Walkway', '0', { 0: 'North neighborhood', 1: 'South neighborhood', 2: 'House entrance', 3: 'East houses' }, true)],
     create(meshes, values) {
       const path = walkways[Number(values.route)]
-      createTrail(meshes, path.name, path.points, path.width, true)
+      createSidewalk(meshes, path)
     },
   },
   {
@@ -405,6 +438,7 @@ export const entries: Entry[] = [
       return water ? ({ time }) => water.pose(time) : undefined
     },
   })),
+  ...saltwindAssets,
 ]
 
 function materialControls(surface: SurfaceName): Control[] {

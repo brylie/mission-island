@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#243b39" />
+    <link rel="icon" href="data:," />
+    <title>Saltwind Island · Mission Island</title>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="identity"><span class="flag" aria-hidden="true"></span><div><span>Mission Island</span><h1>Saltwind Island</h1></div></div>
+      <nav aria-label="Preview controls">
+        <a href="/">Starter island</a>
+        <button id="overview" type="button" aria-pressed="false">Overview <kbd>C</kbd></button>
+        <button id="atlas-button" type="button" aria-haspopup="dialog">Site map <kbd>M</kbd></button>
+      </nav>
+    </header>
+    <main>
+      <canvas id="island" tabindex="0" aria-label="Saltwind Island. Walk with WASD or the arrow keys, Space to jump, and drag to look around."></canvas>
+      <div id="world-labels" aria-hidden="true"></div>
+      <div id="boot" role="status"><strong>Saltwind Island</strong><span id="boot-message">Building the preview…</span></div>
+      <section class="journey" aria-labelledby="place" hidden id="journey">
+        <p class="eyebrow" id="stage-label">Development preview</p>
+        <h2 id="place">Brinewick Ferry</h2>
+        <p id="direction">Cross the ramp to the quay or follow the tour through all three villages.</p>
+        <div class="action-row">
+          <button id="tour" class="primary" type="button">Start tour</button>
+          <button id="reset" type="button">Return to ferry</button>
+        </div>
+        <button type="button" id="copy-playtest">Copy playtest link</button>
+          <span id="copy-status" role="status"></span>
+          <input id="playtest-url" type="url" readonly hidden aria-label="Playtest link" />
+        <button type="button" id="resume-preview" hidden>Resume playtest</button>
+        <div class="stops" id="stops" aria-label="Tour stops"></div>
+      </section>
+      <button class="chart" id="mini-button" type="button" aria-label="Open the Saltwind site map" hidden>
+        <span class="north" aria-hidden="true">▲ N</span><canvas id="mini" width="340" height="254" aria-hidden="true"></canvas>
+      </button>
+      <aside class="readout" aria-label="Survey readout" hidden id="readout">
+        <span id="coordinates"></span><span id="discoveries"></span><span id="performance" hidden></span>
+      </aside>
+      <footer class="keys"><span><kbd>W A S D</kbd> Walk</span><span><kbd>Shift</kbd> Run</span><span><kbd>Space</kbd> Jump</span><span>Drag to look</span><span>Scroll to zoom</span></footer>
+    </main>
+    <dialog id="atlas" aria-labelledby="atlas-title">
+      <header><div><p class="eyebrow">Saltwind Island</p><h2 id="atlas-title">Site map</h2></div><button id="atlas-close" type="button">Close <kbd>Esc</kbd></button></header>
+      <div class="atlas-content">
+        <figure><canvas id="map" width="680" height="510" aria-label="Map of Saltwind Island and its roads"></canvas><figcaption id="map-scale"></figcaption></figure>
+        <section aria-label="Sites and landmarks">
+          <label for="site">Survey location</label><select id="site"></select>
+          <p id="site-info"></p><button id="inspect" class="primary" type="button">Inspect site</button>
+          <p class="map-note">Inspect moves the crew to the nearest road access point.</p>
+          <label for="survey-weather">Survey conditions</label>
+          <select id="survey-weather">
+            <option value="live">Live weather</option><option value="morning">Clear morning</option>
+            <option value="daylight">Clear daylight</option><option value="rain">Heavy rain</option>
+            <option value="dusk">Clear dusk</option><option value="night">Clear night</option>
+          </select>
+        </section>
+      </div>
+    </dialog>
+    <script type="module" src="/src/second-island/main.ts"></script>
+  </body>
+</html>

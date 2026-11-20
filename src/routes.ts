@@ -27,10 +27,23 @@ export const road = roundCorners([
   { x: -55, z: -11 }, { x: -19, z: -11 }, { x: 10, z: 12 }, { x: 51, z: 12 },
 ], 7)
 
-export const footpaths = [
-  { name: 'Lookout trail', width: 3.2, points: roundCorners([{ x: 17, z: 12 }, { x: 20, z: 22 }, lookout], 4) },
-  { name: 'Beach trail', width: 2.6, points: roundCorners([{ x: 35, z: 12 }, { x: 33.1, z: 4 }, beach], 4) },
-  { name: 'Harbor trail', width: 3.1, points: roundCorners([{ x: -46, z: -11 }, harbor, { x: -44, z: -30 }], 3) },
+export const shellglassPoint = { x: 43.2, z: -31.4 }
+
+export const splitstone = { x: 53.5, z: -20.8 }
+
+export type PathSurface = 'gravel' | 'pavement' | 'desire'
+interface Footpath { name: string; width: number; surface: PathSurface; points: Point[] }
+
+export const footpaths: Footpath[] = [
+  { name: 'Lookout trail', surface: 'gravel', width: 3.2, points: roundCorners([{ x: 17, z: 12 }, { x: 20, z: 22 }, lookout], 4) },
+  { name: 'Beach trail', surface: 'pavement', width: 2.6, points: roundCorners([{ x: 35, z: 12 }, { x: 33.1, z: 4 }, { x: 29.6, z: -24.7 }, beach], 4) },
+  { name: 'Harbor trail', surface: 'gravel', width: 3.1, points: roundCorners([{ x: -46, z: -11 }, harbor, { x: -44, z: -30 }], 3) },
+  { name: 'Splitstone strand', surface: 'desire', width: .85, points: roundCorners([
+    { x: 41.7, z: -30.2 }, { x: 44.1, z: -29.05 }, { x: 45.85, z: -28.25 },
+  ], 1) },
+  { name: 'Driftwood shore walk', surface: 'desire', width: 1.1, points: roundCorners([
+    { x: 30.1, z: -24.7 }, { x: 34.7, z: -26.3 }, { x: 39, z: -29.2 }, { x: 42.6, z: -30.68 },
+  ], 1.1) },
 ]
 
 export function distanceToRoute(point: Point, path: readonly Point[]) {
@@ -95,6 +108,10 @@ const southSidewalkEdge = southSidewalkZ - sidewalkWidth / 2
 export const walkways = [
   { name: 'North Seabrook pavement', width: sidewalkWidth, points: [{ x: 30, z: 15.76 }, { x: 51, z: 15.76 }] },
   { name: 'South Seabrook pavement', width: sidewalkWidth, points: [{ x: 31, z: southSidewalkZ }, { x: 51, z: southSidewalkZ }] },
-  { name: 'South house walk', width: 1.5, points: roundCorners([{ x: 35.2, z: southSidewalkEdge }, { x: 35.2, z: 1.7 }, { x: 40.2, z: 1.7 }], 1.45) },
-  { name: 'East house walk', width: 1.4, points: roundCorners([{ x: 44.5, z: southSidewalkEdge }, { x: 44.5, z: 2 }, { x: 49, z: 2 }], 1.4) },
+  { name: 'South house walk', width: 1.5, points: [{ x: 39, z: southSidewalkEdge }, { x: 39, z: 5.28 }] },
+  { name: 'East house walk', width: 1.4, points: [{ x: 48, z: southSidewalkEdge }, { x: 48, z: 5.28 }] },
+  ...[35, 43, 50].map((x) => ({
+    name: 'Seabrook front walk ' + x, width: 1.1,
+    points: [{ x, z: 15.76 + sidewalkWidth / 2 }, { x, z: x === 50 ? 19.22 : 19.32 }],
+  })),
 ]

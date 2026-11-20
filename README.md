@@ -73,6 +73,10 @@ MISSION_ISLAND_SAVE=weekend npm run dev
 
 Run one host per save. Use `MISSION_ISLAND_SAVE=off` for a temporary playtest. Open tabs keep the last rendered scene during reconnect and a styled loading screen shows the current phase when the page reloads. Skiff seats are reserved for two minutes during a reconnect and move with the skiff. Use **WASD** to swim if you land in deep water, or choose **Options → Respawn at home**. Respawning brings your inventory and coins and safely releases loose cargo.
 
+## Saltwind Island development preview
+
+With Vite running, open [Saltwind Island](http://localhost:5173/second-island.html) or select **Saltwind preview** from the starter island. The preview opens on the ferry and includes a guided road tour, free walking, an overview and a site chart. It runs locally in the browser. See the [tour and site inventory](docs/saltwind-island.md) for coordinates, vehicle assets and integration notes. The [preview QA report](docs/saltwind-qa.md) records the terrain, browser and compatibility checks.
+
 ## Build and iterate together
 
 - Edit `src/style.css` for the HUD or `src/scene.ts` for the 3D scene. Vite hot-updates both browsers while the host keeps the mission running.
@@ -106,6 +110,10 @@ Choose **Capture reference**, then change the lighting, test a draft placement, 
 Use **Layout draft** to place a test player, truck, crate, rock, or tree at the camera focus. Select a test player and focus the canvas to walk or jump using the game's terrain and collision rules. Move or remove selected objects, save the layout in the browser, or export the coordinates as JSON.
 
 Use **Undo** and **Redo** in Layout draft or on the Island map to step through placements, moves, and removals. **Ctrl/Cmd+Z** undoes an edit, and **Ctrl/Cmd+Shift+Z** or **Ctrl+Y** redoes it. History lasts until you reload the Workbench. **Save layout** stores the current arrangement.
+
+The [Biome Composer](http://localhost:5173/workbench.html#biome) stages a 16 m habitat using island assets. Choose a starting habitat and press **Apply**, then use the codex to set the number of each plant, animal and shelter. **Copy recipe link** reopens the composition from the beginning on any browser that can reach the server. Use the LAN address when sharing between computers. Use **Export JSON** to keep a versioned recipe in source control and **Open JSON** to edit it again.
+
+For a controlled comparison, open **Meadow edge**, pause at 60 seconds and read **Field observations**. Set tussocks, pines, logs and boulders to zero while keeping the seed and playback time fixed. Compare escapes and close encounters. Restore cover, remove the fox, and raise rain above 65% to watch hares seek logs and trees. The timeline replays the whole trial under the selected conditions.
 
 ### Z-fighting QA check
 

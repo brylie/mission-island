@@ -88,7 +88,7 @@ void main() {
   gl_FragColor = vec4(color, mix(opacity, 1., cloudOpacity));
 }`
 
-export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: DirectionalLight, shadows: ShadowGenerator) {
+export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: DirectionalLight, shadows: ShadowGenerator, diameter = 1050) {
   const engine = scene.getEngine()
   const physical = Atmosphere.IsSupported(engine) ? new Atmosphere('Island atmospheric scattering', scene, [sunlight], {
     skyRenderingGroup: -1,
@@ -118,7 +118,7 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
       if (drawPhysicalSky && renderingManager === scene.renderingManager) physical.drawSkyCompositor()
     }, 1)
   }
-  const dome = CreateSphere('Atmospheric sky', { diameter: 1050, segments: 24 }, scene)
+  const dome = CreateSphere('Atmospheric sky', { diameter, segments: 24 }, scene)
   dome.isPickable = false
   dome.alwaysSelectAsActiveMesh = true
   dome.alphaIndex = -1
@@ -148,7 +148,8 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
   const white = Color3.FromHexString('#fff3d7')
   return {
     supportsSunShafts: Boolean(updateSunShafts),
-    update(time: number, weather: Weather, camera: Vector3, close: boolean, shaftIntensity = 1) {
+    update(time: number, weather: Weather, camera: Vector3, close: boolean,
+      { shaftIntensity = 1, fogScale = 1 }: { shaftIntensity?: number; fogScale?: number } = {}) {
       const theta = (weather.hour - 6) * Math.PI / 12
       sun.set(-Math.cos(theta), Math.sin(theta), -0.24).normalize()
       const light = Math.max(0, Math.min(1, (sun.y + 0.11) * 2.65))
@@ -164,8 +165,8 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
       if (drawPhysicalSky) scene.clearColor.set(0, 0, 0, 1)
       else scene.clearColor.set(horizon.r, horizon.g, horizon.b, 1)
       if (close) {
-        scene.fogStart = 36 - weather.rain * 20
-        scene.fogEnd = 135 - weather.rain * 63
+        scene.fogStart = (36 - weather.rain * 20) * fogScale
+        scene.fogEnd = (135 - weather.rain * 63) * fogScale
       }
       dome.position.copyFrom(camera)
       material.setVector3('sunDir', sun)

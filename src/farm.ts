@@ -2,7 +2,7 @@ import { distance } from './world.ts'
 import type { Point } from './world.ts'
 
 export const farm = { x: 24, z: -12 }
-export const market = { x: 39, z: 1.7 }
+export const market = { x: 39, z: 5.9 }
 export const plotSize = 1.55
 export const growthSeconds = 24
 export const seedPrice = 1

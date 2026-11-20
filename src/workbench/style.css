@@ -350,3 +350,17 @@ input[type="color"] { width: 34px; height: 25px; padding: 2px; background: #2636
   .workspace { height: 65dvh; min-height: 420px; }
   .inspector { padding-top: 16px; }
 }
+
+#copy-status:not(:empty) { display: block; margin-top: .35rem; font-size: .78rem; }
+#playtest-url { width: 100%; margin-top: .35rem; }
+
+#biome-field {
+  position: absolute; left: 14px; top: 14px; pointer-events: none;
+  padding: 9px 12px; border-radius: 6px; background: #192824e8; color: #eff2de;
+  font-size: 11px; line-height: 1.5;
+}
+#biome-field strong { color: #efc98e; }
+#biome-observations { white-space: pre-line; font-variant-numeric: tabular-nums; }
+.codex-group { margin: 18px 0 6px; color: var(--accent); font-size: 12px; }
+.codex-note { margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.4; }
+.recipe-files { margin-top: 10px; }

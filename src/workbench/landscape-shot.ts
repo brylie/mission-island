@@ -24,9 +24,10 @@ export function readLandscapeShot(value: unknown): LandscapeShot | undefined {
       !record(value.options) || !between(value.time, 0, Number.MAX_SAFE_INTEGER) ||
       typeof value.grid !== 'boolean' || typeof value.wireframe !== 'boolean') return
   const name = value.name.trim()
-  const { alpha, beta, radius, target } = value.camera
+  const { alpha, beta, radius, target, fov } = value.camera
   if (!name || name.length > 60 || !between(alpha, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER) ||
       !between(beta, 0.035, Math.PI - 0.06) || !between(radius, 0.55, 450) ||
+      (fov !== undefined && !between(fov, .1, 2)) ||
       !Array.isArray(target) || target.length !== 3 ||
       !target.every((coordinate: unknown): coordinate is number => between(coordinate, -10_000, 10_000))) return
 
@@ -34,8 +35,9 @@ export function readLandscapeShot(value: unknown): LandscapeShot | undefined {
     const [, setting] = entry
     return typeof setting === 'boolean' || typeof setting === 'string' || (typeof setting === 'number' && Number.isFinite(setting))
   }))
+  if (options.clockStart !== undefined && !between(options.clockStart, 0, 1e9)) return
   return {
-    version: 1, name, camera: { alpha, beta, radius, target }, time: value.time, options,
+    version: 1, name, camera: { alpha, beta, radius, target, ...(fov !== undefined && { fov }) }, time: value.time, options,
     grid: value.grid, wireframe: value.wireframe,
   }
 }

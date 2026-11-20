@@ -11,8 +11,9 @@ import { starterTools, toolNames } from './inventory'
 import type { InventoryItem } from './inventory'
 import type { ClientMessage, FishingResult, Input, Player, ServerMessage, Snapshot } from './protocol'
 import { footpaths, road, walkways } from './routes'
-import { northernRegions } from './scenery'
+import { northernRegions, starterDiscoveries } from './scenery'
 import { createRenderer } from './scene'
+import { bindPlaytestCopy } from './playtest-link'
 import { isNight } from './weather'
 import { crewHomes, distance, harbor, lookout } from './world'
 
@@ -195,7 +196,9 @@ function drawMap(state?: Snapshot) {
   const local = state?.players.find((player) => player.id === id)
   for (const region of northernRegions) {
     dot(region.at.x, region.at.z, region.color, region.spread * scale * 0.55)
-    if (local?.discoveries?.includes(region.id)) dot(region.site.x, region.site.z, '#e4ffe0', 2.25)
+  }
+  for (const region of starterDiscoveries) if (local?.discoveries?.includes(region.id)) {
+    dot(region.site.x, region.site.z, '#e4ffe0', 2.25)
   }
   ink.lineJoin = 'round'
   ink.lineCap = 'round'
@@ -211,7 +214,10 @@ function drawMap(state?: Snapshot) {
     ink.stroke()
   }
 
-  for (const { points } of footpaths) drawRoute(points, 2, '#a5a77e')
+  for (const { points, surface } of footpaths) {
+    if (surface === 'desire') drawRoute(points, .85, '#b5a77e')
+    else drawRoute(points, 2, surface === 'pavement' ? '#c4c9c1' : '#a5a77e')
+  }
   for (const { points } of walkways) drawRoute(points, 2, '#c4c9c1')
   drawRoute(road, 4, '#c7bb9a')
   const drop = state && deliveryDrop(state)
@@ -329,7 +335,7 @@ function updateMission(state: Snapshot) {
 
 function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player | undefined) {
   if (earlier) {
-    const found = northernRegions.find(({ id }) => player.discoveries.includes(id) && !earlier.discoveries?.includes(id))
+    const found = starterDiscoveries.find(({ id }) => player.discoveries.includes(id) && !earlier.discoveries?.includes(id))
     if (found) actionFeedback = { key: '', label: `Discovered ${found.name}`, until: performance.now() + 4200 }
   }
   if (Boolean(player.ownsAngler) !== ownsAngler) {
@@ -571,6 +577,7 @@ function toggleOptions() {
   const player = live ? snapshot?.players.find((entry) => entry.id === id) : undefined
   editingName = player && { id: player.id, token, name: player.name }
   crewName.value = editingName?.name ?? ''
+  element('playtest-tools').hidden = !renderer?.playtestLink()
   optionsDialog.showModal()
 }
 
@@ -684,6 +691,7 @@ cameraButton.addEventListener('click', () => {
   toggleCamera()
   cameraButton.blur()
 })
+bindPlaytestCopy(() => renderer?.playtestLink())
 optionsButton.addEventListener('click', toggleOptions)
 editCrewName.addEventListener('click', () => {
   if (!optionsDialog.open) toggleOptions()

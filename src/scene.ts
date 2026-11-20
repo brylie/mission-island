@@ -6,6 +6,7 @@ import type { Viewport } from '@babylonjs/core/Maths/math.viewport'
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { Scene } from '@babylonjs/core/scene'
 import { createAtmosphere } from './island-atmosphere'
+import { landscapeLink } from './playtest-link'
 import { inSkiff } from './actions'
 import { castTravelSeconds } from './charged-actions'
 import { farm, market } from './farm'
@@ -14,15 +15,15 @@ import { createLookoutFire } from './fire-effect'
 import { createIslandCamera } from './island-camera'
 import {
   createCrew, createFarmTools, createFlatbed, createSkiffGear, createSupply, playerColors, poseCrew,
-  poseFlatbed, poseFloating, poseSkiffCrew,
+  poseFlatbed, poseFloating, poseSkiffCrew, poseSwimming, swimmingHeight,
 } from './island-assets'
 import { createIslandLighting, createMeshFactory } from './island-meshes'
 import { createIslandWorld } from './island-world'
 import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'
 import { createObjectiveMarker } from './objective-marker'
-import { northernRegions } from './scenery'
+import { northernRegions, starterDiscoveries } from './scenery'
 import type { Player, Snapshot } from './protocol'
-import { groundHeight, walkingHeight, waterLevel } from './terrain'
+import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
 import { wheelRadius } from './truck-pose'
 import { nightLighting } from './weather'
 import {
@@ -41,7 +42,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
-  const { water, homeChests, showFarm, boat, buoys, northernScenery, gulls, fishSchools, lights } = createIslandWorld(meshes)
+  const { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights } = createIslandWorld(meshes)
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
   const dropPad = createObjectiveMarker(meshes, town, deliveryRadius * 2, '#67ecdc')
@@ -99,7 +100,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   ]
   const places = [
     ...landmarks.map((place) => ({ ...place, discovery: '', mapOnly: false })),
-    ...northernRegions.map((region) => ({ point: region.site, title: region.name, kind: 'discovery',
+    ...starterDiscoveries.map((region) => ({ point: region.site, title: region.name, kind: 'discovery',
       height: 2.8, discovery: region.id, mapOnly: false })),
     ...northernRegions.map((region) => ({ point: region.at, title: region.biome, kind: 'biome',
       height: 5, discovery: '', mapOnly: true })),
@@ -142,7 +143,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   let last: Snapshot | undefined
   let viewer = -1
   let follow = false
-  let time = 0
+  let time = 0, ambientTime = 0
   function updateScenery(state: Snapshot, factor: number, delta: number) {
     showFarm(state.farm)
     for (const [i, { hinge }] of homeChests.entries()) {
@@ -212,10 +213,10 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         const stroke = player.rowing ? Math.sin(time * 5.2 + id * 2.2) : 0
         poseSkiffCrew(character, stroke, side, rod, wasVisible ? factor : 1)
       } else {
-        node.rotation.x = player.swimming ? 0.95 : 0
+        node.rotation.x = 0
         node.rotation.z = 0
         const { x, z } = node.position
-        moveTo(node, player, player.y + 0.05, factor)
+        moveTo(node, player, player.swimming ? swimmingHeight(time + id) : player.y + 0.05, factor)
         if (player.grounded && !player.onBed && !player.swimming) {
           node.position.y = Math.max(node.position.y, walkingHeight(node.position) + 0.05)
         }
@@ -225,7 +226,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         cycles[id] += step / 4.8
         const stride = delta > 0 ? Math.min(0.92, step / delta * 0.072) : 0
         const winding = player.charge?.kind === 'throw' ? player.charge.power : 0
-        poseCrew(character, cycles[id], stride, !player.grounded, held?.kind ?? (player.equipped ? 'tool' : undefined),
+        if (player.swimming) poseSwimming(character, time + id, Math.min(1, step / Math.max(.001, delta * 3.8)), factor)
+        else poseCrew(character, cycles[id], stride, !player.grounded, held?.kind ?? (player.equipped ? 'tool' : undefined),
           Number(Boolean(player.reaching || held?.spraying || player.casting)),
           wasVisible ? 1 - Math.exp(-delta * 16) : 1, winding, player.throwing, player.rightHandRaised)
       }
@@ -311,8 +313,6 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     if (last?.skiff) moveTo(boat, last.skiff, waterLevel, factor)
     poseFloating(boat, time, 0.5, 0.048)
     buoys.forEach((buoy, index) => poseFloating(buoy, time, index * 1.67))
-    gulls(time)
-    fishSchools(time)
     if (last) {
       updateScenery(last, factor, delta)
       updateCharacters(last, factor, delta)
@@ -338,6 +338,16 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const camera = islandCamera.update(subject, Boolean(local?.seat), aspect, delta)
     northernScenery.update(camera.position, Boolean(subject))
     const weather = last?.weather ?? { hour: 6, rain: 0 }
+    const clock = last?.islandTime ?? time
+    const timeError = clock - ambientTime
+    ambientTime = Math.abs(timeError) > .25 ? clock : ambientTime + delta * (1 + timeError * 4)
+    const crewInWater = last?.players.filter((player) => player.connected && !player.seat &&
+      (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04))) ?? []
+    const threats = last ? [...crewInWater, last.skiff] : crewInWater
+    const frame = { time: ambientTime, delta, weather, camera: camera.position, threats }
+    if (last?.juniper) juniper(last.juniper, time, factor)
+    wildlife(frame)
+    phenomena(frame)
     const strength = nightLighting(weather.hour)
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
     lights(camera.position, strength)
@@ -355,6 +365,12 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       last = snapshot
       viewer = id
       follow = trackPlayer
+    },
+    playtestLink() {
+      const camera = islandCamera.inspectionCamera()
+      if (!camera || !last) return
+      return landscapeLink(location.href, { focus: [camera.target[0], camera.target[2]], camera, ...last.weather,
+        time: ambientTime, grid: false, wireframe: false })
     },
     walkInput: (x: number, z: number) => islandCamera.walkInput(x, z),
     aimHeading: islandCamera.aimHeading,

@@ -1,37 +1,52 @@
+import { juniperCenter } from './juniper-habitat'
+import { onBeachTowel } from './starter-sites'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import { CreateLineSystem } from '@babylonjs/core/Meshes/Builders/linesBuilder'
 import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
-import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { seededRandom } from './scenery'
 import { distanceToRoute, footpaths, road, walkways } from './routes'
-import { coastPoint, coastRadius, falls, grove, groundHeight, headland, pool, shoreProfile, streamX, waterLevel } from './terrain'
+import { coastPoint, coastRadius, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, pool, shoreProfile, streamX, tidePool, waterLevel } from './terrain'
 import { buildings, distance, harbor, island, lookout, town } from './world'
 import type { MeshFactory } from './island-meshes'
 import { createOceanMaterial } from './ocean'
 
 export function createIslandTerrain(meshes: MeshFactory) {
   function band(name: string, rings: readonly number[], sand: boolean) {
-    const segments = 256
+    // Refine the angular sector around the narrow stream without tessellating every beach.
+    const angles = Array.from({ length: 256 }, (_, j) => {
+      const a = j * Math.PI / 128
+      const steps = a > 1.39 && a < 1.51 ? 12 : sand && a > 5.24 && a < 5.59 ? 5 : 1
+      return Array.from({ length: steps }, (_, k) => a + k / steps * Math.PI / 128)
+    }).flat()
+    angles.push(2 * Math.PI)
+    const segments = angles.length - 1
     const positions: number[] = []
     const uvs: number[] = []
     const colors: number[] = []
     const indices: number[] = []
     for (const [i, ring] of rings.entries()) {
       for (let j = 0; j <= segments; j++) {
-        const angle = j / segments * Math.PI * 2
+        const angle = angles[j]
         const { x, z } = coastPoint(angle, ring)
         positions.push(x, groundHeight({ x, z }), z)
-        if (sand) uvs.push(j / segments * 96, (ring - 0.905) * 32)
-        else {
+        if (sand) {
+          uvs.push(angle / (Math.PI * 2) * 96, (ring - 0.905) * 32)
+          const bed = Math.max(0, 1 - Math.hypot((x - tidePool.x) / 4.2, (z - tidePool.z) / 3.5) ** 3)
+          const seam = .86 + .14 * Math.sin(x * 3.2 + z * 2.1)
+          colors.push(1 - .60 * bed * seam, 1 - .39 * bed * seam, 1 - .36 * bed, 1)
+        } else {
           uvs.push(x / 4.5, z / 4.5)
           const point = { x, z }
           const influence = (at: typeof point, range: number) => Math.max(0, 1 - distance(point, at) / range) ** 1.4
+          const duff = influence(juniperCenter, 10)
           const forest = influence(grove, 50)
           const ridge = influence(headland, 41)
           const wetland = influence(pool, 31)
-          colors.push(1 - forest * 0.42 + ridge * 0.44, 1 - forest * 0.27 - ridge * 0.30,
-            1 - forest * 0.12 - ridge * 0.32 + wetland * 0.19, 1)
+          const bank = z > 80 && z < 94 ? Math.max(0, Math.min(1, z - 80, (94 - z) / 2,
+            (fernfallSection(z).halfWidth + 1.6 - Math.abs(x - streamX(z))) / 1.5)) : 0
+          colors.push(1 + bank * .13 - forest * 0.42 + ridge * 0.44, 1 - duff * .48 - bank * .29 - forest * 0.27 - ridge * 0.30,
+            1 - duff * .44 + bank * .16 - forest * 0.12 - ridge * 0.32 + wetland * 0.19, 1)
         }
         if (i === 0 || j === segments) continue
         const a = (i - 1) * (segments + 1) + j
@@ -41,37 +56,57 @@ export function createIslandTerrain(meshes: MeshFactory) {
       }
     }
     const mesh = meshes.surface(name, positions, indices, meshes.paintSurface(sand ? 'sand' : 'grass'), undefined, uvs)
-    if (!sand) mesh.setVerticesData(VertexBuffer.ColorKind, colors)
+    mesh.setVerticesData(VertexBuffer.ColorKind, colors)
     return mesh.freezeWorldMatrix()
   }
-  const meadowRings = Array.from({ length: 89 }, (_, i) => i / 88 * shoreProfile[1].radius)
+  const meadowRings = Array.from({ length: 89 }, (_, i) => {
+    const ring = i / 88 * shoreProfile[1].radius
+    const steps = ring > .42 && ring < .57 ? 7 : 1
+    return Array.from({ length: steps }, (_, k) => (i + k / steps) / 88 * shoreProfile[1].radius)
+  }).flat()
   band('Textured meadow', [...meadowRings, shoreProfile[2].radius], false)
-  band('Beach and seabed', shoreProfile.slice(2).map((ring) => ring.radius), true)
+  const beachRings = shoreProfile.slice(2).flatMap(({ radius }, i, rings) => {
+    const next = rings[i + 1]?.radius
+    if (!next || radius >= 1.048) return [radius]
+    const steps = Math.ceil((next - radius) / .006)
+    return Array.from({ length: steps }, (_, j) => radius + (next - radius) * j / steps)
+  })
+  band('Beach and seabed', beachRings, true)
   const water = createOceanMaterial(meshes.scene)
   const y = waterLevel
   const ocean = meshes.surface('Ocean', [-850, y, -850, 850, y, -850, 850, y, 850, -850, y, 850],
     [0, 1, 2, 0, 2, 3], water.material)
   ocean.alphaIndex = 0
   ocean.freezeWorldMatrix()
-  const sheet = meshes.paint('#9ddce0')
-  sheet.alpha = 0.83
+  const sheet = meshes.paint('#e2f3ea')
+  sheet.alpha = .9
   sheet.backFaceCulling = false
-  const surfaceY = (x: number, z: number) => Math.max(waterLevel - 0.045, groundHeight({ x, z }) + 0.035)
-  const spill: number[] = []
-  const spillIndices: number[] = []
-  for (let i = 0; i <= 16; i++) {
-    const z = falls.z - 3 + i * 0.61
-    const x = streamX(z)
-    const width = 1.15 + i * 0.08
-    spill.push(x - width, surfaceY(x - width, z), z, x, surfaceY(x, z), z, x + width, surfaceY(x + width, z), z)
-    if (i > 0) {
-      const a = (i - 1) * 3
-      const b = i * 3
-      spillIndices.push(a, b, a + 1, a + 1, b, b + 1, a + 1, b + 1, a + 2, a + 2, b + 1, b + 2)
+  const spill: number[] = [], spillIndices: number[] = [], colors: number[] = []
+  const start = fernfallProfile[0].z, end = fernfallProfile[fernfallProfile.length - 1].z
+  const rows = 96, columns = 10
+  for (let i = 0; i <= rows; i++) {
+    const z = start + (end - start) * i / rows
+    const { y, halfWidth } = fernfallSection(z)
+    const drop = Math.min(1, (y - fernfallSection(z + .1).y) * 8)
+    for (let j = 0; j <= columns; j++) {
+      const lane = 2 * j / columns - 1
+      const x = streamX(z) + lane * halfWidth
+      spill.push(x, y + .014 * Math.cos(lane * 5 + z * 2) * (1 - lane * lane), z)
+      const froth = drop * (.42 + .34 * Math.cos(lane * 15 + Math.sin(z * 1.8)))
+      const opacity = Math.min(1, (end - z) / 2.8) * (1 - .55 * Math.abs(lane) ** 5)
+      colors.push(.39 + froth * .74, .66 + froth * .37, .65 + froth * .43, opacity)
+      if (i && j) {
+        const d = i * (columns + 1) + j, b = d - columns - 1
+        spillIndices.push(b - 1, b, d, b - 1, d, d - 1)
+      }
     }
   }
-  meshes.surface('Fernfall cascade', spill, spillIndices, sheet).freezeWorldMatrix()
-  const streaks = Array.from({ length: 24 }, () => [Vector3.Zero(), Vector3.Zero()])
+  const stream = meshes.surface('Fernfall spring and cascade', spill, spillIndices, sheet)
+  stream.setVerticesData(VertexBuffer.ColorKind, colors)
+  stream.hasVertexAlpha = true
+  stream.alphaIndex = 1
+  stream.freezeWorldMatrix()
+  const streaks = Array.from({ length: 34 }, () => [Vector3.Zero(), Vector3.Zero(), Vector3.Zero()])
   const cascade = CreateLineSystem('Cascade foam', { lines: streaks, updatable: true }, meshes.scene)
   cascade.color = Color3.FromHexString('#dcffff')
   cascade.alpha = 0.55
@@ -84,19 +119,20 @@ export function createIslandTerrain(meshes: MeshFactory) {
       cascade.setEnabled(Boolean(eye && Math.hypot(eye.x - falls.x, eye.z - falls.z) < 52 && eye.y < 55))
       if (!cascade.isEnabled()) return
       streaks.forEach((streak, i) => {
-        const z = falls.z - 3 + ((time * (0.54 + (i % 5) * 0.022) + i * 0.418) % 1) * 8.8
-        const lane = Math.sin(i * 2.7) * 0.98
-        for (const [end, point] of streak.entries()) {
-          const along = z + end * (0.22 + (i % 3) * 0.17)
-          const x = streamX(along) + lane
-          point.set(x, surfaceY(x, along) + 0.025, along)
+        const phase = (time * (.29 + (i % 5) * .013) + i * .418) % 1
+        const z = start + .7 + phase * phase * 7.8
+        const lane = Math.sin(i * 2.7) * .82
+        for (const [index, point] of streak.entries()) {
+          const along = z + index * (.035 + phase * .21)
+          const section = fernfallSection(along)
+          const x = streamX(along) + section.halfWidth * (lane + .038 * Math.sin(along * 1.8 + i))
+          point.set(x, section.y + .027, along)
         }
       })
       CreateLineSystem('Cascade foam', { lines: streaks, instance: cascade }, meshes.scene)
     },
   }
 }
-
 export function createGrassTufts(meshes: MeshFactory) {
   const random = seededRandom(82489)
   const positions: number[] = []
@@ -105,7 +141,7 @@ export function createGrassTufts(meshes: MeshFactory) {
     const x = (random() - 0.5) * island.width
     const z = (random() - 0.5) * island.length
     const point = { x, z }
-    if (coastRadius(point) > 0.91 || distance(point, harbor) < 5 || distance(point, town) < 8 ||
+    if (onBeachTowel(point) || coastRadius(point) > 0.91 || distance(point, harbor) < 5 || distance(point, town) < 8 ||
       distance(point, lookout) < 5.5 || distanceToRoute(point, road) < 4.2 ||
       footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + 0.3) ||
       walkways.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + 0.3) ||
@@ -126,27 +162,4 @@ export function createGrassTufts(meshes: MeshFactory) {
   const green = meshes.paint('#618752')
   green.backFaceCulling = false
   meshes.surface('Grass tufts', positions, indices, green).freezeWorldMatrix()
-}
-
-export function createGulls(meshes: MeshFactory) {
-  const plumage = meshes.paint('#e9ede6')
-  plumage.backFaceCulling = false
-  const birds = Array.from({ length: 5 }, () => {
-    const root = new TransformNode('Gull', meshes.scene)
-    const wings = [-1, 1].map((side) => meshes.surface('Gull wing',
-      [0, 0, -0.13, side * 0.48, 0.035, 0.17, side * 1.03, -0.015, -0.17, side * 0.52, -0.015, -0.25],
-      [0, 1, 2, 0, 2, 3], plumage, root))
-    return { root, wings }
-  })
-  return (time: number) => {
-    for (const [i, { root, wings }] of birds.entries()) {
-      const t = time * 0.23 + i * 0.20
-      root.position.set(-23 + Math.cos(t) * (37 + i), 8 + i * 0.45 + Math.sin(t * 2 + i) * 1.45,
-        -22 + Math.sin(t) * 21)
-      root.rotation.y = Math.atan2(-Math.sin(t) * (37 + i), Math.cos(t) * 21)
-      const flap = Math.sin(time * 4.7 + i * 1.7) * (0.23 + 0.14 * Math.sin(time * 0.63 + i))
-      wings[0].rotation.z = -flap
-      wings[1].rotation.z = flap
-    }
-  }
 }

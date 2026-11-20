@@ -8,6 +8,16 @@ Aim for a quaint and comforting island. Give props generous shapes, warm colors,
 
 Ground the game in simple physical behavior. Crates have weight, boats drift after paddling, and the dock holds a player above the water. Keep recovery easy. Missed throws can be picked up, fishing attempts can be repeated, and crops grow while both players explore. Use shared meshes, simple geometry, and inexpensive motion for background life so the game stays responsive on the LAN.
 
+## An inhabited island
+
+Give each destination a detail that helps players infer who uses the place, what they do there, or how the landscape changes. At Shellglass a repaired tide staff faces the approach. At Mirror Lake someone put their basket at one end of the seat, leaving space for company. The surveyor’s mark at Tarnstep gives visitors a bearing they can still follow.
+
+Design the approach as part of the place. Let players glimpse a distinctive shape, follow a worn route, then discover something smaller at walking distance. Leave room for two people to stop and look. Use wear, repairs, local plants and animal routines where they belong. During review, ask what a player could learn by looking around with the labels off and what would draw them back at another hour.
+
+**Desire paths and animal trails** show repeated use. Where people leave a maintained route for a favorite destination, let the tread narrow, bend around obstacles, and fade where visitors spread out. At Driftwood, the pavement reaches the beach and worn tracks branch toward Shellglass Tide Pool and Splitstone Narrows. The worn earth fades at the grass–sand boundary. From there, the tide pool and sandstone fins guide the last few steps across open sand.
+
+Animal trails follow a species’ routine. A hare might slip through a hedge between cover and a feeding patch, while ducks might leave a short, flattened run from reeds to water. Match the width, headroom and occasional tracks to the animal. Place those traces where players can also observe the behavior.
+
 ## Generativity
 
 Use rules to produce variation in familiar places and activities. A ferry terminal should feel recognizable on every visit. Its surfaces, passing flocks, weather, and available work can change with the place, time, and crew's progress.
@@ -18,6 +28,10 @@ Use rules to produce variation in familiar places and activities. A ferry termin
 - **Jobs and events.** Combine reusable job patterns with available cargo, reachable destinations, villagers, and crew unlocks. A market day might generate different pickup and return loads. Check that each offer has a route and equipment the crew can use, and keep its details stable once accepted.
 
 Use repeatable seeds or saved outcomes for generated details that affect traversal or progression. The host owns shared conditions, events, and accepted orders so both players can resume the same situation after a reconnect. Use the Workbenches to compare seeds and conditions and replay a particular result during QA.
+
+The Biome Composer models a small food web in isolation. Clover feeds hares, foxes pursue exposed hares, and tussocks and terrain features offer refuge. Rain changes shelter choices and available forage. A recipe records the ground surface, ingredient counts, weather, hour and placement seed. Designers can compare a single change at the same point on the timeline before adopting a recipe or a behavior on an island.
+
+Juniper Hollow on Starter Island uses the Pine hollow recipe. Its seed sets the composition, with spacing adjusted for solid trunks and fallen wood on the hillside. The clearing follows the island clock and rainfall. Hares and foxes can cross fallen logs and low boulders up to 0.66 m high. They take detours around trunks, taller rocks, and long stretches of fallen wood. A hare startles within 3.8 m of a visitor and a fox breaks pursuit within 4.6 m. Both crew members see the same animals and remaining clover. Wildlife is ambient and starts a new simulation when the host restarts.
 
 ## Play loops
 
