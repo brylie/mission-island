@@ -1,7 +1,7 @@
 import { falls, meadowHill, pool, streamX, tidePool } from '../terrain.ts'
 import { juniperCenter } from '../juniper-habitat.ts'
 import { market } from '../farm.ts'
-import { harborDock, lookout } from '../world.ts'
+import { harborDock, harborDockPiles, lookout } from '../world.ts'
 import { lampPosts } from '../worlds/starter/sites.ts'
 import type { Point } from '../world.ts'
 
@@ -41,6 +41,8 @@ const fernfall = 'Fernfall'
 const meadow = 'Meadow slope'
 const seabrook = 'Seabrook Market'
 const timber = 'Harbor Road'
+
+export const saltBloomPile = harborDockPiles.find(pile => pile.x === harborDock.x - 1.6 && pile.z === -34)!
 
 const water = {
   'skiff-wake': {
@@ -113,7 +115,7 @@ const surfaces = {
   'timber-salt-bloom': {
     name: 'Salt bloom on timber', description: 'Drying brine leaves a ragged white band above the waterline on harbor pilings.',
     control: 'Dry salt deposit', baseline: 'Freshly wetted', preset: 'Salt bloom', value: .9,
-    field: view(dock, harborDock.x - 1.6, -34, -.08, 3.6, 2.86, 1.33, 12),
+    field: view(dock, saltBloomPile.x, saltBloomPile.z, -.08, 3.6, 2.86, 1.33, 12),
     camera: camera(4.4, 1.17, -1.3, .83),
   },
   'awning-rain-load': {

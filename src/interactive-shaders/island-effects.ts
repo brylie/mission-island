@@ -7,13 +7,12 @@ import { onBeachTowel } from '../worlds/starter/sites'
 import { daylight, nightLighting } from '../weather'
 import { harborDock } from '../world'
 import type { Pose } from '../world'
-import { interactiveStudies, type StudyId } from './catalog'
+import { interactiveStudies, saltBloomPile, type StudyId } from './catalog'
 import { demonstrationLamp, studyBuilders } from './effects'
 import type { Effect, EffectFrame, Place } from './render'
 import { skiffStudyPose, wakeStrength } from './skiff-wake'
 import { createFootprintTrail } from './vegetation'
 
-export const studioPiling = { x: harborDock.x - 1.6, z: -34 }
 export const parallaxCottage = -45
 
 export interface StudyInspection { id: StudyId; value: number }
@@ -33,7 +32,8 @@ export interface StudyActors {
 
 const objectY: Partial<Record<StudyId, number>> = {
   'skiff-wake': waterLevel + .022, 'wading-rings': waterLevel + .028, 'seabed-caustics': waterLevel,
-  'water-rain-rings': waterLevel + .031, 'waterfall-shear': 0, 'timber-salt-bloom': -.42,
+  'water-rain-rings': waterLevel + .031, 'waterfall-shear': 0,
+  'timber-salt-bloom': (saltBloomPile.top + saltBloomPile.bottom) / 2,
   'window-parallax': 2.074, 'rope-fiber-sheen': harborDock.top + .017, 'streetlamp-droplets': 2.53,
   'fernfall-rainbow': 2.1, 'moon-glitter': waterLevel + .027,
 }
@@ -182,7 +182,8 @@ export function createIslandShaderEffects(meshes: MeshFactory, includeCottage: b
       const detail = studyDetail(id, frame, signals, origin, selected)
       const active = (response > .001 || baseVisible.has(id) || (id === 'streetlamp-droplets' && live && detail > .02))
         && studyIsPlaced(id, includeCottage, selected, signals)
-      effect.root.setEnabled(active && sameSiteAsCamera(frame.camera, effect.root.position, id === 'moon-glitter' ? 70 : 46))
+      const visible = id === 'timber-salt-bloom' || sameSiteAsCamera(frame.camera, effect.root.position, id === 'moon-glitter' ? 70 : 46)
+      effect.root.setEnabled(active && visible)
       if (!effect.root.isEnabled()) continue
       const lighting = id === 'road-retroreflector'
         ? { ...frame, lamp: selected ? demonstrationLamp(origin) : activeHeadlamp(signals.snapshot) } : frame

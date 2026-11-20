@@ -7,6 +7,7 @@ import { conversationStudy } from './conversation-study'
 import { crewStudy } from './crew-study'
 import { effectStudies } from './effect-studies'
 import { farmStudy } from './farm-study'
+import { gullStudy } from './gull-study'
 import { furnishingStudies } from './furnishing-studies'
 import { landscapeStudy } from './landscape-study'
 import { materialStudies } from './material-studies'
@@ -26,6 +27,7 @@ export const entries: Entry[] = [
   schoolStudy,
   ...natureEntries,
   longAcreStudy,
+  gullStudy,
   brinewickMarketStudy,
   ...mechanicStudies,
   conversationStudy,

@@ -9,7 +9,8 @@ import { juniperCenter, juniperLayout } from './juniper-habitat'
 import { createFarm } from './island-farm'
 import { createMarketShower } from './market-shower'
 import type { MarketRunoff } from './market-runoff'
-import { createIslandShaderEffects, parallaxCottage, studioPiling, type StudyActors } from './interactive-shaders/island-effects'
+import { saltBloomPile } from './interactive-shaders/catalog'
+import { createIslandShaderEffects, parallaxCottage, type StudyActors } from './interactive-shaders/island-effects'
 import { nightLighting } from './weather'
 import { createGrassTufts, createIslandTerrain } from './island-landscape'
 import type { MeshFactory } from './island-meshes'
@@ -64,7 +65,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   for (const dx of [-0.52, 0, 0.52]) {
     meshes.box(jobBoard.x + dx, boardY + 1.38, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
   }
-  createDock(meshes, studioPiling)
+  createDock(meshes, saltBloomPile)
   createFerryTerminal(meshes)
   const features = (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site)
   placeSiteFeatures(meshes, features, walkingHeight)

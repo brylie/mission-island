@@ -1,3 +1,4 @@
+import { saltBloomPile } from './catalog'
 import { card, createEffect, grid, type Builder } from './render'
 
 const piling: Builder = (meshes, origin, studio) => {
@@ -12,7 +13,9 @@ const piling: Builder = (meshes, origin, studio) => {
     timber = mix(timber,vec3(.89,.86,.69) + crystals * .1, smoothstep(.07,.42,salt));
     ink = vec4(diffuseLight(timber,n),1.);
   ` })
-  meshes.cylinder(0,0,0,studio ? .73 : .43,studio ? .78 : .43,2.25,18,effect.material,effect.root)
+  const { bottom, top, diameter } = saltBloomPile
+  meshes.cylinder(0, 0, 0, studio ? .73 : diameter, studio ? .78 : diameter, top - bottom,
+    studio ? 18 : 7, effect.material, effect.root)
   return effect
 }
 
