@@ -1,3 +1,5 @@
+import { dryMarketRainAge } from './market-runoff.ts'
+
 // Versioned, inspection-only state. Build a new URL so a live session's query
 // parameters and credentials never travel with a scenery bookmark.
 export const landscapeDuration = 96
@@ -13,6 +15,7 @@ interface LandscapeView {
   camera: { target: number[]; alpha: number; beta: number; radius: number; fov: number }
   hour: number
   rain: number
+  marketRainAge?: number
   time: number
   grid: boolean
   wireframe: boolean
@@ -48,7 +51,8 @@ function encode(base: string, path: string, groups: Record<string, string | numb
 export function landscapeLink(base: string, v: LandscapeView) {
   const c = v.camera
   return encode(base, 'workbench.html#landscape', { focus: v.focus, target: c.target,
-    orbit: [c.alpha, c.beta, c.radius, c.fov], sky: [v.hour, v.rain, v.time], display: [+v.grid, +v.wireframe] })
+    orbit: [c.alpha, c.beta, c.radius, c.fov], sky: [v.hour, v.rain, v.time], display: [+v.grid, +v.wireframe],
+    ...(v.marketRainAge !== undefined && { runoff: [v.marketRainAge] }) })
 }
 
 export function saltwindLink(base: string, v: SaltwindView) {
@@ -74,10 +78,11 @@ export function readLandscapeView(params: URLSearchParams): LandscapeView | unde
   const orbit = tuple(params, 'orbit', angle, [0.034, Math.PI - 0.059], [.55, 450], [.1, 2])
   const sky = tuple(params, 'sky', [0, 24], [0, 1], [0, 1e9])
   const display = tuple(params, 'display', flag, flag)
-  if (params.get('view') !== '1' || !focus || !target || !orbit || !sky || !display) return
+  const runoff = tuple(params, 'runoff', [0, dryMarketRainAge])
+  if (params.get('view') !== '1' || !focus || !target || !orbit || !sky || !display || (params.has('runoff') && !runoff)) return
   const [alpha, beta, radius, fov] = orbit
   return { focus, camera: { target, alpha, beta, radius, fov }, hour: sky[0], rain: sky[1], time: sky[2],
-    grid: Boolean(display[0]), wireframe: Boolean(display[1]) }
+    grid: Boolean(display[0]), wireframe: Boolean(display[1]), ...(runoff && { marketRainAge: runoff[0] }) }
 }
 
 export function readSaltwindView(params: URLSearchParams): SaltwindView | undefined {

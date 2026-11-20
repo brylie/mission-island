@@ -22,6 +22,11 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
     focus: { x: -45, z: -12, height: 0.25 },
     alpha: 2.87, beta: 1.55, radius: 15, hour: 17.4, time: 4,
   },
+  'seabrook-market-runoff': {
+    label: 'Seabrook Market runoff',
+    focus: { x: 38.72, z: 5.65, height: 1.60 },
+    alpha: 1.92, beta: 1.17, radius: 7.4, hour: 13.5, time: 102.48,
+  },
   'fernfall-overlook': {
     label: 'Fernfall overlook',
     focus: { ...falls, height: 0.25 },

@@ -38,6 +38,17 @@ For a LAN review, open the preview using the laptop’s LAN address before copyi
 - Focus the Landscape Workbench at (13, 87) and orbit to the downstream bank. Follow the spring water over both ledges to its junction with the creek. Inspect the banks at a low angle and look for exposed sheet edges, submerged foam or spray rising above dry ground.
 - Follow the discovery routes from the cottages. The traversal test checks a pedestrian approach to each solid landmark, original discovery pin and activity area. A separate check exercises recovery for a player whose saved position now falls inside a moved building.
 
+### Seabrook Market shower
+
+Open **Landscape Workbench → Scenic view → Seabrook Market runoff**. All three links use the same camera, island hour and animation frame. Run Vite on its default port to open them. Use the local server address when sharing a view over the LAN.
+
+[Dry](http://localhost:5173/workbench.html?view=1&focus=38.72%2C5.65&target=38.72%2C1.6%2C5.65&orbit=1.92%2C1.17%2C7.4%2C0.73&sky=13.5%2C0%2C102.48&display=0%2C0&runoff=27#landscape) · [Sustained rain](http://localhost:5173/workbench.html?view=1&focus=38.72%2C5.65&target=38.72%2C1.6%2C5.65&orbit=1.92%2C1.17%2C7.4%2C0.73&sky=13.5%2C0.92%2C102.48&display=0%2C0&runoff=27#landscape) · [Just after rain](http://localhost:5173/workbench.html?view=1&focus=38.72%2C5.65&target=38.72%2C1.6%2C5.65&orbit=1.92%2C1.17%2C7.4%2C0.73&sky=13.5%2C0%2C102.48&display=0%2C0&runoff=3.2#landscape)
+
+- Dry cloth shows the stitched seams and the canvas repair. Follow the gutter's fall to the copper rain chain and the stone channel at the side of the walk.
+- During a sustained shower, look for strikes on the canvas and a thin stream from the low end of the gutter into the channel. Both the entrance and the pavement are clear.
+- Just after rain, compare the separate drops and the still-wet channel with the dry setup. The **Market · seconds since rain stopped** control changes the retained water when **Rain intensity** is zero. **Copy playtest link** saves that age with the camera.
+- In the live game the runoff is sampled from the shared island clock. The host test walks up from the sidewalk and completes a sale in all three phases. It also checks that a second client joining midway sees the same runoff at the same island time.
+
 ## Saltwind
 
 | Destination | Existing arrival and cue | Change and placement check |

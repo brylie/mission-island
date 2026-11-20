@@ -9,6 +9,7 @@ import { actionHint, atHomeDoor } from '../src/actions.ts'
 import { chargePower } from '../src/charged-actions.ts'
 import { farmPlots, market } from '../src/farm.ts'
 import { jobBoard, jobs, secondIslandGoal } from '../src/jobs.ts'
+import { marketRunoffAt } from '../src/market-runoff.ts'
 import { footpaths, shellglassPoint } from '../src/routes.ts'
 import { northernRegions } from '../src/scenery.ts'
 import { groundHeight, grove, maxWadeDepth, waterDepth, waterLevel } from '../src/terrain.ts'
@@ -198,6 +199,32 @@ test('markets sell only owned goods, consume coins for seeds and protect locked 
   assert.equal(a.player.appearance.uniform, 'angler')
   assert.equal(a.messages.filter(({ type }) => type === 'market-sale').length, 1)
   assert.ok(h.checkpoint.mock.callCount() > 0)
+})
+
+test('the Seabrook market approach and sale work before, during and after a shower', (t) => {
+  const sidewalk = { x: market.x, z: market.z + 2.35 }
+  for (const [time, phase] of [[60, 'dry'], [115, 'rain'], [161.7, 'after']]) {
+    const h = setup(t, {
+      players: [player(0, sidewalk, { goods: { fish: 1, carrots: 0 } }), player(1)],
+      arrange: save => { save.islandTime = time },
+    })
+    const seller = h.join(tokens[0])
+    const runoff = marketRunoffAt(seller.state.islandTime)
+    const observer = h.join(tokens[1])
+    assert.deepEqual(marketRunoffAt(observer.state.islandTime), marketRunoffAt(seller.state.islandTime))
+    assert.equal(runoff.rain > 0, phase === 'rain')
+    assert.equal(runoff.stream > 0, phase === 'rain')
+    assert.equal(runoff.drip > 0, phase === 'after')
+    h.hold(seller, 16, { z: -1 })
+    h.input(seller)
+    h.advance()
+    assert.ok(seller.player.z < sidewalk.z - .4, phase)
+    assert.match(actionHint(seller.state, seller.player)[1], /Sell for/, phase)
+    seller.request('interact')
+    h.advance()
+    assert.deepEqual(seller.player.goods, { fish: 0, carrots: 0 }, phase)
+    assert.ok(seller.player.coins > 0, phase)
+  }
 })
 
 test('rain waters a shared plot, repeated crops grow from zero, and harvest is awarded once', (t) => {

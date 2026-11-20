@@ -26,6 +26,7 @@ import type { Player, Snapshot } from './protocol'
 import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
 import { wheelRadius } from './truck-pose'
 import { nightLighting } from './weather'
+import { marketRunoffAt } from './market-runoff'
 import {
   beach, crateStarts, distance, extinguisherStarts, forest, harbor, lookout, town,
 } from './world'
@@ -42,7 +43,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
-  const { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights } = createIslandWorld(meshes)
+  const { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights, marketShower } = createIslandWorld(meshes)
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
   const dropPad = createObjectiveMarker(meshes, town, deliveryRadius * 2, '#67ecdc')
@@ -348,6 +349,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     if (last?.juniper) juniper(last.juniper, time, factor)
     wildlife(frame)
     phenomena(frame)
+    marketShower(ambientTime, camera.position, marketRunoffAt(clock))
     const strength = nightLighting(weather.hour)
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
     lights(camera.position, strength)
