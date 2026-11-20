@@ -35,6 +35,11 @@ import type { Pose } from './world'
 
 const sun = '#ffd56b'
 
+function swimmers(snapshot?: Snapshot) {
+  return snapshot?.players.filter((player) => player.connected && !player.seat &&
+    (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04))) ?? []
+}
+
 function sceneWeather(fixed?: Weather, live?: Weather) {
   return fixed ? { weather: fixed } : { weather: live ?? { hour: 6, rain: 0 }, weatherAt: live && weatherAt }
 }
@@ -359,8 +364,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const clock = last?.islandTime ?? time
     const timeError = clock - ambientTime
     ambientTime = Math.abs(timeError) > .25 ? clock : ambientTime + delta * (1 + timeError * 4)
-    const crewInWater = last?.players.filter((player) => player.connected && !player.seat &&
-      (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04))) ?? []
+    const crewInWater = swimmers(last)
     const threats = last ? [...crewInWater, last.skiff] : crewInWater
     const frame = { time: field?.time ?? ambientTime, delta, ...climate, camera: camera.position, threats }
     if (last?.juniper) juniper(last.juniper, time, factor)
@@ -368,7 +372,11 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const strength = nightLighting(weather.hour)
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
     const light = atmosphere.update(field?.time ?? time, weather, camera.position, close)
-    updateEnvironment(frame, light, close, runoff, { driftwood: last?.driftwood, quality: review?.quality(), tideTime: field ? field.tideTime : clock })
+    updateEnvironment(frame, light, close, runoff, {
+      driftwood: last?.driftwood, quality: review?.quality(), tideTime: field ? field.tideTime : clock,
+      actors: { snapshot: last, waterCrew: crewInWater, inspection: field?.inspection,
+        skiffPose: { x: boat.position.x, z: boat.position.z, heading: boat.rotation.y } },
+    })
     if (review) review.render()
     else scene.render()
     const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
