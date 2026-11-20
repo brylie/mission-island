@@ -1,6 +1,6 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
-import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { createFarmTools, poseCrew } from '../assets/crew'
+import { createTimberSaw } from '../assets/effect-props'
 import { createSupply } from '../assets/props'
 import type { MeshFactory } from '../island-meshes'
 import { crateSize } from '../world'
@@ -40,32 +40,14 @@ export function wateringFixture(meshes: MeshFactory): Fixture {
 }
 
 export function sawdustFixture(meshes: MeshFactory): Fixture {
-  const wood = meshes.paintSurface('wood', '#a07e54')
-  meshes.box(0, .84, .02, 2.42, .135, 1.16, wood)
-  for (const x of [-.96, .96]) {
-    for (const z of [-.4, .43]) meshes.box(x, .404, z, .135, .81, .15, '#746650')
-  }
-  meshes.box(-.52, .952, 0, 1.18, .09, .37, '#cdab74')
-  const arbor = new TransformNode('Saw arbor', meshes.scene)
-  arbor.position.set(.08, 1.01, -.018)
-  meshes.cylinder(0, 0, 0, .48, .48, .053, 22, '#a2b5b1', arbor).rotation.x = Math.PI / 2
-  for (let tooth = 0; tooth < 14; tooth++) {
-    const angle = tooth * Math.PI * 2 / 14
-    const edge = meshes.box(.247 * Math.sin(angle), .247 * Math.cos(angle), 0,
-      .049, .079, .058, '#98a5a0', arbor)
-    edge.rotation.z = -angle - .23
-  }
-  meshes.box(.079, .158, .029, .035, .061, .008, '#556c69', arbor, false).name = 'Blade witness mark'
+  const saw = createTimberSaw(meshes)
   crewAt(meshes, -1.12, -.69)
   const source = { x: .1, y: 1.12, z: .025, floor: .035 }
   const sourceAt = (time: number) => contactAge(time, .3, 1.03, .56) === undefined ? undefined : source
   return {
     sourceAt,
     accents: [{ id: 'mill-dust', sourceAt }],
-    pose(time) {
-      // The cutting edge moves toward +X where it meets the stock and throws sawdust.
-      arbor.rotation.z = -time * 12
-    },
+    pose: saw.pose,
   }
 }
 

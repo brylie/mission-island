@@ -3,6 +3,7 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from './island-meshes'
 import type { Weather } from './protocol'
 import type { Point } from './world'
+import { createMovingEffects } from './world-particles'
 import { birdActivity, schoolAvoidance } from './wildlife-motion'
 
 export interface WildlifeFrame {
@@ -97,16 +98,24 @@ export function wingedAnimal(meshes: MeshFactory, color: string, bat: boolean) {
 }
 
 export function createFlocks(meshes: MeshFactory, groups: readonly Flock[]) {
-  const flocks = groups.map((group) => ({ ...group,
+  const effects = createMovingEffects(meshes.scene)
+  const flocks = groups.map((group) => ({ ...group, previousGround: 0,
     members: Array.from({ length: group.count }, () => wingedAnimal(meshes, group.color, Boolean(group.bat))),
   }))
-  return ({ time, weather, camera }: WildlifeFrame) => {
+  let previousTime = -Infinity
+  return ({ time, weather, camera, seek }: WildlifeFrame) => {
+    const regular = !seek && time > previousTime && time - previousTime < .35
+    previousTime = time
+    effects.begin(time, camera, !seek)
     const { roost, landing, bat } = birdActivity(time, weather)
     for (const flock of flocks) {
       const { center, landing: meadow, roost: tree, range, members } = flock
       const visible = Math.hypot(center.x - camera.x, center.z - camera.z) < range + 86 && camera.y < center.y + 90
       const perchWeight = flock.bat ? 1 - bat : roost
       const groundWeight = flock.bat ? 0 : landing
+      const leave = regular && flock.previousGround >= .84 && groundWeight < .84
+      flock.previousGround = groundWeight
+      if (leave) effects.burst('takeoff-feathers', meadow, .91, .86, .27)
       const rest = perchWeight + groundWeight
       for (const [i, { root, wings }] of members.entries()) {
         root.setEnabled(visible && (!flock.bat || bat > .015))
@@ -128,5 +137,6 @@ export function createFlocks(meshes: MeshFactory, groups: readonly Flock[]) {
         wings[1].rotation.y = rest * .8
       }
     }
+    effects.finish()
   }
 }

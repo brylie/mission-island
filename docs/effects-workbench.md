@@ -92,6 +92,21 @@ These setups stage the moment just before or after an action. Play them from the
 | Jobs | [Wash-station rinse](http://localhost:5173/workbench.html#wash-station-rinse?setup=%7B%22version%22%3A1%2C%22name%22%3A%22Wash-station+rinse%22%2C%22camera%22%3A%7B%22alpha%22%3A0.94%2C%22beta%22%3A1.1%2C%22radius%22%3A7.12099997997284%2C%22fov%22%3A0.8%2C%22target%22%3A%5B0%2C0.9932999856472015%2C0%5D%7D%2C%22time%22%3A2.72%2C%22options%22%3A%7B%22strength%22%3A1%2C%22footprint%22%3A1%2C%22seed%22%3A5124%7D%2C%22grid%22%3Afalse%2C%22wireframe%22%3Afalse%7D&light=daylight) | `wash-station-rinse` | Turning carrots in a washing trough |
 | Jobs | [Chalk line snap](http://localhost:5173/workbench.html#chalk-line-snap?setup=%7B%22version%22%3A1%2C%22name%22%3A%22Chalk+line+snap%22%2C%22camera%22%3A%7B%22alpha%22%3A1.18%2C%22beta%22%3A1.1%2C%22radius%22%3A8.330999994277954%2C%22fov%22%3A0.8%2C%22target%22%3A%5B0%2C0.9717999958992004%2C0%5D%7D%2C%22time%22%3A2.63%2C%22options%22%3A%7B%22strength%22%3A1%2C%22footprint%22%3A1%2C%22seed%22%3A4850%7D%2C%22grid%22%3Afalse%2C%22wireframe%22%3Afalse%7D&light=daylight) | `chalk-line-snap` | Marking a cut line across planks during repairs |
 
+## Effects in the island worlds
+
+41 of the 52 presets have a live placement or a gameplay trigger. The Starter Island multiplayer host sends confirmed farm actions. Fishing, cargo and fire effects follow changes in shared gameplay state. Small effects use bounded pools and fade with camera distance. The island overview skips the local details.
+
+| Group | In the world |
+| --- | --- |
+| Water | Fernfall and Tarnstep waterfall spray, Driftwood shore splash, paddle droplets and skiff wake, wading crescents, swimmer bubbles, bobber bite dip and fish thrash, Tarnstep eddy foam, tire spray on wet surfaces, and wet boarding-plank footprints. |
+| Weather and air | Rain around the crew, roof drips and canvas runoff at Seabrook Market, puddle rings, dawn ground mist, window spatter on the Brinewick apartments, Pinewoods sunbeam dust, Driftwood sand skitter, moths around lit lamps, the Alder Timber Works roof vent, and a snuff curl from the Harbor Depot lantern at dawn. |
+| Vegetation and loose ground | Windblown leaves, pollen in flower patches, track dust, seed parachutes, droplets when brushing wet ferns, soil from the hoe and carrot harvest, feathers when birds take off, hive entrance traffic at Long Acre, clover petals underfoot, and loose slate by the mine path. |
+| Jobs | Forest Lookout embers, smoke, extinguisher plume and wet-ash steam, watering-can showers on confirmed watering, sawdust at Alder Timber Works, crate landing grit, and gravel chips under braking tires. |
+
+The shelf also has previews for boat drainage and mooring, cold-weather breath and frost, harvest chaff and hedge trimming, and the remaining cargo and ferry repair actions. Those setups can be used when the corresponding interactions and weather conditions are authored.
+
+These Saltwind playtest links open at a fixed time. Press **Resume playtest** to see the whole effect in motion. [Alder Timber Works](http://localhost:5173/second-island.html?view=1&at=-232.2%2C30.1%2C166.2&eye=-225.8%2C34.3%2C164.6&pose=-0.844154%2C0%2C1%2C0%2C0%2C0&orbit=0%2C0.2%2C5%2C0&tour=0%2C0%2C0%2C0&time=0.54&site=timber&weather=daylight) · [Long Acre hives](http://localhost:5173/second-island.html?view=1&at=180%2C17%2C22.11&eye=185.3%2C21.15%2C17.8&pose=0.247354%2C0%2C1%2C0%2C0%2C0&orbit=0%2C0.2%2C5%2C0&tour=0%2C0%2C0%2C0&time=1.77&site=fields&weather=daylight) · [Tarnstep Falls in rain](http://localhost:5173/second-island.html?view=1&at=-124.9%2C10.827093%2C168.4&eye=-121.88%2C20.36%2C158.45&pose=1.366778%2C0%2C1%2C0%2C0%2C0&orbit=0%2C0.2%2C5%2C0&tour=0%2C0%2C0%2C0&time=2.29&site=falls&weather=rain)
+
 ## Destination checks
 
 ![Spray lifting where the Tarnstep cascade meets its plunge pool, and mist emerging from a held extinguisher beside the Forest Lookout trail](images/effects-field-checks.jpg)

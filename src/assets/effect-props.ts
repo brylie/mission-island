@@ -26,3 +26,28 @@ export function createProduceCarrot(meshes: MeshFactory, root: TransformNode) {
     meshes.sphere(side * .052, .144, 0, .07, .248, .052, '#789653', root).rotation.z = side * -.34
   }
 }
+
+export function createTimberSaw(meshes: MeshFactory) {
+  const root = new TransformNode('Timber saw', meshes.scene)
+  const wood = meshes.paintSurface('wood', '#a07e54')
+  meshes.box(0, .84, .02, 2.42, .135, 1.16, wood, root)
+  for (const x of [-.96, .96]) {
+    for (const z of [-.4, .43]) meshes.box(x, .404, z, .135, .81, .15, '#746650', root)
+  }
+  meshes.box(-.52, .952, 0, 1.18, .09, .37, '#cdab74', root)
+  const arbor = new TransformNode('Saw arbor', meshes.scene)
+  arbor.parent = root
+  arbor.position.set(.08, 1.01, -.018)
+  meshes.cylinder(0, 0, 0, .48, .48, .053, 22, '#a2b5b1', arbor).rotation.x = Math.PI / 2
+  for (let tooth = 0; tooth < 14; tooth++) {
+    const angle = tooth * Math.PI * 2 / 14
+    const edge = meshes.box(.247 * Math.sin(angle), .247 * Math.cos(angle), 0,
+      .049, .079, .058, '#98a5a0', arbor)
+    edge.rotation.z = -angle - .23
+  }
+  meshes.box(.079, .158, .029, .035, .061, .008, '#556c69', arbor, false).name = 'Blade witness mark'
+  return { root, pose(this: void, time: number) {
+    // The cutting edge moves toward +X where it meets the stock and throws sawdust.
+    arbor.rotation.z = -time * 12
+  } }
+}

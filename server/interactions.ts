@@ -10,6 +10,7 @@ import { crateSize, crateStarts, distance, extinguisherStarts, spawns } from '..
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { stopPrimary, stopped, stowTool, type CrewMember } from './crew.ts'
 import { updateHeldItems } from './items.ts'
+import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 
@@ -88,6 +89,7 @@ export function createInteractions(
       if (state.farm[plot] === 'ripe') {
         state.farm[plot] = 'grass'
         player.goods.carrots++
+        recordCultivation(state, 'harvest', plot, player.id)
         return
       }
       const nearby = nearbyItem(state, player)

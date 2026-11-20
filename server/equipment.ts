@@ -9,6 +9,7 @@ import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewCommand } from './commands.ts'
 import { stopPrimary, stowTool, type CrewMember } from './crew.ts'
 import { castPoint, catchChance, stepFight } from '../src/simulation/fishing.ts'
+import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 
 export function createEquipment(
@@ -49,9 +50,13 @@ export function createEquipment(
     } else if (!item && !player.seat) {
       if (player.grounded && !player.onBed) {
         const plot = nearbyPlot(player)
-        if (player.equipped === 'hoe' && state.farm[plot] === 'grass') state.farm[plot] = 'tilled'
+        if (player.equipped === 'hoe' && state.farm[plot] === 'grass') {
+          state.farm[plot] = 'tilled'
+          recordCultivation(state, 'hoe', plot, player.id)
+        }
         if (player.equipped === 'watering-can' && state.farm[plot] === 'planted') {
           state.farm[plot] = 'watered'
+          recordCultivation(state, 'water', plot, player.id)
         }
       }
       member.primary = { kind: 'reach', since: now }

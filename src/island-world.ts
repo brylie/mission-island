@@ -28,6 +28,7 @@ interface WorldSubstitutions {
   features?: readonly SiteFeature[]
   replaceFeature?: SiteFeature
   replaceFarm?: boolean
+  liveParticles?: boolean
 }
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
@@ -85,11 +86,14 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const northernScenery = createNorthernScenery(meshes)
   createGrassTufts(meshes)
   createWildflowers(meshes)
-  createUnderstory(meshes)
+  const ferns = createUnderstory(meshes)
   const wildlife = createStarterWildlife(meshes)
-  const phenomena = createPhenomena(meshes.scene, [
+  const sceneryWeather = [
     { ...pool, name: 'Mirror Pool dawn mist', kind: 'mist', y: waterLevel, extent: 22, seed: 5182 },
     { name: 'Fernfall spray', kind: 'spray', x: streamX(89.2), y: waterLevel + .04, z: 89.2, extent: 2.7, seed: 2961 },
+  ] as const
+  const phenomena = createPhenomena(meshes.scene, [
+    ...(substitutions.liveParticles ? [] : sceneryWeather),
     { name: 'Shellglass plankton', kind: 'glow', ...tidePool, y: waterLevel, extent: 1.7, seed: 6787 },
   ])
   const lights = createStreetLights(meshes)
@@ -97,5 +101,5 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   beachUmbrellas.forEach(({ x, z }, index) => createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))
 
   meshes.finishScenery()
-  return { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights, marketShower }
+  return { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights, marketShower, ferns }
 }
