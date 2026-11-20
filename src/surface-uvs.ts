@@ -31,14 +31,3 @@ export function cylinderSurfaceUVs(mesh: Mesh, diameter: number, height: number,
   }
   mesh.setVerticesData(VertexBuffer.UVKind, uvs)
 }
-
-// On low boulders and heaps, project the finish from above in metres so it
-// follows the footprint without pinching around the visible crown.
-export function groundSurfaceUVs(mesh: Mesh) {
-  const positions = mesh.getVerticesData(VertexBuffer.PositionKind)!
-  const uvs = []
-  for (let i = 0; i < positions.length; i += 3) {
-    uvs.push(mesh.position.x + positions[i] * mesh.scaling.x, mesh.position.z + positions[i + 2] * mesh.scaling.z)
-  }
-  mesh.setVerticesData(VertexBuffer.UVKind, uvs)
-}

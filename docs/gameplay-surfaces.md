@@ -10,14 +10,18 @@ Run `npm run dev` on the default port to use the links. The gallery opens under 
 
 ## On the islands
 
-- **Starter Island** uses the meadow turf across the mainland, compacted gravel on the Harbor Trail, and salt-worn boards on the fishing dock. At Shellglass Tide Pool, look for the barnacles and the low rock whose algae brightens after dusk.
-- **Saltwind** has separate magnetite, malachite, and honey calcite stockpiles next to the Slatecliff Mine hopper. From the Tarnstep Survey Shelf, look for lichen at the foot of the benchmark, basalt at the upper falls, and slate downstream.
+- **Starter Island** uses the meadow turf across the mainland, compacted gravel on the Harbor Trail, and salt-worn boards on the fishing dock. Pairs of nailheads mark the dock stringers, and barnacles cling to the pilings at the waterline. At Shellglass the ebb exposes three rock pockets where plankton flicker after dusk.
+- **Saltwind** stores magnetite, malachite, and honey calcite in open timber bays beside the Slatecliff hopper. Each heap has a scoop taken out of its loading face and loose chunks at its foot. From the Tarnstep Survey Shelf, look for lichen at the foot of the benchmark, basalt at the upper falls, and slate downstream.
 
 | Starter Island | Saltwind |
 | --- | --- |
 | ![Harbor gravel leading to the weathered fishing dock](images/island-surfaces/harbor-dock.jpg) | ![Magnetite, malachite, and honey calcite stockpiles at Slatecliff Mine](images/island-surfaces/slatecliff-stockpiles.jpg) |
-| ![Barnacle-covered rocks at Shellglass during the day](images/island-surfaces/shellglass-day.jpg) | ![Basalt outcrops at the upper Tarnstep Falls](images/island-surfaces/tarnstep-falls.jpg) |
-| ![Cyan algae glowing at Shellglass after dusk](images/island-surfaces/shellglass-night.jpg) | ![Lichen at the base of the Tarnstep Survey Shelf benchmark](images/island-surfaces/tarnstep-benchmark.jpg) |
+| ![Retained rock pools and the exposed wet rim at Shellglass at low tide](images/island-surfaces/shellglass-day.jpg) | ![Basalt outcrops at the upper Tarnstep Falls](images/island-surfaces/tarnstep-falls.jpg) |
+| ![Plankton glimmering in the retained pools at Shellglass after dusk](images/island-surfaces/shellglass-night.jpg) | ![Lichen at the base of the Tarnstep Survey Shelf benchmark](images/island-surfaces/tarnstep-benchmark.jpg) |
+
+From the loading side, dark magnetite breaks through its host rock, malachite shows green on fractured faces, and larger calcite pieces gather at the foot of the heap.
+
+![Loose ore, crusher fines, and timber dividers seen from the Slatecliff loading apron](images/island-surfaces/slatecliff-ore-detail.jpg)
 
 ## Material clues and gameplay ideas
 

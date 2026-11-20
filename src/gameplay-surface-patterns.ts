@@ -30,22 +30,23 @@ function basaltHex(u: number, v: number, n: number, seed: number) {
 
 export const gameplayPatterns: Record<GameplaySurfaceId, (p: Point) => Sample> = {
   'magnetite-seam': ({ u, v, n, seed, wear, patch, fine }) => {
-    const vein = centered(u * n + v + patch * .82 + fine * .095)
+    const fold = valueNoise(u, v, 3, seed + 13)
+    const vein = centered(u * n + v + fold * 1.8 + patch * .64 + fine * .12)
     const deposit = valueNoise(u + v, v, n, seed + 82, 3)
     const oreWidth = .043 + .21 * deposit * (wear + .26)
     const main = disk(Math.abs(vein), oreWidth, .055)
     const fork = disk(Math.abs(vein - .14 - .13 * patch), .047, .035) * smooth(.48, .79, deposit)
-    const seam = Math.max(main, fork * .84) * smooth(.10, .47, deposit + .14 * wear)
+    const seam = Math.max(main, fork * .84) * smooth(.28, .66, deposit + .11 * wear)
     const grains = cell(u, v, n * 4, seed, .72)
     const chip = smooth(.013, .10, grains.edge) * (.28 + .72 * grains.tone)
     const stain = disk(Math.abs(vein), .24 + .082 * wear, .14) * deposit
     return [.43 + .09 * patch + .16 * fine + seam * (chip * .47 - .24),
       .43 + .40 * patch, seam * (.68 + chip * .32) + stain * .24]
   },
-  'malachite-bloom': ({ u, v, n, seed, wear, fine }) => {
+  'malachite-bloom': ({ u, v, n, seed, wear, patch, fine }) => {
     const nodule = cell(u + .012 * fine, v, n, seed)
     const size = .34 + .19 * nodule.tone - wear * .11
-    const body = disk(nodule.distance, size, .24)
+    const body = disk(nodule.distance + (fine - .5) * .10, size, .21) * smooth(.30, .70, patch)
     const band = wave(nodule.distance * 10.4 + nodule.tone * .74)
     const banding = body * (.44 + band * .56)
     return [.13 + body * (.48 + .27 * band) + fine * .15,
@@ -147,15 +148,18 @@ export const gameplayPatterns: Record<GameplaySurfaceId, (p: Point) => Sample> =
       .23 + crown * (.42 + .26 * stones.tone) + patch * .14, upheaval * .72]
   },
   'lichen-clock': ({ u, v, n, seed, wear, patch, fine }) => {
-    const colony = cell(u, v, n, seed)
-    const angle = Math.atan2(colony.dy, colony.dx)
-    const frill = Math.cos(angle * 11 + colony.tone * 7) * .05 + (fine - .5) * .07
-    const radius = .29 + colony.tone * .17 + wear * .13
-    const lobe = disk(colony.distance + frill, radius, .08) * smooth(.12, .46, colony.tone + .25 * wear)
-    const edge = rim(colony.distance + frill, radius - .09, .082) * lobe
+    const colony = cell(u + .043 * patch, v + .027 * fine, n, seed)
     const pores = valueNoise(u, v, n * 5, seed + 29)
-    return [.12 + lobe * (.32 + edge * .24 + pores * .32) + fine * .11,
-      .23 + .65 * lobe + .08 * patch, edge * (.55 + .39 * colony.tone)]
+    const shelter = valueNoise(u, v, 3, seed + 11)
+    const damp = smooth(.34, .67, .60 * shelter + .4 * patch + .16 * wear)
+    const angle = Math.atan2(colony.dy, colony.dx)
+    const frill = .027 * Math.cos(angle * 7 + colony.tone * 5) + (pores - .5) * .12
+    const radius = .12 + colony.tone * .25 + wear * .18
+    const edgeDistance = colony.distance + frill - radius
+    const lobe = disk(colony.distance + frill, radius, .085) * damp
+    const growth = rim(edgeDistance + .045, 0, .057) * lobe
+    return [.16 + .13 * fine + lobe * (.14 + growth * .18 + pores * .22),
+      .28 + .15 * patch + lobe * (.31 + .21 * pores), growth * (.20 + .56 * colony.tone)]
   },
   'mycelium-threads': ({ u, v, n, seed, wear, patch, fine }) => {
     const scale = .034 + .046 * wear

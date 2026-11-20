@@ -24,7 +24,6 @@ import { islandRocks, islandTrees } from './scenery'
 import type { SiteFeature } from './worlds/site-feature'
 import { placeSiteFeatures } from './assets/site-props'
 import { beachUmbrellas, shellRocks, starterFeatures } from './worlds/starter/sites'
-import { groundSurfaceUVs } from './surface-uvs'
 import { createWetPaving } from './wet-paving'
 import { createSurfaceMaterial } from './materials'
 import { meadowDefaults, shaderPresets, shoreDefaults, type ShaderQuality } from './shader-studies'
@@ -41,20 +40,6 @@ interface WorldSubstitutions {
   features?: readonly SiteFeature[]
   replaceFeature?: SiteFeature
   replaceFarm?: boolean
-}
-
-function createShellglassRocks(meshes: MeshFactory) {
-  const algae = meshes.paintRecipe('glow-algae-film')
-  const barnacles = meshes.paintRecipe('barnacle-belt')
-  for (const [index, point] of shellRocks.entries()) {
-    const { size, heading } = point
-    const y = groundHeight(point)
-    const rock = meshes.sphere(point.x, y + .055, point.z, size, .23, size * .65, index === 0 ? algae : barnacles)
-    rock.rotation.y = heading
-    groundSurfaceUVs(rock)
-    meshes.sphere(point.x + .025, y + .165, point.z - .015, .16, .055, .12, '#ecd3aa')
-  }
-  return algae
 }
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
@@ -92,7 +77,12 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const features = (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site)
   placeSiteFeatures(meshes, features, walkingHeight)
   const shellglass = createShellglassTide(meshes, features.find(feature => feature.site === 'shellglass' && feature.model === 'tide-staff'))
-  const shellglassAlgae = createShellglassRocks(meshes)
+  for (const point of shellRocks) {
+    const { size, heading } = point
+    const rock = meshes.sphere(point.x, groundHeight(point) + .055, point.z, size, .23, size * .65, '#798b80')
+    rock.rotation.y = heading
+    meshes.sphere(point.x + .025, groundHeight(point) + .165, point.z - .015, .16, .055, .12, '#ecd3aa')
+  }
   // Limpets on the sill and wrack in the basin give the pool a scale at foot level.
   for (let i = 0; i < 17; i++) {
     const patch = Math.floor(i / 4)
@@ -141,9 +131,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     northernScenery.update(frame.camera, close)
     wildlife(frame, driftwood)
     marketShower(frame.time, frame.camera, runoff)
-    const night = nightLighting(frame.weather.hour)
-    lights(frame.camera, night)
-    shellglassAlgae.emissiveIntensity = .10 + .9 * night
+    lights(frame.camera, nightLighting(frame.weather.hour))
     shore.quality = quality
     const { tide, near } = shellglass(frame, light, tideTime, shore)
     const enabled = quality !== 'off'
