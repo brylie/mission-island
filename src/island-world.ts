@@ -38,6 +38,7 @@ interface WorldSubstitutions {
   features?: readonly SiteFeature[]
   replaceFeature?: SiteFeature
   replaceFarm?: boolean
+  liveParticles?: boolean
 }
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
@@ -102,11 +103,13 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const northernScenery = createNorthernScenery(meshes)
   const blades = createGrassTufts(meshes)
   createWildflowers(meshes)
-  createUnderstory(meshes)
+  const ferns = createUnderstory(meshes)
   const wildlife = createStarterWildlife(meshes)
   const phenomena = createPhenomena(meshes.scene, [
     { ...pool, name: 'Mirror Pool dawn mist', kind: 'mist', y: waterLevel, extent: 22, seed: 5182, scatter: true },
-    { name: 'Fernfall spray', kind: 'spray', x: streamX(89.2), y: waterLevel + .04, z: 89.2, extent: 2.7, seed: 2961 },
+    ...(substitutions.liveParticles ? [] : [
+      { name: 'Fernfall spray', kind: 'spray' as const, x: streamX(89.2), y: waterLevel + .04, z: 89.2, extent: 2.7, seed: 2961 },
+    ]),
   ])
   const lights = createStreetLights(meshes)
 
@@ -142,5 +145,5 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     return tide
   }
 
-  return { juniper, updateEnvironment, homeChests, showFarm, boat, buoys }
+  return { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns }
 }

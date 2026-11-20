@@ -9,7 +9,8 @@ import { walkingHeight } from './terrain'
 
 type Position = { x: number; y: number; z: number }
 const back = { z: 5.075, y: 3.13 }
-const hem = { z: 6.43, y: 2.87 }
+export const marketAwningHem = { z: 6.43, y: 2.87 }
+const hem = marketAwningHem
 const halfWidth = 1.465
 const spout = { x: market.x - halfWidth - .045, y: 2.73, z: hem.z + .13 }
 const splash = { x: spout.x - .031, z: spout.z }

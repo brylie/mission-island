@@ -3,6 +3,7 @@ import { starterGullPerches } from './gull-sites'
 import { createDriftwoodFish } from './driftwood-fish'
 import type { DriftwoodFrame } from './simulation/driftwood-school'
 import { onBeachTowel } from './worlds/starter/sites'
+import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
 import { distanceToRoute, footpaths, road } from './routes'
 import { islandTrees, seededRandom } from './scenery'
@@ -45,6 +46,7 @@ export function createWildflowers(meshes: MeshFactory) {
 }
 
 export function createUnderstory(meshes: MeshFactory) {
+  const ferns: Point[] = []
   for (const habitat of [
     { name: 'Juniper fern fans', x: grove.x + 2, z: grove.z + 1, radius: 12, height: .53, bend: .5, color: '#72925d', seed: 1632 },
     { name: 'Mirror Pool rushes', x: pool.x, z: pool.z, radius: 16, height: 1.25, bend: .17, color: '#7b9362', seed: 2833 },
@@ -58,6 +60,7 @@ export function createUnderstory(meshes: MeshFactory) {
       const point = { x: habitat.x + radius * Math.cos(angle), z: habitat.z + radius * Math.sin(angle) }
       if (onBeachTowel(point) || waterDepth(point) > .04 || distanceToRoute(point, road) < 4.3 ||
         footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + .68)) continue
+      if (habitat.seed === 1632) ferns.push(point)
       const y = groundHeight(point) - .025, scale = .66 + random() * .82
       for (let leaf = 0; leaf < 5; leaf++) {
         const theta = angle + leaf * 2.34 + random() * .26
@@ -77,6 +80,7 @@ export function createUnderstory(meshes: MeshFactory) {
     paint.backFaceCulling = false
     meshes.surface(habitat.name, positions, Array.from({ length: positions.length / 3 }, (_, i) => i), paint).freezeWorldMatrix()
   }
+  return ferns
 }
 
 export function createStarterWildlife(meshes: MeshFactory) {

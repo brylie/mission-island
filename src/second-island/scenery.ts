@@ -10,6 +10,7 @@ import '@babylonjs/core/Meshes/thinInstanceMesh'
 import { createHarborBoat } from '../assets/waterfront'
 import { createTree } from '../assets/props'
 import { createPhenomena } from '../island-phenomena'
+import { createTarnstepSpray } from './tarnstep-spray'
 import type { MeshFactory } from '../island-meshes'
 import { placeSiteFeatures } from '../assets/site-props'
 import { distanceToRoute } from '../routes'
@@ -25,7 +26,7 @@ import { createHoneyMarketStand, createLongAcreGarden } from './long-acre-art'
 import { longAcreSubject } from './long-acre'
 import { arrival, helipad, lowerLake, pavedYards, roundYards, sites, discoveryWalks, waterfront } from './sites'
 import type { MapPoint } from './sites'
-import { fallsWidth, fallsX, fallsY, groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
+import { fallsWidth, fallsX, groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
 import { createSaltwindVehicle } from './vehicles'
 import type { VehicleId } from './vehicles'
 import { buildSigns } from './site-signs'
@@ -393,9 +394,9 @@ export function createScenery(meshes: MeshFactory, solids: ScenerySolids, omit?:
   const pollinators = omit === longAcreSubject ? undefined : createLongAcreGarden(meshes, solids)
   const plants = createPlants(meshes, solids)
   const wildlife = createWildlife(meshes, solids)
+  const tarnstepSpray = omit === 'waterfall-spray' ? undefined : createTarnstepSpray(meshes.scene)
   const phenomena = createPhenomena(meshes.scene, [
     { ...lowerLake, name: 'Mirror Lake dawn mist', kind: 'mist', extent: 62, seed: 5183 },
-    { name: 'Tarnstep spray', kind: 'spray', x: fallsX(169), y: fallsY(169), z: 169, extent: 7.5, seed: 2962 },
     { name: 'Sandspit plankton', kind: 'glow', x: -248, y: 0, z: -272, extent: 9.8, seed: 6788 },
   ])
   meshes.finishScenery()
@@ -406,5 +407,6 @@ export function createScenery(meshes: MeshFactory, solids: ScenerySolids, omit?:
     plants(frame.camera, overview)
     wildlife(frame, overview)
     phenomena(frame)
+    tarnstepSpray?.(frame)
   }
 }

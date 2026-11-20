@@ -4,7 +4,7 @@ export const workspaces = {
   Ecology: ['Habitats', 'Animals', 'Plants'],
   Construction: ['Starter buildings', 'Saltwind buildings', 'Props', 'Site furnishings'],
   Surfaces: ['Materials', 'Water and shore', 'Vegetation and terrain', 'Built surfaces', 'Weather and light'],
-  Effects: ['Effects'],
+  Effects: ['Water', 'Weather and air', 'Vegetation and loose ground', 'Jobs'],
   Characters: ['Wardrobe', 'NPC interactions'],
   Vehicles: ['Starter vehicles', 'Saltwind vehicles'],
   Mechanics: ['Farming', 'Fishing', 'Physics'],
