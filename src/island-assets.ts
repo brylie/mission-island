@@ -200,16 +200,20 @@ export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
     eyes.push({ mesh: white, height: white.scaling.y }, { mesh: pupil, height: pupil.scaling.y })
   }
   sphere(0, 1.366, 0.296, 0.135, 0.025, 0.033, '#754d43', root, false, 10)
-  fabric.push(sphere(0, 1.712, 0.016, 0.61, 0.31, 0.6, cream, root, true, 16))
-  accents.push(sphere(0, 1.654, 0.185, 0.615, 0.068, 0.53, cream, root, true, 16))
+  const cap = sphere(0, 1.712, 0.016, 0.61, 0.31, 0.6, cream, root, true, 16)
+  const brim = sphere(0, 1.654, 0.185, 0.615, 0.068, 0.53, cream, root, true, 16)
+  fabric.push(cap)
+  accents.push(brim)
 
   let worn: CrewAppearance | undefined
-  function setAppearance(appearance = defaultAppearance) {
-    if (worn?.uniform === appearance.uniform && worn.skin === appearance.skin) return
+  let lastDye: string | undefined
+  function setAppearance(appearance = defaultAppearance, dye?: string) {
+    if (worn?.uniform === appearance.uniform && worn.skin === appearance.skin && lastDye === dye) return
+    lastDye = dye
     worn = appearance
     const uniform = uniforms[appearance.uniform === 'default' ? (id === 0 ? 'amber' : 'blue') : appearance.uniform]
     const tone = skinTones[appearance.skin === 'default' ? (id === 0 ? 'light' : 'medium') : appearance.skin]
-    const colors = [paint(uniform.color), paint(uniform.trim), paint(tone.color)]
+    const colors = [paint(dye ?? uniform.color), paint(uniform.trim), paint(tone.color)]
     for (const [i, parts] of [fabric, accents, skin].entries()) {
       for (const part of parts) part.material = colors[i]
     }
@@ -220,7 +224,7 @@ export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
     for (const { mesh, height } of eyes) mesh.scaling.y = height * openness
   }
   setAppearance()
-  return { root, arms, legs, setAppearance, blink }
+  return { root, arms, legs, setAppearance, blink, setCap(visible: boolean) { cap.setEnabled(visible); brim.setEnabled(visible) } }
 }
 
 export function poseCrew(crew: ReturnType<typeof createCrew>, cycle: number, stride: number, airborne: boolean,

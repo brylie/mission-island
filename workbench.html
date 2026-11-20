@@ -18,8 +18,13 @@
 
     <main class="workbench">
       <aside class="library" aria-label="Asset library">
-        <h2>Library</h2>
-        <div id="asset-list"></div>
+        <label class="library-field" for="workspace-select">Workspace</label>
+        <select id="workspace-select"></select>
+        <label class="sr-only" for="library-search">Search all workspaces</label>
+        <input id="library-search" type="search" placeholder="Search all workspaces" autocomplete="off" />
+        <p id="library-results" role="status"></p>
+        <nav id="asset-list" aria-label="Subjects"></nav>
+        <a id="island-tour" class="asset-link" href="second-island.html" hidden>Tour Saltwind ↗</a>
       </aside>
 
       <section class="workspace" aria-labelledby="asset-title">
@@ -29,7 +34,10 @@
             <h2 id="asset-title"></h2>
             <p id="asset-description"></p>
           </div>
-          <button type="button" id="landscape-map-toggle" aria-controls="landscape-map" aria-expanded="false" hidden>Island map</button>
+          <div class="scene-actions">
+            <nav id="field-switch" aria-label="Preview setting" hidden><a id="inspect-alone">Studio</a><a id="inspect-field">On island</a></nav>
+            <button type="button" id="landscape-map-toggle" aria-controls="landscape-map" aria-expanded="false" hidden>Island map</button>
+          </div>
         </header>
 
         <div class="viewport" id="viewport">
@@ -41,6 +49,7 @@
             <input id="landscape-reference-split" type="range" min="0" max="100" value="50" aria-label="Reference split" />
           </div>
           <div class="viewport-note" aria-hidden="true"><span>DRAG</span> Orbit <span>SCROLL</span> Zoom <span>RIGHT-DRAG</span> Pan</div>
+          <aside id="subject-field" hidden><strong id="subject-readout"></strong><p id="subject-observations"></p></aside>
           <aside id="biome-field" aria-label="Field observations" hidden><strong>Field observations</strong><p id="biome-observations"></p></aside>
           <aside id="landscape-map" aria-labelledby="landscape-map-title" hidden>
             <div class="map-heading">
@@ -100,24 +109,6 @@
       </section>
 
       <aside class="inspector" aria-label="Preview controls">
-        <section>
-          <h2>View</h2>
-          <div class="views" aria-label="Camera presets">
-            <button type="button" data-angle="perspective">3D</button><button type="button" data-angle="front">Front</button>
-            <button type="button" data-angle="side">Side</button><button type="button" data-angle="top">Top</button>
-          </div>
-          <label class="row" id="lighting-row"><span>Lighting</span><select id="lighting">
-            <option value="daylight">Daylight</option><option value="overcast">Overcast</option><option value="golden">Golden hour</option>
-          </select></label>
-          <label class="row" id="landscape-view-row" hidden><span>Scenic view</span><select id="landscape-view">
-            <option value="">Jump to…</option>
-          </select></label>
-          <div class="display-options">
-            <label><input id="grid" type="checkbox" checked /> Grid</label>
-            <label><input id="wireframe" type="checkbox" /> Wireframe</label>
-            <label><input id="turntable" type="checkbox" /> Turntable</label>
-          </div>
-        </section>
         <section id="biome-presets" hidden>
           <h2>Starting habitat</h2>
           <div class="row"><select id="biome-preset" aria-label="Starting habitat"></select><button type="button" id="biome-apply">Apply</button></div>
@@ -125,14 +116,19 @@
           <input id="biome-file" type="file" accept=".json,application/json" hidden />
           <p id="biome-file-status" class="codex-note" role="status"></p>
         </section>
-        <section id="playtest-tools" hidden>
-          <button type="button" id="copy-playtest">Copy playtest link</button>
-          <span id="copy-status" role="status"></span>
-          <input id="playtest-url" type="url" readonly hidden aria-label="Playtest link" />
-        </section>
         <section id="asset-inspector" hidden>
           <div class="section-heading"><h2 id="settings-heading">Asset settings</h2><button type="button" id="reset" class="reset">Reset</button></div>
           <div id="asset-controls"></div>
+          <div id="subject-actions" class="layout-actions"></div>
+        </section>
+        <section id="furnishing-draft" hidden>
+          <h2>Island furnishing</h2>
+          <div class="layout-actions">
+            <button type="button" id="save-furnishing">Save to landscape draft</button>
+            <button type="button" id="export-furnishing">Export placement JSON</button>
+          </div>
+          <a id="return-to-landscape" class="asset-link">Inspect this location →</a>
+          <p id="furnishing-status" role="status"></p>
         </section>
         <section id="landscape-studies" hidden>
           <details id="landscape-study-details">
@@ -163,10 +159,8 @@
         </section>
         <section id="landscape-layout" hidden>
           <h2>Layout draft</h2>
-          <label class="row"><span>Object</span><select id="landscape-kind">
-            <option value="player">Test player</option><option value="crate">Crate</option>
-            <option value="rock">Rock</option><option value="tree">Tree</option><option value="truck">Flatbed truck</option>
-          </select></label>
+          <label class="row"><span>Island furnishing</span><select id="edit-furnishing"><option value="">Edit in place…</option></select></label>
+          <label class="row"><span>Object</span><select id="landscape-kind"></select></label>
           <button type="button" id="landscape-add">Place at focus</button>
           <label class="row"><span>Selected</span><select id="landscape-selected"></select></label>
           <div class="layout-actions">
@@ -181,9 +175,45 @@
           <div id="landscape-status" role="status"></div>
         </section>
         <section>
+          <h2>View</h2>
+          <div class="views" aria-label="Camera presets">
+            <button type="button" data-angle="perspective">3D</button><button type="button" data-angle="front">Front</button>
+            <button type="button" data-angle="side">Side</button><button type="button" data-angle="top">Top</button>
+          </div>
+          <label class="row" id="lighting-row"><span>Lighting</span><select id="lighting">
+            <option value="daylight">Daylight</option><option value="overcast">Overcast</option><option value="golden">Golden hour</option>
+          </select></label>
+          <label class="row" id="landscape-view-row" hidden><span>Scenic view</span><select id="landscape-view">
+            <option value="">Jump to…</option>
+          </select></label>
+          <div class="display-options">
+            <label><input id="grid" type="checkbox" checked /> Grid</label>
+            <label><input id="wireframe" type="checkbox" /> Wireframe</label>
+            <label><input id="turntable" type="checkbox" /> Turntable</label>
+          </div>
+        </section>
+        <section>
           <h2>Geometry QA</h2>
           <button type="button" id="check-z-fighting" disabled>Check z-fighting</button>
           <div id="z-fighting-result" role="status"></div>
+        </section>
+        <section id="variations" hidden>
+          <details><summary>Saved variations</summary>
+            <form id="variation-form" class="study-name">
+              <input id="variation-name" type="text" aria-label="Variation name" placeholder="Variation name" maxlength="60" required />
+              <button type="submit">Save</button>
+            </form>
+            <div id="variation-library" hidden>
+              <label class="row"><span>Variation</span><select id="variation-select"></select></label>
+              <div class="layout-actions"><button id="variation-open" type="button">Open</button><button id="variation-remove" type="button">Remove</button></div>
+            </div>
+            <p id="variation-status" role="status"></p>
+          </details>
+        </section>
+        <section id="playtest-tools" hidden>
+          <button type="button" id="copy-playtest">Copy playtest link</button>
+          <span id="copy-status" role="status"></span>
+          <input id="playtest-url" type="url" readonly hidden aria-label="Playtest link" />
         </section>
         <section class="source">
           <h2>Source</h2>

@@ -1,7 +1,8 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { stepPlayerOnTerrain } from '../../server/movement'
 import { writeStorage } from '../browser-storage'
-import { createCrew, createFlatbed, createSupply, poseCrew, poseSwimming, swimmingHeight } from '../island-assets'
+import { createSiteFeature } from '../site-props'
+import { createCrew, createHomeChest, createFlatbed, createSupply, poseCrew, poseSwimming, swimmingHeight } from '../island-assets'
 import type { MeshFactory } from '../island-meshes'
 import { walkingHeight } from '../terrain'
 import { crateSize, distance, jumpSpeed, truckStart } from '../world'
@@ -32,6 +33,11 @@ function nodeFor(meshes: MeshFactory, placement: Draft['objects'][number]) {
   } else if (placement.kind === 'tree') {
     meshes.cylinder(0, 1.1, 0, 0.32, 0.42, 2.2, 8, '#765b48', root)
     meshes.cylinder(0, 2.7, 0, 0.12, 3.1, 3.5, 9, meshes.paintSurface('leaves'), root)
+  } else if (placement.kind === 'chest') {
+    createHomeChest(meshes, { x: 0, z: 0 }, '#4faba4').root.parent = root
+  } else if (placement.kind === 'rail' || placement.kind === 'bench' || placement.kind === 'planter') {
+    const model = placement.kind
+    createSiteFeature(meshes, { x: 0, z: 0, site: 'draft', name: labels[model], model, color: '#539285' }).parent = root
   } else if (truckPose) {
     const truck = createFlatbed(meshes)
     truck.root.parent = root

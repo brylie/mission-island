@@ -1,4 +1,10 @@
 import './style.css'
+import { createVariationLibrary } from './variations'
+import { readSubjectLink, subjectLink } from './subject-link'
+import { starterFeatures } from '../starter-sites'
+import { editedFeature, readSiteDrafts, saveSiteDraft } from './site-drafts'
+import { workspaceOf } from './library'
+import { createLibraryPanel } from './library-panel'
 import { bindBiomeRecipes } from './biome-files'
 import { biomeLink, codex, readRecipe, recipeFromLink } from '../biome-recipe'
 import { bindPlaytestCopy, landscapeLink, landscapeWindow, readLandscapeView } from '../playtest-link'
@@ -6,11 +12,11 @@ import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { readStorage, writeStorage } from '../browser-storage'
 import { entries as initialEntries } from './catalog'
-import type { Control, Values } from './catalog'
+import type { Control, Values } from './subject'
 import { createStage } from './stage'
 import type { Angle, CameraState } from './stage'
 import { landscapeViews } from './landscape-views'
-import { createLandscapeDraft, draftStorageKey } from './landscape-draft'
+import { createLandscapeDraft, draftLabels, draftStorageKey } from './landscape-draft'
 import { createLandscapeMap } from './landscape-map'
 import { createLandscapeStudies } from './landscape-studies'
 import { parseLandscapeShot } from './landscape-shot'
@@ -25,7 +31,7 @@ function element<T extends HTMLElement = HTMLElement>(id: string) {
 }
 
 const canvas = element<HTMLCanvasElement>('stage')
-const library = element('asset-list')
+const library = createLibraryPanel()
 const inspector = element('asset-controls')
 const playback = element('playback')
 const play = element<HTMLButtonElement>('play')
@@ -46,6 +52,7 @@ interface SavedView {
   id: string
   options: Record<string, Values>
   camera?: CameraState
+  field?: boolean
   time: number
   playing: boolean
   speed: number
@@ -82,6 +89,8 @@ let entries = initialEntries
 let createPreviewStage = createStage
 const requested = () => location.hash.slice(1).split('?')[0]
 let asset = entries.find(({ id }) => id === (requested() || saved.id)) ?? entries[0]
+const fieldRequested = () => new URLSearchParams(location.hash.split('?')[1]).get('stage') === 'island'
+let onIsland = Boolean(asset.fieldSite && (location.hash ? fieldRequested() : saved.field))
 const optionsByAsset = saved.options ?? {}
 let values: Values = {}
 let time = Number.isFinite(saved.time) ? Math.max(0, Number(saved.time)) : 0
@@ -104,7 +113,7 @@ function reportError(text: string) {
 
 function remember() {
   const view: SavedView = {
-    id: asset.id, options: optionsByAsset, camera: stage?.getCamera(), time, playing,
+    id: asset.id, field: onIsland, options: optionsByAsset, camera: stage?.getCamera(), time, playing,
     speed: Number(rateSelect.value), lighting: lightSelect.value as LightingPreset,
     grid: grid.checked, wireframe: wireframe.checked, turntable: turntable.checked,
   }
@@ -132,43 +141,20 @@ function restoreOptions(controls: readonly Control[] = [], previous: Values = {}
   }))
 }
 
-function renderLibrary() {
-  const groups = new Map<string, HTMLElement>()
-  library.replaceChildren()
-  for (const entry of entries) {
-    let group = groups.get(entry.group)
-    if (!group) {
-      group = document.createElement('section')
-      group.className = 'asset-group'
-      const title = document.createElement('h3')
-      title.textContent = entry.group
-      group.append(title)
-      groups.set(entry.group, group)
-      library.append(group)
-    }
-    const link = document.createElement('a')
-    link.href = `#${entry.id}`
-    link.className = 'asset-link'
-    if (entry.id === asset.id) link.setAttribute('aria-current', 'true')
-    if (entry.swatch) {
-      const swatch = document.createElement('span')
-      swatch.className = 'swatch'
-      swatch.style.background = entry.swatch
-      link.append(swatch)
-    }
-    link.append(entry.name)
-    group.append(link)
-  }
-}
-
-function selectLibraryAsset() {
-  for (const link of library.querySelectorAll('a.asset-link')) {
-    if (link.getAttribute('href') === `#${asset.id}`) link.setAttribute('aria-current', 'true')
+function showFieldSwitch() {
+  const site = asset.fieldSite?.(values)
+  element('field-switch').hidden = !site
+  element('asset-group').textContent = [workspaceOf(asset.group), asset.group, onIsland && site?.name].filter(Boolean).join(' / ')
+  for (const [id, field] of [['inspect-alone', false], ['inspect-field', true]] as const) {
+    const link = element<HTMLAnchorElement>(id)
+    link.href = '#' + asset.id + (field ? '?stage=island' : '')
+    if (onIsland === field) link.setAttribute('aria-current', 'page')
     else link.removeAttribute('aria-current')
   }
 }
 
 function renderAssetControls() {
+  refreshActions()
   inspector.replaceChildren()
   let group = ''
   for (const control of asset.controls ?? []) {
@@ -250,8 +236,11 @@ function renderAssetControls() {
         } else {
           row.className = 'row'
           input.value = String(values[control.key])
-          input.addEventListener('input', () => setOption(control, input.value, false))
-          input.addEventListener('change', remember)
+          if (control.rebuild) input.addEventListener('change', () => setOption(control, input.value))
+          else {
+            input.addEventListener('input', () => setOption(control, input.value, false))
+            input.addEventListener('change', remember)
+          }
           row.append(name, input)
         }
       }
@@ -268,11 +257,35 @@ function renderAssetControls() {
   }
 }
 
+function refreshActions() {
+  const panel = element('subject-actions')
+  panel.replaceChildren()
+  for (const action of asset.actions ?? []) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.textContent = action.label
+    button.disabled = !action.enabled(values)
+    button.addEventListener('click', () => {
+      action.run(values)
+      renderAssetControls()
+      remember()
+      panel.querySelector<HTMLButtonElement>('button:enabled')?.focus()
+    })
+    panel.append(button)
+  }
+}
+
 function setOption(control: Control, value: Values[string], save = true) {
+  const oldSite = onIsland ? asset.fieldSite?.(values) : undefined
   values[control.key] = value
+  if (asset.actions) refreshActions()
   zFightingResult.replaceChildren()
   seek = true
-  if (control.rebuild) rebuild(stage?.getCamera())
+  if (control.rebuild) {
+    const nextSite = onIsland ? asset.fieldSite?.(values) : undefined
+    rebuild(oldSite?.offset.x === nextSite?.offset.x && oldSite?.offset.z === nextSite?.offset.z ? stage?.getCamera() : undefined)
+    showFieldSwitch()
+  }
   if (save) remember()
 }
 
@@ -302,7 +315,7 @@ function rebuild(camera?: CameraState) {
   checkZFighting.disabled = true
   reportError('')
   try {
-    stage = createPreviewStage(engine, canvas, asset, values, reportError, draft)
+    stage = createPreviewStage(engine, canvas, asset, values, reportError, draft, onIsland ? asset.fieldSite?.(values) : undefined)
     checkZFighting.disabled = false
     if (camera) stage.setCamera(camera)
     applyDisplay()
@@ -317,31 +330,39 @@ function rebuild(camera?: CameraState) {
 }
 
 function loadAsset(camera?: CameraState) {
-  const previous = optionsByAsset[asset.id]
+  const furnishing = starterFeatures.find(f => 'site-' + f.site === asset.id)
+  const previous = optionsByAsset[asset.id] ?? (furnishing && readSiteDrafts()[furnishing.site])
+  element('furnishing-draft').hidden = !furnishing
+  element('furnishing-status').textContent = ''
+  if (furnishing) element<HTMLAnchorElement>('return-to-landscape').href = '#landscape?site=' + furnishing.site
   values = restoreOptions(asset.controls, previous)
   if (asset.landscape && typeof previous?.clockStart === 'number' && Number.isFinite(previous.clockStart)) {
     values.clockStart = previous.clockStart
   }
   optionsByAsset[asset.id] = values
-  element('asset-group').textContent = asset.group
+  showFieldSwitch()
   element('asset-title').textContent = asset.name
   element('asset-description').textContent = asset.description
   element('source-file').textContent = asset.source
   element('asset-inspector').hidden = !asset.controls?.length
+  showVariations(asset.id, Boolean(!asset.landscape && asset.id !== 'biome'))
+  element('subject-field').hidden = !asset.readout
+  element('subject-readout').textContent = asset.readout ?? ''
+  element('subject-observations').textContent = ''
   const biome = asset.id === 'biome'
   element('biome-presets').hidden = element('biome-field').hidden = !biome
   element('settings-heading').textContent = biome ? 'Habitat codex' : 'Asset settings'
-  element('copy-playtest').textContent = biome ? 'Copy recipe link' : 'Copy playtest link'
+  element('copy-playtest').textContent = biome ? 'Copy recipe link' : asset.landscape ? 'Copy playtest link' : 'Copy setup link'
   element('copy-status').textContent = ''
   element('playtest-url').hidden = true
-  element('playtest-tools').hidden = !asset.landscape && !biome
+  element('playtest-tools').hidden = false
   lightSelect.disabled = Boolean(asset.landscape) || biome
   element('lighting-row').hidden = Boolean(asset.landscape) || biome
   element('landscape-view-row').hidden = !asset.landscape
   playback.hidden = !asset.duration
   slider.max = String(asset.duration ?? 0)
   time = Math.min(time, asset.duration ?? 0)
-  selectLibraryAsset()
+  library.show(entries, asset)
   renderPlayback()
   rebuild(camera)
   renderAssetControls()
@@ -388,6 +409,7 @@ const studies = createLandscapeStudies(canvas, {
   },
 })
 
+element<HTMLSelectElement>('landscape-kind').replaceChildren(...Object.entries(draftLabels).map(([id, title]) => new Option(title, id)))
 const landscapeMap = createLandscapeMap({
   focus: () => stage?.mapFocus(),
   placements: () => stage?.draftMapObjects() ?? [],
@@ -405,6 +427,23 @@ const landscapeMap = createLandscapeMap({
     remember()
   },
 })
+
+function openSubjectSetup() {
+  if (asset.landscape || asset.id === 'biome') return false
+  const setup = readSubjectLink(location.hash)
+  if (!setup) return false
+  const { shot, lighting } = setup
+  optionsByAsset[asset.id] = shot.options
+  grid.checked = shot.grid
+  wireframe.checked = shot.wireframe
+  lightSelect.value = lighting
+  playing = turntable.checked = false
+  time = shot.time
+  loadAsset(shot.camera)
+  history.replaceState(history.state, '', location.pathname + '#' + asset.id + (onIsland ? '?stage=island' : ''))
+  remember()
+  return true
+}
 
 function openLinkedStudy() {
   if (!asset.landscape) return false
@@ -437,6 +476,41 @@ function openLandscapeView(id: string) {
   remember()
 }
 
+const furnishSelect = element<HTMLSelectElement>('edit-furnishing')
+furnishSelect.append(...starterFeatures.map(f => new Option(f.name, f.site)))
+furnishSelect.addEventListener('change', () => {
+  if (furnishSelect.value) location.hash = 'site-' + furnishSelect.value + '?stage=island'
+  furnishSelect.value = ''
+})
+element('save-furnishing').addEventListener('click', () => {
+  const site = starterFeatures.find(f => 'site-' + f.site === asset.id)
+  if (site) element('furnishing-status').textContent = saveSiteDraft(site.site, values)
+    ? 'Saved in this browser. The Landscape Workbench now uses this placement.' : 'Could not save this draft.'
+})
+
+element('export-furnishing').addEventListener('click', () => {
+  const site = starterFeatures.find(f => 'site-' + f.site === asset.id)
+  if (!site) return
+  const json = JSON.stringify(editedFeature(site, values), null, 2)
+  const url = URL.createObjectURL(new Blob([json + '\n'], { type: 'application/json' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = site.site + '-placement.json'
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+})
+
+function openFurnishingLocation() {
+  if (!asset.landscape) return
+  const id = new URLSearchParams(location.hash.split('?')[1]).get('site')
+  const feature = starterFeatures.find(f => f.site === id)
+  if (!feature) return
+  const draft = readSiteDrafts()[feature.site]
+  Object.assign(values, { x: feature.x + (draft?.east ?? 0), z: feature.z + (draft?.north ?? 0), focusHeight: .65 })
+  stage?.setLandscapeView({ alpha: -.95, beta: 1.18, radius: 8 })
+  renderAssetControls()
+}
+
 scenicView.addEventListener('change', () => {
   openLandscapeView(scenicView.value)
   scenicView.value = ''
@@ -445,13 +519,18 @@ scenicView.addEventListener('change', () => {
 window.addEventListener('hashchange', () => {
   const next = entries.find(({ id }) => id === requested())
   if (!next) return
-  if (next !== asset) {
+  const field = Boolean(next.fieldSite && fieldRequested())
+  if (next !== asset || field !== onIsland) {
+    if (next !== asset) {
+      time = 0
+      playing = true
+    }
     asset = next
-    time = 0
-    playing = true
-    loadAsset()
-  }
+    onIsland = field
+    if (!openSubjectSetup()) loadAsset()
+  } else openSubjectSetup()
   openLinkedStudy()
+  openFurnishingLocation()
   remember()
 })
 window.addEventListener('pagehide', remember)
@@ -530,13 +609,18 @@ bindBiomeRecipes(() => readRecipe(values), recipe => {
   remember()
 })
 
-bindPlaytestCopy(() => {
+function currentSetupLink() {
   if (asset.id === 'biome') return biomeLink(location.href, readRecipe(values))
   const camera = stage?.getCamera()
-  if (!camera || !asset.landscape) return
+  if (!camera) return
+  if (!asset.landscape) return subjectLink(location.href, asset.id, onIsland, {
+    version: 1, name: asset.name, camera, time, options: values, grid: grid.checked, wireframe: wireframe.checked,
+  }, lightSelect.value as LightingPreset)
   return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? .8 },
     hour: Number(values.hour), rain: Number(values.rain), time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
-})
+}
+bindPlaytestCopy(currentSetupLink)
+const showVariations = createVariationLibrary(currentSetupLink)
 
 let resize: ResizeObserver | undefined
 try {
@@ -546,8 +630,8 @@ try {
 } catch (error) {
   reportError(error instanceof Error ? error.message : 'This browser could not start the 3D preview.')
 }
-renderLibrary()
-loadAsset(saved.id === asset.id ? saved.camera : undefined)
+if (!openSubjectSetup()) loadAsset(saved.id === asset.id && Boolean(saved.field) === onIsland ? saved.camera : undefined)
+openFurnishingLocation()
 const initialUrl = new URL(location.href)
 const initialView = initialUrl.searchParams.get('view')
 if (!openLinkedStudy() && asset.landscape && initialView && Object.hasOwn(landscapeViews, initialView)) {
@@ -584,7 +668,7 @@ if (import.meta.hot) {
     const camera = stage?.getCamera()
     entries = module.entries
     asset = entries.find(({ id }) => id === asset.id) ?? entries[0]
-    renderLibrary()
+    onIsland = Boolean(asset.fieldSite && fieldRequested())
     loadAsset(camera)
   })
   import.meta.hot.accept('./stage', (changed) => {

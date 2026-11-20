@@ -208,17 +208,26 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
   },
 }
 
+export function poseSiteFeature(root: TransformNode, feature: SiteFeature, heightAt: (point: Point) => number) {
+  root.position.set(feature.x, heightAt(feature), feature.z)
+  root.rotation.y = feature.heading ?? 0
+  if (feature.followSlope) {
+    const pose = { ...feature, heading: root.rotation.y }
+    root.rotation.z = Math.atan2(heightAt(offset(pose, 1, 0)) - heightAt(offset(pose, -1, 0)), 2)
+  }
+  root.scaling.setAll(feature.scale ?? 1)
+}
+
+export function createSiteFeature(meshes: MeshFactory, feature: SiteFeature) {
+  const root = new TransformNode(feature.name, meshes.scene)
+  models[feature.model](featurePieces(meshes, root), feature.color)
+  return root
+}
+
 export function placeSiteFeatures(meshes: MeshFactory, features: readonly SiteFeature[], heightAt: (point: Point) => number) {
   for (const feature of features) {
-    const root = new TransformNode(feature.name, meshes.scene)
-    root.position.set(feature.x, heightAt(feature), feature.z)
-    root.rotation.y = feature.heading ?? 0
-    if (feature.followSlope) {
-      const pose = { ...feature, heading: root.rotation.y }
-      root.rotation.z = Math.atan2(heightAt(offset(pose, 1, 0)) - heightAt(offset(pose, -1, 0)), 2)
-    }
-    root.scaling.setAll(feature.scale ?? 1)
-    models[feature.model](featurePieces(meshes, root), feature.color)
+    const root = createSiteFeature(meshes, feature)
+    poseSiteFeature(root, feature, heightAt)
     meshes.batchModel(root)
   }
 }

@@ -6,10 +6,13 @@ import { CreateLineSystem } from '@babylonjs/core/Meshes/Builders/linesBuilder'
 import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
 import { Scene } from '@babylonjs/core/scene'
 import { createIslandLighting, createMeshFactory } from '../island-meshes'
+import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { createFieldScenery } from './field-scenery'
+import type { FieldSite } from './field-site'
 import { createAtmosphere } from '../island-atmosphere'
 import { createIslandMaterial } from '../materials'
 import { groundHeight as terrainHeight, waterLevel } from '../terrain'
-import type { Entry, Values } from './catalog'
+import type { Entry, Values } from './subject'
 import { lightingPresets } from './lighting'
 import type { LightingPreset } from './lighting'
 import { findZFightCandidates } from './z-fighting'
@@ -28,7 +31,7 @@ export interface CameraState {
 export type Angle = 'perspective' | 'front' | 'side' | 'top'
 
 export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values,
-  reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>) {
+  reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>, field?: FieldSite) {
   const scene = new Scene(engine)
   const biome = entry.id === 'biome'
   try {
@@ -36,9 +39,22 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     if (entry.landscape) scene.fogMode = Scene.FOGMODE_LINEAR
     const { sky, sunlight, shadows } = createIslandLighting(scene)
     const atmosphere = entry.landscape || biome ? createAtmosphere(scene, sky, sunlight, shadows) : undefined
+    const surroundings = field ? createFieldScenery(createMeshFactory(scene, shadows), field) : undefined
+    if (field) scene.clearColor = Color4.FromHexString('#b7d3d7ff')
+    const firstSubjectRoot = scene.rootNodes.length
     const firstSubjectMesh = scene.meshes.length
     const meshes = createMeshFactory(scene, shadows)
-    const update = entry.create(meshes, values, reportError)
+    const readout = document.getElementById('subject-observations')!
+    const update = entry.create(meshes, values, reportError, text => {
+      if (readout.textContent !== text) readout.textContent = text
+    })
+    if (field) {
+      const roots = scene.rootNodes.slice(firstSubjectRoot)
+      const anchor = new TransformNode('Field subject', scene)
+      anchor.position.set(field.offset.x, field.offset.y, field.offset.z)
+      anchor.rotation.y = field.heading ?? 0
+      for (const root of roots) root.parent = anchor
+    }
     meshes.finishScenery({ merge: false })
     let min = new Vector3(Infinity, Infinity, Infinity)
     let max = new Vector3(-Infinity, -Infinity, -Infinity)
@@ -55,7 +71,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
 
     max.y += entry.headroom ?? 0
     const span = max.subtract(min)
-    const groundHeight = entry.ground?.height ?? 0
+    const groundHeight = (entry.ground?.height ?? 0) + (field?.offset.y ?? 0)
     const subjectHeight = Math.max(0.4, max.y - Math.max(min.y, groundHeight))
     const center = new Vector3((min.x + max.x) / 2, Math.max(min.y, groundHeight) + subjectHeight * 0.43, (min.z + max.z) / 2)
     const size = entry.landscape ? 24 : Math.max(span.x, span.z, subjectHeight)
@@ -84,7 +100,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     })) : undefined
 
     const directions = Array.from({ length: Math.floor(groundSize / step) + 1 }, (_, i) => (i * step) - groundSize / 2)
-    if (!entry.landscape) {
+    if (!entry.landscape && !field) {
       const floor = createIslandMaterial(scene, 'Workbench floor', entry.ground?.color ?? '#374a48')
       const ground = meshes.box(center.x, groundHeight - 0.19, center.z, groundSize, 0.36, groundSize, floor, undefined, false)
       ground.receiveShadows = true
@@ -166,6 +182,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         const position = camera.globalPosition
         const light = atmosphere?.update(time, { hour: Number(settings.hour), rain }, position, true, { shaftIntensity }) ?? 1
         update?.({ time, rate, seek, lighting, camera: position, light, rain, delta }, settings)
+        surroundings?.({ time, delta: rate * delta, seek, weather: { hour: 13, rain }, camera: position, threats: [] }, light)
         layout?.update(delta, time)
         subject.forEach(applyWireframe)
         layout?.meshes().forEach(applyWireframe)

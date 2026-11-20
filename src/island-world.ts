@@ -13,21 +13,31 @@ import { createStarterWildlife, createUnderstory, createWildflowers } from './is
 import { jobBoard } from './jobs'
 import { footpaths, road, walkways } from './routes'
 import { islandRocks, islandTrees } from './scenery'
+import type { SiteFeature } from './site-props'
 import { placeSiteFeatures } from './site-props'
 import { beachUmbrellas, shellRocks, starterFeatures } from './starter-sites'
 import { createStreetLights } from './street-lights'
 import { boundaryBuoys, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
 import { buildings, crewHomes } from './world'
 
-export function createIslandWorld(meshes: MeshFactory) {
+interface WorldSubstitutions {
+  replaceBuilding?: number
+  features?: readonly SiteFeature[]
+  replaceFeature?: SiteFeature
+  replaceFarm?: boolean
+}
+
+export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
   const water = createIslandTerrain(meshes)
   for (const { name, points, width, surface } of footpaths) createTrail(meshes, name, points, width, surface, groundHeight)
   for (const path of walkways) createSidewalk(meshes, path)
   createRoad(meshes, road)
 
-  for (const building of buildings) meshes.batchModel(createHouse(meshes, building))
+  buildings.forEach((building, index) => {
+    if (index !== substitutions.replaceBuilding) meshes.batchModel(createHouse(meshes, building))
+  })
   const homeChests = crewHomes.map(({ chest }, i) => createHomeChest(meshes, chest, playerColors[i]))
-  const showFarm = createFarm(meshes)
+  const showFarm = createFarm(meshes, substitutions.replaceFarm ? [] : undefined)
   showFarm([])
   createMarketAwning(meshes)
   const boardY = groundHeight(jobBoard)
@@ -38,7 +48,7 @@ export function createIslandWorld(meshes: MeshFactory) {
     meshes.box(jobBoard.x + dx, boardY + 1.38, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
   }
   createDock(meshes)
-  placeSiteFeatures(meshes, starterFeatures, walkingHeight)
+  placeSiteFeatures(meshes, (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site), walkingHeight)
   for (const point of shellRocks) {
     const { size, heading } = point
     const rock = meshes.sphere(point.x, groundHeight(point) + .055, point.z, size, .23, size * .65, '#798b80')

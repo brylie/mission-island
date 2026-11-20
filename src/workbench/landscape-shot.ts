@@ -1,4 +1,4 @@
-import type { Values } from './catalog'
+import type { Values } from './subject'
 import type { CameraState } from './stage'
 
 export interface LandscapeShot {
@@ -19,14 +19,18 @@ function between(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max
 }
 
-export function readLandscapeShot(value: unknown): LandscapeShot | undefined {
+export function readLandscapeShot(value: unknown) {
+  return readShot(value, 450)
+}
+
+function readShot(value: unknown, maxRadius: number): LandscapeShot | undefined {
   if (!record(value) || value.version !== 1 || typeof value.name !== 'string' || !record(value.camera) ||
       !record(value.options) || !between(value.time, 0, Number.MAX_SAFE_INTEGER) ||
       typeof value.grid !== 'boolean' || typeof value.wireframe !== 'boolean') return
   const name = value.name.trim()
   const { alpha, beta, radius, target, fov } = value.camera
   if (!name || name.length > 60 || !between(alpha, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER) ||
-      !between(beta, 0.035, Math.PI - 0.06) || !between(radius, 0.55, 450) ||
+      !between(beta, 0.035, Math.PI - 0.06) || !between(radius, 0.55, maxRadius) ||
       (fov !== undefined && !between(fov, .1, 2)) ||
       !Array.isArray(target) || target.length !== 3 ||
       !target.every((coordinate: unknown): coordinate is number => between(coordinate, -10_000, 10_000))) return
@@ -42,10 +46,10 @@ export function readLandscapeShot(value: unknown): LandscapeShot | undefined {
   }
 }
 
-export function parseLandscapeShot(serialized: string): LandscapeShot | undefined {
+export function parseLandscapeShot(serialized: string, maxRadius = 450): LandscapeShot | undefined {
   if (serialized.length > 4096) return
   try {
-    return readLandscapeShot(JSON.parse(serialized))
+    return readShot(JSON.parse(serialized), maxRadius)
   } catch {
     return undefined
   }

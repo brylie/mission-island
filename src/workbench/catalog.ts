@@ -13,87 +13,32 @@ import { createIslandWorld } from '../island-world'
 import { farmPlots } from '../farm'
 import type { PlotStage } from '../farm'
 import { chargePower } from '../charged-actions'
-import type { MeshFactory } from '../island-meshes'
-import { readAppearance, skinTones, uniforms } from '../crew-appearance'
+import { anglerCost, readAppearance, skinTones, uniforms } from '../crew-appearance'
 import { createIslandMaterial, createSurfaceMaterial, surfaces } from '../materials'
 import type { SurfaceName } from '../materials'
 import { createOceanMaterial } from '../ocean'
 import { createTextureSample, noiseTypes } from '../surface-textures'
 import type { MetalType } from '../surface-textures'
-import { falls, waterLevel } from '../terrain'
+import { falls, groundHeight, walkingHeight, waterLevel } from '../terrain'
 import { nightLighting } from '../weather'
-import type { Point } from '../world'
 import { footpaths, road, walkways } from '../routes'
-import { buildings, cargoSlots, crateSize, jumpGravity, jumpSpeed, truckBed } from '../world'
+import { truckStart, buildings, cargoSlots, crateSize, jumpGravity, jumpSpeed, truckBed } from '../world'
 import { createSurfaceShader } from './surface-preview'
-import type { LightingPreset } from './lighting'
-import { createExterior } from '../second-island/exteriors'
-import { buildings as saltwindBuildings } from '../second-island/lots'
-import { createSaltwindVehicle, vehicleSpecs } from '../second-island/vehicles'
-import type { VehicleId } from '../second-island/vehicles'
+import { draftFeatures } from './site-drafts'
+import { conversationStudy } from './conversation-study'
+import { mechanicStudies } from './mechanic-studies'
+import { natureEntries } from './nature-studies'
 
-type Value = string | number | boolean
-export type Values = Record<string, Value>
-
-export type Control = { key: string; label: string; rebuild?: boolean } & (
-  | { type: 'select'; value: string; choices: Record<string, string> }
-  | { type: 'range' | 'number'; value: number; min: number; max: number; step: number }
-  | { type: 'checkbox'; value: boolean }
-  | { type: 'color'; value: string }
-)
-
-interface Playback {
-  time: number
-  rate: number
-  seek: boolean
-  lighting: LightingPreset
-  camera: Point & { y: number }
-  delta: number
-  light: number
-  rain: number
-}
-
-export interface Entry {
-  id: string
-  name: string
-  group: string
-  description: string
-  swatch?: string
-  source: string
-  duration?: number
-  angle?: number
-  headroom?: number
-  topView?: boolean
-  landscape?: boolean
-  ground?: { color: string; height: number }
-  controls?: Control[]
-  create(meshes: MeshFactory, values: Values, reportError: (error: string) => void):
-    ((frame: Playback, values: Values) => void) | void
-}
+import { control, range, type Control, type Entry } from './subject'
+import { saltwindAssets } from './saltwind-studies'
+import { furnishingStudies } from './furnishing-studies'
 
 const models = 'src/island-assets.ts'
-const control = (key: string, label: string, value: string, choices: Record<string, string>, rebuild = false): Control =>
-  ({ type: 'select', key, label, value, choices, rebuild })
-const range = (key: string, label: string, value: number, min: number, max: number, step: number, rebuild = false): Control =>
-  ({ type: 'range', key, label, value, min, max, step, rebuild })
-
-const saltwindAssets: Entry[] = [
-  ...(Object.entries(vehicleSpecs) as [VehicleId, typeof vehicleSpecs[VehicleId]][]).map(([id, spec]): Entry => ({
-    id: `saltwind-${id}`, name: spec.name, group: 'Saltwind vehicles', source: 'src/second-island/vehicles.ts',
-    description: `${spec.width} m wide · ${spec.length} m long · +Z forward. Staged exterior.`,
-    create(meshes) { createSaltwindVehicle(meshes, id) },
-  })),
-  ...saltwindBuildings.map((building): Entry => ({
-    id: `saltwind-${building.site}`, name: building.site.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' '),
-    group: 'Saltwind buildings', source: 'src/second-island/exteriors.ts',
-    description: `${building.width} × ${building.depth} m footprint. Front entry faces local +Z.`,
-    create(meshes) { createExterior(meshes, building) },
-  })),
-]
 
 export const entries: Entry[] = [
   {
-    id: 'flatbed', name: 'Flatbed truck', group: 'Vehicles', source: models, duration: 4,
+    id: 'flatbed', name: 'Flatbed truck', group: 'Starter vehicles', source: models, duration: 4,
+    fieldSite: () => ({ name: 'Harbor Depot', heading: truckStart.heading, offset: { ...truckStart, y: groundHeight(truckStart) } }),
     description: 'Inspect the truck exterior, side rails, steering, and cargo fit.',
     controls: [
       control('state', 'State', 'parked', { parked: 'Parked', driving: 'Driving', turning: 'Turning' }),
@@ -119,8 +64,12 @@ export const entries: Entry[] = [
     },
   },
   biomeEntry,
+  ...natureEntries,
+  ...mechanicStudies,
+  conversationStudy,
+  ...furnishingStudies,
   {
-    id: 'landscape', name: 'Landscape Workbench', group: 'World', source: 'src/island-world.ts',
+    id: 'landscape', name: 'Landscape Workbench', group: 'Island', source: 'src/island-world.ts',
     description: 'Focus on map coordinates in metres, orbit and pan, and inspect scenery under different skies.',
     landscape: true, duration: landscapeDuration, angle: -Math.PI / 2,
     controls: [
@@ -133,7 +82,7 @@ export const entries: Entry[] = [
       range('shaftIntensity', 'Sun shaft intensity (%)', 100, 0, 150, 5),
     ],
     create(meshes) {
-      const world = createIslandWorld(meshes)
+      const world = createIslandWorld(meshes, { features: draftFeatures() })
       let habitat = createJuniperHabitat()
       let previousSky = ''
       return ({ time, delta, rate, camera, light, rain, seek }, settings) => {
@@ -154,15 +103,20 @@ export const entries: Entry[] = [
     },
   },
   {
-    id: 'crew', name: 'Crew character', group: 'Crew', source: models, duration: 2.4, headroom: 1.45,
+    id: 'crew', name: 'Crew character', group: 'Wardrobe', source: models, duration: 2.4, headroom: 1.45,
+    fieldSite: () => ({ name: 'Seabrook', offset: { x: 39, z: 16, y: walkingHeight({ x: 39, z: 16 }) } }),
+    readout: 'Wardrobe',
     description: 'Play or scrub the crew poses and compare uniform and skin color choices.',
     controls: [
       control('state', 'Animation', 'walk', { idle: 'Idle', walk: 'Walk', sprint: 'Sprint', jump: 'Jump', swim: 'Swim', tread: 'Tread water', reach: 'Left reach', raise: 'Raise right hand', carry: 'Carry crate', throw: 'Throw crate', spray: 'Use extinguisher' }),
       control('uniform', 'Uniform', 'amber', Object.fromEntries(Object.entries(uniforms).map(([id, uniform]) => [id, uniform.name]))),
       control('skin', 'Skin tone', 'light', Object.fromEntries(Object.entries(skinTones).map(([id, tone]) => [id, tone.name]))),
+      { type: 'checkbox', key: 'cap', label: 'Wear uniform cap', value: true },
+      { type: 'checkbox', key: 'dyed', label: 'Use custom fabric dye', value: false },
+      { type: 'color', key: 'dye', label: 'Fabric dye', value: '#488a73' },
       range('stride', 'Stride length', 1, 0.2, 1.4, 0.05),
     ],
-    create(meshes) {
+    create(meshes, _, _error, observe) {
       const crew = createCrew(meshes, 0)
       const crate = createSupply(meshes, 'crate')
       crate.parent = crew.root
@@ -183,7 +137,11 @@ export const entries: Entry[] = [
         const elevation = jumping ? Math.max(0, jumpSpeed * jumpTime - jumpGravity / 2 * jumpTime * jumpTime) : 0
         crew.root.position.y = elevation
         const stride = Number(values.stride) * (sprinting ? 0.89 : walking ? 0.57 : 0)
-        crew.setAppearance(readAppearance(values))
+        const appearance = readAppearance(values)
+        const uniform = uniforms[appearance.uniform === 'default' ? 'amber' : appearance.uniform]
+        crew.setAppearance(appearance, values.dyed ? String(values.dye) : undefined)
+        crew.setCap(Boolean(values.cap))
+        observe(uniform.name + ' · ' + (appearance.uniform === 'angler' ? anglerCost + ' coins' : uniform.unlock || 'Starting uniform'))
         crew.blink(time)
         const power = windup ? chargePower('throw', time) : 0
         crew.root.rotation.x = 0
@@ -209,7 +167,7 @@ export const entries: Entry[] = [
     create(meshes, values) { createUmbrella(meshes, 0, 0, umbrellaColors[Number(values.color)]) },
   },
   {
-    id: 'tree', name: 'Trees', group: 'Props', source: models,
+    id: 'tree', name: 'Trees', group: 'Plants', source: models,
     description: 'Compare the broadleaf tree and the two pine variants.',
     ground: { height: 0, color: surfaces.grass.color },
     controls: [
@@ -230,7 +188,11 @@ export const entries: Entry[] = [
     create(meshes, values) { createRock(meshes, 0, 0, Number(values.size), 0.36, Boolean(values.light), values.offshore ? -0.45 : 0) },
   },
   {
-    id: 'house', name: 'Island houses', group: 'Props', source: models, angle: -0.98,
+    id: 'house', name: 'Island houses', group: 'Starter buildings', source: models, angle: -0.98,
+    fieldSite: values => {
+      const index = Number(values.variant)
+      return { name: 'Starter Island', offset: { ...buildings[index], y: 0 }, replaceBuilding: index }
+    },
     description: 'Inspect the exterior, windows, roofline, and foundation of each building.',
     controls: [control('variant', 'Building', '0', {
       0: 'Harbor Depot', 1: 'Harbor workshop', 2: 'Seabrook house', 3: 'Seabrook brick house',
@@ -249,7 +211,8 @@ export const entries: Entry[] = [
     },
   },
   {
-    id: 'farm', name: 'Carrot plots', group: 'Props', source: 'src/island-farm.ts',
+    id: 'farm', name: 'Carrot plots', group: 'Farming', source: 'src/island-farm.ts',
+    fieldSite: () => ({ name: 'Carrot farm', offset: { x: 0, y: 0, z: 0 }, replaceFarm: true }),
     description: 'Compare soil and carrot growth through each stage of the crop.',
     controls: [control('plot', 'Growth stage', 'ripe', { grass: 'Grass', tilled: 'Tilled', planted: 'Planted', watered: 'Watered', ripe: 'Ripe' })],
     create(meshes, values) {
@@ -271,7 +234,7 @@ export const entries: Entry[] = [
     create: createDock,
   },
   {
-    id: 'boat', name: 'Harbor boat', group: 'Props', source: models,
+    id: 'boat', name: 'Harbor boat', group: 'Starter vehicles', source: models,
     description: 'Inspect the skiff hull, bench seats, and gentle motion at the dock.',
     ground: { height: waterLevel, color: surfaces.water.color }, duration: 8,
     create(meshes) {

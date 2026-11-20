@@ -57,27 +57,30 @@ function paintBay(meshes: MeshFactory, x: number, y: number, z: number, width: n
   meshes.box(x, y + .026, z - depth / 2, width, .025, .14, cream, undefined, false)
 }
 
-function placeVehicles(meshes: MeshFactory) {
-  const placements: [VehicleId, string][] = [
-    ['ambulance', 'hospital'], ['engine', 'fire'], ['patrol', 'police'], ['logger', 'timber'], ['hauler', 'mine'], ['airplane', 'airport'],
-  ]
-  for (const [id, siteId] of placements) {
-    const site = sites.find(({ id }) => id === siteId)
-    if (!site) continue
+const vehicleSites: Record<Exclude<VehicleId, 'helicopter'>, string> = {
+  ambulance: 'hospital', engine: 'fire', patrol: 'police', logger: 'timber', hauler: 'mine', airplane: 'airport',
+}
+export function vehiclePlacement(id: VehicleId) {
+  if (id === 'helicopter') return { ...helipad, y: groundHeight(helipad.x, helipad.z) + .20, heading: .38 }
+  const site = sites.find(site => site.id === vehicleSites[id])!
+  const { x, z } = site.stop
+  const y = Math.max(...[-1, 1].map(side => surfaceHeight(x + Math.sin(site.heading) * side * 2, z + Math.cos(site.heading) * side * 2)))
+  return { x, y, z, heading: site.heading }
+}
+function placeVehicles(meshes: MeshFactory, omit?: string) {
+  for (const id of [...Object.keys(vehicleSites), 'helicopter'] as VehicleId[]) {
+    if (id === omit) continue
     const parked = createSaltwindVehicle(meshes, id)
-    const { x, z } = site.stop
-    parked.position.set(x, Math.max(...[-1, 1].map((side) => surfaceHeight(x + Math.sin(site.heading) * side * 2, z + Math.cos(site.heading) * side * 2))), z)
-    parked.rotation.y = site.heading
+    const { x, y, z, heading } = vehiclePlacement(id)
+    parked.position.set(x, y, z)
+    parked.rotation.y = heading
     meshes.batchModel(parked)
   }
-  const helicopter = createSaltwindVehicle(meshes, 'helicopter')
-  helicopter.position.set(helipad.x, groundHeight(helipad.x, helipad.z) + .20, helipad.z)
-  helicopter.rotation.y = .38
-  meshes.batchModel(helicopter)
 }
 
-function buildYards(meshes: MeshFactory) {
+function buildYards(meshes: MeshFactory, omit?: string) {
   for (const building of islandBuildings) {
+    if (building.site === omit) continue
     const { x, z, width, depth, facing } = building
     const sideways = Math.abs(Math.sin(facing)) > .5
     const a = sideways ? depth / 2 : width / 2, b = sideways ? width / 2 : depth / 2
@@ -371,12 +374,12 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
   }
 }
 
-export function createScenery(meshes: MeshFactory, solids: ScenerySolids) {
+export function createScenery(meshes: MeshFactory, solids: ScenerySolids, omit?: string) {
   const firstFixture = meshes.scene.meshes.length
-  buildYards(meshes)
+  buildYards(meshes, omit)
   buildSigns(meshes)
   placeSiteFeatures(meshes, saltwindFeatures, ({ x, z }) => surfaceHeight(x, z))
-  placeVehicles(meshes)
+  placeVehicles(meshes, omit)
   const waterfront = buildWaterfront(meshes)
   solids.capture(meshes.scene.meshes.slice(firstFixture))
   const plants = createPlants(meshes, solids)

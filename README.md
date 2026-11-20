@@ -88,6 +88,8 @@ With Vite running, open [Saltwind Island](http://localhost:5173/second-island.ht
 
 Run `npm run dev` and open [the Asset Workbench](http://localhost:5173/workbench.html). It runs separately from the LAN session and needs no second player. A selected asset has its own URL, such as [Crew character](http://localhost:5173/workbench.html#crew) or [Water](http://localhost:5173/workbench.html#water).
 
+Choose a workspace or search across the entire catalog. For supported subjects, **Studio** and **On island** keep the same inspector while switching surroundings. Try [editing the Seabrook bench in place](http://localhost:5173/workbench.html#site-town?stage=island) or [composing the Saltwind school](http://localhost:5173/workbench.html#saltwind-school?stage=island). The [Workbench guide](docs/workbench.md) covers draft storage, shareable setups, mechanic trials and adding new subjects.
+
 - Drag to orbit, scroll to zoom, and right-drag to pan. Use the **3D**, **Front**, **Side**, and **Top** buttons to reframe. Compare daylight, overcast, and golden-hour lighting, or turn on wireframe and the turntable.
 - Play, pause, scrub, or advance a frame in timed previews. Try different crew animations, truck steering and cargo, extinguisher bursts, or the fire at different intensities.
 - Check each prop variant, compare road and trail widths, and inspect the same geometry used in the game. Use the Texture gallery to compare surface presets and noise families. The material panels use physical descriptions such as grain spacing, chip relief, pitting, or oxidation. The water preview animates on the timeline, and the shader drafts have a separate preview.
