@@ -8,7 +8,7 @@ Open `/second-island.html` from the Vite server or use **Saltwind preview** on t
 | --- | ---: | --- |
 | Brinewick Ferry | −274, −266 | Walk up the 8 m wide vehicle ramp to the quay. Take the west spur to the rescue slip or east to the fishing pier. |
 | Brinewick | −270, −105 | Inspect the striped fish market and its delivery apron, then look across the main road to the police station. The grocery and apartments sit west of the ferry approach. |
-| Barleycross | 162, −65 | Follow the main road east past the airfield turn. Inspect the farmers market and its apron, then follow the bend past the school and the Long Acre field gate. |
+| Barleycross | 162, −65 | Follow the main road east past the airfield turn. Inspect the farmers market and its apron, then follow the bend past the school and the Long Acre field access. |
 | Alderwatch | −56, 158 | Climb past the hospital and helipad. The fire station and church face the village road. Keep west to see the tarn, waterfall and sawmill. Inspect Slatecliff Mine from the east road. |
 | Scenic return | −351, 12 | Complete the loop through Reedwater Valley, cross Reedwater Bridge, then follow the waterfront back to the ferry. Mill Road gives a second route between the inland junction and the south road across Mill Bridge. |
 

@@ -66,7 +66,7 @@ Run one host per save. Use `MISSION_ISLAND_SAVE=off` for a temporary playtest. O
 
 ## Saltwind Island development preview
 
-With Vite running, open [Saltwind Island](http://localhost:5173/second-island.html) or select **Saltwind preview** from the starter island. The preview opens on the ferry and includes a guided road tour, free walking, an overview and a site chart. It runs locally in the browser. See the [tour and site inventory](docs/saltwind-island.md) for coordinates, vehicle assets and integration notes.
+With Vite running, open [Saltwind Island](http://localhost:5173/second-island.html) or select **Saltwind preview** from the starter island. The preview opens on the ferry and includes a guided road tour, free walking, an overview and a site chart. It runs locally in the browser. See the [tour and site inventory](docs/saltwind-island.md) for coordinates, vehicle assets and integration notes. The [preview QA report](docs/saltwind-qa.md) records the terrain, browser and compatibility checks.
 
 ## Build and iterate together
 
