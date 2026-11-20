@@ -19,6 +19,8 @@ Materials should suggest how something grows, weathers, or is handled. Look at w
 
 For sound, a direction to try is a cue with a recognizable source: boots change tone at the dock, or a saw becomes audible on the approach to a timber yard. Pair important prompts with visible feedback so two players talking across the room can still follow the action. This is a direction for playtesting. [Timber Works sound proposal](https://github.com/brylie/mission-island/issues/47)
 
+The [crew character turnaround](crew-character-art.md) sets the proportions and finish for character fittings. The [coastal model studies](coastal-model-studies.md) show how to apply that direction to plants, wildlife, buildings and vehicles with the game’s mesh factories.
+
 ## What we take from our references
 
 | Reference | Quality we are aiming for in Mission Island |

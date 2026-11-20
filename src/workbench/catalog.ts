@@ -1,3 +1,4 @@
+import { coastalModelStudies } from './coastal-model-studies'
 import { schoolStudy } from './school-study'
 import { biomeEntry } from './biome-preview'
 import { brinewickMarketStudy } from './brinewick-market-study'
@@ -23,6 +24,7 @@ export const entries: Entry[] = [
   biomeEntry,
   schoolStudy,
   ...natureEntries,
+  ...coastalModelStudies,
   longAcreStudy,
   brinewickMarketStudy,
   ...mechanicStudies,
