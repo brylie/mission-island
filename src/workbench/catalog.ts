@@ -1,3 +1,4 @@
+import { schoolStudy } from './school-study'
 import { biomeEntry } from './biome-preview'
 import { conversationStudy } from './conversation-study'
 import { crewStudy } from './crew-study'
@@ -18,6 +19,7 @@ import { flatbedStudy, harborBoatStudy } from './vehicle-studies'
 export const entries: Entry[] = [
   flatbedStudy,
   biomeEntry,
+  schoolStudy,
   ...natureEntries,
   ...mechanicStudies,
   conversationStudy,

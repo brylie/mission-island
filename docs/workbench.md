@@ -32,3 +32,9 @@ Use **Saved variations** to build a named, browser-local collection for a subjec
 The cargo trial steps the actual Cannon simulation at the server’s fixed rate. The fishing trial uses the server’s cast validation, bite probability and fight rules. It guarantees a bite after a valid cast so reeling strategies can be compared. The farm preview exposes crop states. The conversation rehearsal uses the game’s market order quantities and contribution rule. Dialogue, range gating, and handover in that rehearsal are Workbench fixtures.
 
 Further work can add named plant species backed by shared generators, production villager schedules and friendship once those systems exist, collision updates for edited scenery, and a versioned catalog of approved material and building recipes. Each can use the existing subject, field site and setup-link conventions.
+
+## Fish schooling trial
+
+In **Ecology → Biome Composer**, choose **Open fish schooling trial**. Six fish cruise in an isolated pool. Watch the default crossing, then choose **Wading player** or **Paddled skiff** and replay the same seed. A click on the water redirects the actor. With the canvas focused, tap **W/A/S/D** to direct it two metres relative to the current view. Press **Space** to pause or resume.
+
+Approach one flank, then move away. Watch which fish turn first, follow their trails, and look for the gold ring around the fish they regroup on. Make a second pass from the opposite side. Rewind to replay your recorded route; steering after a rewind replaces subsequent moves. **Copy setup link** includes the route, actor, seed, view and timeline position. **Reset** restores the default crossing. The [Driftwood field playtest](https://github.com/brylie/mission-island/issues/68) follows this Composer trial.

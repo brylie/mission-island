@@ -35,6 +35,7 @@
             <p id="asset-description"></p>
           </div>
           <div class="scene-actions">
+            <a class="asset-link" id="return-to-biome" href="#biome" hidden>Biome Composer</a>
             <nav id="field-switch" aria-label="Preview setting" hidden><a id="inspect-alone">Studio</a><a id="inspect-field">On island</a></nav>
             <button type="button" id="landscape-map-toggle" aria-controls="landscape-map" aria-expanded="false" hidden>Island map</button>
           </div>
@@ -111,6 +112,7 @@
       <aside class="inspector" aria-label="Preview controls">
         <section id="biome-presets" hidden>
           <h2>Starting habitat</h2>
+          <a class="asset-link" href="#fish-school">Open fish schooling trial →</a>
           <div class="row"><select id="biome-preset" aria-label="Starting habitat"></select><button type="button" id="biome-apply">Apply</button></div>
           <div class="layout-actions recipe-files"><button type="button" id="biome-import">Open JSON</button><button type="button" id="biome-export">Export JSON</button></div>
           <input id="biome-file" type="file" accept=".json,application/json" hidden />
