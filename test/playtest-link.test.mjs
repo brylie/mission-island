@@ -45,3 +45,11 @@ test('landscape bookmarks restore the full island clock inside a bounded scrub w
     assert.equal(start + time, clock)
   }
 })
+
+test('market runoff history can be shared in a fixed landscape camera', () => {
+  const state = { ...bench, marketRainAge: 3.2 }
+  const params = new URL(landscapeLink(host, state)).searchParams
+  assert.deepEqual(readLandscapeView(params), state)
+  params.set('runoff', '-1')
+  assert.equal(readLandscapeView(params), undefined)
+})

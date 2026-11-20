@@ -7,6 +7,7 @@ import { workspaceOf } from './library'
 import { createLibraryPanel } from './library-panel'
 import { bindBiomeRecipes } from './biome-files'
 import { biomeLink, codex, readRecipe, recipeFromLink } from '../biome-recipe'
+import { dryMarketRainAge } from '../market-runoff'
 import { bindPlaytestCopy, landscapeLink, landscapeWindow, readLandscapeView } from '../playtest-link'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
@@ -82,7 +83,10 @@ if (shared) {
   const timeline = landscapeWindow(shared.time)
   saved.id = 'landscape'
   saved.camera = shared.camera
-  saved.options = { ...saved.options, landscape: { x: shared.focus[0], z: shared.focus[1], hour: shared.hour, rain: shared.rain, clockStart: timeline.start } }
+  saved.options = { ...saved.options, landscape: {
+    x: shared.focus[0], z: shared.focus[1], hour: shared.hour, rain: shared.rain,
+    marketRainAge: shared.marketRainAge ?? dryMarketRainAge, clockStart: timeline.start,
+  } }
   Object.assign(saved, { time: timeline.time, playing: false, grid: shared.grid, wireframe: shared.wireframe, turntable: false })
 }
 const draft = createLandscapeDraft(readStorage('localStorage', draftStorageKey))
@@ -476,7 +480,7 @@ function openLandscapeView(id: string) {
   const view = landscapeViews[id]
   Object.assign(values, {
     x: view.focus.x, z: view.focus.z, focusHeight: view.focus.height,
-    hour: view.hour, rain: 0, clockStart: 0, sunShafts: true, shaftIntensity: 100,
+    hour: view.hour, rain: 0, marketRainAge: dryMarketRainAge, clockStart: 0, sunShafts: true, shaftIntensity: 100,
   })
   stage?.setLandscapeView(view)
   grid.checked = wireframe.checked = turntable.checked = false
@@ -630,7 +634,8 @@ function currentSetupLink() {
     version: 1, name: asset.name, camera, time, options: values, grid: grid.checked, wireframe: wireframe.checked,
   }, lightSelect.value as LightingPreset)
   return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? .8 },
-    hour: Number(values.hour), rain: Number(values.rain), time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
+    hour: Number(values.hour), rain: Number(values.rain), marketRainAge: Number(values.marketRainAge),
+    time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
 }
 bindPlaytestCopy(currentSetupLink)
 const showVariations = createVariationLibrary(currentSetupLink)

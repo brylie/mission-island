@@ -4,7 +4,8 @@ import {
 } from './island-assets'
 import { createBiomeScenery } from './biome-scenery'
 import { juniperCenter, juniperLayout } from './juniper-habitat'
-import { createFarm, createMarketAwning } from './island-farm'
+import { createFarm } from './island-farm'
+import { createMarketShower } from './market-shower'
 import { createGrassTufts, createIslandTerrain } from './island-landscape'
 import type { MeshFactory } from './island-meshes'
 import { createNorthernScenery } from './island-north'
@@ -40,7 +41,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const homeChests = crewHomes.map(({ chest }, i) => createHomeChest(meshes, chest, playerColors[i]))
   const showFarm = createFarm(meshes, substitutions.replaceFarm ? [] : undefined)
   showFarm([])
-  createMarketAwning(meshes)
+  const marketShower = createMarketShower(meshes)
   const boardY = groundHeight(jobBoard)
   for (const dx of [-0.66, 0.66]) meshes.box(jobBoard.x + dx, boardY + 0.91, jobBoard.z, 0.12, 1.82, 0.13, '#765641')
   meshes.box(jobBoard.x, boardY + 1.38, jobBoard.z, 1.75, 0.93, 0.14, '#996447')
@@ -95,5 +96,5 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   beachUmbrellas.forEach(({ x, z }, index) => createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))
 
   meshes.finishScenery()
-  return { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights }
+  return { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights, marketShower }
 }

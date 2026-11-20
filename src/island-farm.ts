@@ -1,6 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
-import { farmPlots, market, plotSize } from './farm'
+import { farmPlots, plotSize } from './farm'
 import type { PlotStage } from './farm'
 import type { MeshFactory } from './island-meshes'
 import { groundHeight } from './terrain'
@@ -59,16 +59,5 @@ export function createFarm({ scene, box, sphere, paintSurface }: MeshFactory, po
       plot.shoots.scaling.y = stage === 'ripe' ? 1.38 : 0.78
       plot.crowns.setEnabled(stage === 'ripe')
     }
-  }
-}
-
-export function createMarketAwning({ box }: MeshFactory) {
-  const x = market.x
-  const z = market.z - 0.13
-  box(x, 2.93, z, 2.86, 0.075, 1.23, '#984d41')
-  for (let stripe = -3; stripe <= 3; stripe++) {
-    const color = stripe % 2 ? '#e8b79f' : '#b86655'
-    box(x + stripe * 0.39, 2.992, z, 0.38, 0.056, 1.26, color)
-    box(x + stripe * 0.39, 2.823, z + 0.614, 0.38, 0.132, 0.055, color)
   }
 }

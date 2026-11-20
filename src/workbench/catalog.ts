@@ -21,6 +21,7 @@ import { createTextureSample, noiseTypes } from '../surface-textures'
 import type { MetalType } from '../surface-textures'
 import { falls, groundHeight, walkingHeight, waterLevel } from '../terrain'
 import { nightLighting } from '../weather'
+import { dryMarketRainAge, marketRunoffPreview } from '../market-runoff'
 import { footpaths, road, walkways } from '../routes'
 import { truckStart, buildings, cargoSlots, crateSize, jumpGravity, jumpSpeed, truckBed } from '../world'
 import { createSurfaceShader } from './surface-preview'
@@ -78,6 +79,7 @@ export const entries: Entry[] = [
       { type: 'number', key: 'focusHeight', label: 'Focus above ground (m)', value: 0.25, min: -5, max: 80, step: 0.05 },
       range('hour', 'Island hour', 16.5, 0, 24, 0.1),
       range('rain', 'Rain intensity', 0, 0, 1, 0.01),
+      range('marketRainAge', 'Market · seconds since rain stopped', dryMarketRainAge, 0, dryMarketRainAge, .1),
       { type: 'checkbox', key: 'sunShafts', label: 'Volumetric sunlight', value: true },
       range('shaftIntensity', 'Sun shaft intensity (%)', 100, 0, 150, 5),
     ],
@@ -97,6 +99,7 @@ export const entries: Entry[] = [
         world.juniper(habitat(time, weather, []), time)
         world.wildlife(frame)
         world.phenomena(frame)
+        world.marketShower(frame.time, camera, marketRunoffPreview(rain, Number(settings.marketRainAge)))
         world.lights(camera, nightLighting(Number(settings.hour)))
         world.water.pose(time, light, rain)
       }
