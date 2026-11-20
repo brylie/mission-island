@@ -92,9 +92,9 @@ export function createMeshFactory(scene: Scene, shadows: ShadowGenerator) {
   }
 
   function cylinder(x: number, y: number, z: number, top: number, bottom: number, height: number,
-    sides: number, color: string | Material, root?: TransformNode) {
+    sides: number, color: string | Material, root?: TransformNode, casts = true) {
     const mesh = CreateCylinder('Cylinder', { diameterTop: top, diameterBottom: bottom, height, tessellation: sides }, scene)
-    return place(mesh, x, y, z, color, root)
+    return place(mesh, x, y, z, color, root, casts)
   }
 
   function surface(name: string, positions: number[], indices: number[], color: string | Material, root?: TransformNode, uvs?: number[]) {

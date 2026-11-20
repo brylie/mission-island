@@ -394,9 +394,20 @@ export const entries: Entry[] = [
         abrasion: id === 'metal' ? Number(values.abrasion) : undefined,
         oxidation: id === 'metal' ? Number(values.oxidation) : undefined,
       })
-      const sample = values.shape === 'sphere'
-        ? meshes.sphere(0, 1.4, 0, 2.8, 2.8, 2.8, finish, undefined, false, 36)
-        : meshes.box(0, values.shape === 'tile' ? 0.1 : 1.25, 0, 3.6, values.shape === 'tile' ? 0.2 : 2.5, 3.6, finish, undefined, false)
+      let sample
+      switch (values.shape) {
+        case 'sphere':
+          sample = meshes.sphere(0, 1.4, 0, 2.8, 2.8, 2.8, finish, undefined, false, 36)
+          break
+        case 'cylinder':
+          sample = meshes.cylinder(0, 1.4, 0, 2.2, 2.2, 2.8, 64, finish, undefined, false)
+          break
+        case 'tile':
+          sample = meshes.box(0, 0.1, 0, 3.6, 0.2, 3.6, finish, undefined, false)
+          break
+        default:
+          sample = meshes.box(0, 1.25, 0, 3.6, 2.5, 3.6, finish, undefined, false)
+      }
       sample.receiveShadows = true
       return water ? ({ time }) => water.pose(time) : undefined
     },
@@ -406,7 +417,7 @@ export const entries: Entry[] = [
 
 function materialControls(surface: SurfaceName): Control[] {
   const defaultShape = ['water', 'sand', 'gravel', 'grass', 'concrete'].includes(surface) ? 'tile' : 'sphere'
-  const shape = control('shape', 'Sample shape', defaultShape, { sphere: 'Sphere', tile: 'Tile', block: 'Block' }, true)
+  const shape = control('shape', 'Sample shape', defaultShape, { sphere: 'Sphere', cylinder: 'Cylinder', tile: 'Tile', block: 'Block' }, true)
   if (surface === 'metal') {
     return [
       shape,
