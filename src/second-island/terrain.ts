@@ -160,6 +160,10 @@ function terrainShape(x: number, z: number) {
       height = mix(Math.min(height, pad.y - .08), height, smooth((edge - 1) / 4))
     }
   }
+  for (const pad of roundYards) {
+    const edge = Math.hypot(x - pad.x, z - pad.z) - pad.radius
+    if (edge < 5) height = mix(Math.min(height, pad.y - .10), height, smooth((edge - 1) / 4))
+  }
   return height
 }
 

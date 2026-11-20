@@ -81,5 +81,9 @@ test('the ferry, pier, rescue slip, runway and staging pads use separate shared 
     assert.ok(islandLoop.samples.some((p) => distance(p, route.samples[0]) < .01))
   }
   for (const pad of [...pavedYards, ...roundYards]) assert.ok(at(pad, surfaceHeight) >= pad.y, pad.id)
+  const mine = roundYards.find(({ id }) => id === 'mine')
+  for (let i = -12; i <= 12; i += 2) for (let j = -12; j <= 12; j += 2) {
+    if (Math.hypot(i, j) < mine.radius - 2) assert.ok(groundHeight(mine.x + i, mine.z + j) < mine.y)
+  }
   for (const site of sites) assert.ok(at(site.stop, surfaceHeight) >= at(site.stop, waterHeight), site.id)
 })

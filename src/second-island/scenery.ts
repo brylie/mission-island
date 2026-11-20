@@ -81,7 +81,10 @@ function buildYards(meshes: MeshFactory) {
     meshes.box(pad.x, pad.y - .12, pad.z, pad.width, .24, pad.depth, pavement, undefined, false)
   }
   const [, mine] = roundYards
-  meshes.cylinder(mine.x, mine.y - .11, mine.z, mine.radius * 2, mine.radius * 2, .22, 42, pavement)
+  const padRoot = new TransformNode('Mine turnaround', meshes.scene)
+  const turnaround = meshes.cylinder(mine.x, mine.y - .11, mine.z, mine.radius * 2, mine.radius * 2, .22, 42, pavement, padRoot)
+  turnaround.receiveShadows = true
+  meshes.shadows.removeShadowCaster(turnaround)
   for (const site of sites.filter(({ id }) => ['fish-market', 'farmers-market', 'hospital', 'fire', 'mine', 'timber'].includes(id))) {
     paintBay(meshes, site.stop.x, surfaceHeight(site.stop.x, site.stop.z), site.stop.z, site.id === 'fire' ? 5.1 : 4.4, site.id === 'timber' ? 13 : 9.5)
   }

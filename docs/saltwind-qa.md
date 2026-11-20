@@ -14,7 +14,7 @@ Saltwind has **0.428 km²** of dry land, about **11.3×** the starter island’s
 | Markets, emergency sites and industrial yards | Inspected building foundations, entry height and the marked delivery and loading areas. Checked the six market and emergency access lanes against the road and apron surface. |
 | Airfield | Checked the level 420 × 22 m strip, apron, taxi connector, parked airplane and 105 m clear approach corridors. |
 
-Preview walking uses the same terrain and deck triangles as rendering. Parked models are visual staging. A host integration needs static terrain/deck/rail colliders, actual truck width and wheel contact tests under load, boat draft and bridge-clearance tests, ferry attachment, and cargo handling on the aprons. No loaded-vehicle or aircraft simulation was exercised.
+Preview walking uses the same terrain and deck triangles as rendering. Parked models are visual staging. A host integration needs static terrain/deck/rail colliders, actual truck width and wheel contact tests under load, boat draft and bridge-clearance tests, ferry attachment, and cargo handling on the aprons. The physical traversal checks in this pass cover walking.
 
 ## Starter compatibility and automated checks
 
@@ -31,4 +31,4 @@ Measured the production build in Brave 157 on an Apple M1 Pro MacBook Pro with t
 | Starter | 0.448 s | 0.550, 0.448, 0.387 s | 59.8 FPS | 59.8 FPS |
 | Saltwind | 0.745 s | 0.791, 0.745, 0.740 s | 60.0 FPS | 59.9 FPS |
 
-Saltwind took 0.297 seconds longer to reach the playable view. Both previews ran near the browser's 60 FPS refresh ceiling in the measured views. Brave reported no console errors during the guided tour and workbench checks.
+Saltwind took 0.297 seconds longer to reach the playable view. Both previews ran near the browser's 60 FPS refresh ceiling in the measured views. Brave reported no console errors during the guided tour and workbench checks. The three-run comparison preceded a localized mine pad clipping correction, which was checked in a follow-up production smoke pass.
