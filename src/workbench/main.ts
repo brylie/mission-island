@@ -470,14 +470,15 @@ function openLinkedStudy() {
 function openLandscapeView(id: string) {
   if (!asset.landscape || !Object.hasOwn(landscapeViews, id)) return
   const view = landscapeViews[id]
+  const timeline = landscapeWindow(view.time)
   Object.assign(values, {
     x: view.focus.x, z: view.focus.z, focusHeight: view.focus.height,
-    hour: view.hour, rain: 0, marketRainAge: dryMarketRainAge, clockStart: 0, sunShafts: true, shaftIntensity: 100,
+    hour: view.hour, rain: 0, marketRainAge: dryMarketRainAge, clockStart: timeline.start, sunShafts: true, shaftIntensity: 100,
   })
   stage?.setLandscapeView(view)
   grid.checked = wireframe.checked = turntable.checked = false
   playing = false
-  seekTo(view.time)
+  seekTo(timeline.time)
   renderAssetControls()
   applyDisplay()
   remember()

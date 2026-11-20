@@ -1,9 +1,8 @@
 import './style.css'
 import { boundaryBuoys, buoyBoundaryPoint, coastPoint } from './terrain'
-import { actionHint, heldItem, inSkiff } from './actions'
+import { actionHint, atClothingCounter, heldItem, inSkiff } from './actions'
 import { readStorage, writeStorage } from './browser-storage'
-import { anglerCost, cleanCrewName, defaultAppearance, readAppearance, skinTones, uniforms } from './crew-appearance'
-import type { CrewAppearance } from './crew-appearance'
+import { cleanCrewName, defaultAppearance, shirtColor } from './crew-appearance'
 import { createCrewGuide } from './crew-guide-ui'
 import { farm, market } from './farm'
 import { createJobBoard, jobDescription, secondIslandProgress } from './job-board-ui'
@@ -17,6 +16,7 @@ import { createRenderer } from './scene'
 import { bindLanInvite } from './lan-invite'
 import { bindPlaytestCopy } from './playtest-link'
 import { isNight } from './weather'
+import { createClothingCounter, createWardrobe } from './wardrobe-ui'
 import { crewHomes, distance, ferryTerminal, harbor, lookout, starterPay } from './world'
 
 function element<T extends HTMLElement>(id: string) {
@@ -64,17 +64,16 @@ const joinName = element<HTMLInputElement>('join-name')
 const editCrewName = element<HTMLButtonElement>('edit-crew-name')
 const invertHorizontal = element<HTMLInputElement>('invert-horizontal')
 const invertVertical = element<HTMLInputElement>('invert-vertical')
-const uniformSelect = element<HTMLSelectElement>('uniform')
-const skinSelect = element<HTMLSelectElement>('skin-tone')
-const uniformProgress = element('uniform-progress')
-const coinBalance = element('coin-balance')
+const openWardrobe = element<HTMLButtonElement>('open-wardrobe')
+const wardrobeDialog = element<HTMLDialogElement>('wardrobe-dialog')
+const counterDialog = element<HTMLDialogElement>('clothing-counter-dialog')
+const wardrobe = createWardrobe(wardrobeDialog, appearance => send({ type: 'appearance', appearance }))
+const counter = createClothingCounter(counterDialog, item => send({ type: 'buy-clothing', item }))
 const fishingWallet = element('fishing-wallet')
 const toolSlots = element('tool-slots')
 const chargeMeter = element('charge-meter')
 const chargeLabel = element('charge-label')
 const chargePower = element<HTMLProgressElement>('charge-power')
-const buyAngler = element<HTMLButtonElement>('buy-angler')
-const profileKey = 'mission-island-appearance'
 invertHorizontal.checked = readStorage('localStorage', 'mission-island-invert-horizontal') !== 'false'
 invertVertical.checked = readStorage('localStorage', 'mission-island-invert-vertical') !== 'false'
 const prompt = element('prompt')
@@ -105,10 +104,6 @@ let leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
 const skipNameKey = () => `mission-island-skip-name-${token}`
 let offerJoinName = false
 let editingName: { id: number; token: string; name: string } | undefined
-let appearance: CrewAppearance = defaultAppearance
-let milestone = 0
-let ownsAngler = false
-let coins = 0
 let actionFeedback: { key: string; label: string; until: number } | undefined
 const feedbackText: Record<FishingResult, [string, string]> = {
   caught: ['+1 fish', 'Caught a fish'],
@@ -133,36 +128,6 @@ const toolButtons = starterTools.map((item, index) => {
   toolSlots.append(button)
   return button
 })
-try {
-  const saved = JSON.parse(readStorage('localStorage', profileKey) ?? '{}') as { appearance?: unknown; milestone?: unknown } | null
-  appearance = readAppearance(saved?.appearance)
-  milestone = saved?.milestone === 2 ? 2 : saved?.milestone === 1 ? 1 : 0
-} catch {
-  // Use the default crew profile if saved preferences are unreadable.
-}
-
-function renderAppearanceOptions() {
-  uniformSelect.replaceChildren(new Option('Crew default', 'default'))
-  for (const [key, uniform] of Object.entries(uniforms)) {
-    const locked = key === 'angler' ? !ownsAngler : uniform.milestone > milestone
-    const option = new Option(locked ? `${uniform.name} (locked)` : uniform.name, key)
-    option.disabled = locked
-    uniformSelect.add(option)
-  }
-  uniformSelect.value = appearance.uniform === 'angler' && !ownsAngler ? 'default' : appearance.uniform
-  skinSelect.replaceChildren(new Option('Crew default', 'default'))
-  for (const [key, tone] of Object.entries(skinTones)) skinSelect.add(new Option(tone.name, key))
-  skinSelect.value = appearance.skin
-  const next = Object.values(uniforms).find((uniform) => uniform.milestone > milestone)
-  uniformProgress.textContent = next ? `${next.unlock} to unlock ${next.name}.` : ''
-}
-renderAppearanceOptions()
-buyAngler.textContent = `Buy Harbor angler · ${anglerCost} coins`
-
-function saveAppearance() {
-  writeStorage('localStorage', profileKey, JSON.stringify({ appearance, milestone }))
-}
-
 function newToken() {
   return Array.from(crypto.getRandomValues(new Uint8Array(16)),
     (byte) => byte.toString(16).padStart(2, '0')).join('')
@@ -254,8 +219,7 @@ function drawMap(state?: Snapshot) {
   for (const player of state.players) {
     if (!player.connected) continue
     dot(player.x, player.z, '#234244', 6.5)
-    const chosen = player.appearance?.uniform
-    dot(player.x, player.z, uniforms[chosen && chosen !== 'default' ? chosen : player.id ? 'blue' : 'amber'].color, 4.5)
+    dot(player.x, player.z, shirtColor(player.appearance ?? defaultAppearance, player.appearanceBase ?? player.id).color, 4.5)
   }
 }
 
@@ -324,12 +288,6 @@ function missionCard(state: Snapshot) {
 }
 
 function updateMission(state: Snapshot) {
-  const reached = state.mission === 'complete' ? 2 : state.mission === 'fire' ? 1 : 0
-  if (live && reached > milestone) {
-    milestone = reached
-    renderAppearanceOptions()
-    saveAppearance()
-  }
   const card = missionCard(state)
   missionLabel.textContent = card.label
   missionTitle.textContent = card.title
@@ -353,13 +311,10 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
     const found = starterDiscoveries.find(({ id }) => player.discoveries.includes(id) && !earlier.discoveries?.includes(id))
     if (found) actionFeedback = { key: '', label: `Discovered ${found.name}`, until: performance.now() + 4200 }
   }
-  if (Boolean(player.ownsAngler) !== ownsAngler) {
-    ownsAngler = Boolean(player.ownsAngler)
-    renderAppearanceOptions()
-  }
-  coins = state.crewCoins
+  wardrobe.update(state, player)
+  if (counterDialog.open) counter.update(state, player, atClothingCounter(player) && !heldItem(state, player))
+  const coins = state.crewCoins
   const balance = `Crew bank · ${coins} ${coins === 1 ? 'coin' : 'coins'}`
-  if (coinBalance.textContent !== balance) coinBalance.textContent = balance
   const { fish, carrots } = player.goods
   const contents = [balance, `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`,
     fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '']
@@ -385,8 +340,6 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
     if (chargeLabel.textContent !== label) chargeLabel.textContent = label
     chargePower.value = player.charge.power
   }
-  buyAngler.hidden = ownsAngler
-  buyAngler.disabled = coins < anglerCost
 }
 
 function update(state: Snapshot) {
@@ -420,7 +373,7 @@ function update(state: Snapshot) {
   if (player) {
     updatePersonalDisplay(state, player, earlier)
     guide.update(state, player)
-    if (offerJoinName && !document.body.hasAttribute('data-booting') && !modalOpen()) {
+    if (offerJoinName && !renderer?.isReviewing() && !document.body.hasAttribute('data-booting') && !modalOpen()) {
       offerJoinName = false
       if (!player.name) {
         pauseControls()
@@ -432,6 +385,7 @@ function update(state: Snapshot) {
     }
   }
   guideButton.disabled = !player
+  openWardrobe.disabled = !player
   updateBoard(state, player)
   editCrewName.hidden = !player
   if (player) editCrewName.textContent = player.name ? 'Edit name' : 'Set name'
@@ -457,7 +411,6 @@ function connect() {
         live = true
         respawn.disabled = false
         if (renderer) bootMessage.textContent = 'Restoring your crew and map…'
-        send({ type: 'appearance', appearance })
         status.textContent = 'LAN connected'
         light.dataset.online = 'true'
         message = ''
@@ -500,6 +453,13 @@ function connect() {
       case 'fisher-chat':
         openGuide(true)
         break
+      case 'open-wardrobe':
+      case 'open-clothing-counter':
+        openClothing(incoming.type === 'open-wardrobe')
+        break
+      case 'clothing-purchase':
+        if (counterDialog.open) counter.result(incoming.item, incoming.result)
+        break
       case 'order-pay':
         actionFeedback = { key: `+${incoming.coins} coins`, label: `${jobs[incoming.id].title} complete · Crew bank`, until: performance.now() + 3200 }
         break
@@ -516,11 +476,13 @@ function connect() {
     live = false
     offerJoinName = false
     if (joinNameDialog.open) joinNameDialog.close()
+    if (wardrobeDialog.open) wardrobeDialog.close()
+    if (counterDialog.open) counterDialog.close()
     respawn.disabled = true
     writeStorage('sessionStorage', reloadKey, 'yes')
     actionFeedback = undefined
     chargeMeter.hidden = true
-    buyAngler.disabled = true
+    openWardrobe.disabled = true
     keys.clear()
     primary = false
     rightButtonHeld = false
@@ -606,7 +568,17 @@ function openJobBoard() {
 }
 
 function modalOpen() {
-  return optionsDialog.open || boardDialog.open || guideDialog.open || joinNameDialog.open
+  return optionsDialog.open || boardDialog.open || guideDialog.open || joinNameDialog.open ||
+    wardrobeDialog.open || counterDialog.open
+}
+
+function openClothing(fromWardrobe: boolean) {
+  if (!live || !snapshot || modalOpen()) return
+  const player = snapshot.players.find(entry => entry.id === id)
+  if (!player) return
+  pauseControls()
+  if (fromWardrobe) wardrobe.open(snapshot, player)
+  else counter.open(snapshot, player, atClothingCounter(player) && !heldItem(snapshot, player))
 }
 
 function openGuide(talking = false) {
@@ -638,17 +610,20 @@ function saveMouseOptions() {
   renderer?.setMouseInversion(invertHorizontal.checked, invertVertical.checked)
 }
 
+function blocksGameKeys() {
+  return optionsDialog.open || renderer?.isReviewing()
+}
+
 applyCamera()
 window.addEventListener('keydown', (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey) return
-  if (boardDialog.open || guideDialog.open || joinNameDialog.open) return
-  if (optionsDialog.open && event.target === crewName) return
+  if (modalOpen() && (!optionsDialog.open || event.target === crewName)) return
   if (event.code === 'KeyO' && !event.repeat) {
     event.preventDefault()
     toggleOptions()
     return
   }
-  if (optionsDialog.open) return
+  if (blocksGameKeys()) return
   if (event.code === 'Escape') {
     renderer?.releaseMouse()
     cancelMouseActions()
@@ -701,7 +676,7 @@ function overGameplay(target: EventTarget | null) {
 }
 
 function beginMouseAction(event: MouseEvent) {
-  if (event.ctrlKey || event.metaKey || !live || modalOpen() || !overGameplay(event.target)) return
+  if (event.ctrlKey || event.metaKey || !live || renderer?.isReviewing() || modalOpen() || !overGameplay(event.target)) return
   if (event.button === 2) {
     setRightButton(true)
     return
@@ -779,15 +754,9 @@ optionsDialog.addEventListener('submit', saveCrewName)
 optionsDialog.addEventListener('close', saveCrewName)
 invertHorizontal.addEventListener('change', saveMouseOptions)
 invertVertical.addEventListener('change', saveMouseOptions)
-for (const select of [uniformSelect, skinSelect]) {
-  select.addEventListener('change', () => {
-    appearance = readAppearance({ uniform: uniformSelect.value, skin: skinSelect.value })
-    saveAppearance()
-    if (live) send({ type: 'appearance', appearance })
-  })
-}
-buyAngler.addEventListener('click', () => {
-  if (live && !ownsAngler && coins >= anglerCost) send({ type: 'buy-angler' })
+openWardrobe.addEventListener('click', () => {
+  optionsDialog.close()
+  openClothing(true)
 })
 boardButton.addEventListener('click', openJobBoard)
 guideButton.addEventListener('click', () => openGuide())

@@ -38,8 +38,10 @@ export interface Entry {
   readout?: string
   duration?: number
   angle?: number
+  cameraBeta?: number
+  cameraRadius?: number
+  cameraFocus?: readonly [number, number, number]
   headroom?: number
-  previewRadius?: number
   topView?: boolean
   landscape?: boolean
   ground?: { color: string; height: number }

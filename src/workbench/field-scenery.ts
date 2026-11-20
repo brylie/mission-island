@@ -6,6 +6,7 @@ import { ScenerySolids } from '../second-island/walking'
 import { createRecipeMaterial } from '../materials'
 import type { MeshFactory } from '../island-meshes'
 import type { WildlifeFrame } from '../wildlife'
+import { marketRunoffPreview, dryMarketRainAge } from '../market-runoff'
 import { draftFeatures } from './site-drafts'
 import type { FieldSite } from './field-site'
 
@@ -34,10 +35,8 @@ export function createFieldScenery(meshes: MeshFactory, site: FieldSite) {
   return {
     surfaceMeshes: material ? meshes.scene.meshes.filter(mesh => mesh.material === material) : undefined,
     update(frame: WildlifeFrame, light: number) {
-      world.northernScenery.update(frame.camera, true)
-      world.wildlife(frame, school(frame.time))
-      world.phenomena(frame)
-      world.water.pose(frame.time, light, frame.weather.rain)
+      const runoff = marketRunoffPreview(frame.weather.rain, dryMarketRainAge)
+      world.updateEnvironment(frame, light, true, runoff, { driftwood: school(frame.time) })
     },
   }
 }

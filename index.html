@@ -60,6 +60,32 @@
     <main class="playfield" id="playfield">
       <canvas id="island" aria-label="Third-person view of Mission Island"></canvas>
       <div id="markers" aria-hidden="true"></div>
+      <section id="shader-review" aria-label="Shader field review" hidden>
+        <label>Field view
+          <select id="shader-site">
+            <option value="">Live crew</option>
+            <option value="shore">Shellglass Tide Pool</option>
+            <option value="meadow">Meadow slope</option>
+            <option value="paving">Seabrook pavement</option>
+            <option value="mist">Mirror Pool at dawn</option>
+          </select>
+        </label>
+        <label>Shader quality
+          <select id="shader-quality">
+            <option value="full">Full</option>
+            <option value="low">Reduced</option>
+            <option value="off">Off (baseline)</option>
+          </select>
+        </label>
+        <label hidden>Shellglass tide (%) <input id="shader-tide" type="range" min="0" max="100" value="32"></label>
+        <label hidden>Meadow to hill <input id="shader-meadow-walk" type="range" min="0" max="100" value="0"></label>
+        <label><input id="shader-freeze" type="checkbox"> Freeze shader time</label>
+        <div>
+          <button type="button" id="shader-reset">Reset view</button>
+          <button type="button" id="shader-measure">Measure frame time</button>
+        </div>
+        <output id="shader-timing" aria-live="polite"></output>
+      </section>
       <div class="reticle" aria-hidden="true"></div>
       <div id="charge-meter" class="charge-meter" hidden>
         <label id="charge-label" for="charge-power"></label>
@@ -133,7 +159,7 @@
       <div id="guide-note">
         <section>
           <h3 id="guide-home"></h3>
-          <p>From Seabrook, follow the main road west to Harbor Depot. Look for “Your home” and “Your tool chest” at the cottages on the north side. Press E at your chest to take or store tools. Your first visit includes a carrot seed.</p>
+          <p>From Seabrook, follow the main road west to Harbor Depot. Look for “Your home” at the cottages on the north side. Press E at your tool chest to take or store tools, or at your wardrobe to change clothes. Your first visit to the chest includes a carrot seed.</p>
           <p>At night, press E at your own door. Dawn starts when every connected crewmate turns in. Press E again or walk away to cancel.</p>
         </section>
         <section>
@@ -175,10 +201,7 @@
         <fieldset class="appearance">
           <legend>Crew appearance</legend>
           <label><span>Name</span><input id="crew-name" type="text" maxlength="24" autocomplete="nickname" placeholder="Crew name" /></label>
-          <label><span>Uniform</span><select id="uniform" aria-describedby="uniform-progress"></select></label>
-          <label><span>Skin tone</span><select id="skin-tone"></select></label>
-          <p id="uniform-progress" aria-live="polite"></p>
-          <div class="outfit-shop"><span id="coin-balance">Crew bank · Connecting…</span><button id="buy-angler" type="button" disabled>Buy Harbor angler</button></div>
+          <button id="open-wardrobe" type="button">Open wardrobe</button>
         </fieldset>
         <fieldset class="lan-invite">
           <legend>Invite a crewmate</legend>
@@ -195,6 +218,48 @@
         <button id="respawn" class="respawn" type="button" disabled>Respawn at home</button>
         <button type="submit">Done</button>
       </form>
+    </dialog>
+
+    <dialog id="wardrobe-dialog" class="options-dialog wardrobe-dialog" aria-labelledby="wardrobe-title">
+      <h2 id="wardrobe-title">Crew wardrobe</h2>
+      <form>
+        <div class="wardrobe-layout">
+          <div class="wardrobe-stage">
+            <canvas aria-label="Crew preview. Drag to orbit or use the Front and Back buttons."></canvas>
+            <p id="wardrobe-preview-status" role="status" hidden>3D preview unavailable</p>
+            <div class="wardrobe-views">
+              <button type="button" data-view="front">Front</button>
+              <button type="button" data-view="back">Back</button>
+            </div>
+          </div>
+          <div class="wardrobe-controls">
+            <label><span>Outfit</span><select name="uniform" aria-describedby="outfit-requirement"><option value="default">Everyday clothes</option></select></label>
+            <p id="outfit-requirement" role="status"></p>
+            <fieldset id="everyday-pieces"><legend>Everyday pieces</legend></fieldset>
+            <fieldset id="personal-parts">
+              <legend>Face and hair</legend>
+              <label><span>Skin tone</span><select name="skin"><option value="default">Crew default</option></select></label>
+            </fieldset>
+          </div>
+        </div>
+        <div class="wardrobe-actions">
+          <button type="button" data-close>Cancel</button>
+          <button type="submit">Apply</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="clothing-counter-dialog" class="options-dialog" aria-labelledby="counter-title">
+      <h2 id="counter-title">Seabrook clothing counter</h2>
+      <div class="counter-account">
+        <p id="counter-balance"></p>
+        <p id="counter-owner"></p>
+      </div>
+      <ul id="counter-stock" class="counter-stock"></ul>
+      <p id="counter-note" role="status"></p>
+      <div class="wardrobe-actions">
+        <button type="button" data-close autofocus>Close</button>
+      </div>
     </dialog>
 
     <script type="module" src="/src/main.ts"></script>

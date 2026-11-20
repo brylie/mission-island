@@ -24,6 +24,28 @@ export function createHomeChest({ scene, box, paintSurface }: MeshFactory, point
   return { root, hinge }
 }
 
+export function createWardrobe({ box, paintSurface }: MeshFactory, { x, z }: Point, y: number, color: string) {
+  const wood = paintSurface('wood', '#9c6a47')
+  const doors = paintSurface('wood', '#bc8b5c')
+  box(x, y + 0.97, z, 1.05, 1.94, 0.33, wood)
+  box(x, y + 1.97, z, 1.15, 0.09, 0.39, wood)
+  for (const side of [-1, 1]) {
+    box(x + side * 0.225, y + 0.97, z - 0.17, 0.43, 1.7, 0.064, doors)
+    box(x + side * 0.225, y + 1.44, z - 0.207, 0.32, 0.38, 0.019, color)
+    box(x + side * 0.078, y + 0.96, z - 0.219, 0.034, 0.145, 0.042, '#654937')
+  }
+}
+
+export function createClothingCounter({ box, paintSurface }: MeshFactory, { x, z }: Point, y: number) {
+  const wood = paintSurface('wood', '#a77856')
+  box(x, y + 0.51, z, 1.46, 1.02, 0.42, wood)
+  box(x, y + 1.06, z, 1.58, 0.12, 0.52, wood)
+  box(x, y + 0.68, z + 0.216, 1.26, 0.45, 0.027, '#537d8c')
+  for (const [index, color] of ['#84aaa7', '#ccead7', '#537d8c'].entries()) {
+    box(x + 0.31, y + 1.16 + index * 0.072, z, 0.47 - index * 0.03, 0.072, 0.27, color)
+  }
+}
+
 export function createSupply({ scene, box, cylinder }: MeshFactory, kind: 'crate' | 'extinguisher') {
   const node = new TransformNode('Supply', scene)
   if (kind === 'crate') {

@@ -54,7 +54,7 @@ export const surfaceStudies: Entry[] = surfaceRecipes.map(recipe => {
   return {
     id, name, group: family, description, swatch: colors[1],
     source: gameplaySurfaceFamilies.some(group => group === family) ? 'src/gameplay-surface-recipes.ts' : 'src/surface-recipes.ts',
-    previewRadius: width * 1.5,
+    cameraRadius: width * 1.5,
     fieldSite: site && (values => {
       const { name, offset, ...view } = site
       return { name, offset, surface: { ...view, recipe, settings: settingsOf(values) } }

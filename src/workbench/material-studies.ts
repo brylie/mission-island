@@ -11,7 +11,7 @@ export const materialStudies: Entry[] = [
   {
     id: 'texture-gallery', name: 'Texture gallery', group: 'Materials', source: 'src/surface-recipes.ts',
     description: 'Compare 54 named finishes across the Surface catalog and Gameplay surfaces galleries. Open a swatch from the Library to inspect its scale, wear, and relief.',
-    previewRadius: 10.9,
+    cameraRadius: 10.9,
     topView: true,
     controls: [
       control('pattern', 'Gallery', 'catalog', { catalog: 'Surface catalog', gameplay: 'Gameplay surfaces', ...noiseTypes, surface: 'Original samples' }, true),
@@ -61,7 +61,7 @@ export const materialStudies: Entry[] = [
       const color = typeof values.color === 'string' ? values.color : undefined
       const grainSize = Number(values.size ?? 1)
       const strength = Number(values.detail ?? 1)
-      const water = id === 'water' ? createOceanMaterial(meshes.scene, true) : undefined
+      const water = id === 'water' ? createOceanMaterial(meshes.scene, 'preview') : undefined
       water?.setAppearance(color ?? surface.color, grainSize, strength)
       const finish = water?.material ?? createSurfaceMaterial(meshes.scene, name, color, {
         grainSize, contrast: strength, relief: Number(values.relief ?? 1),

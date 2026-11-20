@@ -1,5 +1,5 @@
 import type { Item, Player, Snapshot } from './protocol'
-import { market, nearbyPlot, saleValue, seedPrice } from './farm.ts'
+import { clothingCounter, market, nearbyPlot, saleValue, seedPrice } from './farm.ts'
 import { cargoSlots, cottageDoor, crateSize, crewHomes, distance, lookout, truckBed, truckSeatSpeed } from './world.ts'
 import { truckPoint } from './truck-pose.ts'
 import { isNight } from './weather.ts'
@@ -59,6 +59,26 @@ export function atHomeDoor(player: Player) {
   return gap < 1.45 && gap < distance(player, home.chest)
 }
 
+function canBrowseClothing(player: Player) {
+  return player.grounded && !player.seat && !player.onBed && !player.swimming && !player.sleeping && !player.truckSurface
+}
+
+function atHomeWardrobe(player: Player) {
+  const home = crewHomes[player.id]
+  if (!home || !canBrowseClothing(player)) return false
+  const gap = distance(player, home.wardrobe)
+  return gap < 1.45 && gap < distance(player, cottageDoor(home))
+}
+
+export function atClothingCounter(player: Player) {
+  return canBrowseClothing(player) && distance(player, clothingCounter) < 2.15
+}
+
+export function clothingInteraction(player: Player) {
+  if (atHomeWardrobe(player)) return 'open-wardrobe'
+  if (atClothingCounter(player) && distance(player, clothingCounter) < distance(player, market)) return 'open-clothing-counter'
+}
+
 export function canCast(state: Snapshot, player: Player) {
   if (player.equipped !== 'fishing-rod') return false
   if (inSkiff(player.seat)) return Math.abs(state.skiff.speed) < 0.35
@@ -97,23 +117,27 @@ function cargoHint(state: Snapshot, player: Player, item: Item): [string, string
   return ['Left click', 'Hold to throw · E to set down']
 }
 
+function ridingHint(state: Snapshot, player: Player): [string, string] {
+  if (inSkiff(player.seat)) {
+    if (canCast(state, player)) return ['Left click', 'Hold and release to cast']
+    return player.inventory.includes('fishing-rod') && !player.equipped
+      ? ['1', 'Equip fishing rod'] : ['WASD', 'Paddle and steer']
+  }
+  if (Math.abs(state.truck.speed) <= truckSeatSpeed) return ['F', 'Exit truck']
+  return player.seat === 'driver' ? ['Space', 'Brake to exit truck'] : ['', 'Wait for the truck to stop']
+}
+
 export function actionHint(state: Snapshot, player: Player): [string, string] {
   if (player.sleeping) return ['E', 'Waiting for your crewmate · Cancel']
   if (player.swimming) return canBoardSkiff(state, player) ? ['F', 'Climb into skiff'] : ['WASD', 'Swim to shore']
   const fight = player.casting?.fight
   if (fight) return ['Left click', fight.pulling ? 'Fish pulling · release to ease tension' : 'Fish hooked · hold to reel']
   if (player.casting) return ['', 'Watching the bobber']
-  if (inSkiff(player.seat)) {
-    if (canCast(state, player)) return ['Left click', 'Hold and release to cast']
-    return player.inventory.includes('fishing-rod') && !player.equipped
-      ? ['1', 'Equip fishing rod'] : ['WASD', 'Paddle and steer']
-  }
-  if (player.seat) {
-    if (Math.abs(state.truck.speed) <= truckSeatSpeed) return ['F', 'Exit truck']
-    return player.seat === 'driver' ? ['Space', 'Brake to exit truck'] : ['', 'Wait for the truck to stop']
-  }
+  if (player.seat) return ridingHint(state, player)
   const item = heldItem(state, player)
   if (item) return cargoHint(state, player, item)
+  const clothing = clothingInteraction(player)
+  if (clothing) return ['E', clothing === 'open-wardrobe' ? 'Open your wardrobe' : 'Browse the clothing counter']
   const ownDoor = atHomeDoor(player)
   if (ownDoor && isNight(state.weather.hour)) return ['E', 'Turn in for the night']
   if (!ownDoor && atHomeChest(player)) {

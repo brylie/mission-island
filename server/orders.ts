@@ -1,5 +1,5 @@
-import { heldItem } from '../src/actions.ts'
-import { anglerCost } from '../src/crew-appearance.ts'
+import { atClothingCounter, heldItem } from '../src/actions.ts'
+import { clothingCatalog, ownsClothing, type ClothingId } from '../src/clothing-catalog.ts'
 import { market, saleValue, seedPrice } from '../src/farm.ts'
 import { atJobBoard, jobs, orderContribution } from '../src/jobs.ts'
 import type { JobId } from '../src/jobs.ts'
@@ -92,12 +92,17 @@ export function createOrders(
     checkpoint?.()
   }
 
-  function buyAngler(player: Player) {
-    if (player.ownsAngler || state.crewCoins < anglerCost) return
-    state.crewCoins -= anglerCost
-    player.ownsAngler = true
+  function buyClothing(player: Player, id: ClothingId) {
+    if (!atClothingCounter(player) || heldItem(state, player)) return 'away'
+    if (ownsClothing(player, id)) return 'already-owned'
+    const { price } = clothingCatalog[id]
+    if (state.crewCoins < price) return 'insufficient-funds'
+    state.crewCoins -= price
+    if (id === 'angler') player.ownsAngler = true
+    else player.ownedClothes = [...(player.ownedClothes ?? []), id]
     checkpoint?.()
+    return 'bought'
   }
 
-  return { startJob, deliverCrate, visitMarket, completeFire, buySeed, buyAngler }
+  return { startJob, deliverCrate, visitMarket, completeFire, buySeed, buyClothing }
 }

@@ -1,5 +1,7 @@
+import { shaderStudies } from './shader-studies'
 import { schoolStudy } from './school-study'
 import { biomeEntry } from './biome-preview'
+import { brinewickMarketStudy } from './brinewick-market-study'
 import { conversationStudy } from './conversation-study'
 import { crewStudy } from './crew-study'
 import { effectStudies } from './effect-studies'
@@ -23,6 +25,7 @@ export const entries: Entry[] = [
   schoolStudy,
   ...natureEntries,
   longAcreStudy,
+  brinewickMarketStudy,
   ...mechanicStudies,
   conversationStudy,
   ...furnishingStudies,
@@ -38,5 +41,6 @@ export const entries: Entry[] = [
   ...effectStudies,
   ...routeStudies,
   ...materialStudies,
+  ...shaderStudies,
   ...saltwindAssets,
 ]

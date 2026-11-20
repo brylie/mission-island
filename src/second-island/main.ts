@@ -9,6 +9,7 @@ import { createIslandLighting, createMeshFactory } from '../island-meshes'
 import { clearCameraDistance, placeWalker, ScenerySolids, walkSaltwind } from './walking'
 import { villageWalks } from './footways'
 import { displayCrewBank } from './crew-bank'
+import { brinewickRainRoof } from './brinewick-market-art'
 import { createHoneyDelivery } from './honey-delivery'
 import { saltwindRainAt, saltwindWeather } from './weather'
 import { createLandscape } from './landscape'
@@ -32,7 +33,7 @@ function start() {
   scene.fogColor.set(.65, .79, .79)
   scene.fogMode = Scene.FOGMODE_LINEAR
   const lighting = createIslandLighting(scene)
-  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, lighting.shadows, 3350)
+  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, lighting.shadows, 3350, brinewickRainRoof)
   lighting.sunlight.shadowMaxZ = 1400
   lighting.sunlight.shadowOrthoScale = .04
   lighting.shadows.getShadowMap()?.resetRefreshCounter()

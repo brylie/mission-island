@@ -12,6 +12,8 @@ export const shoreProfile = [
 ]
 
 export const tidePool = { x: 46, z: -33 }
+export const meadowHill = { x: -25, z: 23 }
+export const meadowFoot = { x: -26, z: 12 }
 export const falls = { x: 11, z: 86 }
 export const pool = { x: 23, z: 112 }
 export const grove = { x: -50, z: 72 }
@@ -84,7 +86,7 @@ export function groundHeight(point: Point) {
     const reach = Math.min(1, Math.max(0, (point.z - falls.z) / 4), Math.max(0, (135 - point.z) / 10))
     const basin = rise(point, pool.x, pool.z, 19, 15, 1.8)
     const edge = Math.min(1, (shoreProfile[1].radius - radius) / 0.055)
-    let relief = rise(point, -25, 23, 16, 14, 2.45) + rise(point, -9, 32, 10, 7.5, 1.55)
+    let relief = rise(point, meadowHill.x, meadowHill.z, 16, 14, 2.45) + rise(point, -9, 32, 10, 7.5, 1.55)
       + rise(point, grove.x, grove.z, 33, 34, 9) + rise(point, headland.x, headland.z, 32, 30, 15)
       + upland - Math.max(basin, channel * reach * 1.4)
     if (point.z > 80 && point.z < 93 && Math.abs(point.x - streamX(point.z)) < 4.5) {

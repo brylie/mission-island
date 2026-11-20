@@ -73,7 +73,7 @@ export function createCrewRoster(
     const profile = profiles.get(token)
     const open = spawns.flatMap((_, index) => state.players.some((player) => player.id === index) ? [] : [index])
     const id = profile && open.includes(profile.id) ? profile.id : open[0]
-    const member = existing ?? crewMember(profile ? { ...profile, id } : {
+    const member = existing ?? crewMember(profile ? { ...profile, id, appearanceBase: profile.appearanceBase ?? profile.id } : {
       ...spawns[id], id, heading: 0, y: groundHeight(spawns[id]), grounded: true,
         name: '', discoveries: [], onBed: false, reaching: false, rightHandRaised: false, connected: true, sleeping: false, swimming: false,
         seat: null, rowing: false, inventory: [], equipped: null,

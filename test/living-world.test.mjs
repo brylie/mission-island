@@ -3,14 +3,14 @@ import test from 'node:test'
 import { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { jobBoard } from '../src/jobs.ts'
 import { canWalkAt, recoverSceneryOverlap, stepPlayerOnTerrain } from '../src/simulation/movement.ts'
-import { footpaths, shellglassPoint, splitstone, walkways } from '../src/routes.ts'
+import { footpaths, meadowPath, shellglassPoint, splitstone, walkways } from '../src/routes.ts'
 import { overlapsProp, propTop, starterDiscoveries } from '../src/scenery.ts'
 import { habitatAt, habitatColor } from '../src/second-island/habitats.ts'
 import { saltwindFeatures } from '../src/second-island/site-features.ts'
 import { discoveryWalks, landmarks, lowerLake, picnicLedge, sites } from '../src/second-island/sites.ts'
 import { fallsX, fallsY, groundHeight, nearestRoad, surfaceHeight, waterHeight } from '../src/second-island/terrain.ts'
 import { starterFeatures } from '../src/worlds/starter/sites.ts'
-import { coastRadius, fernfallSection, maxWadeDepth, shoreProfile, streamX, tidePool, walkingHeight, waterDepth, waterLevel } from '../src/terrain.ts'
+import { coastRadius, fernfallSection, maxWadeDepth, meadowFoot, meadowHill, shoreProfile, streamX, tidePool, walkingHeight, waterDepth, waterLevel } from '../src/terrain.ts'
 import { birdActivity, phenomenonStrength, schoolAvoidance } from '../src/wildlife-motion.ts'
 import { beach, buildings, crateSize, extinguisherStarts, forest, jumpSpeed, spawns, truckStart } from '../src/world.ts'
 
@@ -83,13 +83,22 @@ test('the tide pool holds wadeable water behind a dry sill, beside the Splitston
     assert.equal(player.swimming, false)
   }
   const strand = footpaths.find(p => p.name === 'Splitstone strand')
-  for (const trail of footpaths.filter(path => path.surface === 'desire')) {
+  for (const trail of [strand, footpaths.find(p => p.name === 'Driftwood shore walk')]) {
     const sandEdge = shoreProfile[2].radius
     assert.ok(walkSamples(trail.points).every(p => coastRadius(p) <= sandEdge), trail.name)
     assert.ok(sandEdge - coastRadius(trail.points.at(-1)) < .005, trail.name)
   }
   // Cross the open sand and enter the cleft from its southern opening.
   for (const p of walkSamples([...strand.points, { x: 50.5, z: -25.4 }, { x: 53.5, z: -22.5 }, splitstone])) assert.ok(canWalkAt(p, .35, waterLevel))
+})
+
+test('the shader review meadow path climbs on dry, clear terrain', () => {
+  assert.deepEqual(meadowPath.points.at(-1), meadowHill)
+  assert.ok(walkingHeight(meadowHill) - walkingHeight(meadowFoot) > 1.5)
+  for (const point of walkSamples(meadowPath.points)) {
+    assert.equal(waterDepth(point), 0)
+    assert.ok(canWalkAt(point, .35, waterLevel))
+  }
 })
 
 test('both Saltwind lookouts have a walkable spur and a sightline at standing eye height', () => {

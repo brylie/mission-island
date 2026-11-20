@@ -9,11 +9,12 @@ import { createAtmosphere } from './island-atmosphere'
 import { landscapeLink } from './playtest-link'
 import { inSkiff } from './actions'
 import { castTravelSeconds } from './charged-actions'
-import { farm, market } from './farm'
+import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutFire } from './fire-effect'
 import { fisherAt, fisherName } from './harbor-fisher'
 import { createIslandCamera } from './island-camera'
+import { hideLandmark, landmarks } from './island-landmarks'
 import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight } from './assets/crew'
 import { createFlatbed, poseFlatbed } from './assets/flatbed'
 import { createSupply } from './assets/props'
@@ -27,10 +28,9 @@ import type { Player, Snapshot } from './protocol'
 import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
 import { flatbedGroundDrive } from './vehicles/flatbed'
 import { nightLighting } from './weather'
-import { marketRunoffAt } from './market-runoff'
-import {
-  beach, cottageDoor, crateStarts, crewHomes, distance, extinguisherStarts, ferryTerminal, forest, harbor, lookout, town,
-} from './world'
+import { createShaderReview } from './shader-review'
+import { dryMarketRainAge, marketRunoffAt, marketRunoffPreview } from './market-runoff'
+import { crateStarts, distance, extinguisherStarts, harbor, lookout, town } from './world'
 import type { Pose } from './world'
 
 const sun = '#ffd56b'
@@ -39,12 +39,13 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
   const scene = new Scene(engine)
   const islandCamera = createIslandCamera(scene, canvas)
+  const review = createShaderReview(scene, canvas, engine, islandCamera.releaseMouse)
 
   const lighting = createIslandLighting(scene)
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
-  const { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights, marketShower } = createIslandWorld(meshes)
+  const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys } = createIslandWorld(meshes)
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
   const dropPad = createObjectiveMarker(meshes, town, deliveryRadius * 2, '#67ecdc')
@@ -65,7 +66,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   })
   const cycles = crew.map(() => 0)
   const fisher = createCrew(meshes, playerColors.length)
-  fisher.setAppearance({ uniform: 'angler', skin: 'warm' }, '#b9664a')
+  fisher.setAppearance({ uniform: 'angler', skin: 'warm' }, { dye: '#b9664a' })
   fisher.root.setEnabled(false)
   let fisherCycle = 0
   const farmTools = crew.map((character) => createFarmTools(meshes, character))
@@ -92,22 +93,6 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const sprays = extinguisherStarts.map(() => createExtinguisherSpray(scene))
   const fire = createLookoutFire(scene, lookout.x, lookout.z)
 
-  const landmarks = [
-    { point: { x: harbor.x + 1.3, z: harbor.z - 5 }, title: 'Harbor Depot', kind: 'harbor', height: 4 },
-    { point: town, title: 'Seabrook', kind: 'town', height: 2.6 },
-    { point: forest, title: 'Pinewoods', kind: 'forest', height: 7 },
-    { point: beach, title: 'Driftwood Beach', kind: 'beach', height: 2.2 },
-    { point: lookout, title: 'Forest Lookout', kind: 'lookout', height: 4.3 },
-    { point: farm, title: 'Island Farm', kind: 'farm', height: 1.32 },
-    { point: market, title: 'Seabrook Market', kind: 'market', height: 3.32 },
-    { point: jobBoard, title: 'Harbor job board', kind: 'board', height: 2.35 },
-    { point: { x: 21, z: 22 }, title: 'Fire Supplies', kind: 'equipment', height: 2.4 },
-    { point: ferryTerminal, title: 'Ferry terminal · Closed', kind: 'ferry', height: 2.1 },
-    ...crewHomes.flatMap((home, owner) => [
-      { point: cottageDoor(home), title: `Your home · ${home.name}`, kind: 'home', height: 2.5, owner },
-      { point: home.chest, title: 'Your tool chest', kind: 'chest', height: 0.95, owner },
-    ]),
-  ]
   const places = [
     ...landmarks.map((place) => ({ ...place, discovery: '', mapOnly: false })),
     ...starterDiscoveries.map((region) => ({ point: region.site, title: region.name, kind: 'discovery',
@@ -222,7 +207,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       hoe.setEnabled(!boating && player.equipped === 'hoe')
       can.setEnabled(!boating && player.equipped === 'watering-can')
       const wasVisible = node.isEnabled()
-      character.setAppearance(player.appearance)
+      character.setAppearance(player.appearance, { base: player.appearanceBase })
       character.blink(time)
       if (boating) {
         const side = seatIndex === 0 ? -1 : 1
@@ -301,8 +286,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       const range = close && local ? distance(place.point, local) : 0
       const opacity = Math.min(1, Math.max(0, (80 - range) / 38))
       place.label.hidden = opacity === 0 || (place.mapOnly && close) ||
-        ('owner' in place && (place.owner !== local?.id || (place.kind === 'chest' && (!close || range > 12)))) ||
-        (place.kind === 'ferry' && close && range > 38) ||
+        hideLandmark(place, local?.id, close, range) ||
         Boolean(place.discovery && !local?.discoveries?.includes(place.discovery)) ||
         (place.kind === 'equipment' && last?.mission !== 'fire') || (place.kind === 'board' && last?.mission !== 'complete')
       place.label.style.opacity = String(opacity)
@@ -362,29 +346,29 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const local = last?.players.find((player) => player.id === viewer && player.connected)
     const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? truck : crew[local.id].root) : undefined
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
-    const camera = islandCamera.update(subject, Boolean(local?.seat), aspect, delta)
-    northernScenery.update(camera.position, Boolean(subject))
-    const weather = last?.weather ?? { hour: 6, rain: 0 }
+    const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta)
+    const field = review?.view(time)
+    const camera = field?.camera ?? normalCamera
+    const close = Boolean(field || subject)
+    const weather = field?.weather ?? last?.weather ?? { hour: 6, rain: 0 }
     const clock = last?.islandTime ?? time
     const timeError = clock - ambientTime
     ambientTime = Math.abs(timeError) > .25 ? clock : ambientTime + delta * (1 + timeError * 4)
     const crewInWater = last?.players.filter((player) => player.connected && !player.seat &&
       (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04))) ?? []
     const threats = last ? [...crewInWater, last.skiff] : crewInWater
-    const frame = { time: ambientTime, delta, weather, camera: camera.position, threats }
+    const frame = { time: field?.time ?? ambientTime, delta, weather, camera: camera.position, threats }
     if (last?.juniper) juniper(last.juniper, time, factor)
-    wildlife(frame, last?.driftwood)
-    phenomena(frame)
-    marketShower(ambientTime, camera.position, marketRunoffAt(clock))
+    const runoff = field ? marketRunoffPreview(weather.rain, dryMarketRainAge) : marketRunoffAt(clock)
     const strength = nightLighting(weather.hour)
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
-    lights(camera.position, strength)
-    const light = atmosphere.update(time, weather, camera.position, Boolean(subject))
-    water.pose(time, light, weather.rain)
-    scene.render()
+    const light = atmosphere.update(field?.time ?? time, weather, camera.position, close)
+    updateEnvironment(frame, light, close, runoff, { driftwood: last?.driftwood, quality: review?.quality(), tideTime: field ? field.tideTime : clock })
+    if (review) review.render()
+    else scene.render()
     const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
-    updatePlaceLabels(local, Boolean(subject), viewport)
-    updateCrewTags(Boolean(subject), viewport)
+    updatePlaceLabels(local, close, viewport)
+    updateCrewTags(close, viewport)
   })
   const resize = new ResizeObserver(() => engine.resize())
   resize.observe(canvas)
@@ -401,12 +385,14 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       return landscapeLink(location.href, { focus: [camera.target[0], camera.target[2]], camera, ...last.weather,
         time: ambientTime, grid: false, wireframe: false })
     },
+    isReviewing: () => review?.active() ?? false,
     walkInput: (x: number, z: number) => islandCamera.walkInput(x, z),
     aimHeading: islandCamera.aimHeading,
-    captureMouse: islandCamera.captureMouse,
+    captureMouse: () => { if (!review?.active()) islandCamera.captureMouse() },
     releaseMouse: islandCamera.releaseMouse,
     setMouseInversion: (horizontal: boolean, vertical: boolean) => islandCamera.setMouseInversion(horizontal, vertical),
     dispose() {
+      review?.dispose()
       islandCamera.dispose()
       resize.disconnect()
       engine.dispose()

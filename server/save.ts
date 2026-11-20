@@ -73,6 +73,7 @@ function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] 
   return isNumber(player.id) && Number.isInteger(player.id) && player.id >= 0 && player.id < spawns.length &&
     [player.y, player.seeds].every(isNumber) && Array.isArray(player.inventory) &&
     (player.starterSeedClaimed === undefined || typeof player.starterSeedClaimed === 'boolean') &&
+    (player.ownedClothes === undefined || (Array.isArray(player.ownedClothes) && player.ownedClothes.every(item => typeof item === 'string'))) &&
     isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
 }
 
