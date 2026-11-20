@@ -1,0 +1,470 @@
+import assert from 'node:assert/strict'
+import { Buffer } from 'node:buffer'
+import { EventEmitter } from 'node:events'
+import { test } from 'node:test'
+import { createGame } from '../server/game.ts'
+import { actionHint, atHomeDoor } from '../src/actions.ts'
+import { chargePower } from '../src/charged-actions.ts'
+import { farmPlots, market } from '../src/farm.ts'
+import { northernRegions } from '../src/scenery.ts'
+import { groundHeight, maxWadeDepth, waterDepth, waterLevel } from '../src/terrain.ts'
+import { daySeconds, isNight } from '../src/weather.ts'
+import { crewHomes, jobPay, lookout, offset, skiffStart, spawns, town, truckStart } from '../src/world.ts'
+
+const tokens = ['a'.repeat(32), 'b'.repeat(32), 'c'.repeat(32)]
+
+class GameClient extends EventEmitter {
+  readyState = 1
+  bufferedAmount = 0
+  messages = []
+  send(raw) {
+    const message = JSON.parse(raw)
+    if (message.type === 'state') this.state = message
+    else this.messages.push(message)
+  }
+  request(type, extra = {}) { this.emit('message', Buffer.from(JSON.stringify({ type, ...extra }))) }
+  close() { this.readyState = 3; this.emit('close') }
+  terminate() { this.close() }
+  get player() {
+    const id = this.messages.find(({ type }) => type === 'welcome')?.id
+    return this.state.players.find((player) => player.id === id)
+  }
+}
+
+function player(id, point = spawns[id], overrides = {}) {
+  return {
+    ...point, id, heading: 0, y: groundHeight(point), grounded: true, onBed: false, reaching: false,
+    connected: true, sleeping: false, seat: null, inventory: [], equipped: null, goods: { fish: 0, carrots: 0 },
+    seeds: 0, charge: null, casting: null, throwing: false, rowing: false, coins: 0, ownsAngler: false, ...overrides,
+  }
+}
+
+function setup(t, { players = [], arrange = () => {}, random = () => 0 } = {}) {
+  let time = 10000
+  const checkpoint = t.mock.fn()
+  const save = createGame().snapshotForSave()
+  save.crew = players.map((entry, index) => ({ token: tokens[index], player: entry, reserved: true }))
+  arrange(save)
+  const game = createGame({ save, clock: () => time, random, checkpoint })
+  const sockets = []
+  t.after(() => sockets.forEach((socket) => socket.close()))
+  function advance(ticks = 1) {
+    for (let i = 0; i < ticks; i++) {
+      time += 1000 / 30
+      game.tick()
+    }
+  }
+  function link() {
+    const socket = new GameClient()
+    sockets.push(socket)
+    game.connect(socket)
+    return socket
+  }
+  function join(token) {
+    const socket = link()
+    socket.request('join', { token })
+    advance()
+    return socket
+  }
+  function input(socket, request = {}) {
+    socket.request('input', { input: { x: 0, z: 0, ...request } })
+  }
+  function hold(socket, ticks, request = {}) {
+    for (let i = 0; i < ticks; i++) {
+      if (i % 6 === 0) input(socket, request)
+      advance()
+    }
+  }
+  function click(socket, aim) {
+    input(socket)
+    socket.request('primary', { phase: 'start' })
+    socket.request('primary', { phase: 'release', aim })
+    advance()
+  }
+  function elapse(milliseconds) {
+    time += milliseconds
+    advance()
+  }
+  function advanceUntil(condition, limit = 2900) {
+    for (let i = 0; i < limit && !condition(); i++) advance()
+    assert.ok(condition(), 'The expected game state was not reached before the tick limit')
+  }
+  return { game, advance, advanceUntil, elapse, link, join, input, hold, click, checkpoint }
+}
+
+function door(id) {
+  const { x, z, d } = crewHomes[id].building
+  return { x, z: z - d / 2 - 0.75 }
+}
+
+test('one player turns in at their door and advances to dawn', (t) => {
+  const h = setup(t, {
+    players: [player(0, door(0))],
+    arrange: (save) => { save.islandTime = daySeconds * 0.68 },
+  })
+  const a = h.join(tokens[0])
+  assert.ok(atHomeDoor(a.player))
+  assert.match(actionHint(a.state, a.player)[1], /Turn in/)
+  a.request('interact')
+  h.advance()
+  assert.equal(a.state.weather.hour, 6)
+  assert.equal(a.player.sleeping, false)
+})
+
+test('two connected players must turn in, and a waiting player can cancel', (t) => {
+  const h = setup(t, {
+    players: [player(0, door(0)), player(1, door(1))],
+    arrange: (save) => { save.islandTime = daySeconds * 0.73 },
+  })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  a.request('interact')
+  h.advance()
+  assert.equal(a.player.sleeping, true)
+  assert.match(actionHint(a.state, a.player)[1], /Waiting/)
+  assert.ok(isNight(b.state.weather.hour))
+  a.request('interact')
+  h.advance()
+  assert.equal(a.player.sleeping, false)
+  a.request('interact')
+  h.input(a, { z: -1 })
+  h.advance()
+  assert.equal(a.player.sleeping, false)
+  h.input(a)
+  a.request('interact')
+  b.request('interact')
+  h.advance()
+  assert.deepEqual(a.state.weather, b.state.weather)
+  assert.equal(b.state.weather.hour, 6)
+  assert.equal(b.player.sleeping, false)
+  a.request('interact')
+  h.advance()
+  assert.equal(a.player.sleeping, false)
+})
+
+test('an occupied crew slot is protected, reconnects, and keeps its profile after expiry', (t) => {
+  const h = setup(t)
+  const invalid = h.link()
+  invalid.emit('message', Buffer.from('{'))
+  invalid.emit('message', Buffer.from('null'))
+  invalid.request('interact')
+  invalid.request('join', { token: 'invalid' })
+  assert.equal(invalid.messages.length, 0)
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  assert.equal(h.join(tokens[0]).messages[0].type, 'duplicate')
+  assert.equal(h.join(tokens[2]).messages[0].type, 'full')
+  assert.match(actionHint(a.state, a.player)[1], /starter tools/)
+  a.request('interact')
+  a.request('appearance', { appearance: { uniform: 'angler', skin: 'deep' } })
+  a.request('input', { input: null })
+  h.advance()
+  assert.equal(a.player.equipped, 'fishing-rod')
+  assert.deepEqual(a.player.appearance, { uniform: 'default', skin: 'deep' })
+  assert.equal(a.state.players.length, 2)
+  a.close()
+  assert.equal(h.join(tokens[0]).player.inventory.length, 3)
+  b.close()
+  h.advance(363)
+  assert.equal(h.game.snapshotForSave().crew.find(({ token }) => token === tokens[1]).reserved, false)
+  const restored = h.join(tokens[1])
+  assert.equal(restored.player.id, 1)
+  assert.equal(restored.player.connected, true)
+})
+
+test('markets sell only owned goods, consume coins for seeds and protect locked uniforms', (t) => {
+  const h = setup(t, { players: [player(0, market, { goods: { fish: 2, carrots: 1 } }), player(1)] })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  assert.match(actionHint(a.state, a.player)[1], /Sell for 7/)
+  a.request('buy-seed')
+  a.request('interact')
+  a.request('interact')
+  b.request('buy-seed')
+  a.request('buy-seed')
+  a.request('buy-angler')
+  a.request('buy-angler')
+  a.request('appearance', { appearance: { uniform: 'angler', skin: 12 } })
+  h.advance()
+  assert.deepEqual(a.player.goods, { fish: 0, carrots: 0 })
+  assert.equal(a.player.coins, 3)
+  assert.equal(a.player.seeds, 1)
+  assert.equal(b.player.seeds, 0)
+  assert.equal(a.player.appearance.uniform, 'angler')
+  assert.equal(a.messages.filter(({ type }) => type === 'market-sale').length, 1)
+  assert.ok(h.checkpoint.mock.callCount() > 0)
+})
+
+test('rain waters a shared plot, repeated crops grow from zero, and harvest is awarded once', (t) => {
+  const plot = farmPlots[0]
+  const h = setup(t, {
+    players: [
+      player(0, plot, { seeds: 2 }),
+      player(1, plot, { inventory: ['hoe', 'watering-can'], equipped: 'hoe' }),
+    ],
+    arrange: (save) => { save.islandTime = daySeconds * 0.18 },
+  })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  h.click(b)
+  assert.equal(a.state.farm[0], 'tilled')
+  b.request('interact')
+  h.advance()
+  assert.equal(a.state.farm[0], 'tilled')
+  a.request('interact')
+  h.advance()
+  assert.equal(b.state.farm[0], 'planted')
+  h.advanceUntil(() => b.state.farm[0] !== 'planted')
+  assert.ok(a.state.weather.rain > 0.35)
+  assert.equal(b.state.farm[0], 'watered')
+  h.advanceUntil(() => b.state.farm[0] !== 'watered')
+  a.request('interact')
+  b.request('interact')
+  h.advance()
+  assert.equal(a.player.goods.carrots + b.player.goods.carrots, 1)
+  assert.equal(a.state.farm[0], 'grass')
+  h.click(b)
+  a.request('interact')
+  h.advance(60)
+  assert.equal(a.player.seeds, 0)
+  assert.equal(b.state.farm[0], 'watered')
+  assert.ok(h.game.snapshotForSave().growth[0] < 3)
+  h.advanceUntil(() => b.state.farm[0] !== 'watered')
+  b.request('interact')
+  h.advance()
+  assert.equal(b.player.goods.carrots, 1)
+})
+
+test('hand watering starts growth and darkness pauses it', (t) => {
+  const h = setup(t, {
+    players: [player(0, farmPlots[3], { inventory: ['watering-can'], equipped: 'watering-can' })],
+    arrange: (save) => { save.world.farm[3] = 'planted'; save.islandTime = daySeconds * 0.67 },
+  })
+  const a = h.join(tokens[0])
+  h.click(a)
+  h.advance(100)
+  assert.equal(a.state.farm[3], 'watered')
+  assert.equal(h.game.snapshotForSave().growth[3], 0)
+})
+
+function cast(h, client, heading) {
+  h.input(client)
+  client.request('primary', { phase: 'start' })
+  h.hold(client, 26)
+  assert.ok(client.player.charge.power > 0.9)
+  client.request('primary', { phase: 'release', aim: heading })
+  h.advance()
+}
+
+test('dock fishing synchronizes a bite, lets the player reel and rewards the landed fish', (t) => {
+  const point = { x: -44, z: -36.7 }
+  const h = setup(t, { players: [player(0, point, { inventory: ['fishing-rod'], equipped: 'fishing-rod' })] })
+  const a = h.join(tokens[0])
+  cast(h, a, 0)
+  assert.ok(a.messages.some(({ result }) => result === 'dry-cast'))
+  cast(h, a, Math.PI)
+  assert.ok(a.player.casting.bobber.z < point.z)
+  h.hold(a, 110)
+  assert.match(actionHint(a.state, a.player)[1], /reel/)
+  assert.equal(a.player.goods.fish, 0)
+  let reeling = false
+  for (let i = 0; i < 690 && a.player.casting; i++) {
+    h.input(a)
+    const desired = !a.player.casting.fight.pulling
+    if (desired !== reeling) a.request('primary', { phase: desired ? 'start' : 'release' })
+    reeling = desired
+    h.advance()
+  }
+  assert.equal(a.player.goods.fish, 1)
+  assert.ok(a.messages.some(({ result }) => result === 'caught'))
+})
+
+test('a bite is independent of the cast meter and walking retrieves the line', (t) => {
+  const h = setup(t, {
+    players: [player(0, { x: -44, z: -36.7 }, { inventory: ['fishing-rod'], equipped: 'fishing-rod' })],
+    random: () => 1,
+  })
+  const a = h.join(tokens[0])
+  cast(h, a, Math.PI)
+  h.hold(a, 111)
+  assert.ok(a.messages.some(({ result }) => result === 'no-bite'))
+  assert.equal(a.player.goods.fish, 0)
+  cast(h, a, Math.PI)
+  h.hold(a, 2, { x: 1 })
+  assert.equal(a.player.casting, null)
+})
+
+test('two players board a skiff, and paddling retrieves the other player’s line', (t) => {
+  const shore = { x: -46.7, z: -33.9 }
+  const rod = { inventory: ['fishing-rod'], equipped: 'fishing-rod' }
+  const h = setup(t, { players: [player(0, shore, rod), player(1, shore, rod)] })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  assert.equal(actionHint(a.state, a.player)[1], 'Board skiff')
+  a.request('seat'); b.request('seat')
+  h.advance()
+  assert.equal(a.player.seat, 'port')
+  assert.equal(b.player.seat, 'starboard')
+  cast(h, a, skiffStart.heading)
+  h.hold(b, 15, { z: 1 })
+  assert.equal(a.player.casting, null)
+  assert.ok(b.state.skiff.speed > 0)
+  h.click(b)
+  assert.ok(b.messages.some(({ result }) => result === 'boat-moving'))
+  b.request('seat')
+  h.advance()
+  assert.equal(b.player.seat, 'starboard')
+  h.advance(50)
+  b.request('seat')
+  h.advance()
+  assert.equal(b.player.seat, null)
+  assert.ok(b.player.y < 1 && b.player.y > waterLevel - 0.55)
+})
+
+test('short throws use physical cargo and the truck keeps it when the crew boards', (t) => {
+  const h = setup(t, {
+    players: [player(0, offset(truckStart, 0, -4.8)), player(1, offset(truckStart, 2.1, 0.9))],
+    arrange: (save) => { save.world.items[0].holder = 0 },
+  })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  a.request('seat')
+  h.advance()
+  assert.equal(a.player.seat, null)
+  a.request('primary', { phase: 'start' })
+  h.advance()
+  assert.ok(a.player.charge.power < 0.1)
+  a.request('primary', { phase: 'cancel' })
+  h.advance()
+  assert.equal(b.state.items[0].holder, 0)
+  h.click(a, truckStart.heading)
+  h.advance(90)
+  assert.equal(b.state.items[0].onBed, true)
+  b.request('seat')
+  h.advance()
+  assert.equal(b.player.seat, 'driver')
+  h.hold(b, 45, { z: 1, careful: true })
+  assert.ok(b.state.truck.x > truckStart.x)
+  assert.equal(a.state.items[0].onBed, true)
+  h.advance(40)
+  b.request('seat')
+  h.advance()
+  assert.equal(b.player.seat, null)
+})
+
+test('placing cargo, delivering all crates, spraying the fire, and replaying work across clients', (t) => {
+  const h = setup(t, {
+    players: [player(0, town), player(1, { x: lookout.x + 2, z: lookout.z + 1 })],
+    arrange: (save) => {
+      save.world.items.slice(0, 3).forEach((item, i) => Object.assign(item, { ...town, x: town.x - 1 + i, y: 0.46 }))
+      Object.assign(save.world.items[3], { x: lookout.x + 1, z: lookout.z + 1 })
+    },
+  })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  b.request('interact')
+  h.advance()
+  assert.equal(b.state.items[3].holder, null)
+  for (let i = 0; i < 3; i++) {
+    a.request('interact')
+    h.advance()
+    assert.equal(a.state.items.some(({ holder }) => holder === 0), true)
+    a.request('interact')
+    h.advance()
+  }
+  assert.equal(b.state.mission, 'fire')
+  assert.equal(b.player.coins, jobPay.crate * 3 + jobPay.delivery)
+  b.request('interact')
+  h.advance()
+  assert.match(actionHint(b.state, b.player)[1], /spray/)
+  b.request('primary', { phase: 'start' })
+  h.hold(b, 170)
+  assert.equal(a.state.mission, 'complete')
+  assert.equal(a.state.fire, 0)
+  assert.equal(a.player.coins, jobPay.crate * 3 + jobPay.delivery + jobPay.fire)
+  assert.equal(b.player.coins, a.player.coins)
+  a.request('reset')
+  h.advance()
+  assert.equal(b.state.mission, 'delivery')
+  assert.equal(a.state.fire, 1)
+})
+
+test('a saved night, held equipment and inventory resume after recreating the host', (t) => {
+  const h = setup(t, {
+    players: [player(0, door(0), { coins: 6, seeds: 2, goods: { fish: 2, carrots: 3 } })],
+    arrange: (save) => {
+      save.islandTime = daySeconds * 0.8
+      save.world.farm[2] = 'watered'
+      save.growth[2] = 9
+      save.world.items[0].holder = 0
+    },
+  })
+  h.join(tokens[0])
+  const save = h.game.snapshotForSave()
+  const restarted = createGame({ save })
+  const a = new GameClient()
+  t.after(() => a.close())
+  restarted.connect(a)
+  a.request('join', { token: tokens[0] })
+  restarted.tick()
+  assert.ok(isNight(a.state.weather.hour))
+  assert.equal(a.player.coins, 6)
+  assert.equal(a.player.seeds, 2)
+  assert.equal(a.state.items[0].holder, 0)
+  assert.equal(a.state.farm[2], 'watered')
+  assert.equal(restarted.snapshotForSave().growth[2], 9)
+  assert.equal(chargePower('throw', 3), 1)
+})
+
+test('a skiff seat survives a slower reload while the other player paddles', (t) => {
+  const h = setup(t, {
+    players: [player(0, skiffStart, { seat: 'port' }), player(1, skiffStart, { seat: 'starboard' })],
+  })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  b.close()
+  h.elapse(45_000)
+  h.hold(a, 100, { z: 1 })
+  const restored = h.join(tokens[1])
+  assert.equal(restored.player.seat, 'starboard')
+  assert.equal(restored.player.swimming, false)
+  assert.ok(Math.hypot(restored.player.x - restored.state.skiff.x, restored.player.z - restored.state.skiff.z) < 0.6)
+})
+
+test('a player who resumes in deep water can swim or respawn without losing progress', (t) => {
+  const deep = { x: -47, z: -38 }
+  const h = setup(t, {
+    players: [player(0, deep, { y: groundHeight(deep), seeds: 1, coins: 3, inventory: ['fishing-rod'],
+      equipped: 'fishing-rod', goods: { carrots: 1, fish: 2 } })],
+    arrange: (save) => { save.world.items[0].holder = 0 },
+  })
+  const a = h.join(tokens[0])
+  assert.ok(waterDepth(deep) > maxWadeDepth)
+  assert.equal(a.player.swimming, true)
+  assert.ok(a.player.y > groundHeight(deep))
+  assert.match(actionHint(a.state, a.player)[1], /Swim/)
+  h.hold(a, 75, { z: 1 })
+  assert.equal(a.player.swimming, false)
+  a.request('respawn')
+  h.advance()
+  assert.equal(a.player.x, spawns[0].x)
+  assert.equal(a.player.z, spawns[0].z)
+  assert.equal(a.state.items[0].holder, null)
+  assert.deepEqual(a.player.goods, { carrots: 1, fish: 2 })
+  assert.equal(a.player.coins, 3)
+  assert.equal(a.player.seeds, 1)
+})
+
+test('crew names and discoveries appear in snapshots and saves', (t) => {
+  const region = northernRegions[0]
+  const h = setup(t, { players: [player(0, region.site), player(1)] })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  a.request('crew-name', { name: '  Lina   Moss  ' })
+  h.input(a)
+  h.advance()
+  assert.equal(b.state.players[0].name, 'Lina Moss')
+  assert.deepEqual(a.player.discoveries, [region.id])
+  assert.deepEqual(b.player.discoveries, [])
+  assert.deepEqual(h.game.snapshotForSave().crew[0].player.discoveries, [region.id])
+})

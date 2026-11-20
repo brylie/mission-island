@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#152122" />
+    <link rel="icon" href="data:," />
+    <title>Asset Workbench · Mission Island</title>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="identity">
+        <span class="brand-symbol" aria-hidden="true"></span>
+        <div><small>MISSION ISLAND</small><h1>Asset Workbench</h1></div>
+      </div>
+      <a href="/" class="game-link">Open game <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <main class="workbench">
+      <aside class="library" aria-label="Asset library">
+        <h2>Library</h2>
+        <div id="asset-list"></div>
+      </aside>
+
+      <section class="workspace" aria-labelledby="asset-title">
+        <header class="asset-header">
+          <div>
+            <p id="asset-group"></p>
+            <h2 id="asset-title"></h2>
+            <p id="asset-description"></p>
+          </div>
+        </header>
+
+        <div class="viewport" id="viewport">
+          <canvas id="stage" tabindex="0" aria-label="3D asset preview. Drag to orbit, scroll to zoom, or right-drag to pan."></canvas>
+          <div class="viewport-note" aria-hidden="true"><span>DRAG</span> Orbit <span>SCROLL</span> Zoom <span>RIGHT-DRAG</span> Pan</div>
+          <div class="stage-error" id="stage-error" role="alert" hidden></div>
+        </div>
+
+        <div class="bottom">
+          <div id="playback" class="playback" aria-label="Animation playback" hidden>
+            <div class="play-buttons">
+              <button id="play" type="button">Pause</button>
+              <button id="restart" type="button" aria-label="Restart animation" title="Restart animation">↺</button>
+              <button id="step" type="button" aria-label="Step one frame" title="Step one frame">▹│</button>
+            </div>
+            <label class="timeline"><span class="sr-only">Animation time</span><input id="time" type="range" min="0" max="4" step="0.01" value="0" /></label>
+            <output id="timecode" for="time">0.00 s</output>
+            <label class="playback-rate"><span class="sr-only">Playback speed</span><select id="rate"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
+          </div>
+          <div class="geometry"><span id="geometry"></span><span id="grid-size"></span></div>
+        </div>
+      </section>
+
+      <aside class="inspector" aria-label="Preview controls">
+        <section>
+          <h2>View</h2>
+          <div class="views" aria-label="Camera presets">
+            <button type="button" data-angle="perspective">3D</button><button type="button" data-angle="front">Front</button>
+            <button type="button" data-angle="side">Side</button><button type="button" data-angle="top">Top</button>
+          </div>
+          <label class="row"><span>Lighting</span><select id="lighting">
+            <option value="daylight">Daylight</option><option value="overcast">Overcast</option><option value="golden">Golden hour</option>
+          </select></label>
+          <div class="display-options">
+            <label><input id="grid" type="checkbox" checked /> Grid</label>
+            <label><input id="wireframe" type="checkbox" /> Wireframe</label>
+            <label><input id="turntable" type="checkbox" /> Turntable</label>
+          </div>
+        </section>
+        <section id="asset-inspector" hidden>
+          <div class="section-heading"><h2>Asset settings</h2><button type="button" id="reset" class="reset">Reset</button></div>
+          <div id="asset-controls"></div>
+        </section>
+        <section id="landscape-layout" hidden>
+          <h2>Layout draft</h2>
+          <label class="row"><span>Object</span><select id="landscape-kind">
+            <option value="player">Test player</option><option value="crate">Crate</option>
+            <option value="rock">Rock</option><option value="tree">Tree</option><option value="truck">Flatbed truck</option>
+          </select></label>
+          <button type="button" id="landscape-add">Place at focus</button>
+          <label class="row"><span>Selected</span><select id="landscape-selected"></select></label>
+          <div class="layout-actions">
+            <button type="button" id="landscape-move">Move to focus</button>
+            <button type="button" id="landscape-remove">Remove</button>
+            <button type="button" id="landscape-save">Save layout</button>
+            <button type="button" id="landscape-export">Export JSON</button>
+          </div>
+          <p id="landscape-help">Select a test player and focus the canvas. Use WASD, Shift, and Space to test the terrain.</p>
+          <div id="landscape-status" role="status"></div>
+        </section>
+        <section>
+          <h2>Geometry QA</h2>
+          <button type="button" id="check-z-fighting" disabled>Check z-fighting</button>
+          <div id="z-fighting-result" role="status"></div>
+        </section>
+        <section class="source">
+          <h2>Source</h2>
+          <code id="source-file"></code>
+        </section>
+      </aside>
+    </main>
+    <script type="module" src="/src/workbench/main.ts"></script>
+  </body>
+</html>

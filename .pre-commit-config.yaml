@@ -1,0 +1,29 @@
+minimum_prek_version: "0.4.8"
+default_install_hook_types: [pre-commit, pre-push]
+default_stages: [pre-commit]
+repos:
+  - repo: builtin
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: detect-private-key
+      - id: end-of-file-fixer
+  - repo: local
+    hooks:
+      - id: mission-island-quality
+        name: Mission Island quality gate
+        entry: npm run quality
+        language: system
+        stages: [pre-commit]
+        pass_filenames: false
+        always_run: true
+      - id: mission-island-audit
+        name: Audit npm dependencies
+        entry: npm run audit
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true

@@ -1,0 +1,158 @@
+import { Body, Box, Heightfield, SAPBroadphase, Sphere, Vec3, World } from 'cannon-es'
+import type { Item } from '../src/protocol.ts'
+import { buildings, chestSize, crateSize, crateStarts, crewHomes, dockEndZ, harborDock,
+  localPoint, truckBed, truckSideRails, truckTailLip } from '../src/world.ts'
+import type { Point, Pose } from '../src/world.ts'
+import { islandRocks, islandTrees, northernProps, treeTrunkRadius } from '../src/scenery.ts'
+import { coastPoint, groundHeight, maxWadeDepth, shoreProfile, waterDepth, waterLevel } from '../src/terrain.ts'
+
+export function createCargoPhysics() {
+  const world = new World({ gravity: new Vec3(0, -9.82, 0) })
+  world.broadphase = new SAPBroadphase(world)
+  world.defaultContactMaterial.friction = 0.4
+  world.defaultContactMaterial.restitution = 0.14
+
+  // Cover the whole island, including the wading shelf and a margin for falling cargo.
+  const outerRadius = shoreProfile[shoreProfile.length - 1].radius
+  const coast = Array.from({ length: 256 }, (_, i) => coastPoint(i * Math.PI / 128, outerRadius))
+  const west = Math.floor(Math.min(...coast.map(({ x }) => x))) - 2
+  const east = Math.ceil(Math.max(...coast.map(({ x }) => x))) + 2
+  const north = Math.ceil(Math.max(...coast.map(({ z }) => z))) + 2
+  const south = Math.floor(Math.min(...coast.map(({ z }) => z))) - 2
+  const heights = Array.from({ length: east - west + 1 }, (_, i) =>
+    Array.from({ length: north - south + 1 }, (_, j) => groundHeight({ x: west + i, z: north - j })))
+  const ground = new Body({ position: new Vec3(west, 0, north), shape: new Heightfield(heights, { elementSize: 1 }) })
+  ground.quaternion.setFromEuler(-Math.PI / 2, 0, 0)
+  world.addBody(ground)
+  for (const building of buildings) {
+    world.addBody(new Body({
+      position: new Vec3(building.x, building.h / 2, building.z),
+      shape: new Box(new Vec3(building.w / 2, building.h / 2, building.d / 2)),
+    }))
+  }
+  for (const { chest } of crewHomes) {
+    world.addBody(new Body({
+      position: new Vec3(chest.x, groundHeight(chest) + chestSize.height / 2, chest.z),
+      shape: new Box(new Vec3(chestSize.width / 2, chestSize.height / 2, chestSize.depth / 2)),
+    }))
+  }
+  world.addBody(new Body({
+    position: new Vec3(harborDock.x, harborDock.top - 0.1, (harborDock.firstZ + dockEndZ) / 2),
+    shape: new Box(new Vec3(harborDock.width / 2, 0.1, (harborDock.firstZ - dockEndZ + harborDock.plankDepth) / 2)),
+  }))
+
+  for (const tree of islandTrees) {
+    const halfHeight = tree.height / 4
+    world.addBody(new Body({
+      position: new Vec3(tree.x, groundHeight(tree) + halfHeight, tree.z),
+      shape: new Box(new Vec3(treeTrunkRadius, halfHeight, treeTrunkRadius)),
+    }))
+  }
+  for (const rock of islandRocks) {
+    world.addBody(new Body({
+      position: new Vec3(rock.x, rock.ground + rock.size * 0.12, rock.z),
+      shape: new Sphere(rock.size * 0.43),
+    }))
+  }
+  for (const { x, y, z, size, angle, tree } of northernProps) {
+    const body = new Body({
+      position: new Vec3(x, y + size * (tree ? 1 : 0.27), z),
+      shape: new Box(tree ? new Vec3(0.12, size, 0.13) : new Vec3(size * 0.84, size * 0.4, size * 0.62)),
+    })
+    if (!tree) body.quaternion.setFromEuler(0, angle, 0)
+    world.addBody(body)
+  }
+
+  const truck = new Body({ type: Body.KINEMATIC })
+  truck.addShape(new Box(new Vec3(truckBed.width / 2, 0.095, truckBed.length / 2)),
+    new Vec3(0, truckBed.top - 0.095, truckBed.center))
+  truck.addShape(new Box(new Vec3(1.18, 0.84, 0.8)), new Vec3(0, 1.5, 1.05))
+  truck.addShape(new Box(new Vec3(1.14, 0.25, 2.85)), new Vec3(0, 0.74, 0))
+  // Each side board has gaps smaller than a crate, so a box represents the rail as a whole.
+  for (const side of [-1, 1]) {
+    const { x, thickness, height } = truckSideRails
+    truck.addShape(new Box(new Vec3(thickness / 2, height / 2, truckBed.length / 2)),
+      new Vec3(side * x, truckBed.top + height / 2, truckBed.center))
+  }
+  truck.addShape(new Box(new Vec3(truckBed.width / 2, truckTailLip.height / 2, truckTailLip.thickness / 2)),
+    new Vec3(0, truckBed.top + truckTailLip.height / 2, truckTailLip.z))
+  world.addBody(truck)
+
+  const half = crateSize / 2
+  const crates = crateStarts.map(() => new Body({
+    mass: 5,
+    shape: new Box(new Vec3(half, half, half)),
+    linearDamping: 0.14,
+    angularDamping: 0.24,
+  }))
+
+  function remove(item: Item) {
+    if (item.kind !== 'crate') return
+    const body = crates[item.id]
+    if (body.world) world.removeBody(body)
+    item.onBed = false
+  }
+
+  function release(item: Item, point: Point, y = groundHeight(point) + half + 0.025, onBed = false) {
+    if (item.kind !== 'crate') return
+    const body = crates[item.id]
+    body.position.set(point.x, y, point.z)
+    body.quaternion.setFromEuler(0, item.heading, 0)
+    body.velocity.setZero()
+    body.angularVelocity.setZero()
+    body.force.setZero()
+    body.torque.setZero()
+    body.aabbNeedsUpdate = true
+    if (!body.world) world.addBody(body)
+    Object.assign(item, { x: point.x, z: point.z, y, rotation: null, onBed })
+  }
+
+  function launch(item: Item, point: Point, y: number, power: number) {
+    release(item, point, y)
+    const body = crates[item.id]
+    const speed = 2.2 + power * 6.4
+    body.velocity.set(Math.sin(item.heading) * speed, 3.4 + power * 1.1, Math.cos(item.heading) * speed)
+    body.angularVelocity.set(0.16, 0.32 + power * 0.52, 0.18)
+  }
+
+  function restore(item: Item) {
+    if (item.kind !== 'crate' || item.holder !== null || item.delivered) return
+    const rotation = item.rotation
+    release(item, item, item.y, item.onBed)
+    if (rotation) {
+      crates[item.id].quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w)
+      item.rotation = rotation
+    }
+  }
+
+  function step(items: Item[], before: Pose, after: Pose, dt: number) {
+    const beforeHeight = groundHeight(before)
+    const afterHeight = groundHeight(after)
+    truck.position.set(before.x, beforeHeight, before.z)
+    truck.quaternion.setFromEuler(0, before.heading, 0)
+    truck.velocity.set((after.x - before.x) / dt, (afterHeight - beforeHeight) / dt, (after.z - before.z) / dt)
+    truck.angularVelocity.set(0, (after.heading - before.heading) / dt, 0)
+    truck.aabbNeedsUpdate = true
+    world.step(dt / 2)
+    world.step(dt / 2)
+
+    for (const item of items) {
+      if (item.kind !== 'crate' || item.holder !== null || item.delivered) continue
+      const { position, quaternion, velocity } = crates[item.id]
+      if ((waterDepth(position) > maxWadeDepth && position.y < waterLevel) || position.y < -4) {
+        release(item, crateStarts[item.id])
+        continue
+      }
+      const relative = localPoint(after, position)
+      const bedClearance = position.y - afterHeight - truckBed.top
+      const onBed = bedClearance > 0.22 && bedClearance < 0.76 &&
+        Math.abs(velocity.y - truck.velocity.y) < 1.9 &&
+        Math.abs(relative.x) < truckBed.width / 2 + 0.24 &&
+        Math.abs(relative.z - truckBed.center) < truckBed.length / 2 + 0.22
+      const { x, y, z, w } = quaternion
+      Object.assign(item, position, { onBed, rotation: { x, y, z, w } })
+    }
+  }
+
+  return { release, launch, remove, restore, step }
+}

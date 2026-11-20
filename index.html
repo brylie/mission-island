@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#172f31" />
+    <title>Mission Island</title>
+    <link rel="icon" href="data:," />
+    <style>
+      html { background: #172f31; }
+      body[data-booting] { margin: 0; }
+      body[data-booting] > :not(#boot-status) { visibility: hidden; }
+      #boot-status { position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; padding: 24px;
+        background: #172f31; color: #fff3d3; text-align: center; font: 600 15px system-ui, sans-serif; }
+      #boot-status[hidden] { display: none; }
+      #boot-status h1 { margin: 0 0 10px; font-size: 26px; letter-spacing: .025em; }
+      .boot-activity { width: 145px; height: 4px; margin: 4px auto 0; border-radius: 4px; background: #4b685e; overflow: hidden; }
+      .boot-activity::after { content: ""; display: block; width: 48px; height: 100%; border-radius: inherit;
+        background: #f7bc66; animation: boot-progress 1.4s ease-in-out infinite alternate; }
+      @keyframes boot-progress { from { transform: translateX(0); } to { transform: translateX(97px); } }
+      @media (prefers-reduced-motion: reduce) { .boot-activity::after { animation: none; } }
+      #boot-status button { margin: 12px auto 0; padding: 6px 12px; color: #fff3d3; background: #355451;
+        border: 1px solid #a6c1b1; border-radius: 5px; font: inherit; cursor: pointer; }
+    </style>
+  </head>
+  <body data-booting>
+    <div id="boot-status">
+      <h1>Mission Island</h1>
+      <p id="boot-message" role="status">Loading the island…</p>
+      <div class="boot-activity" aria-hidden="true"></div>
+      <button id="boot-retry" type="button" hidden>Reload</button>
+    </div>
+    <script>
+      const bootMessage = document.getElementById('boot-message')
+      const retry = document.getElementById('boot-retry')
+      if (sessionStorage.getItem('mission-island-reloading')) bootMessage.textContent = 'Reloading the island…'
+      retry.addEventListener('click', () => location.reload())
+      setTimeout(() => {
+        if (document.body.hasAttribute('data-booting')) retry.hidden = false
+      }, 6000)
+    </script>
+    <header class="masthead">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true"><i></i></div>
+        <div><strong>MISSION ISLAND</strong><small>ISLAND SERVICE CREW</small></div>
+      </div>
+      <div class="top-actions">
+        <div class="connection" role="status"><i id="status-light"></i><span id="status">Connecting</span></div>
+        <div id="island-clock" class="connection">06:00 · Daylight</div>
+        <button id="camera" class="camera" type="button" aria-pressed="false"><span>Follow crew</span><kbd>C</kbd></button>
+        <button id="options-button" class="camera" type="button" aria-haspopup="dialog" aria-controls="options-dialog"><span>Options</span><kbd>O</kbd></button>
+      </div>
+    </header>
+
+    <main class="playfield" id="playfield">
+      <canvas id="island" aria-label="Third-person view of Mission Island"></canvas>
+      <div id="markers" aria-hidden="true"></div>
+      <div class="reticle" aria-hidden="true"></div>
+      <div id="charge-meter" class="charge-meter" hidden>
+        <label id="charge-label" for="charge-power"></label>
+        <progress id="charge-power" max="1" value="0"></progress>
+      </div>
+
+      <section class="mission" aria-label="Shared mission">
+        <div class="eyebrow"><span class="mission-mark" aria-hidden="true"></span><span id="mission-label">MISSION 01 / 02</span></div>
+        <h1 id="mission-title">Harbor delivery</h1>
+        <p id="mission-description">Bring three supply crates from Harbor Depot to Seabrook.</p>
+        <div id="mission-progress" class="progress">
+          <div id="progress-track" class="progress-track" role="progressbar" aria-label="Crates delivered" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0">
+            <i></i><i></i><i></i>
+          </div>
+          <span id="progress-label">0 / 3 delivered</span>
+        </div>
+        <p id="mission-step" class="mission-step">Pick up crates and load the flatbed.</p>
+        <button id="reset" type="button" hidden>Play again <span aria-hidden="true">↻</span></button>
+      </section>
+
+      <aside class="crew" aria-label="Crew and map">
+        <div class="crew-heading"><span>CREW</span><strong id="crew-count">0 / 2</strong></div>
+        <div class="crew-person" data-online="false" id="crew-0"><i></i><span>Crew 1</span><small></small></div>
+        <div class="crew-person" data-online="false" id="crew-1"><i></i><span>Crew 2</span><small></small></div>
+        <button id="edit-crew-name" class="edit-crew-name" type="button" hidden>Set name</button>
+        <div id="fishing-wallet" class="fishing-wallet" hidden></div>
+        <div id="tool-slots" class="tool-slots" aria-label="Inventory" hidden></div>
+        <div class="minimap">
+          <canvas id="map" width="328" height="192" aria-label="Map with crew, truck and skiff positions"></canvas>
+          <span aria-hidden="true">N</span>
+        </div>
+      </aside>
+
+      <div class="prompt" id="prompt" hidden><kbd id="prompt-key"></kbd><span id="prompt-action"></span></div>
+      <div class="notice" id="notice" hidden role="status"></div>
+      <footer class="controls" aria-label="Keyboard controls">
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Walk / drive</span></div>
+        <div><kbd>E</kbd><span>Interact</span></div>
+        <div><kbd>F</kbd><span>Enter / exit</span></div>
+        <div><kbd>Shift</kbd><span>Sprint / slow drive</span></div>
+        <div><kbd>Space</kbd><span>Jump</span></div>
+        <div><kbd>Left click</kbd><span>Reach / throw / use tool</span></div>
+        <div id="orbit-control">
+          <div class="mouse-look-active"><kbd>Mouse</kbd><span>Look around</span><kbd>Esc</kbd><span>Release</span></div>
+          <div class="mouse-look-paused"><kbd>WASD</kbd><span>Resume mouse look</span></div>
+        </div>
+        <div id="spray-control" hidden><kbd>R</kbd><span>Spray</span></div>
+      </footer>
+    </main>
+
+    <dialog id="options-dialog" class="options-dialog" aria-labelledby="options-title">
+      <form method="dialog">
+        <h2 id="options-title">Options</h2>
+        <fieldset>
+          <legend>Mouse look</legend>
+          <label><input id="invert-horizontal" type="checkbox" checked autofocus /> Invert horizontal look</label>
+          <label><input id="invert-vertical" type="checkbox" checked /> Invert vertical look</label>
+        </fieldset>
+        <fieldset class="appearance">
+          <legend>Crew appearance</legend>
+          <label><span>Name</span><input id="crew-name" type="text" maxlength="24" autocomplete="nickname" placeholder="Crew name" /></label>
+          <label><span>Uniform</span><select id="uniform" aria-describedby="uniform-progress"></select></label>
+          <label><span>Skin tone</span><select id="skin-tone"></select></label>
+          <p id="uniform-progress" aria-live="polite"></p>
+          <div class="outfit-shop"><span id="coin-balance">0 coins</span><button id="buy-angler" type="button" disabled>Buy Harbor angler</button></div>
+        </fieldset>
+        <button id="respawn" class="respawn" type="button" disabled>Respawn at home</button>
+        <button type="submit">Done</button>
+      </form>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

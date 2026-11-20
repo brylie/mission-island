@@ -1,0 +1,352 @@
+import { Engine } from '@babylonjs/core/Engines/engine'
+import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
+import { Color3 } from '@babylonjs/core/Maths/math.color'
+import { CreateLines } from '@babylonjs/core/Meshes/Builders/linesBuilder'
+import type { Viewport } from '@babylonjs/core/Maths/math.viewport'
+import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { Scene } from '@babylonjs/core/scene'
+import { createAtmosphere } from './island-atmosphere'
+import { inSkiff } from './actions'
+import { castTravelSeconds } from './charged-actions'
+import { farm, market } from './farm'
+import { createExtinguisherSpray } from './extinguisher-spray'
+import { createLookoutFire } from './fire-effect'
+import { createIslandCamera } from './island-camera'
+import {
+  createCrew, createFarmTools, createFlatbed, createSkiffGear, createSupply, playerColors, poseCrew,
+  poseFlatbed, poseFloating, poseSkiffCrew,
+} from './island-assets'
+import { createIslandLighting, createMeshFactory } from './island-meshes'
+import { createIslandWorld } from './island-world'
+import { createObjectiveMarker } from './objective-marker'
+import { northernRegions } from './scenery'
+import type { Player, Snapshot } from './protocol'
+import { groundHeight, walkingHeight, waterLevel } from './terrain'
+import { nightLighting } from './weather'
+import {
+  beach, crateStarts, distance, extinguisherStarts, forest, harbor, lookout, town,
+} from './world'
+import type { Pose } from './world'
+
+const sun = '#ffd56b'
+
+export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) {
+  const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
+  const scene = new Scene(engine)
+  const islandCamera = createIslandCamera(scene, canvas)
+
+  const lighting = createIslandLighting(scene)
+  const { shadows } = lighting
+  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight)
+  const meshes = createMeshFactory(scene, shadows)
+  const { water, homeChests, showFarm, boat, buoys, northernScenery, gulls, fishSchools, lights } = createIslandWorld(meshes)
+
+  const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
+  const dropPad = createObjectiveMarker(meshes, town, 8.3, '#67ecdc')
+  const firePad = createObjectiveMarker(meshes, lookout, 9.7, '#ff956b')
+  const equipmentPad = createObjectiveMarker(meshes, { x: 21, z: 22 }, 5.3, '#ffae77')
+
+  const flatbed = createFlatbed(meshes)
+  const truck = flatbed.root
+  truck.setEnabled(false)
+  let wheelRotation = 0
+
+  const crew = playerColors.map((_, id) => {
+    const character = createCrew(meshes, id)
+    character.root.setEnabled(false)
+    return character
+  })
+  const cycles = crew.map(() => 0)
+  const farmTools = crew.map((character) => createFarmTools(meshes, character))
+  const skiffGear = crew.map((character) => {
+    const gear = createSkiffGear(meshes, character)
+    const bobber = meshes.sphere(0, 0, 0, 0.135, 0.135, 0.135, '#ff845e', undefined, false)
+    const linePoints = [Vector3.Zero(), Vector3.Zero(), Vector3.Zero()]
+    const line = CreateLines('Fishing line', { points: linePoints, updatable: true }, scene)
+    line.color = Color3.FromHexString('#eee7c7')
+    line.isPickable = false
+    line.isVisible = false
+    bobber.isVisible = false
+    return { gear, bobber, linePoints, line, tip: new Vector3(0, -1.425, 0),
+      seats: [new Vector3(-0.44, -0.39, 0.25), new Vector3(0.44, -0.39, 0.25)] }
+  })
+  const items = [...crateStarts, ...extinguisherStarts].map((_, id) => {
+    const node = createSupply(meshes, id < crateStarts.length ? 'crate' : 'extinguisher')
+    node.setEnabled(false)
+    return node
+  })
+
+  const sprays = extinguisherStarts.map(() => createExtinguisherSpray(scene))
+  const fire = createLookoutFire(scene, lookout.x, lookout.z)
+
+  const landmarks = [
+    { point: { x: harbor.x + 1.3, z: harbor.z - 5 }, title: 'Harbor Depot', kind: 'harbor', height: 4 },
+    { point: town, title: 'Seabrook', kind: 'town', height: 2.6 },
+    { point: forest, title: 'Pinewoods', kind: 'forest', height: 7 },
+    { point: beach, title: 'Driftwood Beach', kind: 'beach', height: 2.2 },
+    { point: lookout, title: 'Forest Lookout', kind: 'lookout', height: 4.3 },
+    { point: farm, title: 'Island Farm', kind: 'farm', height: 1.32 },
+    { point: market, title: 'Seabrook Market', kind: 'market', height: 3.32 },
+    { point: { x: 21, z: 22 }, title: 'Fire Supplies', kind: 'equipment', height: 2.4 },
+  ]
+  const places = [
+    ...landmarks.map((place) => ({ ...place, discovery: '', mapOnly: false })),
+    ...northernRegions.map((region) => ({ point: region.site, title: region.name, kind: 'discovery',
+      height: 2.8, discovery: region.id, mapOnly: false })),
+    ...northernRegions.map((region) => ({ point: region.at, title: region.biome, kind: 'biome',
+      height: 5, discovery: '', mapOnly: true })),
+  ].map((place) => {
+    const label = document.createElement('span')
+    label.className = `place place--${place.kind}`
+    label.textContent = place.title
+    markers.append(label)
+    return { ...place, label }
+  })
+  const tags = playerColors.map((_, id) => {
+    const tag = document.createElement('span')
+    tag.className = `crew-tag crew-tag--${id}`
+    markers.append(tag)
+    return tag
+  })
+
+  function locate(element: HTMLElement, viewport: Viewport, x: number, y: number, z: number) {
+    const point = Vector3.Project(new Vector3(x, y, z), Matrix.IdentityReadOnly,
+      scene.getTransformMatrix(), viewport)
+    element.style.left = `${point.x / viewport.width * 100}%`
+    element.style.top = `${point.y / viewport.height * 100}%`
+    element.style.visibility = point.z >= 0 && point.z <= 1 ? 'visible' : 'hidden'
+  }
+
+  const moveTo = (node: TransformNode, pose: Pose, y: number, factor: number) => {
+    if (!node.isEnabled() || Math.hypot(node.position.x - pose.x, node.position.z - pose.z) > 14) {
+      node.position.set(pose.x, y, pose.z)
+      node.rotation.y = pose.heading
+    } else {
+      node.position.x += (pose.x - node.position.x) * factor
+      node.position.y += (y - node.position.y) * factor
+      node.position.z += (pose.z - node.position.z) * factor
+      const turn = pose.heading - node.rotation.y
+      node.rotation.y += Math.atan2(Math.sin(turn), Math.cos(turn)) * factor
+    }
+    node.setEnabled(true)
+  }
+
+  let last: Snapshot | undefined
+  let viewer = -1
+  let follow = false
+  let time = 0
+  function updateScenery(state: Snapshot, factor: number, delta: number) {
+    showFarm(state.farm)
+    for (const [i, { hinge }] of homeChests.entries()) {
+      const withdrawn = state.players.find((player) => player.id === i)?.inventory.length
+      hinge.rotation.x += ((withdrawn ? 0.9 : 0) - hinge.rotation.x) * factor
+    }
+    const wasDriving = truck.isEnabled()
+    const { x, z } = truck.position
+    const heading = truck.rotation.y
+    moveTo(truck, state.truck, groundHeight(state.truck) + 0.06, factor)
+    truck.position.y = Math.max(truck.position.y, groundHeight(truck.position) + 0.06)
+    const dx = truck.position.x - x
+    const dz = truck.position.z - z
+    if (wasDriving && Math.hypot(dx, dz) < 4) {
+      wheelRotation += (dx * Math.sin(heading) + dz * Math.cos(heading)) / 0.48
+    }
+    const steering = wasDriving && delta > 0 ? (truck.rotation.y - heading) / delta * 0.27 : 0
+    poseFlatbed(flatbed, wheelRotation, Math.max(-0.45, Math.min(0.45, steering)))
+  }
+
+  function updateFishingLine(player: Player, kit: typeof skiffGear[number], gripIndex: number) {
+    const { gear, bobber, line, linePoints, tip } = kit
+    if (player.casting && gripIndex >= 0) {
+      const { bobber: target, elapsed } = player.casting
+      Vector3.TransformCoordinatesToRef(tip, gear[gripIndex].rod.computeWorldMatrix(true), linePoints[0])
+      const flight = Math.min(1, elapsed / castTravelSeconds)
+      const progress = player.casting.fight?.progress ?? 0
+      const pulling = player.casting.fight?.pulling
+      linePoints[2].set(target.x + (player.x - target.x) * progress * 0.88,
+        waterLevel + 0.025 + Math.sin(time * (pulling ? 13 : 5)) * (pulling ? 0.09 : 0.025),
+        target.z + (player.z - target.z) * progress * 0.88)
+      Vector3.LerpToRef(linePoints[0], linePoints[2], flight, bobber.position)
+      bobber.position.y += Math.sin(flight * Math.PI) * 1.25
+      Vector3.LerpToRef(linePoints[0], bobber.position, 0.55, linePoints[1])
+      linePoints[1].y -= 0.13 * flight
+      linePoints[2].copyFrom(bobber.position)
+      CreateLines('Fishing line', { points: linePoints, instance: line })
+    }
+  }
+
+  function updateCharacters(state: Snapshot, factor: number, delta: number) {
+    for (const [id, character] of crew.entries()) {
+      const node = character.root
+      const player = state.players.find((entry) => entry.id === id)
+      const { gear, bobber, line, seats } = skiffGear[id]
+      const boating = player?.connected && inSkiff(player.seat)
+      bobber.isVisible = line.isVisible = Boolean(player?.connected && player.casting)
+      if (!player?.connected || (player.seat && !boating)) {
+        node.setEnabled(false)
+        continue
+      }
+      const seatIndex = player.seat === 'port' ? 0 : 1
+      const rod = player.equipped === 'fishing-rod' && !player.rowing
+      const gripIndex = boating ? seatIndex : rod ? 0 : -1
+      gear.forEach((tool, index) => {
+        tool.grip.setEnabled(gripIndex === index)
+        tool.rod.setEnabled(rod)
+        tool.paddle.setEnabled(!rod)
+      })
+      const { hoe, can } = farmTools[id]
+      hoe.setEnabled(!boating && player.equipped === 'hoe')
+      can.setEnabled(!boating && player.equipped === 'watering-can')
+      const wasVisible = node.isEnabled()
+      character.setAppearance(player.appearance)
+      character.blink(time)
+      if (boating) {
+        const side = seatIndex === 0 ? -1 : 1
+        Vector3.TransformCoordinatesToRef(seats[seatIndex], boat.computeWorldMatrix(true), node.position)
+        node.rotation.copyFrom(boat.rotation)
+        node.setEnabled(true)
+        const stroke = player.rowing ? Math.sin(time * 5.2 + id * 2.2) : 0
+        poseSkiffCrew(character, stroke, side, rod, wasVisible ? factor : 1)
+      } else {
+        node.rotation.x = player.swimming ? 0.95 : 0
+        node.rotation.z = 0
+        const { x, z } = node.position
+        moveTo(node, player, player.y + 0.05, factor)
+        if (player.grounded && !player.onBed && !player.swimming) {
+          node.position.y = Math.max(node.position.y, walkingHeight(node.position) + 0.05)
+        }
+        const traveled = Math.hypot(node.position.x - x, node.position.z - z)
+        const step = wasVisible && traveled < 2 ? traveled : 0
+        const held = state.items.find((item) => item.holder === id)
+        cycles[id] += step / 4.8
+        const stride = delta > 0 ? Math.min(0.92, step / delta * 0.072) : 0
+        const winding = player.charge?.kind === 'throw' ? player.charge.power : 0
+        poseCrew(character, cycles[id], stride, !player.grounded, held?.kind ?? (player.equipped ? 'tool' : undefined),
+          Number(Boolean(player.reaching || held?.spraying || player.casting)),
+          wasVisible ? 1 - Math.exp(-delta * 16) : 1, winding, player.throwing)
+      }
+      if (rod && gripIndex >= 0) {
+        const { grip, rod } = gear[gripIndex]
+        grip.computeWorldMatrix(true)
+        const lean = player.casting?.fight?.pulling ? 0.21 : 0.07
+        rod.rotationQuaternion = Quaternion.Inverse(grip.absoluteRotationQuaternion)
+          .multiply(Quaternion.RotationYawPitchRoll(player.heading, lean, Math.PI))
+      }
+      updateFishingLine(player, skiffGear[id], gripIndex)
+
+    }
+  }
+
+  function updateEquipment(state: Snapshot, factor: number) {
+    for (const item of state.items) {
+      const node = items[item.id]
+      const holder = state.players.find((player) => player.id === item.holder)
+      const spray = sprays[item.id - crateStarts.length]
+      const locked = item.kind === 'extinguisher' && state.mission !== 'fire'
+      if (item.delivered || holder?.seat || locked) {
+        node.setEnabled(false)
+        spray?.update(node, false)
+        continue
+      }
+      const smooth = node.isEnabled()
+      moveTo(node, item, item.y, factor)
+      if (item.rotation) {
+        const { x, y, z, w } = item.rotation
+        const target = new Quaternion(x, y, z, w)
+        node.rotationQuaternion = smooth && node.rotationQuaternion
+          ? Quaternion.Slerp(node.rotationQuaternion, target, factor)
+          : target
+      } else {
+        node.rotationQuaternion = null
+        node.rotation.y = item.heading
+      }
+      spray?.update(node, item.spraying === true)
+    }
+  }
+
+  function updateLabels(local: Player | undefined, close: boolean, viewport: Viewport) {
+    for (const place of places) {
+      const range = close && local ? distance(place.point, local) : 0
+      const opacity = Math.min(1, Math.max(0, (80 - range) / 38))
+      place.label.hidden = opacity === 0 || (place.mapOnly && close) ||
+        Boolean(place.discovery && !local?.discoveries?.includes(place.discovery)) ||
+        (place.kind === 'equipment' && last?.mission !== 'fire')
+      place.label.style.opacity = String(opacity)
+      place.label.classList.toggle('place--active',
+        (last?.mission === 'delivery' && (place.kind === 'harbor' || place.kind === 'town')) ||
+        (last?.mission === 'fire' && (place.kind === 'lookout' || place.kind === 'equipment')))
+      locate(place.label, viewport, place.point.x, groundHeight(place.point) + place.height, place.point.z)
+    }
+    for (const [id, tag] of tags.entries()) {
+      const actor = last?.players.find((player) => player.id === id)
+      const visible = actor?.connected
+      tag.hidden = !visible
+      if (!visible) continue
+      tag.textContent = actor.name || `Crew ${id + 1}`
+      const boating = inSkiff(actor.seat)
+      const position = boating || !actor.seat ? crew[id].root.position : truck.position
+      const spread = !close && actor.seat && last?.players.every((player) => player.seat &&
+        inSkiff(player.seat) === boating) ? (id - 0.5) * 5 : 0
+      locate(tag, viewport, position.x + spread, position.y + (boating ? 2.35 : actor.seat ? 3.9 : 2.8), position.z)
+    }
+  }
+
+  engine.runRenderLoop(() => {
+    const delta = Math.min(engine.getDeltaTime() / 1000, 0.06)
+    const factor = 1 - Math.exp(-delta * 22)
+    time += delta
+    if (last?.skiff) moveTo(boat, last.skiff, waterLevel, factor)
+    poseFloating(boat, time, 0.5, 0.048)
+    buoys.forEach((buoy, index) => poseFloating(buoy, time, index * 1.67))
+    gulls(time)
+    fishSchools(time)
+    if (last) {
+      updateScenery(last, factor, delta)
+      updateCharacters(last, factor, delta)
+      updateEquipment(last, factor)
+      pickupPad.setEnabled(last.mission === 'delivery')
+      dropPad.setEnabled(last.mission === 'delivery')
+      firePad.setEnabled(last.mission === 'fire')
+      equipmentPad.setEnabled(last.mission === 'fire')
+      fire.pose(time, last.mission === 'fire' ? last.fire : 0)
+    } else {
+      firePad.setEnabled(false)
+      equipmentPad.setEnabled(false)
+    }
+    const local = last?.players.find((player) => player.id === viewer && player.connected)
+    const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? truck : crew[local.id].root) : undefined
+    const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
+    const camera = islandCamera.update(subject, Boolean(local?.seat), aspect, delta)
+    northernScenery.update(camera.position, Boolean(subject))
+    const weather = last?.weather ?? { hour: 6, rain: 0 }
+    const strength = nightLighting(weather.hour)
+    flatbed.setLights(truck.isEnabled() ? strength : 0)
+    lights(camera.position, strength)
+    const light = atmosphere.update(time, weather, camera.position, Boolean(subject))
+    water.pose(time, light, weather.rain)
+    scene.render()
+    const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
+    updateLabels(local, Boolean(subject), viewport)
+  })
+  const resize = new ResizeObserver(() => engine.resize())
+  resize.observe(canvas)
+
+  return {
+    update(snapshot: Snapshot, id: number, trackPlayer: boolean) {
+      last = snapshot
+      viewer = id
+      follow = trackPlayer
+    },
+    walkInput: (x: number, z: number) => islandCamera.walkInput(x, z),
+    aimHeading: islandCamera.aimHeading,
+    captureMouse: islandCamera.captureMouse,
+    releaseMouse: islandCamera.releaseMouse,
+    setMouseInversion: (horizontal: boolean, vertical: boolean) => islandCamera.setMouseInversion(horizontal, vertical),
+    dispose() {
+      islandCamera.dispose()
+      resize.disconnect()
+      engine.dispose()
+      markers.replaceChildren()
+    },
+  }
+}
