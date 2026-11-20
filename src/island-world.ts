@@ -15,6 +15,7 @@ import { createFerryTerminal } from './island-terminal'
 import { createStarterWildlife, createUnderstory, createWildflowers } from './island-wildlife'
 import { jobBoard } from './jobs'
 import { footpaths, road, walkways } from './routes'
+import { createShellglassTide } from './shellglass-art'
 import { islandRocks, islandTrees } from './scenery'
 import type { SiteFeature } from './worlds/site-feature'
 import { placeSiteFeatures } from './assets/site-props'
@@ -52,7 +53,9 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   }
   createDock(meshes)
   createFerryTerminal(meshes)
-  placeSiteFeatures(meshes, (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site), walkingHeight)
+  const features = (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site)
+  placeSiteFeatures(meshes, features, walkingHeight)
+  const shellglass = createShellglassTide(meshes, features.find(feature => feature.site === 'shellglass' && feature.model === 'tide-staff'))
   for (const point of shellRocks) {
     const { size, heading } = point
     const rock = meshes.sphere(point.x, groundHeight(point) + .055, point.z, size, .23, size * .65, '#798b80')
@@ -90,12 +93,11 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const phenomena = createPhenomena(meshes.scene, [
     { ...pool, name: 'Mirror Pool dawn mist', kind: 'mist', y: waterLevel, extent: 22, seed: 5182 },
     { name: 'Fernfall spray', kind: 'spray', x: streamX(89.2), y: waterLevel + .04, z: 89.2, extent: 2.7, seed: 2961 },
-    { name: 'Shellglass plankton', kind: 'glow', ...tidePool, y: waterLevel, extent: 1.7, seed: 6787 },
   ])
   const lights = createStreetLights(meshes)
 
   beachUmbrellas.forEach(({ x, z }, index) => createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))
 
   meshes.finishScenery()
-  return { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights, marketShower }
+  return { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights, marketShower, shellglass }
 }

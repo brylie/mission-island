@@ -25,5 +25,6 @@ export function createFieldScenery(meshes: MeshFactory, site: FieldSite) {
     world.wildlife(frame, school(frame.time))
     world.phenomena(frame)
     world.water.pose(frame.time, light, frame.weather.rain)
+    world.shellglass(frame, light)
   }
 }
