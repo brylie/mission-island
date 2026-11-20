@@ -1,3 +1,4 @@
+import { previewDriftwood } from './driftwood-preview'
 import { createIslandWorld } from '../island-world'
 import { createLandscape } from '../second-island/landscape'
 import { createScenery } from '../second-island/scenery'
@@ -17,10 +18,11 @@ export function createFieldScenery(meshes: MeshFactory, site: FieldSite) {
       water(frame.time, light)
     }
   }
+  const school = previewDriftwood()
   const world = createIslandWorld(meshes, { ...site, features: draftFeatures() })
   return (frame: WildlifeFrame, light: number) => {
     world.northernScenery.update(frame.camera, true)
-    world.wildlife(frame)
+    world.wildlife(frame, school(frame.time))
     world.phenomena(frame)
     world.water.pose(frame.time, light, frame.weather.rain)
   }

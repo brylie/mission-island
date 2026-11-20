@@ -13,7 +13,7 @@ import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { readStorage, writeStorage } from '../browser-storage'
 import { entries as initialEntries } from './catalog'
-import type { Control, Values } from './subject'
+import { restoreOptions, type Control, type Values } from './subject'
 import type { FieldSite } from './field-site'
 import { createStage } from './stage'
 import type { Angle, CameraState } from './stage'
@@ -127,23 +127,6 @@ function remember() {
     const link = biomeLink(location.href, readRecipe(values))
     if (link !== location.href) history.replaceState(null, '', link)
   }
-}
-
-function restoreOptions(controls: readonly Control[] = [], previous: Values = {}): Values {
-  return Object.fromEntries(controls.map((control) => {
-    const value = previous[control.key]
-    if (control.type === 'select' && typeof value === 'string' && Object.hasOwn(control.choices, value)) {
-      return [control.key, value]
-    }
-    if ((control.type === 'range' || control.type === 'number') && typeof value === 'number' && Number.isFinite(value)) {
-      return [control.key, Math.min(control.max, Math.max(control.min, value))]
-    }
-    if (control.type === 'color' && typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)) {
-      return [control.key, value]
-    }
-    if (control.type === 'checkbox' && typeof value === 'boolean') return [control.key, value]
-    return [control.key, control.value]
-  }))
 }
 
 function showFieldSwitch() {
@@ -272,6 +255,10 @@ function refreshActions() {
     button.disabled = !action.enabled(values)
     button.addEventListener('click', () => {
       action.run(values)
+      if (action.restart) {
+        seekTo(0)
+        rebuild(stage?.getCamera())
+      }
       renderAssetControls()
       remember()
       panel.querySelector<HTMLButtonElement>('button:enabled')?.focus()
@@ -351,6 +338,8 @@ function loadAsset(camera?: CameraState) {
   element('furnishing-status').textContent = ''
   if (furnishing) element<HTMLAnchorElement>('return-to-landscape').href = '#landscape?site=' + furnishing.site
   values = restoreOptions(asset.controls, previous)
+  if (asset.id === 'fish-school' && typeof previous?.route === 'string') values.route = previous.route
+  element('return-to-biome').hidden = asset.id !== 'fish-school'
   if (asset.landscape && typeof previous?.clockStart === 'number' && Number.isFinite(previous.clockStart)) {
     values.clockStart = previous.clockStart
   }

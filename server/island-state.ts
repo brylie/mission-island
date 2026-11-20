@@ -1,3 +1,4 @@
+import type { DriftwoodFrame } from '../src/simulation/driftwood-school.ts'
 import { farmPlots } from '../src/farm.ts'
 import type { createJuniperHabitat } from '../src/juniper-habitat.ts'
 import type { Snapshot } from '../src/protocol.ts'
@@ -10,6 +11,7 @@ import type { IslandSave } from './save.ts'
 export function restoreIsland(
   physics: Pick<ReturnType<typeof createCargoPhysics>, 'parkTruck' | 'restore' | 'release'>,
   juniper: ReturnType<typeof createJuniperHabitat>,
+  driftwood: DriftwoodFrame,
   save?: IslandSave,
 ) {
   const islandTime = save?.islandTime ?? 0
@@ -19,7 +21,7 @@ export function restoreIsland(
     mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...structuredClone(save?.world),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
     weather: weatherAt(islandTime), islandTime,
-    juniper: juniper(0, weatherAt(islandTime), []),
+    driftwood, juniper: juniper(0, weatherAt(islandTime), []),
     jobs: structuredClone(save?.world.jobs ?? { active: null, completed: 0 }),
   }
   state.skiff.speed = 0

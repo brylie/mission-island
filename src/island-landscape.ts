@@ -1,3 +1,4 @@
+import { dressStrand } from './assets/strand'
 import { juniperCenter } from './juniper-habitat'
 import { onBeachTowel } from './worlds/starter/sites'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
@@ -29,12 +30,15 @@ export function createIslandTerrain(meshes: MeshFactory) {
       for (let j = 0; j <= segments; j++) {
         const angle = angles[j]
         const { x, z } = coastPoint(angle, ring)
-        positions.push(x, groundHeight({ x, z }), z)
+        const height = groundHeight({ x, z })
+        positions.push(x, height, z)
         if (sand) {
           uvs.push(angle / (Math.PI * 2) * 96, (ring - 0.905) * 32)
           const bed = Math.max(0, 1 - Math.hypot((x - tidePool.x) / 4.2, (z - tidePool.z) / 3.5) ** 3)
           const seam = .86 + .14 * Math.sin(x * 3.2 + z * 2.1)
-          colors.push(1 - .60 * bed * seam, 1 - .39 * bed * seam, 1 - .36 * bed, 1)
+          const wet = Math.max(0, Math.min(1, (waterLevel - height) / .65))
+          colors.push((1 - .60 * bed * seam) * (1 - wet * .43), (1 - .39 * bed * seam) * (1 - wet * .11),
+            (1 - .36 * bed) * (1 + wet * .24), 1)
         } else {
           uvs.push(x / 4.5, z / 4.5)
           const point = { x, z }
@@ -72,6 +76,9 @@ export function createIslandTerrain(meshes: MeshFactory) {
     return Array.from({ length: steps }, (_, j) => radius + (next - radius) * j / steps)
   })
   band('Beach and seabed', beachRings, true)
+  const banks = [5.10, 5.18, 5.26, 5.36, 5.44, 5.53, 5.62].map((a, i) => coastPoint(a, i % 2 ? .972 : 1.012))
+  dressStrand(meshes, 'Driftwood', banks, 3125, groundHeight, (p, y) =>
+    coastRadius(p) > .935 && y > waterLevel - .55 && !onBeachTowel(p))
   const water = createOceanMaterial(meshes.scene)
   const y = waterLevel
   const ocean = meshes.surface('Ocean', [-850, y, -850, 850, y, -850, 850, y, 850, -850, y, 850],

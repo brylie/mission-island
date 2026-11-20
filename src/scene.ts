@@ -374,7 +374,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const threats = last ? [...crewInWater, last.skiff] : crewInWater
     const frame = { time: ambientTime, delta, weather, camera: camera.position, threats }
     if (last?.juniper) juniper(last.juniper, time, factor)
-    wildlife(frame)
+    wildlife(frame, last?.driftwood)
     phenomena(frame)
     marketShower(ambientTime, camera.position, marketRunoffAt(clock))
     const strength = nightLighting(weather.hour)

@@ -1,3 +1,5 @@
+import { createDriftwoodFish } from './driftwood-fish'
+import type { DriftwoodFrame } from './simulation/driftwood-school'
 import { onBeachTowel } from './worlds/starter/sites'
 import type { MeshFactory } from './island-meshes'
 import { distanceToRoute, footpaths, road } from './routes'
@@ -76,7 +78,8 @@ export function createUnderstory(meshes: MeshFactory) {
 }
 
 export function createStarterWildlife(meshes: MeshFactory) {
-  const schools = createSchools(meshes, [-2.17, -0.89, 1.19].map((angle) => {
+  const driftwood = createDriftwoodFish(meshes)
+  const schools = createSchools(meshes, [-2.17, 1.19].map((angle) => {
     const off = coastPoint(angle)
     const length = Math.hypot(off.x, off.z)
     return {
@@ -97,7 +100,8 @@ export function createStarterWildlife(meshes: MeshFactory) {
       roost, range: 23, color: '#f5e8d2', count: 5 },
     { center: { x: -13, y: 5, z: 24 }, landing: roost, roost, range: 9, color: '#6f677e', count: 3, bat: true },
   ])
-  return (frame: WildlifeFrame) => {
+  return (frame: WildlifeFrame, school: DriftwoodFrame | undefined) => {
+    driftwood(frame, school)
     schools(frame)
     flocks(frame)
   }

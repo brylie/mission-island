@@ -1,3 +1,4 @@
+import { previewDriftwood } from './driftwood-preview'
 import { landscapeDuration } from '../playtest-link'
 import { createJuniperHabitat } from '../juniper-habitat'
 import { poseFloating } from '../assets/waterfront'
@@ -23,6 +24,7 @@ export const landscapeStudy: Entry = {
     range('shaftIntensity', 'Sun shaft intensity (%)', 100, 0, 150, 5),
   ],
   create(meshes) {
+    const school = previewDriftwood()
     const world = createIslandWorld(meshes, { features: draftFeatures() })
     let habitat = createJuniperHabitat()
     let previousSky = ''
@@ -36,7 +38,7 @@ export const landscapeStudy: Entry = {
       if (previousSky !== sky) habitat = createJuniperHabitat()
       previousSky = sky
       world.juniper(habitat(time, weather, []), time)
-      world.wildlife(frame)
+      world.wildlife(frame, school(time))
       world.phenomena(frame)
       world.marketShower(frame.time, camera, marketRunoffPreview(rain, Number(settings.marketRainAge)))
       world.lights(camera, nightLighting(Number(settings.hour)))

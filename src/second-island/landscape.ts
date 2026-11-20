@@ -1,3 +1,6 @@
+import { MultiMaterial } from '@babylonjs/core/Materials/multiMaterial'
+import { SubMesh } from '@babylonjs/core/Meshes/subMesh'
+import { dressStrand } from '../assets/strand'
 import type { ScenerySolids } from './walking'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import type { MeshFactory } from '../island-meshes'
@@ -34,23 +37,40 @@ function terrainColor(x: number, y: number, z: number) {
 function createTerrain(meshes: MeshFactory) {
   const height = heightGrid(), tile = 24
   const material = meshes.paint('#ffffff')
+  const shore = new MultiMaterial('Sandspit beach and upland', meshes.scene)
+  shore.subMaterials = [material, meshes.paintSurface('sand', '#ffffff')]
   const { minX, minZ } = waterBounds
   for (let iz = 0; iz < rows - 1; iz += tile) for (let ix = 0; ix < cols - 1; ix += tile) {
     const ex = Math.min(ix + tile, cols - 1), ez = Math.min(iz + tile, rows - 1)
     const x0 = minX + ix * gridStep, z0 = minZ + iz * gridStep
     if (!couldSeeTerrain(x0, z0, ex - ix, ez - iz)) continue
     const positions: number[] = [], indices: number[] = [], colors: number[] = []
+    const sand: number[] = [], uvs: number[] = []
     const stride = ex - ix + 1
     for (let z = iz; z <= ez; z++) for (let x = ix; x <= ex; x++) {
       const px = minX + x * gridStep, pz = minZ + z * gridStep, y = height[z * cols + x]
       positions.push(px, y, pz)
+      uvs.push((px - pz) / 3.5, (pz + px * .72) / 3.5)
       const rgb = terrainColor(px, y, pz)
+      const byPier = px >= -255 && px <= -200 && pz < -250
+      if (byPier && y < 0) {
+        const wet = Math.min(1, -y / .65)
+        rgb[0] *= 1 - .43 * wet
+        rgb[1] *= 1 - .11 * wet
+        rgb[2] *= 1 + .24 * wet
+      }
       colors.push(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, 1)
       if (x === ex || z === ez) continue
       const a = (z - iz) * stride + x - ix
-      indices.push(a, a + 1, a + stride, a + 1, a + stride + 1, a + stride)
+      const faces = byPier && y < 1.5 && y > -4 ? sand : indices
+      faces.push(a, a + 1, a + stride, a + 1, a + stride + 1, a + stride)
     }
-    const mesh = meshes.surface(`Ground ${ix},${iz}`, positions, indices, material)
+    const mesh = meshes.surface(`Ground ${ix},${iz}`, positions, indices.concat(sand), sand.length ? shore : material, undefined, sand.length ? uvs : undefined)
+    if (sand.length) {
+      mesh.releaseSubMeshes()
+      if (indices.length) new SubMesh(0, 0, positions.length / 3, 0, indices.length, mesh)
+      new SubMesh(1, 0, positions.length / 3, indices.length, sand.length, mesh)
+    }
     mesh.setVerticesData(VertexBuffer.ColorKind, colors)
     // Identical central differences across tile borders keep lighting continuous.
     const normals: number[] = []
@@ -217,6 +237,9 @@ export function clearAirfield(x: number, z: number) { return airfieldDistance(x,
 
 export function createLandscape(meshes: MeshFactory, solids: ScenerySolids) {
   createTerrain(meshes)
+  const banks = [[-243, -268], [-239, -270], [-235, -276], [-231, -276], [-225, -283], [-218, -286]]
+    .map(([x, z]) => ({ x, z }))
+  dressStrand(meshes, 'Sandspit', banks, 781, p => groundHeight(p.x, p.z), (_p, y) => y > -.55 && y < .55)
   const water = createWater(meshes)
   for (const route of [...routes, ferryTrack, fishingPier]) createRoad(meshes, route, solids)
   for (const walk of discoveryWalks) {
