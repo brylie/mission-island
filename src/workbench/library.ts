@@ -3,7 +3,7 @@ export const workspaces = {
   World: ['Island', 'Routes'],
   Ecology: ['Habitats', 'Animals', 'Plants'],
   Construction: ['Starter buildings', 'Saltwind buildings', 'Props', 'Site furnishings'],
-  Surfaces: ['Materials', 'Water and shore', 'Vegetation and terrain', 'Weather and light'],
+  Surfaces: ['Materials', 'Water and shore', 'Vegetation and terrain', 'Built surfaces', 'Weather and light'],
   Effects: ['Water', 'Weather and air', 'Vegetation and loose ground', 'Jobs'],
   Characters: ['Wardrobe', 'NPC interactions'],
   Vehicles: ['Starter vehicles', 'Saltwind vehicles'],

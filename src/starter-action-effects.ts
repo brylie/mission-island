@@ -4,6 +4,7 @@ import type { Scene } from '@babylonjs/core/scene'
 import { inSkiff } from './actions'
 import type { createCrew, createFarmTools, createSkiffGear } from './assets/crew'
 import { farmPlots } from './farm'
+import { wakeStrength } from './interactive-shaders/skiff-wake'
 import { juniperCenter, juniperLayout } from './juniper-habitat'
 import type { ParticleSource } from './particle-motion'
 import type { CultivationCue, Player, Snapshot } from './protocol'
@@ -31,13 +32,16 @@ interface Rigs {
   ferns: readonly Point[]
 }
 
-function wake(effects: Effects, boat: TransformNode, speed: number) {
-  if (Math.abs(speed) < .5) return
-  const yaw = boat.rotation.y
+function wake(effects: Effects, boat: TransformNode, skiff: Snapshot['skiff']) {
+  const speed = Math.abs(skiff.speed)
+  const pose = { x: boat.position.x, z: boat.position.z, heading: boat.rotation.y }
+  if (speed < .5 || !wakeStrength(skiff, pose)) return
+  const yaw = pose.heading + (skiff.speed < 0 ? Math.PI : 0)
   for (const side of [-1, 1]) {
-    const source = offset({ x: boat.position.x, z: boat.position.z, heading: yaw }, side * .65, -2.33)
-    effects.emit('skiff-wake-foam', String(side), { ...source, y: surface, yaw: yaw - .48 * side, speed: .73 + Math.abs(speed) * .065 },
-      { strength: Math.min(.91, Math.abs(speed) * .17), footprint: .89 })
+    const source = offset({ ...pose, heading: yaw }, side * .65, -2.33)
+    if (waterDepth(source) <= 0) continue
+    effects.emit('skiff-wake-foam', String(side), { ...source, y: surface, yaw: yaw - .48 * side, speed: .73 + speed * .065 },
+      { strength: Math.min(.91, speed * .17), footprint: .89 })
   }
 }
 
@@ -144,7 +148,7 @@ export function createStarterActionEffects(scene: Scene, rigs: Rigs) {
           effects.emit('rain-streaks', 'crew', { x: local.x, z: local.z, y: Math.max(waterLevel, walkingHeight(local)) + 4.1,
             floor: Math.max(waterLevel, walkingHeight(local)) + .03 }, { strength: state.weather.rain * .48, footprint: 1.34 })
         }
-        wake(effects, rigs.boat, state.skiff.speed)
+        wake(effects, rigs.boat, state.skiff)
         wheelEffects(effects, state.truck, state.weather.rain)
         for (const player of state.players) {
           if (!player.connected || player.sleeping) {

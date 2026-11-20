@@ -55,7 +55,7 @@ export const dockStudy: Entry = {
   id: 'dock', name: 'Harbor dock', group: 'Props', source: 'src/assets/waterfront.ts',
   description: 'Inspect the dock planks and posts from above or alongside.',
   ground: { height: waterLevel, color: surfaces.water.color },
-  create: createDock,
+  create(meshes) { createDock(meshes) },
 }
 
 export const buoyStudy: Entry = {

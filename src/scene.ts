@@ -37,11 +37,9 @@ import { crateStarts, distance, extinguisherStarts, harbor, lookout, town } from
 
 const sun = '#ffd56b'
 
-function waterThreats(state: Snapshot | undefined) {
-  if (!state) return []
-  const wading = state.players.filter(player => player.connected && !player.seat &&
-    (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04)))
-  return [...wading, state.skiff]
+function swimmers(snapshot?: Snapshot) {
+  return snapshot?.players.filter((player) => player.connected && !player.seat &&
+    (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04))) ?? []
 }
 
 function sceneWeather(fixed?: Weather, live?: Weather) {
@@ -357,7 +355,9 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const clock = last?.islandTime ?? time
     const timeError = clock - ambientTime
     ambientTime = Math.abs(timeError) > .25 ? clock : ambientTime + delta * (1 + timeError * 4)
-    const frame = { time: field?.time ?? ambientTime, delta, ...climate, camera: camera.position, threats: waterThreats(last) }
+    const crewInWater = swimmers(last)
+    const threats = last ? [...crewInWater, last.skiff] : crewInWater
+    const frame = { time: field?.time ?? ambientTime, delta, ...climate, camera: camera.position, threats, seek: Boolean(field) }
     if (last?.juniper) juniper(last.juniper, time, factor)
     const runoff = field ? marketRunoffPreview(weather.rain, dryMarketRainAge) : marketRunoffAt(clock)
     const livePlayer = !field && subject ? local : undefined
@@ -366,7 +366,11 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const strength = nightLighting(weather.hour)
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
     const light = atmosphere.update(field?.time ?? time, weather, camera.position, close)
-    updateEnvironment(frame, light, close, runoff, { driftwood: last?.driftwood, quality: review?.quality(), tideTime: field ? field.tideTime : clock })
+    updateEnvironment(frame, light, close, runoff, {
+      driftwood: last?.driftwood, quality: review?.quality(), tideTime: field ? field.tideTime : clock,
+      actors: { snapshot: last, waterCrew: crewInWater, inspection: field?.inspection,
+        skiffPose: { x: boat.position.x, z: boat.position.z, heading: boat.rotation.y } },
+    })
     if (review) review.render()
     else scene.render()
     const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())

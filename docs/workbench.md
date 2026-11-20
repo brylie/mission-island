@@ -7,7 +7,7 @@ Choose a workspace to narrow the library to one job. Search matches words in sub
 | World | Orbit Starter Island, jump to a landmark, place or move draft objects, walk the terrain, compare saved shots, or launch the Saltwind tour. |
 | Ecology | Scrub hare and fox poses. Compare clover and tussock seeds and growth. Use the Biome Composer for feeding, pursuit, concealment and rain responses. |
 | Construction | Edit named Starter Island furnishings in place. Review Starter houses and combine Saltwind roof, tower, canopy, width and paint options at their actual addresses. |
-| Surfaces | Compare the procedural texture gallery, edit substance-specific finishes, and run [interactive shader studies](shader-studies.md) for water, vegetation and weather. |
+| Surfaces | Compare the procedural texture gallery, edit substance-specific finishes, and run [interactive shader studies](shader-studies.md) and [twenty additional studies](more-shader-studies.md) in the studio and on Starter Island. |
 | Effects | Audition 52 seeded effects at crew or truck scale. Scrub the burst, adjust the source footprint, or open the Tarnstep and Forest Lookout field setups. |
 | Characters | Try a uniform, fabric dye or cap while posing the crew. Rehearse offering, accepting and fulfilling a fish order with a stand-in shopkeeper at Seabrook Market. |
 | Vehicles | Inspect exteriors and lights. Compare vehicles on a neutral stage and at their parking or landing sites. |
