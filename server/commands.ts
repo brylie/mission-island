@@ -1,4 +1,5 @@
 import { cleanCrewName, readAppearance } from '../src/crew-appearance.ts'
+import { isClothingId } from '../src/clothing-catalog.ts'
 import { starterTools } from '../src/inventory.ts'
 import { isJobId, type JobId } from '../src/jobs.ts'
 import type { ClientMessage, Input } from '../src/protocol.ts'
@@ -51,6 +52,9 @@ export function readCrewCommand(message: Record<string, unknown>): CrewCommand |
       return { type: 'crew-name', name: cleanCrewName(message.name) }
     case 'take-job':
       return { type: 'take-job', id: isJobId(message.id) ? message.id : undefined }
+    case 'buy-clothing':
+      if (isClothingId(message.item)) return { type: message.type, item: message.item }
+      return
     case 'buy-angler':
     case 'buy-seed':
     case 'interact':

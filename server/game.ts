@@ -93,7 +93,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         equipment.equip(member, message.item)
         break
       case 'appearance':
-        setAppearance(member, message.appearance)
+        setAppearance(member.player, message.appearance, state.mission)
+        checkpoint?.()
         break
       case 'crew-name':
         member.player.name = message.name
@@ -103,8 +104,13 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         orders.buySeed(member.player)
         break
       case 'buy-angler':
-        orders.buyAngler(member.player)
+        member.notify?.({ type: 'angler-purchase', result: orders.buyClothing(member.player, 'angler') })
         break
+      case 'buy-clothing': {
+        const result = orders.buyClothing(member.player, message.item)
+        member.notify?.({ type: 'clothing-purchase', item: message.item, result })
+        break
+      }
       case 'interact':
         interactions.interact(member)
         // Save order progress, completion, and crew payouts together.

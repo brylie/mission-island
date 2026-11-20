@@ -110,7 +110,7 @@ button:focus-visible { outline: 2px solid #ffc560; outline-offset: 4px; }
 .place--lookout.place--active, .place--equipment.place--active { background: #ffae83; border-color: #ffdbc0; }
 .place--biome { background: #294d3ddd; color: #d8edc5; }
 .place--discovery { background: #d8eec5; color: #233d35; }
-.place--home, .place--chest { color: #264239; background: #fff0c2; }
+.place--home, .place--chest, .place--wardrobe, .place--clothing { color: #264239; background: #fff0c2; }
 .place--resident { color: #352c26; background: #f4ccb4; }
 .crew-tag {
   color: #173332;
@@ -284,15 +284,43 @@ kbd {
 #lan-status:not(:empty) { display: block; margin-top: 5px; font-size: 12px; }
 .options-dialog .appearance { margin-top: 12px; }
 .appearance label { justify-content: space-between; }
-.appearance select { max-width: 68%; padding: 5px 7px; color: var(--ink); background: #fffbec; border: 1px solid #c9c3ac; border-radius: 4px; font: inherit; }
-#uniform-progress { margin: 5px 0 2px; color: var(--muted); font-size: 11px; }
-#uniform-progress:empty { display: none; }
-.outfit-shop { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 12px; font-weight: 750; }
-.options-dialog .outfit-shop button { margin: 0; padding: 6px 8px; font-size: 11px; }
-.options-dialog .outfit-shop button:disabled { opacity: 0.48; }
 .options-dialog .respawn { float: left; color: #28473d; background: #e8d9b4; }
 .options-dialog .respawn:disabled { opacity: 0.55; }
 .options-dialog button { display: block; margin: 15px 0 0 auto; padding: 7px 13px; color: var(--cream); background: #31584c; border: 0; border-radius: 5px; font-size: 12px; font-weight: 780; }
+.options-dialog button:disabled { opacity: 0.52; cursor: default; }
+.options-dialog #open-wardrobe { margin: 5px 0 0; }
+
+.wardrobe-dialog { width: min(735px, calc(100% - 28px)); max-height: calc(100% - 28px); }
+.wardrobe-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+.wardrobe-stage { overflow: hidden; border-radius: 8px; background: #293d3c; color: #fff3d0; }
+.wardrobe-stage canvas { display: block; width: 100%; height: clamp(238px, 53vh, 410px); touch-action: none; }
+#wardrobe-preview-status { margin: 0; padding: 0 12px 12px; font-size: 13px; }
+.wardrobe-views, .wardrobe-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.wardrobe-views { justify-content: center; padding: 0 10px 10px; }
+.wardrobe-views button { margin: 0; background: #48665f; }
+.wardrobe-controls label { justify-content: space-between; gap: 8px; }
+.wardrobe-controls select { min-width: 0; max-width: 69%; padding: 4px 6px; color: var(--ink); background: #fffbec; border: 1px solid #c9c3ac; border-radius: 4px; font: inherit; }
+.wardrobe-controls fieldset + fieldset { margin-top: 8px; }
+.wardrobe-controls fieldset:disabled { opacity: 0.63; }
+#outfit-requirement { margin: 0 0 8px; color: var(--muted); font-size: 12px; }
+#outfit-requirement:empty, #counter-note:empty { display: none; }
+.wardrobe-actions button { margin-left: 0; }
+.wardrobe-actions [data-close] { color: var(--ink); background: #e8d9b4; }
+#clothing-counter-dialog { width: min(390px, calc(100% - 28px)); }
+.counter-account { margin-bottom: 12px; }
+.counter-account p { margin: 0 0 4px; overflow-wrap: anywhere; }
+.counter-stock { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.counter-item { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 8px 10px; border: 1px solid #dbcfaf; border-radius: 6px; }
+.counter-item img { display: block; width: clamp(64px, 23vw, 88px); height: auto; border-radius: 5px; }
+.counter-item > div { overflow-wrap: anywhere; }
+.counter-item h3 { margin: 0; font-size: 16px; }
+.options-dialog .counter-item button { margin: 5px 0 0; }
+#clothing-counter-dialog p { font-size: 13px; color: var(--muted); }
+#counter-balance { font-weight: 780; }
+@media (max-width: 610px) {
+  .wardrobe-layout { grid-template-columns: 1fr; gap: 10px; }
+  .wardrobe-stage canvas { height: 225px; }
+}
 
 .crew-guide-dialog { width: min(510px, calc(100% - 28px)); max-height: calc(100% - 30px); }
 .crew-guide-dialog h2 { margin-bottom: 12px; }
