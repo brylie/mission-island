@@ -14,6 +14,7 @@ import type { ClientMessage, FishingResult, Input, Player, ServerMessage, Snapsh
 import { footpaths, road, walkways } from './routes'
 import { northernRegions, starterDiscoveries } from './scenery'
 import { createRenderer } from './scene'
+import { bindLanInvite } from './lan-invite'
 import { bindPlaytestCopy } from './playtest-link'
 import { isNight } from './weather'
 import { crewHomes, distance, ferryTerminal, harbor, lookout, starterPay } from './world'
@@ -58,6 +59,8 @@ const orbitControl = element('orbit-control')
 const optionsButton = element<HTMLButtonElement>('options-button')
 const optionsDialog = element<HTMLDialogElement>('options-dialog')
 const crewName = element<HTMLInputElement>('crew-name')
+const joinNameDialog = element<HTMLDialogElement>('join-name-dialog')
+const joinName = element<HTMLInputElement>('join-name')
 const editCrewName = element<HTMLButtonElement>('edit-crew-name')
 const invertHorizontal = element<HTMLInputElement>('invert-horizontal')
 const invertVertical = element<HTMLInputElement>('invert-vertical')
@@ -99,6 +102,8 @@ writeStorage('sessionStorage', crewKey, token)
 if (!savedToken) writeStorage('localStorage', crewKey, token)
 const leadKey = () => `mission-island-fisher-lead-${token}`
 let leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
+const skipNameKey = () => `mission-island-skip-name-${token}`
+let offerJoinName = false
 let editingName: { id: number; token: string; name: string } | undefined
 let appearance: CrewAppearance = defaultAppearance
 let milestone = 0
@@ -415,6 +420,16 @@ function update(state: Snapshot) {
   if (player) {
     updatePersonalDisplay(state, player, earlier)
     guide.update(state, player)
+    if (offerJoinName && !document.body.hasAttribute('data-booting') && !modalOpen()) {
+      offerJoinName = false
+      if (!player.name) {
+        pauseControls()
+        joinName.value = ''
+        joinName.setCustomValidity('')
+        joinName.placeholder = `Crew ${player.id + 1}`
+        joinNameDialog.showModal()
+      }
+    }
   }
   guideButton.disabled = !player
   updateBoard(state, player)
@@ -437,6 +452,7 @@ function connect() {
     const incoming = JSON.parse(event.data) as ServerMessage
     switch (incoming.type) {
       case 'welcome':
+        offerJoinName = readStorage('localStorage', skipNameKey()) !== 'yes'
         id = incoming.id
         live = true
         respawn.disabled = false
@@ -498,6 +514,8 @@ function connect() {
   })
   socket.addEventListener('close', () => {
     live = false
+    offerJoinName = false
+    if (joinNameDialog.open) joinNameDialog.close()
     respawn.disabled = true
     writeStorage('sessionStorage', reloadKey, 'yes')
     actionFeedback = undefined
@@ -588,7 +606,7 @@ function openJobBoard() {
 }
 
 function modalOpen() {
-  return optionsDialog.open || boardDialog.open || guideDialog.open
+  return optionsDialog.open || boardDialog.open || guideDialog.open || joinNameDialog.open
 }
 
 function openGuide(talking = false) {
@@ -611,6 +629,7 @@ function toggleOptions() {
   crewName.value = editingName?.name ?? ''
   element('playtest-tools').hidden = !renderer?.playtestLink()
   optionsDialog.showModal()
+  void refreshLanInvite()
 }
 
 function saveMouseOptions() {
@@ -622,7 +641,7 @@ function saveMouseOptions() {
 applyCamera()
 window.addEventListener('keydown', (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey) return
-  if (boardDialog.open || guideDialog.open) return
+  if (boardDialog.open || guideDialog.open || joinNameDialog.open) return
   if (optionsDialog.open && event.target === crewName) return
   if (event.code === 'KeyO' && !event.repeat) {
     event.preventDefault()
@@ -723,12 +742,32 @@ cameraButton.addEventListener('click', () => {
   toggleCamera()
   cameraButton.blur()
 })
+const refreshLanInvite = bindLanInvite(optionsDialog)
 bindPlaytestCopy(() => renderer?.playtestLink())
 optionsButton.addEventListener('click', toggleOptions)
 editCrewName.addEventListener('click', () => {
   if (!optionsDialog.open) toggleOptions()
   crewName.focus()
   crewName.select()
+})
+joinName.addEventListener('input', () => joinName.setCustomValidity(''))
+element('join-name-form').addEventListener('submit', (event) => {
+  const name = cleanCrewName(joinName.value)
+  if (!name) {
+    event.preventDefault()
+    joinName.setCustomValidity('Enter a game name or choose Skip for now.')
+    joinName.reportValidity()
+    return
+  }
+  if (live) send({ type: 'crew-name', name })
+})
+function skipJoinName() {
+  writeStorage('localStorage', skipNameKey(), 'yes')
+}
+joinNameDialog.addEventListener('cancel', skipJoinName)
+element('skip-join-name').addEventListener('click', () => {
+  skipJoinName()
+  joinNameDialog.close()
 })
 function saveCrewName() {
   const original = editingName
