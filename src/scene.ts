@@ -25,7 +25,7 @@ import { createObjectiveMarker } from './objective-marker'
 import { northernRegions, starterDiscoveries } from './scenery'
 import type { Player, Snapshot } from './protocol'
 import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
-import { wheelRadius } from './truck-pose'
+import { flatbedGroundDrive } from './vehicles/flatbed'
 import { nightLighting } from './weather'
 import { marketRunoffAt } from './market-runoff'
 import {
@@ -176,7 +176,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     moveTo(truck, pose, pose.y, factor)
     truck.rotation.x += (pose.pitch - truck.rotation.x) * blend
     truck.rotation.z += (pose.roll - truck.rotation.z) * blend
-    if (!snap) wheelRotation += pose.speed * delta / wheelRadius
+    if (!snap) wheelRotation += pose.speed * delta / flatbedGroundDrive.wheels.radius
     poseFlatbed(flatbed, wheelRotation, pose.steering, pose.suspension, blend)
   }
 
