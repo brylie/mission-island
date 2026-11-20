@@ -1,4 +1,4 @@
-import { createCrew, poseCrew } from '../island-assets'
+import { createCrew, poseCrew } from '../assets/crew'
 import { jobs, orderContribution } from '../jobs'
 import { walkingHeight } from '../terrain'
 import type { Entry, Values } from './subject'

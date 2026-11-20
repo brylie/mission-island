@@ -1,9 +1,9 @@
-import { juniperSolids } from './juniper-habitat.ts'
-import { jobBoard } from './jobs.ts'
-import { beachUmbrellas, lampPosts, shellRocks, starterFeatures } from './starter-sites.ts'
-import { walkingHeight } from './terrain.ts'
-import { ferryTerminal, offset } from './world.ts'
-import type { Point } from './world.ts'
+import { juniperSolids } from '../../juniper-habitat.ts'
+import { jobBoard } from '../../jobs.ts'
+import { beachUmbrellas, lampPosts, shellRocks, starterFeatures } from './sites.ts'
+import { walkingHeight } from '../../terrain.ts'
+import { ferryTerminal, offset } from '../../world.ts'
+import type { Point } from '../../world.ts'
 
 // Local support volumes in metres. Separate surfaces preserve the seat and taller back,
 // the individual crate tiers, and the lower of the two farm barrels.

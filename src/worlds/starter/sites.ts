@@ -1,5 +1,5 @@
-import { shellglassPoint, splitstone } from './routes.ts'
-import type { SiteFeature } from './site-props.ts'
+import { shellglassPoint, splitstone } from '../../routes.ts'
+import type { SiteFeature } from '../site-feature.ts'
 
 export const ridgeViewpoint = { x: 36.5, z: 134 }
 

@@ -1,7 +1,8 @@
-import {
-  createBuoy, createDock, createHarborBoat, createHomeChest, createHouse, createRock, createRoad,
-  createSidewalk, createTrail, createTree, createUmbrella, playerColors, umbrellaColors,
-} from './island-assets'
+import { createBuoy, createDock, createHarborBoat } from './assets/waterfront'
+import { createHomeChest, createRock, createTree, createUmbrella, umbrellaColors } from './assets/props'
+import { createHouse } from './assets/buildings'
+import { createRoad, createSidewalk, createTrail } from './assets/routes'
+import { playerColors } from './assets/crew'
 import { createBiomeScenery } from './biome-scenery'
 import { juniperCenter, juniperLayout } from './juniper-habitat'
 import { createFarm } from './island-farm'
@@ -15,9 +16,9 @@ import { createStarterWildlife, createUnderstory, createWildflowers } from './is
 import { jobBoard } from './jobs'
 import { footpaths, road, walkways } from './routes'
 import { islandRocks, islandTrees } from './scenery'
-import type { SiteFeature } from './site-props'
-import { placeSiteFeatures } from './site-props'
-import { beachUmbrellas, shellRocks, starterFeatures } from './starter-sites'
+import type { SiteFeature } from './worlds/site-feature'
+import { placeSiteFeatures } from './assets/site-props'
+import { beachUmbrellas, shellRocks, starterFeatures } from './worlds/starter/sites'
 import { createStreetLights } from './street-lights'
 import { boundaryBuoys, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
 import { buildings, crewHomes } from './world'

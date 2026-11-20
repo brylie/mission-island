@@ -2,7 +2,7 @@ import type { Input, Player, Skiff } from '../src/protocol'
 import { waterDepth, waterLevel, withinSkiffBoundary } from '../src/terrain.ts'
 import { dockEndZ, harborDock, offset } from '../src/world.ts'
 import type { Point } from '../src/world'
-import { canWalkAt } from './movement.ts'
+import { canWalkAt } from '../src/simulation/movement.ts'
 
 function navigable(point: Point) {
   const byDock = Math.abs(point.x - harborDock.x) < harborDock.width / 2 + 0.275 &&

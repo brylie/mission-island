@@ -8,6 +8,7 @@ Mission Island is a third-person co-op game about two people making a home on a 
 | --- | --- |
 | What are we making, and what should a session feel like? | [Game design](game-design.md) and [creative direction and inspirations](design/creative-direction.md) |
 | What can we play today, and where is the crew going next? | [Playable features and roadmap](roadmap.md) and [the crew’s progression](design/progression.md) |
+| Where should a feature, asset, or world edit go? | [Architecture and contribution guide](architecture.md) |
 | What exactly happens when a player uses something? | [Starter chests and tools](mechanics/inventory.md), [charged throws](mechanics/throwing.md), [fishing](mechanics/fishing.md), [farming and sales](mechanics/farming-and-market.md), and [orders and pay](mechanics/crew-orders.md) |
 | What belongs at this location? | [Inhabited places](game-design.md#an-inhabited-island), [the two-island destination survey](living-world-qa.md), and [Saltwind’s site inventory](saltwind-island.md) |
 | How do we get variation that still makes sense? | [Generativity and the Juniper Hollow habitat](game-design.md#generativity) and [the Biome Composer workflow](../README.md#asset-workbench) |

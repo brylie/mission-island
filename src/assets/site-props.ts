@@ -1,18 +1,7 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import type { MeshFactory } from './island-meshes'
-import { offset, type Point } from './world'
-
-export interface SiteFeature extends Point {
-  site: string
-  name: string
-  model: FeatureModel
-  color: string
-  heading?: number
-  scale?: number
-  followSlope?: boolean
-}
-
-type FeatureModel = 'tide-staff' | 'splitstone' | 'picnic' | 'benchmark' | 'rack' | 'planter' | 'crates' | 'bench' | 'marker' | 'shelter' | 'scope' | 'rail' | 'pennant' | 'barrels' | 'hose' | 'cairn' | 'gauge' | 'log' | 'lifebuoy'
+import type { MeshFactory } from '../island-meshes'
+import { offset, type Point } from '../world'
+import type { FeatureModel, SiteFeature } from '../worlds/site-feature'
 
 function featurePieces(meshes: MeshFactory, root: TransformNode) {
   return {

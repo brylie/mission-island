@@ -1,6 +1,6 @@
 import { createJuniperHabitat, juniperCenter, juniperLayout } from '../src/juniper-habitat.ts'
 import { groundHeight, waterDepth } from '../src/terrain.ts'
-import { starterPropTop } from '../src/starter-colliders.ts'
+import { starterPropTop } from '../src/worlds/starter/colliders.ts'
 import { offset, spawns } from '../src/world.ts'
 import assert from 'node:assert/strict'
 import test from 'node:test'

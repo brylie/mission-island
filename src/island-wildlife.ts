@@ -1,4 +1,4 @@
-import { onBeachTowel } from './starter-sites'
+import { onBeachTowel } from './worlds/starter/sites'
 import type { MeshFactory } from './island-meshes'
 import { distanceToRoute, footpaths, road } from './routes'
 import { islandTrees, seededRandom } from './scenery'
