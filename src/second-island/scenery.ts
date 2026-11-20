@@ -1,8 +1,6 @@
 import { createHare } from '../hare'
 import { villageWalks } from './footways'
 import type { ScenerySolids } from './walking'
-import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture'
-import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 import { Matrix } from '@babylonjs/core/Maths/math.vector'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
@@ -19,11 +17,14 @@ import { habitatAt } from './habitats'
 import { createExterior } from './exteriors'
 import { islandBuildings } from './lots'
 import { clearAirfield } from './landscape'
+import { createHoneyMarketStand, createLongAcreGarden } from './long-acre-art'
+import { longAcreSubject } from './long-acre'
 import { arrival, helipad, lowerLake, pavedYards, roundYards, sites, discoveryWalks, waterfront } from './sites'
 import type { MapPoint } from './sites'
 import { fallsWidth, fallsX, fallsY, groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
 import { createSaltwindVehicle } from './vehicles'
 import type { VehicleId } from './vehicles'
+import { buildSigns } from './site-signs'
 import { saltwindFeatures } from './site-features'
 
 const cream = '#f5e5c2', slate = '#8a9185', pavement = '#858780'
@@ -381,8 +382,10 @@ export function createScenery(meshes: MeshFactory, solids: ScenerySolids, omit?:
   buildSigns(meshes)
   placeSiteFeatures(meshes, saltwindFeatures, ({ x, z }) => surfaceHeight(x, z))
   placeVehicles(meshes, omit)
+  createHoneyMarketStand(meshes)
   const waterfront = buildWaterfront(meshes)
   solids.capture(meshes.scene.meshes.slice(firstFixture))
+  const pollinators = omit === longAcreSubject ? undefined : createLongAcreGarden(meshes, solids)
   const plants = createPlants(meshes, solids)
   const wildlife = createWildlife(meshes, solids)
   const phenomena = createPhenomena(meshes.scene, [
@@ -391,33 +394,11 @@ export function createScenery(meshes: MeshFactory, solids: ScenerySolids, omit?:
     { name: 'Sandspit plankton', kind: 'glow', x: -248, y: 0, z: -272, extent: 9.8, seed: 6788 },
   ])
   meshes.finishScenery()
-  return (frame: WildlifeFrame, overview: boolean) => {
+  return (frame: WildlifeFrame, overview: boolean, rainAt?: (time: number) => number) => {
+    pollinators?.(frame, overview, rainAt)
     waterfront(frame.time)
     plants(frame.camera, overview)
     wildlife(frame, overview)
     phenomena(frame)
-  }
-}
-
-function buildSigns(meshes: MeshFactory) {
-  const signs = [
-    { x: -265, z: -228, name: 'BRINEWICK FERRY', angle: Math.PI },
-    { x: -283, z: -113, name: 'BRINEWICK', angle: Math.PI },
-    { x: 129, z: -58, name: 'BARLEYCROSS', angle: -Math.PI / 2 },
-    { x: -10, z: 161, name: 'ALDERWATCH', angle: Math.PI / 2 },
-  ]
-  for (const { x, z, name, angle } of signs) {
-    const root = new TransformNode(name, meshes.scene)
-    root.position.set(x, groundHeight(x, z), z)
-    root.rotation.y = angle
-    const texture = new DynamicTexture(name, { width: 512, height: 128 }, meshes.scene, true)
-    texture.drawText(name, null, 86, 'bold 54px Georgia', '#fff1cc', '#3b6b65', true)
-    const material = new StandardMaterial(name, meshes.scene)
-    material.diffuseTexture = texture
-    material.backFaceCulling = false
-    for (const side of [-1, 1]) meshes.box(side * 1.45, 1.24, 0, .18, 2.54, .17, '#987958', root)
-    meshes.box(0, 2.03, 0, 3.91, 1.03, .19, '#edcf99', root)
-    meshes.surface(`${name} face`, [-1.87, 1.58, .104, 1.87, 1.58, .104, 1.87, 2.48, .104, -1.87, 2.48, .104],
-      [0, 2, 1, 0, 3, 2], material, root, [1, 0, 0, 0, 0, 1, 1, 1])
   }
 }

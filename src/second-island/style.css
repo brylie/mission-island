@@ -66,3 +66,7 @@ figcaption, .map-note { color: #d8ceb7; font-size: .76rem; margin-top: .6rem; li
 
 #copy-status:not(:empty) { display: block; margin-top: .35rem; font-size: .78rem; }
 #playtest-url { width: 100%; margin-top: .35rem; }
+
+.honey-order { border-top: 1px solid var(--line); margin-top: .75rem; padding-top: .68rem; font-size: .82rem; }
+.honey-order strong { color: #ffdc9c; }
+#honey-status { color: var(--muted); margin: .32rem 0 .45rem; line-height: 1.45; }

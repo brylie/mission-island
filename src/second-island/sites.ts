@@ -1,3 +1,4 @@
+import { apiary } from './long-acre.ts'
 export interface MapPoint { x: number; z: number }
 
 export const islandName = 'Saltwind Island'
@@ -92,6 +93,7 @@ export const landmarks: readonly (MapPoint & { id: string; name: string; radius:
   { id: 'falls', name: 'Tarnstep Falls', x: falls.x, z: falls.z, radius: 47 },
   { id: 'fishing', name: 'Sandspit Fishing Pier', ...waterfront.fishing, radius: 28 },
   { id: 'rescue', name: 'Brinewick Rescue Slip', ...waterfront.rescue, radius: 32 },
+  { id: 'apiary', name: 'Long Acre Apiary', ...apiary, radius: 10 },
   ...discoveryWalks.map(walk => ({ ...walk, discoverable: true })),
   ...sites.map(({ id, name, x, z }) => ({ id, name, x, z, radius: 34 })),
   ...villages.map(({ id, name, x, z }) => ({ id, name, x, z, radius: 62 })),
