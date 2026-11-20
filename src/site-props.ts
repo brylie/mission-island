@@ -1,6 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from './island-meshes'
-import type { Point } from './world'
+import { offset, type Point } from './world'
 
 export interface SiteFeature extends Point {
   site: string
@@ -9,6 +9,7 @@ export interface SiteFeature extends Point {
   color: string
   heading?: number
   scale?: number
+  followSlope?: boolean
 }
 
 type FeatureModel = 'tide-staff' | 'splitstone' | 'picnic' | 'benchmark' | 'rack' | 'planter' | 'crates' | 'bench' | 'marker' | 'shelter' | 'scope' | 'rail' | 'pennant' | 'barrels' | 'hose' | 'cairn' | 'gauge' | 'log' | 'lifebuoy'
@@ -212,6 +213,10 @@ export function placeSiteFeatures(meshes: MeshFactory, features: readonly SiteFe
     const root = new TransformNode(feature.name, meshes.scene)
     root.position.set(feature.x, heightAt(feature), feature.z)
     root.rotation.y = feature.heading ?? 0
+    if (feature.followSlope) {
+      const pose = { ...feature, heading: root.rotation.y }
+      root.rotation.z = Math.atan2(heightAt(offset(pose, 1, 0)) - heightAt(offset(pose, -1, 0)), 2)
+    }
     root.scaling.setAll(feature.scale ?? 1)
     models[feature.model](featurePieces(meshes, root), feature.color)
     meshes.batchModel(root)

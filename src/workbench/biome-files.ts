@@ -1,4 +1,4 @@
-import { parseRecipeFile, presets, serializeRecipe, type BiomeRecipe } from './biome-recipe'
+import { parseRecipeFile, presets, serializeRecipe, type BiomeRecipe } from '../biome-recipe'
 
 export function bindBiomeRecipes(current: () => BiomeRecipe, apply: (recipe: BiomeRecipe) => void) {
   const select = document.querySelector<HTMLSelectElement>('#biome-preset')!

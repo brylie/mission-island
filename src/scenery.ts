@@ -1,3 +1,4 @@
+import { seededRandom } from './seeded-random.ts'
 import { ridgeViewpoint } from './starter-sites.ts'
 import { starterPropTop } from './starter-colliders.ts'
 import { distanceToRoute, footpaths, road, shellglassPoint, splitstone } from './routes.ts'
@@ -7,12 +8,7 @@ import type { Point } from './world.ts'
 
 export const treeTrunkRadius = 0.265
 
-export function seededRandom(seed: number) {
-  return () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0
-    return seed / 4294967296
-  }
-}
+export { seededRandom }
 
 const northernRandom = seededRandom(41132)
 export const northernRegions = [

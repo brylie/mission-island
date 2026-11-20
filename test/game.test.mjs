@@ -3,6 +3,7 @@ import { Buffer } from 'node:buffer'
 import { EventEmitter } from 'node:events'
 import { test } from 'node:test'
 import { createGame } from '../server/game.ts'
+import { juniperCenter, juniperLayout } from '../src/juniper-habitat.ts'
 import { actionHint, atHomeDoor } from '../src/actions.ts'
 import { chargePower } from '../src/charged-actions.ts'
 import { farmPlots, market } from '../src/farm.ts'
@@ -747,4 +748,20 @@ test('discovering Shellglass Tide Pool uses the existing per-crew save path', (t
   assert.deepEqual(b.player.discoveries, [])
   const resumed = setup(t, { saved: h.game.snapshotForSave() })
   assert.deepEqual(resumed.join(tokens[0]).player.discoveries, ['shellglass'])
+})
+
+test('a second player disturbs the shared Juniper habitat and reconnects to its current state', t => {
+  const fox = juniperLayout.foxes[0]
+  const nearby = { x: juniperCenter.x + fox.x, z: juniperCenter.z + fox.z + .55 }
+  const { join, advance } = setup(t, { players: [player(0), player(1, nearby)] })
+  const observer = join(tokens[0]), walker = join(tokens[1])
+  advance(4)
+  assert.equal(observer.state.juniper.foxes[0].behavior, 'fleeing')
+  assert.ok(observer.state.juniper.hares.some(h => h.behavior === 'fleeing'))
+  assert.deepEqual(observer.state.juniper, walker.state.juniper)
+  walker.close()
+  advance(150)
+  assert.notEqual(observer.state.juniper.foxes[0].behavior, 'fleeing')
+  const returned = join(tokens[1])
+  assert.deepEqual(returned.state.juniper, observer.state.juniper)
 })

@@ -1,6 +1,6 @@
 import './style.css'
 import { bindBiomeRecipes } from './biome-files'
-import { biomeLink, codex, readRecipe, recipeFromLink } from './biome-recipe'
+import { biomeLink, codex, readRecipe, recipeFromLink } from '../biome-recipe'
 import { bindPlaytestCopy, landscapeLink, readLandscapeView } from '../playtest-link'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'

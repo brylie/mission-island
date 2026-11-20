@@ -1,3 +1,4 @@
+import { createJuniperHabitat } from '../src/juniper-habitat.ts'
 import type { IncomingMessage } from 'node:http'
 import type { Duplex } from 'node:stream'
 import type { RawData } from 'ws'
@@ -80,11 +81,14 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const profiles = new Map<string, Player>()
   let islandTime = save?.islandTime ?? 0
   const physics = createCargoPhysics()
+  const juniper = createJuniperHabitat()
+  let wildlifeTick = 0
   const state: Snapshot = {
     type: 'state', players: [], skiff: { ...skiffStart, speed: 0 }, items: makeItems(),
     mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...structuredClone(save?.world),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
     weather: weatherAt(islandTime), islandTime,
+    juniper: juniper(0, weatherAt(islandTime), []),
     jobs: structuredClone(save?.world.jobs ?? { active: null, completed: 0 }),
   }
   const jobCrew = new Set(save?.jobCrew ?? save?.crew.filter(({ reserved }) => reserved).map(({ token }) => token))
@@ -626,6 +630,10 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       walkCrew(member, before, connected, now)
     }
     updateItems()
+    // Animal motion follows real simulation ticks, even when the crew sleeps through the night.
+    if (++wildlifeTick % 3 === 0) {
+      state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter(p => p.connected && !p.sleeping))
+    }
     const snapshot = JSON.stringify(state)
     for (const { socket } of members) {
       if (socket?.readyState === WebSocket.OPEN && socket.bufferedAmount < 65_536) {

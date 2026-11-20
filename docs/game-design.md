@@ -31,6 +31,8 @@ Use repeatable seeds or saved outcomes for generated details that affect travers
 
 The Biome Composer models a small food web in isolation. Clover feeds hares, foxes pursue exposed hares, and tussocks and terrain features offer refuge. Rain changes shelter choices and available forage. A recipe records the ground surface, ingredient counts, weather, hour and placement seed. Designers can compare a single change at the same point on the timeline before adopting a recipe or a behavior on an island.
 
+Juniper Hollow on Starter Island uses the Pine hollow recipe. Its seed sets the composition, with spacing adjusted for solid trunks and fallen wood on the hillside. The clearing follows the island clock and rainfall. Hares and foxes can cross fallen logs and low boulders up to 0.66 m high. They take detours around trunks, taller rocks, and long stretches of fallen wood. A hare startles within 3.8 m of a visitor and a fox breaks pursuit within 4.6 m. Both crew members see the same animals and remaining clover. Wildlife is ambient and starts a new simulation when the host restarts.
+
 ## Play loops
 
 - **Service shifts.** Work together to deliver harbor crates and put out the lookout fire. After the starter shift, the harbor board offers repeat deliveries to new destinations and market orders for fish and crops. Choosing an order leaves the crew in the world where they were already playing.

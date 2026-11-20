@@ -1,8 +1,13 @@
+import { createJuniperHabitat, juniperCenter, juniperLayout } from '../src/juniper-habitat.ts'
+import { groundHeight, waterDepth } from '../src/terrain.ts'
+import { starterPropTop } from '../src/starter-colliders.ts'
+import { offset, spawns } from '../src/world.ts'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { URL, URLSearchParams } from 'node:url'
-import { createBiome } from '../src/workbench/biome-model.ts'
-import { biomeLink, codex, parseRecipeFile, presets, serializeRecipe, readRecipe, recipeFromLink } from '../src/workbench/biome-recipe.ts'
+import { habitatNavigation } from '../src/biome-navigation.ts'
+import { createBiome, populate } from '../src/biome-model.ts'
+import { biomeLink, codex, parseRecipeFile, presets, serializeRecipe, readRecipe, recipeFromLink } from '../src/biome-recipe.ts'
 
 const meadow = presets['Meadow edge']
 const run = (changes, time) => createBiome({ ...meadow, ...changes }).seek(time)
@@ -85,4 +90,92 @@ test('versioned files reproduce a recipe and reject invalid edits', () => {
   for (const data of [null, { version: 2 }, { version: 1, recipe: null }, { version: 1, recipe: {} },
     { version: 1, recipe: { ...meadow, foxes: -1 } }]) assert.throws(() => parseRecipeFile(JSON.stringify(data)))
   assert.throws(() => parseRecipeFile('{'), SyntaxError)
+})
+
+test('Juniper Hollow fits the Pine hollow recipe to dry ground and keeps solid props walkable around their edges', () => {
+  const { hares, foxes, patches } = juniperLayout
+  assert.equal(hares.length, presets['Pine hollow'].hares)
+  assert.equal(foxes.length, presets['Pine hollow'].foxes)
+  for (const { key } of codex.slice(0, 5)) assert.equal(patches.filter(p => p.kind === key).length, presets['Pine hollow'][key])
+  for (const p of patches) {
+    const point = { x: p.x + juniperCenter.x, z: p.z + juniperCenter.z }
+    assert.equal(waterDepth(point), 0)
+    if (p.kind === 'trees') {
+      assert.ok(Math.hypot(p.x, p.z) >= 4.8)
+      assert.ok(p.z >= 1 || Math.abs(p.x) >= 3.4)
+    }
+    const solid = ['trees', 'logs', 'stones'].includes(p.kind)
+    assert.equal(starterPropTop(point, .02) > groundHeight(point), solid)
+  }
+})
+
+test('hares and foxes move away from nearby walkers, recover and follow live island rain', () => {
+  const habitat = createJuniperHabitat(), dry = { hour: 11, rain: 0 }
+  const first = habitat(0, dry, [])
+  const p = first.foxes[0]
+  const visitor = { x: p.x + juniperCenter.x, z: p.z + juniperCenter.z + .55 }
+  const close = habitat(.4, dry, [visitor])
+  assert.equal(close.foxes[0].behavior, 'fleeing')
+  assert.equal(close.hares[0].behavior, 'fleeing')
+  assert.ok(Math.hypot(close.foxes[0].x + juniperCenter.x - visitor.x, close.foxes[0].z + juniperCenter.z - visitor.z) > 1)
+  assert.notEqual(habitat(2, dry, []).foxes[0].behavior, 'fleeing')
+  const wet = habitat(50, { hour: 12, rain: 1 }, [])
+  assert.ok(wet.hares.some(h => h.behavior === 'sheltering'))
+  assert.deepEqual(createJuniperHabitat()(20, dry, [spawns[0]]), createJuniperHabitat()(20, dry, []))
+})
+
+test('Juniper fox keeps making progress around cover and avoids repeated U-turns near stationary walkers', () => {
+  const weather = { rain: 0, hour: 12 }
+  const besideTrail = { x: juniperCenter.x, z: juniperCenter.z - 7.8 }
+  for (const visitors of [[], [besideTrail], [juniperCenter], [besideTrail, juniperCenter]]) {
+    const habitat = createJuniperHabitat()
+    let previous = habitat(0, weather, visitors).foxes[0]
+    const reversals = []
+    const visited = new Set()
+    for (let i = 1; i <= 1200; i++) {
+      const fox = habitat(i / 10, weather, visitors).foxes[0]
+      visited.add(Math.floor(fox.x) + ',' + Math.floor(fox.z))
+      const angle = fox.heading - previous.heading
+      if (Math.cos(angle) < -.75) reversals.push(i)
+      while (reversals.length && i - reversals[0] >= 20) reversals.shift()
+      assert.ok(reversals.length < 5, 'Repeated U-turns within two seconds at ' + i / 10)
+      previous = fox
+    }
+    assert.ok(visited.size > 12, 'Fox should travel through the clearing')
+  }
+})
+
+test('hares and foxes cross low props and take detours around taller or lengthwise obstacles', () => {
+  for (const species of ['hares', 'foxes']) {
+    for (const [kind, angle, lengthwise, detour] of [
+      ['logs', .83, false, false], ['stones', .6, false, false],
+      ['stones', 5.8, false, true], ['logs', .83, true, true], ['trees', .4, false, true],
+    ]) {
+      const recipe = { ...meadow, ...noCover, clover: 0, hares: 0, foxes: 0, [species]: 1 }
+      const layout = populate(recipe)
+      const center = { x: 0, z: 0, heading: angle }
+      const start = offset(center, lengthwise ? -2.4 : 0, lengthwise ? 0 : -2.4)
+      const end = offset(center, lengthwise ? 2.4 : 0, lengthwise ? 0 : 2.4)
+      Object.assign(layout[species][0], start, { waypoint: end })
+      layout.patches.push({ ...center, angle, kind, stock: 1 })
+      if (species === 'hares') layout.patches.push({ ...end, kind: 'clover', angle: 0, stock: 1 })
+      const nav = habitatNavigation(layout.patches), sim = createBiome(recipe, layout)
+      assert.equal(nav.clear(start, end), !detour)
+      let maxLift = 0, deviation = 0, remaining = 5
+      for (let i = 0; i < 150 && remaining > .48; i++) {
+        const p = sim.seek(i / 10)[species][0]
+        assert.ok(nav.open(p), species + ' entered ' + kind)
+        maxLift = Math.max(maxLift, nav.lift(p))
+        deviation = Math.max(deviation, Math.abs(p.x * start.z - p.z * start.x) / 2.4)
+        remaining = Math.hypot(end.x - p.x, end.z - p.z)
+        if (remaining <= .48) assert.equal(nav.lift(p), 0)
+      }
+      assert.ok(remaining <= .48, species + ' failed to reach the far side of ' + kind)
+      if (detour) assert.ok(deviation > .3)
+      else {
+        assert.ok(deviation < .05)
+        assert.ok(maxLift > .4, species + ' should clear the top of ' + kind)
+      }
+    }
+  }
 })

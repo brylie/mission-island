@@ -1,3 +1,4 @@
+import { createJuniperHabitat } from '../juniper-habitat'
 import { biomeEntry } from './biome-preview'
 import { createLookoutFire } from '../fire-effect'
 import { createExtinguisherSpray } from '../extinguisher-spray'
@@ -129,12 +130,18 @@ export const entries: Entry[] = [
     ],
     create(meshes) {
       const world = createIslandWorld(meshes)
+      let habitat = createJuniperHabitat()
+      let previousSky = ''
       return ({ time, delta, rate, camera, light, rain }, settings) => {
         world.northernScenery.update(camera, true)
         poseFloating(world.boat, time)
         world.buoys.forEach((buoy, index) => poseFloating(buoy, time, index * 1.67))
         const weather = { hour: Number(settings.hour), rain }
         const frame = { time, delta: delta * rate, weather, camera, threats: [] }
+        const sky = weather.hour + '/' + rain
+        if (previousSky !== sky) habitat = createJuniperHabitat()
+        previousSky = sky
+        world.juniper(habitat(time, weather, []), time)
         world.wildlife(frame)
         world.phenomena(frame)
         world.lights(camera, nightLighting(Number(settings.hour)))

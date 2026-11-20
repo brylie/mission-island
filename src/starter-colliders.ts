@@ -1,3 +1,4 @@
+import { juniperSolids } from './juniper-habitat.ts'
 import { jobBoard } from './jobs.ts'
 import { beachUmbrellas, lampPosts, shellRocks, starterFeatures } from './starter-sites.ts'
 import { walkingHeight } from './terrain.ts'
@@ -32,6 +33,7 @@ function solidsAt(point: Point, pieces: Solid[], heading = 0, scale = 1) {
 }
 
 export const starterSolids = [
+  ...juniperSolids.flatMap(s => solidsAt(s, [[s.width, s.depth, s.height]], s.heading)),
   ...starterFeatures.flatMap((feature) => solidsAt(feature, shapes[feature.model],
     'heading' in feature ? feature.heading : 0, 'scale' in feature ? feature.scale : 1)),
   ...solidsAt(jobBoard, [[1.75, .14, 1.95]]),

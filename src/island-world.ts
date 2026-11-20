@@ -2,6 +2,8 @@ import {
   createBuoy, createDock, createHarborBoat, createHomeChest, createHouse, createRock, createRoad,
   createSidewalk, createTrail, createTree, createUmbrella, playerColors, umbrellaColors,
 } from './island-assets'
+import { createBiomeScenery } from './biome-scenery'
+import { juniperCenter, juniperLayout } from './juniper-habitat'
 import { createFarm, createMarketAwning } from './island-farm'
 import { createGrassTufts, createIslandTerrain } from './island-landscape'
 import type { MeshFactory } from './island-meshes'
@@ -65,6 +67,7 @@ export function createIslandWorld(meshes: MeshFactory) {
   for (const { x, z, size, angle, light, ground } of islandRocks) {
     createRock(meshes, x, z, size, angle, light, ground)
   }
+  const juniper = createBiomeScenery(meshes, juniperLayout, juniperCenter, groundHeight)
   const northernScenery = createNorthernScenery(meshes)
   createGrassTufts(meshes)
   createWildflowers(meshes)
@@ -80,5 +83,5 @@ export function createIslandWorld(meshes: MeshFactory) {
   beachUmbrellas.forEach(({ x, z }, index) => createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))
 
   meshes.finishScenery()
-  return { water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights }
+  return { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights }
 }

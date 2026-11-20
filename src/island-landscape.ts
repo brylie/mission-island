@@ -1,3 +1,4 @@
+import { juniperCenter } from './juniper-habitat'
 import { onBeachTowel } from './starter-sites'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import { CreateLineSystem } from '@babylonjs/core/Meshes/Builders/linesBuilder'
@@ -38,13 +39,14 @@ export function createIslandTerrain(meshes: MeshFactory) {
           uvs.push(x / 4.5, z / 4.5)
           const point = { x, z }
           const influence = (at: typeof point, range: number) => Math.max(0, 1 - distance(point, at) / range) ** 1.4
+          const duff = influence(juniperCenter, 10)
           const forest = influence(grove, 50)
           const ridge = influence(headland, 41)
           const wetland = influence(pool, 31)
           const bank = z > 80 && z < 94 ? Math.max(0, Math.min(1, z - 80, (94 - z) / 2,
             (fernfallSection(z).halfWidth + 1.6 - Math.abs(x - streamX(z))) / 1.5)) : 0
-          colors.push(1 + bank * .13 - forest * 0.42 + ridge * 0.44, 1 - bank * .29 - forest * 0.27 - ridge * 0.30,
-            1 + bank * .16 - forest * 0.12 - ridge * 0.32 + wetland * 0.19, 1)
+          colors.push(1 + bank * .13 - forest * 0.42 + ridge * 0.44, 1 - duff * .48 - bank * .29 - forest * 0.27 - ridge * 0.30,
+            1 - duff * .44 + bank * .16 - forest * 0.12 - ridge * 0.32 + wetland * 0.19, 1)
         }
         if (i === 0 || j === segments) continue
         const a = (i - 1) * (segments + 1) + j

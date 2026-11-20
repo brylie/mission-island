@@ -42,7 +42,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight)
   const meshes = createMeshFactory(scene, shadows)
-  const { water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights } = createIslandWorld(meshes)
+  const { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights } = createIslandWorld(meshes)
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
   const dropPad = createObjectiveMarker(meshes, town, deliveryRadius * 2, '#67ecdc')
@@ -345,6 +345,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04))) ?? []
     const threats = last ? [...crewInWater, last.skiff] : crewInWater
     const frame = { time: ambientTime, delta, weather, camera: camera.position, threats }
+    if (last?.juniper) juniper(last.juniper, time, factor)
     wildlife(frame)
     phenomena(frame)
     const strength = nightLighting(weather.hour)
