@@ -7,12 +7,16 @@ import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { seededRandom } from './scenery'
 import { distanceToRoute, footpaths, road, walkways } from './routes'
-import { coastPoint, coastRadius, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, pool, shoreProfile, streamX, tidePool, waterLevel } from './terrain'
+import { coastPoint, coastRadius, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, pool, shoreProfile, streamX, tidePool, waterLevel } from './terrain'
 import { buildings, distance, harbor, island, lookout, town } from './world'
 import type { MeshFactory } from './island-meshes'
 import { createOceanMaterial } from './ocean'
+import { createMeadowBlades, createMeadowSurface } from './meadow-shaders'
+import { shoreDefaults, type ShoreSettings } from './shader-studies'
 
 export function createIslandTerrain(meshes: MeshFactory) {
+  const grass = meshes.paintSurface('grass')
+  const meadow = createMeadowSurface(grass)
   function band(name: string, rings: readonly number[], sand: boolean) {
     // Refine the angular sector around the narrow stream without tessellating every beach.
     const angles = Array.from({ length: 256 }, (_, j) => {
@@ -59,7 +63,7 @@ export function createIslandTerrain(meshes: MeshFactory) {
         indices.push(a, b, b + 1)
       }
     }
-    const mesh = meshes.surface(name, positions, indices, meshes.paintSurface(sand ? 'sand' : 'grass'), undefined, uvs)
+    const mesh = meshes.surface(name, positions, indices, sand ? meshes.paintSurface('sand') : grass, undefined, uvs)
     mesh.setVerticesData(VertexBuffer.ColorKind, colors)
     return mesh.freezeWorldMatrix()
   }
@@ -120,8 +124,9 @@ export function createIslandTerrain(meshes: MeshFactory) {
   cascade.isPickable = false
   cascade.alwaysSelectAsActiveMesh = true
   return {
-    pose(time: number, light: number, rain: number) {
-      water.pose(time, light, rain)
+    meadow,
+    pose(time: number, light: number, rain: number, shore: ShoreSettings = shoreDefaults, localWaterLevel = waterLevel) {
+      water.pose(time, light, rain, shore, localWaterLevel)
       const eye = meshes.scene.activeCamera?.position
       cascade.setEnabled(Boolean(eye && Math.hypot(eye.x - falls.x, eye.z - falls.z) < 52 && eye.y < 55))
       if (!cascade.isEnabled()) return
@@ -142,31 +147,19 @@ export function createIslandTerrain(meshes: MeshFactory) {
 }
 export function createGrassTufts(meshes: MeshFactory) {
   const random = seededRandom(82489)
-  const positions: number[] = []
-  const indices: number[] = []
-  for (let i = 0; i < 1900; i++) {
-    const x = (random() - 0.5) * island.width
-    const z = (random() - 0.5) * island.length
+  const points: { x: number; z: number }[] = []
+  for (let i = 0; i < 2290; i++) {
+    const extent = i < 1900 ? island : { width: 29, length: 25 }
+    const center = i < 1900 ? { x: 0, z: 0 } : meadowHill
+    const x = center.x + (random() - .5) * extent.width
+    const z = center.z + (random() - .5) * extent.length
     const point = { x, z }
     if (onBeachTowel(point) || coastRadius(point) > 0.91 || distance(point, harbor) < 5 || distance(point, town) < 8 ||
       distance(point, lookout) < 5.5 || distanceToRoute(point, road) < 4.2 ||
       footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + 0.3) ||
       walkways.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + 0.3) ||
       buildings.some((entry) => Math.abs(entry.x - x) < entry.w / 2 + 0.15 && Math.abs(entry.z - z) < entry.d / 2 + 0.15)) continue
-    const y = groundHeight(point)
-    const angle = random() * Math.PI
-    for (let k = 0; k < 3; k++) {
-      const theta = angle + k * Math.PI / 3
-      const width = 0.065 + random() * 0.07
-      const height = 0.13 + random() * 0.29
-      const dx = Math.cos(theta) * width
-      const dz = Math.sin(theta) * width
-      const base = positions.length / 3
-      positions.push(x - dx, y, z - dz, x + dx, y, z + dz, x + dx * 2.6, y + height, z + dz * 2.6)
-      indices.push(base, base + 1, base + 2)
-    }
+    if (groundHeight(point) > waterLevel + .06) points.push(point)
   }
-  const green = meshes.paint('#618752')
-  green.backFaceCulling = false
-  meshes.surface('Grass tufts', positions, indices, green).freezeWorldMatrix()
+  return createMeadowBlades(meshes, points, groundHeight, 82490)
 }

@@ -60,6 +60,32 @@
     <main class="playfield" id="playfield">
       <canvas id="island" aria-label="Third-person view of Mission Island"></canvas>
       <div id="markers" aria-hidden="true"></div>
+      <section id="shader-review" aria-label="Shader field review" hidden>
+        <label>Field view
+          <select id="shader-site">
+            <option value="">Live crew</option>
+            <option value="shore">Shellglass Tide Pool</option>
+            <option value="meadow">Meadow slope</option>
+            <option value="paving">Seabrook pavement</option>
+            <option value="mist">Mirror Pool at dawn</option>
+          </select>
+        </label>
+        <label>Shader quality
+          <select id="shader-quality">
+            <option value="full">Full</option>
+            <option value="low">Reduced</option>
+            <option value="off">Off (baseline)</option>
+          </select>
+        </label>
+        <label hidden>Shellglass tide (%) <input id="shader-tide" type="range" min="0" max="100" value="32"></label>
+        <label hidden>Meadow to hill <input id="shader-meadow-walk" type="range" min="0" max="100" value="0"></label>
+        <label><input id="shader-freeze" type="checkbox"> Freeze shader time</label>
+        <div>
+          <button type="button" id="shader-reset">Reset view</button>
+          <button type="button" id="shader-measure">Measure frame time</button>
+        </div>
+        <output id="shader-timing" aria-live="polite"></output>
+      </section>
       <div class="reticle" aria-hidden="true"></div>
       <div id="charge-meter" class="charge-meter" hidden>
         <label id="charge-label" for="charge-power"></label>

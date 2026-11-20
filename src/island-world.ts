@@ -8,6 +8,8 @@ import { createBiomeScenery } from './biome-scenery'
 import { juniperCenter, juniperLayout } from './juniper-habitat'
 import { createFarm } from './island-farm'
 import { createMarketShower } from './market-shower'
+import type { MarketRunoff } from './market-runoff'
+import { nightLighting } from './weather'
 import { createGrassTufts, createIslandTerrain } from './island-landscape'
 import type { MeshFactory } from './island-meshes'
 import { createNorthernScenery } from './island-north'
@@ -21,6 +23,10 @@ import { islandRocks, islandTrees } from './scenery'
 import type { SiteFeature } from './worlds/site-feature'
 import { placeSiteFeatures } from './assets/site-props'
 import { beachUmbrellas, shellRocks, starterFeatures } from './worlds/starter/sites'
+import { createWetPaving } from './wet-paving'
+import { createSurfaceMaterial } from './materials'
+import { meadowDefaults, shaderPresets, shoreDefaults, type ShaderQuality } from './shader-studies'
+import type { WildlifeFrame } from './wildlife'
 import { createStreetLights } from './street-lights'
 import { boundaryBuoys, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
 import { buildings, crewHomes } from './world'
@@ -35,7 +41,9 @@ interface WorldSubstitutions {
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
   const water = createIslandTerrain(meshes)
   for (const { name, points, width, surface } of footpaths) createTrail(meshes, name, points, width, surface, groundHeight)
-  for (const path of walkways) createSidewalk(meshes, path)
+  const paving = createSurfaceMaterial(meshes.scene, 'concrete')
+  const wetPaving = createWetPaving(paving)
+  for (const path of walkways) createSidewalk(meshes, path, paving)
   createRoad(meshes, road)
 
   buildings.forEach((building, index) => {
@@ -90,12 +98,12 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   }
   const juniper = createBiomeScenery(meshes, juniperLayout, juniperCenter, groundHeight)
   const northernScenery = createNorthernScenery(meshes)
-  createGrassTufts(meshes)
+  const blades = createGrassTufts(meshes)
   createWildflowers(meshes)
   createUnderstory(meshes)
   const wildlife = createStarterWildlife(meshes)
   const phenomena = createPhenomena(meshes.scene, [
-    { ...pool, name: 'Mirror Pool dawn mist', kind: 'mist', y: waterLevel, extent: 22, seed: 5182 },
+    { ...pool, name: 'Mirror Pool dawn mist', kind: 'mist', y: waterLevel, extent: 22, seed: 5182, scatter: true },
     { name: 'Fernfall spray', kind: 'spray', x: streamX(89.2), y: waterLevel + .04, z: 89.2, extent: 2.7, seed: 2961 },
   ])
   const lights = createStreetLights(meshes)
@@ -103,5 +111,31 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   beachUmbrellas.forEach(({ x, z }, index) => createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))
 
   meshes.finishScenery()
-  return { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights, marketShower, shellglass }
+  const shore = { ...shoreDefaults }
+  const calm = { gust: 0, grassDistance: 0, patchContrast: 0 }
+  const reducedMist = { ...shaderPresets.dawnSilver, reduced: true }
+  const unlitMist = { mistDensity: 1, scattering: 0 }
+  function updateEnvironment(frame: WildlifeFrame, light: number, close: boolean, runoff: MarketRunoff,
+    { driftwood, quality = 'full', tideTime = frame.time }: {
+      driftwood?: Parameters<typeof wildlife>[1]; quality?: ShaderQuality; tideTime?: number
+    } = {}) {
+    northernScenery.update(frame.camera, close)
+    wildlife(frame, driftwood)
+    marketShower(frame.time, frame.camera, runoff)
+    lights(frame.camera, nightLighting(frame.weather.hour))
+    shore.quality = quality
+    const { tide, near } = shellglass(frame, light, tideTime, shore)
+    const enabled = quality !== 'off'
+    water.pose(frame.time, light, frame.weather.rain, shore, near ? tide.level : waterLevel)
+    const meadow = enabled ? meadowDefaults : calm
+    water.meadow(frame.time, frame.camera, meadow)
+    blades(frame.time, frame.camera, meadow)
+    wetPaving(enabled ? Math.max(frame.weather.rain * .74, runoff.puddle) * shaderPresets.rainPolished.wetness : 0,
+      shaderPresets.rainPolished.reflection)
+    const mist = quality === 'low' ? reducedMist : shaderPresets.dawnSilver
+    phenomena(frame, enabled ? mist : unlitMist)
+    return tide
+  }
+
+  return { juniper, updateEnvironment, homeChests, showFarm, boat, buoys }
 }

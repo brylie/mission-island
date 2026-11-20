@@ -1,4 +1,5 @@
 import { beach, distance, ferryTerminal, harbor, lookout } from './world.ts'
+import { meadowFoot, meadowHill } from './terrain.ts'
 import type { Point } from './world.ts'
 
 function lerp(a: Point, b: Point, t: number): Point {
@@ -34,6 +35,11 @@ export const splitstone = { x: 53.5, z: -20.8 }
 export type PathSurface = 'gravel' | 'pavement' | 'desire'
 interface Footpath { name: string; width: number; surface: PathSurface; points: Point[] }
 
+export const meadowPath: Footpath = {
+  name: 'Meadow slope path', width: 1.35, surface: 'desire',
+  points: roundCorners([{ x: -27, z: 8 }, meadowFoot, { x: -26.6, z: 17 }, meadowHill], 1.8),
+}
+
 export const footpaths: Footpath[] = [
   { name: 'Lookout trail', surface: 'gravel', width: 3.2, points: roundCorners([{ x: 17, z: 12 }, { x: 20, z: 22 }, lookout], 4) },
   { name: 'Beach trail', surface: 'pavement', width: 2.6, points: roundCorners([{ x: 35, z: 12 }, { x: 33.1, z: 4 }, { x: 29.6, z: -24.7 }, beach], 4) },
@@ -46,6 +52,7 @@ export const footpaths: Footpath[] = [
   { name: 'Driftwood shore walk', surface: 'desire', width: 1.1, points: roundCorners([
     { x: 30.1, z: -24.7 }, { x: 34.7, z: -26.3 }, { x: 39, z: -29.2 }, { x: 42.6, z: -30.68 },
   ], 1.1) },
+  meadowPath,
 ]
 
 export function distanceToRoute(point: Point, path: readonly Point[]) {

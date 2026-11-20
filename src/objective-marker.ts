@@ -9,6 +9,8 @@ import { createIslandMaterial } from './materials'
 import { groundHeight } from './terrain'
 import type { Point } from './world'
 
+export const objectiveLayer = 0x08000000
+
 export function createObjectiveMarker({ scene, paint }: MeshFactory, point: Point, size: number, color: string) {
   const root = new TransformNode('Objective area', scene)
   root.position.set(point.x, groundHeight(point) + 0.095, point.z)
@@ -35,6 +37,7 @@ export function createObjectiveMarker({ scene, paint }: MeshFactory, point: Poin
   curtain.position.y = height / 2
   curtain.isPickable = false
   curtain.parent = root
+  ring.layerMask = curtain.layerMask = objectiveLayer
   const halo = createIslandMaterial(scene, 'Objective glow', '#ffffff')
   halo.disableLighting = true
   halo.emissiveColor = Color3.White()

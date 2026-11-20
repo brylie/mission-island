@@ -28,7 +28,8 @@ import type { Player, Snapshot } from './protocol'
 import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
 import { flatbedGroundDrive } from './vehicles/flatbed'
 import { nightLighting } from './weather'
-import { marketRunoffAt } from './market-runoff'
+import { createShaderReview } from './shader-review'
+import { dryMarketRainAge, marketRunoffAt, marketRunoffPreview } from './market-runoff'
 import { crateStarts, distance, extinguisherStarts, harbor, lookout, town } from './world'
 import type { Pose } from './world'
 
@@ -38,12 +39,13 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
   const scene = new Scene(engine)
   const islandCamera = createIslandCamera(scene, canvas)
+  const review = createShaderReview(scene, canvas, engine, islandCamera.releaseMouse)
 
   const lighting = createIslandLighting(scene)
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
-  const { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights, marketShower, shellglass } = createIslandWorld(meshes)
+  const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys } = createIslandWorld(meshes)
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
   const dropPad = createObjectiveMarker(meshes, town, deliveryRadius * 2, '#67ecdc')
@@ -344,30 +346,29 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const local = last?.players.find((player) => player.id === viewer && player.connected)
     const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? truck : crew[local.id].root) : undefined
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
-    const camera = islandCamera.update(subject, Boolean(local?.seat), aspect, delta)
-    northernScenery.update(camera.position, Boolean(subject))
-    const weather = last?.weather ?? { hour: 6, rain: 0 }
+    const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta)
+    const field = review?.view(time)
+    const camera = field?.camera ?? normalCamera
+    const close = Boolean(field || subject)
+    const weather = field?.weather ?? last?.weather ?? { hour: 6, rain: 0 }
     const clock = last?.islandTime ?? time
     const timeError = clock - ambientTime
     ambientTime = Math.abs(timeError) > .25 ? clock : ambientTime + delta * (1 + timeError * 4)
     const crewInWater = last?.players.filter((player) => player.connected && !player.seat &&
       (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04))) ?? []
     const threats = last ? [...crewInWater, last.skiff] : crewInWater
-    const frame = { time: ambientTime, delta, weather, camera: camera.position, threats }
+    const frame = { time: field?.time ?? ambientTime, delta, weather, camera: camera.position, threats }
     if (last?.juniper) juniper(last.juniper, time, factor)
-    wildlife(frame, last?.driftwood)
-    phenomena(frame)
-    marketShower(ambientTime, camera.position, marketRunoffAt(clock))
+    const runoff = field ? marketRunoffPreview(weather.rain, dryMarketRainAge) : marketRunoffAt(clock)
     const strength = nightLighting(weather.hour)
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
-    lights(camera.position, strength)
-    const light = atmosphere.update(time, weather, camera.position, Boolean(subject))
-    water.pose(time, light, weather.rain)
-    shellglass(frame, light, clock)
-    scene.render()
+    const light = atmosphere.update(field?.time ?? time, weather, camera.position, close)
+    updateEnvironment(frame, light, close, runoff, { driftwood: last?.driftwood, quality: review?.quality(), tideTime: field ? field.tideTime : clock })
+    if (review) review.render()
+    else scene.render()
     const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
-    updatePlaceLabels(local, Boolean(subject), viewport)
-    updateCrewTags(Boolean(subject), viewport)
+    updatePlaceLabels(local, close, viewport)
+    updateCrewTags(close, viewport)
   })
   const resize = new ResizeObserver(() => engine.resize())
   resize.observe(canvas)
@@ -384,12 +385,14 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       return landscapeLink(location.href, { focus: [camera.target[0], camera.target[2]], camera, ...last.weather,
         time: ambientTime, grid: false, wireframe: false })
     },
+    isReviewing: () => review?.active() ?? false,
     walkInput: (x: number, z: number) => islandCamera.walkInput(x, z),
     aimHeading: islandCamera.aimHeading,
-    captureMouse: islandCamera.captureMouse,
+    captureMouse: () => { if (!review?.active()) islandCamera.captureMouse() },
     releaseMouse: islandCamera.releaseMouse,
     setMouseInversion: (horizontal: boolean, vertical: boolean) => islandCamera.setMouseInversion(horizontal, vertical),
     dispose() {
+      review?.dispose()
       islandCamera.dispose()
       resize.disconnect()
       engine.dispose()
