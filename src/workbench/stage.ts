@@ -14,6 +14,8 @@ import { lightingPresets } from './lighting'
 import type { LightingPreset } from './lighting'
 import { findZFightCandidates } from './z-fighting'
 import { createLandscapeLayout } from './landscape-layout'
+import type { createLandscapeDraft } from './landscape-draft'
+import type { Point } from '../world'
 
 export interface CameraState {
   alpha: number
@@ -25,19 +27,21 @@ export interface CameraState {
 export type Angle = 'perspective' | 'front' | 'side' | 'top'
 
 export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values,
-  reportError: (error: string) => void) {
+  reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>) {
   const scene = new Scene(engine)
   try {
     scene.clearColor = Color4.FromHexString('#1b292aff')
     if (entry.landscape) scene.fogMode = Scene.FOGMODE_LINEAR
     const { sky, sunlight, shadows } = createIslandLighting(scene)
+    const atmosphere = entry.landscape ? createAtmosphere(scene, sky, sunlight, shadows) : undefined
+    const firstSubjectMesh = scene.meshes.length
     const meshes = createMeshFactory(scene, shadows)
     const update = entry.create(meshes, values, reportError)
     meshes.finishScenery({ merge: false })
     let min = new Vector3(Infinity, Infinity, Infinity)
     let max = new Vector3(-Infinity, -Infinity, -Infinity)
     let triangles = 0
-    const subject = [...scene.meshes]
+    const subject = scene.meshes.slice(firstSubjectMesh)
     const meshCount = subject.filter((mesh) => mesh.isVisible).length
     for (const mesh of subject) {
       mesh.computeWorldMatrix(true)
@@ -53,9 +57,10 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     const subjectHeight = Math.max(0.4, max.y - Math.max(min.y, groundHeight))
     const center = new Vector3((min.x + max.x) / 2, Math.max(min.y, groundHeight) + subjectHeight * 0.43, (min.z + max.z) / 2)
     const size = entry.landscape ? 24 : Math.max(span.x, span.z, subjectHeight)
+    let focusHeight = Number(values.focusHeight ?? 0.25)
     if (entry.landscape) {
       const point = { x: Number(values.x), z: Number(values.z) }
-      center.set(point.x, terrainHeight(point) + 0.25, point.z)
+      center.set(point.x, terrainHeight(point) + focusHeight, point.z)
     }
     const groundSize = Math.max(14, size * 2.25)
     const step = size > 45 ? 5 : size > 12 ? 2 : 1
@@ -71,8 +76,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     camera.panningSensibility = 840 / Math.max(1, size / 5)
     camera.attachControl(canvas, false)
     scene.activeCamera = camera
-    const atmosphere = entry.landscape ? createAtmosphere(scene, sky, sunlight) : undefined
-    const layout = entry.landscape ? createLandscapeLayout(meshes, canvas, () => ({
+    const layout = entry.landscape ? createLandscapeLayout(meshes, canvas, draft, () => ({
       x: camera.target.x, z: camera.target.z,
       yaw: Math.atan2(camera.target.x - camera.globalPosition.x, camera.target.z - camera.globalPosition.z),
     })) : undefined
@@ -84,7 +88,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       ground.receiveShadows = true
     }
     const gridY = (entry.landscape ? terrainHeight(center) : groundHeight) + 0.005
-    const gridOrigin = center.clone()
+    const gridOrigin = new Vector3(center.x, gridY, center.z)
     const half = groundSize / 2
     const lines = directions.flatMap((offset) => [
       [new Vector3(center.x + offset, gridY, center.z - half), new Vector3(center.x + offset, gridY, center.z + half)],
@@ -110,14 +114,32 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       top: [Math.PI / 2, 0.04],
     }
 
-    function setView(angle: Angle = entry.topView ? 'top' : 'perspective') {
-      camera.setTarget(center.clone())
-      camera.alpha = pointOfView[angle][0]
-      camera.beta = pointOfView[angle][1]
-      const aspect = engine.getAspectRatio(camera)
-      camera.radius = radius * Math.max(1, 0.92 / Math.max(0.3, aspect))
+    function setCamera(saved: CameraState, settings?: Values) {
+      if (entry.landscape && settings) updateLandscapeFocus(settings)
+      camera.setTarget(Vector3.FromArray(saved.target))
+      camera.alpha = saved.alpha
+      camera.beta = saved.beta
+      camera.radius = saved.radius
       camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0
       camera.inertialPanningX = camera.inertialPanningY = 0
+    }
+
+    function setView(angle: Angle = entry.topView ? 'top' : 'perspective', settings?: Values) {
+      if (entry.landscape && settings) updateLandscapeFocus(settings)
+      const [alpha, beta] = pointOfView[angle]
+      const aspect = engine.getAspectRatio(camera)
+      setCamera({ alpha, beta, radius: radius * Math.max(1, 0.92 / Math.max(0.3, aspect)), target: center.asArray() })
+    }
+
+    function updateLandscapeFocus(settings: Values) {
+      const point = { x: Number(settings.x), z: Number(settings.z) }
+      const height = Number(settings.focusHeight ?? 0.25)
+      if (center.x === point.x && center.z === point.z && focusHeight === height) return
+      focusHeight = height
+      const ground = terrainHeight(point)
+      center.set(point.x, ground + height, point.z)
+      grid.position.set(point.x - gridOrigin.x, ground + 0.005 - gridOrigin.y, point.z - gridOrigin.z)
+      camera.setTarget(center.clone())
     }
     setView()
 
@@ -125,18 +147,21 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       meshCount,
       triangles: Math.round(triangles),
       step,
+      supportsSunShafts: atmosphere?.supportsSunShafts ?? false,
+      mapFocus: () => ({ x: camera.target.x, z: camera.target.z }),
+      draftMapObjects: () => layout?.mapObjects() ?? [],
+      placeDraftAt: (point: Point) => layout?.placeAt(point) ?? false,
+      moveDraftAt: (id: number, point: Point) => layout?.moveAt(id, point) ?? false,
+      selectDraft: (id: number) => layout?.select(id),
       checkZFighting: () => findZFightCandidates(layout ? [...subject, ...layout.meshes()] : subject, entry.landscape ? camera.target : undefined),
       draw(time: number, rate: number, seek: boolean, settings: Values, turntable: boolean, delta: number) {
         if (turntable) camera.alpha += delta * 0.38
-        if (entry.landscape && (center.x !== settings.x || center.z !== settings.z)) {
-          const point = { x: Number(settings.x), z: Number(settings.z) }
-          center.set(point.x, terrainHeight(point) + 0.25, point.z)
-          grid.position.copyFrom(center.subtract(gridOrigin))
-          camera.setTarget(center.clone())
-        }
+        if (entry.landscape) updateLandscapeFocus(settings)
         const rain = entry.landscape ? Number(settings.rain) : 0
+        const shaftIntensity = settings.sunShafts === false ? 0 : Number(settings.shaftIntensity ?? 100) / 100
+        camera.getViewMatrix()
         const position = camera.globalPosition
-        const light = atmosphere?.update(time, { hour: Number(settings.hour), rain }, position, true) ?? 1
+        const light = atmosphere?.update(time, { hour: Number(settings.hour), rain }, position, true, shaftIntensity) ?? 1
         update?.({ time, rate, seek, lighting, camera: position, light, rain }, settings)
         layout?.update(delta, time)
         subject.forEach(applyWireframe)
@@ -154,15 +179,14 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       setGrid(visible: boolean) { grid.setEnabled(visible) },
       setWireframe(visible: boolean) { wireframe = visible },
       setView,
+      setLandscapeView({ alpha, beta, radius }: Omit<CameraState, 'target'>) {
+        updateLandscapeFocus(values)
+        setCamera({ alpha, beta, radius, target: center.asArray() })
+      },
       getCamera(): CameraState {
         return { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, target: camera.target.asArray() }
       },
-      setCamera(saved: CameraState) {
-        camera.setTarget(Vector3.FromArray(saved.target))
-        camera.alpha = saved.alpha
-        camera.beta = saved.beta
-        camera.radius = saved.radius
-      },
+      setCamera,
       dispose() {
         layout?.dispose()
         camera.detachControl()

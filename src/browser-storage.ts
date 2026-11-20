@@ -12,7 +12,8 @@ export function writeStorage(area: StorageArea, key: string, value: string | nul
   try {
     if (value === null) window[area].removeItem(key)
     else window[area].setItem(key, value)
+    return true
   } catch {
-    // Keep playing with the current page's preferences and crew token.
+    return false
   }
 }

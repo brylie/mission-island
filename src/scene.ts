@@ -39,7 +39,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
 
   const lighting = createIslandLighting(scene)
   const { shadows } = lighting
-  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight)
+  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
   const { water, homeChests, showFarm, boat, buoys, northernScenery, gulls, fishSchools, lights } = createIslandWorld(meshes)
 
