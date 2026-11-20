@@ -64,6 +64,10 @@ MISSION_ISLAND_SAVE=weekend npm run dev
 
 Run one host per save. Use `MISSION_ISLAND_SAVE=off` for a temporary playtest. Open tabs keep the last rendered scene during reconnect and a styled loading screen shows the current phase when the page reloads. Skiff seats are reserved for two minutes during a reconnect and move with the skiff. Use **WASD** to swim if you land in deep water, or choose **Options → Respawn at home**. Respawning brings your inventory and coins and safely releases loose cargo.
 
+## Saltwind Island development preview
+
+With Vite running, open [Saltwind Island](http://localhost:5173/second-island.html) or select **Saltwind preview** from the starter island. The preview opens on the ferry and includes a guided road tour, free walking, an overview and a site chart. It runs locally in the browser. See the [tour and site inventory](docs/saltwind-island.md) for coordinates, vehicle assets and integration notes.
+
 ## Build and iterate together
 
 - Edit `src/style.css` for the HUD or `src/scene.ts` for the 3D scene. Vite hot-updates both browsers while the host keeps the mission running.
