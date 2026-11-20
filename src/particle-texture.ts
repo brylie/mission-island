@@ -2,7 +2,7 @@ import { RawTexture } from '@babylonjs/core/Materials/Textures/rawTexture'
 import type { Scene } from '@babylonjs/core/scene'
 
 export type ParticleShape = 'mist' | 'flame' | 'smoke' | 'drop' | 'streak' | 'leaf' | 'mote'
-  | 'foam' | 'ring' | 'crescent' | 'bubble' | 'bead' | 'parachute' | 'clod' | 'feather'
+  | 'foam' | 'ring' | 'crescent' | 'bubble' | 'bead' | 'parachute' | 'clod' | 'feather' | 'sole' | 'moth' | 'bee' | 'petal'
 export const particleTextureSize = 48
 
 const clamp = (value: number) => Math.min(1, Math.max(0, value))
@@ -47,6 +47,21 @@ function wetShape(shape: 'foam' | 'ring' | 'crescent' | 'bubble' | 'bead', u: nu
   }
 }
 
+function wingedShape(shape: 'bee' | 'moth', u: number, v: number) {
+  const side = Math.abs(u)
+  const body = clamp(1 - Math.hypot(u * 4.4, v * 1.46) ** 2)
+  const wing = clamp(1 - Math.hypot((side - .47) * 2.38, (v + side * .33) * 2.38) ** 1.3)
+  const stripe = shape === 'bee' ? 142 + 106 * Math.abs(Math.sin(v * 8)) : 224
+  return [Math.max(body, wing * (shape === 'bee' ? .64 : .91)), body > .38 ? stripe : 252]
+}
+
+function footprintShape(u: number, v: number) {
+  const toe = clamp((.89 - Math.hypot(u * 1.07, (v - .27) * 1.45)) * 5)
+  const heel = clamp((.57 - Math.hypot(u * 1.44, (v + .49) * 1.56)) * 6)
+  const tread = Math.abs(Math.sin(v * 24 + Math.abs(u) * 4))
+  return [Math.max(toe, heel) * (.62 + .38 * tread), 255]
+}
+
 function shadeParticle(shape: ParticleShape, u: number, v: number) {
   const radius = Math.hypot(u, v)
   const wobble = Math.sin(u * 14 + v * 7) * Math.cos(u * 9 - v * 13)
@@ -65,6 +80,15 @@ function shadeParticle(shape: ParticleShape, u: number, v: number) {
       return [Math.max(0, 1 - Math.abs(u)) * Math.max(0, 1 - Math.abs(v)) ** .65, 255]
     case 'mote':
       return [Math.max(0, 1 - radius) ** .8, 255]
+    case 'moth':
+    case 'bee':
+      return wingedShape(shape, u, v)
+    case 'sole':
+      return footprintShape(u, v)
+    case 'petal': {
+      const curl = u + .18 * Math.sin(v * 4)
+      return [clamp((.79 - Math.hypot(curl * (1.4 - v * .37), v)) * 12), 229 + 26 * (1 - v * v)]
+    }
     case 'clod':
       return [clamp((.8 - Math.max(Math.abs(u), Math.abs(v) * 1.21, Math.abs(u + v) * .82) + wobble * .1) * 11), 220 + 31 * wobble]
     case 'parachute':

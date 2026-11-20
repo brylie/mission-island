@@ -20,7 +20,7 @@ function createBillboards(scene: Scene, name: string, recipe: ParticleRecipe, ca
       manager.sprites[index] = sprite
       sprite.position.set(frame.x, frame.y, frame.z)
       sprite.height = frame.size
-      sprite.width = frame.size * recipe.aspect
+      sprite.width = frame.size * recipe.aspect * frame.widthScale
       sprite.angle = frame.angle
       sprite.color.set(r, g, b, a)
     },

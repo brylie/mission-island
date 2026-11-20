@@ -1,3 +1,4 @@
+import { gameplayParticleRecipes } from './particle-gameplay-recipes.ts'
 import { shelfParticleRecipes } from './particle-shelf-recipes.ts'
 import type { ParticleShape } from './particle-texture.ts'
 
@@ -11,6 +12,7 @@ interface Recipe {
   bounce?: number
   adhesion?: number
   stretch?: number
+  wingbeat?: number
   rate: number
   life: Range
   spread: Axis
@@ -100,6 +102,7 @@ export const particleRecipes = {
     opacity: .79, fadeIn: .08,
   },
   ...shelfParticleRecipes,
+  ...gameplayParticleRecipes,
 } satisfies Record<string, Recipe>
 
 export const lookoutParticleHeights = { embers: .31, smoke: .745 }

@@ -119,6 +119,7 @@ export function particleAppearance(recipe: ParticleRecipe, particle: Particle, a
     z: start.z + travel * (particle.vz + age * particle.az / 2) + flutter * .42,
     size: particle.size * between(1, recipe.growth, progress),
     stretch: 1 + (recipe.stretch ?? 0) * Math.max(0, progress - .24),
+    widthScale: recipe.wingbeat ? .31 + .69 * Math.abs(Math.cos(age * recipe.wingbeat + particle.phase)) : 1,
     yaw: particle.yaw,
     angle: particle.tilt + (recipe.spin ? particle.phase + particle.spin * age : 0),
     alpha: recipe.opacity * Math.min(1, progress / recipe.fadeIn) * (1 - progress),

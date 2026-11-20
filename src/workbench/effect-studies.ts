@@ -2,6 +2,7 @@ import type { Scene } from '@babylonjs/core/scene'
 import type { MeshFactory } from '../island-meshes'
 import { createParticleEffect } from '../particle-effect'
 import { particleBurst, type Particle, type ParticleTuning } from '../particle-motion'
+import { gameplayParticleRecipes } from '../particle-gameplay-recipes'
 import { lookoutParticleHeights, particleRecipes, type ParticleRecipe } from '../particle-recipes'
 import { particleAccents, shelfParticleRecipes as expandedRecipes } from '../particle-shelf-recipes'
 import { tarnstepSpraySeed, tarnstepSpraySource } from '../second-island/tarnstep-spray'
@@ -14,6 +15,7 @@ import {
 import type { Fixture } from './effect-fixtures'
 import type { FieldSite } from './field-site'
 import { expandedEffectStudies } from './expanded-effect-studies'
+import { gameplayEffectStudies } from './gameplay-effect-studies'
 import { control, range, type Control, type Entry, type Values } from './subject'
 
 type EffectId = keyof typeof particleRecipes
@@ -158,9 +160,14 @@ function playbackLabel(time: number, count: number, mode: Values[string]) {
   return count ? 'Decay' : 'Cleared'
 }
 
-export const effectStudies: Entry[] = [...studies, ...expandedEffectStudies].map(study => ({
+function recipeSource(id: EffectId) {
+  if (id in gameplayParticleRecipes) return 'src/particle-gameplay-recipes.ts'
+  return id in expandedRecipes ? 'src/particle-shelf-recipes.ts' : 'src/particle-recipes.ts'
+}
+
+export const effectStudies: Entry[] = [...studies, ...expandedEffectStudies, ...gameplayEffectStudies].map(study => ({
   id: study.id, name: study.name, group: study.group, description: study.description,
-  source: study.id in expandedRecipes ? 'src/particle-shelf-recipes.ts' : 'src/particle-recipes.ts',
+  source: recipeSource(study.id),
   duration, angle: study.angle ?? .88, ground: study.ground,
   fieldSite: study.field ? () => study.field! : undefined,
   readout: 'Particle playback', controls: effectControls(study),
