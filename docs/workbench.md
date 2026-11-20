@@ -42,3 +42,11 @@ In **Ecology → Biome Composer**, choose **Open fish schooling trial**. Six fis
 Each follower sees the leader's recent path with its own short delay. Seeded, mean-reverting Brownian noise gently varies each fish's direction. A fish can bank more sharply while startled. Its body turns with its direction of travel, including when it slows to regroup.
 
 Approach one flank, then move away. Watch which fish turn first, follow their trails, and look for the gold ring around the fish they regroup on. Make a second pass from the opposite side. Rewind to replay your recorded route; steering after a rewind replaces subsequent moves. **Copy setup link** includes the route, actor, seed, view and timeline position. **Reset** restores the default crossing. The [Driftwood field playtest](https://github.com/brylie/mission-island/issues/68) follows this Composer trial.
+
+### Two-player Driftwood field trial
+
+Open the same Starter Island game address on both computers. Walk to Driftwood Beach in daylight. One player stands on the sand beside the middle parasol and looks out over the wet sand toward the school. The other approaches one flank through the shallows, pauses, then backs away. Have the observer point out the first fish to turn and where the group reforms before comparing what each person saw.
+
+Repeat with one player paddling the skiff from the small fishing dock along the southern shoreline. Cross the school, carry on past it, and give the fish room to settle. Try approaching from opposite sides on foot, then refreshing one browser while the other keeps watching. Look for fish showing through the hull, disappearing against the sand, or popping above the foam as the camera moves.
+
+The host advances six fish at 30 steps per second and broadcasts their positions, headings, startle states and regroup leader together. A reconnect picks up the current encounter. For a repeatable solo inspection, focus the Landscape Workbench near **X 33.4 m, Z −42.9 m**. It runs an undisturbed school from a fixed seed.

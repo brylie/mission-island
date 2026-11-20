@@ -1,3 +1,4 @@
+import type { DriftwoodFrame } from './simulation/driftwood-school'
 import type { BiomeFrame } from './biome-model'
 import type { Point, Pose, starterPay } from './world'
 import type { CrewAppearance } from './crew-appearance'
@@ -69,6 +70,7 @@ export interface Item extends Pose {
 export type Mission = 'delivery' | 'fire' | 'complete'
 
 export interface Snapshot {
+  driftwood: DriftwoodFrame
   juniper: BiomeFrame
   type: 'state'
   crewCoins: number

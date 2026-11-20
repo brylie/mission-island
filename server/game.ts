@@ -1,3 +1,4 @@
+import { createDriftwoodSchool } from '../src/simulation/driftwood-school.ts'
 import { inSkiff } from '../src/actions.ts'
 import { chargePower } from '../src/charged-actions.ts'
 import { createJuniperHabitat } from '../src/juniper-habitat.ts'
@@ -26,7 +27,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
 } = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat()
-  const { state, growth } = restoreIsland(physics, juniper, save)
+  const driftwood = createDriftwoodSchool(clock() >>> 0)
+  const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint)
   const orders = createOrders(state, physics, crew.notifyAll, checkpoint)
@@ -69,6 +71,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       walkCrew(state, member, before, connected, now, tickSeconds, orders.completeFire, checkpoint)
     }
     updateHeldItems(state)
+    state.driftwood = driftwood.step(state.players, state.skiff)
     // Animal motion follows real simulation ticks, even when the crew sleeps through the night.
     if (++wildlifeTick % 3 === 0) {
       state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter(p => p.connected && !p.sleeping))
