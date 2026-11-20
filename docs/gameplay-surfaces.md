@@ -13,6 +13,12 @@ Run `npm run dev` on the default port to use the links. The gallery opens under 
 - **Starter Island** uses the meadow turf across the mainland, compacted gravel on the Harbor Trail, and salt-worn boards on the fishing dock. At Shellglass Tide Pool, look for the barnacles and the low rock whose algae brightens after dusk.
 - **Saltwind** has separate magnetite, malachite, and honey calcite stockpiles next to the Slatecliff Mine hopper. From the Tarnstep Survey Shelf, look for lichen at the foot of the benchmark, basalt at the upper falls, and slate downstream.
 
+| Starter Island | Saltwind |
+| --- | --- |
+| ![Harbor gravel leading to the weathered fishing dock](images/island-surfaces/harbor-dock.jpg) | ![Magnetite, malachite, and honey calcite stockpiles at Slatecliff Mine](images/island-surfaces/slatecliff-stockpiles.jpg) |
+| ![Barnacle-covered rocks at Shellglass during the day](images/island-surfaces/shellglass-day.jpg) | ![Basalt outcrops at the upper Tarnstep Falls](images/island-surfaces/tarnstep-falls.jpg) |
+| ![Cyan algae glowing at Shellglass after dusk](images/island-surfaces/shellglass-night.jpg) | ![Lichen at the base of the Tarnstep Survey Shelf benchmark](images/island-surfaces/tarnstep-benchmark.jpg) |
+
 ## Material clues and gameplay ideas
 
 ### Ore and crystals
