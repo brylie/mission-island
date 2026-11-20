@@ -4,9 +4,10 @@ import { hash } from '../surface-noise'
 import { boxSurfaceUVs } from '../surface-uvs'
 import type { MeshFactory } from '../island-meshes'
 import { waterLevel } from '../terrain'
-import { harborDock, skiffStart } from '../world'
+import type { Point } from '../world'
+import { harborDock, harborDockPiles, skiffStart } from '../world'
 
-export function createDock(meshes: MeshFactory, deck: Material = meshes.paintRecipe('weathered-board')) {
+export function createDock(meshes: MeshFactory, shaderPile?: Point, deck: Material = meshes.paintRecipe('weathered-board')) {
   const { box, cylinder, paintSurface } = meshes
   const { x, top, planks, spacing, width, firstZ, plankDepth } = harborDock
   const length = (planks - 1) * spacing + plankDepth
@@ -24,14 +25,16 @@ export function createDock(meshes: MeshFactory, deck: Material = meshes.paintRec
     }
   }
   const barnacles = meshes.paintRecipe('barnacle-belt')
-  for (const px of [-45.6, -42.4]) for (const z of [-31, -34, -37]) {
-    cylinder(px, -.42, z, .43, .43, 2.25, 7, timber)
+  for (const { x: px, z, top: cap, bottom: foot, diameter } of harborDockPiles) {
+    if (px === shaderPile?.x && z === shaderPile.z) continue
+    cylinder(px, (cap + foot) / 2, z, diameter, diameter, cap - foot, 7, timber)
     // A broken crust hugs the wet outer faces below the deck. Above it,
     // the exposed timber remains bare.
     const vertices: number[] = [], uvs: number[] = [], indices: number[] = []
     for (let i = 0; i <= 4; i++) {
       const k = i + (px < x ? 2 : -1), a = k * 2 * Math.PI / 7
-      const dx = .218 * Math.cos(a), dz = -.218 * Math.sin(a)
+      const radius = diameter / 2 + .003
+      const dx = radius * Math.cos(a), dz = -radius * Math.sin(a)
       const low = waterLevel - .055, high = waterLevel + .085 + hash(i, z, 409) * .10
       vertices.push(px + dx, low, z + dz, px + dx, high, z + dz)
       uvs.push(i * .19, low, i * .19, high)

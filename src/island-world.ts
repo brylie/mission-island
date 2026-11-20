@@ -10,6 +10,8 @@ import { juniperCenter, juniperLayout } from './juniper-habitat'
 import { createFarm } from './island-farm'
 import { createMarketShower } from './market-shower'
 import type { MarketRunoff } from './market-runoff'
+import { saltBloomPile } from './interactive-shaders/catalog'
+import { createIslandShaderEffects, parallaxCottage, type StudyActors } from './interactive-shaders/island-effects'
 import { nightLighting } from './weather'
 import { createGrassTufts, createIslandTerrain } from './island-landscape'
 import type { MeshFactory } from './island-meshes'
@@ -72,7 +74,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   for (const dx of [-0.52, 0, 0.52]) {
     meshes.box(jobBoard.x + dx, boardY + 1.38, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
   }
-  createDock(meshes, study?.target === 'dock' ? study.material : undefined)
+  createDock(meshes, saltBloomPile, study?.target === 'dock' ? study.material : undefined)
   createFerryTerminal(meshes)
   const features = (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site)
   placeSiteFeatures(meshes, features, walkingHeight)
@@ -119,14 +121,16 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
 
   beachUmbrellas.forEach(({ x, z }, index) => createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))
 
+  const omittedBuilding = buildings.findIndex(building => building.x === parallaxCottage)
+  const interactive = createIslandShaderEffects(meshes, substitutions.replaceBuilding !== omittedBuilding, boat)
   meshes.finishScenery()
   const shore = { ...shoreDefaults }
   const calm = { gust: 0, grassDistance: 0, patchContrast: 0 }
   const reducedMist = { ...shaderPresets.dawnSilver, reduced: true }
   const unlitMist = { mistDensity: 1, scattering: 0 }
   function updateEnvironment(frame: WildlifeFrame, light: number, close: boolean, runoff: MarketRunoff,
-    { driftwood, quality = 'full', tideTime = frame.time }: {
-      driftwood?: Parameters<typeof wildlife>[1]; quality?: ShaderQuality; tideTime?: number
+    { driftwood, quality = 'full', tideTime = frame.time, actors }: {
+      driftwood?: Parameters<typeof wildlife>[1]; quality?: ShaderQuality; tideTime?: number; actors?: StudyActors
     } = {}) {
     northernScenery.update(frame.camera, close)
     wildlife(frame, driftwood)
@@ -143,6 +147,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
       shaderPresets.rainPolished.reflection)
     const mist = quality === 'low' ? reducedMist : shaderPresets.dawnSilver
     phenomena(frame, enabled ? mist : unlitMist)
+    interactive({ ...frame, light }, { ...actors, runoff, tideLevel: tide.level, quality })
     return tide
   }
 
