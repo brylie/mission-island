@@ -88,7 +88,10 @@ void main() {
   gl_FragColor = vec4(color, mix(opacity, 1., cloudOpacity));
 }`
 
-export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: DirectionalLight, shadows: ShadowGenerator, diameter = 1050) {
+interface RainRoof { x: number; y: number; z: number; width: number; depth: number }
+
+export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: DirectionalLight, shadows: ShadowGenerator,
+  diameter = 1050, rainRoof?: RainRoof) {
   const engine = scene.getEngine()
   const physical = Atmosphere.IsSupported(engine) ? new Atmosphere('Island atmospheric scattering', scene, [sunlight], {
     skyRenderingGroup: -1,
@@ -192,8 +195,15 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
         for (let i = 0; i < drops.length; i++) {
           const { x, y, z } = drops[i]
           const height = ((y - time * 15) % 17 + 17) % 17 - 7
-          lines[i][0].set(camera.x + x - height * 0.11, camera.y + height, camera.z + z)
-          lines[i][1].copyFromFloats(lines[i][0].x + 0.08, lines[i][0].y - 0.56, lines[i][0].z)
+          const [head, tail] = lines[i]
+          head.set(camera.x + x - height * 0.11, camera.y + height, camera.z + z)
+          tail.copyFromFloats(head.x + 0.08, head.y - 0.56, head.z)
+          if (!rainRoof || tail.y >= rainRoof.y || Math.abs(head.z - rainRoof.z) >= rainRoof.depth / 2) continue
+          // Follow the slant of the streak back to its intersection with the roof.
+          const roofX = tail.x - (rainRoof.y - tail.y) * .08 / .56
+          if (Math.abs(roofX - rainRoof.x) >= rainRoof.width / 2) continue
+          if (head.y <= rainRoof.y) tail.copyFrom(head)
+          else tail.copyFromFloats(roofX, rainRoof.y, head.z)
         }
         CreateLineSystem('Rain', { lines, instance: rain }, scene)
       }
