@@ -1,12 +1,16 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import type { Material } from '@babylonjs/core/Materials/material'
+import { hash } from '../surface-noise'
+import { boxSurfaceUVs } from '../surface-uvs'
 import type { MeshFactory } from '../island-meshes'
 import { waterLevel } from '../terrain'
 import { harborDock, skiffStart } from '../world'
 
-export function createDock({ box, cylinder, paintSurface }: MeshFactory) {
+export function createDock({ box, cylinder, paintRecipe, paintSurface }: MeshFactory, deck: Material = paintRecipe('weathered-board')) {
   for (let i = 0; i < harborDock.planks; i++) {
-    box(harborDock.x, harborDock.top - 0.1, harborDock.firstZ - i * harborDock.spacing,
-      harborDock.width, 0.2, harborDock.plankDepth, paintSurface('wood', i % 3 ? '#a67548' : '#b88758'))
+    const plank = box(harborDock.x, harborDock.top - 0.1, harborDock.firstZ - i * harborDock.spacing,
+      harborDock.width, 0.2, harborDock.plankDepth, deck)
+    boxSurfaceUVs(plank, true, hash(i, 0, 931) * 1.7)
   }
   for (const x of [-45.6, -42.4]) {
     for (const z of [-31, -34, -37]) cylinder(x, -0.42, z, 0.43, 0.43, 2.25, 7, paintSurface('wood'))

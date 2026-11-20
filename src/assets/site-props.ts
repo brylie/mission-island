@@ -1,10 +1,14 @@
+import type { Material } from '@babylonjs/core/Materials/material'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
+import { surfaceRecipe, surfaceRepeatMeters } from '../surface-recipes'
+import { cylinderSurfaceUVs } from '../surface-uvs'
 import { offset, type Point } from '../world'
 import type { FeatureModel, SiteFeature } from '../worlds/site-feature'
 
 function featurePieces(meshes: MeshFactory, root: TransformNode) {
   return {
+    paintRecipe: meshes.paintRecipe,
     face: (vertices: number[], color: string) => {
       const indices = []
       for (let i = 2; i < vertices.length / 3; i++) indices.push(0, i - 1, i)
@@ -13,7 +17,7 @@ function featurePieces(meshes: MeshFactory, root: TransformNode) {
     box: (x: number, y: number, z: number, width: number, height: number, depth: number, color: string) => {
       return meshes.box(x, y, z, width, height, depth, color, root)
     },
-    round: (x: number, y: number, z: number, top: number, bottom: number, height: number, color: string) => {
+    round: (x: number, y: number, z: number, top: number, bottom: number, height: number, color: string | Material) => {
       return meshes.cylinder(x, y, z, top, bottom, height, 10, color, root)
     },
     leaf: (x: number, y: number, z: number, color: string) =>
@@ -94,9 +98,10 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     for (const dx of [-.15, .15]) round(.66 + dx, .865, .01, .028, .03, .13, wood)
     box(.66, .93, .01, .32, .04, .045, wood)
   },
-  benchmark({ round, box }, color) {
-    const base = round(0, .18, 0, .9, 1.15, .47, '#817e72')
+  benchmark({ round, box, paintRecipe }, color) {
+    const base = round(0, .18, 0, .9, 1.15, .47, paintRecipe('lichen-clock'))
     base.scaling.z = .8
+    cylinderSurfaceUVs(base, .92, .47, surfaceRepeatMeters(surfaceRecipe('lichen-clock'), {}))
     const stone = round(.025, .65, .02, .53, .77, .66, '#a59e86')
     stone.scaling.z = .86
     round(.025, .997, .02, .43, .48, .044, color)

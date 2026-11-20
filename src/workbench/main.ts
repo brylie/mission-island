@@ -148,6 +148,7 @@ function renderAssetControls() {
   inspector.replaceChildren()
   let group = ''
   for (const control of asset.controls ?? []) {
+    if (onIsland && control.key === 'shape') continue
     const organism = asset.id === 'biome' ? codex.find(item => item.key === control.key) : undefined
     const heading = organism?.group ?? 'Conditions'
     if (asset.id === 'biome' && heading !== group) {
@@ -287,7 +288,7 @@ function setOption(control: Control, value: Values[string], save = true) {
   zFightingResult.replaceChildren()
   seek = true
   if (control.rebuild) {
-    rebuild(cameraAtSameSite(oldSite))
+    rebuild(!onIsland && control.key === 'shape' ? undefined : cameraAtSameSite(oldSite))
     showFieldSwitch()
   }
   if (save) remember()

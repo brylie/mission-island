@@ -43,6 +43,54 @@ function stageWeather(entry: Entry, time: number, settings: Values) {
   }
 }
 
+function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Entry, values: Values,
+  subject: AbstractMesh[], field?: FieldSite) {
+  const biome = entry.id === 'biome'
+  let min = new Vector3(Infinity, Infinity, Infinity)
+  let max = new Vector3(-Infinity, -Infinity, -Infinity)
+  let triangles = 0
+  let meshCount = 0
+  for (const mesh of subject) {
+    mesh.computeWorldMatrix(true)
+    const { boundingBox } = mesh.getBoundingInfo()
+    min = Vector3.Minimize(min, boundingBox.minimumWorld)
+    max = Vector3.Maximize(max, boundingBox.maximumWorld)
+    if (mesh.isVisible) {
+      meshCount++
+      triangles += mesh.getTotalIndices() / 3
+    }
+  }
+
+  max.y += entry.headroom ?? 0
+  const span = max.subtract(min)
+  const groundHeight = (entry.ground?.height ?? 0) + (field?.offset.y ?? 0)
+  const subjectHeight = Math.max(entry.previewRadius ? .01 : .4, max.y - Math.max(min.y, groundHeight))
+  const center = new Vector3((min.x + max.x) / 2, Math.max(min.y, groundHeight) + subjectHeight * 0.43, (min.z + max.z) / 2)
+  if (field?.surface) center.set(field.offset.x, field.offset.y, field.offset.z)
+  const size = field?.surface?.radius ?? (entry.landscape ? 24 : Math.max(span.x, span.z, subjectHeight))
+  const focusHeight = Number(values.focusHeight ?? 0.25)
+  if (entry.landscape) {
+    const point = { x: Number(values.x), z: Number(values.z) }
+    center.set(point.x, Math.max(waterLevel, terrainHeight(point)) + focusHeight, point.z)
+  }
+  const groundSize = Math.max(14, size * 2.25)
+  const step = size > 45 ? 5 : size > 12 ? 2 : 1
+  const previewRadius = field ? field.surface?.radius : entry.previewRadius
+  const radius = previewRadius ?? (entry.landscape ? 24 : biome ? size * 1.15 : Math.max(3, size * 1.55 + subjectHeight * 0.6))
+  const camera = new ArcRotateCamera('Workbench camera', entry.angle ?? 0.88, 1.1, radius, center.clone(), scene)
+  camera.lowerRadiusLimit = previewRadius ? Math.max(.02, Math.min(.55, previewRadius * .15)) : entry.landscape ? .55 : Math.max(.55, size * .12)
+  camera.upperRadiusLimit = entry.landscape || field?.surface ? 450 : radius * 5
+  camera.lowerBetaLimit = 0.035
+  camera.upperBetaLimit = Math.PI - 0.06
+  camera.minZ = Math.max(previewRadius ? .004 : .025, size / 2000)
+  camera.maxZ = entry.landscape ? 950 : Math.max(600, radius * 8)
+  camera.wheelDeltaPercentage = 0.045
+  camera.panningSensibility = 840 / Math.max(1, size / 5)
+  camera.attachControl(canvas, false)
+  scene.activeCamera = camera
+  return { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount }
+}
+
 export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values,
   reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>, field?: FieldSite) {
   const scene = new Scene(engine)
@@ -58,10 +106,10 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     const firstSubjectMesh = scene.meshes.length
     const meshes = createMeshFactory(scene, shadows)
     const readout = document.getElementById('subject-observations')!
-    const update = entry.create(meshes, values, reportError, text => {
+    const update = !field?.surface ? entry.create(meshes, values, reportError, text => {
       if (readout.textContent !== text) readout.textContent = text
-    })
-    if (field) {
+    }) : undefined
+    if (field && !field.surface) {
       const roots = scene.rootNodes.slice(firstSubjectRoot)
       const anchor = new TransformNode('Field subject', scene)
       anchor.position.set(field.offset.x, field.offset.y, field.offset.z)
@@ -69,44 +117,10 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       for (const root of roots) root.parent = anchor
     }
     meshes.finishScenery({ merge: false })
-    let min = new Vector3(Infinity, Infinity, Infinity)
-    let max = new Vector3(-Infinity, -Infinity, -Infinity)
-    let triangles = 0
-    const subject = scene.meshes.slice(firstSubjectMesh)
-    const meshCount = subject.filter((mesh) => mesh.isVisible).length
-    for (const mesh of subject) {
-      mesh.computeWorldMatrix(true)
-      const { boundingBox } = mesh.getBoundingInfo()
-      min = Vector3.Minimize(min, boundingBox.minimumWorld)
-      max = Vector3.Maximize(max, boundingBox.maximumWorld)
-      if (mesh.isVisible) triangles += mesh.getTotalIndices() / 3
-    }
-
-    max.y += entry.headroom ?? 0
-    const span = max.subtract(min)
-    const groundHeight = (entry.ground?.height ?? 0) + (field?.offset.y ?? 0)
-    const subjectHeight = Math.max(0.4, max.y - Math.max(min.y, groundHeight))
-    const center = new Vector3((min.x + max.x) / 2, Math.max(min.y, groundHeight) + subjectHeight * 0.43, (min.z + max.z) / 2)
-    const size = entry.landscape ? 24 : Math.max(span.x, span.z, subjectHeight)
-    let focusHeight = Number(values.focusHeight ?? 0.25)
-    if (entry.landscape) {
-      const point = { x: Number(values.x), z: Number(values.z) }
-      center.set(point.x, Math.max(waterLevel, terrainHeight(point)) + focusHeight, point.z)
-    }
-    const groundSize = Math.max(14, size * 2.25)
-    const step = size > 45 ? 5 : size > 12 ? 2 : 1
-    const radius = entry.landscape ? 24 : biome ? size * 1.15 : Math.max(3, size * 1.55 + subjectHeight * 0.6)
-    const camera = new ArcRotateCamera('Workbench camera', entry.angle ?? 0.88, 1.1, radius, center.clone(), scene)
-    camera.lowerRadiusLimit = entry.landscape ? 0.55 : Math.max(0.55, size * 0.12)
-    camera.upperRadiusLimit = entry.landscape ? 450 : radius * 5
-    camera.lowerBetaLimit = 0.035
-    camera.upperBetaLimit = Math.PI - 0.06
-    camera.minZ = Math.max(0.025, size / 2000)
-    camera.maxZ = entry.landscape ? 950 : Math.max(600, radius * 8)
-    camera.wheelDeltaPercentage = 0.045
-    camera.panningSensibility = 840 / Math.max(1, size / 5)
-    camera.attachControl(canvas, false)
-    scene.activeCamera = camera
+    const subject = surroundings?.surfaceMeshes ?? scene.meshes.slice(firstSubjectMesh)
+    const { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount } =
+      createPreviewCamera(scene, canvas, entry, values, subject, field)
+    let focusHeight = Number(values.focusHeight ?? .25)
     const layout = entry.landscape ? createLandscapeLayout(meshes, canvas, draft, () => ({
       x: camera.target.x, z: camera.target.z,
       yaw: Math.atan2(camera.target.x - camera.globalPosition.x, camera.target.z - camera.globalPosition.z),
@@ -139,7 +153,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     }
 
     const pointOfView = {
-      perspective: [entry.angle ?? 0.88, 1.1],
+      perspective: [field?.surface?.alpha ?? entry.angle ?? 0.88, field?.surface?.beta ?? 1.1],
       front: [entry.angle && entry.angle < 0 ? -Math.PI / 2 : Math.PI / 2, Math.PI / 2],
       side: [0, Math.PI / 2],
       top: [Math.PI / 2, 0.04],
@@ -189,13 +203,14 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       draw(time: number, rate: number, seek: boolean, settings: Values, turntable: boolean, delta: number) {
         if (turntable) camera.alpha += delta * 0.38
         if (entry.landscape) updateLandscapeFocus(settings)
+        if (field?.surface) camera.minZ = Math.max(.04, camera.radius / 360)
         const weather = stageWeather(entry, time, settings)
         const shaftIntensity = settings.sunShafts === false ? 0 : Number(settings.shaftIntensity ?? 100) / 100
         camera.getViewMatrix()
         const position = camera.globalPosition
         const light = atmosphere?.update(time, weather, position, true, { shaftIntensity, fogScale: field?.saltwindSubject ? 7 : 1 }) ?? 1
         update?.({ time, rate, seek, lighting, camera: position, light, rain: weather.rain, delta }, settings)
-        surroundings?.({ time, delta: rate * delta, seek, weather: { hour: entry.weather ? weather.hour : 13, rain: weather.rain }, camera: position, threats: [] }, light)
+        surroundings?.update({ time, delta: rate * delta, seek, weather: { hour: entry.weather ? weather.hour : 13, rain: weather.rain }, camera: position, threats: [] }, light)
         layout?.update(delta, time)
         subject.forEach(applyWireframe)
         layout?.meshes().forEach(applyWireframe)

@@ -66,11 +66,11 @@ function wornPath(meshes: MeshFactory, name: string, points: readonly Point[], w
 }
 
 export function createTrail(meshes: MeshFactory, name: string, points: readonly Point[], width: number,
-  surface: PathSurface = 'gravel', heightAt: (p: Point) => number = () => 0) {
+  surface: PathSurface = 'gravel', heightAt: (p: Point) => number = () => 0, material?: Material) {
   if (surface === 'desire') return wornPath(meshes, name, points, width, heightAt)
   const paved = surface === 'pavement'
-  return ribbon(meshes, name, [points], width, .039, meshes.paintSurface(paved ? 'concrete' : 'gravel'),
-    paved ? 2 : 1.85, heightAt)
+  return ribbon(meshes, name, [points], width, .039, material ?? meshes.paintSurface(paved ? 'concrete' : 'gravel'),
+    material ? 1 : paved ? 2 : 1.85, heightAt)
 }
 
 export function createSidewalk(meshes: MeshFactory, path: { name: string; points: readonly Point[]; width: number }) {

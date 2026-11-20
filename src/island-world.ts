@@ -1,3 +1,4 @@
+import type { Material } from '@babylonjs/core/Materials/material'
 import { createBuoy, createDock, createHarborBoat } from './assets/waterfront'
 import { createHomeChest, createRock, createTree, createUmbrella, umbrellaColors } from './assets/props'
 import { createHouse } from './assets/buildings'
@@ -19,20 +20,45 @@ import { islandRocks, islandTrees } from './scenery'
 import type { SiteFeature } from './worlds/site-feature'
 import { placeSiteFeatures } from './assets/site-props'
 import { beachUmbrellas, shellRocks, starterFeatures } from './worlds/starter/sites'
+import { groundSurfaceUVs } from './surface-uvs'
+import { nightLighting } from './weather'
+import type { WildlifeFrame } from './wildlife'
 import { createStreetLights } from './street-lights'
 import { boundaryBuoys, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
 import { buildings, crewHomes } from './world'
 
+export type IslandSurfaceTarget = 'meadow' | 'harbor-trail' | 'dock'
+
 interface WorldSubstitutions {
+  surfaceStudy?: { target: IslandSurfaceTarget; material: Material; wear: number }
   replaceBuilding?: number
   features?: readonly SiteFeature[]
   replaceFeature?: SiteFeature
   replaceFarm?: boolean
 }
 
+function createShellglassRocks(meshes: MeshFactory) {
+  const algae = meshes.paintRecipe('glow-algae-film')
+  const barnacles = meshes.paintRecipe('barnacle-belt')
+  for (const [index, point] of shellRocks.entries()) {
+    const { size, heading } = point
+    const y = groundHeight(point)
+    const rock = meshes.sphere(point.x, y + .055, point.z, size, .23, size * .65, index === 0 ? algae : barnacles)
+    rock.rotation.y = heading
+    groundSurfaceUVs(rock)
+    meshes.sphere(point.x + .025, y + .165, point.z - .015, .16, .055, .12, '#ecd3aa')
+  }
+  return algae
+}
+
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
-  const water = createIslandTerrain(meshes)
-  for (const { name, points, width, surface } of footpaths) createTrail(meshes, name, points, width, surface, groundHeight)
+  const study = substitutions.surfaceStudy
+  const water = createIslandTerrain(meshes, study?.target === 'meadow' ? study : undefined)
+  const harborFinish = study?.target === 'harbor-trail' ? study.material : meshes.paintRecipe('path-gravel')
+  for (const { name, points, width, surface } of footpaths) {
+    const finish = name === 'Harbor trail' ? harborFinish : undefined
+    createTrail(meshes, name, points, width, surface, groundHeight, finish)
+  }
   for (const path of walkways) createSidewalk(meshes, path)
   createRoad(meshes, road)
 
@@ -50,15 +76,10 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   for (const dx of [-0.52, 0, 0.52]) {
     meshes.box(jobBoard.x + dx, boardY + 1.38, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
   }
-  createDock(meshes)
+  createDock(meshes, study?.target === 'dock' ? study.material : undefined)
   createFerryTerminal(meshes)
   placeSiteFeatures(meshes, (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site), walkingHeight)
-  for (const point of shellRocks) {
-    const { size, heading } = point
-    const rock = meshes.sphere(point.x, groundHeight(point) + .055, point.z, size, .23, size * .65, '#798b80')
-    rock.rotation.y = heading
-    meshes.sphere(point.x + .025, groundHeight(point) + .165, point.z - .015, .16, .055, .12, '#ecd3aa')
-  }
+  const shellglassAlgae = createShellglassRocks(meshes)
   // Limpets on the sill and wrack in the basin give the pool a scale at foot level.
   for (let i = 0; i < 17; i++) {
     const patch = Math.floor(i / 4)
@@ -87,11 +108,15 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   createWildflowers(meshes)
   createUnderstory(meshes)
   const wildlife = createStarterWildlife(meshes)
-  const phenomena = createPhenomena(meshes.scene, [
+  const posePhenomena = createPhenomena(meshes.scene, [
     { ...pool, name: 'Mirror Pool dawn mist', kind: 'mist', y: waterLevel, extent: 22, seed: 5182 },
     { name: 'Fernfall spray', kind: 'spray', x: streamX(89.2), y: waterLevel + .04, z: 89.2, extent: 2.7, seed: 2961 },
     { name: 'Shellglass plankton', kind: 'glow', ...tidePool, y: waterLevel, extent: 1.7, seed: 6787 },
   ])
+  const phenomena = (frame: WildlifeFrame) => {
+    shellglassAlgae.emissiveIntensity = .10 + .9 * nightLighting(frame.weather.hour)
+    posePhenomena(frame)
+  }
   const lights = createStreetLights(meshes)
 
   beachUmbrellas.forEach(({ x, z }, index) => createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))

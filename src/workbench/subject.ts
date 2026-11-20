@@ -39,6 +39,7 @@ export interface Entry {
   duration?: number
   angle?: number
   headroom?: number
+  previewRadius?: number
   topView?: boolean
   landscape?: boolean
   ground?: { color: string; height: number }

@@ -1,3 +1,6 @@
+import type { Material } from '@babylonjs/core/Materials/material'
+import { meadowGroundTone } from './surface-patterns'
+import { surfaceRecipe } from './surface-recipes'
 import { dressStrand } from './assets/strand'
 import { juniperCenter } from './juniper-habitat'
 import { onBeachTowel } from './worlds/starter/sites'
@@ -12,7 +15,10 @@ import { buildings, distance, harbor, island, lookout, town } from './world'
 import type { MeshFactory } from './island-meshes'
 import { createOceanMaterial } from './ocean'
 
-export function createIslandTerrain(meshes: MeshFactory) {
+export function createIslandTerrain(meshes: MeshFactory, meadow: { material: Material; wear: number } = {
+  material: meshes.paintRecipe('meadow-turf'),
+  wear: surfaceRecipe('meadow-turf').wear.amount,
+}) {
   function band(name: string, rings: readonly number[], sand: boolean) {
     // Refine the angular sector around the narrow stream without tessellating every beach.
     const angles = Array.from({ length: 256 }, (_, j) => {
@@ -40,7 +46,7 @@ export function createIslandTerrain(meshes: MeshFactory) {
           colors.push((1 - .60 * bed * seam) * (1 - wet * .43), (1 - .39 * bed * seam) * (1 - wet * .11),
             (1 - .36 * bed) * (1 + wet * .24), 1)
         } else {
-          uvs.push(x / 4.5, z / 4.5)
+          uvs.push(x, z)
           const point = { x, z }
           const influence = (at: typeof point, range: number) => Math.max(0, 1 - distance(point, at) / range) ** 1.4
           const duff = influence(juniperCenter, 10)
@@ -49,8 +55,11 @@ export function createIslandTerrain(meshes: MeshFactory) {
           const wetland = influence(pool, 31)
           const bank = z > 80 && z < 94 ? Math.max(0, Math.min(1, z - 80, (94 - z) / 2,
             (fernfallSection(z).halfWidth + 1.6 - Math.abs(x - streamX(z))) / 1.5)) : 0
-          colors.push(1 + bank * .13 - forest * 0.42 + ridge * 0.44, 1 - duff * .48 - bank * .29 - forest * 0.27 - ridge * 0.30,
-            1 - duff * .44 + bank * .16 - forest * 0.12 - ridge * 0.32 + wetland * 0.19, 1)
+          const dry = meadowGroundTone(x, z, meadow.wear)
+          const grass = 1 - dry
+          colors.push(1 + bank * .13 - forest * 0.42 + ridge * 0.44 + .22 * dry - .08 * grass,
+            1 - duff * .48 - bank * .29 - forest * 0.27 - ridge * 0.30 - .20 * dry + .17 * grass,
+            1 - duff * .44 + bank * .16 - forest * 0.12 - ridge * 0.32 + wetland * 0.19 - .39 * dry, 1)
         }
         if (i === 0 || j === segments) continue
         const a = (i - 1) * (segments + 1) + j
@@ -59,7 +68,8 @@ export function createIslandTerrain(meshes: MeshFactory) {
         indices.push(a, b, b + 1)
       }
     }
-    const mesh = meshes.surface(name, positions, indices, meshes.paintSurface(sand ? 'sand' : 'grass'), undefined, uvs)
+    const material = sand ? meshes.paintSurface('sand') : meadow.material
+    const mesh = meshes.surface(name, positions, indices, material, undefined, uvs)
     mesh.setVerticesData(VertexBuffer.ColorKind, colors)
     return mesh.freezeWorldMatrix()
   }
