@@ -6,9 +6,10 @@ import { createCrew, poseCrew, poseSwimming, swimmingHeight } from '../assets/cr
 import { createHomeChest, createSupply } from '../assets/props'
 import { createFlatbed } from '../assets/flatbed'
 import type { MeshFactory } from '../island-meshes'
-import { walkingHeight } from '../terrain'
+import { groundHeight, walkingHeight } from '../terrain'
 import { crateSize, distance, jumpSpeed, truckStart } from '../world'
-import { parkedTruckPose } from '../truck-pose'
+import { parkedGroundPose } from '../truck-pose'
+import { flatbedGroundDrive } from '../vehicles/flatbed'
 import type { Point } from '../world'
 import { draftLabels as labels, draftStorageKey } from './landscape-draft'
 import type { createLandscapeDraft } from './landscape-draft'
@@ -23,7 +24,9 @@ function nodeFor(meshes: MeshFactory, placement: Draft['objects'][number]) {
   const crew = placement.kind === 'player' ? createCrew(meshes, 0) : undefined
   const root = crew?.root ?? new TransformNode(labels[placement.kind], meshes.scene)
   const y = walkingHeight(placement)
-  const truckPose = placement.kind === 'truck' ? parkedTruckPose({ ...placement, heading: truckStart.heading }) : undefined
+  const truckPose = placement.kind === 'truck'
+    ? parkedGroundPose({ ...placement, heading: truckStart.heading }, flatbedGroundDrive.wheels, groundHeight)
+    : undefined
   root.position.set(placement.x, y, placement.z)
   const motor: Motor = { player: { ...placement, y, heading: 0, grounded: true, onBed: false, swimming: false }, verticalSpeed: 0 }
   if (placement.kind === 'crate') {
@@ -84,7 +87,7 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
   function positionObject(object: typeof objects[number]) {
     const { x, z } = object.placement
     if (object.truckPose) {
-      object.truckPose = parkedTruckPose({ x, z, heading: object.truckPose.heading })
+      object.truckPose = parkedGroundPose({ x, z, heading: object.truckPose.heading }, flatbedGroundDrive.wheels, groundHeight)
       const { y, heading, pitch, roll } = object.truckPose
       object.root.position.set(x, y, z)
       object.root.rotation.set(pitch, heading, roll)
