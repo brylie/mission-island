@@ -73,7 +73,7 @@ export function createTrail(meshes: MeshFactory, name: string, points: readonly 
     paved ? 2 : 1.85, heightAt)
 }
 
-export function createSidewalk(meshes: MeshFactory, path: { name: string; points: readonly Point[]; width: number }) {
+export function createSidewalk(meshes: MeshFactory, path: { name: string; points: readonly Point[]; width: number }, material = meshes.paintSurface('concrete')) {
   // The sidewalk continues across the beach approach at the Seabrook junction.
-  return ribbon(meshes, path.name, [path.points], path.width, .065, meshes.paintSurface('concrete'), 2)
+  return ribbon(meshes, path.name, [path.points], path.width, .065, material, 2)
 }

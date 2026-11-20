@@ -1,3 +1,4 @@
+import { shaderStudies } from './shader-studies'
 import { schoolStudy } from './school-study'
 import { biomeEntry } from './biome-preview'
 import { brinewickMarketStudy } from './brinewick-market-study'
@@ -40,5 +41,6 @@ export const entries: Entry[] = [
   ...effectStudies,
   ...routeStudies,
   ...materialStudies,
+  ...shaderStudies,
   ...saltwindAssets,
 ]
