@@ -7,6 +7,7 @@ import { birdActivity, schoolAvoidance } from './wildlife-motion'
 export interface WildlifeFrame {
   time: number
   delta: number
+  seek?: boolean
   weather: Weather
   camera: { x: number; y: number; z: number }
   threats: readonly Point[]
@@ -23,7 +24,7 @@ export function createSchools(meshes: MeshFactory, groups: readonly School[]) {
   const paint = meshes.paint('#8ac0ad')
   paint.backFaceCulling = false
   const schools = groups.map((group) => ({
-    ...group, flee: { x: 0, z: 0 }, heading: 0,
+    ...group, flee: { x: 0, z: 0 }, heading: undefined as number | undefined,
     fish: Array.from({ length: 6 }, (_, i) => {
       const node = meshes.surface('Schooling fish',
         [0, 0, .39, .095, 0, .035, 0, .12, .02, -.095, 0, .035, 0, -.085, .02,
@@ -33,12 +34,16 @@ export function createSchools(meshes: MeshFactory, groups: readonly School[]) {
       return node
     }),
   }))
-  return ({ time, delta, camera, threats }: WildlifeFrame) => {
+  return ({ time, delta, camera, threats, seek }: WildlifeFrame) => {
     for (const school of schools) {
       const { swim, deep, level, flee, fish, isWater } = school
       const origin = swim(time)
       const visible = camera.y - level < 47 && Math.hypot(origin.x - camera.x, origin.z - camera.z) < 75
       for (const node of fish) node.setEnabled(visible)
+      if (seek) {
+        school.heading = undefined
+        flee.x = flee.z = 0
+      }
       if (!visible) continue
       const aim = schoolAvoidance(origin, threats, deep)
       const stressed = Math.hypot(aim.x, aim.z) > .14
@@ -47,8 +52,11 @@ export function createSchools(meshes: MeshFactory, groups: readonly School[]) {
       flee.z += (aim.z - flee.z) * factor
       const ahead = swim(time + .065)
       const target = Math.atan2(ahead.x - origin.x + (aim.x - flee.x) * .11, ahead.z - origin.z + (aim.z - flee.z) * .11)
-      const turn = target - school.heading
-      school.heading += Math.atan2(Math.sin(turn), Math.cos(turn)) * (1 - Math.exp(-delta * 6))
+      if (school.heading === undefined || (!stressed && Math.hypot(flee.x, flee.z) < .001)) school.heading = target
+      else {
+        const turn = target - school.heading
+        school.heading += Math.atan2(Math.sin(turn), Math.cos(turn)) * (1 - Math.exp(-delta * 6))
+      }
       const sin = Math.sin(school.heading), cos = Math.cos(school.heading)
       const spread = 1 + Math.hypot(flee.x, flee.z) * .2
       for (const [i, node] of fish.entries()) {

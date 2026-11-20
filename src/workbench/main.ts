@@ -1,7 +1,7 @@
 import './style.css'
 import { bindBiomeRecipes } from './biome-files'
 import { biomeLink, codex, readRecipe, recipeFromLink } from '../biome-recipe'
-import { bindPlaytestCopy, landscapeLink, readLandscapeView } from '../playtest-link'
+import { bindPlaytestCopy, landscapeLink, landscapeWindow, readLandscapeView } from '../playtest-link'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { readStorage, writeStorage } from '../browser-storage'
@@ -64,10 +64,11 @@ if (sharedRecipe) {
   Object.assign(saved, { id: 'biome', camera: undefined, time: 0, playing: true })
 }
 if (shared) {
+  const timeline = landscapeWindow(shared.time)
   saved.id = 'landscape'
   saved.camera = shared.camera
-  saved.options = { ...saved.options, landscape: { x: shared.focus[0], z: shared.focus[1], hour: shared.hour, rain: shared.rain } }
-  Object.assign(saved, { time: shared.time, playing: false, grid: shared.grid, wireframe: shared.wireframe, turntable: false })
+  saved.options = { ...saved.options, landscape: { x: shared.focus[0], z: shared.focus[1], hour: shared.hour, rain: shared.rain, clockStart: timeline.start } }
+  Object.assign(saved, { time: timeline.time, playing: false, grid: shared.grid, wireframe: shared.wireframe, turntable: false })
 }
 let entries = initialEntries
 let createPreviewStage = createStage
@@ -297,7 +298,11 @@ function rebuild(camera?: CameraState) {
 }
 
 function loadAsset(camera?: CameraState) {
-  values = restoreOptions(asset.controls, optionsByAsset[asset.id])
+  const previous = optionsByAsset[asset.id]
+  values = restoreOptions(asset.controls, previous)
+  if (asset.landscape && typeof previous?.clockStart === 'number' && Number.isFinite(previous.clockStart)) {
+    values.clockStart = previous.clockStart
+  }
   optionsByAsset[asset.id] = values
   element('asset-group').textContent = asset.group
   element('asset-title').textContent = asset.name
@@ -397,7 +402,9 @@ for (const button of document.querySelectorAll<HTMLButtonElement>('[data-angle]'
   })
 }
 element('reset').addEventListener('click', () => {
+  const clockStart = values.clockStart
   values = restoreOptions(asset.controls)
+  if (asset.landscape && typeof clockStart === 'number') values.clockStart = clockStart
   optionsByAsset[asset.id] = values
   renderAssetControls()
   rebuild(stage?.getCamera())
@@ -417,7 +424,7 @@ bindPlaytestCopy(() => {
   const camera = stage?.getCamera()
   if (!camera || !asset.landscape) return
   return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? .8 },
-    hour: Number(values.hour), rain: Number(values.rain), time, grid: grid.checked, wireframe: wireframe.checked })
+    hour: Number(values.hour), rain: Number(values.rain), time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
 })
 
 let resize: ResizeObserver | undefined

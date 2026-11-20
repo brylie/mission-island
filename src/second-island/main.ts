@@ -106,7 +106,9 @@ function start() {
     place.textContent = tour[stop].name
     direction.textContent = playing ? `Following the road to ${tour[stop + 1].name}. Walk at any time to take over.` : tour[stop].detail
     stage.textContent = playing ? 'Guided tour' : 'Development preview'
-    tourButton.textContent = playing ? 'Pause tour' : stop === 0 ? 'Start tour' : stop === tour.length - 1 ? 'Restart tour' : 'Continue tour'
+    tourButton.textContent = playing ? 'Pause tour' : stop === 0 && !leg && !progress ? 'Start tour' : stop === tour.length - 1 ? 'Restart tour' : 'Continue tour'
+    tourButton.title = playing ? 'Pause at this point on the route' : stop === tour.length - 1
+      ? 'Return to the ferry and start again' : 'Follow the route from the last tour position'
     stopLabels.forEach((label, i) => i === stop ? label.setAttribute('aria-current', 'step') : label.removeAttribute('aria-current'))
   }
 
@@ -192,6 +194,7 @@ function start() {
   tourButton.addEventListener('click', () => {
     resumePreview()
     if (playing) { stopTour(); return }
+    // Walking and site inspection leave the route cursor intact. Continue returns to that cursor.
     if (stop === tour.length - 1) reset()
     playing = true
     setOverview(false)

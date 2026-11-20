@@ -22,15 +22,15 @@ export function canWalkAt(point: Point, radius: number, minimumY: number) {
   return canOccupyGround(point, radius, onDock(point) ? -Infinity : minimumY)
 }
 
-// Older saves may place a grounded player inside a moved building or a new landmark.
+// A saved jump can land inside a moved building. Props also need recovery at ground level.
 export function recoverSceneryOverlap(player: Player) {
-  if (player.seat || player.swimming || player.onBed || player.truckSurface || !player.grounded) return
-  if (clearFixedWalls(player, .4) && propTop(player, .18) <= player.y + .055) return
+  if (player.seat || player.swimming || player.onBed || player.truckSurface) return
+  if (clearFixedWalls(player, .4) && (!player.grounded || propTop(player, .18) <= player.y + .055)) return
   for (let radius = .5; radius <= 8; radius += .5) {
     for (let direction = 0; direction < 16; direction++) {
       const point = offset({ ...player, heading: Math.PI + direction * Math.PI / 8 }, 0, radius)
       if (!canWalkAt(point, .4, waterLevel - maxWadeDepth)) continue
-      Object.assign(player, point, { y: walkingHeight(point) })
+      Object.assign(player, point, { y: walkingHeight(point), grounded: true })
       return
     }
   }

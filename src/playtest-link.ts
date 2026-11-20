@@ -1,5 +1,13 @@
 // Versioned, inspection-only state. Build a new URL so a live session's query
 // parameters and credentials never travel with a scenery bookmark.
+export const landscapeDuration = 96
+
+// Keep the scrubber bounded while restoring the exact island time for ambient wildlife and effects.
+export function landscapeWindow(clock: number) {
+  const start = clock <= landscapeDuration ? 0 : Math.floor(clock / landscapeDuration) * landscapeDuration
+  return { start, time: clock - start }
+}
+
 interface LandscapeView {
   focus: number[]
   camera: { target: number[]; alpha: number; beta: number; radius: number; fov: number }
@@ -64,7 +72,7 @@ export function readLandscapeView(params: URLSearchParams): LandscapeView | unde
   const focus = tuple(params, 'focus', [-500, 500], [-500, 500])
   const target = tuple(params, 'target', coordinate, coordinate, coordinate)
   const orbit = tuple(params, 'orbit', angle, [0.034, Math.PI - 0.059], [.55, 450], [.1, 2])
-  const sky = tuple(params, 'sky', [0, 24], [0, 1], [0, 84])
+  const sky = tuple(params, 'sky', [0, 24], [0, 1], [0, 1e9])
   const display = tuple(params, 'display', flag, flag)
   if (params.get('view') !== '1' || !focus || !target || !orbit || !sky || !display) return
   const [alpha, beta, radius, fov] = orbit

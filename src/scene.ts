@@ -370,7 +370,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       const camera = islandCamera.inspectionCamera()
       if (!camera || !last) return
       return landscapeLink(location.href, { focus: [camera.target[0], camera.target[2]], camera, ...last.weather,
-        time: time % 84, grid: false, wireframe: false })
+        time: ambientTime, grid: false, wireframe: false })
     },
     walkInput: (x: number, z: number) => islandCamera.walkInput(x, z),
     aimHeading: islandCamera.aimHeading,

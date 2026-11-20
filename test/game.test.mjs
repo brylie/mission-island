@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { Buffer } from 'node:buffer'
 import { EventEmitter } from 'node:events'
 import { test } from 'node:test'
+import { canWalkAt } from '../server/movement.ts'
 import { createGame } from '../server/game.ts'
 import { juniperCenter, juniperLayout } from '../src/juniper-habitat.ts'
 import { actionHint, atHomeDoor } from '../src/actions.ts'
@@ -764,4 +765,14 @@ test('a second player disturbs the shared Juniper habitat and reconnects to its 
   assert.notEqual(observer.state.juniper.foxes[0].behavior, 'fleeing')
   const returned = join(tokens[1])
   assert.deepEqual(returned.state.juniper, observer.state.juniper)
+})
+
+test('a save made mid-jump inside the relocated market restores to walkable ground', t => {
+  const wall = { x: 39, z: 1.7 }
+  assert.equal(canWalkAt(wall, .4, waterLevel), false)
+  const h = setup(t, { players: [player(0, wall, { grounded: false, y: 1.2 })] })
+  const restored = h.join(tokens[0]).player
+  assert.ok(canWalkAt(restored, .4, waterLevel))
+  assert.equal(restored.grounded, true)
+  assert.equal(restored.y, groundHeight(restored))
 })

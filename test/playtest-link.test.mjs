@@ -1,7 +1,7 @@
 import { URL } from 'node:url'
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { landscapeLink, saltwindLink, readLandscapeView, readSaltwindView } from '../src/playtest-link.ts'
+import { landscapeLink, landscapeWindow, saltwindLink, readLandscapeView, readSaltwindView } from '../src/playtest-link.ts'
 
 const host = 'http://demo:example@192.168.1.10:5173/dev/index.html?save=family#private'
 const bench = { focus: [39, 17.65], camera: { target: [39, 1, 17.65], alpha: -1.3, beta: 1.1, radius: 6, fov: .8 },
@@ -35,3 +35,13 @@ for (const [name, state, write, read, path] of [
     }
   })
 }
+
+test('landscape bookmarks restore the full island clock inside a bounded scrub window', () => {
+  for (const clock of [0, 84, 90, 96, 233.125, 1234567.25]) {
+    const url = new URL(landscapeLink(host, { ...bench, time: clock }))
+    const { time, start } = landscapeWindow(readLandscapeView(url.searchParams).time)
+    assert.ok(time >= 0 && time <= 96)
+    assert.equal(time % 48, clock % 48)
+    assert.equal(start + time, clock)
+  }
+})

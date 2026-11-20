@@ -82,7 +82,7 @@ export function createPhenomena(scene: Scene, effects: readonly Effect[]) {
         const lift = kind === 'mist' ? (.055 + phase * .024) * extent : .035
         mesh.position.set(x + (side + drift) * extent, y + lift + climb,
           z + (across + (kind === 'spray' ? progress * .42 : -drift)) * extent)
-        const fade = kind === 'spray' ? .3 + .7 * Math.sin(progress * Math.PI) : 1
+        const fade = kind === 'spray' ? Math.sin(progress * Math.PI) : 1
         mesh.scaling.set(look.width * extent * size * fade, look.height * extent * size * fade, 1)
       }
     }

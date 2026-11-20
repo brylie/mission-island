@@ -2,6 +2,8 @@
 
 Open `/second-island.html` from the Vite server or use **Saltwind preview** on the starter island. The preview opens on the Brinewick ferry. **Start tour** follows the road and pauses in each village. **WASD** or the arrow keys take over on foot, **Shift** runs, drag orbits the camera, and the wheel changes how close you stand to the crew. **C** opens the overview, **M** opens the site chart, and **Inspect site** places the crew at the nearest surveyed road access. Discoveries appear as you approach landmarks and last for the preview session.
 
+Walking or inspecting a landmark pauses the guided tour. Starting or continuing it returns the crew to the saved position on the route. Restarting a completed tour takes the crew back to the ferry.
+
 ## Tour
 
 | Stop | X, Z (m) | What to inspect |
