@@ -1,8 +1,9 @@
 import { createBuoy, createDock, createHarborBoat } from './assets/waterfront'
-import { createHomeChest, createRock, createTree, createUmbrella, umbrellaColors } from './assets/props'
+import { createClothingCounter, createHomeChest, createRock, createTree, createUmbrella, createWardrobe, umbrellaColors } from './assets/props'
 import { createHouse } from './assets/buildings'
 import { createRoad, createSidewalk, createTrail } from './assets/routes'
 import { playerColors } from './assets/crew'
+import { clothingCounter } from './farm'
 import { createBiomeScenery } from './biome-scenery'
 import { juniperCenter, juniperLayout } from './juniper-habitat'
 import { createFarm } from './island-farm'
@@ -41,6 +42,9 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     if (index !== substitutions.replaceBuilding) meshes.batchModel(createHouse(meshes, building))
   })
   const homeChests = crewHomes.map(({ chest }, i) => createHomeChest(meshes, chest, playerColors[i]))
+  crewHomes.forEach(({ wardrobe }, i) => createWardrobe(meshes, { ...wardrobe, z: wardrobe.z + 0.49 },
+    groundHeight(wardrobe), playerColors[i]))
+  createClothingCounter(meshes, { ...clothingCounter, z: clothingCounter.z - 0.65 }, groundHeight(clothingCounter))
   const showFarm = createFarm(meshes, substitutions.replaceFarm ? [] : undefined)
   showFarm([])
   const marketShower = createMarketShower(meshes)

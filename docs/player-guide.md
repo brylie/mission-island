@@ -41,7 +41,15 @@ Press **E** at the chest outside your starting cottage to take your tools and on
 
 Equip the fishing rod and aim into the water from the shore, the harbor dock, or a stopped skiff. Hold **left click**, then release near the top of the rising and falling cast meter to cast farther and improve your odds. When a fish bites, hold **left click** to reel and release when it pulls. Watch line tension and land the fish before it escapes. To take the skiff, walk into the shallows beside the dock and press **F** near it. Both seats can paddle. Return to shallow water and stop before disembarking.
 
-At Island Farm, till with the hoe, plant with **E**, then water by hand or wait for rain. Watered carrots grow in daylight. Sell fish and harvested carrots at Seabrook Market’s striped awning with **E**. Buy another seed for one coin with **B**, or spend three coins on the Harbor angler uniform in **Options → Crew appearance**. Finishing the delivery and firefighting missions unlocks two more uniforms.
+At Island Farm, till with the hoe, plant with **E**, then water by hand or wait for rain. Watered carrots grow in daylight. Sell fish and harvested carrots at Seabrook Market’s striped awning with **E**. Buy another seed for one coin with **B**.
+
+## Clothes and work outfits
+
+Press **E** at the wardrobe outside your cottage, or open **Options → Crew appearance → Open wardrobe**. Mix everyday pieces and choose face and hair options. Drag the preview to orbit or use **Front** and **Back**. Use **Apply** to show your changes to the crew or **Cancel** to keep wearing your current outfit.
+
+At Seabrook Market, press **E** at the clothing counter beside the striped awning. Buy the Coral shirt for one crew coin, the Lagoon swimsuit for two, or the Harbor angler outfit for three. Each purchase goes into the buyer’s wardrobe and can be worn again for free. Select the swimsuit under **Shirt or swimsuit**. It covers your top and bottoms while worn, and your trousers are ready when you change back.
+
+The delivery and lookout fire missions unlock work outfits for both crewmates. Each player can wear one independently and return to their saved everyday clothes.
 
 The island clock runs one day every eight real minutes. At night, press **E** at your cottage door. Dawn begins when every connected player turns in. Press **E** again or walk away to cancel while waiting.
 
