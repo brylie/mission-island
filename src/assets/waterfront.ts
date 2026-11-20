@@ -1,15 +1,15 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import { waterLevel } from '../terrain'
-import { harborDock, skiffStart } from '../world'
+import { harborDock, harborDockPiles, skiffStart } from '../world'
 
 export function createDock({ box, cylinder, paintSurface }: MeshFactory) {
   for (let i = 0; i < harborDock.planks; i++) {
     box(harborDock.x, harborDock.top - 0.1, harborDock.firstZ - i * harborDock.spacing,
       harborDock.width, 0.2, harborDock.plankDepth, paintSurface('wood', i % 3 ? '#a67548' : '#b88758'))
   }
-  for (const x of [-45.6, -42.4]) {
-    for (const z of [-31, -34, -37]) cylinder(x, -0.42, z, 0.43, 0.43, 2.25, 7, paintSurface('wood'))
+  for (const { x, z, bottom, top, diameter } of harborDockPiles) {
+    cylinder(x, (top + bottom) / 2, z, diameter, diameter, top - bottom, 7, paintSurface('wood'))
   }
 }
 

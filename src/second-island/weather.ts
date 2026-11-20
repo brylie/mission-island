@@ -1,8 +1,8 @@
 import type { Weather } from '../protocol'
 import { weatherAt } from '../weather'
 
-const liveWeather = (seconds: number) => weatherAt(seconds + 100)
-export const saltwindRainAt = (seconds: number) => liveWeather(seconds).rain
+export const saltwindLiveWeather = (seconds: number) => weatherAt(seconds + 100)
+export const saltwindRainAt = (seconds: number) => saltwindLiveWeather(seconds).rain
 
 const surveyWeather: Record<string, Weather> = {
   morning: { hour: 6.8, rain: 0 },
@@ -12,4 +12,4 @@ const surveyWeather: Record<string, Weather> = {
   night: { hour: 23, rain: 0 },
 }
 
-export const saltwindWeather = (preset: string, time: number) => surveyWeather[preset] ?? liveWeather(time)
+export const saltwindWeather = (preset: string, time: number) => surveyWeather[preset] ?? saltwindLiveWeather(time)
