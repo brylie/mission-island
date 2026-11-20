@@ -1,9 +1,10 @@
 import { canCast, canSpray, heldItem, inSkiff } from '../src/actions.ts'
 import { biteSeconds, castTravelSeconds, chargePower } from '../src/charged-actions.ts'
-import type { CrewAppearance } from '../src/crew-appearance.ts'
+import { ownsClothing, shopItemFor } from '../src/clothing-catalog.ts'
+import { outfitRequirement, type CrewAppearance } from '../src/crew-appearance.ts'
 import type { InventoryItem } from '../src/inventory.ts'
 import { nearbyPlot } from '../src/farm.ts'
-import type { FishingResult, Snapshot } from '../src/protocol.ts'
+import type { FishingResult, Player, Snapshot } from '../src/protocol.ts'
 import { crateSize, offset } from '../src/world.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewCommand } from './commands.ts'
@@ -146,7 +147,10 @@ export function createEquipment(
   return { handlePrimary, isReadyToCast, updateFishing, equip }
 }
 
-export function setAppearance(member: CrewMember, appearance: CrewAppearance) {
-  const uniform = appearance.uniform === 'angler' && !member.player.ownsAngler ? 'default' : appearance.uniform
-  member.player.appearance = { ...appearance, uniform }
+export function setAppearance(player: Player, appearance: CrewAppearance, mission: Snapshot['mission']) {
+  const uniform = outfitRequirement(appearance.uniform, mission, ownsClothing(player, 'angler'))
+    ? player.appearance?.uniform ?? 'default' : appearance.uniform
+  const item = shopItemFor('shirt', appearance.shirt)
+  const shirt = item && !ownsClothing(player, item) ? player.appearance?.shirt : appearance.shirt
+  player.appearance = { ...appearance, uniform, shirt }
 }

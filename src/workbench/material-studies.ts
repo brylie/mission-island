@@ -57,7 +57,7 @@ export const materialStudies: Entry[] = [
       const color = typeof values.color === 'string' ? values.color : undefined
       const grainSize = Number(values.size ?? 1)
       const strength = Number(values.detail ?? 1)
-      const water = id === 'water' ? createOceanMaterial(meshes.scene, true) : undefined
+      const water = id === 'water' ? createOceanMaterial(meshes.scene, 'preview') : undefined
       water?.setAppearance(color ?? surface.color, grainSize, strength)
       const finish = water?.material ?? createSurfaceMaterial(meshes.scene, name, color, {
         grainSize, contrast: strength, relief: Number(values.relief ?? 1),

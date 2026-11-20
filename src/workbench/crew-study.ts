@@ -2,13 +2,28 @@ import { createCrew, createSkiffGear, poseCrew, poseSkiffCrew, poseSwimming, ski
 import { createSupply } from '../assets/props'
 import { createHarborBoat } from '../assets/waterfront'
 import { chargePower } from '../charged-actions'
-import { anglerCost, readAppearance, skinTones, uniforms } from '../crew-appearance'
+import { clothingCatalog, shopItemFor } from '../clothing-catalog'
+import { appearancePartKeys, appearanceParts, isEveryday, readAppearance, skinTones, uniforms, type CrewAppearance } from '../crew-appearance'
 import { walkingHeight, waterLevel } from '../terrain'
 import { jumpGravity, jumpSpeed, skiffStart } from '../world'
 import { control, range, type Entry } from './subject'
 
 const duration = 2.4
 const skiffPreviewHeight = 0.44
+
+function describeOutfit(appearance: CrewAppearance) {
+  const everyday = isEveryday(appearance.uniform)
+  const item = (everyday && shopItemFor('shirt', appearance.shirt)) ||
+    shopItemFor('uniform', appearance.uniform)
+  if (item) {
+    const { name, price } = clothingCatalog[item]
+    return `${name} · ${price} ${price === 1 ? 'coin' : 'coins'}`
+  }
+  const uniform = uniforms[appearance.uniform === 'default' ? 'amber' : appearance.uniform]
+  if (!everyday) return uniform.name + ' · ' + uniform.unlock
+  const shirt = appearance.shirt ? appearanceParts.shirt.choices[appearance.shirt] : uniform.name
+  return shirt + ' · ' + appearanceParts.trousers.choices[appearance.trousers ?? 'slate']
+}
 
 export const crewStudy: Entry = {
   id: 'crew', name: 'Crew character', group: 'Wardrobe', source: 'src/assets/crew.ts', duration, headroom: 1.45,
@@ -21,6 +36,10 @@ export const crewStudy: Entry = {
     control('state', 'Animation', 'walk', { idle: 'Idle', walk: 'Walk', sprint: 'Sprint', jump: 'Jump', paddle: 'Paddle skiff', swim: 'Swim', tread: 'Tread water', reach: 'Left reach', raise: 'Raise right hand', carry: 'Carry crate', throw: 'Throw crate', spray: 'Use extinguisher' }, true),
     control('uniform', 'Uniform', 'amber', Object.fromEntries(Object.entries(uniforms).map(([id, uniform]) => [id, uniform.name]))),
     control('skin', 'Skin tone', 'light', Object.fromEntries(Object.entries(skinTones).map(([id, tone]) => [id, tone.name]))),
+    ...appearancePartKeys.map(key => {
+      const { label, choices } = appearanceParts[key]
+      return control(key, label, 'default', { default: 'Default', ...choices })
+    }),
     { type: 'checkbox', key: 'cap', label: 'Wear uniform cap', value: true },
     { type: 'checkbox', key: 'dyed', label: 'Use custom fabric dye', value: false },
     { type: 'color', key: 'dye', label: 'Fabric dye', value: '#488a73' },
@@ -59,10 +78,9 @@ export const crewStudy: Entry = {
       if (!paddling) crew.root.position.y = elevation
       const stride = Number(values.stride) * (sprinting ? 0.89 : walking ? 0.57 : 0)
       const appearance = readAppearance(values)
-      const uniform = uniforms[appearance.uniform === 'default' ? 'amber' : appearance.uniform]
-      crew.setAppearance(appearance, values.dyed ? String(values.dye) : undefined)
+      crew.setAppearance(appearance, { dye: values.dyed ? String(values.dye) : undefined })
       crew.setCap(Boolean(values.cap))
-      observe(uniform.name + ' · ' + (appearance.uniform === 'angler' ? anglerCost + ' coins' : uniform.unlock || 'Starting uniform'))
+      observe(describeOutfit(appearance))
       crew.blink(time)
       const power = windup ? chargePower('throw', time) : 0
       crew.root.rotation.x = 0

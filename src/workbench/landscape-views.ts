@@ -1,4 +1,6 @@
+import { brinewickMarketSubject } from '../second-island/brinewick-market'
 import { longAcreSubject } from '../second-island/long-acre'
+import { shellglassCycle } from '../shellglass-tide'
 import { falls } from '../terrain'
 import type { Point } from '../world'
 
@@ -10,6 +12,11 @@ interface LandscapeView {
   radius: number
   hour: number
   time: number
+}
+
+const shellglassView = {
+  focus: { x: 45.35, z: -33.65, height: .49 },
+  alpha: 2.11, beta: 1.09, radius: 7.45, hour: 13,
 }
 
 export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
@@ -28,6 +35,10 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
     focus: { x: 38.72, z: 5.65, height: 1.60 },
     alpha: 1.92, beta: 1.17, radius: 7.4, hour: 13.5, time: 102.48,
   },
+  'shellglass-rising': { ...shellglassView, label: 'Shellglass rising tide', time: shellglassCycle * .36 },
+  'shellglass-retreating': { ...shellglassView, label: 'Shellglass retreating tide', time: shellglassCycle * .76 },
+  'shellglass-low': { ...shellglassView, label: 'Shellglass low water', time: shellglassCycle * .96 },
+  'shellglass-night': { ...shellglassView, label: 'Shellglass plankton at night', hour: 23, time: shellglassCycle * .96 },
   'fernfall-overlook': {
     label: 'Fernfall overlook',
     focus: { ...falls, height: 0.25 },
@@ -36,10 +47,11 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
 }
 
 export const scenicChoices = [...Object.entries(landscapeViews).map(([id, view]) => [id, view.label]),
-  [longAcreSubject, 'Long Acre Fields pollinators']]
+  [longAcreSubject, 'Long Acre Fields pollinators'],
+  [brinewickMarketSubject, 'Brinewick Fish Market routine']]
 
 export function openFieldView(id: string) {
-  if (id !== longAcreSubject) return false
+  if (id !== longAcreSubject && id !== brinewickMarketSubject) return false
   location.hash = id + '?stage=island'
   return true
 }

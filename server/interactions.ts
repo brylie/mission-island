@@ -1,4 +1,4 @@
-import { atHomeChest, atHomeDoor, byTruckBed, freeBed, heldItem, nearbyItem } from '../src/actions.ts'
+import { atHomeChest, atHomeDoor, byTruckBed, clothingInteraction, freeBed, heldItem, nearbyItem } from '../src/actions.ts'
 import { market, nearbyPlot } from '../src/farm.ts'
 import { atFisher } from '../src/harbor-fisher.ts'
 import { starterTools } from '../src/inventory.ts'
@@ -65,8 +65,11 @@ export function createInteractions(
     }
     const ownDoor = atHomeDoor(player)
     const item = heldItem(state, player)
+    const clothing = clothingInteraction(player)
     if (item) {
       putDown(member, item)
+    } else if (clothing) {
+      member.notify?.({ type: clothing })
     } else if (ownDoor && isNight(state.weather.hour)) {
       stopPrimary(member)
       player.casting = null

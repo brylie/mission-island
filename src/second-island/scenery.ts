@@ -15,6 +15,8 @@ import { distanceToRoute } from '../routes'
 import { createFlocks, createSchools } from '../wildlife'
 import type { WildlifeFrame } from '../wildlife'
 import { habitatAt } from './habitats'
+import { brinewickMarketSubject } from './brinewick-market'
+import { createBrinewickMarket } from './brinewick-market-art'
 import { createExterior } from './exteriors'
 import { islandBuildings } from './lots'
 import { clearAirfield } from './landscape'
@@ -386,6 +388,7 @@ export function createScenery(meshes: MeshFactory, solids: ScenerySolids, omit?:
   createHoneyMarketStand(meshes)
   const waterfront = buildWaterfront(meshes)
   solids.capture(meshes.scene.meshes.slice(firstFixture))
+  const market = omit === brinewickMarketSubject ? undefined : createBrinewickMarket(meshes, solids)
   const pollinators = omit === longAcreSubject ? undefined : createLongAcreGarden(meshes, solids)
   const plants = createPlants(meshes, solids)
   const wildlife = createWildlife(meshes, solids)
@@ -396,6 +399,7 @@ export function createScenery(meshes: MeshFactory, solids: ScenerySolids, omit?:
   ])
   meshes.finishScenery()
   return (frame: WildlifeFrame, overview: boolean, rainAt?: (time: number) => number) => {
+    market?.(frame.time, frame.weather, overview)
     pollinators?.(frame, overview, rainAt)
     waterfront(frame.time)
     plants(frame.camera, overview)

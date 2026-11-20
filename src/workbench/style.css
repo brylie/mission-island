@@ -361,6 +361,7 @@ input[type="color"] { width: 34px; height: 25px; padding: 2px; background: #2636
   padding: 9px 12px; border-radius: 6px; background: #192824e8; color: #eff2de;
   font-size: 11px; line-height: 1.5;
 }
+#subject-field:has(#subject-observations:empty) { display: none; }
 :is(#biome-field, #subject-field) strong { color: #efc98e; }
 :is(#biome-observations, #subject-observations) { white-space: pre-line; font-variant-numeric: tabular-nums; }
 .codex-group { margin: 18px 0 6px; color: var(--accent); font-size: 12px; }

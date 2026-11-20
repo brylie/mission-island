@@ -7,6 +7,7 @@ import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
 import { Scene } from '@babylonjs/core/scene'
 import { createIslandLighting, createMeshFactory } from '../island-meshes'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { brinewickRainRoof } from '../second-island/brinewick-market-art'
 import { createFieldScenery } from './field-scenery'
 import type { FieldSite } from './field-site'
 import { createAtmosphere } from '../island-atmosphere'
@@ -34,7 +35,8 @@ function stageAtmosphere(scene: Scene, lighting: ReturnType<typeof createIslandL
   if (entry.landscape || entry.weather) scene.fogMode = Scene.FOGMODE_LINEAR
   if (!entry.landscape && entry.id !== 'biome' && !entry.weather) return
   const { sky, sunlight, shadows } = lighting
-  return createAtmosphere(scene, sky, sunlight, shadows, field?.saltwindSubject ? 3350 : undefined)
+  return createAtmosphere(scene, sky, sunlight, shadows, field?.saltwindSubject ? 3350 : undefined,
+    field?.saltwindSubject ? brinewickRainRoof : undefined)
 }
 
 function stageWeather(entry: Entry, time: number, settings: Values) {
@@ -86,7 +88,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     const span = max.subtract(min)
     const groundHeight = (entry.ground?.height ?? 0) + (field?.offset.y ?? 0)
     const subjectHeight = Math.max(0.4, max.y - Math.max(min.y, groundHeight))
-    const center = new Vector3((min.x + max.x) / 2, Math.max(min.y, groundHeight) + subjectHeight * 0.43, (min.z + max.z) / 2)
+    const center = Vector3.FromArray(entry.cameraFocus ?? [(min.x + max.x) / 2, Math.max(min.y, groundHeight) + subjectHeight * 0.43, (min.z + max.z) / 2])
     const size = entry.landscape ? 24 : Math.max(span.x, span.z, subjectHeight)
     let focusHeight = Number(values.focusHeight ?? 0.25)
     if (entry.landscape) {
@@ -95,7 +97,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     }
     const groundSize = Math.max(14, size * 2.25)
     const step = size > 45 ? 5 : size > 12 ? 2 : 1
-    const radius = entry.landscape ? 24 : biome ? size * 1.15 : Math.max(3, size * 1.55 + subjectHeight * 0.6)
+    const radius = entry.cameraRadius ?? (entry.landscape ? 24 : biome ? size * 1.15 : Math.max(3, size * 1.55 + subjectHeight * 0.6))
     const camera = new ArcRotateCamera('Workbench camera', entry.angle ?? 0.88, 1.1, radius, center.clone(), scene)
     camera.lowerRadiusLimit = entry.landscape ? 0.55 : Math.max(0.55, size * 0.12)
     camera.upperRadiusLimit = entry.landscape ? 450 : radius * 5
@@ -139,7 +141,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     }
 
     const pointOfView = {
-      perspective: [entry.angle ?? 0.88, 1.1],
+      perspective: [entry.angle ?? 0.88, entry.cameraBeta ?? 1.1],
       front: [entry.angle && entry.angle < 0 ? -Math.PI / 2 : Math.PI / 2, Math.PI / 2],
       side: [0, Math.PI / 2],
       top: [Math.PI / 2, 0.04],

@@ -1,9 +1,9 @@
 export const uniforms = {
-  amber: { name: 'Harbor amber', color: '#ffb54d', trim: '#fff3d0', milestone: 0, unlock: '' },
-  blue: { name: 'Coastal blue', color: '#77dffc', trim: '#e4faff', milestone: 0, unlock: '' },
-  courier: { name: 'Delivery crew', color: '#488a73', trim: '#e8d397', milestone: 1, unlock: 'Deliver all three crates' },
-  rescue: { name: 'Fire crew', color: '#be4540', trim: '#ffe18a', milestone: 2, unlock: 'Put out the lookout fire' },
-  angler: { name: 'Harbor angler', color: '#537d8c', trim: '#ccead7', milestone: 0, unlock: '' },
+  amber: { name: 'Harbor amber', color: '#ffb54d', trim: '#fff3d0', unlock: '' },
+  blue: { name: 'Coastal blue', color: '#77dffc', trim: '#e4faff', unlock: '' },
+  courier: { name: 'Delivery crew', color: '#488a73', trim: '#e8d397', unlock: 'Deliver all three crates' },
+  rescue: { name: 'Fire crew', color: '#be4540', trim: '#ffe18a', unlock: 'Put out the lookout fire' },
+  angler: { name: 'Harbor angler', color: '#537d8c', trim: '#ccead7', unlock: '' },
 } as const
 export const anglerCost = 3
 
@@ -14,12 +14,62 @@ export const skinTones = {
   deep: { name: 'Deep', color: '#81503a' },
 } as const
 
+export const everydayColors = {
+  amber: uniforms.amber,
+  blue: uniforms.blue,
+  coral: { color: '#d86565', trim: '#ffddbc' },
+  lagoon: { color: '#327d78', trim: '#b5eacf' },
+} as const
+
+export const hairColors = {
+  chestnut: '#4c352e', black: '#252729', blond: '#b17c41',
+} as const
+
+export const appearanceParts = {
+  hair: { label: 'Hair', choices: { short: 'Short crop', bare: 'Shaved' } },
+  hairColor: { label: 'Hair color', choices: { chestnut: 'Chestnut', black: 'Black', blond: 'Honey blond' } },
+  eyes: { label: 'Eyes', choices: { round: 'Round', narrow: 'Narrow' } },
+  nose: { label: 'Nose', choices: { round: 'Round', small: 'Small' } },
+  mouth: { label: 'Mouth', choices: { soft: 'Soft smile', wide: 'Wide smile' } },
+  shirt: { label: 'Shirt or swimsuit', choices: { amber: 'Harbor amber', blue: 'Coastal blue', coral: 'Coral shirt', lagoon: 'Lagoon swimsuit' } },
+  hat: { label: 'Hat', choices: { none: 'Bareheaded', amber: 'Amber cap', blue: 'Blue cap' } },
+  trousers: { label: 'Bottoms', choices: { slate: 'Slate trousers', sand: 'Sand trousers', 'slate-shorts': 'Slate shorts', 'sand-shorts': 'Sand shorts' } },
+  shoes: { label: 'Shoes', choices: { dark: 'Dark deck shoes', brown: 'Brown deck shoes', bare: 'Bare feet' } },
+} as const
+
+type AppearancePart = keyof typeof appearanceParts
+export const appearancePartKeys = Object.keys(appearanceParts) as AppearancePart[]
+
+export type Uniform = keyof typeof uniforms | 'default'
 export type CrewAppearance = {
-  uniform: keyof typeof uniforms | 'default'
+  uniform: Uniform
   skin: keyof typeof skinTones | 'default'
-}
+} & { [Part in AppearancePart]?: keyof typeof appearanceParts[Part]['choices'] }
 
 export const defaultAppearance: CrewAppearance = { uniform: 'default', skin: 'default' }
+
+export function isEveryday(uniform: Uniform) {
+  return uniform === 'default' || uniform === 'amber' || uniform === 'blue'
+}
+
+export function wearsSwimsuit(appearance: CrewAppearance) {
+  return isEveryday(appearance.uniform) && appearance.shirt === 'lagoon'
+}
+
+export function uniformPalette(uniform: Uniform, id: number) {
+  return uniforms[uniform === 'default' ? (id === 0 ? 'amber' : 'blue') : uniform]
+}
+
+export function shirtColor(appearance: CrewAppearance, id: number) {
+  return isEveryday(appearance.uniform) && appearance.shirt ? everydayColors[appearance.shirt]
+    : uniformPalette(appearance.uniform, id)
+}
+
+export function outfitRequirement(uniform: Uniform, mission: 'delivery' | 'fire' | 'complete', ownsAngler: boolean) {
+  if (uniform === 'courier' && mission === 'delivery') return uniforms.courier.unlock
+  if (uniform === 'rescue' && mission !== 'complete') return uniforms.rescue.unlock
+  if (uniform === 'angler' && !ownsAngler) return 'Buy at the Seabrook clothing counter'
+}
 
 export function cleanCrewName(input: unknown) {
   if (typeof input !== 'string') return ''
@@ -30,8 +80,14 @@ export function cleanCrewName(input: unknown) {
 export function readAppearance(raw: unknown): CrewAppearance {
   if (!raw || typeof raw !== 'object') return defaultAppearance
   const { uniform, skin } = raw as Partial<CrewAppearance>
+  const parts = raw as Record<string, unknown>
+  const choices = appearancePartKeys.flatMap<[AppearancePart, string]>(key => {
+    const value = parts[key]
+    return typeof value === 'string' && Object.hasOwn(appearanceParts[key].choices, value) ? [[key, value]] : []
+  })
   return {
     uniform: typeof uniform === 'string' && Object.hasOwn(uniforms, uniform) ? uniform : 'default',
     skin: typeof skin === 'string' && Object.hasOwn(skinTones, skin) ? skin : 'default',
+    ...Object.fromEntries(choices),
   }
 }

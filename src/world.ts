@@ -41,9 +41,9 @@ export const cargoSlots = [-0.46, -1.46, -2.46]
 export const crateSize = 0.89
 export const crewHomes = [
   { name: 'Amber cottage', building: { x: -52, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#f2d5a4', roof: '#a85d36' },
-    chest: { x: -50.65, z: -7.52 } },
+    chest: { x: -50.65, z: -7.52 }, wardrobe: { x: -53.35, z: -7.27 } },
   { name: 'Blue cottage', building: { x: -45, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#d5e9dc', roof: '#477986' },
-    chest: { x: -43.65, z: -7.52 } },
+    chest: { x: -43.65, z: -7.52 }, wardrobe: { x: -46.35, z: -7.27 } },
 ]
 
 export function cottageDoor(home: typeof crewHomes[number]) {

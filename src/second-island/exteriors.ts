@@ -1,5 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
+import { streetCanopy } from './lots'
 import type { Exterior } from './lots'
 
 const cream = '#f8e2b9', glass = '#426e73', shade = '#624e42', plank = '#926f55'
@@ -70,36 +71,36 @@ export function createExterior(meshes: MeshFactory, building: Exterior, foundati
     }
   }
   if (parts.tower !== 'none') createTower(meshes, root, { ...building, kind: parts.tower ?? kind })
-  if (parts.canopy ?? (kind === 'market' || kind === 'shop')) {
-    const awning = w * .72
-    const depth = 2.85
-    for (let i = 0; i < 10; i++) {
-      const x = ((i + .5) / 10 - .5) * awning
-      box(x, 3.17, eave + depth / 2, awning / 10, .15, depth, i % 2 ? cream : roof).rotation.x = .10
-    }
-    for (const side of [-1, 1]) box(side * (awning / 2 - .12), 1.48, eave + depth - .15, .15, 2.96, .15, plank)
-    if (kind === 'market') for (const side of [-1, 1]) {
-      box(side * awning * .29, .79, eave + 1.58, awning * .33, .87, 1.06, '#967352')
-      box(side * awning * .29, 1.29, eave + 1.58, awning * .35, .15, 1.24, '#ca9e72')
-      stockMarketCounter(meshes, root, side * awning * .29, eave + 1.58, building.site === 'fish-market')
-    }
-  }
+  if (parts.canopy ?? (kind === 'market' || kind === 'shop')) addStreetCanopy(meshes, root, building)
   addServiceEmblem(meshes, root, building)
   return root
 }
 
-function stockMarketCounter(meshes: MeshFactory, root: TransformNode, x: number, z: number, fish: boolean) {
-  meshes.box(x, 1.405, z, 2.05, .09, .88, fish ? '#dce9df' : '#a57a55', root)
+function addStreetCanopy(meshes: MeshFactory, root: TransformNode, building: Exterior) {
+  const awning = building.width * streetCanopy.widthRatio
+  const depth = streetCanopy.depth
+  const eave = building.depth / 2
+  const box = (x: number, y: number, z: number, w: number, h: number, d: number, color: string) =>
+    meshes.box(x, y, z, w, h, d, color, root)
+  for (let i = 0; i < 10; i++) {
+    const x = ((i + .5) / 10 - .5) * awning
+    box(x, streetCanopy.height, eave + depth / 2, awning / 10, .15, depth, i % 2 ? cream : building.roof).rotation.x = .10
+  }
+  for (const side of [-1, 1]) box(side * (awning / 2 - .12), 1.48, eave + depth - .15, .15, 2.96, .15, plank)
+  if (building.kind !== 'market' || building.site === 'fish-market') return
+  for (const side of [-1, 1]) {
+    box(side * awning * .29, .79, eave + 1.58, awning * .33, .87, 1.06, '#967352')
+    box(side * awning * .29, 1.29, eave + 1.58, awning * .35, .15, 1.24, '#ca9e72')
+    stockMarketCounter(meshes, root, side * awning * .29, eave + 1.58)
+  }
+}
+
+function stockMarketCounter(meshes: MeshFactory, root: TransformNode, x: number, z: number) {
+  meshes.box(x, 1.405, z, 2.05, .09, .88, '#a57a55', root)
   for (const side of [-1, 1]) meshes.box(x, 1.45, z + side * .44, 2.1, .17, .055, '#bb9268', root)
   for (const offset of [-.62, 0, .62]) {
-    if (fish) {
-      const body = meshes.sphere(x + offset, 1.52, z, .17, .14, .53, '#799c9e', root, true, 6)
-      body.rotation.y = .42
-      meshes.sphere(x + offset - .11, 1.52, z - .25, .22, .055, .14, '#668487', root, true, 4)
-    } else {
-      for (const side of [-1, 1]) meshes.sphere(x + offset, 1.52, z + side * .18, .30, .26, .29,
-        offset === 0 ? '#87a858' : '#db9653', root, true, 6)
-    }
+    for (const side of [-1, 1]) meshes.sphere(x + offset, 1.52, z + side * .18, .30, .26, .29,
+      offset === 0 ? '#87a858' : '#db9653', root, true, 6)
   }
 }
 

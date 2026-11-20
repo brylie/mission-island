@@ -2,6 +2,7 @@ import type { DriftwoodFrame } from './simulation/driftwood-school'
 import type { BiomeFrame } from './biome-model'
 import type { Point, Pose, starterPay } from './world'
 import type { CrewAppearance } from './crew-appearance'
+import type { ClothingId } from './clothing-catalog'
 import type { ChargeKind } from './charged-actions'
 import type { InventoryItem } from './inventory'
 import type { Goods, PlotStage } from './farm'
@@ -36,6 +37,7 @@ export interface Player extends Pose {
   reaching: boolean
   rightHandRaised: boolean
   appearance?: CrewAppearance
+  appearanceBase?: number
   connected: boolean
   sleeping: boolean
   swimming: boolean
@@ -50,6 +52,7 @@ export interface Player extends Pose {
   throwing: boolean
   rowing: boolean
   ownsAngler: boolean
+  ownedClothes?: ClothingId[]
 }
 
 export interface Skiff extends Pose {
@@ -102,8 +105,12 @@ export type ServerMessage =
   | { type: 'market-sale'; coins: number }
   | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
   | { type: 'order-pay'; coins: number; id: JobId }
-  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'fisher-chat' }
+  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'fisher-chat' | 'open-wardrobe' | 'open-clothing-counter' }
+  | { type: 'angler-purchase'; result: ClothingPurchaseResult }
+  | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }
   | { type: 'full' | 'duplicate' }
+
+export type ClothingPurchaseResult = 'bought' | 'already-owned' | 'insufficient-funds' | 'away'
 
 export type ClientMessage =
   | { type: 'join'; token: string }
@@ -114,4 +121,5 @@ export type ClientMessage =
   | { type: 'equip'; item: InventoryItem }
   | { type: 'take-job'; id: JobId }
   | { type: 'buy-angler' | 'buy-seed' }
+  | { type: 'buy-clothing'; item: ClothingId }
   | { type: 'interact' | 'seat' | 'jump' | 'respawn' }

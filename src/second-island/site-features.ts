@@ -3,7 +3,6 @@ import { picnicLedge, viaductWalk } from './sites.ts'
 
 export const saltwindFeatures: readonly SiteFeature[] = [
   { site: 'ferry', name: 'Ferry passenger waiting shelter', model: 'shelter', color: '#9b6451', x: -264.5, z: -225, heading: Math.PI / 2 },
-  { site: 'fish-market', name: 'Fish hall net rack', model: 'rack', color: '#768dad', x: -253, z: -123 },
   { site: 'apartments', name: 'Quay apartments herb boxes', model: 'planter', color: '#f3bc72', x: -312.3, z: -134.5 },
   { site: 'grocery', name: 'Grocery produce display', model: 'crates', color: '#8ea456', x: -323.3, z: -83.6 },
   { site: 'farmers-market', name: 'Farmers market produce display', model: 'crates', color: '#ce8354', x: 145, z: -41 },
