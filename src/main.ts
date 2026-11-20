@@ -775,6 +775,7 @@ function saveCrewName() {
   const name = cleanCrewName(crewName.value)
   if (live && original?.token === token && original.id === id && name !== original.name) send({ type: 'crew-name', name })
 }
+optionsDialog.addEventListener('submit', saveCrewName)
 optionsDialog.addEventListener('close', saveCrewName)
 invertHorizontal.addEventListener('change', saveMouseOptions)
 invertVertical.addEventListener('change', saveMouseOptions)
