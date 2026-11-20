@@ -168,6 +168,8 @@ Each new mission can start with one destination, one vehicle and a shared object
 
 ## Quality checks
 
+GitHub Actions runs the same prek hooks on pull requests into `main` and pushes to `main`. Open **CI → Quality and tests** on a pull request to see the test results, coverage, build, and dependency audit.
+
 With Mise installed, trust this checkout's configuration and run the setup task. Mise supplies the pinned prek version.
 
 ```sh
