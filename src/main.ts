@@ -214,7 +214,10 @@ function drawMap(state?: Snapshot) {
     ink.stroke()
   }
 
-  for (const { points } of footpaths) drawRoute(points, 2, '#a5a77e')
+  for (const { points, surface } of footpaths) {
+    if (surface === 'desire') drawRoute(points, .85, '#b5a77e')
+    else drawRoute(points, 2, surface === 'pavement' ? '#c4c9c1' : '#a5a77e')
+  }
   for (const { points } of walkways) drawRoute(points, 2, '#c4c9c1')
   drawRoute(road, 4, '#c7bb9a')
   const drop = state && deliveryDrop(state)

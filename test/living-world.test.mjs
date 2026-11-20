@@ -10,7 +10,7 @@ import { saltwindFeatures } from '../src/second-island/site-features.ts'
 import { discoveryWalks, landmarks, lowerLake, picnicLedge, sites } from '../src/second-island/sites.ts'
 import { fallsX, fallsY, groundHeight, nearestRoad, surfaceHeight, waterHeight } from '../src/second-island/terrain.ts'
 import { starterFeatures } from '../src/starter-sites.ts'
-import { fernfallSection, maxWadeDepth, streamX, tidePool, walkingHeight, waterDepth, waterLevel } from '../src/terrain.ts'
+import { coastRadius, fernfallSection, maxWadeDepth, shoreProfile, streamX, tidePool, walkingHeight, waterDepth, waterLevel } from '../src/terrain.ts'
 import { birdActivity, phenomenonStrength, schoolAvoidance } from '../src/wildlife-motion.ts'
 import { beach, buildings, crateSize, extinguisherStarts, forest, jumpSpeed, spawns, truckStart } from '../src/world.ts'
 
@@ -83,7 +83,13 @@ test('the tide pool holds wadeable water behind a dry sill, beside the Splitston
     assert.equal(player.swimming, false)
   }
   const strand = footpaths.find(p => p.name === 'Splitstone strand')
-  for (const p of walkSamples([...strand.points, splitstone])) assert.ok(canWalkAt(p, .35, waterLevel))
+  for (const trail of footpaths.filter(path => path.surface === 'desire')) {
+    const sandEdge = shoreProfile[2].radius
+    assert.ok(walkSamples(trail.points).every(p => coastRadius(p) <= sandEdge), trail.name)
+    assert.ok(sandEdge - coastRadius(trail.points.at(-1)) < .005, trail.name)
+  }
+  // Cross the open sand and enter the cleft from its southern opening.
+  for (const p of walkSamples([...strand.points, { x: 50.5, z: -25.4 }, { x: 53.5, z: -22.5 }, splitstone])) assert.ok(canWalkAt(p, .35, waterLevel))
 })
 
 test('both Saltwind lookouts have a walkable spur and a sightline at standing eye height', () => {

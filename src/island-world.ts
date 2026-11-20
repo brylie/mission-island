@@ -1,6 +1,6 @@
 import {
   createBuoy, createDock, createHarborBoat, createHomeChest, createHouse, createRock, createRoad,
-  createTrail, createTree, createUmbrella, playerColors, umbrellaColors,
+  createSidewalk, createTrail, createTree, createUmbrella, playerColors, umbrellaColors,
 } from './island-assets'
 import { createFarm, createMarketAwning } from './island-farm'
 import { createGrassTufts, createIslandTerrain } from './island-landscape'
@@ -19,8 +19,8 @@ import { buildings, crewHomes } from './world'
 
 export function createIslandWorld(meshes: MeshFactory) {
   const water = createIslandTerrain(meshes)
-  for (const { name, points, width } of footpaths) createTrail(meshes, name, points, width)
-  for (const { name, points, width } of walkways) createTrail(meshes, name, points, width, true)
+  for (const { name, points, width, surface } of footpaths) createTrail(meshes, name, points, width, surface, groundHeight)
+  for (const path of walkways) createSidewalk(meshes, path)
   createRoad(meshes, road)
 
   for (const building of buildings) meshes.batchModel(createHouse(meshes, building))

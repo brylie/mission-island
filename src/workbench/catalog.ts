@@ -2,7 +2,7 @@ import { createLookoutFire } from '../fire-effect'
 import { createExtinguisherSpray } from '../extinguisher-spray'
 import {
   createBuoy, createCrew, createDock, createFlatbed, createHarborBoat, createHomeChest, createHouse,
-  createRoad, createRock, createSupply, createTrail, createTree, createUmbrella, poseCrew, poseSwimming, poseFlatbed, poseFloating,
+  createRoad, createRock, createSupply, createSidewalk, createTrail, createTree, createUmbrella, poseCrew, poseSwimming, poseFlatbed, poseFloating,
   umbrellaColors,
 } from '../island-assets'
 import { createFarm } from '../island-farm'
@@ -338,15 +338,15 @@ export const entries: Entry[] = [
   },
   {
     id: 'trail', name: 'Footpaths', group: 'Routes', source: 'src/routes.ts',
-    description: 'Check the rounded path geometry used by the lookout, beach, and harbor trails.',
+    description: 'Compare the beach pavement, worn attraction paths, and gravel trails.',
     ground: { height: 0, color: surfaces.grass.color },
     controls: [
-      control('route', 'Path', '0', { 0: 'Lookout', 1: 'Beach', 2: 'Harbor' }, true),
+      control('route', 'Path', '0', Object.fromEntries(footpaths.map((path, i) => [i, path.name])), true),
       range('width', 'Width multiplier', 1, 0.5, 1.8, 0.05, true),
     ],
     create(meshes, values) {
       const path = footpaths[Number(values.route)]
-      createTrail(meshes, path.name, path.points, path.width * Number(values.width))
+      createTrail(meshes, path.name, path.points, path.width * Number(values.width), path.surface)
     },
   },
   {
@@ -356,7 +356,7 @@ export const entries: Entry[] = [
     controls: [control('route', 'Walkway', '0', { 0: 'North neighborhood', 1: 'South neighborhood', 2: 'House entrance', 3: 'East houses' }, true)],
     create(meshes, values) {
       const path = walkways[Number(values.route)]
-      createTrail(meshes, path.name, path.points, path.width, true)
+      createSidewalk(meshes, path)
     },
   },
   {

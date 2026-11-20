@@ -20,7 +20,7 @@ For a LAN review, open the preview using the laptop’s LAN address before copyi
 | Seabrook | Follow the main road, then use the pavement on either side. | Both rows face the street, with front walks from the doorways to the pavement. A teal bench at (39, 17.65) looks across the street from a pocket between the front walks. |
 | Seabrook Market | Take the short walk south from the residential pavement. | Buy and sell under the striped awning at (39, 5.9). A produce stack at (41.15, 5.86) stands to one side of the entrance. |
 | Island Farm | Approach from the beach trail side. | Rain barrels at (28.75, −10.9) identify the field edge and leave the planting plots apart from scenery. |
-| Driftwood Beach | Follow gravel downhill past the umbrellas. | The gravel path forks toward Shellglass and continues to the sand. The three parasols shade 2.30 × 1.10 m striped towels. The freight drop stays inland at the path junction. |
+| Driftwood Beach | Follow the paved approach from Seabrook to the beach. | A narrow track through the grass forks toward Shellglass and Splitstone. Check that both treads fade at the edge of the sand. The three parasols shade 2.30 × 1.10 m striped towels. The freight drop stays inland at the path junction. |
 | Pinewoods | Leave the road and climb toward the trees and rocks. | Trees, understory and exposed rock identify the forest approach. The clearing is open for exploration. |
 | Forest Lookout | Follow the gravel trail to the fire site. | A brass scope at (5.42, 32.6) sits off the trail and away from the objective. |
 | Fire Supplies | Take the outside edge of the lookout approach. | The extinguishers identify the pickup when the fire mission is active. The shoulder stays clear for access. |
