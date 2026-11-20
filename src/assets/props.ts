@@ -6,6 +6,8 @@ import { chestSize, crateSize } from '../world'
 import type { Point } from '../world'
 const cream = '#fff3d0'
 
+export const extinguisherNozzle = { height: .98, center: .19, length: .35 }
+
 export const umbrellaColors = ['#e97a59', '#ffce64', '#4faba4']
 
 export function createHomeChest({ scene, box, paintSurface }: MeshFactory, point: Point, color: string) {
@@ -35,8 +37,9 @@ export function createSupply({ scene, box, cylinder }: MeshFactory, kind: 'crate
   } else {
     cylinder(0, 0.48, 0, 0.56, 0.56, 0.83, 12, '#d4513d', node)
     cylinder(0, 0.57, 0, 0.57, 0.57, 0.18, 12, cream, node)
-    box(0, 0.98, 0, 0.42, 0.15, 0.22, '#2b4445', node)
-    box(0, 0.98, 0.19, 0.15, 0.12, 0.35, '#2b4445', node)
+    const { height, center, length } = extinguisherNozzle
+    box(0, height, 0, 0.42, 0.15, 0.22, '#2b4445', node)
+    box(0, height, center, 0.15, 0.12, length, '#2b4445', node)
   }
   return node
 }

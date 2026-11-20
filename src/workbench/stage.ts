@@ -60,7 +60,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     const readout = document.getElementById('subject-observations')!
     const update = entry.create(meshes, values, reportError, text => {
       if (readout.textContent !== text) readout.textContent = text
-    })
+    }, field)
     if (field) {
       const roots = scene.rootNodes.slice(firstSubjectRoot)
       const anchor = new TransformNode('Field subject', scene)

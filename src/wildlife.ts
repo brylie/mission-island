@@ -82,7 +82,7 @@ interface Flock {
   bat?: boolean
 }
 
-function wingedAnimal(meshes: MeshFactory, color: string, bat: boolean) {
+export function wingedAnimal(meshes: MeshFactory, color: string, bat: boolean) {
   const root = new TransformNode(bat ? 'Night bat' : 'Flock member', meshes.scene)
   const material = meshes.paint(color)
   material.backFaceCulling = false

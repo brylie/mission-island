@@ -89,7 +89,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     return { node, cargoTag }
   })
 
-  const sprays = extinguisherStarts.map(() => createExtinguisherSpray(scene))
+  const sprays = extinguisherStarts.map((_, index) => createExtinguisherSpray(scene, 9011 + index))
   const fire = createLookoutFire(scene, lookout.x, lookout.z)
 
   const landmarks = [
@@ -275,7 +275,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       const locked = item.kind === 'extinguisher' && state.mission !== 'fire'
       if (item.delivered || holder?.seat || locked) {
         node.setEnabled(false)
-        spray?.update(node, false)
+        spray?.(time, node, false)
         continue
       }
       const smooth = node.isEnabled()
@@ -290,7 +290,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         node.rotationQuaternion = null
         node.rotation.y = item.heading
       }
-      spray?.update(node, item.spraying === true)
+      spray?.(time, node, item.spraying === true)
     }
   }
 

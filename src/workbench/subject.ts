@@ -44,7 +44,7 @@ export interface Entry {
   ground?: { color: string; height: number }
   actions?: { label: string; restart?: boolean; enabled(values: Values): boolean; run(values: Values): void }[]
   controls?: Control[]
-  create(meshes: MeshFactory, values: Values, reportError: (error: string) => void, observe: (text: string) => void):
+  create(meshes: MeshFactory, values: Values, reportError: (error: string) => void, observe: (text: string) => void, field?: FieldSite):
     ((frame: Playback, values: Values) => void) | void
 }
 
