@@ -12,6 +12,7 @@ import { castTravelSeconds } from './charged-actions'
 import { farm, market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutFire } from './fire-effect'
+import { fisherAt, fisherName } from './harbor-fisher'
 import { createIslandCamera } from './island-camera'
 import {
   createCrew, createFarmTools, createFlatbed, createSkiffGear, createSupply, playerColors, poseCrew,
@@ -28,7 +29,7 @@ import { wheelRadius } from './truck-pose'
 import { nightLighting } from './weather'
 import { marketRunoffAt } from './market-runoff'
 import {
-  beach, crateStarts, distance, extinguisherStarts, forest, harbor, lookout, town,
+  beach, cottageDoor, crateStarts, crewHomes, distance, extinguisherStarts, ferryTerminal, forest, harbor, lookout, town,
 } from './world'
 import type { Pose } from './world'
 
@@ -63,6 +64,10 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     return character
   })
   const cycles = crew.map(() => 0)
+  const fisher = createCrew(meshes, playerColors.length)
+  fisher.setAppearance({ uniform: 'angler', skin: 'warm' }, '#b9664a')
+  fisher.root.setEnabled(false)
+  let fisherCycle = 0
   const farmTools = crew.map((character) => createFarmTools(meshes, character))
   const skiffGear = crew.map((character) => {
     const gear = createSkiffGear(meshes, character)
@@ -98,6 +103,11 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     { point: market, title: 'Seabrook Market', kind: 'market', height: 3.32 },
     { point: jobBoard, title: 'Harbor job board', kind: 'board', height: 2.35 },
     { point: { x: 21, z: 22 }, title: 'Fire Supplies', kind: 'equipment', height: 2.4 },
+    { point: ferryTerminal, title: 'Ferry terminal · Closed', kind: 'ferry', height: 2.1 },
+    ...crewHomes.flatMap((home, owner) => [
+      { point: cottageDoor(home), title: `Your home · ${home.name}`, kind: 'home', height: 2.5, owner },
+      { point: home.chest, title: 'Your tool chest', kind: 'chest', height: 0.95, owner },
+    ]),
   ]
   const places = [
     ...landmarks.map((place) => ({ ...place, discovery: '', mapOnly: false })),
@@ -118,6 +128,10 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     markers.append(tag)
     return tag
   })
+  const fisherTag = document.createElement('span')
+  fisherTag.className = 'place place--resident'
+  fisherTag.textContent = `${fisherName} · Fisher`
+  markers.append(fisherTag)
 
   function locate(element: HTMLElement, viewport: Viewport, x: number, y: number, z: number) {
     const point = Vector3.Project(new Vector3(x, y, z), Matrix.IdentityReadOnly,
@@ -147,6 +161,11 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   let time = 0, ambientTime = 0
   function updateScenery(state: Snapshot, factor: number, delta: number) {
     showFarm(state.farm)
+    const resident = fisherAt(state.weather.hour)
+    moveTo(fisher.root, resident, walkingHeight(resident), factor)
+    if (resident.walking) fisherCycle += delta * 1.8
+    poseCrew(fisher, fisherCycle, resident.walking ? 0.65 : 0, false, undefined, 0, factor)
+    fisher.blink(time)
     for (const [i, { hinge }] of homeChests.entries()) {
       const withdrawn = state.players.find((player) => player.id === i)?.inventory.length
       hinge.rotation.x += ((withdrawn ? 0.9 : 0) - hinge.rotation.x) * factor
@@ -276,13 +295,15 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     }
   }
 
-  function updateLabels(local: Player | undefined, close: boolean, viewport: Viewport) {
+  function updatePlaceLabels(local: Player | undefined, close: boolean, viewport: Viewport) {
     const job = last && activeJob(last)
     const drop = last && deliveryDrop(last)
     for (const place of places) {
       const range = close && local ? distance(place.point, local) : 0
       const opacity = Math.min(1, Math.max(0, (80 - range) / 38))
       place.label.hidden = opacity === 0 || (place.mapOnly && close) ||
+        ('owner' in place && (place.owner !== local?.id || (place.kind === 'chest' && (!close || range > 12)))) ||
+        (place.kind === 'ferry' && close && range > 38) ||
         Boolean(place.discovery && !local?.discoveries?.includes(place.discovery)) ||
         (place.kind === 'equipment' && last?.mission !== 'fire') || (place.kind === 'board' && last?.mission !== 'complete')
       place.label.style.opacity = String(opacity)
@@ -293,6 +314,12 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         (last?.mission === 'fire' && (place.kind === 'lookout' || place.kind === 'equipment')))
       locate(place.label, viewport, place.point.x, groundHeight(place.point) + place.height, place.point.z)
     }
+    const resident = fisher.root.position
+    fisherTag.hidden = !local || (close && distance(resident, local) > 18)
+    if (!fisherTag.hidden) locate(fisherTag, viewport, resident.x, resident.y + 2.1, resident.z)
+  }
+
+  function updateCrewTags(close: boolean, viewport: Viewport) {
     for (const [id, tag] of tags.entries()) {
       const actor = last?.players.find((player) => player.id === id)
       const visible = actor?.connected
@@ -357,7 +384,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     water.pose(time, light, weather.rain)
     scene.render()
     const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
-    updateLabels(local, Boolean(subject), viewport)
+    updatePlaceLabels(local, Boolean(subject), viewport)
+    updateCrewTags(Boolean(subject), viewport)
   })
   const resize = new ResizeObserver(() => engine.resize())
   resize.observe(canvas)

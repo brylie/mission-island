@@ -1,9 +1,10 @@
 import type { Item, Player, Snapshot } from './protocol'
 import { market, nearbyPlot, saleValue, seedPrice } from './farm.ts'
-import { cargoSlots, crateSize, crewHomes, distance, lookout, truckBed, truckSeatSpeed } from './world.ts'
+import { cargoSlots, cottageDoor, crateSize, crewHomes, distance, lookout, truckBed, truckSeatSpeed } from './world.ts'
 import { truckPoint } from './truck-pose.ts'
 import { isNight } from './weather.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, orderContribution } from './jobs.ts'
+import { atFisher, fisherName } from './harbor-fisher.ts'
 
 export function heldItem(state: Snapshot, player: Player) {
   return state.items.find((item) => item.holder === player.id)
@@ -54,9 +55,7 @@ export function atHomeChest(player: Player) {
 export function atHomeDoor(player: Player) {
   const home = crewHomes[player.id]
   if (!home || player.seat || !player.grounded || player.onBed) return false
-  const { x, z, d } = home.building
-  const door = { x, z: z - d / 2 - 0.55 }
-  const gap = distance(player, door)
+  const gap = distance(player, cottageDoor(home))
   return gap < 1.45 && gap < distance(player, home.chest)
 }
 
@@ -76,7 +75,7 @@ function farmOrMarketHint(state: Snapshot, player: Player): [string, string] | u
     }
     const value = saleValue(player.goods)
     if (value) return ['E / B', `Sell for ${value} coins · buy a carrot seed for ${seedPrice}`]
-    return player.coins >= seedPrice ? ['B', `Buy a carrot seed for ${seedPrice} coin`] : ['', 'Sell fish or carrots to buy seeds']
+    return state.crewCoins >= seedPrice ? ['B', `Buy a carrot seed for ${seedPrice} coin`] : ['', 'Sell fish or carrots to buy seeds']
   }
   const plot = player.grounded && !player.onBed ? state.farm[nearbyPlot(player)] : undefined
   if (plot === 'grass') return player.equipped === 'hoe' ? ['Left click', 'Till soil'] : ['2', 'Equip hoe']
@@ -115,8 +114,9 @@ export function actionHint(state: Snapshot, player: Player): [string, string] {
   }
   const item = heldItem(state, player)
   if (item) return cargoHint(state, player, item)
-  if (isNight(state.weather.hour) && atHomeDoor(player)) return ['E', 'Turn in for the night']
-  if (atHomeChest(player)) {
+  const ownDoor = atHomeDoor(player)
+  if (ownDoor && isNight(state.weather.hour)) return ['E', 'Turn in for the night']
+  if (!ownDoor && atHomeChest(player)) {
     if (!player.starterSeedClaimed) return ['E', player.inventory.length ? 'Collect starter carrot seed' : 'Take tools and a carrot seed']
     return ['E', player.inventory.length ? 'Store tools' : 'Take starter tools']
   }
@@ -127,6 +127,8 @@ export function actionHint(state: Snapshot, player: Player): [string, string] {
   if (nearby?.onBed) return ['E', 'Unload crate']
   if (nearby?.kind === 'crate') return ['E', 'Pick up crate']
   if (nearby?.kind === 'extinguisher') return ['E', 'Pick up extinguisher']
+  if (ownDoor) return ['E', 'Read your welcome note']
+  if (atFisher(player, state.weather.hour)) return ['E', `Talk to ${fisherName}`]
   if (player.grounded && !player.onBed && !player.truckSurface && distance(player, state.truck) < 4.5 &&
     Math.abs(state.truck.speed) <= truckSeatSpeed) return ['F', 'Board truck']
   if (canBoardSkiff(state, player)) return ['F', 'Board skiff']

@@ -10,7 +10,7 @@ Each player spawns by a different harbor cottage. Press **E** at your own chest 
 
 Withdrawing the toolkit equips the fishing rod. Press a slot key again to stow that tool. The inventory buttons mirror the keyboard slots. Picking up a loose crate or extinguisher puts away the equipped tool. A crate uses the throw action and an extinguisher sprays while held. Stowing or swapping a rod cancels its active cast.
 
-The host owns chest access, inventory, equipment, and sale goods. Fish and carrots stay in the player's inventory when they return tools. The host save keeps tools and goods across restarts. Each browser profile keeps its crew identity. Respawning at home retains inventory and coins and releases any loose item the player was carrying.
+The host owns chest access, inventory, equipment, and sale goods. Fish and carrots stay in the player's inventory when they return tools. The host save keeps tools and goods across restarts. Each browser profile keeps its crew identity. Respawning at home retains personal inventory and access to the crew bank and releases any loose item the player was carrying.
 
 ## Planned tools
 

@@ -10,11 +10,12 @@ import { biteSeconds, castTravelSeconds, chargePower } from '../src/charged-acti
 import type { ChargeKind } from '../src/charged-actions'
 import { anglerCost, cleanCrewName, readAppearance } from '../src/crew-appearance.ts'
 import { farmPlots, growthSeconds, market, nearbyPlot, saleValue, seedPrice } from '../src/farm.ts'
+import { atFisher } from '../src/harbor-fisher.ts'
 import { starterTools } from '../src/inventory.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, isJobId, jobs, orderContribution } from '../src/jobs.ts'
 import {
-  crateSize, crateStarts, distance, extinguisherStarts, jobPay, jumpSpeed, localPoint, lookout, offset,
-  skiffStart, spawns, truckSeatSpeed, truckStart,
+  crateSize, crateStarts, distance, extinguisherStarts, jumpSpeed, localPoint, lookout, offset,
+  skiffStart, spawns, starterPay, truckSeatSpeed, truckStart,
 } from '../src/world.ts'
 import { truckPoint } from '../src/truck-pose.ts'
 import type { TruckPose } from '../src/truck-pose.ts'
@@ -84,6 +85,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const juniper = createJuniperHabitat()
   let wildlifeTick = 0
   const state: Snapshot = {
+    crewCoins: save?.crewCoins ?? 0, lastStarterPay: save?.lastStarterPay,
     type: 'state', players: [], skiff: { ...skiffStart, speed: 0 }, items: makeItems(),
     mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...structuredClone(save?.world),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
@@ -91,7 +93,6 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     juniper: juniper(0, weatherAt(islandTime), []),
     jobs: structuredClone(save?.world.jobs ?? { active: null, completed: 0 }),
   }
-  const jobCrew = new Set(save?.jobCrew ?? save?.crew.filter(({ reserved }) => reserved).map(({ token }) => token))
   state.skiff.speed = 0
   const growth = save?.growth.slice() ?? farmPlots.map(() => 0)
   for (const item of state.items) {
@@ -130,9 +131,9 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     const { truck, skiff, items, mission, fire, farm, jobs } = state
     const { x, z, heading } = truck
     return {
-      version: 1, islandTime, growth: growth.slice(),
+      version: 2, crewCoins: state.crewCoins, islandTime, growth: growth.slice(),
+      ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
       world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs }),
-      jobCrew: [...jobCrew],
       crew: Array.from(profiles, ([token, player]) => ({
         token, player: structuredClone(restingPlayer(player)), reserved: crew.has(token),
       })),
@@ -159,21 +160,10 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     tell(member, { type: 'fishing-result', result })
   }
 
-  function enrollConnectedCrew() {
-    jobCrew.clear()
-    for (const [token, member] of crew) {
-      if (member.socket) jobCrew.add(token)
-    }
-  }
-
-  function payCrew(message: Extract<ServerMessage, { type: 'job-pay' | 'order-pay' }>) {
-    for (const token of jobCrew) {
-      const player = profiles.get(token)
-      if (!player) continue
-      player.coins += message.coins
-      const member = crew.get(token)
-      if (member) tell(member, message)
-    }
+  function payCrew(message: Extract<ServerMessage, { type: 'job-pay' | 'order-pay' | 'market-sale' }>) {
+    state.crewCoins += message.coins
+    if (message.type === 'job-pay') state.lastStarterPay = message.job
+    for (const member of crew.values()) tell(member, message)
   }
 
   function startJob(member: CrewMember, id: unknown) {
@@ -184,7 +174,6 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     }
     const job = jobs[id]
     state.jobs.active = { id, progress: 0 }
-    enrollConnectedCrew()
     if (job.kind === 'delivery') {
       for (const [i, point] of crateStarts.entries()) {
         const crate = state.items[i]
@@ -205,7 +194,6 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     state.jobs.active = null
     state.jobs.completed++
     payCrew({ type: 'order-pay', id: order.id, coins: job.coins })
-    jobCrew.clear()
   }
 
   function deliverCrate(item: Item) {
@@ -214,10 +202,9 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       advanceOrder(1)
     } else if (state.items.filter((entry) => entry.kind === 'crate').every((crate) => crate.delivered)) {
       state.mission = 'fire'
-      payCrew({ type: 'job-pay', job: 'delivery', coins: jobPay.crate + jobPay.delivery })
-      enrollConnectedCrew()
+      payCrew({ type: 'job-pay', job: 'delivery', coins: starterPay.delivery.coins })
     } else {
-      payCrew({ type: 'job-pay', job: 'crate', coins: jobPay.crate })
+      payCrew({ type: 'job-pay', job: 'crate', coins: starterPay.crate.coins })
     }
   }
 
@@ -231,9 +218,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     }
     const proceeds = saleValue(player.goods)
     if (!proceeds) return
-    player.coins += proceeds
     player.goods = { fish: 0, carrots: 0 }
-    tell(member, { type: 'market-sale', coins: proceeds })
+    payCrew({ type: 'market-sale', coins: proceeds })
   }
 
   function useHomeChest(member: CrewMember) {
@@ -342,6 +328,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       player.sleeping = false
       return
     }
+    const ownDoor = atHomeDoor(player)
     const item = heldItem(state, player)
     if (item) {
       stopPrimary(member)
@@ -360,13 +347,13 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       } else {
         item.y = groundHeight(item) + 0.04
       }
-    } else if (isNight(state.weather.hour) && atHomeDoor(player)) {
+    } else if (ownDoor && isNight(state.weather.hour)) {
       stopPrimary(member)
       player.casting = null
       member.input = stopped
       player.sleeping = true
       return
-    } else if (atHomeChest(player)) {
+    } else if (!ownDoor && atHomeChest(player)) {
       useHomeChest(member)
     } else if (player.grounded && !player.onBed && distance(player, market) < 2.25) {
       visitMarket(member)
@@ -385,7 +372,11 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         return
       }
       const nearby = nearbyItem(state, player)
-      if (!nearby) return
+      if (!nearby) {
+        if (ownDoor) tell(member, { type: 'crew-note' })
+        else if (atFisher(player, state.weather.hour)) tell(member, { type: 'fisher-chat' })
+        return
+      }
       stopPrimary(member)
       stowTool(member)
       nearby.holder = player.id
@@ -571,8 +562,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         state.fire = Math.max(0, state.fire - tickSeconds / 5)
         if (state.fire === 0) {
           state.mission = 'complete'
-          payCrew({ type: 'job-pay', job: 'fire', coins: jobPay.fire })
-          jobCrew.clear()
+          payCrew({ type: 'job-pay', job: 'fire', coins: starterPay.fire.coins })
           for (const tool of state.items.filter(({ kind }) => kind === 'extinguisher')) {
             tool.holder = null
             tool.spraying = false
@@ -666,23 +656,21 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       socket.close()
       return
     }
-    const id = spawns.findIndex((_, index) => !state.players.some((player) => player.id === index))
     const profile = profiles.get(token)
+    const open = spawns.flatMap((_, index) => state.players.some((player) => player.id === index) ? [] : [index])
+    const id = profile && open.includes(profile.id) ? profile.id : open[0]
     const member = existing ?? crewMember(profile ? { ...profile, id } : {
       ...spawns[id], id, heading: 0, y: groundHeight(spawns[id]), grounded: true,
         name: '', discoveries: [], onBed: false, reaching: false, rightHandRaised: false, connected: true, sleeping: false, swimming: false,
         seat: null, rowing: false, inventory: [], equipped: null,
-        goods: { fish: 0, carrots: 0 }, seeds: 0, charge: null, casting: null, throwing: false, coins: 0, ownsAngler: false },
+        goods: { fish: 0, carrots: 0 }, seeds: 0, charge: null, casting: null, throwing: false, ownsAngler: false },
     )
     if (!existing) state.players.push(member.player)
     crew.set(token, member)
     profiles.set(token, member.player)
     member.socket = socket
     member.player.connected = true
-    if (!jobCrew.has(token) && (state.mission !== 'complete' || state.jobs.active)) {
-      jobCrew.add(token)
-      checkpoint?.()
-    }
+    if (!existing) checkpoint?.()
     return member
   }
 
@@ -732,16 +720,16 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       case 'buy-seed': {
         const { player } = member
         if (!player.seat && player.grounded && !player.onBed && !heldItem(state, player) &&
-          distance(player, market) < 2.25 && player.coins >= seedPrice) {
-          player.coins -= seedPrice
+          distance(player, market) < 2.25 && state.crewCoins >= seedPrice) {
+          state.crewCoins -= seedPrice
           player.seeds++
           checkpoint?.()
         }
         break
       }
       case 'buy-angler':
-        if (!member.player.ownsAngler && member.player.coins >= anglerCost) {
-          member.player.coins -= anglerCost
+        if (!member.player.ownsAngler && state.crewCoins >= anglerCost) {
+          state.crewCoins -= anglerCost
           member.player.ownsAngler = true
           checkpoint?.()
         }
@@ -807,10 +795,10 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     })
   }
 
-  return { tick, connect, snapshotForSave }
+  return { tick, connect, snapshotForSave, get crewCoins() { return state.crewCoins } }
 }
 
-function attachGame(server: NonNullable<ViteDevServer['httpServer']>, root: string, port: number) {
+function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middlewares: ViteDevServer['middlewares'], root: string, port: number) {
   const archive = islandSaveFile(root, port, process.env.MISSION_ISLAND_SAVE)
   let saveFailed = false
   function checkpoint() {
@@ -824,6 +812,15 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, root: stri
     }
   }
   const game = createGame({ save: archive?.load(), checkpoint })
+  // Saltwind's survey can read the same bank without reserving a Starter Island crew slot.
+  middlewares.use('/api/crew-bank', (request, response) => {
+    response.setHeader('Cache-Control', 'no-store')
+    if (request.method !== 'GET') {
+      response.writeHead(405, { Allow: 'GET' }).end()
+      return
+    }
+    response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ crewCoins: game.crewCoins }))
+  })
   const sockets = new WebSocketServer({ noServer: true, maxPayload: 256 })
   const live = new Set<WebSocket>()
   const timer = setInterval(game.tick, tickSeconds * 1000)
@@ -864,10 +861,10 @@ export function multiplayer(): Plugin {
   return {
     name: 'mission-island-multiplayer',
     configureServer(server) {
-      if (server.httpServer) attachGame(server.httpServer, server.config.root, server.config.server.port ?? 5173)
+      if (server.httpServer) attachGame(server.httpServer, server.middlewares, server.config.root, server.config.server.port ?? 5173)
     },
     configurePreviewServer(server) {
-      attachGame(server.httpServer, server.config.root, server.config.preview.port ?? 5173)
+      attachGame(server.httpServer, server.middlewares, server.config.root, server.config.preview.port ?? 5173)
     },
   }
 }

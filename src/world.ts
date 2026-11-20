@@ -15,6 +15,11 @@ export const beach = { x: 32, z: -35.5 }
 export const forest = { x: -27, z: 22 }
 export const houseRoofRise = 1.65
 export const jobPay = { crate: 2, delivery: 3, fire: 4 }
+export const starterPay = {
+  crate: { label: 'Crate delivered', coins: jobPay.crate },
+  delivery: { label: 'Harbor delivery complete', coins: jobPay.crate + jobPay.delivery },
+  fire: { label: 'Lookout fire out', coins: jobPay.fire },
+}
 export const jumpSpeed = 6.85
 export const jumpGravity = 17
 export const truckStart: Pose = { x: -41, z: -11, heading: Math.PI / 2 }
@@ -22,6 +27,7 @@ export const truckSeatSpeed = 2
 export const skiffStart: Pose = { x: -48.5, z: -35.8, heading: -2.5 }
 export const harborDock = { x: -44, firstZ: -29, planks: 18, spacing: 0.49, width: 3.45, plankDepth: 0.45, top: 0.23 }
 export const dockEndZ = harborDock.firstZ - (harborDock.planks - 1) * harborDock.spacing
+export const ferryTerminal = { x: -32, z: -31, width: 6 }
 export const truckBed = { width: 2.28, length: 3.12, center: -1.39, top: 1.12 }
 export const truckRoof = { width: 2.36, length: 1.52, center: 1.03, top: 2.3 }
 export const truckHood = { width: 2.46, length: 1.07, center: 2.325, top: 1.43 }
@@ -34,9 +40,16 @@ export const truckTailLip = {
 export const cargoSlots = [-0.46, -1.46, -2.46]
 export const crateSize = 0.89
 export const crewHomes = [
-  { building: { x: -52, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#f2d5a4', roof: '#a85d36' }, chest: { x: -50.65, z: -7.52 } },
-  { building: { x: -45, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#d5e9dc', roof: '#477986' }, chest: { x: -43.65, z: -7.52 } },
+  { name: 'Amber cottage', building: { x: -52, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#f2d5a4', roof: '#a85d36' },
+    chest: { x: -50.65, z: -7.52 } },
+  { name: 'Blue cottage', building: { x: -45, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#d5e9dc', roof: '#477986' },
+    chest: { x: -43.65, z: -7.52 } },
 ]
+
+export function cottageDoor(home: typeof crewHomes[number]) {
+  const { x, z, d } = home.building
+  return { x, z: z - d / 2 - 0.55 }
+}
 export const chestSize = { width: 0.92, depth: 0.64, height: 0.66 }
 export const spawns: Point[] = crewHomes.map(({ chest }) => ({ x: chest.x, z: chest.z - 1.34 }))
 export const crateStarts: Point[] = [
