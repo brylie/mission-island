@@ -30,15 +30,28 @@ export interface CameraState {
 
 export type Angle = 'perspective' | 'front' | 'side' | 'top'
 
+function stageAtmosphere(scene: Scene, lighting: ReturnType<typeof createIslandLighting>, entry: Entry, field?: FieldSite) {
+  if (entry.landscape || entry.weather) scene.fogMode = Scene.FOGMODE_LINEAR
+  if (!entry.landscape && entry.id !== 'biome' && !entry.weather) return
+  const { sky, sunlight, shadows } = lighting
+  return createAtmosphere(scene, sky, sunlight, shadows, field?.saltwindSubject ? 3350 : undefined)
+}
+
+function stageWeather(entry: Entry, time: number, settings: Values) {
+  return entry.weather?.(time, settings) ?? {
+    hour: Number(settings.hour), rain: entry.id === 'biome' ? Number(settings.rain) / 100 : entry.landscape ? Number(settings.rain) : 0,
+  }
+}
+
 export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values,
   reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>, field?: FieldSite) {
   const scene = new Scene(engine)
   const biome = entry.id === 'biome'
   try {
     scene.clearColor = Color4.FromHexString('#1b292aff')
-    if (entry.landscape) scene.fogMode = Scene.FOGMODE_LINEAR
-    const { sky, sunlight, shadows } = createIslandLighting(scene)
-    const atmosphere = entry.landscape || biome ? createAtmosphere(scene, sky, sunlight, shadows) : undefined
+    const sceneLighting = createIslandLighting(scene)
+    const { sky, sunlight, shadows } = sceneLighting
+    const atmosphere = stageAtmosphere(scene, sceneLighting, entry, field)
     const surroundings = field ? createFieldScenery(createMeshFactory(scene, shadows), field) : undefined
     if (field) scene.clearColor = Color4.FromHexString('#b7d3d7ff')
     const firstSubjectRoot = scene.rootNodes.length
@@ -176,13 +189,13 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       draw(time: number, rate: number, seek: boolean, settings: Values, turntable: boolean, delta: number) {
         if (turntable) camera.alpha += delta * 0.38
         if (entry.landscape) updateLandscapeFocus(settings)
-        const rain = biome ? Number(settings.rain) / 100 : entry.landscape ? Number(settings.rain) : 0
+        const weather = stageWeather(entry, time, settings)
         const shaftIntensity = settings.sunShafts === false ? 0 : Number(settings.shaftIntensity ?? 100) / 100
         camera.getViewMatrix()
         const position = camera.globalPosition
-        const light = atmosphere?.update(time, { hour: Number(settings.hour), rain }, position, true, { shaftIntensity }) ?? 1
-        update?.({ time, rate, seek, lighting, camera: position, light, rain, delta }, settings)
-        surroundings?.({ time, delta: rate * delta, seek, weather: { hour: 13, rain }, camera: position, threats: [] }, light)
+        const light = atmosphere?.update(time, weather, position, true, { shaftIntensity, fogScale: field?.saltwindSubject ? 7 : 1 }) ?? 1
+        update?.({ time, rate, seek, lighting, camera: position, light, rain: weather.rain, delta }, settings)
+        surroundings?.({ time, delta: rate * delta, seek, weather: { hour: entry.weather ? weather.hour : 13, rain: weather.rain }, camera: position, threats: [] }, light)
         layout?.update(delta, time)
         subject.forEach(applyWireframe)
         layout?.meshes().forEach(applyWireframe)

@@ -2,6 +2,7 @@ import type { MeshFactory } from '../island-meshes'
 import type { SubjectGroup } from './library'
 import type { FieldSite } from './field-site'
 import type { LightingPreset } from './lighting'
+import type { Weather } from '../protocol'
 import type { Point } from '../world'
 
 type Value = string | number | boolean
@@ -30,6 +31,7 @@ export interface Entry {
   name: string
   group: SubjectGroup
   fieldSite?: (values: Values) => FieldSite
+  weather?: (time: number, values: Values) => Weather
   description: string
   swatch?: string
   source: string

@@ -6,10 +6,11 @@ import { Scene } from '@babylonjs/core/scene'
 import { createCrew, poseCrew, poseSwimming } from '../assets/crew'
 import { createAtmosphere } from '../island-atmosphere'
 import { createIslandLighting, createMeshFactory } from '../island-meshes'
-import type { Weather } from '../protocol'
-import { weatherAt } from '../weather'
 import { clearCameraDistance, placeWalker, ScenerySolids, walkSaltwind } from './walking'
 import { villageWalks } from './footways'
+import { displayCrewBank } from './crew-bank'
+import { createHoneyDelivery } from './honey-delivery'
+import { saltwindRainAt, saltwindWeather } from './weather'
 import { createLandscape } from './landscape'
 import { createChart } from './map'
 import { routes, sampleRoute } from './routes'
@@ -20,14 +21,6 @@ import { dryLandKm2, groundHeight, waterHeight } from './terrain'
 import { tour } from './tour'
 import { bindPlaytestCopy, readSaltwindView, saltwindLink } from '../playtest-link'
 import './style.css'
-
-const surveyWeather: Record<string, Weather> = {
-  morning: { hour: 6.8, rain: 0 },
-  daylight: { hour: 13, rain: 0 },
-  rain: { hour: 15, rain: .85 },
-  dusk: { hour: 17.6, rain: 0 },
-  night: { hour: 23, rain: 0 },
-}
 
 function start() {
   const get = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T
@@ -65,23 +58,7 @@ function start() {
   const discoveries = get('discoveries'), stage = get('stage-label'), place = get('place'), direction = get('direction')
   const tourButton = get<HTMLButtonElement>('tour'), overviewButton = get<HTMLButtonElement>('overview')
   const labels = get('world-labels'), performanceLabel = get('performance')
-  const bank = get('crew-bank')
-  async function refreshBank() {
-    try {
-      const response = await fetch('/api/crew-bank', { signal: AbortSignal.timeout(5000) })
-      if (!response.ok) throw new Error('Bank unavailable')
-      const data: unknown = await response.json()
-      if (!data || typeof data !== 'object' || !('crewCoins' in data) || typeof data.crewCoins !== 'number') {
-        throw new Error('Invalid crew bank balance')
-      }
-      const { crewCoins } = data
-      bank.textContent = `Crew bank · ${crewCoins} ${crewCoins === 1 ? 'coin' : 'coins'}`
-    } catch {
-      bank.textContent = 'Crew bank · Reconnecting…'
-    }
-    window.setTimeout(() => void refreshBank(), 3000)
-  }
-  void refreshBank()
+  displayCrewBank(get('crew-bank'))
   const showPerformance = new URLSearchParams(location.search).has('perf')
   const area = dryLandKm2().toFixed(3)
   get('map-scale').textContent = `${area} km² of dry land · North is +Z · 1 unit = 1 metre`
@@ -101,6 +78,7 @@ function start() {
   let yaw = 0, orbit = 0, pitch = .48, arm = 12, cycle = 0, sceneTime = 0, lastDraw = -1
   let broad = false, stop = 0, playing = false, leg = 0, progress = 0, drag: PointerEvent | undefined
   let jump = false, snapCamera = true
+  const honey = createHoneyDelivery(meshes, crew, () => { resumePreview(); canvas.focus() })
   const worldLabels = landmarks.map((pin) => {
     const label = document.createElement('span')
     label.textContent = pin.name
@@ -196,7 +174,7 @@ function start() {
     const target = trail?.path[0] ?? walk?.points.at(-1) ?? site?.access ?? landmark
     const nearest = routes.flatMap(({ samples }) => samples).reduce((best, p) =>
       Math.hypot(p.x - target.x, p.z - target.z) < Math.hypot(best.x - target.x, best.z - target.z) ? p : best)
-    const approach = landmark.id === 'ferry' ? arrival : nearest
+    const approach = landmark.id === 'ferry' ? arrival : landmark.id === 'apiary' ? { x: 187, z: 27 } : nearest
     const sight = walk?.points[0] ?? (landmark.id === 'rescue' ? waterfront.skiffLaunch : landmark)
     const dx = sight.x - approach.x, dz = sight.z - approach.z
     setPoint(approach, Math.hypot(dx, dz) < 1 ? nearest.yaw : Math.atan2(dx, dz))
@@ -230,6 +208,7 @@ function start() {
       event.preventDefault()
       if (!event.repeat) { resumePreview(); stopTour(); jump = true }
     }
+    if (key === 'e' && !event.repeat) honey.interact()
     if (key === 'c' && !event.repeat) setOverview(!broad)
     if (key === 'm' && !event.repeat) openMap()
   })
@@ -384,6 +363,11 @@ function start() {
   bindPlaytestCopy(() => saltwindLink(location.href, { point, yaw, orbit, pitch, arm, cycle, speed, time: sceneTime,
     eye: follow.position.asArray(), tour: { stop, leg, progress, playing }, weather: climate.value, overview: broad, site: inspectedSite }))
   updateCamera(1)
+  function poseWalkingCrew(walking: number, dt: number) {
+    if (point.swimming) poseSwimming(crew, sceneTime, Math.min(1, walking / 3.8))
+    else poseCrew(crew, cycle, walking ? Math.min(.85, walking * .1) : 0, !point.grounded,
+      honey.carrying() ? 'tool' : undefined, 0, frozen ? 1 : Math.min(1, dt * 10))
+  }
   engine.runRenderLoop(() => {
     const dt = Math.min(.065, engine.getDeltaTime() / 1000)
     const simulationDelta = frozen ? 0 : dt
@@ -397,8 +381,8 @@ function start() {
     crew.root.rotation.x = 0
     crew.root.rotation.y = yaw
     crew.blink(sceneTime)
-    if (point.swimming) poseSwimming(crew, sceneTime, Math.min(1, walking / 3.8))
-    else poseCrew(crew, cycle, walking ? Math.min(.85, walking * .1) : 0, !point.grounded, undefined, 0, frozen ? 1 : Math.min(1, dt * 10))
+    poseWalkingCrew(walking, dt)
+    honey.update(point, !broad && !playing)
     for (const pin of landmarks) if (!known.has(pin.id) && Math.hypot(point.x - pin.x, point.z - pin.z) <= pin.radius) {
       known.add(pin.id)
       if (pin.discoverable) {
@@ -411,10 +395,10 @@ function start() {
     }
     updateCamera(dt)
     const camera = scene.activeCamera ?? follow
-    const weather = surveyWeather[climate.value] ?? weatherAt(sceneTime + 100)
+    const weather = saltwindWeather(climate.value, sceneTime)
     const light = atmosphere.update(sceneTime, weather, camera.position, !broad, { fogScale: 7 })
     const threats = point.y < waterHeight(point.x, point.z) - .04 ? [point] : []
-    updateScenery({ time: sceneTime, delta: simulationDelta, weather, camera: camera.position, threats }, broad)
+    updateScenery({ time: sceneTime, delta: simulationDelta, weather, camera: camera.position, threats }, broad, climate.value === 'live' ? saltwindRainAt : undefined)
     updateWater(sceneTime, light)
     scene.render()
     updateLabels()

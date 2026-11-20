@@ -17,7 +17,7 @@ import type { Control, Values } from './subject'
 import type { FieldSite } from './field-site'
 import { createStage } from './stage'
 import type { Angle, CameraState } from './stage'
-import { landscapeViews } from './landscape-views'
+import { landscapeViews, openFieldView, scenicChoices } from './landscape-views'
 import { createLandscapeDraft, draftLabels, draftStorageKey } from './landscape-draft'
 import { createLandscapeMap } from './landscape-map'
 import { createLandscapeStudies } from './landscape-studies'
@@ -109,7 +109,7 @@ lightSelect.value = saved.lighting && saved.lighting in lightingPresets ? saved.
 grid.checked = saved.grid ?? true
 wireframe.checked = saved.wireframe ?? false
 turntable.checked = saved.turntable ?? false
-scenicView.append(...Object.entries(landscapeViews).map(([id, view]) => new Option(view.label, id)))
+scenicView.append(...scenicChoices.map(([id, label]) => new Option(label, id)))
 
 function reportError(text: string) {
   status.textContent = text
@@ -527,7 +527,7 @@ function openFurnishingLocation() {
 }
 
 scenicView.addEventListener('change', () => {
-  openLandscapeView(scenicView.value)
+  if (!openFieldView(scenicView.value)) openLandscapeView(scenicView.value)
   scenicView.value = ''
 })
 

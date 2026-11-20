@@ -1,3 +1,4 @@
+import { longAcreSubject } from '../second-island/long-acre'
 import { falls } from '../terrain'
 import type { Point } from '../world'
 
@@ -32,4 +33,13 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
     focus: { ...falls, height: 0.25 },
     alpha: -Math.PI / 2, beta: 1.1, radius: 24, hour: 16.5, time: 0,
   },
+}
+
+export const scenicChoices = [...Object.entries(landscapeViews).map(([id, view]) => [id, view.label]),
+  [longAcreSubject, 'Long Acre Fields pollinators']]
+
+export function openFieldView(id: string) {
+  if (id !== longAcreSubject) return false
+  location.hash = id + '?stage=island'
+  return true
 }
