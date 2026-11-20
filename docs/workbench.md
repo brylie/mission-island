@@ -37,4 +37,8 @@ Further work can add named plant species backed by shared generators, production
 
 In **Ecology → Biome Composer**, choose **Open fish schooling trial**. Six fish cruise in an isolated pool. Watch the default crossing, then choose **Wading player** or **Paddled skiff** and replay the same seed. A click on the water redirects the actor. With the canvas focused, tap **W/A/S/D** to direct it two metres relative to the current view. Press **Space** to pause or resume.
 
+**Randomize school** starts a fresh encounter with a different shoal shape, heading and set of individual speeds. For a controlled comparison, enter seed **125**, select the skiff, and watch the default crossing. Pause at 25 seconds and toggle **Nudge fish 1 east by 5 cm**. Only that initial position changes. Look for differences downstream in who scatters or takes the lead. The setup link retains the nudge as well as the seed.
+
+Each follower sees the leader's recent path with its own short delay. Seeded, mean-reverting Brownian noise gently varies each fish's direction. A fish can bank more sharply while startled. Its body turns with its direction of travel, including when it slows to regroup.
+
 Approach one flank, then move away. Watch which fish turn first, follow their trails, and look for the gold ring around the fish they regroup on. Make a second pass from the opposite side. Rewind to replay your recorded route; steering after a rewind replaces subsequent moves. **Copy setup link** includes the route, actor, seed, view and timeline position. **Reset** restores the default crossing. The [Driftwood field playtest](https://github.com/brylie/mission-island/issues/68) follows this Composer trial.

@@ -4,12 +4,16 @@ import { PointerEventTypes } from '@babylonjs/core/Events/pointerEvents'
 import { CreateTorus } from '@babylonjs/core/Meshes/Builders/torusBuilder'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { createCrew, poseCrew } from '../assets/crew'
+import { poolSand, roundedPebble } from '../assets/strand'
 import { createSchoolFish } from '../assets/fish'
 import { createHarborBoat } from '../assets/waterfront'
 import { poolRadius } from '../simulation/fish-school'
 import type { Point } from '../world'
 import { createSchoolTrial, trialSeconds } from './school-trial'
 import { control, type Entry } from './subject'
+
+const seedCount = 10000
+const firstSeed = Math.floor(Math.random() * seedCount)
 
 const directions: Record<string, [number, number]> = {
   KeyW: [0, 1], KeyA: [-1, 0], KeyS: [0, -1], KeyD: [1, 0],
@@ -21,16 +25,24 @@ export const schoolStudy: Entry = {
   readout: 'School observations', topView: true, duration: trialSeconds, ground: { height: -1.1, color: '#485b57' },
   controls: [
     control('actor', 'Disturbance', 'player', { player: 'Wading player', skiff: 'Paddled skiff' }, true),
-    { key: 'seed', label: 'School seed', type: 'number', min: 0, max: 9999, step: 1, value: 42, rebuild: true },
+    { key: 'seed', label: 'School seed', type: 'number', min: 0, max: 9999, step: 1, value: firstSeed, rebuild: true },
+    { key: 'nudge', label: 'Nudge fish 1 east by 5 cm', type: 'checkbox', value: false, rebuild: true },
     { key: 'trails', label: 'Show fish trails', type: 'checkbox', value: true },
     { key: 'leaderRing', label: 'Mark regroup leader', type: 'checkbox', value: true },
   ],
+  actions: [{
+    label: 'Randomize school', restart: true, enabled: () => true,
+    run(values) {
+      const offset = 1 + Math.floor(Math.random() * (seedCount - 1))
+      values.seed = (Number(values.seed) + offset) % seedCount
+    },
+  }],
   create(meshes, values, _reportError, observe) {
     const { scene } = meshes
-    const trial = createSchoolTrial(Number(values.seed), values.actor === 'skiff' ? 'skiff' : 'player', values.route)
+    const trial = createSchoolTrial(Number(values.seed), values.actor === 'skiff' ? 'skiff' : 'player', values.route, Boolean(values.nudge))
     const { school, actor } = trial
     values.route = JSON.stringify(trial.route)
-    const sand = meshes.paintSurface('sand', '#80afa1')
+    const sand = meshes.paintSurface('sand', poolSand)
     meshes.cylinder(0, -.74, 0, 16, 16, .55, 64, sand)
     const water = meshes.paint('#4d9fa6')
     water.alpha = .20
@@ -38,9 +50,8 @@ export const schoolStudy: Entry = {
     surface.isPickable = true
     for (let i = 0; i < 15; i++) {
       const angle = i * 2.4, radius = 6.6 + .48 * Math.sin(i * 3.1)
-      const rock = meshes.sphere(Math.cos(angle) * radius, -.49, Math.sin(angle) * radius,
-        .58 + .3 * Math.cos(i), .32, .42, i % 2 ? '#789997' : '#899d8b', undefined, false, 4)
-      rock.rotation.y = angle
+      roundedPebble(meshes, Math.cos(angle) * radius, -.49, Math.sin(angle) * radius,
+        .58 + .3 * Math.cos(i), .32, .42, angle, i + 1)
     }
     const shoal = meshes.paint('#bce7b7')
     shoal.backFaceCulling = false
@@ -92,7 +103,7 @@ export const schoolStudy: Entry = {
       let startled = 0
       for (const [i, member] of school.fish.entries()) {
         fish[i].position.set(member.x, -.09, member.z)
-        fish[i].rotation.y = Math.atan2(member.vx, member.vz) + Math.sin(time * 8 + i) * .07
+        fish[i].rotation.y = Math.PI / 2 - member.heading
         fish[i].material = member.alarm > 0 ? startledPaint : shoal
         if (member.alarm > 0) startled++
         if (settings.trails) {

@@ -23,15 +23,15 @@ export function readSchoolRoute(raw: unknown): Waypoint[] {
   } catch { return [] }
 }
 
-export function createSchoolTrial(seed: number, kind: Disturbance, raw: unknown) {
+export function createSchoolTrial(seed: number, kind: Disturbance, raw: unknown, nudge = false) {
   const route = readSchoolRoute(raw)
-  const school = createSchool(seed)
+  const school = createSchool(seed, nudge)
   const actor = { x: -6, z: 0, heading: Math.PI / 2, speed: 0 }
   const tracks: Point[][] = school.fish.map(() => [])
   let tick = 0, nextCommand = 0
   let target: Point = actor
   function restart() {
-    Object.assign(school, createSchool(seed))
+    Object.assign(school, createSchool(seed, nudge))
     Object.assign(actor, { x: -6, z: 0, heading: Math.PI / 2, speed: 0 })
     target = actor
     for (const track of tracks) track.length = 0

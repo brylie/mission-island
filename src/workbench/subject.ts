@@ -40,7 +40,7 @@ export interface Entry {
   topView?: boolean
   landscape?: boolean
   ground?: { color: string; height: number }
-  actions?: { label: string; enabled(values: Values): boolean; run(values: Values): void }[]
+  actions?: { label: string; restart?: boolean; enabled(values: Values): boolean; run(values: Values): void }[]
   controls?: Control[]
   create(meshes: MeshFactory, values: Values, reportError: (error: string) => void, observe: (text: string) => void):
     ((frame: Playback, values: Values) => void) | void

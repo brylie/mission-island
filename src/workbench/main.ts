@@ -255,6 +255,10 @@ function refreshActions() {
     button.disabled = !action.enabled(values)
     button.addEventListener('click', () => {
       action.run(values)
+      if (action.restart) {
+        seekTo(0)
+        rebuild(stage?.getCamera())
+      }
       renderAssetControls()
       remember()
       panel.querySelector<HTMLButtonElement>('button:enabled')?.focus()
