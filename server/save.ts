@@ -8,12 +8,13 @@ import { crateStarts, extinguisherStarts, spawns, starterPay } from '../src/worl
 import type { Pose } from '../src/world.ts'
 
 export type IslandSave = {
-  version: 1
+  version: 2
+  crewCoins: number
+  lastStarterPay?: Snapshot['lastStarterPay']
   islandTime: number
   growth: number[]
   world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm'> & { truck: Pose; jobs?: JobBoardState }
   crew: { token: string; player: Player; reserved: boolean }[]
-  jobCrew?: string[]
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -22,6 +23,32 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
+}
+
+function isCoinBalance(value: unknown): value is number {
+  return isNumber(value) && Number.isSafeInteger(value) && value >= 0
+}
+
+function validReceipt(value: unknown) {
+  return value === undefined || (typeof value === 'string' && Object.hasOwn(starterPay, value))
+}
+
+// Version 1 kept unspent coins and the last starter receipt on each profile.
+function migrateWallets(value: unknown): unknown {
+  if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.crew)) return value
+  let crewCoins = 0
+  const receipts = new Set<string>()
+  const crew = []
+  for (const entry of value.crew) {
+    if (!isRecord(entry) || !isRecord(entry.player)) return value
+    const { coins, lastStarterPay, ...player } = entry.player
+    if (!isCoinBalance(coins) || !validReceipt(lastStarterPay)) return value
+    crewCoins += coins
+    if (typeof lastStarterPay === 'string') receipts.add(lastStarterPay)
+    crew.push({ ...entry, player })
+  }
+  const lastStarterPay = ['fire', 'delivery', 'crate'].find(job => receipts.has(job))
+  return { version: 2, islandTime: value.islandTime, growth: value.growth, world: value.world, crewCoins, lastStarterPay, crew }
 }
 
 function isPose(value: unknown): value is Record<string, unknown> {
@@ -44,21 +71,19 @@ function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] 
     typeof entry.reserved !== 'boolean' || !isPose(entry.player)) return false
   const player = entry.player
   return isNumber(player.id) && Number.isInteger(player.id) && player.id >= 0 && player.id < spawns.length &&
-    [player.y, player.coins, player.seeds].every(isNumber) && Array.isArray(player.inventory) &&
+    [player.y, player.seeds].every(isNumber) && Array.isArray(player.inventory) &&
     (player.starterSeedClaimed === undefined || typeof player.starterSeedClaimed === 'boolean') &&
-    (player.lastStarterPay === undefined || (typeof player.lastStarterPay === 'string' &&
-      Object.hasOwn(starterPay, player.lastStarterPay))) &&
     isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
 }
 
 function isSave(value: unknown): value is IslandSave {
-  if (!isRecord(value) || value.version !== 1 || !isNumber(value.islandTime) || value.islandTime < 0 ||
+  if (!isRecord(value) || value.version !== 2 || !isCoinBalance(value.crewCoins) ||
+    !validReceipt(value.lastStarterPay) || !isNumber(value.islandTime) || value.islandTime < 0 ||
     !Array.isArray(value.growth) || value.growth.length !== farmPlots.length || !value.growth.every(isNumber) ||
     !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
   const { world } = value
   const reservedIds = new Set(value.crew.filter(({ reserved }) => reserved).map(({ player }) => player.id))
   if (world.jobs !== undefined && !isJobBoard(world.jobs, world.mission)) return false
-  if (value.jobCrew !== undefined && (!Array.isArray(value.jobCrew) || !value.jobCrew.every(isCrewToken))) return false
   return isPose(world.truck) && isPose(world.skiff) && isNumber(world.fire) &&
     ['delivery', 'fire', 'complete'].some((mission) => mission === world.mission) &&
     Array.isArray(world.farm) && world.farm.length === farmPlots.length &&
@@ -79,7 +104,7 @@ export function islandSaveFile(root: string, port: number, slot = `island-${port
   return {
     load(): IslandSave | undefined {
       try {
-        const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'))
+        const parsed = migrateWallets(JSON.parse(readFileSync(path, 'utf8')))
         if (!isSave(parsed)) throw new Error('Unsupported or malformed save')
         return parsed
       } catch (error) {

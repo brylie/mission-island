@@ -75,7 +75,7 @@ function farmOrMarketHint(state: Snapshot, player: Player): [string, string] | u
     }
     const value = saleValue(player.goods)
     if (value) return ['E / B', `Sell for ${value} coins · buy a carrot seed for ${seedPrice}`]
-    return player.coins >= seedPrice ? ['B', `Buy a carrot seed for ${seedPrice} coin`] : ['', 'Sell fish or carrots to buy seeds']
+    return state.crewCoins >= seedPrice ? ['B', `Buy a carrot seed for ${seedPrice} coin`] : ['', 'Sell fish or carrots to buy seeds']
   }
   const plot = player.grounded && !player.onBed ? state.farm[nearbyPlot(player)] : undefined
   if (plot === 'grass') return player.equipped === 'hoe' ? ['Left click', 'Till soil'] : ['2', 'Equip hoe']

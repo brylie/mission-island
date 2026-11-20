@@ -65,6 +65,23 @@ function start() {
   const discoveries = get('discoveries'), stage = get('stage-label'), place = get('place'), direction = get('direction')
   const tourButton = get<HTMLButtonElement>('tour'), overviewButton = get<HTMLButtonElement>('overview')
   const labels = get('world-labels'), performanceLabel = get('performance')
+  const bank = get('crew-bank')
+  async function refreshBank() {
+    try {
+      const response = await fetch('/api/crew-bank', { signal: AbortSignal.timeout(5000) })
+      if (!response.ok) throw new Error('Bank unavailable')
+      const data: unknown = await response.json()
+      if (!data || typeof data !== 'object' || !('crewCoins' in data) || typeof data.crewCoins !== 'number') {
+        throw new Error('Invalid crew bank balance')
+      }
+      const { crewCoins } = data
+      bank.textContent = `Crew bank · ${crewCoins} ${crewCoins === 1 ? 'coin' : 'coins'}`
+    } catch {
+      bank.textContent = 'Crew bank · Reconnecting…'
+    }
+    window.setTimeout(() => void refreshBank(), 3000)
+  }
+  void refreshBank()
   const showPerformance = new URLSearchParams(location.search).has('perf')
   const area = dryLandKm2().toFixed(3)
   get('map-scale').textContent = `${area} km² of dry land · North is +Z · 1 unit = 1 metre`

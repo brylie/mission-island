@@ -48,8 +48,6 @@ export interface Player extends Pose {
   casting: { bobber: Point; elapsed: number; power: number; fight?: { progress: number; tension: number; pulling: boolean } } | null
   throwing: boolean
   rowing: boolean
-  coins: number
-  lastStarterPay?: keyof typeof starterPay
   ownsAngler: boolean
 }
 
@@ -73,6 +71,8 @@ export type Mission = 'delivery' | 'fire' | 'complete'
 export interface Snapshot {
   juniper: BiomeFrame
   type: 'state'
+  crewCoins: number
+  lastStarterPay?: keyof typeof starterPay
   players: Player[]
   truck: Truck
   skiff: Skiff

@@ -189,7 +189,7 @@ test('named save slots are separate, validated and replaced with full snapshots'
   first.write(save)
   assert.deepEqual(first.load(), save)
   const crew = [{ token: 'a'.repeat(32), reserved: true, player: {
-    ...truckStart, id: 0, y: 0, coins: 0, seeds: 0, inventory: [], goods: { fish: 0, carrots: 0 },
+    ...truckStart, id: 0, y: 0, seeds: 0, inventory: [], goods: { fish: 0, carrots: 0 },
   } }]
   const held = { ...save, crew, world: { ...save.world, items: save.world.items.map((item) => ({ ...item })) } }
   held.world.items[0].holder = 0
@@ -213,9 +213,12 @@ test('named save slots are separate, validated and replaced with full snapshots'
   assert.deepEqual(other.load(), save)
   const legacy = { ...save, world: { ...save.world } }
   delete legacy.world.jobs
-  delete legacy.jobCrew
   other.write(legacy)
   assert.deepEqual(other.load(), legacy)
+  for (const invalid of [-1, 1.5, '3', Number.MAX_SAFE_INTEGER + 1]) {
+    other.write({ ...save, crewCoins: invalid })
+    assert.throws(() => other.load(), /Could not load island save/)
+  }
   save.world.mission = 'complete'
   save.world.jobs.active = { id: 'market-fish', progress: 1 }
   first.write(save)

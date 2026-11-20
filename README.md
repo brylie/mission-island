@@ -36,7 +36,7 @@ Bring crates to the tail of the truck to set them on the bed. Jump over the low 
 
 Jump onto or over low rocks and crates. The bed or hood gives you a second jump onto the cab roof.
 
-Each starter crate delivered pays two coins per player. Completing the delivery pays three more, and clearing the lookout fire pays four. The truck's headlights and taillights come on around dusk, along with street lamps in the settlements.
+Each starter crate delivered pays two coins into the shared crew bank. Completing the delivery pays three more, and clearing the lookout fire pays four. The truck's headlights and taillights come on around dusk, along with street lamps in the settlements.
 
 The truck has four-wheel suspension and follows the terrain under each wheel. **W** accelerates, **S** brakes when moving forward and then reverses, and **Space** applies the brake without changing direction. Brake lights work in daylight and at night. Cargo and players riding on the bed move with the truck, so slowing down before sharp corners and rough ground helps keep the crates aboard.
 
@@ -44,7 +44,7 @@ The truck has four-wheel suspension and follows the terrain under each wheel. **
 
 After the lookout fire, press **E** at the Harbor Depot job board to take the next crew order. You can read the board from the mission panel anywhere on the island. Deliver seed crates to Island Farm, take beach gear to Driftwood Beach, or fill fish and carrot orders at Seabrook Market. Either player can contribute to an order. You can keep fishing, farming, or exploring while the order is open.
 
-Orders pay each member of the crew who joined the job, including teammates who reconnect after the reservation ends. Four completed orders mark the crew ready for the future second island. Coins are available to spend along the way. See the [crew orders specification](docs/mechanics/crew-orders.md) for payouts and rules.
+Each completed order deposits its posted reward once in the crew bank. Both islands show the same balance. Either player can use it to buy seeds or a uniform. Four completed orders mark the crew ready for the future second island. Coins are available to spend along the way. See the [crew orders specification](docs/mechanics/crew-orders.md) for payouts and rules.
 
 ### Starting tools and island life
 
@@ -73,7 +73,7 @@ The host automatically saves in `.mission-island/saves/island-5173.json` for the
 MISSION_ISLAND_SAVE=weekend npm run dev
 ```
 
-Run one host per save. Use `MISSION_ISLAND_SAVE=off` for a temporary playtest. Open tabs keep the last rendered scene during reconnect and a styled loading screen shows the current phase when the page reloads. Skiff seats are reserved for two minutes during a reconnect and move with the skiff. Use **WASD** to swim if you land in deep water, or choose **Options → Respawn at home**. Respawning brings your inventory and coins and safely releases loose cargo.
+Run one host per save. Use `MISSION_ISLAND_SAVE=off` for a temporary playtest. Open tabs keep the last rendered scene during reconnect and a styled loading screen shows the current phase when the page reloads. Skiff seats are reserved for two minutes during a reconnect and move with the skiff. Use **WASD** to swim if you land in deep water, or choose **Options → Respawn at home**. Respawning brings your inventory and safely releases loose cargo.
 
 ## Saltwind Island development preview
 

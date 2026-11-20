@@ -15,4 +15,4 @@ The host computes power and resolves each player's bite and fight independently.
 - Cast from dry shore, the end of the dock, and a stationary skiff. Aim at land to check the dry-cast prompt.
 - Land a fish by reeling during calm periods. Keep reeling through a pull to test snapping the line, then wait out a fight to test an escape. Only landing the fish adds it to inventory.
 - Cast from both skiff seats, then paddle with one player. Both bobbers should disappear.
-- Sell the catch and check that the fish leave the inventory and coins are credited to the seller.
+- Sell the catch and check that the fish leave the inventory and both players see the sale credited once to the crew bank.

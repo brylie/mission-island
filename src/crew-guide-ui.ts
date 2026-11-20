@@ -37,11 +37,11 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
         : state.mission === 'fire'
           ? 'Pick up the extinguishers at Fire Supplies and head to Forest Lookout. Putting out the fire opens the Harbor Job Board back at the depot.'
           : 'Cross the main road to the Harbor Depot freight yard south of the cottages. One crewmate can load the flatbed from the back with E while the other boards with F. Once loaded, follow the road east to Seabrook. Next comes the lookout fire, then the job board beside the depot.'
-    const balance = `Crew wallet · ${player.coins} ${player.coins === 1 ? 'coin' : 'coins'}`
-    const latest = player.lastStarterPay && starterPay[player.lastStarterPay]
+    const balance = `Crew bank · ${state.crewCoins} ${state.crewCoins === 1 ? 'coin' : 'coins'}`
+    const latest = state.lastStarterPay && starterPay[state.lastStarterPay]
     const receipt = latest
       ? `Last starter payout · ${latest.label} · +${latest.coins} coins.`
-      : `Starter pay goes straight into each participating player’s wallet. Earn ${jobPay.crate} coins per crate, ${jobPay.delivery} extra for finishing the delivery, and ${jobPay.fire} for clearing the lookout fire.`
+      : `Starter pay goes straight into the shared crew bank. Earn ${jobPay.crate} coins per crate, ${jobPay.delivery} extra for finishing the delivery, and ${jobPay.fire} for clearing the lookout fire.`
     for (const [element, value] of [
       [home, crewHomes[player.id].name], [workTitle, heading], [work, direction], [pay, `${balance}. ${receipt}`],
     ] as const) {

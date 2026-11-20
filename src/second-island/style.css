@@ -19,6 +19,7 @@ kbd { font: 650 .70rem system-ui, sans-serif; color: #f3deb5; border: 1px solid 
 h1, h2, p { margin: 0; }
 h1 { font-family: Georgia, serif; font-size: 1.47rem; font-weight: 600; line-height: 1.05; }
 nav { display: flex; gap: .5rem; align-items: center; font-size: .83rem; }
+#crew-bank { color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
 nav a { text-decoration: none; background: transparent; border-color: transparent; }
 main { position: relative; flex: 1; min-height: 0; }
 #island, #world-labels { position: absolute; inset: 0; width: 100%; height: 100%; }

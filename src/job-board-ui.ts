@@ -27,8 +27,8 @@ export function createJobBoard(dialog: HTMLDialogElement, request: (id: JobId) =
     detail.textContent = jobDescription(job)
     const button = document.createElement('button')
     button.type = 'button'
-    button.textContent = `Take order · ${job.coins} coins each`
-    button.setAttribute('aria-label', `Take ${job.title}, ${job.coins} coins each`)
+    button.textContent = `Take order · ${job.coins} coins for the crew`
+    button.setAttribute('aria-label', `Take ${job.title}, ${job.coins} coins for the crew`)
     button.addEventListener('click', () => {
       if (pending) return
       pending = id

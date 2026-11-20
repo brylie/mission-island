@@ -44,7 +44,7 @@ function player(id, point = spawns[id], overrides = {}) {
   return {
     ...point, id, heading: 0, y: groundHeight(point), grounded: true, onBed: false, reaching: false, rightHandRaised: false,
     connected: true, sleeping: false, seat: null, inventory: [], equipped: null, goods: { fish: 0, carrots: 0 },
-    seeds: 0, charge: null, casting: null, throwing: false, rowing: false, coins: 0, ownsAngler: false, ...overrides,
+    seeds: 0, charge: null, casting: null, throwing: false, rowing: false, ownsAngler: false, ...overrides,
   }
 }
 
@@ -197,12 +197,27 @@ test('markets sell only owned goods, consume coins for seeds and protect locked 
   a.request('appearance', { appearance: { uniform: 'angler', skin: 12 } })
   h.advance()
   assert.deepEqual(a.player.goods, { fish: 0, carrots: 0 })
-  assert.equal(a.player.coins, 3)
+  assert.equal(a.state.crewCoins, 3)
+  assert.equal(b.state.crewCoins, 3)
+  assert.deepEqual(b.messages.filter(({ type }) => type === 'market-sale'), [{ type: 'market-sale', coins: 7 }])
   assert.equal(a.player.seeds, 1)
   assert.equal(b.player.seeds, 0)
   assert.equal(a.player.appearance.uniform, 'angler')
   assert.equal(a.messages.filter(({ type }) => type === 'market-sale').length, 1)
   assert.ok(h.checkpoint.mock.callCount() > 0)
+})
+
+test('simultaneous purchases spend the last shared coin once and award the seed to its buyer', (t) => {
+  const h = setup(t, { players: [player(0, market), player(1, market)], arrange(save) { save.crewCoins = 1 } })
+  const a = h.join(tokens[0])
+  const b = h.join(tokens[1])
+  b.request('buy-seed')
+  a.request('buy-seed')
+  h.advance()
+  assert.equal(a.state.crewCoins, 0)
+  assert.equal(b.state.crewCoins, 0)
+  assert.equal(a.player.seeds, 0)
+  assert.equal(b.player.seeds, 1)
 })
 
 test('rain waters a shared plot, repeated crops grow from zero, and harvest is awarded once', (t) => {
@@ -471,7 +486,7 @@ test('delivering all crates and spraying the fire unlocks repeatable jobs withou
     h.advance()
   }
   assert.equal(b.state.mission, 'fire')
-  assert.equal(b.player.coins, jobPay.crate * 3 + jobPay.delivery)
+  assert.equal(b.state.crewCoins, jobPay.crate * 3 + jobPay.delivery)
   b.request('interact')
   h.advance()
   assert.match(actionHint(b.state, b.player)[1], /spray/)
@@ -479,10 +494,10 @@ test('delivering all crates and spraying the fire unlocks repeatable jobs withou
   h.hold(b, 170)
   assert.equal(a.state.mission, 'complete')
   assert.equal(a.state.fire, 0)
-  assert.equal(a.player.coins, jobPay.crate * 3 + jobPay.delivery + jobPay.fire)
-  assert.equal(b.player.coins, a.player.coins)
-  assert.equal(a.player.lastStarterPay, 'fire')
-  assert.equal(b.player.lastStarterPay, 'fire')
+  assert.equal(a.state.crewCoins, jobPay.crate * 3 + jobPay.delivery + jobPay.fire)
+  assert.equal(b.state.crewCoins, a.state.crewCoins)
+  assert.equal(a.state.lastStarterPay, 'fire')
+  assert.equal(b.state.lastStarterPay, 'fire')
   assert.equal(a.state.items[3].holder, null)
   const before = a.player
   a.request('reset')
@@ -514,7 +529,7 @@ test('the cottage gives each saved profile one starter seed, including existing 
   assert.equal(returning.player.inventory.length, 3)
 })
 
-test('a saved job stays payable after a crewmate’s reservation expires, including across host restarts', (t) => {
+test('a solo delivery credits the bank while a crewmate is offline across a host restart', (t) => {
   const h = setup(t, {
     players: [player(0, town), player(1)],
     arrange(save) {
@@ -527,9 +542,9 @@ test('a saved job stays payable after a crewmate’s reservation expires, includ
   const b = h.join(tokens[1])
   a.request('interact')
   h.advance()
-  assert.equal(b.player.coins, jobPay.crate)
-  assert.equal(a.player.lastStarterPay, 'crate')
-  assert.equal(b.player.lastStarterPay, 'crate')
+  assert.equal(b.state.crewCoins, jobPay.crate)
+  assert.equal(a.state.lastStarterPay, 'crate')
+  assert.equal(b.state.lastStarterPay, 'crate')
   b.close()
   h.elapse(12_100)
   assert.equal(h.game.snapshotForSave().crew[1].reserved, false)
@@ -542,11 +557,10 @@ test('a saved job stays payable after a crewmate’s reservation expires, includ
     resumed.advance()
   }
   assert.equal(driver.state.mission, 'fire')
-  assert.equal(resumed.game.snapshotForSave().crew[1].player.coins, 3 * jobPay.crate + jobPay.delivery)
-  assert.deepEqual(resumed.game.snapshotForSave().jobCrew, [tokens[0]])
+  assert.equal(resumed.game.snapshotForSave().crewCoins, 3 * jobPay.crate + jobPay.delivery)
   const returning = resumed.join(tokens[1])
-  assert.equal(returning.player.coins, driver.player.coins)
-  assert.equal(returning.player.lastStarterPay, 'delivery')
+  assert.equal(returning.state.crewCoins, driver.state.crewCoins)
+  assert.equal(returning.state.lastStarterPay, 'delivery')
 })
 
 test('each cottage has its own daytime welcome note and keeps its owner across a rejoin', (t) => {
@@ -587,25 +601,27 @@ test('Mara moves between walkable stops and either crewmate can talk at the fish
   }
 })
 
-test('an older completed shift keeps its order, farm and wallets when crew open onboarding', (t) => {
-  const root = mkdtempSync(join(tmpdir(), 'mission-island-guide-'))
+test('an older completed shift pools legacy wallets and keeps its order and farm on rejoining', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'mission-island-bank-'))
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const file = islandSaveFile(root, 5173)
   const save = createGame().snapshotForSave()
   Object.assign(save.world, { mission: 'complete', fire: 0, jobs: { active: { id: 'market-carrots', progress: 1 }, completed: 2 } })
   save.world.farm[0] = 'watered'
+  save.version = 1
+  delete save.crewCoins
   save.crew = [13, 9].map((coins, id) => ({
-    token: tokens[id], player: player(id, door(id), { coins, starterSeedClaimed: true }), reserved: true,
+    token: tokens[id], player: player(id, door(id), { coins, starterSeedClaimed: true, lastStarterPay: id === 0 ? 'delivery' : 'fire' }), reserved: id === 0,
   }))
   file.write(save)
   const h = setup(t, { saved: file.load() })
   const returning = tokens.slice(0, 2).map(h.join)
-  for (const [id, client] of returning.entries()) {
+  for (const client of returning) {
     client.request('interact')
     h.advance()
     assert.deepEqual(client.messages.at(-1), { type: 'crew-note' })
-    assert.equal(client.player.coins, save.crew[id].player.coins)
-    assert.equal(client.player.lastStarterPay, undefined)
+    assert.equal(client.state.crewCoins, 22)
+    assert.equal(client.state.lastStarterPay, 'fire')
     assert.deepEqual(client.state.jobs, save.world.jobs)
     assert.equal(client.state.farm[0], 'watered')
   }
@@ -613,7 +629,13 @@ test('an older completed shift keeps its order, farm and wallets when crew open 
   h.elapse(12_100)
   const newcomer = h.join(tokens[2])
   assert.deepEqual(actionHint(newcomer.state, newcomer.player), ['E', 'Take tools and a carrot seed'])
-  assert.equal(newcomer.player.coins, 0)
+  assert.equal(newcomer.state.crewCoins, 22)
+  file.write(h.game.snapshotForSave())
+  const migrated = file.load()
+  assert.equal(migrated.version, 2)
+  assert.equal(migrated.lastStarterPay, 'fire')
+  assert.ok(migrated.crew.every(({ player }) => !('coins' in player)))
+  assert.equal(createGame({ save: migrated }).crewCoins, 22)
   assert.deepEqual(newcomer.state.jobs, save.world.jobs)
 })
 
@@ -667,8 +689,8 @@ test('the harbor board offers a new cargo and destination without moving either 
   }
   assert.deepEqual(delivery.state.jobs, { active: null, completed: 1 })
   assert.equal(delivery.state.mission, 'complete')
-  assert.equal(delivery.player.coins, job.coins)
-  assert.equal(nearFarm.join(tokens[1]).player.coins, job.coins)
+  assert.equal(delivery.state.crewCoins, job.coins)
+  assert.equal(nearFarm.join(tokens[1]).state.crewCoins, job.coins)
 })
 
 test('market orders can be filled by both players, survive a reload, and count toward the second island', (t) => {
@@ -687,7 +709,7 @@ test('market orders can be filled by both players, survive a reload, and count t
   b.request('interact')
   h.advance()
   assert.equal(a.state.jobs.active.progress, 1)
-  assert.equal(b.player.coins, 0)
+  assert.equal(b.state.crewCoins, 0)
   const saved = h.game.snapshotForSave()
   Object.assign(saved.crew[0].player, market, { y: groundHeight(market) })
   const resumed = setup(t, { saved })
@@ -697,18 +719,18 @@ test('market orders can be filled by both players, survive a reload, and count t
   seller.request('interact')
   const checkpoint = resumed.checkpoint.mock.calls[0]?.result
   assert.deepEqual(checkpoint?.world.jobs, { active: null, completed: secondIslandGoal })
-  assert.deepEqual(checkpoint.crew.map(({ player }) => player.coins), [jobs['market-fish'].coins, jobs['market-fish'].coins])
+  assert.equal(checkpoint.crewCoins, jobs['market-fish'].coins)
   resumed.advance()
   assert.deepEqual(seller.player.goods, { fish: 1, carrots: 1 })
-  assert.equal(seller.player.coins, jobs['market-fish'].coins)
+  assert.equal(seller.state.crewCoins, jobs['market-fish'].coins)
   assert.deepEqual(seller.state.jobs, { active: null, completed: secondIslandGoal })
   const teammate = resumed.join(tokens[1])
-  assert.equal(teammate.player.coins, seller.player.coins)
+  assert.equal(teammate.state.crewCoins, seller.state.crewCoins)
   seller.request('buy-seed')
   seller.request('interact')
   resumed.advance()
   assert.equal(seller.player.seeds, 1)
-  assert.equal(seller.player.coins, jobs['market-fish'].coins - 1 + 5)
+  assert.equal(seller.state.crewCoins, jobs['market-fish'].coins - 1 + 5)
   assert.equal(seller.state.jobs.completed, secondIslandGoal)
 })
 
@@ -735,8 +757,9 @@ test('an extinguisher left by an expired crew member stays reachable on a hill',
 
 test('a saved night, held equipment and inventory resume after recreating the host', (t) => {
   const h = setup(t, {
-    players: [player(0, door(0), { coins: 6, seeds: 2, goods: { fish: 2, carrots: 3 } })],
+    players: [player(0, door(0), { seeds: 2, goods: { fish: 2, carrots: 3 } })],
     arrange: (save) => {
+      save.crewCoins = 6
       save.islandTime = daySeconds * 0.8
       save.world.farm[2] = 'watered'
       save.growth[2] = 9
@@ -752,7 +775,7 @@ test('a saved night, held equipment and inventory resume after recreating the ho
   a.request('join', { token: tokens[0] })
   restarted.tick()
   assert.ok(isNight(a.state.weather.hour))
-  assert.equal(a.player.coins, 6)
+  assert.equal(a.state.crewCoins, 6)
   assert.equal(a.player.seeds, 2)
   assert.equal(a.state.items[0].holder, 0)
   assert.equal(a.state.farm[2], 'watered')
@@ -778,9 +801,9 @@ test('a skiff seat survives a slower reload while the other player paddles', (t)
 test('a player who resumes in deep water can swim or respawn without losing progress', (t) => {
   const deep = { x: -47, z: -38 }
   const h = setup(t, {
-    players: [player(0, deep, { y: groundHeight(deep), seeds: 1, coins: 3, inventory: ['fishing-rod'],
+    players: [player(0, deep, { y: groundHeight(deep), seeds: 1, inventory: ['fishing-rod'],
       equipped: 'fishing-rod', goods: { carrots: 1, fish: 2 } })],
-    arrange: (save) => { save.world.items[0].holder = 0 },
+    arrange: (save) => { save.world.items[0].holder = 0; save.crewCoins = 3 },
   })
   const a = h.join(tokens[0])
   assert.ok(waterDepth(deep) > maxWadeDepth)
@@ -795,7 +818,7 @@ test('a player who resumes in deep water can swim or respawn without losing prog
   assert.equal(a.player.z, spawns[0].z)
   assert.equal(a.state.items[0].holder, null)
   assert.deepEqual(a.player.goods, { carrots: 1, fish: 2 })
-  assert.equal(a.player.coins, 3)
+  assert.equal(a.state.crewCoins, 3)
   assert.equal(a.player.seeds, 1)
 })
 
