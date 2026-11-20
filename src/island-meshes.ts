@@ -17,10 +17,9 @@ import { createIslandMaterial, createSurfaceMaterial } from './materials'
 import type { SurfaceName } from './materials'
 
 export function createIslandLighting(scene: Scene) {
-  const sky = new HemisphericLight('Sky fill', new Vector3(0.1, 1, -0.35), scene)
-  sky.intensity = 0.58
-  sky.groundColor = Color3.FromHexString('#8aaba1')
   const sunlight = new DirectionalLight('Afternoon sun', new Vector3(0.55, -1, 0.6), scene)
+  // The Atmosphere material plugin uses the sun as the first light.
+  sunlight.renderPriority = 1
   sunlight.position.set(-48, 86, -55)
   sunlight.intensity = 0.86
   sunlight.diffuse = Color3.FromHexString('#fff3d7')
@@ -31,6 +30,10 @@ export function createIslandLighting(scene: Scene) {
   shadows.bias = 0.0008
   shadows.normalBias = 0.045
   shadows.setDarkness(0.22)
+
+  const sky = new HemisphericLight('Sky fill', new Vector3(0.1, 1, -0.35), scene)
+  sky.intensity = 0.58
+  sky.groundColor = Color3.FromHexString('#8aaba1')
 
   return { sky, sunlight, shadows }
 }
