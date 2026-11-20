@@ -1,5 +1,5 @@
 import type { BiomeFrame } from './biome-model'
-import type { Point, Pose } from './world'
+import type { Point, Pose, starterPay } from './world'
 import type { CrewAppearance } from './crew-appearance'
 import type { ChargeKind } from './charged-actions'
 import type { InventoryItem } from './inventory'
@@ -48,7 +48,6 @@ export interface Player extends Pose {
   casting: { bobber: Point; elapsed: number; power: number; fight?: { progress: number; tension: number; pulling: boolean } } | null
   throwing: boolean
   rowing: boolean
-  coins: number
   ownsAngler: boolean
 }
 
@@ -72,6 +71,8 @@ export type Mission = 'delivery' | 'fire' | 'complete'
 export interface Snapshot {
   juniper: BiomeFrame
   type: 'state'
+  crewCoins: number
+  lastStarterPay?: keyof typeof starterPay
   players: Player[]
   truck: Truck
   skiff: Skiff
@@ -89,7 +90,7 @@ export type ServerMessage =
   | { type: 'welcome'; id: number }
   | { type: 'fishing-result'; result: FishingResult }
   | { type: 'market-sale'; coins: number }
-  | { type: 'job-pay'; coins: number; job: 'crate' | 'delivery' | 'fire' }
+  | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
   | { type: 'order-pay'; coins: number; id: JobId }
   | { type: 'order-unavailable' | 'starter-seed' }
   | { type: 'full' | 'duplicate' }

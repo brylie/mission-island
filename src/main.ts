@@ -15,7 +15,7 @@ import { northernRegions, starterDiscoveries } from './scenery'
 import { createRenderer } from './scene'
 import { bindPlaytestCopy } from './playtest-link'
 import { isNight } from './weather'
-import { crewHomes, distance, harbor, lookout } from './world'
+import { crewHomes, distance, harbor, lookout, starterPay } from './world'
 
 function element<T extends HTMLElement>(id: string) {
   const node = document.getElementById(id)
@@ -342,15 +342,15 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
     ownsAngler = Boolean(player.ownsAngler)
     renderAppearanceOptions()
   }
-  coins = player.coins ?? 0
-  const balance = `${coins} ${coins === 1 ? 'coin' : 'coins'}`
+  coins = state.crewCoins
+  const balance = `Crew bank · ${coins} ${coins === 1 ? 'coin' : 'coins'}`
   if (coinBalance.textContent !== balance) coinBalance.textContent = balance
   const { fish, carrots } = player.goods
   const contents = [balance, `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`,
     fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '']
     .filter(Boolean).join(' · ')
   if (fishingWallet.textContent !== contents) fishingWallet.textContent = contents
-  fishingWallet.hidden = !coins && !fish && !carrots && !player.seeds && !player.inventory.length
+  fishingWallet.hidden = false
   toolSlots.hidden = !player.inventory.length
   const handsFull = Boolean(heldItem(state, player) || (player.seat && !inSkiff(player.seat)))
   for (const [index, button] of toolButtons.entries()) {
@@ -456,16 +456,15 @@ function connect() {
         break
       }
       case 'market-sale':
-        actionFeedback = { key: `+${incoming.coins} coins`, label: 'Sold at the market', until: performance.now() + 2100 }
+        actionFeedback = { key: `+${incoming.coins} coins`, label: 'Market sale · Crew bank', until: performance.now() + 2100 }
         break
       case 'job-pay': {
-        const label = incoming.job === 'crate' ? 'Crate delivered'
-          : incoming.job === 'delivery' ? 'Harbor delivery complete' : 'Lookout fire out'
-        actionFeedback = { key: `+${incoming.coins} coins`, label, until: performance.now() + 2400 }
+        actionFeedback = { key: `+${incoming.coins} coins`, label: `${starterPay[incoming.job].label} · Crew bank`,
+          until: performance.now() + 3200 }
         break
       }
       case 'order-pay':
-        actionFeedback = { key: `+${incoming.coins} coins`, label: `${jobs[incoming.id].title} complete`, until: performance.now() + 3200 }
+        actionFeedback = { key: `+${incoming.coins} coins`, label: `${jobs[incoming.id].title} complete · Crew bank`, until: performance.now() + 3200 }
         break
       case 'starter-seed':
         actionFeedback = { key: '+1 seed', label: 'Plant it at Island Farm', until: performance.now() + 3200 }

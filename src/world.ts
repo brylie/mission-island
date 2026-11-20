@@ -15,6 +15,11 @@ export const beach = { x: 32, z: -35.5 }
 export const forest = { x: -27, z: 22 }
 export const houseRoofRise = 1.65
 export const jobPay = { crate: 2, delivery: 3, fire: 4 }
+export const starterPay = {
+  crate: { label: 'Crate delivered', coins: jobPay.crate },
+  delivery: { label: 'Harbor delivery complete', coins: jobPay.crate + jobPay.delivery },
+  fire: { label: 'Lookout fire out', coins: jobPay.fire },
+}
 export const jumpSpeed = 6.85
 export const jumpGravity = 17
 export const truckStart: Pose = { x: -41, z: -11, heading: Math.PI / 2 }
