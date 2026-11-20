@@ -2,6 +2,8 @@
 
 A two-player browser game about running an island service crew. Load a flatbed with supplies at Harbor Depot, drive to Seabrook and unload together. Then pick up extinguishers and deal with a fire at Forest Lookout.
 
+The [design handbook](docs/README.md) brings together the creative direction, inspirations, progression, gameplay rules, and open design questions.
+
 ## Play on your local network
 
 On the host laptop, use Node.js 22.13 or newer and run these commands in the project folder.
@@ -87,6 +89,8 @@ With Vite running, open [Saltwind Island](http://localhost:5173/second-island.ht
 ## Asset Workbench
 
 Run `npm run dev` and open [the Asset Workbench](http://localhost:5173/workbench.html). It runs separately from the LAN session and needs no second player. A selected asset has its own URL, such as [Crew character](http://localhost:5173/workbench.html#crew) or [Water](http://localhost:5173/workbench.html#water).
+
+Choose a workspace or search across the entire catalog. For supported subjects, **Studio** and **On island** keep the same inspector while switching surroundings. Try [editing the Seabrook bench in place](http://localhost:5173/workbench.html#site-town?stage=island) or [composing the Saltwind school](http://localhost:5173/workbench.html#saltwind-school?stage=island). The [Workbench guide](docs/workbench.md) covers draft storage, shareable setups, mechanic trials and adding new subjects.
 
 - Drag to orbit, scroll to zoom, and right-drag to pan. Use the **3D**, **Front**, **Side**, and **Top** buttons to reframe. Compare daylight, overcast, and golden-hour lighting, or turn on wireframe and the turntable.
 - Play, pause, scrub, or advance a frame in timed previews. Try different crew animations, truck steering and cargo, extinguisher bursts, or the fire at different intensities.

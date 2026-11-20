@@ -4,7 +4,8 @@ import type { Exterior } from './lots'
 
 const cream = '#f8e2b9', glass = '#426e73', shade = '#624e42', plank = '#926f55'
 
-export function createExterior(meshes: MeshFactory, building: Exterior, foundation = .48) {
+export function createExterior(meshes: MeshFactory, building: Exterior, foundation = .48,
+  parts: { roof?: 'flat' | 'gable'; canopy?: boolean; tower?: 'school' | 'fire' | 'church' | 'none' } = {}) {
   const root = new TransformNode(building.kind, meshes.scene)
   const { width: w, height: h, depth: d, kind, wall, roof } = building
   const box = (x: number, y: number, z: number, width: number, height: number, depth: number, color: string) =>
@@ -16,7 +17,7 @@ export function createExterior(meshes: MeshFactory, building: Exterior, foundati
     box(x, y - .64, z + .10, w + .24, .12, .29, '#b69e79')
   }
   const eave = d / 2
-  const flat = kind === 'hospital' || kind === 'apartments' || kind === 'police' || kind === 'mine'
+  const flat = parts.roof ? parts.roof === 'flat' : ['hospital', 'apartments', 'police', 'mine'].includes(kind)
   box(0, .18 - foundation / 2, 0, w + .33, foundation + .38, d + .33, '#a6957d')
   box(0, h / 2 + .36, 0, w, h, d, wall)
   box(0, .46, 0, w + .095, .19, d + .095, cream)
@@ -68,8 +69,8 @@ export function createExterior(meshes: MeshFactory, building: Exterior, foundati
       box(side * (w / 2 + .128), 2.02, z, .035, 1.04, 1.13, glass)
     }
   }
-  createTower(meshes, root, building)
-  if (kind === 'market' || kind === 'shop') {
+  if (parts.tower !== 'none') createTower(meshes, root, { ...building, kind: parts.tower ?? kind })
+  if (parts.canopy ?? (kind === 'market' || kind === 'shop')) {
     const awning = w * .72
     const depth = 2.85
     for (let i = 0; i < 10; i++) {

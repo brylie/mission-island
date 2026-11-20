@@ -1,7 +1,7 @@
 import { createBiomeScenery } from '../biome-scenery'
 import { codex, presets, readRecipe } from '../biome-recipe'
 import { biomeFrame, createBiome } from '../biome-model'
-import type { Control, Entry } from './catalog'
+import type { Control, Entry } from './subject'
 
 const meadow = presets['Meadow edge']
 
@@ -16,7 +16,7 @@ function controls(): Control[] {
 }
 
 export const biomeEntry: Entry = {
-  id: 'biome', name: 'Biome Composer', group: 'World', source: 'src/biome-model.ts',
+  id: 'biome', name: 'Biome Composer', group: 'Habitats', source: 'src/biome-model.ts',
   description: 'Compose a 16 m clearing. Replay the same seed to compare feeding, pursuit and shelter.',
   duration: 90, ground: { height: -.6, color: '#394942' }, controls: controls(),
   create(meshes, values) {

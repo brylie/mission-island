@@ -2,6 +2,8 @@
 
 Mission Island is a two-player, third-person island game. Players can tackle shared service missions or spend a session fishing, tending the farm, and visiting Seabrook. The browser and LAN host give both players a short loop for building and playtesting together.
 
+Start with the [design handbook](README.md) for the full documentation map. The [creative direction](design/creative-direction.md) describes the themes and inspirations behind these choices. [Crew progression](design/progression.md) follows them across several sessions.
+
 ## Feel and art direction
 
 Aim for a quaint and comforting island. Give props generous shapes, warm colors, and a few recognizable details. A chest latch, a striped market awning, a rod bending toward a bobber, or carrot tops showing above the soil should tell players what they can do. From island view, preserve the compact toy-scale silhouettes and keep landmarks easy to read.
@@ -37,7 +39,7 @@ Juniper Hollow on Starter Island uses the Pine hollow recipe. Its seed sets the 
 
 - **Service shifts.** Work together to deliver harbor crates and put out the lookout fire. After the starter shift, the harbor board offers repeat deliveries to new destinations and market orders for fish and crops. Choosing an order leaves the crew in the world where they were already playing.
 - **Island life.** Take tools from the chest outside your starting house. Fish from the shore, dock, or skiff, or use the shared farm to grow carrots. Sell your catch and crops at Seabrook Market.
-- **Observation.** Either player can use the in-game camera to record fish, plants, wildlife, landmarks, and distinctive animal behaviors in a shared field journal. First records and new behaviors earn observation experience and count toward journal completion alongside the crew's career paths. [Island field journal](https://github.com/brylie/mission-island/issues/8)
+- **Observation.** Today each player can discover named places and watch ambient wildlife. The planned in-game camera will let either player record fish, plants, wildlife, landmarks, and distinctive animal behaviors in a shared field journal. First records and new behaviors will earn observation experience alongside the crew's career paths. [Island field journal](https://github.com/brylie/mission-island/issues/8)
 - **Progression.** Farming, fishing, and truck deliveries provide the first income. Each starter crate earns two coins per crew member, with three more for finishing the delivery and four for clearing the lookout fire. Market earnings and crew pay buy seeds and the Harbor angler uniform. Service missions also unlock the delivery and fire uniforms. Completed orders count toward the shared second-island milestone independently of coin balances.
 
 The [roadmap](roadmap.md) records the playtest ideas and future jobs.

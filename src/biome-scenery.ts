@@ -7,7 +7,7 @@ import { placeSiteFeatures } from './site-props'
 import { biomeFrame, type BiomeFrame, type populate } from './biome-model'
 import type { Point } from './world'
 
-function createFox(meshes: MeshFactory) {
+export function createFox(meshes: MeshFactory) {
   const root = new TransformNode('Fox', meshes.scene)
   const coat = '#ba653c', cream = '#e5d9b9'
   const part = (x: number, y: number, z: number, w: number, h: number, d: number, color: string) =>
@@ -25,12 +25,12 @@ function createFox(meshes: MeshFactory) {
   return root
 }
 
-function plant(meshes: MeshFactory, grass: boolean) {
+export function createGroundCover(meshes: MeshFactory, grass: boolean, seed = 0) {
   const root = new TransformNode(grass ? 'Tussock' : 'Clover', meshes.scene)
   // One mesh per patch keeps individual plants cheap even at full density.
   const vertices: number[] = [], faces: number[] = []
   for (let i = 0; i < (grass ? 28 : 18); i++) {
-    const angle = i * 2.39996
+    const angle = i * 2.39996 + Math.sin(seed + i) * (seed ? .6 : 0)
     const spread = .1 + .42 * ((i * 7) % 17) / 17
     const x = Math.cos(angle) * spread, z = Math.sin(angle) * spread
     const tip = grass ? .26 + (i % 5) * .072 : .1 + i % 3 * .04
@@ -51,6 +51,13 @@ function plant(meshes: MeshFactory, grass: boolean) {
   return root
 }
 
+export function animalPose(species: 'hare' | 'fox', behavior: string, time: number, index = 0) {
+  if (species === 'fox') return { height: behavior === 'watching' ? 0 : .035 * Math.abs(Math.sin(time * 6 + index)), pitch: 0 }
+  const still = behavior === 'grazing' || behavior === 'sheltering'
+  const hop = still ? 0 : .11 * Math.abs(Math.sin(time * (behavior === 'fleeing' ? 12 : 7) + index))
+  return { height: .12 + hop, pitch: behavior === 'grazing' ? .18 : 0 }
+}
+
 export function createBiomeScenery(meshes: MeshFactory, initial: ReturnType<typeof populate>, center: Point, heightAt: (p: Point) => number) {
   const navigation = habitatNavigation(initial.patches)
   const plants: TransformNode[] = []
@@ -61,7 +68,7 @@ export function createBiomeScenery(meshes: MeshFactory, initial: ReturnType<type
     if (p.kind === 'stones') createRock(meshes, p.x, p.z, .8 + .13 * p.angle, p.angle, i % 2 === 0, ground)
     if (p.kind === 'logs') placeSiteFeatures(meshes, [{ ...p, site: 'biome', model: 'log', name: 'Fallen trunk', heading: p.angle, followSlope: true, color: '#87725a' }], heightAt)
     if (p.kind === 'grass' || p.kind === 'clover') {
-      const root = plant(meshes, p.kind === 'grass')
+      const root = createGroundCover(meshes, p.kind === 'grass')
       root.position.set(p.x, ground, p.z)
       root.rotation.y = p.angle
       if (p.kind === 'clover') plants.push(root)
@@ -80,12 +87,11 @@ export function createBiomeScenery(meshes: MeshFactory, initial: ReturnType<type
   function update(frame: BiomeFrame, time: number, blend = 1) {
     plants.forEach((plant, i) => plant.scaling.setAll(.28 + .72 * frame.clover[i]))
     frame.hares.forEach((animal, i) => {
-      const moving = animal.behavior !== 'grazing' && animal.behavior !== 'sheltering'
-      const hop = moving ? .11 * Math.abs(Math.sin(time * (animal.behavior === 'fleeing' ? 12 : 7) + i)) : 0
-      pose(hares[i], animal, .12 + hop, blend)
-      hares[i].rotation.x = animal.behavior === 'grazing' ? .18 : 0
+      const motion = animalPose('hare', animal.behavior, time, i)
+      pose(hares[i], animal, motion.height, blend)
+      hares[i].rotation.x = motion.pitch
     })
-    frame.foxes.forEach((fox, i) => pose(foxes[i], fox, fox.behavior === 'watching' ? 0 : .035 * Math.abs(Math.sin(time * 6 + i)), blend))
+    frame.foxes.forEach((fox, i) => pose(foxes[i], fox, animalPose('fox', fox.behavior, time, i).height, blend))
   }
   update(biomeFrame(initial), 0)
   return update

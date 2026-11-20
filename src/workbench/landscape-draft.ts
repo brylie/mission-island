@@ -1,7 +1,7 @@
 import type { Point } from '../world'
 
 export const draftStorageKey = 'mission-island-landscape-layout'
-export const draftLabels = { player: 'Test player', crate: 'Crate', rock: 'Rock', tree: 'Tree', truck: 'Flatbed' } as const
+export const draftLabels = { player: 'Test player', crate: 'Crate', rock: 'Rock', tree: 'Tree', truck: 'Flatbed', rail: 'Fence section', bench: 'Village bench', planter: 'Flower box', chest: 'Home chest' } as const
 const maxObjects = 60
 
 type Placement = Point & { kind: keyof typeof draftLabels }

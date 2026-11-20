@@ -13,10 +13,10 @@ function mergeParts(name: string, parts: Mesh[], pivot: TransformNode) {
   }
 }
 
-export function createFarm({ scene, box, sphere, paintSurface }: MeshFactory) {
+export function createFarm({ scene, box, sphere, paintSurface }: MeshFactory, points = farmPlots) {
   const dry = paintSurface('gravel', '#98704f')
   const wet = paintSurface('gravel', '#6e4a38')
-  const plots = farmPlots.map((point) => {
+  const plots = points.map((point) => {
     const root = new TransformNode('Farm plot', scene)
     root.position.set(point.x, groundHeight(point), point.z)
     const earth = box(0, 0.025, 0, plotSize, 0.05, plotSize, '#788e62', root, false)
