@@ -21,6 +21,33 @@ The LAN host owns gameplay state, including movement, crew membership, orders, t
 - Organize world changes by island and by site, region, or system as the content grows. Give placements stable IDs, and record which geometry affects walking, cargo, or navigation. Aim to feed render and collision builders from the same placement data. Keep Babylon mesh construction and batching in the presentation layer.
 - Add regression cases to the matching `test/game-*.test.mjs` suite. The [game test harness](../test/support/game-harness.mjs) supplies fake sockets, an injected clock, and save fixtures. Use the smallest suite that exercises the feature's actual entry point.
 
+## Composing behavior with traits
+
+A trait is a capability or characteristic described by a small, typed piece of data. An entity definition combines the traits that apply to it. A shared system reads each trait and implements its behavior. Add traits when they describe behavior that multiple entities can use, or when an optional capability needs a clear owner.
+
+| Responsibility | Where it belongs |
+| --- | --- |
+| Definition | Keep reusable tuning and geometry with the entity family. A trait can describe drive parameters, a threat detection range, or a plant's moisture requirements. |
+| Behavior | Keep the rules in the system that uses the trait. Shared mechanics can run on the host and in the Workbench. The host owns changes that affect multiplayer gameplay. |
+| Instance state | Give placed entities stable IDs when gameplay needs to refer to them. Keep changing values, such as speed or remaining forage, with the instance. Send or save the values that clients need to render or that a restart must restore. |
+| Appearance and placement | Keep models and visual effects in the asset and presentation layers. Keep each island's spawn points, habitats, and placements with its world data. Share physical attachment points between simulation and rendering when they need to line up. |
+
+### Flatbed and future fire truck
+
+The [flatbed model](../src/assets/flatbed.ts) and [truck physics](../src/simulation/truck.ts) already use the same [wheel dimensions](../src/truck-pose.ts). When adding a second drivable ground vehicle, move the shared wheel layout and drivetrain tuning into a typed ground-drive definition. Use the flatbed's current values as the first definition and pass it to the driving system to preserve existing handling.
+
+| Vehicle | Shared traits | Equipment |
+| --- | --- | --- |
+| Flatbed | Ground drive and seats with the flatbed's current wheel layout, suspension, braking, and seat positions | A cargo bed with load slots and support surfaces |
+| Future fire truck | The same throttle, steering, brake, and boarding rules with its own chassis dimensions, suspension, and seat positions | A pump and hose station so one crewmate can drive while the other operates the hose |
+
+Keep the two models in the asset layer. Let island data choose where each vehicle spawns. When the host supports multiple vehicles, identify the occupied vehicle and seat together so driving and equipment commands reach the right instance. Verify the flatbed's suspension, braking, and cargo behavior before adding the fire truck's equipment.
+
+### Animals and plants
+
+- **Animals.** In [Juniper Hollow](../src/juniper-habitat.ts), hares and foxes can share locomotion and [obstacle navigation](../src/biome-navigation.ts) with different speeds and clearances. A hare's threat response can send it toward cover, while a fox can give a nearby player space and then resume its patrol. Position and current behavior belong to each animal.
+- **Plants.** A habitat trait can guide where an island places reeds or clover. A regrowth trait can let clover replenish forage after grazing, with the patch's remaining forage tracked by the [biome simulation](../src/biome-model.ts). Wind sway can stay in presentation when it only affects appearance.
+
 ## Static checks
 
 `npm run quality` runs the architecture rules through ESLint, followed by unused-code checks, coverage, type checking and the build. First-party TypeScript modules have a 350-line file limit, a 140-line function limit, and a cyclomatic complexity ceiling of 24. Line limits exclude comments and blank lines. Test files have the same file limit. The [ESLint config](../eslint.config.mjs) records per-file ceilings for existing hotspots. Lower an exception or remove it when the relevant code is split.

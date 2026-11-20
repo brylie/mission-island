@@ -33,7 +33,7 @@ The [Starter Island milestone](https://github.com/brylie/mission-island/mileston
 - [Village market days](https://github.com/brylie/mission-island/issues/9) bring villagers to Seabrook Market for special orders and conversations.
 - Give the shovel, pickaxe, and axe usable jobs. Start with buried finds, marked rock deposits, and fallen branches.
 - Add more crops, sale goods, outfits, trade jobs, and practical upgrades for coins. Expand beyond the initial farming, fishing, and delivery work.
-- Build a pump-equipped fire truck and a two-person firefighting job. Use separate roles for staging equipment, driving, and operating the pump.
+- Build a pump-equipped fire truck and a two-person firefighting job. Use separate roles for staging equipment, driving, and operating the pump. [Shared driving and vehicle equipment](architecture.md#flatbed-and-future-fire-truck)
 - Add rescue work on land and water, including animal rescues, buoy service, and dedicated rescue boats.
 - Add airplanes and helicopters with an airstrip, landing areas, and cooperative missions. Keep the exterior boarding and chase camera.
 - Refine flora, wildlife, scenery, terrain, character movement, and close-up model detail as each new job needs them. Keep the gentle palette, clear silhouettes, and readable scale.
