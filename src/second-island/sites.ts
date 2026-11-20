@@ -58,7 +58,7 @@ export const sites: readonly Site[] = [
   { id: 'church', name: 'Alderwatch Church', x: -23, z: 188, y: 30, width: 33, depth: 32,
     assets: 'Chapel, steeple and entry steps', access: { x: -26, z: 154 }, stop: { x: -14, z: 181 }, heading: Math.PI },
   { id: 'cemetery', name: 'Alderwatch Cemetery', x: 20, z: 190, y: 30, width: 43, depth: 36,
-    assets: 'Stone wall, gate and headstones', access: { x: 20, z: 150 }, stop: { x: 20, z: 178 }, heading: 0 },
+    assets: 'Stone wall, gate and headstones', access: { x: 20, z: 150 }, stop: { x: 26, z: 173 }, heading: 0 },
   { id: 'fire', name: 'Alderwatch Fire Station', x: -57, z: 188, y: 29.7, width: 34, depth: 43,
     assets: 'Two-bay station, drill tower and engine apron', access: { x: -56, z: 158 }, stop: { x: -59, z: 177 }, heading: Math.PI },
   { id: 'timber', name: 'Alder Timber Works', x: -227, z: 155, y: 30, width: 70, depth: 60,

@@ -32,14 +32,18 @@ export function riverY(x: number) {
 }
 
 export function fallsX(z: number) { return -120 + 5 * Math.sin((z - 186) * 0.065) }
+export function fallsWidth(z: number) {
+  return 3.2 + .83 * Math.cos((z - 169) * .29) + .48 * Math.sin(z * .51)
+}
 export function fallsY(z: number) {
-  return lowerLake.y + 0.12 + 7 * smooth((z - 125) / 32) + 26 * smooth((z - 170) / 23) + 3.07 * smooth((z - 192) / 7)
+  return lowerLake.y + 7.1 * smooth((z - 125) / 30) + 10.8 * smooth((z - 171) / 8.5)
+    + 2.4 * smooth((z - 179) / 5) + 12.9 * smooth((z - 184) / 7.5) + 3 * smooth((z - 192) / 5.5)
 }
 
 export function waterHeight(x: number, z: number) {
   if (radius(x, z, tarn.x, tarn.z, tarn.rx, tarn.rz) <= 1) return tarn.y
   if (radius(x, z, lowerLake.x, lowerLake.z, lowerLake.rx, lowerLake.rz) <= 1) return lowerLake.y
-  if (z >= 123 && z <= 199 && Math.abs(x - fallsX(z)) <= 3.2) return fallsY(z)
+  if (z >= 123 && z <= 199 && Math.abs(x - fallsX(z)) <= fallsWidth(z)) return fallsY(z)
   if (x <= -87 && x > -465 && Math.abs(z - riverZ(x)) <= 9) return riverY(x)
   return seaLevel
 }
@@ -135,7 +139,10 @@ function terrainShape(x: number, z: number) {
   }
   if (z >= 121 && z <= 199) {
     const distance = Math.abs(x - fallsX(z))
-    if (distance < 12) height = mix(fallsY(z) + (distance - 3.2) * 0.67, height, smooth((distance - 3.2) / 8.8))
+    const width = fallsWidth(z)
+    const bank = distance - width
+    const spread = 11 + 5 * smooth((z - 163) / 12)
+    if (bank < spread) height = mix(fallsY(z) + bank * .67, height, smooth(bank / spread))
   }
   const ungraded = height
   const nearest = nearestRoad(x, z, true)
@@ -163,6 +170,14 @@ function terrainShape(x: number, z: number) {
   for (const pad of roundYards) {
     const edge = Math.hypot(x - pad.x, z - pad.z) - pad.radius
     if (edge < 5) height = mix(Math.min(height, pad.y - .10), height, smooth((edge - 1) / 4))
+  }
+  // The cemetery gate and loop sit on two graded pads. Carry the walk across
+  // the shallow hollow between them, feathering the fill into the hillside.
+  if (z > 153 && z < 176 && Math.abs(x - 19) < 9) {
+    const t = clamp((z - 155) / 18)
+    const grade = mix(28.1, 30, t)
+    const blend = (1 - smooth((Math.abs(x - 19) - 2) / 7)) * smooth((z - 153) / 3) * smooth((176 - z) / 3)
+    height = mix(height, grade, blend)
   }
   return height
 }
@@ -216,15 +231,16 @@ function triangleHeight(point: MapPoint, a: ReturnType<typeof deckPoint>, b: typ
   return u >= -1e-6 && v >= -1e-6 && u + v <= 1 + 1e-6 ? u * a.y + v * b.y + (1 - u - v) * c.y : -Infinity
 }
 
-export function surfaceHeight(x: number, z: number) {
+export function surfaceHeight(x: number, z: number, maxDeck = Infinity) {
   let height = groundHeight(x, z)
   const point = { x, z }
   for (const { route, a, b } of roadIndex.get(key(Math.floor(x / indexSize), Math.floor(z / indexSize))) ?? []) {
     if (Math.abs(a.x - x) > 7 || Math.abs(a.z - z) > 7) continue
     const first = deckSection(a, route), next = deckSection(b, route)
     for (const lane of [0, 1]) {
-      height = Math.max(height, triangleHeight(point, first[lane], first[lane + 1], next[lane]),
+      const deck = Math.max(triangleHeight(point, first[lane], first[lane + 1], next[lane]),
         triangleHeight(point, first[lane + 1], next[lane + 1], next[lane]))
+      if (deck <= maxDeck) height = Math.max(height, deck)
     }
   }
   for (const pad of pavedYards) if (Math.abs(x - pad.x) <= pad.width / 2 && Math.abs(z - pad.z) <= pad.depth / 2) height = Math.max(height, pad.y)

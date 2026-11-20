@@ -36,3 +36,44 @@ export function createSoundMaterial(scene: Scene) {
   material.setFloat('time', 0)
   return material
 }
+
+export function createCascadeMaterial(scene: Scene) {
+  return new ShaderMaterial('Tarnstep current', scene, {
+    vertexSource: `
+      precision highp float;
+      attribute vec3 position;
+      attribute vec2 uv;
+      uniform mat4 worldViewProjection;
+      varying vec2 flow;
+      varying float along;
+      void main() {
+        flow = uv;
+        along = position.z;
+        gl_Position = worldViewProjection * vec4(position, 1.);
+      }
+    `,
+    fragmentSource: `
+      precision highp float;
+      varying vec2 flow;
+      varying float along;
+      uniform float time;
+      uniform float light;
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float noise(vec2 p) {
+        vec2 i = floor(p), f = fract(p);
+        f = f*f*(3.-2.*f);
+        return mix(mix(hash(i), hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.),f.x),f.y);
+      }
+      void main() {
+        vec2 drift = vec2(flow.x * 12., along * .54 + time * 2.1);
+        float eddy = noise(drift * .32);
+        float streak = noise(vec2(drift.x * 1.8 + eddy * 3., drift.y * .74));
+        float bubbles = noise(drift * 2.2);
+        float lace = smoothstep(.56,.84,streak + .18 * (bubbles - .5));
+        vec3 pool = mix(vec3(.16,.40,.42),vec3(.38,.62,.58),.18+.57*eddy+.21*abs(flow.x));
+        vec3 color = mix(pool,vec3(.88,.93,.85),(.14 + .78 * flow.y) * lace + .05 * flow.y);
+        gl_FragColor = vec4(color * (.23 + .77 * light), 1.);
+      }
+    `,
+  }, { attributes: ['position', 'uv'], uniforms: ['worldViewProjection', 'time', 'light'] })
+}

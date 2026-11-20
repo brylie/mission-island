@@ -11,12 +11,12 @@ export interface SiteFeature extends Point {
   scale?: number
 }
 
-type FeatureModel = 'rack' | 'planter' | 'crates' | 'bench' | 'marker' | 'shelter' | 'scope' | 'rail' | 'pennant' | 'barrels' | 'hose'
+type FeatureModel = 'rack' | 'planter' | 'crates' | 'bench' | 'marker' | 'shelter' | 'scope' | 'rail' | 'pennant' | 'barrels' | 'hose' | 'cairn' | 'gauge' | 'log' | 'lifebuoy'
 
 function featurePieces(meshes: MeshFactory, root: TransformNode) {
   return {
     box: (x: number, y: number, z: number, width: number, height: number, depth: number, color: string) => {
-      meshes.box(x, y, z, width, height, depth, color, root)
+      return meshes.box(x, y, z, width, height, depth, color, root)
     },
     round: (x: number, y: number, z: number, top: number, bottom: number, height: number, color: string) => {
       return meshes.cylinder(x, y, z, top, bottom, height, 10, color, root)
@@ -64,6 +64,25 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     for (const x of [-0.65, 0.65]) box(x, 0.69, 0.21, 0.13, 0.44, 0.13, metal)
     box(0, 0.92, 0.22, 1.7, 0.23, 0.105, color)
   },
+  log({ round }, color) {
+    const trunk = round(0, .2, 0, .34, .52, 2.4, color)
+    trunk.rotation.z = Math.PI / 2
+    const branch = round(-.45, .44, .09, .11, .19, .51, wood)
+    branch.rotation.z = -.56
+    branch.rotation.x = .35
+  },
+  cairn({ round }, color) {
+    for (const [x, y, width, height, turn] of [[0, .10, .86, .25, .4], [.055, .31, .56, .19, 1.1], [.02, .46, .32, .13, 2.3]]) {
+      const stone = round(x, y, 0, width * .72, width, height, color)
+      stone.scaling.z = .75
+      stone.rotation.y = turn
+    }
+  },
+  gauge({ box }, color) {
+    box(0, .65, 0, .14, 1.4, .13, wood)
+    box(0, .72, -.075, .13, 1.08, .025, color)
+    for (let i = 0; i < 10; i++) box(-.02, .26 + i * .1, -.093, i % 2 ? .045 : .09, .022, .012, linen)
+  },
   marker({ box, round }, color) {
     box(0, 0.13, 0, 0.95, 0.26, 0.72, metal)
     box(0, 0.58, 0, 0.49, 0.67, 0.40, wood)
@@ -71,9 +90,23 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     round(0, 0.98, 0, 0.26, 0.26, 0.04, linen)
   },
   shelter({ box }, color) {
-    for (const x of [-0.91, 0.91]) for (const z of [-0.64, 0.64]) box(x, 0.86, z, 0.13, 1.72, 0.13, wood)
-    box(0, 1.74, 0, 2.2, 0.12, 1.65, color)
-    box(0, 0.73, 0.43, 1.64, 0.135, 0.43, lightWood)
+    for (const x of [-1.42, 1.42]) for (const z of [-.76, .76]) box(x, 1.17, z, .11, 2.34, .11, wood)
+    box(0, 2.37, 0, 3.18, .15, 1.94, color).rotation.x = -.06
+    for (const y of [.53, .76, .99, 1.22]) box(0, y, .76, 2.81, .18, .08, lightWood)
+    box(0, .47, .44, 2.61, .12, .47, lightWood)
+    for (const x of [-1, 1]) box(x, .22, .43, .12, .44, .35, metal)
+    box(.89, 1.58, .75, .55, .67, .09, wood)
+    box(.89, 1.58, .69, .46, .58, .025, linen)
+    for (let i = 0; i < 4; i++) box(.89, 1.73 - i * .1, .67, .31, .019, .012, metal)
+  },
+  lifebuoy({ box }, color) {
+    box(0, .88, 0, .14, 1.76, .16, wood)
+    box(0, 1.48, -.08, .45, .08, .12, metal)
+    for (let i = 0; i < 16; i++) {
+      const angle = i * Math.PI / 8
+      box(.34 * Math.cos(angle), 1.16 + .34 * Math.sin(angle), -.19,
+        .155, .151, .13, i % 4 < 2 ? linen : color).rotation.z = angle
+    }
   },
   scope({ box, round }, color) {
     round(0, 0.08, 0, 0.69, 0.76, 0.16, metal)

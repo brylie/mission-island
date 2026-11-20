@@ -11,7 +11,7 @@ export const island = { width: 134, length: 92 }
 export const harbor = { x: -46, z: -16 }
 export const town = { x: 40, z: 13 }
 export const lookout = { x: 7, z: 29 }
-export const beach = { x: 29, z: -24 }
+export const beach = { x: 32, z: -35.5 }
 export const forest = { x: -27, z: 22 }
 export const houseRoofRise = 1.65
 export const jobPay = { crate: 2, delivery: 3, fire: 4 }
@@ -47,11 +47,11 @@ export const extinguisherStarts: Point[] = [{ x: 20, z: 22 }, { x: 22, z: 22 }]
 export const buildings = [
   { x: -50, z: -22, w: 8, d: 5, h: 4.65, wall: '#f3c78e', roof: '#a84632' },
   { x: -38, z: -20, w: 6, d: 5, h: 4.1, wall: '#f7e3a1', roof: '#1b7773' },
-  { x: 35, z: 19, w: 6, d: 5, h: 4.8, wall: '#f4ce91', roof: '#b74635' },
-  { x: 43, z: 19, w: 6, d: 5, h: 5.25, wall: '#eb9973', roof: '#9e3c39' },
-  { x: 49, z: 18.25, w: 4, d: 4, h: 4.1, wall: '#ffe8b7', roof: '#236b75' },
-  { x: 39, z: 5, w: 6, d: 5, h: 4.9, wall: '#f5e3b2', roof: '#b74e36' },
-  { x: 48, z: 5, w: 5, d: 5, h: 4.35, wall: '#76b7a3', roof: '#25585f' },
+  { x: 35, z: 22, w: 6, d: 5, h: 4.8, wall: '#f4ce91', roof: '#b74635' },
+  { x: 43, z: 22, w: 6, d: 5, h: 5.25, wall: '#eb9973', roof: '#9e3c39' },
+  { x: 50, z: 21.4, w: 4, d: 4, h: 4.1, wall: '#ffe8b7', roof: '#236b75' },
+  { x: 39, z: 2.6, heading: Math.PI, w: 6, d: 5, h: 4.9, wall: '#f5e3b2', roof: '#b74e36' },
+  { x: 48, z: 2.6, heading: Math.PI, w: 5, d: 5, h: 4.35, wall: '#76b7a3', roof: '#25585f' },
   { x: 25, z: 18, w: 4, d: 4, h: 4.1, wall: '#e47c63', roof: '#a02e30' },
   { x: 10, z: 33, w: 3, d: 3, h: 4.65, wall: '#d6b188', roof: '#12605b' },
   ...crewHomes.map(({ building }) => building),

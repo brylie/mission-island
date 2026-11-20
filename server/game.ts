@@ -20,7 +20,7 @@ import type { TruckPose } from '../src/truck-pose.ts'
 import { groundHeight, maxWadeDepth, walkingHeight, waterDepth } from '../src/terrain.ts'
 import { starterDiscoveries } from '../src/scenery.ts'
 import { createCargoPhysics } from './cargo.ts'
-import { canOccupyGround, isInsideTruck, stepPlayer } from './movement.ts'
+import { canOccupyGround, isInsideTruck, recoverSceneryOverlap, stepPlayer } from './movement.ts'
 import { skiffExit, stepSkiff } from './skiff.ts'
 import { castPoint, catchChance, stepFight } from './fishing.ts'
 import { daylight, isNight, nextDawn, weatherAt } from '../src/weather.ts'
@@ -114,6 +114,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
 
   for (const { token, player, reserved } of save?.crew ?? []) {
     const restored = restingPlayer(structuredClone(player))
+    recoverSceneryOverlap(restored)
     profiles.set(token, restored)
     if (reserved) {
       crew.set(token, crewMember(restored))

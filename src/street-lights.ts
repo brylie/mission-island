@@ -3,6 +3,7 @@ import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from './island-meshes'
+import { lampPosts as posts } from './starter-sites'
 import { groundHeight } from './terrain'
 import { distance } from './world'
 import type { Point } from './world'
@@ -12,7 +13,6 @@ export function createStreetLights({ scene, box, cylinder, sphere, paint }: Mesh
   fill.diffuse = Color3.FromHexString('#ffcc88')
   fill.range = 22
   fill.setEnabled(false)
-  const posts = [{ x: -55, z: -7.1 }, { x: -39, z: -7.1 }, { x: 34, z: 16.6 }, { x: 46.5, z: 7.25 }]
   const glass = paint('#fff0c9')
   const glow = paint('#ffe2a2', true)
   const bulbs = new TransformNode('Streetlamp bulbs', scene)

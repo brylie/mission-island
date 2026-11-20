@@ -1,44 +1,8 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
-import type { MapPoint } from './sites.ts'
+import type { Exterior } from './lots'
 
-export const buildings = [
-  { site: 'fish-market', kind: 'market', x: -247, z: -132, width: 15.8, depth: 11.4, height: 4.4, facing: 0, wall: '#72a6a1', roof: '#b86351' },
-  { site: 'police', kind: 'police', x: -251, z: -69, width: 18, depth: 11.3, height: 5.1, facing: Math.PI, wall: '#668a99', roof: '#38555b' },
-  { site: 'apartments', kind: 'apartments', x: -307, z: -144, width: 17, depth: 13.1, height: 9.5, facing: 0, wall: '#d4916b', roof: '#7b5450' },
-  { site: 'grocery', kind: 'shop', x: -320, z: -74, width: 18, depth: 13.2, height: 4.6, facing: Math.PI, wall: '#edc780', roof: '#56816e' },
-  { site: 'farmers-market', kind: 'market', x: 152, z: -30, width: 22, depth: 12, height: 5.3, facing: Math.PI, wall: '#dda553', roof: '#ab5445' },
-  { site: 'school', kind: 'school', x: 271, z: -38, width: 18.4, depth: 12.3, height: 5.4, facing: -Math.PI / 2, wall: '#edca92', roof: '#b66150' },
-  { site: 'hospital', kind: 'hospital', x: 136, z: 102, width: 23, depth: 13.5, height: 7.5, facing: 0, wall: '#e4dcc0', roof: '#658b82' },
-  { site: 'fire', kind: 'fire', x: -57, z: 195, width: 21, depth: 13, height: 5.9, facing: Math.PI, wall: '#b65d4e', roof: '#815049' },
-  { site: 'church', kind: 'church', x: -23, z: 192, width: 10, depth: 15, height: 6.1, facing: Math.PI, wall: '#ead7aa', roof: '#557374' },
-  { site: 'timber', kind: 'mill', x: -249, z: 161, width: 23, depth: 16, height: 6.8, facing: 0, wall: '#a57550', roof: '#625b48' },
-  { site: 'mine', kind: 'mine', x: 265, z: 181, width: 20, depth: 9.5, height: 5.8, facing: Math.PI, wall: '#a3937e', roof: '#68615a' },
-  { site: 'airport', kind: 'hangar', x: 170, z: -114, width: 26, depth: 16, height: 7, facing: Math.PI, wall: '#7e9c99', roof: '#4f6973' },
-] as const
-
-interface Exterior extends MapPoint {
-  site: string; kind: typeof buildings[number]['kind'] | 'cottage'
-  width: number; depth: number; height: number; facing: number; wall: string; roof: string
-}
-
-const cottageLots = [
-  [-288, -86, Math.PI], [-285, -124, 0], [-268, -70, Math.PI], [-294, -64, Math.PI],
-  [125, -42, Math.PI], [146, -85, 0], [172, -84, 0], [196, -16, Math.PI], [249, 3, -Math.PI / 2],
-  [-84, 167, Math.PI], [-40, 173, Math.PI], [-28, 142, 0], [6, 162, Math.PI], [25, 137, 0],
-]
-const cottagePaint = [['#edc280', '#ac6550'], ['#cba487', '#7a6254'], ['#a8b8a0', '#526f65']]
-export const islandBuildings: readonly Exterior[] = [...buildings, ...cottageLots.map(([x, z, facing], i): Exterior => {
-  const [wall, roof] = cottagePaint[i % cottagePaint.length]
-  return { kind: 'cottage', site: `cottage-${i}`, x, z, facing, width: 7.2, depth: 6.3, height: 3.35, wall, roof }
-})]
 const cream = '#f8e2b9', glass = '#426e73', shade = '#624e42', plank = '#926f55'
-
-export function buildingLocal(point: MapPoint, building: Exterior) {
-  const x = point.x - building.x, z = point.z - building.z
-  const c = Math.cos(building.facing), s = Math.sin(building.facing)
-  return { x: x * c - z * s, z: x * s + z * c }
-}
 
 export function createExterior(meshes: MeshFactory, building: Exterior, foundation = .48) {
   const root = new TransformNode(building.kind, meshes.scene)
@@ -116,17 +80,50 @@ export function createExterior(meshes: MeshFactory, building: Exterior, foundati
     if (kind === 'market') for (const side of [-1, 1]) {
       box(side * awning * .29, .79, eave + 1.58, awning * .33, .87, 1.06, '#967352')
       box(side * awning * .29, 1.29, eave + 1.58, awning * .35, .15, 1.24, '#ca9e72')
-      for (let i = 0; i < 3; i++) box(side * awning * .29 + (i - 1) * .56, 1.49, eave + 1.55, .49, .24, .49, i === 1 ? '#8da25a' : '#d5885b')
+      stockMarketCounter(meshes, root, side * awning * .29, eave + 1.58, building.site === 'fish-market')
     }
   }
+  addServiceEmblem(meshes, root, building)
+  return root
+}
+
+function stockMarketCounter(meshes: MeshFactory, root: TransformNode, x: number, z: number, fish: boolean) {
+  meshes.box(x, 1.405, z, 2.05, .09, .88, fish ? '#dce9df' : '#a57a55', root)
+  for (const side of [-1, 1]) meshes.box(x, 1.45, z + side * .44, 2.1, .17, .055, '#bb9268', root)
+  for (const offset of [-.62, 0, .62]) {
+    if (fish) {
+      const body = meshes.sphere(x + offset, 1.52, z, .17, .14, .53, '#799c9e', root, true, 6)
+      body.rotation.y = .42
+      meshes.sphere(x + offset - .11, 1.52, z - .25, .22, .055, .14, '#668487', root, true, 4)
+    } else {
+      for (const side of [-1, 1]) meshes.sphere(x + offset, 1.52, z + side * .18, .30, .26, .29,
+        offset === 0 ? '#87a858' : '#db9653', root, true, 6)
+    }
+  }
+}
+
+function addServiceEmblem(meshes: MeshFactory, root: TransformNode, building: Exterior) {
+  const { kind, height: h, depth } = building
+  const eave = depth / 2
+  const box = (x: number, y: number, z: number, w: number, h: number, d: number, color: string) =>
+    meshes.box(x, y, z, w, h, d, color, root)
   if (kind === 'hospital' || kind === 'police' || kind === 'fire') {
     const z = eave + .22, y = h - .45
     box(0, y, z, 2.1, 1.05, .20, cream)
     const accent = kind === 'police' ? '#406c82' : '#bd5d50'
-    box(0, y, z + .12, .87, .24, .08, accent)
-    box(0, y, z + .17, .24, .74, .07, accent)
+    if (kind === 'hospital') {
+      box(0, y, z + .12, .87, .24, .08, accent)
+      box(0, y, z + .17, .24, .74, .07, accent)
+    } else if (kind === 'police') {
+      meshes.cylinder(0, y, z + .14, .76, .76, .12, 5, accent, root).rotation.x = Math.PI / 2
+      box(0, y, z + .22, .31, .09, .05, cream)
+    } else {
+      for (const side of [-1, 1]) {
+        box(side * .04, y, z + .13 + side * .035, .13, .81, .07, accent).rotation.z = side * .76
+        box(side * .28, y + .26, z + .14 + side * .035, .3, .18, .07, accent).rotation.z = side * .66
+      }
+    }
   }
-  return root
 }
 
 function createTower(meshes: MeshFactory, root: TransformNode, building: Exterior) {

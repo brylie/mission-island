@@ -1,10 +1,12 @@
+import { villageWalks } from './footways'
+import type { ScenerySolids } from './walking'
 import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture'
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 import { Matrix } from '@babylonjs/core/Maths/math.vector'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import '@babylonjs/core/Meshes/thinInstanceMesh'
-import { createTree } from '../island-assets'
+import { createHarborBoat, createTree } from '../island-assets'
 import { createPhenomena } from '../island-phenomena'
 import type { MeshFactory } from '../island-meshes'
 import { placeSiteFeatures } from '../site-props'
@@ -12,11 +14,12 @@ import { distanceToRoute } from '../routes'
 import { createFlocks, createSchools } from '../wildlife'
 import type { WildlifeFrame } from '../wildlife'
 import { habitatAt } from './habitats'
-import { islandBuildings, createExterior } from './exteriors'
+import { createExterior } from './exteriors'
+import { islandBuildings } from './lots'
 import { clearAirfield } from './landscape'
 import { arrival, helipad, lowerLake, pavedYards, roundYards, sites, viaductWalk, waterfront } from './sites'
 import type { MapPoint } from './sites'
-import { fallsX, fallsY, groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
+import { fallsWidth, fallsX, fallsY, groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
 import { createSaltwindVehicle } from './vehicles'
 import type { VehicleId } from './vehicles'
 import { saltwindFeatures } from './site-features'
@@ -106,6 +109,17 @@ function buildYards(meshes: MeshFactory) {
     meshes.box(helipad.x + 8.1 * Math.cos(angle), padY + .2, helipad.z + 8.1 * Math.sin(angle), .22, .06, .22, '#f1c679')
   }
 
+  // Slate outcrops break the current at the two lips and on the downstream banks.
+  for (const [z, lane, width, depth, height, turn] of [
+    [193.2, -.91, 3.8, 2.4, 1.3, .6], [190.8, .77, 2.7, 2.1, 1.5, -.3],
+    [184, -1.02, 4.9, 3.1, 1.6, .2], [180, .62, 2.4, 2.9, 1.3, 1.1],
+    [174.8, -.94, 3.6, 2.4, 1.2, .4], [170.7, .97, 3.2, 3.7, 1.5, -.6],
+  ]) {
+    const x = fallsX(z) + lane * fallsWidth(z)
+    const rock = meshes.cylinder(x, groundHeight(x, z), z, .72, 1.1, height, 6, '#75817b')
+    rock.scaling.set(width, 1, depth); rock.rotation.y = turn
+  }
+
   // A clear service corridor runs between the log stacks and the mill.
   for (const [x, z] of [[-204, 164], [-209, 177], [-225, 177]]) for (let layer = 0; layer < 3; layer++) {
     for (let n = 0; n < 5 - layer; n++) {
@@ -120,8 +134,18 @@ function buildYards(meshes: MeshFactory) {
   for (const x of [292, 296, 300]) meshes.sphere(x, 30.3, 177, 5.7, 2.5, 5.9, '#8d8174')
 
   for (const z of [182, 187, 192, 197]) for (const x of [9, 16, 24, 31]) {
-    meshes.box(x, 30.48, z, .74, .98, .30, slate)
-    meshes.sphere(x, 30.97, z, .74, .36, .31, slate, undefined, true, 8)
+    const y = groundHeight(x, z)
+    const height = .76 + ((x + z) % 3) * .09
+    meshes.box(x, y + .07, z, .98, .14, .48, '#989888')
+    meshes.box(x, y + height / 2 + .1, z, .74, height, .30, slate)
+    meshes.sphere(x, y + height + .1, z, .74, .27, .31, slate, undefined, true, 8)
+    if ((x + z) % 3 === 0) {
+      meshes.cylinder(x + .28, y + .14, z - .4, .19, .14, .28, 7, '#a58167')
+      for (const dx of [-.05, .05]) {
+        meshes.box(x + .28 + dx, y + .34, z - .4, .022, .16, .022, '#778958')
+        meshes.sphere(x + .28 + dx, y + .44, z - .4, .12, .10, .12, '#e1be92')
+      }
+    }
   }
   for (const dx of [-19, 19]) meshes.box(20 + dx, 30.43, 190, .55, .87, 28, '#a39c86')
   for (const dx of [-10.3, 10.3]) meshes.box(20 + dx, 30.43, 176, 17.4, .87, .55, '#a39c86')
@@ -151,14 +175,14 @@ function buildWaterfront(meshes: MeshFactory) {
   }
   const { x, z } = waterfront.rescue
   for (const side of [-1, 1]) meshes.box(x + side * 5.2, surfaceHeight(x, z) + .48, z, .36, 1.1, .36, '#e29c62')
-  const boat = new TransformNode('Rescue skiff exterior', meshes.scene)
-  boat.position.set(x - 7, .16, z - 15.6)
-  meshes.sphere(0, .09, 0, 2.48, 1.05, 6.2, '#cf7648', boat, true, 12)
-  meshes.box(0, .55, 0, 1.77, .16, 3.8, '#eedcb7', boat)
-  meshes.box(0, .71, 1.15, 1.59, .38, 1.23, '#42747a', boat)
-  for (const bx of [-.79, .79]) meshes.box(bx, .61, -.27, .14, .25, 3.36, cream, boat)
+  const boat = createHarborBoat(meshes)
+  boat.name = 'Rescue skiff'
+  boat.position.set(x - 7, .035, z - 15.6)
+  boat.rotation.y = .12
+  meshes.box(0, .4, -2.4, .48, .69, .42, '#54625b', boat)
+  meshes.box(0, .81, -2.44, .68, .34, .55, '#c8734b', boat)
   return (time: number) => {
-    boat.position.y = .16 + .08 * Math.sin(time * 1.7)
+    boat.position.y = .035 + .065 * Math.sin(time * 1.7)
     boat.rotation.z = .039 * Math.sin(time * 1.28)
   }
 }
@@ -174,7 +198,7 @@ function rng() {
 type Plant = 'fir' | 'alder' | 'reed' | 'flower' | 'shore' | 'crop' | 'fern' | 'heather'
 interface PlantTile { x: number; z: number; matrices: Map<Plant, number[]> }
 
-function createPlants(meshes: MeshFactory) {
+function createPlants(meshes: MeshFactory, solids: ScenerySolids) {
   const random = rng()
   const tiles = new Map<string, PlantTile>()
   function place(kind: Plant, x: number, y: number, z: number, scale: number) {
@@ -184,14 +208,21 @@ function createPlants(meshes: MeshFactory) {
     const matrices = tile.matrices.get(kind) ?? []
     const yaw = random() * Math.PI * 2
     const breadth = scale * (.82 + random() * .42)
+    if (kind === 'fir' || kind === 'alder') solids.add({
+      x, z, heading: yaw, width: .42 * breadth, depth: .39 * breadth, bottom: y - .3 * scale, top: y + 3.4 * scale,
+    })
     const transform = Matrix.Scaling(breadth, scale, breadth).multiply(Matrix.RotationY(yaw))
     transform.setTranslationFromFloats(x, y, z)
     matrices.push(...transform.m)
     tile.matrices.set(kind, matrices)
     tiles.set(key, tile)
   }
-  const clear = (x: number, y: number, z: number, water: number) => y >= water - .05 && !clearAirfield(x, z)
+  const clear = (x: number, y: number, z: number, water: number) => y >= water - .05
+    && Math.abs(groundHeight(x + 1, z) - groundHeight(x - 1, z)) < 1.8
+    && Math.abs(groundHeight(x, z + 1) - groundHeight(x, z - 1)) < 1.8 && !clearAirfield(x, z)
     && nearestRoad(x, z).distance >= 10 && !sites.some((site) => siteDistance(x, z, site) < 3)
+    && !villageWalks.some(({ points }) => points.length && Math.abs(points[0].x - x) < 65 &&
+      Math.abs(points[0].z - z) < 65 && distanceToRoute({ x, z }, points) < 1.6)
     && distanceToRoute({ x, z }, viaductWalk.path) > 2.2 && Math.hypot(x - viaductWalk.x, z - viaductWalk.z) > 3.5
     && !islandBuildings.some((building) => building.kind === 'cottage' && Math.hypot(x - building.x, z - building.z) < 7)
   for (let i = 0; i < 5600; i++) {
@@ -285,10 +316,11 @@ function createPlants(meshes: MeshFactory) {
   }
 }
 
-function createWildlife(meshes: MeshFactory) {
+function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
   const roostX = -175, roostZ = 221, roostHeight = 6.4
   const roostGround = groundHeight(roostX, roostZ)
   createTree(meshes, roostX, roostZ, roostHeight, 0, roostGround)
+  solids.add({ x: roostX, z: roostZ, bottom: roostGround, top: roostGround + roostHeight / 2, width: .53, depth: .53, heading: 0 })
   const roost = { x: roostX, y: roostGround + roostHeight * 1.015, z: roostZ }
   const perch = (x: number, z: number) => ({ x, z, y: surfaceHeight(x, z) + .15 })
   const flocks = createFlocks(meshes, [
@@ -337,14 +369,16 @@ function createWildlife(meshes: MeshFactory) {
   }
 }
 
-export function createScenery(meshes: MeshFactory) {
+export function createScenery(meshes: MeshFactory, solids: ScenerySolids) {
+  const firstFixture = meshes.scene.meshes.length
   buildYards(meshes)
   buildSigns(meshes)
   placeSiteFeatures(meshes, saltwindFeatures, ({ x, z }) => surfaceHeight(x, z))
   placeVehicles(meshes)
   const waterfront = buildWaterfront(meshes)
-  const plants = createPlants(meshes)
-  const wildlife = createWildlife(meshes)
+  solids.capture(meshes.scene.meshes.slice(firstFixture))
+  const plants = createPlants(meshes, solids)
+  const wildlife = createWildlife(meshes, solids)
   const phenomena = createPhenomena(meshes.scene, [
     { ...lowerLake, name: 'Mirror Lake dawn mist', kind: 'mist', extent: 62, seed: 5183 },
     { name: 'Tarnstep spray', kind: 'spray', x: fallsX(169), y: fallsY(169), z: 169, extent: 7.5, seed: 2962 },

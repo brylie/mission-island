@@ -2,7 +2,7 @@
 
 ## Area and geometry
 
-Saltwind has **0.428 km²** of dry land, about **11.3×** the starter island’s stated 0.038 km². The survey counts terrain samples above their local water surface and excludes the seabed, river, lake and tarn. Sampling on 1 m and 2 m grids gave 0.428370 and 0.428312 km². The values describe the dry terrain footprint, which includes steep slopes and the waterfall banks.
+Saltwind has **0.428 km²** of dry land, about **11.3×** the starter island’s stated 0.038 km². The survey counts terrain samples above their local water surface and excludes the seabed, river, lake and tarn. Sampling on 1 m and 2 m grids gave approximately 0.42838 and 0.42830 km². The values describe the dry terrain footprint, which includes steep slopes and the waterfall banks.
 
 | Route or site | Checked in the preview or by geometry tests |
 | --- | --- |
@@ -21,6 +21,20 @@ Preview walking uses the same terrain and deck triangles as rendering. Parked mo
 The branch starts at `376ee07`. Saltwind retains compatibility with the starter terrain, world coordinates, server protocol and save schema. The starter save-and-resume, skiff reconnect, persistent discovery and named-slot tests passed. The preview uses local in-memory state and opens no starter save. A Git merge-tree check with the parallel flatbed branch at `38d3c3c` found no conflict.
 
 `npm run quality` passed lint, unused-code checks, the 28-test suite with coverage gates, TypeScript and the Vite production build. Four tests cover Saltwind area and bounds, tour continuity, road/bridge geometry, and water-access and staging surfaces. Vite still emits its bundle-size warning for the shared Babylon chunk.
+
+## Pedestrian survey
+
+Use **Site map → Survey location → Inspect site** to start at each road approach. The ferry arrival begins on deck. The pedestrian controller reads the solid parts of buildings, parked vehicles and site furniture before visual batching. Seeded tree trunks use the same placement as the rendered trees.
+
+| Route | Repeatable check |
+| --- | --- |
+| Ferry to Brinewick | Walk left into the ore truck, then forward along the centre lane and ramp. Check the dispatch seat and headroom under the shelter. |
+| Village approaches | Follow the paved walks to the front steps. In Alderwatch, follow the gravel from the loop through the cemetery gate. Check that the rail, wall and headstones block sideways travel. |
+| Barleycross and service yards | Walk around the market displays, school bench, field barrels and parked vehicles. Jump onto a low seat with Space. Verify that the camera draws closer when a solid object comes between it and the crew. |
+| Rescue slip | Walk forward from inspection, past the lifebuoy and down the slip. Check wading, upright swimming, treading and the return to dry land. |
+| Tarnstep | Look upstream from the viaduct in daylight, then try rain. Follow the water from Alder Tarn over the two main drops toward Mirror Lake. Verify the dry bridge deck and water passage below separately. |
+
+The 22 front walks have automated route and doorstep checks. Other regression cases cover collision and headroom, the swimming return, the high viaduct, and the descending waterfall profile. Saltwind uses a local preview controller. Vehicle driving, networked cargo and cooperative jobs still belong to the host integration.
 
 ## Same-machine browser performance
 

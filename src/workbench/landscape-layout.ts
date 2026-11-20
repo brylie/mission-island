@@ -1,6 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { stepPlayerOnTerrain } from '../../server/movement'
-import { createCrew, createFlatbed, createSupply, poseCrew } from '../island-assets'
+import { createCrew, createFlatbed, createSupply, poseCrew, poseSwimming, swimmingHeight } from '../island-assets'
 import type { MeshFactory } from '../island-meshes'
 import { walkingHeight } from '../terrain'
 import { crateSize, distance, jumpSpeed, truckStart } from '../world'
@@ -170,11 +170,12 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
       const { player } = current.motor
       current.placement.x = player.x
       current.placement.z = player.z
-      current.root.position.set(player.x, player.y + 0.05, player.z)
-      current.root.rotation.set(player.swimming ? 0.95 : 0, player.heading, 0)
+      current.root.position.set(player.x, player.swimming ? swimmingHeight(time) : player.y + 0.05, player.z)
+      current.root.rotation.set(0, player.heading, 0)
       const moving = Boolean(dx || dz)
       if (moving) current.stride += delta * (input.sprint ? 2.5 : 1.7)
-      poseCrew(current.crew, current.stride, moving ? 0.64 : 0, !player.grounded)
+      if (player.swimming) poseSwimming(current.crew, time, Number(moving))
+      else poseCrew(current.crew, current.stride, moving ? 0.64 : 0, !player.grounded)
       current.crew.blink(time)
       if (document.activeElement === canvas) {
         status.textContent = `${player.x.toFixed(1)} m X · ${player.z.toFixed(1)} m Z · ${player.y.toFixed(1)} m high`

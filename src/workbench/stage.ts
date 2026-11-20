@@ -8,7 +8,7 @@ import { Scene } from '@babylonjs/core/scene'
 import { createIslandLighting, createMeshFactory } from '../island-meshes'
 import { createAtmosphere } from '../island-atmosphere'
 import { createIslandMaterial } from '../materials'
-import { groundHeight as terrainHeight } from '../terrain'
+import { groundHeight as terrainHeight, waterLevel } from '../terrain'
 import type { Entry, Values } from './catalog'
 import { lightingPresets } from './lighting'
 import type { LightingPreset } from './lighting'
@@ -55,7 +55,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     const size = entry.landscape ? 24 : Math.max(span.x, span.z, subjectHeight)
     if (entry.landscape) {
       const point = { x: Number(values.x), z: Number(values.z) }
-      center.set(point.x, terrainHeight(point) + 0.25, point.z)
+      center.set(point.x, Math.max(waterLevel, terrainHeight(point)) + 0.25, point.z)
     }
     const groundSize = Math.max(14, size * 2.25)
     const step = size > 45 ? 5 : size > 12 ? 2 : 1
@@ -83,7 +83,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       const ground = meshes.box(center.x, groundHeight - 0.19, center.z, groundSize, 0.36, groundSize, floor, undefined, false)
       ground.receiveShadows = true
     }
-    const gridY = (entry.landscape ? terrainHeight(center) : groundHeight) + 0.005
+    const gridY = (entry.landscape ? Math.max(waterLevel, terrainHeight(center)) : groundHeight) + 0.005
     const gridOrigin = center.clone()
     const half = groundSize / 2
     const lines = directions.flatMap((offset) => [
@@ -130,7 +130,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         if (turntable) camera.alpha += delta * 0.38
         if (entry.landscape && (center.x !== settings.x || center.z !== settings.z)) {
           const point = { x: Number(settings.x), z: Number(settings.z) }
-          center.set(point.x, terrainHeight(point) + 0.25, point.z)
+          center.set(point.x, Math.max(waterLevel, terrainHeight(point)) + 0.25, point.z)
           grid.position.copyFrom(center.subtract(gridOrigin))
           // A new focus translates the orbit instead of zooming out to include the old location.
           camera.setTarget(center.clone(), false, false, true)

@@ -1,3 +1,4 @@
+import { onBeachTowel } from './starter-sites'
 import type { MeshFactory } from './island-meshes'
 import { distanceToRoute, footpaths, road } from './routes'
 import { islandTrees, seededRandom } from './scenery'
@@ -18,7 +19,7 @@ export function createWildflowers(meshes: MeshFactory) {
   for (const [x, z] of [[-31, 18], [-17, 29], [28, -25], [37, -23]]) {
     for (let i = 0; i < 23; i++) {
       const point = { x: x + (random() - 0.5) * 11, z: z + (random() - 0.5) * 7 }
-      if (coastRadius(point) > 0.93) continue
+      if (coastRadius(point) > 0.93 || onBeachTowel(point)) continue
       const y = groundHeight(point)
       const angle = random() * Math.PI
       const height = 0.19 + random() * 0.28
@@ -51,7 +52,7 @@ export function createUnderstory(meshes: MeshFactory) {
       const angle = random() * Math.PI * 2
       const radius = habitat.radius * (.68 + random() * .5)
       const point = { x: habitat.x + radius * Math.cos(angle), z: habitat.z + radius * Math.sin(angle) }
-      if (waterDepth(point) > .04 || distanceToRoute(point, road) < 4.3 ||
+      if (onBeachTowel(point) || waterDepth(point) > .04 || distanceToRoute(point, road) < 4.3 ||
         footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + .68)) continue
       const y = groundHeight(point) - .025, scale = .66 + random() * .82
       for (let leaf = 0; leaf < 5; leaf++) {

@@ -2,7 +2,7 @@ import { createLookoutFire } from '../fire-effect'
 import { createExtinguisherSpray } from '../extinguisher-spray'
 import {
   createBuoy, createCrew, createDock, createFlatbed, createHarborBoat, createHomeChest, createHouse,
-  createRoad, createRock, createSupply, createTrail, createTree, createUmbrella, poseCrew, poseFlatbed, poseFloating,
+  createRoad, createRock, createSupply, createTrail, createTree, createUmbrella, poseCrew, poseSwimming, poseFlatbed, poseFloating,
   umbrellaColors,
 } from '../island-assets'
 import { createFarm } from '../island-farm'
@@ -24,7 +24,8 @@ import { footpaths, road, walkways } from '../routes'
 import { buildings, cargoSlots, crateSize, jumpGravity, jumpSpeed, truckBed } from '../world'
 import { createSurfaceShader } from './surface-preview'
 import type { LightingPreset } from './lighting'
-import { buildings as saltwindBuildings, createExterior } from '../second-island/exteriors'
+import { createExterior } from '../second-island/exteriors'
+import { buildings as saltwindBuildings } from '../second-island/lots'
 import { createSaltwindVehicle, vehicleSpecs } from '../second-island/vehicles'
 import type { VehicleId } from '../second-island/vehicles'
 
@@ -143,7 +144,7 @@ export const entries: Entry[] = [
     id: 'crew', name: 'Crew character', group: 'Crew', source: models, duration: 2.4, headroom: 1.45,
     description: 'Play or scrub the crew poses and compare uniform and skin color choices.',
     controls: [
-      control('state', 'Animation', 'walk', { idle: 'Idle', walk: 'Walk', sprint: 'Sprint', jump: 'Jump', reach: 'Left reach', raise: 'Raise right hand', carry: 'Carry crate', throw: 'Throw crate', spray: 'Use extinguisher' }),
+      control('state', 'Animation', 'walk', { idle: 'Idle', walk: 'Walk', sprint: 'Sprint', jump: 'Jump', swim: 'Swim', tread: 'Tread water', reach: 'Left reach', raise: 'Raise right hand', carry: 'Carry crate', throw: 'Throw crate', spray: 'Use extinguisher' }),
       control('uniform', 'Uniform', 'amber', Object.fromEntries(Object.entries(uniforms).map(([id, uniform]) => [id, uniform.name]))),
       control('skin', 'Skin tone', 'light', Object.fromEntries(Object.entries(skinTones).map(([id, tone]) => [id, tone.name]))),
       range('stride', 'Stride length', 1, 0.2, 1.4, 0.05),
@@ -172,7 +173,9 @@ export const entries: Entry[] = [
         crew.setAppearance(readAppearance(values))
         crew.blink(time)
         const power = windup ? chargePower('throw', time) : 0
-        poseCrew(crew, time * (sprinting ? 2.5 : 5 / 3), stride, elevation > 0.08,
+        crew.root.rotation.x = 0
+        if (values.state === 'swim' || values.state === 'tread') poseSwimming(crew, time, Number(values.state === 'swim'))
+        else poseCrew(crew, time * (sprinting ? 2.5 : 5 / 3), stride, elevation > 0.08,
           carrying ? 'crate' : spraying ? 'extinguisher' : undefined, reach, 1, power, throwing, values.state === 'raise')
         crate.setEnabled(carrying)
         crate.position.y = 1.13 + power * 0.41

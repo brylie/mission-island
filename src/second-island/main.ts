@@ -3,19 +3,20 @@ import { FreeCamera } from '@babylonjs/core/Cameras/freeCamera'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { Scene } from '@babylonjs/core/scene'
-import { createCrew, poseCrew } from '../island-assets'
+import { createCrew, poseCrew, poseSwimming } from '../island-assets'
 import { createAtmosphere } from '../island-atmosphere'
 import { createIslandLighting, createMeshFactory } from '../island-meshes'
 import type { Weather } from '../protocol'
 import { weatherAt } from '../weather'
-import { islandBuildings, buildingLocal } from './exteriors'
+import { clearCameraDistance, placeWalker, ScenerySolids, walkSaltwind } from './walking'
+import { villageWalks } from './footways'
 import { createLandscape } from './landscape'
 import { createChart } from './map'
 import { routes, sampleRoute } from './routes'
 import { createScenery } from './scenery'
-import { arrival, islandName, landmarks, sites, villages, wadeDepth, waterBounds } from './sites'
+import { arrival, islandName, landmarks, sites, villages, waterfront, waterBounds } from './sites'
 import type { MapPoint } from './sites'
-import { dryLandKm2, groundHeight, shoreAccess, surfaceHeight, waterHeight } from './terrain'
+import { dryLandKm2, groundHeight, waterHeight } from './terrain'
 import { tour } from './tour'
 import './style.css'
 
@@ -43,8 +44,9 @@ function start() {
   lighting.shadows.getShadowMap()?.resetRefreshCounter()
   const meshes = createMeshFactory(scene, lighting.shadows)
   const crew = createCrew(meshes, 0)
-  const updateWater = createLandscape(meshes)
-  const updateScenery = createScenery(meshes)
+  const solids = new ScenerySolids()
+  const updateWater = createLandscape(meshes, solids)
+  const updateScenery = createScenery(meshes, solids)
   const follow = new FreeCamera('Saltwind follow', new Vector3(arrival.x, 12, arrival.z - 19), scene)
   const overview = new FreeCamera('Saltwind overview', new Vector3(0, 910, -389), scene)
   overview.mode = Camera.ORTHOGRAPHIC_CAMERA
@@ -67,10 +69,10 @@ function start() {
   get('map-scale').textContent = `${area} km² of dry land · North is +Z · 1 unit = 1 metre`
   const known = new Set<string>(['ferry'])
   const keys = new Set<string>()
-  const point = { x: arrival.x, z: arrival.z }
+  const point = placeWalker(arrival)
   let yaw = 0, orbit = 0, pitch = .48, arm = 12, cycle = 0, sceneTime = 0, lastDraw = -1
   let broad = false, stop = 0, playing = false, leg = 0, progress = 0, drag: PointerEvent | undefined
-  let height = surfaceHeight(point.x, point.z)
+  let jump = false, snapCamera = true
   const worldLabels = landmarks.map((pin) => {
     const label = document.createElement('span')
     label.textContent = pin.name
@@ -97,9 +99,9 @@ function start() {
   }
 
   function setPoint(at: MapPoint, heading: number) {
-    point.x = at.x
-    point.z = at.z
-    height = surfaceHeight(at.x, at.z)
+    Object.assign(point, placeWalker(at))
+    jump = false
+    snapCamera = true
     yaw = orbit = heading
     lastDraw = -1
   }
@@ -140,6 +142,7 @@ function start() {
   function openMap() {
     if (atlas.open) return
     keys.clear()
+    jump = false
     stopTour()
     atlas.showModal()
     syncMap()
@@ -155,11 +158,14 @@ function start() {
     const landmark = landmarks.find(({ id }) => id === select.value)
     if (!landmark) return
     const site = sites.find(({ id }) => id === landmark.id)
-    const target = site?.access ?? landmark
+    const walk = villageWalks.find(({ name }) => name === landmark.id)
+    const target = walk?.points.at(-1) ?? site?.access ?? landmark
     const nearest = routes.flatMap(({ samples }) => samples).reduce((best, p) =>
       Math.hypot(p.x - target.x, p.z - target.z) < Math.hypot(best.x - target.x, best.z - target.z) ? p : best)
     const approach = landmark.id === 'ferry' ? arrival : nearest
-    setPoint(approach, Math.atan2(landmark.x - approach.x, landmark.z - approach.z))
+    const sight = walk?.points[0] ?? (landmark.id === 'rescue' ? waterfront.skiffLaunch : landmark)
+    const dx = sight.x - approach.x, dz = sight.z - approach.z
+    setPoint(approach, Math.hypot(dx, dz) < 1 ? nearest.yaw : Math.atan2(dx, dz))
     arm = landmark.id === 'airport' || landmark.id === 'mine' || landmark.id === 'falls' ? 20 : 13
     pitch = .18
     stopTour()
@@ -185,11 +191,15 @@ function start() {
       event.preventDefault()
       keys.add(key)
     }
+    if (key === ' ' && (event.target === canvas || event.target === document.body)) {
+      event.preventDefault()
+      if (!event.repeat) { stopTour(); jump = true }
+    }
     if (key === 'c' && !event.repeat) setOverview(!broad)
     if (key === 'm' && !event.repeat) openMap()
   })
   window.addEventListener('keyup', (event) => { keys.delete(event.key.toLowerCase()) })
-  window.addEventListener('blur', () => { keys.clear() })
+  window.addEventListener('blur', () => { keys.clear(); jump = false })
   canvas.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return
     canvas.setPointerCapture(event.pointerId)
@@ -207,29 +217,18 @@ function start() {
     arm = Math.max(3.4, Math.min(38, arm + event.deltaY * .018))
   }, { passive: false })
 
-  function traversable(x: number, z: number) {
-    const y = surfaceHeight(x, z)
-    if (waterHeight(x, z) - y > wadeDepth || Math.abs(y - height) > .86) return false
-    if (z < -252 && x > -280 && x < -268 && (x < -279.4 || x > -268.6 || z < -277.5)) return false
-    return islandBuildings.every((building) => {
-      const local = buildingLocal({ x, z }, building)
-      return Math.abs(local.x) > building.width / 2 + .27 || Math.abs(local.z) > building.depth / 2 + .27
-    })
-  }
-
   function walk(dt: number) {
     const side = Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft'))
     const forward = Number(keys.has('w') || keys.has('arrowup')) - Number(keys.has('s') || keys.has('arrowdown'))
-    if (!side && !forward) return 0
-    stopTour()
+    if (side || forward) stopTour()
+    if (playing) return 0
     const angle = orbit + Math.atan2(side, forward)
-    const speed = (keys.has('shift') ? 10 : 5.4) * (height < waterHeight(point.x, point.z) ? .58 : 1)
-    const x = point.x + Math.sin(angle) * dt * speed, z = point.z + Math.cos(angle) * dt * speed
-    if (traversable(x, point.z)) point.x = x
-    if (traversable(point.x, z)) point.z = z
-    height = surfaceHeight(point.x, point.z)
-    yaw = angle
-    return speed
+    const pace = point.swimming ? 3.8 : (keys.has('shift') ? 10 : 5.4) * (point.y < waterHeight(point.x, point.z) ? .68 : 1)
+    const speed = side || forward ? pace : 0
+    if (speed) yaw = angle
+    const moved = walkSaltwind(point, solids, Math.sin(angle) * speed, Math.cos(angle) * speed, jump, dt)
+    jump = false
+    return moved
   }
 
   function advance(dt: number) {
@@ -239,8 +238,7 @@ function start() {
     progress = Math.min(progress + dt * speed, Math.abs(segment.to - segment.from))
     const p = sampleRoute(segment.route, segment.from + progress * direction)
     const heading = p.yaw + (direction < 0 ? Math.PI : 0)
-    point.x = p.x; point.z = p.z
-    height = surfaceHeight(p.x, p.z)
+    Object.assign(point, placeWalker(p))
     yaw = heading
     orbit += Math.atan2(Math.sin(heading - orbit), Math.cos(heading - orbit)) * Math.min(1, dt * 3)
     if (progress < Math.abs(segment.to - segment.from)) return
@@ -259,9 +257,9 @@ function start() {
     if (broad) return
     const distance = playing ? 30 : arm, angle = playing ? .58 : pitch
     const trailing = Math.cos(angle) * distance
-    subject.set(point.x, height + (playing ? 3.7 : 1.6), point.z)
+    subject.set(point.x, point.y + (playing ? 3.7 : 1.6), point.z)
     const x = point.x - Math.sin(orbit) * trailing, z = point.z - Math.cos(orbit) * trailing
-    const y = Math.max(height + 1.3 + Math.sin(angle) * distance, groundHeight(x, z) + 1.5)
+    const y = Math.max(point.y + 1.3 + Math.sin(angle) * distance, groundHeight(x, z) + 1.5)
     cameraGoal.set(x, y, z)
     for (let i = 2; i <= 13; i++) {
       const t = i / 13
@@ -269,7 +267,14 @@ function start() {
       const obstruction = groundHeight(px, pz)
       if (obstruction + .45 > subject.y + t * (cameraGoal.y - subject.y)) cameraGoal.y = subject.y + (obstruction - subject.y + .45) / t
     }
-    Vector3.LerpToRef(follow.position, cameraGoal, 1 - Math.exp(-dt * (playing ? 8 : 12)), follow.position)
+    if (!playing) {
+      const fraction = clearCameraDistance(point, solids, x - point.x, cameraGoal.y - subject.y, z - point.z)
+      Vector3.LerpToRef(subject, cameraGoal, fraction, cameraGoal)
+    }
+    if (snapCamera || Vector3.DistanceSquared(cameraGoal, subject) < Vector3.DistanceSquared(follow.position, subject)) {
+      follow.position.copyFrom(cameraGoal)
+      snapCamera = false
+    } else Vector3.LerpToRef(follow.position, cameraGoal, 1 - Math.exp(-dt * (playing ? 8 : 12)), follow.position)
     follow.setTarget(subject)
   }
 
@@ -309,10 +314,12 @@ function start() {
     if (playing) advance(dt)
     cycle += dt * walking / 2.8
     crew.root.setEnabled(!broad && !playing)
-    crew.root.position.set(point.x, height + .02, point.z)
+    crew.root.position.set(point.x, point.y + (point.swimming ? .036 * Math.sin(sceneTime * Math.PI * 1.25) : .02), point.z)
+    crew.root.rotation.x = 0
     crew.root.rotation.y = yaw
     crew.blink(sceneTime)
-    poseCrew(crew, cycle, walking ? Math.min(.85, walking * .1) : 0, false, undefined, 0, Math.min(1, dt * 10))
+    if (point.swimming) poseSwimming(crew, sceneTime, Math.min(1, walking / 3.8))
+    else poseCrew(crew, cycle, walking ? Math.min(.85, walking * .1) : 0, !point.grounded, undefined, 0, Math.min(1, dt * 10))
     for (const pin of landmarks) if (!known.has(pin.id) && Math.hypot(point.x - pin.x, point.z - pin.z) <= pin.radius) {
       known.add(pin.id)
       if (pin.discoverable) select.add(new Option(pin.name, pin.id))
@@ -321,16 +328,15 @@ function start() {
     const camera = scene.activeCamera ?? follow
     const weather = surveyWeather[climate.value] ?? weatherAt(sceneTime + 100)
     const light = atmosphere.update(sceneTime, weather, camera.position, !broad, 7)
-    const threats = height < waterHeight(point.x, point.z) - .04 ? [point] : []
+    const threats = point.y < waterHeight(point.x, point.z) - .04 ? [point] : []
     updateScenery({ time: sceneTime, delta: dt, weather, camera: camera.position, threats }, broad)
     updateWater(sceneTime, light)
     scene.render()
     updateLabels()
     if (sceneTime - lastDraw > .24) {
       lastDraw = sceneTime
-      const shore = shoreAccess(point.x, point.z)
-      const edge = height < waterHeight(point.x, point.z) && shore.wade ? ' · Wade' : ''
-      coordinates.textContent = `X ${Math.round(point.x)} · Z ${Math.round(point.z)} · ${height.toFixed(1)} m${edge}`
+      const edge = point.swimming ? ' · Swimming' : point.y < waterHeight(point.x, point.z) ? ' · Wading' : ''
+      coordinates.textContent = `X ${Math.round(point.x)} · Z ${Math.round(point.z)} · ${point.y.toFixed(1)} m${edge}`
       discoveries.textContent = `${known.size}/${landmarks.length} found`
       drawMini(point, known)
       if (showPerformance) performanceLabel.textContent = `${Math.round(engine.getFps())} FPS`

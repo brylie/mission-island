@@ -9,53 +9,60 @@ Coordinates are metres, written (X, Z). Set them in the starter Landscape Workbe
 | Destination | Arrival and original cue | Change and placement check |
 | --- | --- | --- |
 | Harbor Depot | The crew joins from the west road, with freight at the depot. | The gold-tagged freight stack at (−52.5, −17.8) marks the loading edge. The main freight path and truck entry stay open. |
-| Amber cottage | Enter from the road shoulder and use the amber chest and the home door. | The low herb box at (−53.26, −6.98) sits along the house side, with the chest and doorstep clear. |
-| Blue cottage | Same approach from the other crew spawn. | Blue flowers distinguish the door at (−46.3, −6.98). The narrow box keeps the shoulder usable. |
-| Harbor job board | Follow the harbor trail to the freestanding board. | A short pennant line at (−42.05, −16.9) cues the starting area. The original board interaction stays at the existing position. |
+| Amber cottage | Enter from the road shoulder and use the amber chest and the home door. | The low herb box at (−53.26, −7.15) sits along the house side, with the chest and doorstep clear. |
+| Blue cottage | Same approach from the other crew spawn. | Blue flowers distinguish the door at (−46.3, −7.15). The narrow box keeps the shoulder usable. |
+| Harbor job board | Follow the harbor trail to the freestanding board. | The posted notices identify the job board. Approach its face or either edge to take an order. |
 | Fishing dock | Walk south along the planks to fish or board the skiff. | The side-facing net rack at (−42.67, −30.9) sits on the east plank edge, leaving the middle and tip open. |
-| Seabrook | Follow the main road, then use the pavement on either side. | The teal bench at (40.1, 17.3) sits beyond the north pavement edge. |
-| Seabrook Market | Take the short walk south from the residential pavement. | The produce stack at (42.44, 0.7) marks the awning approach. The sale and seed interaction point stays open. |
+| Seabrook | Follow the main road, then use the pavement on either side. | Both rows face the street, with front walks from the doorways to the pavement. A teal bench at (39, 17.65) looks across the street from a pocket between the front walks. |
+| Seabrook Market | Take the short walk south from the residential pavement. | Buy and sell under the striped awning at (39, 5.9). A produce stack at (41.15, 5.86) stands to one side of the entrance. |
 | Island Farm | Approach from the beach trail side. | Rain barrels at (28.75, −10.9) identify the field edge and leave the planting plots apart from scenery. |
-| Driftwood Beach | Follow gravel downhill past the umbrellas. | The shelter at (33.5, −23.5) marks the turn toward Shellglass. Marram hugs the shore and stays away from the new path. |
-| Pinewoods | Leave the road and climb toward the trees and rocks. | An amber marker at (−23.6, 19.3) stands on gentler ground between trunks. |
+| Driftwood Beach | Follow gravel downhill past the umbrellas. | The gravel path forks toward Shellglass and continues to the sand. The three parasols shade 2.30 × 1.10 m striped towels. The freight drop stays inland at the path junction. |
+| Pinewoods | Leave the road and climb toward the trees and rocks. | Trees, understory and exposed rock identify the forest approach. The clearing is open for exploration. |
 | Forest Lookout | Follow the gravel trail to the fire site. | A brass scope at (5.42, 32.6) sits off the trail and away from the objective. |
-| Fire Supplies | Take the outside edge of the lookout approach. | Rust-colored pennants at (25.1, 22.8) make the staging area easier to spot. The pickup coordinates stay in place. |
-| Juniper Hollow | Climb out of the clearing and into the pine hillside. | A green shelter replaces the generic marker beside the discovery trigger. Fern fans mark the understory away from the shelter. |
-| Fernfall | Approach from below the stream bank. | A blue gauge stands on the walkable shoulder at (8.5, 82), above the basin and away from the steepest part of the cascade. |
-| Mirror Pool | Circle to the east bank for dry footing. | The hide rail at (44.5, 106) sits clear of the nearest trunk. Rushes and dawn mist distinguish the basin. |
-| Windstone Ridge | Approach along the crown where the ground levels. | The scope moved to a gentler gap between rocks at (36.5, 134). The original approach still enters the same discovery radius. |
-| Shellglass Point | Take the approximately 14 m spur east from Driftwood Beach. | A small tide marker and shell-studded rocks overlook the surf at (43.2, −31.4). The saved map pin and world name appear on discovery. |
+| Fire Supplies | Take the outside edge of the lookout approach. | The extinguishers identify the pickup when the fire mission is active. The shoulder stays clear for access. |
+| Juniper Hollow | Climb out of the clearing and into the pine hillside. | A low trail cairn marks the clearing at (−55.5, 66). Look for fern fans under the pines. |
+| Fernfall | Approach from below the stream bank. | Follow the creek uphill to the stepped cascade. A graduated staff stands beside the spring. Foam follows the flow over ledges and spray rises from the lower pool. |
+| Mirror Pool | Circle to the east bank for dry footing. | A fallen willow lies along the east bank at (44.5, 106). Rushes and dawn mist distinguish the basin. |
+| Windstone Ridge | Approach along the crown where the ground levels. | The scope and discovery pin share the walkable survey point at (36.5, 134). |
+| Shellglass Point | Take the approximately 14 m spur east from Driftwood Beach. | Shell-studded rocks mark the end of the path at (43.2, −31.4). A narrow tide staff stands at the waterline at (43, −36). |
+
+### Repeatable starter checks
+
+- Walk both pavements, turn onto each front walk, then buy or sell at the market. Walk into the front of the village bench and jump onto the seat. Drop a loose crate onto the depot freight stack.
+- At Driftwood, walk over the towels and around the parasol poles. Wade out and stop to tread water, swim forward, then turn back toward shore. The eyes and mouth should clear the surface during the entire stroke. The Crew Workbench also has **Swim** and **Tread water** animation states.
+- Focus the Landscape Workbench at (13, 87) and orbit to the downstream bank. Follow the spring water over both ledges to its junction with the creek. Inspect the banks at a low angle and look for exposed sheet edges, submerged foam or spray rising above dry ground.
+- Follow the discovery routes from the cottages. The traversal test checks a pedestrian approach to each solid landmark, original discovery pin and activity area. A separate check exercises recovery for a player whose saved position now falls inside a moved building.
 
 ## Saltwind
 
 | Destination | Existing arrival and cue | Change and placement check |
 | --- | --- | --- |
-| Brinewick Ferry | Cross the ramp along the center lane from the parked deck. | The dispatch shelter sits east of the ramp. Inspect now faces toward the quay from the ferry deck, so forward movement takes the crew up the ramp. |
-| Brinewick | Arrive at the coast village from the quay road. | The teal tide marker is across the shoulder from the village sign. |
+| Brinewick Ferry | Cross the ramp along the center lane from the parked deck. | The passenger shelter has a seat at 0.47 m, a timetable and standing room under the canopy. The lorry occupies the port lane. Walk the unobstructed centre lane to the quay. |
+| Brinewick | Arrive at the coast village from the quay road. | The village sign marks the junction. Front walks connect the homes and public buildings to the road. |
 | Fish Market | Enter from the loop and apron beside the fish hall. | A net rack sits along the awning approach, away from the apron center. |
-| Police Station | Turn in from the loop past the parked patrol car. | Blue notice pennants sit by the station side, away from the marked vehicle stop. |
+| Police Station | Turn in from the loop past the parked patrol car. | A shield identifies the front entrance, and the parked patrol car marks the station apron. |
 | Quay Apartments | Approach from the loop and look for the three-storey façade. | A yellow herb box marks the porch approach. |
 | Brinewick Grocery | Reach the storefront from the west leg of the loop. | A low green produce display sits outside the delivery position. |
-| Barleycross | Follow the south loop between village buildings and open fields. | Harvest flags distinguish the village shoulder. |
+| Barleycross | Follow the south loop between village buildings and open fields. | The village sign and the market canopy mark the road into the fields. |
 | Farmers Market | Follow the turn-in lane to the covered stands and apron. | Terracotta produce crates sit at the public market edge. |
 | Long Acre Fields | Leave the loop by the signed field stop beside the rows. | Rain barrels sit by the outer field edge, clear of the delivery origin. |
 | Barleycross School | Approach from its west road access and sheltered door. | A reading bench sits along the school approach. |
 | Saltwind Hospital | Reach the pull-through and the separate helipad from the loop. | A garden planter sits east of the helipad circle, away from the ambulance stop. |
 | Alderwatch | Climb the loop to the village junction by the chapel and fire station. | A moss-green bench marks the village shoulder. |
 | Alderwatch Church | Enter from the village loop and face the chapel steps. | A rose planter marks the side of the steps and leaves the center approach open. |
-| Alderwatch Cemetery | Follow the stone wall to the gate. | A quiet grey-green bench sits beside the entry, offset from the gate approach. |
+| Alderwatch Cemetery | Follow the stone wall to the gate. | The gravel approach rises from the loop to the gate. The vehicle stop is outside the wall and the remembrance bench faces the graves. |
 | Alderwatch Fire Station | Follow either access lane to the engine apron. | A hose rack sits west of the staging bays and outside the pull-through. |
-| Alder Timber Works | Take Mill Road to the sawmill and log yard. | A timber scale marker sits outside the lorry origin and leaves the apron open. |
-| Slatecliff Mine | Follow the spur to the loop, hopper and portal. | A slate survey rack sits beyond the west edge of the truck lane and away from the ore truck stop. |
-| Saltwind Airstrip | Turn in at Airfield Lane and follow the apron to the hangar. | Service barrels sit beside the hangar approach, outside the runway and taxi rectangle. |
+| Alder Timber Works | Take Mill Road to the sawmill and log yard. | Follow the clear loading corridor between the log bunks and the mill. The parked logger, stacked timber and sawn ends identify the job. |
+| Slatecliff Mine | Follow the spur to the loop, hopper and portal. | The portal, ore hopper and hauler identify the working yard. Walk around the ore stockpiles to reach the turnaround. |
+| Saltwind Airstrip | Turn in at Airfield Lane and follow the apron to the hangar. | The windsock and parked airplane identify the apron. Walk around the fuselage or beneath high aircraft parts where headroom allows. |
 | Sandspit Fishing Pier | Follow the quay spur to the dry deck and water beyond. | A float rack is placed on the shore side of the pier edge. Clear-night plankton highlights the shallows below. |
-| Brinewick Rescue Slip | Follow the other quay spur to the skiff slip. | The gear shelter sits off the side of the slip. The wading and launch thresholds stay the same. |
-| Reedwater Bridge | Cross the main loop toward the lower river valley. | A depth gauge moved to the dry north shoulder after the riverbank check. |
-| Mill Bridge | Take Mill Road across the river. | The ochre approach marker sits behind the north shoulder above the cut bank. |
-| Tarnstep Viaduct | Follow the main loop past Alderwatch to the high crossing. | A stone rail cues the west approach. Pier feet now reach below the terrain across their footprint. |
-| Mirror Lake | Look down over the south side of the loop from the north overlook. | The picnic bench moved uphill to a gentle shoulder at (−104, 145), with the basin in view. |
-| Tarnstep Falls | Look upstream from the viaduct. | The scope sits on dry ground above the cascade. Seeded spray adds a stronger plume in rain. |
-| Viaduct Survey Shelf | Take the short gravel spur from the west side of the viaduct. | A brass survey marker at (−140.8, 160) faces the crossing. Its preview map pin and survey entry appear once the crew reaches the shelf. |
+| Brinewick Rescue Slip | Follow the other quay spur to the skiff slip. | The lifebuoy marks the water entry beside the rescue skiff. Walk down the slip, swim out and turn back to wade ashore. |
+| Reedwater Bridge | Cross the main loop toward the lower river valley. | Follow the rail along the crossing or approach the river below. The bridge and the water beneath it have separate movement surfaces. |
+| Mill Bridge | Take Mill Road across the river. | The Mill Road bridge deck, parapets and river are the landmarks at this crossing. |
+| Tarnstep Viaduct | Follow the main loop past Alderwatch to the high crossing. | The viaduct rail frames the upstream view; supports extend to the valley floor. |
+| Mirror Lake | Look down over the south side of the loop from the north overlook. | The bench on the shoulder at (−104, 145) faces the lake. |
+| Tarnstep Falls | Look upstream from the viaduct. | Look upstream from the viaduct. Tarn water spills over staggered ledges, breaks around slate outcrops and enters Mirror Lake. |
+| Viaduct Survey Shelf | Take the short gravel spur from the west side of the viaduct. | The brass viewing scope at (−140.8, 160) faces Tarnstep Falls. The shelf appears on the survey list after discovery. |
 
 ## Habitat route and observation conditions
 

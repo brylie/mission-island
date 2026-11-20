@@ -14,7 +14,7 @@ import { createLookoutFire } from './fire-effect'
 import { createIslandCamera } from './island-camera'
 import {
   createCrew, createFarmTools, createFlatbed, createSkiffGear, createSupply, playerColors, poseCrew,
-  poseFlatbed, poseFloating, poseSkiffCrew,
+  poseFlatbed, poseFloating, poseSkiffCrew, poseSwimming, swimmingHeight,
 } from './island-assets'
 import { createIslandLighting, createMeshFactory } from './island-meshes'
 import { createIslandWorld } from './island-world'
@@ -212,10 +212,10 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         const stroke = player.rowing ? Math.sin(time * 5.2 + id * 2.2) : 0
         poseSkiffCrew(character, stroke, side, rod, wasVisible ? factor : 1)
       } else {
-        node.rotation.x = player.swimming ? 0.95 : 0
+        node.rotation.x = 0
         node.rotation.z = 0
         const { x, z } = node.position
-        moveTo(node, player, player.y + 0.05, factor)
+        moveTo(node, player, player.swimming ? swimmingHeight(time + id) : player.y + 0.05, factor)
         if (player.grounded && !player.onBed && !player.swimming) {
           node.position.y = Math.max(node.position.y, walkingHeight(node.position) + 0.05)
         }
@@ -225,7 +225,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         cycles[id] += step / 4.8
         const stride = delta > 0 ? Math.min(0.92, step / delta * 0.072) : 0
         const winding = player.charge?.kind === 'throw' ? player.charge.power : 0
-        poseCrew(character, cycles[id], stride, !player.grounded, held?.kind ?? (player.equipped ? 'tool' : undefined),
+        if (player.swimming) poseSwimming(character, time + id, Math.min(1, step / Math.max(.001, delta * 3.8)), factor)
+        else poseCrew(character, cycles[id], stride, !player.grounded, held?.kind ?? (player.equipped ? 'tool' : undefined),
           Number(Boolean(player.reaching || held?.spraying || player.casting)),
           wasVisible ? 1 - Math.exp(-delta * 16) : 1, winding, player.throwing, player.rightHandRaised)
       }

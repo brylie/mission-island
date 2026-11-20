@@ -24,6 +24,7 @@ export function createHouse(meshes: MeshFactory, building: typeof buildings[numb
   const root = new TransformNode('House', scene)
   const { x, z, w, d, h, wall } = building
   root.position.set(x, 0, z)
+  root.rotation.y = 'heading' in building ? building.heading ?? 0 : 0
 
   function roof() {
     const { w, d, h, roof: color } = building
@@ -227,6 +228,7 @@ export function poseCrew(crew: ReturnType<typeof createCrew>, cycle: number, str
     const side = i === 0 ? -1 : 1
     leg.rotation.x += ((airborne ? side * 0.35 : swing * side) - leg.rotation.x) * blend
     const arm = crew.arms[i]
+    arm.rotation.z *= 1 - blend
     const swinging = airborne ? -0.8 : -swing * side * 0.77
     const relaxed = throwing ? -1.75 : carrying === 'crate' ? -1.22 - winding * 0.67
       : (carrying === 'extinguisher' || carrying === 'tool') && i === 0 ? -1.36 : swinging
@@ -234,6 +236,23 @@ export function poseCrew(crew: ReturnType<typeof createCrew>, cycle: number, str
     const forward = relaxed + (-Math.PI / 2 - relaxed) * reachAmount
     arm.rotation.x += (forward - arm.rotation.x) * blend
   }
+}
+
+export function poseSwimming(crew: ReturnType<typeof createCrew>, time: number, speed: number, blend = 1) {
+  const stroke = time * Math.PI * 2 / 1.6
+  crew.root.rotation.x = .06 + .22 * speed
+  for (const [i, arm] of crew.arms.entries()) {
+    const side = i === 0 ? -1 : 1
+    const reach = -.86 - Math.cos(stroke) * (.2 + .46 * speed)
+    const sweep = side * (.7 + Math.sin(stroke) * .44)
+    arm.rotation.x += (reach - arm.rotation.x) * blend
+    arm.rotation.z += (sweep - arm.rotation.z) * blend
+    crew.legs[i].rotation.x = .25 + side * Math.sin(stroke * 2) * (.17 + .27 * speed)
+  }
+}
+
+export function swimmingHeight(time: number) {
+  return waterLevel - 1.01 + .036 * Math.sin(time * Math.PI * 2 / 1.6)
 }
 
 export function createFarmTools({ scene, box, cylinder, sphere }: MeshFactory, character: ReturnType<typeof createCrew>) {
@@ -273,6 +292,7 @@ export function poseSkiffCrew(crew: ReturnType<typeof createCrew>, stroke: numbe
   for (const [i, leg] of crew.legs.entries()) {
     leg.rotation.x += (-1.27 - leg.rotation.x) * blend
     const arm = crew.arms[i]
+    arm.rotation.z *= 1 - blend
     const outerArm = i === (side < 0 ? 0 : 1)
     const pose = fishing ? (outerArm ? -1.39 : -1.07) : outerArm ? -1.09 + stroke * 0.59 : -1.25 + stroke * 0.22
     arm.rotation.x += (pose - arm.rotation.x) * blend
@@ -315,10 +335,18 @@ export function createSupply({ scene, box, cylinder }: MeshFactory, kind: 'crate
   return node
 }
 
-export function createUmbrella({ cylinder, box }: MeshFactory, x: number, z: number, color: string) {
-  cylinder(x, 1.25, z, 0.12, 0.16, 2.5, 6, '#8c6545')
-  cylinder(x, 2.6, z, 0.15, 3, 0.67, 8, color)
-  box(x + 1.2, 0.11, z + 0.3, 0.87, 0.13, 1.4, '#f4e2b6')
+export function createUmbrella({ cylinder, surface }: MeshFactory, x: number, z: number, color: string,
+  heightAt: (point: Point) => number = () => 0) {
+  const y = heightAt({ x, z })
+  cylinder(x, y + 1.25, z, 0.12, 0.16, 2.5, 6, '#8c6545')
+  cylinder(x, y + 2.6, z, 0.15, 3, 0.67, 8, color)
+  // Adjacent woven bands share their hems and follow the sand beneath each corner.
+  const ends = [-1.15, -.99, -.92, -.84, .84, .92, .99, 1.15]
+  for (let i = 1; i < ends.length; i++) {
+    const corners = [[.35, ends[i - 1]], [1.45, ends[i - 1]], [1.45, ends[i]], [.35, ends[i]]]
+    const vertices = corners.flatMap(([dx, dz]) => [x + dx, heightAt({ x: x + dx, z: z + dz }) + .022, z + dz])
+    surface('Beach towel', vertices, [0, 1, 2, 0, 2, 3], i === 2 || i === 6 ? color : '#f4e2b6').freezeWorldMatrix()
+  }
 }
 
 export function createTree({ cylinder, sphere, paintSurface }: MeshFactory, x: number, z: number, height: number, variant: number, ground = 0) {

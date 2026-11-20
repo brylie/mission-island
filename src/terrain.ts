@@ -45,6 +45,25 @@ export function streamX(z: number) {
   return 15 + 7 * Math.sin((z - 90) * 0.09)
 }
 
+// Surveyed along the course, from the spring shelf to the creek below Fernfall.
+// Each pair of ledges has a shallow run followed by a steeper spill.
+export const fernfallProfile = [
+  { z: 81, y: 4.85, halfWidth: .18 }, { z: 82, y: 4.82, halfWidth: 1.07 },
+  { z: 83.6, y: 4.66, halfWidth: .86 }, { z: 85.1, y: 3.42, halfWidth: 1.22 },
+  { z: 86.0, y: 3.23, halfWidth: 1.01 }, { z: 88.5, y: .18, halfWidth: 1.55 },
+  { z: 89.9, y: waterLevel + .018, halfWidth: 1.86 }, { z: 91.4, y: waterLevel - .04, halfWidth: 2.12 },
+]
+
+export function fernfallSection(z: number) {
+  const i = fernfallProfile.findIndex((station) => station.z >= z)
+  if (i < 0) return fernfallProfile[fernfallProfile.length - 1]
+  if (i === 0) return fernfallProfile[0]
+  const a = fernfallProfile[i - 1], b = fernfallProfile[i]
+  const t = (z - a.z) / (b.z - a.z)
+  const ease = t * t * (3 - 2 * t)
+  return { z, y: a.y + (b.y - a.y) * ease, halfWidth: a.halfWidth + (b.halfWidth - a.halfWidth) * ease }
+}
+
 export function coastRadius(point: Point) {
   const x = point.x / (island.width / 2)
   const z = point.z / (island.length / 2)
@@ -64,9 +83,16 @@ export function groundHeight(point: Point) {
     const reach = Math.min(1, Math.max(0, (point.z - falls.z) / 4), Math.max(0, (135 - point.z) / 10))
     const basin = rise(point, pool.x, pool.z, 19, 15, 1.8)
     const edge = Math.min(1, (shoreProfile[1].radius - radius) / 0.055)
-    const relief = rise(point, -25, 23, 16, 14, 2.45) + rise(point, -9, 32, 10, 7.5, 1.55)
+    let relief = rise(point, -25, 23, 16, 14, 2.45) + rise(point, -9, 32, 10, 7.5, 1.55)
       + rise(point, grove.x, grove.z, 33, 34, 9) + rise(point, headland.x, headland.z, 32, 30, 15)
       + upland - Math.max(basin, channel * reach * 1.4)
+    if (point.z > 80 && point.z < 93 && Math.abs(point.x - streamX(point.z)) < 4.5) {
+      const section = fernfallSection(point.z)
+      const bank = Math.abs(point.x - streamX(point.z)) - section.halfWidth
+      const weight = Math.min(1, point.z - 80, (93 - point.z) / 1.6, Math.max(0, 1 - Math.max(0, bank) / 1.7))
+      const streambed = section.y + Math.max(-.46, Math.min(.42, bank * .74))
+      relief += (streambed - relief) * weight
+    }
     return relief * edge * edge * (3 - 2 * edge)
   }
   for (let i = 2; i < shoreProfile.length; i++) {
