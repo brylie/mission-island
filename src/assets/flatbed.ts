@@ -6,10 +6,11 @@ import type { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import { surfaces } from '../materials'
-import { wheelAxles, wheelRadius, wheelTrack } from '../truck-pose'
+import { flatbedGroundDrive } from '../vehicles/flatbed'
 import { truckBed, truckSideRails, truckTailLip } from '../world'
 
 export function createFlatbed({ scene, box, cylinder, paint, paintSurface }: MeshFactory) {
+  const { radius, halfTrack, axles } = flatbedGroundDrive.wheels
   const truck = new TransformNode('Flatbed', scene)
   const beam = new SpotLight('Flatbed headlights', new Vector3(0, 1.1, 2.98), new Vector3(0, -0.10, 1), 0.9, 1.1, scene)
   beam.parent = truck
@@ -40,15 +41,15 @@ export function createFlatbed({ scene, box, cylinder, paint, paintSurface }: Mes
       { mesh: box(side * 0.89, 0.57, -3.065, 0.33, 0.17, 0.042, tail, truck),
         unlit: tail, lit: paint('#c83832', true), braking: paint('#ff7763', true) },
     )
-    for (const z of wheelAxles) {
+    for (const [index, z] of axles.entries()) {
       const axle = new TransformNode('Wheel steering', scene)
       axle.parent = truck
-      axle.position.set(side * wheelTrack, wheelRadius, z)
+      axle.position.set(side * halfTrack, radius, z)
       const spin = new TransformNode('Wheel spin', scene)
       spin.parent = axle
-      cylinder(0, 0, 0, 0.96, 0.96, 0.46, 14, '#253834', spin).rotation.z = Math.PI / 2
+      cylinder(0, 0, 0, radius * 2, radius * 2, 0.46, 14, '#253834', spin).rotation.z = Math.PI / 2
       cylinder(side * 0.24, 0, 0, 0.42, 0.42, 0.04, 10, '#9aab9d', spin).rotation.z = Math.PI / 2
-      wheels.push({ axle, spin, steering: z > 0 })
+      wheels.push({ axle, spin, steering: index === 1 })
     }
   }
   box(0, truckBed.top - 0.155, truckBed.center, truckBed.width, 0.19, truckBed.length, '#a97e54', truck).name = 'Deck'
@@ -98,6 +99,6 @@ export function poseFlatbed(truck: ReturnType<typeof createFlatbed>, rotation: n
   for (const [index, wheel] of truck.wheels.entries()) {
     wheel.spin.rotation.x = rotation
     wheel.axle.rotation.y = wheel.steering ? steering : 0
-    wheel.axle.position.y += ((suspension?.[index] ?? wheelRadius) - wheel.axle.position.y) * blend
+    wheel.axle.position.y += ((suspension?.[index] ?? flatbedGroundDrive.wheels.radius) - wheel.axle.position.y) * blend
   }
 }

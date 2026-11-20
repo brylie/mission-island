@@ -13,7 +13,8 @@ import { castPeakSeconds, chargePower, throwSeconds } from '../src/charged-actio
 import { cleanCrewName, readAppearance } from '../src/crew-appearance.ts'
 import { northernProps } from '../src/scenery.ts'
 import { boundaryBuoys, buoyBoundaryPoint, coastPoint, groundHeight, offshoreLimitMetres, withinSkiffBoundary } from '../src/terrain.ts'
-import { parkedTruckPose, truckPoint } from '../src/truck-pose.ts'
+import { parkedGroundPose, truckPoint } from '../src/truck-pose.ts'
+import { flatbedGroundDrive } from '../src/vehicles/flatbed.ts'
 import { daylight, daySeconds, isNight, nextDawn, nightLighting, weatherAt } from '../src/weather.ts'
 import { crateSize, jumpSpeed, localPoint, offset, skiffStart, truckBed, truckRoof, truckStart } from '../src/world.ts'
 
@@ -108,7 +109,7 @@ test('the truck collides with buildings and stops at deep water', () => {
 
 test('the truck rear lip is jumpable and its side rail blocks an attempted entry', () => {
   const dt = 1 / 30
-  const pose = parkedTruckPose(truckStart)
+  const pose = parkedGroundPose(truckStart, flatbedGroundDrive.wheels, groundHeight)
   function jump(lateral, forward, direction) {
     const motion = {
       player: { ...offset(truckStart, lateral, forward), y: 0, heading: 0, grounded: false, onBed: false },
@@ -124,7 +125,7 @@ test('the truck rear lip is jumpable and its side rail blocks an attempted entry
 
 test('a second jump reaches the truck roof and stays on it as the truck moves', () => {
   const dt = 1 / 30
-  const pose = parkedTruckPose(truckStart)
+  const pose = parkedGroundPose(truckStart, flatbedGroundDrive.wheels, groundHeight)
   const motion = {
     player: { ...offset(truckStart, 0, -0.55), y: truckBed.top, heading: truckStart.heading,
       grounded: false, onBed: false, swimming: false },
@@ -146,7 +147,7 @@ test('a second jump reaches the truck roof and stays on it as the truck moves', 
 
 test('a crate blocks a walking player and supports a player landing from a jump', () => {
   const dt = 1 / 30
-  const pose = parkedTruckPose(truckStart)
+  const pose = parkedGroundPose(truckStart, flatbedGroundDrive.wheels, groundHeight)
   const top = (point, margin) => Math.abs(point.x - 20.9) < crateSize / 2 + margin &&
     Math.abs(point.z + 18) < crateSize / 2 + margin ? crateSize : -Infinity
   const motion = { player: { x: 19.5, z: -18, y: 0, heading: 0, grounded: true, onBed: false, swimming: false }, verticalSpeed: 0 }
@@ -162,8 +163,8 @@ test('a crate blocks a walking player and supports a player landing from a jump'
 })
 
 test('a second draft truck blocks walking and supports landing on its bed', () => {
-  const first = parkedTruckPose(truckStart)
-  const second = parkedTruckPose({ ...truckStart, x: 21, z: -18 })
+  const first = parkedGroundPose(truckStart, flatbedGroundDrive.wheels, groundHeight)
+  const second = parkedGroundPose({ ...truckStart, x: 21, z: -18 }, flatbedGroundDrive.wheels, groundHeight)
   const motion = {
     player: { ...offset(second, 0, -3.26), y: groundHeight(second), heading: 0, grounded: true, onBed: false, swimming: false },
     verticalSpeed: 0,

@@ -34,7 +34,7 @@ A trait is a capability or characteristic described by a small, typed piece of d
 
 ### Flatbed and future fire truck
 
-The [flatbed model](../src/assets/flatbed.ts) and [truck physics](../src/simulation/truck.ts) already use the same [wheel dimensions](../src/truck-pose.ts). When adding a second drivable ground vehicle, move the shared wheel layout and drivetrain tuning into a typed ground-drive definition. Use the flatbed's current values as the first definition and pass it to the driving system to preserve existing handling.
+The [flatbed's ground-drive definition](../src/vehicles/flatbed.ts) holds its wheel layout, suspension, throttle, steering, and brake tuning. The [driving system](../src/simulation/ground-drive.ts) uses that definition with a chassis body and a terrain height query. The [flatbed model](../src/assets/flatbed.ts) uses the same wheel dimensions to build and animate its wheels. The current system steers the front axle and drives the rear axle.
 
 | Vehicle | Shared traits | Equipment |
 | --- | --- | --- |
