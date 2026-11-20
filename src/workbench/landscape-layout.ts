@@ -1,34 +1,22 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { stepPlayerOnTerrain } from '../../server/movement'
+import { writeStorage } from '../browser-storage'
 import { createCrew, createFlatbed, createSupply, poseCrew, poseSwimming, swimmingHeight } from '../island-assets'
 import type { MeshFactory } from '../island-meshes'
 import { walkingHeight } from '../terrain'
 import { crateSize, distance, jumpSpeed, truckStart } from '../world'
 import { parkedTruckPose } from '../truck-pose'
 import type { Point } from '../world'
+import { draftLabels as labels, draftStorageKey } from './landscape-draft'
+import type { createLandscapeDraft } from './landscape-draft'
 
-const store = 'mission-island-landscape-layout'
-const labels = { player: 'Test player', crate: 'Crate', rock: 'Rock', tree: 'Tree', truck: 'Flatbed' } as const
-type Kind = keyof typeof labels
-type Placement = Point & { kind: Kind }
+type Draft = ReturnType<typeof createLandscapeDraft>
+type DraftChange = ReturnType<Draft['undo']>
 type Motor = Parameters<typeof stepPlayerOnTerrain>[0]
 
-function loadLayout(): Placement[] {
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(store) ?? '[]')
-    if (!Array.isArray(parsed)) return []
-    return parsed.slice(0, 60).filter((item: unknown): item is Placement => {
-      if (typeof item !== 'object' || item === null) return false
-      const point = item as Partial<Placement>
-      return typeof point.kind === 'string' && Object.hasOwn(labels, point.kind) &&
-        typeof point.x === 'number' && Number.isFinite(point.x) && typeof point.z === 'number' && Number.isFinite(point.z)
-    })
-  } catch {
-    return []
-  }
-}
+export type DraftMapObject = Point & { id: number; name: string }
 
-function nodeFor(meshes: MeshFactory, placement: Placement) {
+function nodeFor(meshes: MeshFactory, placement: Draft['objects'][number]) {
   const crew = placement.kind === 'player' ? createCrew(meshes, 0) : undefined
   const root = crew?.root ?? new TransformNode(labels[placement.kind], meshes.scene)
   const y = walkingHeight(placement)
@@ -53,65 +41,112 @@ function nodeFor(meshes: MeshFactory, placement: Placement) {
   return { placement, root, motor, crew, truckPose, stride: 0 }
 }
 
-export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasElement, focus: () => Point & { yaw: number }) {
+export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasElement, draft: Draft,
+  focus: () => Point & { yaw: number }) {
   const panel = document.getElementById('landscape-layout')!
   const kind = document.querySelector<HTMLSelectElement>('#landscape-kind')!
   const selected = document.querySelector<HTMLSelectElement>('#landscape-selected')!
   const status = document.getElementById('landscape-status')!
   const move = document.querySelector<HTMLButtonElement>('#landscape-move')!
   const remove = document.querySelector<HTMLButtonElement>('#landscape-remove')!
+  const map = document.getElementById('landscape-map')!
+  const mapStatus = document.getElementById('landscape-map-status')!
+  const undoButtons = document.querySelectorAll<HTMLButtonElement>('[data-layout-history="undo"]')
+  const redoButtons = document.querySelectorAll<HTMLButtonElement>('[data-layout-history="redo"]')
   const abort = new AbortController()
   const events = { signal: abort.signal }
-  const objects = loadLayout().map((item) => nodeFor(meshes, item))
+  const objects = draft.objects.map((item) => nodeFor(meshes, item))
   const keys = new Set<string>()
   const movementKeys = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft', 'ShiftRight', 'Space'])
   let carriedTime = 0
   panel.hidden = false
 
-  function refresh(index = objects.length - 1) {
+  function refreshSelection(index = objects.length - 1) {
     selected.replaceChildren(...objects.map(({ placement }, i) =>
       new Option(`${i + 1}. ${labels[placement.kind]}`, String(i))))
     selected.selectedIndex = index
     move.disabled = remove.disabled = index < 0
   }
 
-  function drop(placement: Placement, index: number) {
-    if (objects[index]) objects[index].root.dispose()
-    objects[index] = nodeFor(meshes, placement)
-    refresh(index)
+  function refreshHistory() {
+    for (const button of undoButtons) button.disabled = !draft.canUndo
+    for (const button of redoButtons) button.disabled = !draft.canRedo
   }
 
-  document.getElementById('landscape-add')?.addEventListener('click', () => {
-    if (objects.length >= 60 || !Object.hasOwn(labels, kind.value)) return
-    const { x, z } = focus()
-    drop({ kind: kind.value as Kind, x, z }, objects.length)
-    status.textContent = 'Object placed.'
-  }, events)
+  function positionObject(object: typeof objects[number]) {
+    const { x, z } = object.placement
+    if (object.truckPose) {
+      object.truckPose = parkedTruckPose({ x, z, heading: object.truckPose.heading })
+      const { y, heading, pitch, roll } = object.truckPose
+      object.root.position.set(x, y, z)
+      object.root.rotation.set(pitch, heading, roll)
+    } else {
+      const y = walkingHeight({ x, z })
+      object.root.position.set(x, y, z)
+      if (object.crew) {
+        Object.assign(object.motor.player, { x, y, z, grounded: true, onBed: false, swimming: false, truckSurface: undefined })
+        object.motor.verticalSpeed = 0
+        object.root.rotation.set(0, object.motor.player.heading, 0)
+      }
+    }
+  }
+
+  function showChange(change: DraftChange, message: string, feedback = status) {
+    if (!change) return false
+    const { index, action, object } = change
+    if (action === 'insert') {
+      objects.splice(index, 0, nodeFor(meshes, object))
+      refreshSelection(index)
+    } else if (action === 'remove') {
+      const previous = selected.selectedIndex
+      const [removed] = objects.splice(index, 1)
+      removed.root.dispose()
+      refreshSelection(previous > index ? previous - 1 : Math.min(previous, objects.length - 1))
+    } else {
+      positionObject(objects[index])
+      selected.selectedIndex = index
+    }
+    refreshHistory()
+    feedback.textContent = message
+    return true
+  }
+
+  function stepHistory(direction: 'undo' | 'redo') {
+    const change = draft[direction]()
+    if (!change) return
+    const actions = { place: 'placement', move: 'move', remove: 'removal' }
+    const message = `${direction === 'undo' ? 'Undid' : 'Redid'} ${actions[change.type]} of ${labels[change.object.kind]}.`
+    if (!map.hidden) status.textContent = ''
+    showChange(change, message, map.hidden ? status : mapStatus)
+  }
+
+  const objectIndex = (id: number) => objects.findIndex(({ placement }) => placement.id === id)
+  const placeAt = (point: Point) => showChange(draft.place(kind.value, point), 'Object placed.')
+  document.getElementById('landscape-add')?.addEventListener('click', () => { placeAt(focus()) }, events)
   move.addEventListener('click', () => {
-    const index = selected.selectedIndex
-    const object = objects[index]
-    if (!object) return
-    const { x, z } = focus()
-    drop({ kind: object.placement.kind, x, z }, index)
-    status.textContent = 'Object moved.'
+    showChange(draft.move(selected.selectedIndex, focus()), 'Object moved.')
   }, events)
   remove.addEventListener('click', () => {
-    const [object] = objects.splice(selected.selectedIndex, 1)
-    object?.root.dispose()
-    refresh()
-    status.textContent = 'Object removed from the draft.'
+    showChange(draft.remove(selected.selectedIndex), 'Object removed from the draft.')
   }, events)
-  const layout = () => objects.map(({ placement }) => placement)
+  for (const button of undoButtons) button.addEventListener('click', () => stepHistory('undo'), events)
+  for (const button of redoButtons) button.addEventListener('click', () => stepHistory('redo'), events)
+  window.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented || event.isComposing || event.altKey || (!event.metaKey && !event.ctrlKey)) return
+    const target = event.target
+    if (target instanceof HTMLElement && (target.isContentEditable ||
+      target.matches('textarea, input:not([type="range"], [type="checkbox"], [type="radio"])'))) return
+    const key = event.key.toLowerCase()
+    if (key !== 'z' && !(key === 'y' && event.ctrlKey && !event.metaKey && !event.shiftKey)) return
+    event.preventDefault()
+    if (!event.repeat) stepHistory(key === 'y' || event.shiftKey ? 'redo' : 'undo')
+  }, events)
   document.getElementById('landscape-save')?.addEventListener('click', () => {
-    try {
-      localStorage.setItem(store, JSON.stringify(layout()))
-      status.textContent = 'Draft saved in this browser.'
-    } catch {
-      status.textContent = 'Browser storage is unavailable. Export the draft as JSON.'
-    }
+    status.textContent = writeStorage('localStorage', draftStorageKey, JSON.stringify(draft.placements()))
+      ? 'Draft saved in this browser.' : 'Browser storage is unavailable. Export the draft as JSON.'
   }, events)
   document.getElementById('landscape-export')?.addEventListener('click', () => {
-    const url = URL.createObjectURL(new Blob([JSON.stringify(layout(), null, 2) + '\n'], { type: 'application/json' }))
+    const url = URL.createObjectURL(new Blob([JSON.stringify(draft.placements(), null, 2) + '\n'], { type: 'application/json' }))
     const link = document.createElement('a')
     link.href = url
     link.download = 'mission-island-layout.json'
@@ -134,7 +169,8 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
   }, { ...events, capture: true })
   window.addEventListener('keyup', (event) => keys.delete(event.code), events)
   canvas.addEventListener('blur', () => keys.clear(), events)
-  refresh()
+  refreshSelection()
+  refreshHistory()
   status.textContent = ''
 
   function draftedSurface(point: Point, margin: number) {
@@ -150,6 +186,15 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
   }
 
   return {
+    placeAt,
+    moveAt: (id: number, point: Point) => showChange(draft.move(objectIndex(id), point), 'Object moved.'),
+    select(id: number) {
+      const index = objectIndex(id)
+      if (index >= 0) selected.selectedIndex = index
+    },
+    mapObjects: (): DraftMapObject[] => draft.objects.map(({ id, kind, x, z }, index) => ({
+      id, name: `${labels[kind]} ${index + 1}`, x, z,
+    })),
     meshes: () => objects.flatMap(({ root }) => root.getChildMeshes()),
     update(delta: number, time: number) {
       const current = objects[selected.selectedIndex]

@@ -29,12 +29,58 @@
             <h2 id="asset-title"></h2>
             <p id="asset-description"></p>
           </div>
+          <button type="button" id="landscape-map-toggle" aria-controls="landscape-map" aria-expanded="false" hidden>Island map</button>
         </header>
 
         <div class="viewport" id="viewport">
           <canvas id="stage" tabindex="0" aria-label="3D asset preview. Drag to orbit, scroll to zoom, or right-drag to pan."></canvas>
+          <div id="landscape-comparison" hidden>
+            <div class="reference-layer"><img id="landscape-reference-image" alt="Captured landscape reference" /></div>
+            <div class="reference-divider" aria-hidden="true"></div>
+            <div class="reference-labels" aria-hidden="true"><span>Reference</span><span>Live</span></div>
+            <input id="landscape-reference-split" type="range" min="0" max="100" value="50" aria-label="Reference split" />
+          </div>
           <div class="viewport-note" aria-hidden="true"><span>DRAG</span> Orbit <span>SCROLL</span> Zoom <span>RIGHT-DRAG</span> Pan</div>
           <aside id="biome-field" aria-label="Field observations" hidden><strong>Field observations</strong><p id="biome-observations"></p></aside>
+          <aside id="landscape-map" aria-labelledby="landscape-map-title" hidden>
+            <div class="map-heading">
+              <h2 id="landscape-map-title">Island map</h2>
+              <div class="map-zoom" role="group" aria-label="Map zoom">
+                <button type="button" id="landscape-map-zoom-out" aria-label="Zoom out">−</button>
+                <span id="landscape-map-zoom">1×</span>
+                <button type="button" id="landscape-map-zoom-in" aria-label="Zoom in">+</button>
+                <button type="button" id="landscape-map-reset" aria-label="Reset map view">Reset</button>
+              </div>
+              <button type="button" id="landscape-map-close" aria-label="Close island map">×</button>
+            </div>
+            <div class="map-tools">
+              <fieldset class="map-modes">
+                <legend class="sr-only">Map action</legend>
+                <label><input type="radio" name="map-mode" id="landscape-map-jump" checked /> Jump</label>
+                <label><input type="radio" name="map-mode" id="landscape-map-place" /> Place scenery</label>
+              </fieldset>
+              <div class="layout-actions" role="group" aria-label="Draft history">
+                <button type="button" data-layout-history="undo" aria-keyshortcuts="Control+Z Meta+Z" title="Undo draft edit (Ctrl or ⌘ + Z)" disabled>Undo</button>
+                <button type="button" data-layout-history="redo" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y" title="Redo draft edit (Ctrl or ⌘ + Shift + Z)" disabled>Redo</button>
+              </div>
+            </div>
+            <label class="row" id="landscape-map-placement-row" hidden><span id="landscape-map-kind-label">Draft object</span><select id="landscape-map-kind" aria-labelledby="landscape-map-kind-label"></select></label>
+            <div class="map-surface" id="landscape-map-surface">
+              <canvas id="landscape-map-canvas" tabindex="0" aria-label="Top-down island terrain" aria-describedby="landscape-map-help landscape-map-keyboard"></canvas>
+              <div id="landscape-map-landmarks" class="map-pins" role="group" aria-label="Landmarks"></div>
+              <canvas id="landscape-map-overlay" aria-hidden="true"></canvas>
+              <div id="landscape-map-shot-pins" class="map-pins" role="group" aria-label="Saved shot pins"></div>
+              <div id="landscape-map-draft-pins" class="map-pins" role="group" aria-label="Draft objects"></div>
+            </div>
+            <div class="map-key" aria-hidden="true">
+              <span class="map-key--focus">Focus</span><span class="map-key--shot">Saved shot</span><span class="map-key--draft">Draft object</span>
+            </div>
+            <label class="row" id="landscape-map-shot-row" hidden><span id="landscape-map-shot-label">Saved shots</span><select id="landscape-map-shots" aria-labelledby="landscape-map-shot-label"></select></label>
+            <p id="landscape-map-help">Scroll to zoom. Drag the map to pan or a draft marker to move it.</p>
+            <p id="landscape-map-keyboard" class="sr-only">Use arrow keys to move the cursor, Enter to choose a spot, and plus or minus to zoom.</p>
+            <p id="landscape-map-draft-help" class="sr-only">Use arrow keys to nudge the object. Hold Shift for a one-metre step.</p>
+            <p id="landscape-map-status" role="status"></p>
+          </aside>
           <div class="stage-error" id="stage-error" role="alert" hidden></div>
         </div>
 
@@ -60,8 +106,11 @@
             <button type="button" data-angle="perspective">3D</button><button type="button" data-angle="front">Front</button>
             <button type="button" data-angle="side">Side</button><button type="button" data-angle="top">Top</button>
           </div>
-          <label class="row"><span>Lighting</span><select id="lighting">
+          <label class="row" id="lighting-row"><span>Lighting</span><select id="lighting">
             <option value="daylight">Daylight</option><option value="overcast">Overcast</option><option value="golden">Golden hour</option>
+          </select></label>
+          <label class="row" id="landscape-view-row" hidden><span>Scenic view</span><select id="landscape-view">
+            <option value="">Jump to…</option>
           </select></label>
           <div class="display-options">
             <label><input id="grid" type="checkbox" checked /> Grid</label>
@@ -85,6 +134,33 @@
           <div class="section-heading"><h2 id="settings-heading">Asset settings</h2><button type="button" id="reset" class="reset">Reset</button></div>
           <div id="asset-controls"></div>
         </section>
+        <section id="landscape-studies" hidden>
+          <details id="landscape-study-details">
+            <summary>Landscape studies</summary>
+            <form id="landscape-shot-form">
+              <label for="landscape-shot-name">Shot name</label>
+              <div class="study-name">
+                <input id="landscape-shot-name" type="text" maxlength="60" required />
+                <button type="submit" id="landscape-shot-save">Save shot</button>
+              </div>
+            </form>
+            <div id="landscape-saved-shots" hidden>
+              <label class="row"><span>Saved shot</span><select id="landscape-shots"></select></label>
+              <div class="study-actions">
+                <button type="button" id="landscape-shot-open">Open</button>
+                <button type="button" id="landscape-shot-link">Copy link</button>
+                <button type="button" id="landscape-shot-remove">Remove</button>
+              </div>
+              <input type="url" id="landscape-shot-url" aria-label="Shot link" readonly hidden />
+            </div>
+            <div class="study-actions study-reference">
+              <button type="button" id="landscape-capture-reference">Capture reference</button>
+              <button type="button" id="landscape-compare-reference" aria-pressed="false" disabled>Compare</button>
+            </div>
+            <p id="landscape-study-status" role="status"></p>
+            <button type="button" id="landscape-shot-undo" hidden>Undo remove</button>
+          </details>
+        </section>
         <section id="landscape-layout" hidden>
           <h2>Layout draft</h2>
           <label class="row"><span>Object</span><select id="landscape-kind">
@@ -96,6 +172,8 @@
           <div class="layout-actions">
             <button type="button" id="landscape-move">Move to focus</button>
             <button type="button" id="landscape-remove">Remove</button>
+            <button type="button" data-layout-history="undo" aria-keyshortcuts="Control+Z Meta+Z" title="Undo draft edit (Ctrl or ⌘ + Z)" disabled>Undo</button>
+            <button type="button" data-layout-history="redo" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y" title="Redo draft edit (Ctrl or ⌘ + Shift + Z)" disabled>Redo</button>
             <button type="button" id="landscape-save">Save layout</button>
             <button type="button" id="landscape-export">Export JSON</button>
           </div>

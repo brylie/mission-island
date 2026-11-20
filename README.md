@@ -95,9 +95,21 @@ Run `npm run dev` and open [the Asset Workbench](http://localhost:5173/workbench
 
 Shared model factories live in `src/island-assets.ts`. Add or extend a preview in `src/workbench/catalog.ts`. The shader drafts live in `src/workbench/surface.frag.glsl` and `src/workbench/surface.vert.glsl`. The workbench is available from the development server.
 
-The [Landscape Workbench](http://localhost:5173/workbench.html#landscape) loads the real island scenery. Enter **Focus X (m)** and **Focus Z (m)** to move the orbit target. Drag to orbit, scroll to zoom, and right-drag to pan. Set the hour and rain to inspect the site in different conditions. The geometry scan covers a 30 m radius along each horizontal axis around the camera target.
+The [Landscape Workbench](http://localhost:5173/workbench.html#landscape) loads the real island scenery. **Scenic view** frames Pinewoods at sunrise, the harbor at sunset, or Fernfall and pauses the timeline for repeatable comparisons. Open [Pinewoods sunrise](http://localhost:5173/workbench.html?view=pinewoods-sunrise#landscape) directly, then toggle **Volumetric sunlight** or adjust **Sun shaft intensity** to compare the lighting in place. The game uses the 100% setting.
+
+Use **Focus X (m)**, **Focus Z (m)**, and **Focus above ground (m)** to position the orbit target. Drag to orbit, scroll to zoom, and right-drag to pan. Set the hour and rain to inspect the site in different conditions. The geometry scan covers a 30 m radius along each horizontal axis around the camera target.
+
+Open **Island map** to jump to terrain or a labeled landmark. Gold pins mark saved camera positions and reopen their shots. The **Saved shots** menu also reaches overlapping pins and cameras outside the map. Choose **Place scenery** and an object, then click the map to add it to **Layout draft** and frame it in 3D. The map shows the current focus and draft objects as you work. With the map focused, use the arrow keys to move the cursor and Enter to act.
+
+Scroll over the map or use **+** and **−** to zoom. Drag the map to pan, and use **Reset** to return to the whole island. Drag a teal draft marker to move its object while keeping the 3D camera in place. With a marker focused, the arrow keys nudge it by 10 cm, or by 1 m with Shift. Use **Save layout** to keep the new positions.
+
+Open **Landscape studies** to name and save a shot with its camera, weather, display settings, and animation frame. **Open** restores the shot and pauses the timeline. **Copy link** shares the saved settings with another Workbench session.
+
+Choose **Capture reference**, then change the lighting, test a draft placement, or edit the scene code. Drag the comparison slider to reveal more of the reference or live render. The reference survives reloads in the same tab. Turning **Compare** back on restores its camera and animation frame while keeping your live lighting settings.
 
 Use **Layout draft** to place a test player, truck, crate, rock, or tree at the camera focus. Select a test player and focus the canvas to walk or jump using the game's terrain and collision rules. Move or remove selected objects, save the layout in the browser, or export the coordinates as JSON.
+
+Use **Undo** and **Redo** in Layout draft or on the Island map to step through placements, moves, and removals. **Ctrl/Cmd+Z** undoes an edit, and **Ctrl/Cmd+Shift+Z** or **Ctrl+Y** redoes it. History lasts until you reload the Workbench. **Save layout** stores the current arrangement.
 
 The [Biome Composer](http://localhost:5173/workbench.html#biome) stages a 16 m habitat using island assets. Choose a starting habitat and press **Apply**, then use the codex to set the number of each plant, animal and shelter. **Copy recipe link** reopens the composition from the beginning on any browser that can reach the server. Use the LAN address when sharing between computers. Use **Export JSON** to keep a versioned recipe in source control and **Open JSON** to edit it again.
 

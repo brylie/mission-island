@@ -39,7 +39,7 @@ function start() {
   scene.fogColor.set(.65, .79, .79)
   scene.fogMode = Scene.FOGMODE_LINEAR
   const lighting = createIslandLighting(scene)
-  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, 3350)
+  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, lighting.shadows, 3350)
   lighting.sunlight.shadowMaxZ = 1400
   lighting.sunlight.shadowOrthoScale = .04
   lighting.shadows.getShadowMap()?.resetRefreshCounter()
@@ -395,7 +395,7 @@ function start() {
     updateCamera(dt)
     const camera = scene.activeCamera ?? follow
     const weather = surveyWeather[climate.value] ?? weatherAt(sceneTime + 100)
-    const light = atmosphere.update(sceneTime, weather, camera.position, !broad, 7)
+    const light = atmosphere.update(sceneTime, weather, camera.position, !broad, { fogScale: 7 })
     const threats = point.y < waterHeight(point.x, point.z) - .04 ? [point] : []
     updateScenery({ time: sceneTime, delta: simulationDelta, weather, camera: camera.position, threats }, broad)
     updateWater(sceneTime, light)

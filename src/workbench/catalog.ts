@@ -126,8 +126,11 @@ export const entries: Entry[] = [
     controls: [
       { type: 'number', key: 'x', label: 'Focus X (m)', value: falls.x, min: -500, max: 500, step: 0.1 },
       { type: 'number', key: 'z', label: 'Focus Z (m)', value: falls.z, min: -500, max: 500, step: 0.1 },
+      { type: 'number', key: 'focusHeight', label: 'Focus above ground (m)', value: 0.25, min: -5, max: 80, step: 0.05 },
       range('hour', 'Island hour', 16.5, 0, 24, 0.1),
       range('rain', 'Rain intensity', 0, 0, 1, 0.01),
+      { type: 'checkbox', key: 'sunShafts', label: 'Volumetric sunlight', value: true },
+      range('shaftIntensity', 'Sun shaft intensity (%)', 100, 0, 150, 5),
     ],
     create(meshes) {
       const world = createIslandWorld(meshes)

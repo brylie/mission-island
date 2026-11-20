@@ -9,6 +9,12 @@ import { entries as initialEntries } from './catalog'
 import type { Control, Values } from './catalog'
 import { createStage } from './stage'
 import type { Angle, CameraState } from './stage'
+import { landscapeViews } from './landscape-views'
+import { createLandscapeDraft, draftStorageKey } from './landscape-draft'
+import { createLandscapeMap } from './landscape-map'
+import { createLandscapeStudies } from './landscape-studies'
+import { parseLandscapeShot } from './landscape-shot'
+import type { LandscapeShot } from './landscape-shot'
 import { lightingPresets } from './lighting'
 import type { LightingPreset } from './lighting'
 
@@ -27,6 +33,7 @@ const slider = element<HTMLInputElement>('time')
 const timecode = element<HTMLOutputElement>('timecode')
 const rateSelect = element<HTMLSelectElement>('rate')
 const lightSelect = element<HTMLSelectElement>('lighting')
+const scenicView = element<HTMLSelectElement>('landscape-view')
 const grid = element<HTMLInputElement>('grid')
 const wireframe = element<HTMLInputElement>('wireframe')
 const turntable = element<HTMLInputElement>('turntable')
@@ -70,9 +77,10 @@ if (shared) {
   saved.options = { ...saved.options, landscape: { x: shared.focus[0], z: shared.focus[1], hour: shared.hour, rain: shared.rain, clockStart: timeline.start } }
   Object.assign(saved, { time: timeline.time, playing: false, grid: shared.grid, wireframe: shared.wireframe, turntable: false })
 }
+const draft = createLandscapeDraft(readStorage('localStorage', draftStorageKey))
 let entries = initialEntries
 let createPreviewStage = createStage
-const requested = () => location.hash.slice(1)
+const requested = () => location.hash.slice(1).split('?')[0]
 let asset = entries.find(({ id }) => id === (requested() || saved.id)) ?? entries[0]
 const optionsByAsset = saved.options ?? {}
 let values: Values = {}
@@ -87,6 +95,7 @@ lightSelect.value = saved.lighting && saved.lighting in lightingPresets ? saved.
 grid.checked = saved.grid ?? true
 wireframe.checked = saved.wireframe ?? false
 turntable.checked = saved.turntable ?? false
+scenicView.append(...Object.entries(landscapeViews).map(([id, view]) => new Option(view.label, id)))
 
 function reportError(text: string) {
   status.textContent = text
@@ -194,6 +203,10 @@ function renderAssetControls() {
       const input = document.createElement('input')
       input.type = control.type
       input.setAttribute('aria-labelledby', name.id)
+      if ((control.key === 'sunShafts' || control.key === 'shaftIntensity') && !stage?.supportsSunShafts) {
+        input.disabled = true
+        row.title = 'Volumetric sunlight requires WebGL 2 with shadow map filtering.'
+      }
       if (control.type === 'checkbox') {
         row.className = 'checkbox-row'
         input.checked = Boolean(values[control.key])
@@ -278,14 +291,18 @@ function applyDisplay() {
 }
 
 function rebuild(camera?: CameraState) {
-  if (!engine) return
+  if (!engine) {
+    studies.setScene(Boolean(asset.landscape), false)
+    landscapeMap.setScene(Boolean(asset.landscape), false)
+    return
+  }
   stage?.dispose()
   stage = undefined
   zFightingResult.replaceChildren()
   checkZFighting.disabled = true
   reportError('')
   try {
-    stage = createPreviewStage(engine, canvas, asset, values, reportError)
+    stage = createPreviewStage(engine, canvas, asset, values, reportError, draft)
     checkZFighting.disabled = false
     if (camera) stage.setCamera(camera)
     applyDisplay()
@@ -295,6 +312,8 @@ function rebuild(camera?: CameraState) {
     element('geometry').textContent = ''
   }
   seek = true
+  studies.setScene(Boolean(asset.landscape), Boolean(stage))
+  landscapeMap.setScene(Boolean(asset.landscape), Boolean(stage))
 }
 
 function loadAsset(camera?: CameraState) {
@@ -317,14 +336,15 @@ function loadAsset(camera?: CameraState) {
   element('playtest-url').hidden = true
   element('playtest-tools').hidden = !asset.landscape && !biome
   lightSelect.disabled = Boolean(asset.landscape) || biome
-  lightSelect.closest('label')!.hidden = biome
+  element('lighting-row').hidden = Boolean(asset.landscape) || biome
+  element('landscape-view-row').hidden = !asset.landscape
   playback.hidden = !asset.duration
   slider.max = String(asset.duration ?? 0)
   time = Math.min(time, asset.duration ?? 0)
   selectLibraryAsset()
-  renderAssetControls()
   renderPlayback()
   rebuild(camera)
+  renderAssetControls()
 }
 
 function seekTo(value: number) {
@@ -334,13 +354,104 @@ function seekTo(value: number) {
   renderPlayback()
 }
 
+function restoreStudy(shot: LandscapeShot, framingOnly = false) {
+  const options = framingOnly
+    ? { ...values, x: shot.options.x, z: shot.options.z, focusHeight: shot.options.focusHeight }
+    : shot.options
+  Object.assign(values, restoreOptions(asset.controls, options))
+  if (!framingOnly) {
+    grid.checked = shot.grid
+    wireframe.checked = shot.wireframe
+  }
+  playing = turntable.checked = false
+  const clock = Number(shot.options.clockStart ?? 0) + shot.time
+  const timeline = landscapeWindow(clock)
+  values.clockStart = timeline.start
+  seekTo(timeline.time)
+  stage?.setCamera(shot.camera, values)
+  renderAssetControls()
+  applyDisplay()
+  remember()
+}
+
+const studies = createLandscapeStudies(canvas, {
+  frame: () => asset.landscape && stage
+    ? { camera: stage.getCamera(), time, options: { ...values }, grid: grid.checked, wireframe: wireframe.checked }
+    : undefined,
+  restore: restoreStudy,
+  pause() {
+    playing = turntable.checked = false
+    const camera = stage?.getCamera()
+    if (camera) stage?.setCamera(camera, values)
+    renderPlayback()
+    remember()
+  },
+})
+
+const landscapeMap = createLandscapeMap({
+  focus: () => stage?.mapFocus(),
+  placements: () => stage?.draftMapObjects() ?? [],
+  move: (id, point) => stage?.moveDraftAt(id, point) ?? false,
+  select: (id) => stage?.selectDraft(id),
+  shots: studies.shots,
+  openShot: studies.openShot,
+  place: (point) => stage?.placeDraftAt(point) ?? false,
+  jump(point) {
+    Object.assign(values, point, { focusHeight: 0.25 })
+    studies.hideComparison()
+    stage?.setView('perspective', values)
+    zFightingResult.replaceChildren()
+    renderAssetControls()
+    remember()
+  },
+})
+
+function openLinkedStudy() {
+  if (!asset.landscape) return false
+  const url = new URL(location.href)
+  const serialized = new URLSearchParams(url.hash.split('?')[1]).get('shot')
+  if (serialized === null) return false
+  const shot = parseLandscapeShot(serialized)
+  if (shot) restoreStudy(shot)
+  studies.showStatus(shot ? `Opened ${shot.name} from a shot link.` : 'This shot link could not be opened.')
+  // Apply explicit links once. Reloads during editing restore the working view.
+  url.searchParams.delete('view')
+  url.hash = 'landscape'
+  history.replaceState(history.state, '', url)
+  return true
+}
+
+function openLandscapeView(id: string) {
+  if (!asset.landscape || !Object.hasOwn(landscapeViews, id)) return
+  const view = landscapeViews[id]
+  Object.assign(values, {
+    x: view.focus.x, z: view.focus.z, focusHeight: view.focus.height,
+    hour: view.hour, rain: 0, clockStart: 0, sunShafts: true, shaftIntensity: 100,
+  })
+  stage?.setLandscapeView(view)
+  grid.checked = wireframe.checked = turntable.checked = false
+  playing = false
+  seekTo(view.time)
+  renderAssetControls()
+  applyDisplay()
+  remember()
+}
+
+scenicView.addEventListener('change', () => {
+  openLandscapeView(scenicView.value)
+  scenicView.value = ''
+})
+
 window.addEventListener('hashchange', () => {
   const next = entries.find(({ id }) => id === requested())
-  if (!next || next === asset) return
-  asset = next
-  time = 0
-  playing = true
-  loadAsset()
+  if (!next) return
+  if (next !== asset) {
+    asset = next
+    time = 0
+    playing = true
+    loadAsset()
+  }
+  openLinkedStudy()
   remember()
 })
 window.addEventListener('pagehide', remember)
@@ -406,8 +517,8 @@ element('reset').addEventListener('click', () => {
   values = restoreOptions(asset.controls)
   if (asset.landscape && typeof clockStart === 'number') values.clockStart = clockStart
   optionsByAsset[asset.id] = values
+  rebuild(asset.landscape ? undefined : stage?.getCamera())
   renderAssetControls()
-  rebuild(stage?.getCamera())
   remember()
 })
 
@@ -437,6 +548,13 @@ try {
 }
 renderLibrary()
 loadAsset(saved.id === asset.id ? saved.camera : undefined)
+const initialUrl = new URL(location.href)
+const initialView = initialUrl.searchParams.get('view')
+if (!openLinkedStudy() && asset.landscape && initialView && Object.hasOwn(landscapeViews, initialView)) {
+  openLandscapeView(initialView)
+  initialUrl.searchParams.delete('view')
+  history.replaceState(history.state, '', initialUrl)
+}
 engine?.runRenderLoop(() => {
   if (!engine) return
   if (!stage) {
@@ -455,6 +573,8 @@ engine?.runRenderLoop(() => {
   }
   stage.draw(time, rate, seek, values, turntable.checked, delta)
   seek = false
+  studies.afterDraw()
+  landscapeMap.update()
 })
 
 if (import.meta.hot) {
@@ -475,6 +595,8 @@ if (import.meta.hot) {
   })
   import.meta.hot.dispose(() => {
     remember()
+    studies.dispose()
+    landscapeMap.dispose()
     resize?.disconnect()
     stage?.dispose()
     engine?.dispose()
