@@ -1,5 +1,5 @@
 import type { SiteFeature } from '../site-props.ts'
-import { viaductWalk } from './sites.ts'
+import { picnicLedge, viaductWalk } from './sites.ts'
 
 export const saltwindFeatures: readonly SiteFeature[] = [
   { site: 'ferry', name: 'Ferry passenger waiting shelter', model: 'shelter', color: '#9b6451', x: -264.5, z: -225, heading: Math.PI / 2 },
@@ -16,6 +16,6 @@ export const saltwindFeatures: readonly SiteFeature[] = [
   { site: 'fire', name: 'Fire station hose rack', model: 'hose', color: '#c5634d', x: -69.6, z: 184.3 },
   { site: 'fishing', name: 'Sandspit float rack', model: 'rack', color: '#d99149', x: -249.1, z: -257.5, heading: Math.PI / 2, scale: 1.1 },
   { site: 'rescue', name: 'Rescue slip lifebuoy', model: 'lifebuoy', color: '#c97653', x: -303.3, z: -224, heading: Math.PI / 2 },
-  { site: 'lake', name: 'Mirror Lake picnic bench', model: 'bench', color: '#72a997', x: -104, z: 145, heading: -.48 },
-  { site: viaductWalk.id, name: 'Tarnstep viewing scope', model: 'scope', color: '#b69462', heading: -2.43, x: viaductWalk.x, z: viaductWalk.z },
+  { site: picnicLedge.id, name: 'Mirror Lake slate picnic seat', model: 'picnic', color: '#bf7860', x: picnicLedge.x, z: picnicLedge.z, heading: -.48 },
+  { site: viaductWalk.id, name: 'Tarnstep triangulation benchmark', model: 'benchmark', color: '#729585', heading: .61, x: viaductWalk.x, z: viaductWalk.z },
 ]

@@ -14,7 +14,7 @@ import { createLandscape } from './landscape'
 import { createChart } from './map'
 import { routes, sampleRoute } from './routes'
 import { createScenery } from './scenery'
-import { arrival, islandName, landmarks, sites, villages, waterfront, waterBounds } from './sites'
+import { arrival, discoveryWalks, islandName, landmarks, sites, villages, waterfront, waterBounds } from './sites'
 import type { MapPoint } from './sites'
 import { dryLandKm2, groundHeight, waterHeight } from './terrain'
 import { tour } from './tour'
@@ -173,7 +173,8 @@ function start() {
     resumePreview()
     const site = sites.find(({ id }) => id === landmark.id)
     const walk = villageWalks.find(({ name }) => name === landmark.id)
-    const target = walk?.points.at(-1) ?? site?.access ?? landmark
+    const trail = discoveryWalks.find(route => route.id === landmark.id)
+    const target = trail?.path[0] ?? walk?.points.at(-1) ?? site?.access ?? landmark
     const nearest = routes.flatMap(({ samples }) => samples).reduce((best, p) =>
       Math.hypot(p.x - target.x, p.z - target.z) < Math.hypot(best.x - target.x, best.z - target.z) ? p : best)
     const approach = landmark.id === 'ferry' ? arrival : nearest
@@ -336,7 +337,7 @@ function start() {
     select.value = id
     place.textContent = landmark.name
     stage.textContent = 'Site inspection'
-    direction.textContent = sites.find(site => site.id === id)?.assets ?? 'Walk from the access point to survey the landmark.'
+    direction.textContent = discoveryWalks.find(walk => walk.id === id)?.detail ?? sites.find(site => site.id === id)?.assets ?? 'Walk from the access point to survey the landmark.'
   }
   if (shared) {
     Object.assign(point, shared.point)
@@ -380,7 +381,13 @@ function start() {
     else poseCrew(crew, cycle, walking ? Math.min(.85, walking * .1) : 0, !point.grounded, undefined, 0, frozen ? 1 : Math.min(1, dt * 10))
     for (const pin of landmarks) if (!known.has(pin.id) && Math.hypot(point.x - pin.x, point.z - pin.z) <= pin.radius) {
       known.add(pin.id)
-      if (pin.discoverable) select.add(new Option(pin.name, pin.id))
+      if (pin.discoverable) {
+        if (playing) select.add(new Option(pin.name, pin.id))
+        else {
+          showSite(pin.id)
+          stage.textContent = 'Discovered on foot'
+        }
+      }
     }
     updateCamera(dt)
     const camera = scene.activeCamera ?? follow

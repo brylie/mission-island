@@ -732,7 +732,7 @@ test('crew names and discoveries appear in snapshots and saves', (t) => {
   assert.deepEqual(h.game.snapshotForSave().crew[0].player.discoveries, [region.id])
 })
 
-test('discovering Shellglass Point uses the existing per-crew save path', (t) => {
+test('discovering Shellglass Tide Pool uses the existing per-crew save path', (t) => {
   const start = footpaths.find(({ name }) => name === 'Driftwood shore walk').points[0]
   const h = setup(t, { players: [player(0, start), player(1)] })
   const a = h.join(tokens[0])

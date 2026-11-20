@@ -37,6 +37,38 @@ export function createSoundMaterial(scene: Scene) {
   return material
 }
 
+export function createLakeMaterial(scene: Scene) {
+  return new ShaderMaterial('Sheltered lake ripples', scene, {
+    vertexSource: `
+      precision highp float;
+      attribute vec3 position;
+      attribute vec2 uv;
+      uniform mat4 worldViewProjection;
+      varying vec2 basin;
+      varying vec2 point;
+      void main() {
+        basin = uv;
+        point = position.xz;
+        gl_Position = worldViewProjection * vec4(position, 1.0);
+      }
+    `,
+    fragmentSource: `
+      precision highp float;
+      uniform float time;
+      uniform float light;
+      varying vec2 basin;
+      varying vec2 point;
+      void main() {
+        float edge = smoothstep(0.48, 1.0, length(basin));
+        float breeze = sin(point.y * 2.1 + point.x * .29 + time * 1.1 + sin(point.x * .56 - time * .22));
+        float shimmer = smoothstep(.83, .99, breeze) * (.5 + .5 * sin(point.x * .73 + point.y * .18));
+        vec3 water = mix(vec3(.23, .47, .48), vec3(.42, .64, .57), edge) + shimmer * .05;
+        gl_FragColor = vec4(water * (.22 + .78 * light), .77 - .26 * edge);
+      }
+    `,
+  }, { attributes: ['position', 'uv'], uniforms: ['worldViewProjection', 'time', 'light'], needAlphaBlending: true })
+}
+
 export function createCascadeMaterial(scene: Scene) {
   return new ShaderMaterial('Tarnstep current', scene, {
     vertexSource: `

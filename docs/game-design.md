@@ -8,6 +8,12 @@ Aim for a quaint and comforting island. Give props generous shapes, warm colors,
 
 Ground the game in simple physical behavior. Crates have weight, boats drift after paddling, and the dock holds a player above the water. Keep recovery easy. Missed throws can be picked up, fishing attempts can be repeated, and crops grow while both players explore. Use shared meshes, simple geometry, and inexpensive motion for background life so the game stays responsive on the LAN.
 
+## An inhabited island
+
+Give each destination a detail that helps players infer who uses the place, what they do there, or how the landscape changes. At Shellglass a repaired tide staff faces the approach. At Mirror Lake someone put their basket at one end of the seat, leaving space for company. The surveyor’s mark at Tarnstep gives visitors a bearing they can still follow.
+
+Design the approach as part of the place. Let players glimpse a distinctive shape, follow a worn route, then discover something smaller at walking distance. Leave room for two people to stop and look. Use wear, repairs, local plants and animal routines where they belong. During review, ask what a player could learn by looking around with the labels off and what would draw them back at another hour.
+
 ## Generativity
 
 Use rules to produce variation in familiar places and activities. A ferry terminal should feel recognizable on every visit. Its surfaces, passing flocks, weather, and available work can change with the place, time, and crew's progress.

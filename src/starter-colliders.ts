@@ -8,6 +8,7 @@ import type { Point } from './world.ts'
 // the individual crate tiers, and the lower of the two farm barrels.
 type Solid = [width: number, depth: number, height: number, x?: number, z?: number]
 const shapes: Record<typeof starterFeatures[number]['model'], Solid[]> = {
+  splitstone: [[1.72, 2.55, 2.035, -1.72, .45], [1.55, 2.29, 1.385, 1.61, -.22]],
   bench: [[1.7, .54, .57], [1.7, .105, 1.035, 0, .22]],
   crates: [[.64, .6, .54, -.36, .02], [.64, .61, 1.05, .33, -.065]],
   barrels: [[.61, .61, .79, -.37], [.43, .43, .56, .34]],
@@ -16,6 +17,7 @@ const shapes: Record<typeof starterFeatures[number]['model'], Solid[]> = {
   scope: [[.76, .76, .16], [.22, .22, 1], [.48, .82, 1.27]],
   log: [[2.4, .45, .42], [.19, .2, .64, -.45, .09]],
   cairn: [[.86, .65, .225], [.56, .42, .405, .055], [.32, .24, .525, .02]],
+  'tide-staff': [[.18, .24, 1.35]],
   gauge: [[.14, .18, 1.35]],
 }
 

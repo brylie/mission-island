@@ -1,4 +1,4 @@
-import { shellglassPoint } from './routes.ts'
+import { shellglassPoint, splitstone } from './routes.ts'
 import type { SiteFeature } from './site-props.ts'
 
 export const ridgeViewpoint = { x: 36.5, z: 134 }
@@ -16,7 +16,8 @@ export const starterFeatures = [
   { site: 'fernfall', name: 'Fernfall stream gauge', model: 'gauge', color: '#719caa', x: 8.5, z: 82 },
   { site: 'pool', name: 'Mirror Pool fallen willow', model: 'log', color: '#80705b', heading: Math.PI / 2, x: 44.5, z: 106 },
   { site: 'ridge', name: 'Windstone survey scope', model: 'scope', color: '#e9af62', heading: -0.8, ...ridgeViewpoint },
-  { site: 'shellglass', name: 'Shellglass tide staff', model: 'gauge', color: '#6caca6', scale: 0.72, x: 43, z: -36 },
+  { site: 'splitstone', name: 'Splitstone sandstone cleft', model: 'splitstone', color: '#a78c6d', ...splitstone },
+  { site: 'shellglass', name: 'Mended Shellglass tide staff', model: 'tide-staff', color: '#6caca6', heading: Math.PI, scale: 0.72, x: 43, z: -36 },
 ] as const satisfies readonly SiteFeature[]
 
 export const beachUmbrellas = [{ x: 26, z: -39.6 }, { x: 33, z: -37.7 }, { x: 38.1, z: -35.3 }]

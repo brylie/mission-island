@@ -4,10 +4,10 @@ import type { MeshFactory } from '../island-meshes'
 import { ribbonGeometry } from '../routes'
 import { villageWalks } from './footways'
 import { habitatColor } from './habitats'
-import { createCascadeMaterial, createSoundMaterial } from './sea'
+import { createCascadeMaterial, createLakeMaterial, createSoundMaterial } from './sea'
 import { ferryTrack, fishingPier, routes, sampleRoute } from './routes'
 import type { Route } from './routes'
-import { lowerLake, pavedYards, runway, seaLevel, sites, tarn, viaductWalk, waterBounds } from './sites'
+import { lowerLake, pavedYards, runway, seaLevel, sites, tarn, discoveryWalks, picnicLedge, waterBounds } from './sites'
 import { airfieldDistance, bridgeAt, cols, deckPoint, deckSection, fallsWidth, fallsX, fallsY, gridStep, groundHeight, heightGrid,
   nearestRoad, riverY, riverZ, rows, shoreDistance, siteDistance, surfaceHeight } from './terrain'
 
@@ -25,9 +25,10 @@ function terrainColor(x: number, y: number, z: number) {
   const color = habitatColor(x, y, z).map((channel, i) => channel + (palette.yard[i] - channel) * yard)
   const bank = z > 121 && z < 200 ? Math.max(0, Math.min(1, (z - 121) / 5, (200 - z) / 5,
     (fallsWidth(z) + 10 - Math.abs(x - fallsX(z))) / 6)) : 0
+  const ledge = Math.max(0, 1 - Math.hypot((x - picnicLedge.x) / 9, (z - picnicLedge.z + 3) / 5))
   const strata = .93 + .07 * Math.sin(y * 2.1 + x * .11)
   const slate = [125, 133, 125]
-  return color.map((channel, i) => (channel + (slate[i] * strata - channel) * bank) * noise)
+  return color.map((channel, i) => (channel + (slate[i] * strata - channel) * Math.max(bank, ledge)) * noise)
 }
 
 function createTerrain(meshes: MeshFactory) {
@@ -82,14 +83,16 @@ function createWater(meshes: MeshFactory) {
   const color = createSoundMaterial(meshes.scene)
   const sea = meshes.surface('Saltwind Sound', [minX, y, minZ, maxX, y, minZ, maxX, y, maxZ, minX, y, maxZ], [0, 1, 2, 0, 2, 3], color)
   sea.freezeWorldMatrix()
+  const stillWater = createLakeMaterial(meshes.scene)
   for (const lake of [lowerLake, tarn]) {
-    const points = [lake.x, lake.y, lake.z], indices: number[] = []
+    const points = [lake.x, lake.y, lake.z], indices: number[] = [], uv = [0, 0]
     for (let i = 0; i <= 96; i++) {
       const angle = i * Math.PI / 48
+      uv.push(Math.cos(angle), Math.sin(angle))
       points.push(lake.x + Math.cos(angle) * lake.rx, lake.y, lake.z + Math.sin(angle) * lake.rz)
       if (i) indices.push(0, i, i + 1)
     }
-    meshes.surface(lake === tarn ? 'Alder Tarn' : 'Mirror Lake', points, indices, '#75afb3').freezeWorldMatrix()
+    meshes.surface(lake === tarn ? 'Alder Tarn' : 'Mirror Lake', points, indices, stillWater, undefined, uv).freezeWorldMatrix()
   }
   const river: number[][] = []
   for (let x = -444; x <= -87; x++) {
@@ -115,7 +118,7 @@ function createWater(meshes: MeshFactory) {
   }
   meshes.surface('Tarnstep ledges and plunge pools', stream, faces, current, undefined, uv).freezeWorldMatrix()
   return (time: number, light: number) => {
-    for (const material of [color, current]) {
+    for (const material of [color, current, stillWater]) {
       material.setFloat('time', time)
       material.setFloat('light', light)
     }
@@ -216,19 +219,21 @@ export function createLandscape(meshes: MeshFactory, solids: ScenerySolids) {
   createTerrain(meshes)
   const water = createWater(meshes)
   for (const route of [...routes, ferryTrack, fishingPier]) createRoad(meshes, route, solids)
-  const points = viaductWalk.path.flatMap((point, i, path) => {
-    const next = path[i + 1]
-    if (!next) return [point]
-    const steps = Math.ceil(Math.hypot(point.x - next.x, point.z - next.z) * 2)
-    return Array.from({ length: steps }, (_, s) => ({
-      x: point.x + (next.x - point.x) * s / steps, z: point.z + (next.z - point.z) * s / steps,
-    }))
-  })
-  const trail = ribbonGeometry([points], 1.25, 0)
-  for (let i = 0; i < trail.positions.length; i += 3) {
-    trail.positions[i + 1] = surfaceHeight(trail.positions[i], trail.positions[i + 2]) + .07
+  for (const walk of discoveryWalks) {
+    const points = walk.path.flatMap((point, i, path) => {
+      const next = path[i + 1]
+      if (!next) return [point]
+      const steps = Math.ceil(Math.hypot(point.x - next.x, point.z - next.z) * 2)
+      return Array.from({ length: steps }, (_, s) => ({
+        x: point.x + (next.x - point.x) * s / steps, z: point.z + (next.z - point.z) * s / steps,
+      }))
+    })
+    const trail = ribbonGeometry([points], 1.25, 0)
+    for (let i = 0; i < trail.positions.length; i += 3) {
+      trail.positions[i + 1] = surfaceHeight(trail.positions[i], trail.positions[i + 2]) + .07
+    }
+    meshes.surface(walk.name + ' footpath', trail.positions, trail.indices, '#cbb58a').freezeWorldMatrix()
   }
-  meshes.surface('Viaduct survey footpath', trail.positions, trail.indices, '#cbb58a').freezeWorldMatrix()
   for (const walk of villageWalks) {
     if (!walk.points.length) continue
     const path = ribbonGeometry([walk.points], 1.45, 0)

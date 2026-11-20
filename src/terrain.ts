@@ -11,6 +11,7 @@ export const shoreProfile = [
   { radius: 1.10, y: -2.15 }, { radius: 1.19, y: -4.3 },
 ]
 
+export const tidePool = { x: 46, z: -33 }
 export const falls = { x: 11, z: 86 }
 export const pool = { x: 23, z: 112 }
 export const grove = { x: -50, z: 72 }
@@ -98,7 +99,18 @@ export function groundHeight(point: Point) {
   for (let i = 2; i < shoreProfile.length; i++) {
     const a = shoreProfile[i - 1]
     const b = shoreProfile[i]
-    if (radius <= b.radius) return a.y + (b.y - a.y) * (radius - a.radius) / (b.radius - a.radius)
+    if (radius <= b.radius) {
+      const shore = a.y + (b.y - a.y) * (radius - a.radius) / (b.radius - a.radius)
+      const dx = point.x - tidePool.x, dz = point.z - tidePool.z
+      if (Math.abs(dx) > 5 || Math.abs(dz) > 4) return shore
+      // A tilted basin with a low seaward sill. The ocean plane fills the hollow.
+      const along = dx * .89 - dz * .45, across = dx * .45 + dz * .89
+      const bearing = Math.atan2(across / 1.82, along / 2.65)
+      const r = Math.hypot(along / 2.65, across / 1.82) * (1 + .085 * Math.sin(3 * bearing + .7) + .045 * Math.cos(5 * bearing))
+      const basin = Math.max(0, 1 - r * r)
+      const rim = Math.max(0, 1 - Math.abs(r - 1) / .48)
+      return shore - .63 * basin * basin + .61 * rim * rim
+    }
   }
   return shoreProfile[shoreProfile.length - 1].y
 }

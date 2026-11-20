@@ -5,7 +5,7 @@ import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { seededRandom } from './scenery'
 import { distanceToRoute, footpaths, road, walkways } from './routes'
-import { coastPoint, coastRadius, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, pool, shoreProfile, streamX, waterLevel } from './terrain'
+import { coastPoint, coastRadius, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, pool, shoreProfile, streamX, tidePool, waterLevel } from './terrain'
 import { buildings, distance, harbor, island, lookout, town } from './world'
 import type { MeshFactory } from './island-meshes'
 import { createOceanMaterial } from './ocean'
@@ -15,7 +15,7 @@ export function createIslandTerrain(meshes: MeshFactory) {
     // Refine the angular sector around the narrow stream without tessellating every beach.
     const angles = Array.from({ length: 256 }, (_, j) => {
       const a = j * Math.PI / 128
-      const steps = a > 1.39 && a < 1.51 ? 12 : 1
+      const steps = a > 1.39 && a < 1.51 ? 12 : sand && a > 5.24 && a < 5.59 ? 5 : 1
       return Array.from({ length: steps }, (_, k) => a + k / steps * Math.PI / 128)
     }).flat()
     angles.push(2 * Math.PI)
@@ -29,8 +29,12 @@ export function createIslandTerrain(meshes: MeshFactory) {
         const angle = angles[j]
         const { x, z } = coastPoint(angle, ring)
         positions.push(x, groundHeight({ x, z }), z)
-        if (sand) uvs.push(angle / (Math.PI * 2) * 96, (ring - 0.905) * 32)
-        else {
+        if (sand) {
+          uvs.push(angle / (Math.PI * 2) * 96, (ring - 0.905) * 32)
+          const bed = Math.max(0, 1 - Math.hypot((x - tidePool.x) / 4.2, (z - tidePool.z) / 3.5) ** 3)
+          const seam = .86 + .14 * Math.sin(x * 3.2 + z * 2.1)
+          colors.push(1 - .60 * bed * seam, 1 - .39 * bed * seam, 1 - .36 * bed, 1)
+        } else {
           uvs.push(x / 4.5, z / 4.5)
           const point = { x, z }
           const influence = (at: typeof point, range: number) => Math.max(0, 1 - distance(point, at) / range) ** 1.4
@@ -50,7 +54,7 @@ export function createIslandTerrain(meshes: MeshFactory) {
       }
     }
     const mesh = meshes.surface(name, positions, indices, meshes.paintSurface(sand ? 'sand' : 'grass'), undefined, uvs)
-    if (!sand) mesh.setVerticesData(VertexBuffer.ColorKind, colors)
+    mesh.setVerticesData(VertexBuffer.ColorKind, colors)
     return mesh.freezeWorldMatrix()
   }
   const meadowRings = Array.from({ length: 89 }, (_, i) => {
@@ -59,7 +63,13 @@ export function createIslandTerrain(meshes: MeshFactory) {
     return Array.from({ length: steps }, (_, k) => (i + k / steps) / 88 * shoreProfile[1].radius)
   }).flat()
   band('Textured meadow', [...meadowRings, shoreProfile[2].radius], false)
-  band('Beach and seabed', shoreProfile.slice(2).map((ring) => ring.radius), true)
+  const beachRings = shoreProfile.slice(2).flatMap(({ radius }, i, rings) => {
+    const next = rings[i + 1]?.radius
+    if (!next || radius >= 1.048) return [radius]
+    const steps = Math.ceil((next - radius) / .006)
+    return Array.from({ length: steps }, (_, j) => radius + (next - radius) * j / steps)
+  })
+  band('Beach and seabed', beachRings, true)
   const water = createOceanMaterial(meshes.scene)
   const y = waterLevel
   const ocean = meshes.surface('Ocean', [-850, y, -850, 850, y, -850, 850, y, 850, -850, y, 850],

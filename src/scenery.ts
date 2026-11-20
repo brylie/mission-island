@@ -1,6 +1,6 @@
 import { ridgeViewpoint } from './starter-sites.ts'
 import { starterPropTop } from './starter-colliders.ts'
-import { distanceToRoute, footpaths, road, shellglassPoint } from './routes.ts'
+import { distanceToRoute, footpaths, road, shellglassPoint, splitstone } from './routes.ts'
 import { coastRadius, falls, grove, groundHeight, headland, pool, waterDepth } from './terrain.ts'
 import { beach, distance, forest, harbor, island, lookout, town } from './world.ts'
 import type { Point } from './world.ts'
@@ -38,7 +38,8 @@ export const northernProps = northernRegions.flatMap(({ props }) => props)
 
 export const starterDiscoveries = [
   ...northernRegions,
-  { id: 'shellglass', name: 'Shellglass Point', site: shellglassPoint },
+  { id: 'shellglass', name: 'Shellglass Tide Pool', site: shellglassPoint },
+  { id: 'splitstone', name: 'Splitstone Narrows', site: splitstone },
 ]
 
 const random = seededRandom(14757)

@@ -3,14 +3,14 @@ import test from 'node:test'
 import { createCargoPhysics } from '../server/cargo.ts'
 import { jobBoard } from '../src/jobs.ts'
 import { canWalkAt, recoverSceneryOverlap, stepPlayerOnTerrain } from '../server/movement.ts'
-import { footpaths, shellglassPoint, walkways } from '../src/routes.ts'
+import { footpaths, shellglassPoint, splitstone, walkways } from '../src/routes.ts'
 import { overlapsProp, propTop, starterDiscoveries } from '../src/scenery.ts'
 import { habitatAt, habitatColor } from '../src/second-island/habitats.ts'
 import { saltwindFeatures } from '../src/second-island/site-features.ts'
-import { landmarks, sites, viaductWalk } from '../src/second-island/sites.ts'
-import { groundHeight, nearestRoad, surfaceHeight, waterHeight } from '../src/second-island/terrain.ts'
+import { discoveryWalks, landmarks, lowerLake, picnicLedge, sites } from '../src/second-island/sites.ts'
+import { fallsX, fallsY, groundHeight, nearestRoad, surfaceHeight, waterHeight } from '../src/second-island/terrain.ts'
 import { starterFeatures } from '../src/starter-sites.ts'
-import { fernfallSection, streamX, walkingHeight, waterDepth, waterLevel } from '../src/terrain.ts'
+import { fernfallSection, maxWadeDepth, streamX, tidePool, walkingHeight, waterDepth, waterLevel } from '../src/terrain.ts'
 import { birdActivity, phenomenonStrength, schoolAvoidance } from '../src/wildlife-motion.ts'
 import { beach, buildings, crateSize, extinguisherStarts, forest, jumpSpeed, spawns, truckStart } from '../src/world.ts'
 
@@ -36,7 +36,10 @@ test('site signatures leave dry approaches and preserve their discovery IDs', ()
   for (const { id } of starterDiscoveries) assert.ok(starterIds.includes(id), id)
   for (const point of starterFeatures) {
     assert.ok(walkingHeight(point) >= waterLevel, point.name)
-    assert.ok(overlapsProp(point, .14), point.name)
+    if (point.site === 'splitstone') {
+      assert.ok(!overlapsProp(point, .35), 'a player fits through the cleft')
+      for (const dx of [-1.72, 1.61]) assert.ok(overlapsProp({ x: point.x + dx, z: point.z }, .14))
+    } else assert.ok(overlapsProp(point, .14), point.name)
   }
   for (const { x, z, name, scale = 1 } of saltwindFeatures) {
     const y = surfaceHeight(x, z)
@@ -50,23 +53,59 @@ test('site signatures leave dry approaches and preserve their discovery IDs', ()
   }
 })
 
-test('the two discovery walks stay above water and avoid sudden steps', () => {
+test('the original Driftwood shore walk stays dry and preserves the Shellglass discovery ID', () => {
   const driftwood = footpaths.find(({ name }) => name === 'Driftwood shore walk')
   for (const point of walkSamples(driftwood.points)) {
     assert.equal(waterDepth(point), 0)
     assert.ok(!overlapsProp(point, .35))
   }
   assert.equal(starterDiscoveries.find(({ id }) => id === 'shellglass').site, shellglassPoint)
-  const start = viaductWalk.path[0]
-  assert.ok(nearestRoad(start.x, start.z).distance < 5)
-  let before
-  for (const { x, z } of walkSamples(viaductWalk.path)) {
-    const height = surfaceHeight(x, z)
-    assert.ok(height > waterHeight(x, z))
-    if (before !== undefined) assert.ok(Math.abs(height - before) < .13)
-    before = height
+})
+
+test('the tide pool holds wadeable water behind a dry sill, beside the Splitstone approach', () => {
+  const depth = waterDepth(tidePool)
+  assert.ok(depth > .40 && depth < maxWadeDepth)
+  for (let i = 0; i < 32; i++) {
+    const a = i * Math.PI / 16
+    const radial = Array.from({ length: 18 }, (_, j) => ({
+      x: tidePool.x + Math.cos(a) * j * .24, z: tidePool.z + Math.sin(a) * j * .24,
+    }))
+    assert.ok(radial.some(p => walkingHeight(p) > waterLevel + .055), 'dry rock or sand shelters the pool')
   }
-  assert.ok(landmarks.find(({ id }) => id === viaductWalk.id).discoverable)
+  const bank = { x: tidePool.x, z: tidePool.z + 3.2 }
+  const player = { ...bank, y: walkingHeight(bank), heading: 0, grounded: true }
+  const motor = { player, verticalSpeed: 0 }
+  for (const target of [tidePool, bank]) {
+    for (let frame = 0; frame < 160 && Math.abs(target.z - player.z) > .12; frame++) {
+      stepPlayerOnTerrain(motor, [], { x: 0, z: Math.sign(target.z - player.z) }, false, 1 / 60, () => -Infinity)
+    }
+    assert.ok(Math.abs(player.z - target.z) <= .12)
+    assert.equal(player.swimming, false)
+  }
+  const strand = footpaths.find(p => p.name === 'Splitstone strand')
+  for (const p of walkSamples([...strand.points, splitstone])) assert.ok(canWalkAt(p, .35, waterLevel))
+})
+
+test('both Saltwind lookouts have a walkable spur and a sightline at standing eye height', () => {
+  for (const walk of discoveryWalks) {
+    assert.ok(landmarks.find(pin => pin.id === walk.id)?.discoverable)
+    const points = walkSamples(walk.path)
+    const start = points[0]
+    assert.ok(nearestRoad(start.x, start.z).distance < 5)
+    points.forEach((p, i) => {
+      const h = surfaceHeight(p.x, p.z)
+      assert.ok(h > waterHeight(p.x, p.z))
+      if (i) assert.ok(Math.abs(h - surfaceHeight(points[i - 1].x, points[i - 1].z)) < .13)
+    })
+    const eye = points.at(-1)
+    const eyeY = surfaceHeight(eye.x, eye.z) + 1.6
+    const target = walk.id === picnicLedge.id ? lowerLake : { x: fallsX(188), z: 188, y: fallsY(188) }
+    for (let i = 1; i < 100; i++) {
+      const t = i / 100
+      assert.ok(groundHeight(eye.x + t * (target.x - eye.x), eye.z + t * (target.z - eye.z)) <
+        eyeY + t * (target.y - eyeY), walk.name)
+    }
+  }
 })
 
 test('each starter site can be approached from the cottage on dry ground', () => {

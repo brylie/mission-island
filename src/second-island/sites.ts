@@ -12,9 +12,19 @@ export const lowerLake = { x: -82, z: 104, rx: 44, rz: 32, y: 5.8 }
 export const tarn = { x: -123, z: 219, rx: 29, rz: 22, y: 42 }
 const falls = { x: -120, z: 184, y: 25 }
 export const viaductWalk = {
-  id: 'viaduct-shelf', name: 'Viaduct Survey Shelf', x: -140.8, z: 160, radius: 4,
-  path: [{ x: -169, z: 155.25 }, { x: -165, z: 157 }, { x: -159, z: 159 }, { x: -150, z: 159.35 }, { x: -142.5, z: 160 }],
+  id: 'viaduct-shelf', name: 'Tarnstep Survey Shelf', x: -137.2, z: 160, radius: 4,
+  path: [{ x: -169, z: 155.25 }, { x: -165, z: 157 }, { x: -159, z: 159 }, { x: -150, z: 159.35 }, { x: -139, z: 159.7 }, { x: -136.3, z: 160 }],
 }
+
+export const picnicLedge = {
+  id: 'mirror-ledge', name: 'Mirror Lake Picnic Ledge', x: -104, z: 145, radius: 3.8,
+  path: [{ x: -99.7, z: 149.9 }, { x: -100.4, z: 148.25 }, { x: -102.1, z: 146.6 }, { x: -102, z: 145.2 }, { x: -102.4, z: 143.7 }],
+}
+
+export const discoveryWalks = [
+  { ...viaductWalk, view: falls, detail: 'Follow the west-bank gravel spur to the lichen-covered survey stone. Its bronze line points upstream to the upper cascades.' },
+  { ...picnicLedge, view: lowerLake, detail: 'Turn off the south shoulder onto the slate lip. Look past the picnic basket toward the lake and its morning mist.' },
+]
 
 export const villages = [
   { id: 'brinewick', name: 'Brinewick', x: -270, z: -105, detail: 'The ferry, fish market, boat ramp and lifeboat quay.' },
@@ -82,7 +92,7 @@ export const landmarks: readonly (MapPoint & { id: string; name: string; radius:
   { id: 'falls', name: 'Tarnstep Falls', x: falls.x, z: falls.z, radius: 47 },
   { id: 'fishing', name: 'Sandspit Fishing Pier', ...waterfront.fishing, radius: 28 },
   { id: 'rescue', name: 'Brinewick Rescue Slip', ...waterfront.rescue, radius: 32 },
-  { ...viaductWalk, discoverable: true },
+  ...discoveryWalks.map(walk => ({ ...walk, discoverable: true })),
   ...sites.map(({ id, name, x, z }) => ({ id, name, x, z, radius: 34 })),
   ...villages.map(({ id, name, x, z }) => ({ id, name, x, z, radius: 62 })),
 ]

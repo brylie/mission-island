@@ -1,6 +1,6 @@
 import { accessLanes, ferryTrack, fishingPier, islandLoop, routes } from './routes.ts'
 import type { RoadSample, Route } from './routes.ts'
-import { landBounds, lowerLake, pavedYards, roundYards, runway, seaLevel, sites, tarn, wadeDepth, waterBounds } from './sites.ts'
+import { landBounds, lowerLake, picnicLedge, pavedYards, roundYards, runway, seaLevel, sites, tarn, wadeDepth, waterBounds } from './sites.ts'
 import type { MapPoint } from './sites.ts'
 
 export const gridStep = 2.5
@@ -171,6 +171,9 @@ function terrainShape(x: number, z: number) {
     const edge = Math.hypot(x - pad.x, z - pad.z) - pad.radius
     if (edge < 5) height = mix(Math.min(height, pad.y - .10), height, smooth((edge - 1) / 4))
   }
+  // An exposed bed of slate forms a level picnic shelf above the steeper shore.
+  const ledge = radius(x, z, picnicLedge.x, picnicLedge.z, 6.8, 3.8)
+  if (ledge < 1.6) height = mix(30.85 + .027 * (z - picnicLedge.z), height, smooth((ledge - .65) / .95))
   // The cemetery gate and loop sit on two graded pads. Carry the walk across
   // the shallow hollow between them, feathering the fill into the hillside.
   if (z > 153 && z < 176 && Math.abs(x - 19) < 9) {

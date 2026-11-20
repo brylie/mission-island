@@ -1,7 +1,7 @@
 import { palette } from './landscape'
 import { habitatColor } from './habitats'
 import { ferryTrack, fishingPier, routes } from './routes'
-import { biomes, landmarks, runway, viaductWalk, villages, waterBounds } from './sites'
+import { biomes, landmarks, runway, discoveryWalks, villages, waterBounds } from './sites'
 import type { MapPoint } from './sites'
 import { groundHeight, waterHeight } from './terrain'
 
@@ -50,9 +50,10 @@ export function createChart(canvas: HTMLCanvasElement, detailed: boolean) {
 
   return (player: MapPoint, known: Set<string>, selected?: string) => {
     context.drawImage(chart, 0, 0, canvas.width, canvas.height)
-    if (detailed && known.has(viaductWalk.id)) {
+    for (const walk of discoveryWalks) {
+      if (!detailed || !known.has(walk.id)) continue
       context.beginPath()
-      viaductWalk.path.forEach((point, i) => {
+      walk.path.forEach((point, i) => {
         const p = scale(point, canvas)
         if (i === 0) context.moveTo(p.x, p.z)
         else context.lineTo(p.x, p.z)

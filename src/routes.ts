@@ -29,10 +29,15 @@ export const road = roundCorners([
 
 export const shellglassPoint = { x: 43.2, z: -31.4 }
 
+export const splitstone = { x: 53.5, z: -20.8 }
+
 export const footpaths = [
   { name: 'Lookout trail', width: 3.2, points: roundCorners([{ x: 17, z: 12 }, { x: 20, z: 22 }, lookout], 4) },
   { name: 'Beach trail', width: 2.6, points: roundCorners([{ x: 35, z: 12 }, { x: 33.1, z: 4 }, { x: 29.6, z: -24.7 }, beach], 4) },
   { name: 'Harbor trail', width: 3.1, points: roundCorners([{ x: -46, z: -11 }, harbor, { x: -44, z: -30 }], 3) },
+  { name: 'Splitstone strand', width: .85, points: roundCorners([
+    { x: 41.7, z: -30.2 }, { x: 45, z: -28.8 }, { x: 50.5, z: -25.4 }, { x: 53.5, z: -22.5 },
+  ], 1) },
   { name: 'Driftwood shore walk', width: 1.1, points: roundCorners([
     { x: 30.8, z: -24.7 }, { x: 34.7, z: -26.3 }, { x: 39, z: -29.2 }, { x: 42.4, z: -30.7 },
   ], 1.1) },

@@ -28,7 +28,8 @@ For a LAN review, open the preview using the laptop’s LAN address before copyi
 | Fernfall | Approach from below the stream bank. | Follow the creek uphill to the stepped cascade. A graduated staff stands beside the spring. Foam follows the flow over ledges and spray rises from the lower pool. |
 | Mirror Pool | Circle to the east bank for dry footing. | A fallen willow lies along the east bank at (44.5, 106). Rushes and dawn mist distinguish the basin. |
 | Windstone Ridge | Approach along the crown where the ground levels. | The scope and discovery pin share the walkable survey point at (36.5, 134). |
-| Shellglass Point | Take the approximately 14 m spur east from Driftwood Beach. | Shell-studded rocks mark the end of the path at (43.2, −31.4). A narrow tide staff stands at the waterline at (43, −36). |
+| Shellglass Tide Pool | Take the roughly 14 m spur east from Driftwood Beach. | The existing Shellglass discovery leads to a wadeable rock basin centred at (46, −33). A patched tide staff, an old high-water notch, limpets and wrack reward a closer look. Come back after dark for plankton. |
+| Splitstone Narrows | Follow the strand inland of the pool to (53.5, −20.8). | Walk between the two fins and look back at the thin pale bed that crosses both faces. There is space in the cleft for a standing player. |
 
 ### Repeatable starter checks
 
@@ -64,9 +65,10 @@ For a LAN review, open the preview using the laptop’s LAN address before copyi
 | Reedwater Bridge | Cross the main loop toward the lower river valley. | Follow the rail along the crossing or approach the river below. The bridge and the water beneath it have separate movement surfaces. |
 | Mill Bridge | Take Mill Road across the river. | The Mill Road bridge deck, parapets and river are the landmarks at this crossing. |
 | Tarnstep Viaduct | Follow the main loop past Alderwatch to the high crossing. | The viaduct rail frames the upstream view; supports extend to the valley floor. |
-| Mirror Lake | Look down over the south side of the loop from the north overlook. | The bench on the shoulder at (−104, 145) faces the lake. |
-| Tarnstep Falls | Look upstream from the viaduct. | Look upstream from the viaduct. Tarn water spills over staggered ledges, breaks around slate outcrops and enters Mirror Lake. |
-| Viaduct Survey Shelf | Take the short gravel spur from the west side of the viaduct. | The brass viewing scope at (−140.8, 160) faces Tarnstep Falls. The shelf appears on the survey list after discovery. |
+| Mirror Lake | Follow the north bank below the road. | A small school patrols the clear northern shallows. The lake has a light ripple, ducks in open water and morning mist. |
+| Mirror Lake Picnic Ledge | Turn off the south shoulder onto the short spur at (−99.7, 149.9). | A folded cloth and handled basket occupy one end of a slate-supported seat at (−104, 145). Follow the spur around the seat to see over the lip. The ledge has its own discovery. |
+| Tarnstep Falls | Look upstream from the viaduct. | Tarn water spills over staggered ledges, breaks around slate outcrops and enters Mirror Lake. |
+| Tarnstep Survey Shelf | Take the west-bank spur near (−169, 155.25). | At (−137.2, 160), a worn stone carries a weathered bronze cross. Stand beside it and follow the line to the upper cascade. The shelf keeps the existing discovery ID. |
 
 ## Habitat route and observation conditions
 
@@ -86,3 +88,17 @@ The wildlife blends motion from deterministic phase and placement data. The star
 ## QA coverage
 
 Automated checks validate documented site coverage, dry and stable prop anchors, space around Saltwind vehicle stops, both discovery footpaths, gradual habitat colors, school response, the weather and time windows, and Shellglass discovery through a starter save and reconnect. A 0.75 m traversal grid reached within 1.5 m of each starter signature from the cottage using the host's terrain and obstacle rules. Browser checks covered all 25 existing Saltwind inspection entries in daylight and dusk and a short walk from each approach, including the ferry ramp. They also covered walking off the viaduct to discover the shelf and confirming the Atlas entry, plus starter Landscape Workbench and follow/overview smoke checks. The dock Workbench check reported zero overlapping faces. Saltwind inspections begin at the access point. Vehicle and cargo clearance under load require the host integration.
+
+## Milestone 2 second pass
+
+| Issue | Finding and action |
+| --- | --- |
+| [#25 Starter destinations](https://github.com/brylie/mission-island/issues/25) | Checked 18 focus stops in the Landscape Workbench and the dry approaches from the cottages with the host movement rules. Driftwood had a tide staff and shells but no hollow to hold water. Shellglass now has a sheltered basin, with a second stop along the strand. |
+| [#26 Saltwind destinations](https://github.com/brylie/mission-island/issues/26) | Reopened all 25 listed sites in daylight and dusk. The old roadside seat and scope have become two distinct pedestrian destinations. Driving and loaded-vehicle checks still depend on [host integration](https://github.com/brylie/mission-island/issues/19). |
+| [#27 Biomes](https://github.com/brylie/mission-island/issues/27) | The new stops expose transitions at walking scale, from sand into a wet tide-pool bed and from grassy road shoulder onto exposed slate. The shared habitat tests cover coast, wetland, meadow, woodland and bluff. A riverbank-to-reeds walk is scoped in [#37](https://github.com/brylie/mission-island/issues/37). |
+| [#28 Flora](https://github.com/brylie/mission-island/issues/28) | Wrack occupies pockets in the basin, and small lichen patches collect on the survey stone. Tree placement preserves the sightlines from the two Saltwind lookouts. The exposed-to-sheltered planting study is scoped in [#38](https://github.com/brylie/mission-island/issues/38). |
+| [#29 Wildlife](https://github.com/brylie/mission-island/issues/29) | Mirror Lake now has a school in its northern shallows. It uses the existing avoidance and regrouping behavior. Existing tests also exercise daylight landing, rain shelter and night bat activity. Recording sightings belongs to [the field journal](https://github.com/brylie/mission-island/issues/8). |
+| [#30 Discoveries](https://github.com/brylie/mission-island/issues/30) | Both original discovery IDs still resolve. Splitstone and the picnic ledge each have a new ID. Walked into both Saltwind lookouts with their entries hidden and verified that reaching each one revealed its own site card. Tests sample both spur grades, standing-eye sightlines, the tide-pool sill and the dry route through the cleft. |
+| [#31 Local phenomena](https://github.com/brylie/mission-island/issues/31) | Shellglass’s night glow now originates in the actual pool. Morning mist is visible from the picnic ledge. From the previous survey position, the bank obscured the waterfall. The new bearing clears the bank. A sunlit spray bow is scoped in [#39](https://github.com/brylie/mission-island/issues/39). |
+
+The Saltwind checks used its standalone walking preview. Multiplayer ferry transfers, crew journal rewards and shared Saltwind discoveries remain separate work. [Seasons](https://github.com/brylie/mission-island/issues/32) is a follow-up outside this milestone.

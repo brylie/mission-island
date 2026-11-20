@@ -14,7 +14,7 @@ import { islandRocks, islandTrees } from './scenery'
 import { placeSiteFeatures } from './site-props'
 import { beachUmbrellas, shellRocks, starterFeatures } from './starter-sites'
 import { createStreetLights } from './street-lights'
-import { boundaryBuoys, groundHeight, pool, streamX, walkingHeight, waterLevel } from './terrain'
+import { boundaryBuoys, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
 import { buildings, crewHomes } from './world'
 
 export function createIslandWorld(meshes: MeshFactory) {
@@ -43,6 +43,21 @@ export function createIslandWorld(meshes: MeshFactory) {
     rock.rotation.y = heading
     meshes.sphere(point.x + .025, groundHeight(point) + .165, point.z - .015, .16, .055, .12, '#ecd3aa')
   }
+  // Limpets on the sill and wrack in the basin give the pool a scale at foot level.
+  for (let i = 0; i < 17; i++) {
+    const patch = Math.floor(i / 4)
+    const a = patch * 1.77 + .105 * (i % 4)
+    const x = tidePool.x + (2.18 + .17 * Math.sin(i * 4.1)) * Math.cos(a), z = tidePool.z + (1.47 + .15 * Math.cos(i * 2.5)) * Math.sin(a)
+    const y = groundHeight({ x, z })
+    if (y >= waterLevel) {
+      meshes.cylinder(x, y + .033, z, .024, .16, .085, 7, '#d4c1a0')
+    } else {
+      for (let j = 0; j < 3; j++) {
+        const blade = meshes.sphere(x + j * .046, y + .074, z, .074, .21, .15, j % 2 ? '#848045' : '#65744b', undefined, false, 5)
+        blade.rotation.z = .3 + j * .25
+      }
+    }
+  }
   const boat = createHarborBoat(meshes)
   const buoys = boundaryBuoys.map(({ x, z }) => createBuoy(meshes, x, z))
 
@@ -58,7 +73,7 @@ export function createIslandWorld(meshes: MeshFactory) {
   const phenomena = createPhenomena(meshes.scene, [
     { ...pool, name: 'Mirror Pool dawn mist', kind: 'mist', y: waterLevel, extent: 22, seed: 5182 },
     { name: 'Fernfall spray', kind: 'spray', x: streamX(89.2), y: waterLevel + .04, z: 89.2, extent: 2.7, seed: 2961 },
-    { name: 'Shellglass plankton', kind: 'glow', x: 45.2, y: waterLevel, z: -38.3, extent: 5.8, seed: 6787 },
+    { name: 'Shellglass plankton', kind: 'glow', ...tidePool, y: waterLevel, extent: 1.7, seed: 6787 },
   ])
   const lights = createStreetLights(meshes)
 

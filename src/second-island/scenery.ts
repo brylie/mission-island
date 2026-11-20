@@ -17,7 +17,7 @@ import { habitatAt } from './habitats'
 import { createExterior } from './exteriors'
 import { islandBuildings } from './lots'
 import { clearAirfield } from './landscape'
-import { arrival, helipad, lowerLake, pavedYards, roundYards, sites, viaductWalk, waterfront } from './sites'
+import { arrival, helipad, lowerLake, pavedYards, roundYards, sites, discoveryWalks, waterfront } from './sites'
 import type { MapPoint } from './sites'
 import { fallsWidth, fallsX, fallsY, groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
 import { createSaltwindVehicle } from './vehicles'
@@ -208,6 +208,8 @@ function createPlants(meshes: MeshFactory, solids: ScenerySolids) {
     const matrices = tile.matrices.get(kind) ?? []
     const yaw = random() * Math.PI * 2
     const breadth = scale * (.82 + random() * .42)
+    if ((kind === 'fir' || kind === 'alder') && discoveryWalks.some(walk =>
+      distanceToRoute({ x, z }, [walk, walk.view]) < 3)) return
     if (kind === 'fir' || kind === 'alder') solids.add({
       x, z, heading: yaw, width: .42 * breadth, depth: .39 * breadth, bottom: y - .3 * scale, top: y + 3.4 * scale,
     })
@@ -223,7 +225,7 @@ function createPlants(meshes: MeshFactory, solids: ScenerySolids) {
     && nearestRoad(x, z).distance >= 10 && !sites.some((site) => siteDistance(x, z, site) < 3)
     && !villageWalks.some(({ points }) => points.length && Math.abs(points[0].x - x) < 65 &&
       Math.abs(points[0].z - z) < 65 && distanceToRoute({ x, z }, points) < 1.6)
-    && distanceToRoute({ x, z }, viaductWalk.path) > 2.2 && Math.hypot(x - viaductWalk.x, z - viaductWalk.z) > 3.5
+    && discoveryWalks.every(walk => distanceToRoute({ x, z }, walk.path) > 2.2 && Math.hypot(x - walk.x, z - walk.z) > 3.5)
     && !islandBuildings.some((building) => building.kind === 'cottage' && Math.hypot(x - building.x, z - building.z) < 7)
   for (let i = 0; i < 5600; i++) {
     const x = random() * 912 - 456, z = random() * 660 - 330
@@ -332,6 +334,9 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
       landing: perch(-115, 79), roost: perch(-115, 79) },
   ])
   const schools = createSchools(meshes, [
+    { swim: (time) => ({ x: lowerLake.x - 5 + 4 * Math.sin(time * .23), z: lowerLake.z + 23 + 2 * Math.cos(time * .23) }),
+      deep: { x: .15, z: -.99 }, level: lowerLake.y,
+      isWater: ({ x, z }) => waterHeight(x, z) === lowerLake.y && groundHeight(x, z) < lowerLake.y - .4 },
     { swim: (time) => ({ x: -253 + 3 * Math.sin(time * .37), z: -268.5 + 1.5 * Math.cos(time * .37) }),
       deep: { x: -.15, z: -.99 }, level: 0, isWater: ({ x, z }) => groundHeight(x, z) < -.4 },
   ])

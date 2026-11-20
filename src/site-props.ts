@@ -11,10 +11,15 @@ export interface SiteFeature extends Point {
   scale?: number
 }
 
-type FeatureModel = 'rack' | 'planter' | 'crates' | 'bench' | 'marker' | 'shelter' | 'scope' | 'rail' | 'pennant' | 'barrels' | 'hose' | 'cairn' | 'gauge' | 'log' | 'lifebuoy'
+type FeatureModel = 'tide-staff' | 'splitstone' | 'picnic' | 'benchmark' | 'rack' | 'planter' | 'crates' | 'bench' | 'marker' | 'shelter' | 'scope' | 'rail' | 'pennant' | 'barrels' | 'hose' | 'cairn' | 'gauge' | 'log' | 'lifebuoy'
 
 function featurePieces(meshes: MeshFactory, root: TransformNode) {
   return {
+    face: (vertices: number[], color: string) => {
+      const indices = []
+      for (let i = 2; i < vertices.length / 3; i++) indices.push(0, i - 1, i)
+      meshes.surface('Sandstone fracture', vertices, indices, color, root)
+    },
     box: (x: number, y: number, z: number, width: number, height: number, depth: number, color: string) => {
       return meshes.box(x, y, z, width, height, depth, color, root)
     },
@@ -64,6 +69,54 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     for (const x of [-0.65, 0.65]) box(x, 0.69, 0.21, 0.13, 0.44, 0.13, metal)
     box(0, 0.92, 0.22, 1.7, 0.23, 0.105, color)
   },
+  splitstone({ face }, color) {
+    // The flat opposing faces are a single fracture. Bedding dips the same
+    // way on both sides, even where the shorter eastern fin has weathered away.
+    const fins = [
+      { x: -1.73, z: .45, height: 2.08, outline: [[-.94, -.55], [-.34, -1.32], [.71, -.94], [.81, .96], [.09, 1.44], [-.78, .77]] },
+      { x: 1.61, z: -.22, height: 1.43, outline: [[-.76, -1.09], [.22, -1.21], [.91, -.35], [.62, .82], [-.12, 1.23], [-.69, .72]] },
+    ]
+    for (const fin of fins) {
+      const ring = (level: number, width: number, cap = false) => fin.outline.map(([x, z]) => [
+        fin.x + x * width + level * .06,
+        level + x * .14 + z * .09 + (cap ? .22 * Math.sin(x * 2 + z) : 0),
+        fin.z + z * width,
+      ])
+      const layers = [ring(-.32, 1.04), ring(.62, .98), ring(.74, .95), ring(fin.height, .82, true)]
+      for (let k = 1; k < layers.length; k++) {
+        const low = layers[k - 1], high = layers[k]
+        for (let a = 0; a < low.length; a++) {
+          const b = (a + 1) % low.length
+          face([...low[a], ...low[b], ...high[b], ...high[a]], k === 2 ? '#c7a87f' : color)
+        }
+      }
+      face(layers[3].flat(), '#ad9775')
+    }
+  },
+  picnic(parts, color) {
+    // A low seat built into the rock, with a basket and folded cloth at one end.
+    const { box, round } = parts
+    for (const x of [-.82, .82]) box(x, .19, 0, .38, .46, .68, '#817f6d')
+    box(0, .46, 0, 2.16, .13, .60, lightWood)
+    box(.66, .54, .015, .65, .035, .64, color)
+    box(.66, .685, .012, .40, .255, .31, '#b88655')
+    for (const y of [.622, .713]) box(.66, y, .012, .413, .025, .32, '#dbb887')
+    for (const dx of [-.15, .15]) round(.66 + dx, .865, .01, .028, .03, .13, wood)
+    box(.66, .93, .01, .32, .04, .045, wood)
+  },
+  benchmark({ round, box }, color) {
+    const base = round(0, .18, 0, .9, 1.15, .47, '#817e72')
+    base.scaling.z = .8
+    const stone = round(.025, .65, .02, .53, .77, .66, '#a59e86')
+    stone.scaling.z = .86
+    round(.025, .997, .02, .43, .48, .044, color)
+    box(.025, 1.025, .02, .024, .019, .35, '#d5b87d')
+    box(.025, 1.026, .02, .215, .020, .022, '#d5b87d')
+    for (const [x, z] of [[-.29, -.16], [.28, -.12], [-.18, .27]]) {
+      const lichen = round(x, .416, z, .14, .18, .033, '#a8ac78')
+      lichen.scaling.z = .68
+    }
+  },
   log({ round }, color) {
     const trunk = round(0, .2, 0, .34, .52, 2.4, color)
     trunk.rotation.z = Math.PI / 2
@@ -82,6 +135,14 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     box(0, .65, 0, .14, 1.4, .13, wood)
     box(0, .72, -.075, .13, 1.08, .025, color)
     for (let i = 0; i < 10; i++) box(-.02, .26 + i * .1, -.093, i % 2 ? .045 : .09, .022, .012, linen)
+  },
+  'tide-staff'(parts, color) {
+    models.gauge(parts, color)
+    // A scarf repair and an old red high-water notch face the beach approach.
+    parts.box(.02, .27, .081, .155, .48, .057, lightWood)
+    for (const y of [.115, .402]) parts.box(.005, y, .029, .173, .044, .19, '#52685e')
+    parts.box(.01, 1.11, -.099, .122, .042, .025, '#a95239')
+    parts.box(.005, 1.055, .076, .13, .035, .024, '#a95239')
   },
   marker({ box, round }, color) {
     box(0, 0.13, 0, 0.95, 0.26, 0.72, metal)
