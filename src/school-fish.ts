@@ -1,11 +1,11 @@
 import { createSchoolFish } from './assets/fish'
 import { schoolSize } from './simulation/fish-school'
 import type { MeshFactory } from './island-meshes'
-import { driftwoodShallows, type DriftwoodFrame } from './simulation/driftwood-school'
-import { waterLevel } from './terrain'
+import type { CoastalSchoolFrame } from './simulation/coastal-school'
 import type { WildlifeFrame } from './wildlife'
+import type { Point } from './world'
 
-export function createDriftwoodFish(meshes: MeshFactory) {
+export function createCoastalFish(meshes: MeshFactory, origin: Point, waterLevel: number) {
   // Opaque fish write depth alongside the sand and hull before the translucent ocean draws.
   const paint = meshes.paint('#99c6aa')
   paint.backFaceCulling = false
@@ -17,9 +17,9 @@ export function createDriftwoodFish(meshes: MeshFactory) {
     return body
   })
   let visible = false
-  return (frame: WildlifeFrame, school?: DriftwoodFrame) => {
+  return (frame: WildlifeFrame, school?: CoastalSchoolFrame) => {
     const near = Boolean(school) && frame.camera.y - waterLevel < 47 &&
-      Math.hypot(frame.camera.x - driftwoodShallows.x, frame.camera.z - driftwoodShallows.z) < 75
+      Math.hypot(frame.camera.x - origin.x, frame.camera.z - origin.z) < 75
     if (near && school) {
       const blend = visible && !frame.seek ? 1 - Math.exp(-24 * frame.delta) : 1
       for (const [id, fish] of school.fish.entries()) {

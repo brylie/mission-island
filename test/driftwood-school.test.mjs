@@ -15,7 +15,7 @@ for (const pass of ['wade', 'paddle']) {
     const boating = pass === 'paddle'
     const start = boating ? at(-6, -1.7) : at(0, 3)
     const game = setup(t, {
-      players: [player(0, ashore), player(1, start, { seat: boating ? 'port' : null })],
+      players: [player(0, ashore), player(1, start, { seat: boating ? 'port' : null }), player(2, at(2, 5))],
       arrange(save) {
         if (boating) save.world.skiff = { ...start, heading: Math.PI / 2, speed: 0 }
       },
@@ -43,7 +43,12 @@ for (const pass of ['wade', 'paddle']) {
         assert.deepEqual(active.state.driftwood, observer.state.driftwood)
         rejoined = true
       }
-      if (rejoined && school.leader >= 0) regrouped = true
+      if (rejoined && school.leader >= 0 && !regrouped) {
+        const lateObserver = game.join(tokens[2])
+        assert.equal(lateObserver.state.driftwood.leader, school.leader)
+        assert.deepEqual(lateObserver.state.driftwood, observer.state.driftwood)
+        regrouped = true
+      }
     }
     assert.ok(partial && regrouped && rejoined)
     if (!boating) assert.ok(wading)

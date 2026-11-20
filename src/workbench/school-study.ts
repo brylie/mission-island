@@ -25,6 +25,8 @@ export const schoolStudy: Entry = {
   readout: 'School observations', topView: true, duration: trialSeconds, ground: { height: -1.1, color: '#485b57' },
   controls: [
     control('actor', 'Disturbance', 'player', { player: 'Wading player', skiff: 'Paddled skiff' }, true),
+    control('side', 'First approach', 'west', { west: 'West edge', east: 'East edge' }, true),
+    { key: 'returnPass', label: 'Cross again from the opposite edge', type: 'checkbox', value: false, rebuild: true },
     { key: 'seed', label: 'School seed', type: 'number', min: 0, max: 9999, step: 1, value: firstSeed, rebuild: true },
     { key: 'nudge', label: 'Nudge fish 1 east by 5 cm', type: 'checkbox', value: false, rebuild: true },
     { key: 'trails', label: 'Show fish trails', type: 'checkbox', value: true },
@@ -39,7 +41,8 @@ export const schoolStudy: Entry = {
   }],
   create(meshes, values, _reportError, observe) {
     const { scene } = meshes
-    const trial = createSchoolTrial(Number(values.seed), values.actor === 'skiff' ? 'skiff' : 'player', values.route, Boolean(values.nudge))
+    const trial = createSchoolTrial(Number(values.seed), values.actor === 'skiff' ? 'skiff' : 'player', values.route,
+      Boolean(values.nudge), { side: values.side === 'east' ? 'east' : 'west', returnPass: Boolean(values.returnPass) })
     const { school, actor } = trial
     values.route = JSON.stringify(trial.route)
     const sand = meshes.paintSurface('sand', poolSand)
@@ -104,7 +107,7 @@ export const schoolStudy: Entry = {
       for (const [i, member] of school.fish.entries()) {
         fish[i].position.set(member.x, -.09, member.z)
         fish[i].rotation.y = Math.PI / 2 - member.heading
-        fish[i].material = member.alarm > 0 ? startledPaint : shoal
+        fish[i].material = settings.trails && member.alarm > 0 ? startledPaint : shoal
         if (member.alarm > 0) startled++
         if (settings.trails) {
           const track = trial.tracks[i]
@@ -120,7 +123,7 @@ export const schoolStudy: Entry = {
       ring.setEnabled(Boolean(settings.leaderRing) && school.leader >= 0)
       if (school.leader >= 0) ring.position.copyFrom(fish[school.leader].position)
       const phase = school.leader >= 0 ? 'Following fish ' + (school.leader + 1)
-        : startled ? 'Scattering' : 'Cruising'
+        : startled ? 'Scattering' : school.scattered ? 'Waiting for calm' : 'Cruising'
       observe(routeFull ? 'Route full. Rewind to edit an earlier move or reset the trial.'
         : phase + ' · ' + startled + ' of 6 startled · ' + school.encounters + (school.encounters === 1 ? ' disturbance' : ' disturbances'))
     }
