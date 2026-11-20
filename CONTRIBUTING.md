@@ -55,6 +55,8 @@ Choose a workspace or search across the entire catalog. For supported subjects, 
 - Check each prop variant, compare road and trail widths, and inspect the same geometry used in the game. Use the Texture gallery to compare surface presets and noise families. The material panels use physical descriptions such as grain spacing, chip relief, pitting, or oxidation. The water preview animates on the timeline, and the shader drafts have a separate preview.
 - Edit a shared asset or shader file while its preview is open. Vite refreshes the scene and keeps the selected asset, camera, and controls. The inspector shows the relevant source file.
 
+For asset reviews, include a Workbench link that opens the model next to the reference detail. The CLI accepts an existing setup link, photo URL, crop and accessible description. [Prepare a comparison link](docs/workbench.md#prepare-a-comparison-link-from-the-command-line)
+
 Shared model factories live in `src/assets/`. Add or extend a preview in the matching `src/workbench/` study module. The shader drafts live in `src/workbench/surface.frag.glsl` and `src/workbench/surface.vert.glsl`. The workbench is available from the development server.
 
 The [Landscape Workbench](http://localhost:5173/workbench.html#landscape) loads the real island scenery. **Scenic view** frames Pinewoods at sunrise, the harbor at sunset, or Fernfall and pauses the timeline for repeatable comparisons. Open [Pinewoods sunrise](http://localhost:5173/workbench.html?view=pinewoods-sunrise#landscape) directly, then toggle **Volumetric sunlight** or adjust **Sun shaft intensity** to compare the lighting in place. The game uses the 100% setting.

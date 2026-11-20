@@ -35,63 +35,99 @@
             <p id="asset-description"></p>
           </div>
           <div class="scene-actions">
+            <button type="button" id="reference-toggle" aria-controls="asset-reference" aria-expanded="false">Reference image</button>
             <a class="asset-link" id="return-to-biome" href="#biome" hidden>Biome Composer</a>
             <nav id="field-switch" aria-label="Preview setting" hidden><a id="inspect-alone">Studio</a><a id="inspect-field">On island</a></nav>
             <button type="button" id="landscape-map-toggle" aria-controls="landscape-map" aria-expanded="false" hidden>Island map</button>
           </div>
         </header>
 
-        <div class="viewport" id="viewport">
-          <canvas id="stage" tabindex="0" aria-label="3D asset preview. Drag to orbit, scroll to zoom, or right-drag to pan."></canvas>
-          <div id="landscape-comparison" hidden>
-            <div class="reference-layer"><img id="landscape-reference-image" alt="Captured landscape reference" /></div>
-            <div class="reference-divider" aria-hidden="true"></div>
-            <div class="reference-labels" aria-hidden="true"><span>Reference</span><span>Live</span></div>
-            <input id="landscape-reference-split" type="range" min="0" max="100" value="50" aria-label="Reference split" />
+        <div class="preview-pair">
+          <div class="viewport" id="viewport">
+            <canvas id="stage" tabindex="0" aria-label="3D asset preview. Drag to orbit, scroll to zoom, or right-drag to pan."></canvas>
+            <div id="landscape-comparison" hidden>
+              <div class="reference-layer"><img id="landscape-reference-image" alt="Captured landscape reference" /></div>
+              <div class="reference-divider" aria-hidden="true"></div>
+              <div class="reference-labels" aria-hidden="true"><span>Reference</span><span>Live</span></div>
+              <input id="landscape-reference-split" type="range" min="0" max="100" value="50" aria-label="Reference split" />
+            </div>
+            <div class="viewport-note" aria-hidden="true"><span>DRAG</span> Orbit <span>SCROLL</span> Zoom <span>RIGHT-DRAG</span> Pan</div>
+            <aside id="subject-field" hidden><strong id="subject-readout"></strong><p id="subject-observations"></p></aside>
+            <aside id="biome-field" aria-label="Field observations" hidden><strong>Field observations</strong><p id="biome-observations"></p></aside>
+            <aside id="landscape-map" aria-labelledby="landscape-map-title" hidden>
+              <div class="map-heading">
+                <h2 id="landscape-map-title">Island map</h2>
+                <div class="map-zoom" role="group" aria-label="Map zoom">
+                  <button type="button" id="landscape-map-zoom-out" aria-label="Zoom out">−</button>
+                  <span id="landscape-map-zoom">1×</span>
+                  <button type="button" id="landscape-map-zoom-in" aria-label="Zoom in">+</button>
+                  <button type="button" id="landscape-map-reset" aria-label="Reset map view">Reset</button>
+                </div>
+                <button type="button" id="landscape-map-close" aria-label="Close island map">×</button>
+              </div>
+              <div class="map-tools">
+                <fieldset class="map-modes">
+                  <legend class="sr-only">Map action</legend>
+                  <label><input type="radio" name="map-mode" id="landscape-map-jump" checked /> Jump</label>
+                  <label><input type="radio" name="map-mode" id="landscape-map-place" /> Place scenery</label>
+                </fieldset>
+                <div class="layout-actions" role="group" aria-label="Draft history">
+                  <button type="button" data-layout-history="undo" aria-keyshortcuts="Control+Z Meta+Z" title="Undo draft edit (Ctrl or ⌘ + Z)" disabled>Undo</button>
+                  <button type="button" data-layout-history="redo" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y" title="Redo draft edit (Ctrl or ⌘ + Shift + Z)" disabled>Redo</button>
+                </div>
+              </div>
+              <label class="row" id="landscape-map-placement-row" hidden><span id="landscape-map-kind-label">Draft object</span><select id="landscape-map-kind" aria-labelledby="landscape-map-kind-label"></select></label>
+              <div class="map-surface" id="landscape-map-surface">
+                <canvas id="landscape-map-canvas" tabindex="0" aria-label="Top-down island terrain" aria-describedby="landscape-map-help landscape-map-keyboard"></canvas>
+                <div id="landscape-map-landmarks" class="map-pins" role="group" aria-label="Landmarks"></div>
+                <canvas id="landscape-map-overlay" aria-hidden="true"></canvas>
+                <div id="landscape-map-shot-pins" class="map-pins" role="group" aria-label="Saved shot pins"></div>
+                <div id="landscape-map-draft-pins" class="map-pins" role="group" aria-label="Draft objects"></div>
+              </div>
+              <div class="map-key" aria-hidden="true">
+                <span class="map-key--focus">Focus</span><span class="map-key--shot">Saved shot</span><span class="map-key--draft">Draft object</span>
+              </div>
+              <label class="row" id="landscape-map-shot-row" hidden><span id="landscape-map-shot-label">Saved shots</span><select id="landscape-map-shots" aria-labelledby="landscape-map-shot-label"></select></label>
+              <p id="landscape-map-help">Scroll to zoom. Drag the map to pan or a draft marker to move it.</p>
+              <p id="landscape-map-keyboard" class="sr-only">Use arrow keys to move the cursor, Enter to choose a spot, and plus or minus to zoom.</p>
+              <p id="landscape-map-draft-help" class="sr-only">Use arrow keys to nudge the object. Hold Shift for a one-metre step.</p>
+              <p id="landscape-map-status" role="status"></p>
+            </aside>
+            <div class="stage-error" id="stage-error" role="alert" hidden></div>
           </div>
-          <div class="viewport-note" aria-hidden="true"><span>DRAG</span> Orbit <span>SCROLL</span> Zoom <span>RIGHT-DRAG</span> Pan</div>
-          <aside id="subject-field" hidden><strong id="subject-readout"></strong><p id="subject-observations"></p></aside>
-          <aside id="biome-field" aria-label="Field observations" hidden><strong>Field observations</strong><p id="biome-observations"></p></aside>
-          <aside id="landscape-map" aria-labelledby="landscape-map-title" hidden>
-            <div class="map-heading">
-              <h2 id="landscape-map-title">Island map</h2>
-              <div class="map-zoom" role="group" aria-label="Map zoom">
-                <button type="button" id="landscape-map-zoom-out" aria-label="Zoom out">−</button>
-                <span id="landscape-map-zoom">1×</span>
-                <button type="button" id="landscape-map-zoom-in" aria-label="Zoom in">+</button>
-                <button type="button" id="landscape-map-reset" aria-label="Reset map view">Reset</button>
+          <aside id="asset-reference" aria-labelledby="reference-heading" hidden>
+            <header><h3 id="reference-heading">Reference image</h3><a id="reference-source" target="_blank" rel="noopener noreferrer" hidden></a></header>
+            <div id="reference-picture" role="group" aria-label="Reference photo" aria-describedby="photo-gestures" tabindex="-1"></div>
+            <div id="photo-controls" hidden>
+              <div class="layout-actions" role="group" aria-label="Photo zoom">
+                <button type="button" data-photo="out" aria-label="Zoom photo out">−</button>
+                <output aria-label="Photo magnification" aria-live="off">100%</output>
+                <button type="button" data-photo="in" aria-label="Zoom photo in">+</button>
+                <button type="button" data-photo="fit" aria-label="Fit whole photo">Fit</button>
               </div>
-              <button type="button" id="landscape-map-close" aria-label="Close island map">×</button>
-            </div>
-            <div class="map-tools">
-              <fieldset class="map-modes">
-                <legend class="sr-only">Map action</legend>
-                <label><input type="radio" name="map-mode" id="landscape-map-jump" checked /> Jump</label>
-                <label><input type="radio" name="map-mode" id="landscape-map-place" /> Place scenery</label>
-              </fieldset>
-              <div class="layout-actions" role="group" aria-label="Draft history">
-                <button type="button" data-layout-history="undo" aria-keyshortcuts="Control+Z Meta+Z" title="Undo draft edit (Ctrl or ⌘ + Z)" disabled>Undo</button>
-                <button type="button" data-layout-history="redo" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y" title="Redo draft edit (Ctrl or ⌘ + Shift + Z)" disabled>Redo</button>
+              <div class="layout-actions" role="group" aria-label="Pan photo">
+                <span aria-hidden="true">Pan</span>
+                <button type="button" data-pan="ArrowLeft" aria-label="Pan photo left">←</button>
+                <button type="button" data-pan="ArrowRight" aria-label="Pan photo right">→</button>
+                <button type="button" data-pan="ArrowUp" aria-label="Pan photo up">↑</button>
+                <button type="button" data-pan="ArrowDown" aria-label="Pan photo down">↓</button>
               </div>
+              <p id="photo-gestures">Scroll or pinch to zoom. Drag to pan. With the photo focused, use + and − to zoom, arrows to pan, and Home to fit.</p>
+              <span id="photo-position" class="sr-only" role="status"></span>
             </div>
-            <label class="row" id="landscape-map-placement-row" hidden><span id="landscape-map-kind-label">Draft object</span><select id="landscape-map-kind" aria-labelledby="landscape-map-kind-label"></select></label>
-            <div class="map-surface" id="landscape-map-surface">
-              <canvas id="landscape-map-canvas" tabindex="0" aria-label="Top-down island terrain" aria-describedby="landscape-map-help landscape-map-keyboard"></canvas>
-              <div id="landscape-map-landmarks" class="map-pins" role="group" aria-label="Landmarks"></div>
-              <canvas id="landscape-map-overlay" aria-hidden="true"></canvas>
-              <div id="landscape-map-shot-pins" class="map-pins" role="group" aria-label="Saved shot pins"></div>
-              <div id="landscape-map-draft-pins" class="map-pins" role="group" aria-label="Draft objects"></div>
-            </div>
-            <div class="map-key" aria-hidden="true">
-              <span class="map-key--focus">Focus</span><span class="map-key--shot">Saved shot</span><span class="map-key--draft">Draft object</span>
-            </div>
-            <label class="row" id="landscape-map-shot-row" hidden><span id="landscape-map-shot-label">Saved shots</span><select id="landscape-map-shots" aria-labelledby="landscape-map-shot-label"></select></label>
-            <p id="landscape-map-help">Scroll to zoom. Drag the map to pan or a draft marker to move it.</p>
-            <p id="landscape-map-keyboard" class="sr-only">Use arrow keys to move the cursor, Enter to choose a spot, and plus or minus to zoom.</p>
-            <p id="landscape-map-draft-help" class="sr-only">Use arrow keys to nudge the object. Hold Shift for a one-metre step.</p>
-            <p id="landscape-map-status" role="status"></p>
+            <p id="reference-status" role="status"></p>
+            <form>
+              <label for="reference-url">Image URL or Commons file page</label>
+              <input id="reference-url" type="url" required placeholder="https://…" autocomplete="off" />
+              <label for="reference-description">Photo description (optional)</label>
+              <input id="reference-description" type="text" maxlength="300" placeholder="Describe the detail to compare" />
+              <div class="layout-actions">
+                <button type="submit">Load image</button>
+                <button type="button" id="reference-remove" hidden>Remove</button>
+              </div>
+            </form>
+            <a id="reference-search" target="_blank" rel="noopener noreferrer">Search Wikimedia Commons ↗</a>
           </aside>
-          <div class="stage-error" id="stage-error" role="alert" hidden></div>
         </div>
 
         <div class="bottom">

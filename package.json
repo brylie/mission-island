@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "workbench:reference": "node --experimental-strip-types scripts/workbench-reference.mjs",
     "check": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "check:unused": "knip",
