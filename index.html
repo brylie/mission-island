@@ -33,11 +33,15 @@
     <script>
       const bootMessage = document.getElementById('boot-message')
       const retry = document.getElementById('boot-retry')
-      if (sessionStorage.getItem('mission-island-reloading')) bootMessage.textContent = 'Reloading the island…'
       retry.addEventListener('click', () => location.reload())
       setTimeout(() => {
         if (document.body.hasAttribute('data-booting')) retry.hidden = false
       }, 6000)
+      try {
+        if (sessionStorage.getItem('mission-island-reloading')) bootMessage.textContent = 'Reloading the island…'
+      } catch {
+        // The loading screen still works without stored reload state.
+      }
     </script>
     <header class="masthead">
       <div class="brand">

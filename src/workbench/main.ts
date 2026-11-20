@@ -1,6 +1,7 @@
 import './style.css'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
+import { readStorage, writeStorage } from '../browser-storage'
 import { entries as initialEntries } from './catalog'
 import type { Control, Values } from './catalog'
 import { createStage } from './stage'
@@ -46,7 +47,7 @@ interface SavedView {
 
 function readSavedView(): Partial<SavedView> {
   try {
-    return JSON.parse(sessionStorage.getItem(storeKey) ?? '{}') as Partial<SavedView>
+    return JSON.parse(readStorage('sessionStorage', storeKey) ?? '{}') as Partial<SavedView>
   } catch {
     return {}
   }
@@ -82,7 +83,7 @@ function remember() {
     speed: Number(rateSelect.value), lighting: lightSelect.value as LightingPreset,
     grid: grid.checked, wireframe: wireframe.checked, turntable: turntable.checked,
   }
-  sessionStorage.setItem(storeKey, JSON.stringify(view))
+  writeStorage('sessionStorage', storeKey, JSON.stringify(view))
 }
 
 function restoreOptions(controls: readonly Control[] = [], previous: Values = {}): Values {
@@ -128,6 +129,13 @@ function renderLibrary() {
     }
     link.append(entry.name)
     group.append(link)
+  }
+}
+
+function selectLibraryAsset() {
+  for (const link of library.querySelectorAll('a.asset-link')) {
+    if (link.getAttribute('href') === `#${asset.id}`) link.setAttribute('aria-current', 'true')
+    else link.removeAttribute('aria-current')
   }
 }
 
@@ -263,7 +271,7 @@ function loadAsset(camera?: CameraState) {
   playback.hidden = !asset.duration
   slider.max = String(asset.duration ?? 0)
   time = Math.min(time, asset.duration ?? 0)
-  renderLibrary()
+  selectLibraryAsset()
   renderAssetControls()
   renderPlayback()
   rebuild(camera)
@@ -359,6 +367,7 @@ try {
 } catch (error) {
   reportError(error instanceof Error ? error.message : 'This browser could not start the 3D preview.')
 }
+renderLibrary()
 loadAsset(saved.id === asset.id ? saved.camera : undefined)
 engine?.runRenderLoop(() => {
   if (!engine) return
@@ -387,6 +396,7 @@ if (import.meta.hot) {
     const camera = stage?.getCamera()
     entries = module.entries
     asset = entries.find(({ id }) => id === asset.id) ?? entries[0]
+    renderLibrary()
     loadAsset(camera)
   })
   import.meta.hot.accept('./stage', (changed) => {

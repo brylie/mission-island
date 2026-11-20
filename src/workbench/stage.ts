@@ -3,6 +3,7 @@ import type { Engine } from '@babylonjs/core/Engines/engine'
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { CreateLineSystem } from '@babylonjs/core/Meshes/Builders/linesBuilder'
+import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
 import { Scene } from '@babylonjs/core/scene'
 import { createIslandLighting, createMeshFactory } from '../island-meshes'
 import { createAtmosphere } from '../island-atmosphere'
@@ -32,6 +33,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     const { sky, sunlight, shadows } = createIslandLighting(scene)
     const meshes = createMeshFactory(scene, shadows)
     const update = entry.create(meshes, values, reportError)
+    meshes.finishScenery({ merge: false })
     let min = new Vector3(Infinity, Infinity, Infinity)
     let max = new Vector3(-Infinity, -Infinity, -Infinity)
     let triangles = 0
@@ -97,6 +99,9 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     sunlight.shadowMaxZ = Math.max(55, size * 4)
     let lighting: LightingPreset = 'daylight'
     let wireframe = false
+    function applyWireframe(mesh: AbstractMesh) {
+      if (mesh.material && mesh.material.wireframe !== wireframe) mesh.material.wireframe = wireframe
+    }
 
     const pointOfView = {
       perspective: [entry.angle ?? 0.88, 1.1],
@@ -134,9 +139,8 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         const light = atmosphere?.update(time, { hour: Number(settings.hour), rain }, position, true) ?? 1
         update?.({ time, rate, seek, lighting, camera: position, light, rain }, settings)
         layout?.update(delta, time)
-        for (const mesh of subject) {
-          if (mesh.material && mesh.material.wireframe !== wireframe) mesh.material.wireframe = wireframe
-        }
+        subject.forEach(applyWireframe)
+        layout?.meshes().forEach(applyWireframe)
         scene.render()
       },
       setLighting(preset: LightingPreset) {

@@ -23,7 +23,7 @@ export const defaultAppearance: CrewAppearance = { uniform: 'default', skin: 'de
 
 export function cleanCrewName(input: unknown) {
   if (typeof input !== 'string') return ''
-  const cleaned = input.trim().replace(/\s+/g, ' ').replace(/[\p{Cc}\p{Cf}]/gu, '')
+  const cleaned = input.replace(/\p{White_Space}+/gu, ' ').replace(/[\p{Cc}\p{Cf}]/gu, '').replace(/ +/g, ' ').trim()
   return Array.from(cleaned).slice(0, 24).join('').trim()
 }
 

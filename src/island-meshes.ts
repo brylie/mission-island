@@ -122,7 +122,19 @@ export function createMeshFactory(scene: Scene, shadows: ShadowGenerator) {
     }
   }
 
-  function finishScenery() {
+  function finishScenery({ merge = true } = {}) {
+    if (!merge) {
+      for (const meshes of batches.values()) {
+        for (const mesh of meshes) {
+          mesh.receiveShadows = true
+          shadows.addShadowCaster(mesh, false)
+        }
+      }
+      for (const mesh of noShadow) mesh.receiveShadows = true
+      batches.clear()
+      noShadow.length = 0
+      return
+    }
     for (const [material, meshes] of batches) {
       const batch = Mesh.MergeMeshes(meshes, true, true)
       if (!batch) continue

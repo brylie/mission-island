@@ -37,6 +37,7 @@ export function createObjectiveMarker({ scene, paint }: MeshFactory, point: Poin
   curtain.parent = root
   const halo = createIslandMaterial(scene, 'Objective glow', '#ffffff')
   halo.disableLighting = true
+  halo.emissiveColor = Color3.White()
   halo.backFaceCulling = false
   halo.alpha = 0.82
   halo.alphaMode = Constants.ALPHA_ADD

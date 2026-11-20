@@ -478,8 +478,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       const item = heldItem(state, member.player)
       if (item) {
         item.holder = null
-        item.y = 0.04
-        physics.release(item, item)
+        if (item.kind === 'crate') physics.release(item, item)
+        else item.y = groundHeight(item) + 0.04
       }
       member.player.seat = null
       member.player.onBed = false
@@ -738,6 +738,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         break
       case 'interact':
         interact(member)
+        // Save order progress, completion, and crew payouts together.
         checkpoint?.()
         break
       case 'seat':

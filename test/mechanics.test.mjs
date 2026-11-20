@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import { createCargoPhysics } from '../server/cargo.ts'
 import { catchChance, stepFight } from '../server/fishing.ts'
 import { createGame } from '../server/game.ts'
-import { canOccupyGround, stepPlayer } from '../server/movement.ts'
+import { canOccupyGround, stepPlayer, stepPlayerOnTerrain } from '../server/movement.ts'
 import { islandSaveFile } from '../server/save.ts'
 import { skiffExit, stepSkiff } from '../server/skiff.ts'
 import { castPeakSeconds, chargePower, throwSeconds } from '../src/charged-actions.ts'
@@ -161,6 +161,22 @@ test('a crate blocks a walking player and supports a player landing from a jump'
   assert.equal(motion.player.grounded, true)
 })
 
+test('a second draft truck blocks walking and supports landing on its bed', () => {
+  const first = parkedTruckPose(truckStart)
+  const second = parkedTruckPose({ ...truckStart, x: 21, z: -18 })
+  const motion = {
+    player: { ...offset(second, 0, -3.26), y: groundHeight(second), heading: 0, grounded: true, onBed: false, swimming: false },
+    verticalSpeed: 0,
+  }
+  const step = () => stepPlayerOnTerrain(motion, [first, second], { x: 1, z: 0 }, false, 1 / 30, () => -Infinity)
+  for (let i = 0; i < 12; i++) step()
+  assert.ok(motion.player.x < second.x - 3)
+  motion.player.grounded = false
+  motion.verticalSpeed = jumpSpeed
+  for (let i = 0; i < 24; i++) step()
+  assert.equal(motion.player.truckSurface, 'bed')
+})
+
 test('named save slots are separate, validated and replaced with full snapshots', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'mission-island-test-'))
   t.after(() => rmSync(root, { recursive: true, force: true }))
@@ -172,6 +188,22 @@ test('named save slots are separate, validated and replaced with full snapshots'
   const save = createGame().snapshotForSave()
   first.write(save)
   assert.deepEqual(first.load(), save)
+  const crew = [{ token: 'a'.repeat(32), reserved: true, player: {
+    ...truckStart, id: 0, y: 0, coins: 0, seeds: 0, inventory: [], goods: { fish: 0, carrots: 0 },
+  } }]
+  const held = { ...save, crew, world: { ...save.world, items: save.world.items.map((item) => ({ ...item })) } }
+  held.world.items[0].holder = 0
+  first.write(held)
+  assert.deepEqual(first.load(), held)
+  for (const holder of ['0', 1]) {
+    held.world.items[0].holder = holder
+    first.write(held)
+    assert.throws(() => first.load(), /Could not load island save/)
+  }
+  held.world.items[0].holder = 0
+  crew[0].reserved = false
+  first.write(held)
+  assert.throws(() => first.load(), /Could not load island save/)
   assert.equal(other.load(), undefined)
   save.islandTime = 500
   save.world.farm[0] = 'planted'
@@ -200,6 +232,9 @@ test('named save slots are separate, validated and replaced with full snapshots'
 test('display names normalize spaces and remove control characters', () => {
   assert.equal(cleanCrewName(null), '')
   assert.equal(cleanCrewName('  Jo\u0000\u202e   Island  '), 'Jo Island')
+  const spaced = cleanCrewName('Jo\t \u202e \nIsland')
+  assert.equal(spaced, 'Jo Island')
+  assert.equal(cleanCrewName(spaced), spaced)
   assert.equal(cleanCrewName('L'.repeat(30)).length, 24)
   assert.deepEqual(readAppearance({ uniform: 'constructor', skin: 2 }), { uniform: 'default', skin: 'default' })
 })

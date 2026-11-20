@@ -1,6 +1,7 @@
 import './style.css'
 import { boundaryBuoys, buoyBoundaryPoint, coastPoint } from './terrain'
 import { actionHint, heldItem, inSkiff } from './actions'
+import { readStorage, writeStorage } from './browser-storage'
 import { anglerCost, cleanCrewName, defaultAppearance, readAppearance, skinTones, uniforms } from './crew-appearance'
 import type { CrewAppearance } from './crew-appearance'
 import { farm, market } from './farm'
@@ -63,8 +64,8 @@ const chargeLabel = element('charge-label')
 const chargePower = element<HTMLProgressElement>('charge-power')
 const buyAngler = element<HTMLButtonElement>('buy-angler')
 const profileKey = 'mission-island-appearance'
-invertHorizontal.checked = localStorage.getItem('mission-island-invert-horizontal') !== 'false'
-invertVertical.checked = localStorage.getItem('mission-island-invert-vertical') !== 'false'
+invertHorizontal.checked = readStorage('localStorage', 'mission-island-invert-horizontal') !== 'false'
+invertVertical.checked = readStorage('localStorage', 'mission-island-invert-vertical') !== 'false'
 const prompt = element('prompt')
 const promptKey = element('prompt-key')
 const promptAction = element('prompt-action')
@@ -72,21 +73,23 @@ const map = element<HTMLCanvasElement>('map')
 const ink = map.getContext('2d')
 
 let renderer: ReturnType<typeof createRenderer> | undefined
-let socket: WebSocket
+let socket: WebSocket | undefined
 let id = -1
 let live = false
 let message = ''
 let snapshot: Snapshot | undefined
-let follow = sessionStorage.getItem('mission-island-follow') !== 'false'
+let follow = readStorage('sessionStorage', 'mission-island-follow') !== 'false'
 const keys = new Set<string>()
 let primary = false
 let rightButtonHeld = false
 let wasPointerLocked = false
 const crewKey = 'mission-island-crew'
 const reloadKey = 'mission-island-reloading'
-let token = sessionStorage.getItem(crewKey) ?? localStorage.getItem(crewKey) ?? newToken()
-sessionStorage.setItem(crewKey, token)
-if (!localStorage.getItem(crewKey)) localStorage.setItem(crewKey, token)
+const savedToken = readStorage('localStorage', crewKey)
+let token = readStorage('sessionStorage', crewKey) ?? savedToken ?? newToken()
+writeStorage('sessionStorage', crewKey, token)
+if (!savedToken) writeStorage('localStorage', crewKey, token)
+let editingName: { id: number; token: string; name: string } | undefined
 let appearance: CrewAppearance = defaultAppearance
 let milestone = 0
 let ownsAngler = false
@@ -116,7 +119,7 @@ const toolButtons = starterTools.map((item, index) => {
   return button
 })
 try {
-  const saved = JSON.parse(localStorage.getItem(profileKey) ?? '{}') as { appearance?: unknown; milestone?: unknown } | null
+  const saved = JSON.parse(readStorage('localStorage', profileKey) ?? '{}') as { appearance?: unknown; milestone?: unknown } | null
   appearance = readAppearance(saved?.appearance)
   milestone = saved?.milestone === 2 ? 2 : saved?.milestone === 1 ? 1 : 0
 } catch {
@@ -142,14 +145,12 @@ renderAppearanceOptions()
 buyAngler.textContent = `Buy Harbor angler · ${anglerCost} coins`
 
 function saveAppearance() {
-  localStorage.setItem(profileKey, JSON.stringify({ appearance, milestone }))
+  writeStorage('localStorage', profileKey, JSON.stringify({ appearance, milestone }))
 }
 
 function newToken() {
-  const value = Array.from(crypto.getRandomValues(new Uint8Array(16)),
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)),
     (byte) => byte.toString(16).padStart(2, '0')).join('')
-  sessionStorage.setItem(crewKey, value)
-  return value
 }
 
 function drawMap(state?: Snapshot) {
@@ -249,6 +250,8 @@ try {
   renderer.setMouseInversion(invertHorizontal.checked, invertVertical.checked)
   bootMessage.textContent = 'Connecting to the host…'
 } catch (error) {
+  renderer?.dispose()
+  renderer = undefined
   console.error(error)
   bootMessage.textContent = renderFailed
 }
@@ -303,8 +306,8 @@ function updateMission(state: Snapshot) {
   const reached = state.mission === 'complete' ? 2 : state.mission === 'fire' ? 1 : 0
   if (live && reached > milestone) {
     milestone = reached
-    saveAppearance()
     renderAppearanceOptions()
+    saveAppearance()
   }
   const card = missionCard(state)
   missionLabel.textContent = card.label
@@ -429,7 +432,7 @@ function connect() {
         if (renderer && document.body.hasAttribute('data-booting')) {
           document.body.removeAttribute('data-booting')
           bootStatus.hidden = true
-          sessionStorage.removeItem(reloadKey)
+          writeStorage('sessionStorage', reloadKey, null)
         }
         break
       case 'full':
@@ -439,6 +442,7 @@ function connect() {
         break
       case 'duplicate':
         token = newToken()
+        writeStorage('sessionStorage', crewKey, token)
         break
       case 'fishing-result': {
         const [key, label] = feedbackText[incoming.result]
@@ -469,7 +473,7 @@ function connect() {
   socket.addEventListener('close', () => {
     live = false
     respawn.disabled = true
-    sessionStorage.setItem(reloadKey, 'yes')
+    writeStorage('sessionStorage', reloadKey, 'yes')
     actionFeedback = undefined
     chargeMeter.hidden = true
     buyAngler.disabled = true
@@ -488,7 +492,7 @@ function connect() {
 }
 
 function send(message: ClientMessage) {
-  if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message))
+  if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message))
 }
 
 const keyBindings = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown',
@@ -533,7 +537,7 @@ function applyCamera() {
 function toggleCamera() {
   cancelMouseActions()
   follow = !follow
-  sessionStorage.setItem('mission-island-follow', String(follow))
+  writeStorage('sessionStorage', 'mission-island-follow', String(follow))
   applyCamera()
   if (follow) renderer?.captureMouse()
   else renderer?.releaseMouse()
@@ -564,13 +568,15 @@ function toggleOptions() {
   }
   if (boardDialog.open) return
   pauseControls()
-  crewName.value = snapshot?.players.find((player) => player.id === id)?.name ?? ''
+  const player = live ? snapshot?.players.find((entry) => entry.id === id) : undefined
+  editingName = player && { id: player.id, token, name: player.name }
+  crewName.value = editingName?.name ?? ''
   optionsDialog.showModal()
 }
 
 function saveMouseOptions() {
-  localStorage.setItem('mission-island-invert-horizontal', String(invertHorizontal.checked))
-  localStorage.setItem('mission-island-invert-vertical', String(invertVertical.checked))
+  writeStorage('localStorage', 'mission-island-invert-horizontal', String(invertHorizontal.checked))
+  writeStorage('localStorage', 'mission-island-invert-vertical', String(invertVertical.checked))
   renderer?.setMouseInversion(invertHorizontal.checked, invertVertical.checked)
 }
 
@@ -673,7 +679,7 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('blur', () => {
   pauseControls()
 })
-window.addEventListener('pagehide', () => socket.close())
+window.addEventListener('pagehide', () => socket?.close())
 cameraButton.addEventListener('click', () => {
   toggleCamera()
   cameraButton.blur()
@@ -685,9 +691,10 @@ editCrewName.addEventListener('click', () => {
   crewName.select()
 })
 function saveCrewName() {
+  const original = editingName
+  editingName = undefined
   const name = cleanCrewName(crewName.value)
-  const player = snapshot?.players.find((entry) => entry.id === id)
-  if (live && player && name !== player.name) send({ type: 'crew-name', name })
+  if (live && original?.token === token && original.id === id && name !== original.name) send({ type: 'crew-name', name })
 }
 optionsDialog.addEventListener('close', saveCrewName)
 invertHorizontal.addEventListener('change', saveMouseOptions)
@@ -708,12 +715,12 @@ respawn.addEventListener('click', () => {
   send({ type: 'respawn' })
   optionsDialog.close()
 })
-connect()
+if (renderer) connect()
 setInterval(sendInput, 60)
 
 if (import.meta.hot) {
   import.meta.hot.on('vite:beforeFullReload', () => {
-    sessionStorage.setItem(reloadKey, 'yes')
+    writeStorage('sessionStorage', reloadKey, 'yes')
     message = 'Reloading the island…'
     showNotice()
   })
@@ -727,6 +734,10 @@ if (import.meta.hot) {
       renderer.setMouseInversion(invertHorizontal.checked, invertVertical.checked)
       if (optionsDialog.open) renderer.releaseMouse()
       if (snapshot) renderer.update(snapshot, id, follow)
+      if (!socket) {
+        bootMessage.textContent = 'Connecting to the host…'
+        connect()
+      }
     } catch (error) {
       console.error(error)
     }

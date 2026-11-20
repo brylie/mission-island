@@ -1,17 +1,17 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import { stepPlayer } from '../../server/movement'
+import { stepPlayerOnTerrain } from '../../server/movement'
 import { createCrew, createFlatbed, createSupply, poseCrew } from '../island-assets'
 import type { MeshFactory } from '../island-meshes'
 import { walkingHeight } from '../terrain'
 import { crateSize, distance, jumpSpeed, truckStart } from '../world'
 import { parkedTruckPose } from '../truck-pose'
-import type { Point, Pose } from '../world'
+import type { Point } from '../world'
 
 const store = 'mission-island-landscape-layout'
 const labels = { player: 'Test player', crate: 'Crate', rock: 'Rock', tree: 'Tree', truck: 'Flatbed' } as const
 type Kind = keyof typeof labels
 type Placement = Point & { kind: Kind }
-type Motor = Parameters<typeof stepPlayer>[0]
+type Motor = Parameters<typeof stepPlayerOnTerrain>[0]
 
 function loadLayout(): Placement[] {
   try {
@@ -32,6 +32,7 @@ function nodeFor(meshes: MeshFactory, placement: Placement) {
   const crew = placement.kind === 'player' ? createCrew(meshes, 0) : undefined
   const root = crew?.root ?? new TransformNode(labels[placement.kind], meshes.scene)
   const y = walkingHeight(placement)
+  const truckPose = placement.kind === 'truck' ? parkedTruckPose({ ...placement, heading: truckStart.heading }) : undefined
   root.position.set(placement.x, y, placement.z)
   const motor: Motor = { player: { ...placement, y, heading: 0, grounded: true, onBed: false, swimming: false }, verticalSpeed: 0 }
   if (placement.kind === 'crate') {
@@ -43,14 +44,13 @@ function nodeFor(meshes: MeshFactory, placement: Placement) {
   } else if (placement.kind === 'tree') {
     meshes.cylinder(0, 1.1, 0, 0.32, 0.42, 2.2, 8, '#765b48', root)
     meshes.cylinder(0, 2.7, 0, 0.12, 3.1, 3.5, 9, meshes.paintSurface('leaves'), root)
-  } else if (placement.kind === 'truck') {
+  } else if (truckPose) {
     const truck = createFlatbed(meshes)
     truck.root.parent = root
-    const pose = parkedTruckPose({ ...placement, heading: truckStart.heading })
-    root.position.y = pose.y
-    root.rotation.set(pose.pitch, pose.heading, pose.roll)
+    root.position.y = truckPose.y
+    root.rotation.set(truckPose.pitch, truckPose.heading, truckPose.roll)
   }
-  return { placement, root, motor, crew, stride: 0 }
+  return { placement, root, motor, crew, truckPose, stride: 0 }
 }
 
 export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasElement, focus: () => Point & { yaw: number }) {
@@ -161,12 +161,10 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
         x: dx * Math.cos(yaw) + dz * Math.sin(yaw), z: dz * Math.cos(yaw) - dx * Math.sin(yaw),
         sprint: keys.has('ShiftLeft') || keys.has('ShiftRight'), spray: false, careful: false,
       }
-      const truck = objects.find(({ placement }) => placement.kind === 'truck')
-      const pose: Pose = truck ? { ...truck.placement, heading: truckStart.heading } : { x: 1000, z: 1000, heading: 0 }
-      const truckPose = parkedTruckPose(pose)
+      const trucks = objects.flatMap(({ truckPose }) => truckPose ? [truckPose] : [])
       carriedTime += delta
       while (carriedTime >= 1 / 30) {
-        stepPlayer(current.motor, truckPose, truckPose, input, false, 1 / 30, draftedSurface)
+        stepPlayerOnTerrain(current.motor, trucks, input, false, 1 / 30, draftedSurface)
         carriedTime -= 1 / 30
       }
       const { player } = current.motor

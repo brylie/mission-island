@@ -61,7 +61,7 @@ function truckOverlap(truck: TruckPose, point: Point, clearance: number) {
 }
 
 function moveHorizontally(
-  player: Motor['player'], truck: TruckPose, input: Input, carrying: boolean, dt: number, clearance: number,
+  player: Motor['player'], trucks: readonly TruckPose[], input: Input, carrying: boolean, dt: number, clearance: number,
   extra: ExtraSurface,
 ) {
   if (!input.x && !input.z) return
@@ -78,8 +78,10 @@ function moveHorizontally(
     if (player.grounded && !player.truckSurface && rise > maxRise) return false
     const top = Math.max(propTop(point, 0.18), extra(point, 0.18))
     if (top > clearance + 0.055 && top >= Math.max(propTop(player, 0.18), extra(player, 0.18))) return false
-    const overlap = truckOverlap(truck, point, clearance)
-    return overlap <= 0 || overlap < truckOverlap(truck, player, clearance)
+    return trucks.every((truck) => {
+      const overlap = truckOverlap(truck, point, clearance)
+      return overlap <= 0 || overlap < truckOverlap(truck, player, clearance)
+    })
   }
   if (canWalk({ x: walk.x, z: player.z })) player.x = walk.x
   if (canWalk({ x: player.x, z: walk.z })) player.z = walk.z
@@ -96,11 +98,22 @@ export function stepPlayer(
     Object.assign(player, truckPoint(truck, local.x, height, local.z))
     player.heading += truck.heading - before.heading
   }
+  stepPlayerOnTerrain(motion, [truck], input, carrying, dt, extra)
+}
+
+export function stepPlayerOnTerrain(
+  motion: Motor, trucks: readonly TruckPose[], input: Input, carrying: boolean, dt: number, extra: ExtraSurface,
+) {
+  const { player } = motion
   const nextFeet = player.y + motion.verticalSpeed * dt
   const clearance = Math.max(player.y, nextFeet)
-  moveHorizontally(player, truck, input, carrying, dt, clearance, extra)
+  moveHorizontally(player, trucks, input, carrying, dt, clearance, extra)
 
-  const platform = truckPlatform(truck, player, clearance)
+  let platform: ReturnType<typeof truckPlatform>
+  for (const truck of trucks) {
+    const candidate = truckPlatform(truck, player, clearance)
+    if (candidate && (!platform || candidate.height > platform.height)) platform = candidate
+  }
   const ground = walkingHeight(player)
   const object = Math.max(propTop(player, 0), extra(player, 0))
   const deck = platform?.height ?? -Infinity

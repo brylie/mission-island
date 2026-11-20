@@ -39,29 +39,32 @@ function isJobBoard(value: unknown, mission: unknown) {
     isNumber(active.progress) && Number.isInteger(active.progress) && active.progress >= 0 && active.progress < jobs[active.id].quantity)
 }
 
+function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] {
+  if (!isRecord(entry) || !isCrewToken(entry.token) ||
+    typeof entry.reserved !== 'boolean' || !isPose(entry.player)) return false
+  const player = entry.player
+  return isNumber(player.id) && Number.isInteger(player.id) && player.id >= 0 && player.id < spawns.length &&
+    [player.y, player.coins, player.seeds].every(isNumber) && Array.isArray(player.inventory) &&
+    (player.starterSeedClaimed === undefined || typeof player.starterSeedClaimed === 'boolean') &&
+    isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
+}
+
 function isSave(value: unknown): value is IslandSave {
   if (!isRecord(value) || value.version !== 1 || !isNumber(value.islandTime) || value.islandTime < 0 ||
     !Array.isArray(value.growth) || value.growth.length !== farmPlots.length || !value.growth.every(isNumber) ||
-    !Array.isArray(value.crew) || !isRecord(value.world)) return false
+    !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
   const { world } = value
+  const reservedIds = new Set(value.crew.filter(({ reserved }) => reserved).map(({ player }) => player.id))
   if (world.jobs !== undefined && !isJobBoard(world.jobs, world.mission)) return false
   if (value.jobCrew !== undefined && (!Array.isArray(value.jobCrew) || !value.jobCrew.every(isCrewToken))) return false
-  if (!isPose(world.truck) || !isPose(world.skiff) || !isNumber(world.fire) ||
-    !['delivery', 'fire', 'complete'].some((mission) => mission === world.mission) ||
-    !Array.isArray(world.farm) || world.farm.length !== farmPlots.length ||
-    !world.farm.every((stage: unknown) => ['grass', 'tilled', 'planted', 'watered', 'ripe'].some((name) => name === stage)) ||
-    !Array.isArray(world.items) || world.items.length !== crateStarts.length + extinguisherStarts.length ||
-    !world.items.every((item: unknown, id) => isPose(item) && item.id === id && isNumber(item.y) &&
-      item.kind === (id < crateStarts.length ? 'crate' : 'extinguisher'))) return false
-  return value.crew.every((entry: unknown) => {
-    if (!isRecord(entry) || !isCrewToken(entry.token) ||
-      typeof entry.reserved !== 'boolean' || !isPose(entry.player)) return false
-    const player = entry.player
-    return isNumber(player.id) && Number.isInteger(player.id) && player.id >= 0 && player.id < spawns.length &&
-      [player.y, player.coins, player.seeds].every(isNumber) && Array.isArray(player.inventory) &&
-      (player.starterSeedClaimed === undefined || typeof player.starterSeedClaimed === 'boolean') &&
-      isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
-  })
+  return isPose(world.truck) && isPose(world.skiff) && isNumber(world.fire) &&
+    ['delivery', 'fire', 'complete'].some((mission) => mission === world.mission) &&
+    Array.isArray(world.farm) && world.farm.length === farmPlots.length &&
+    world.farm.every((stage: unknown) => ['grass', 'tilled', 'planted', 'watered', 'ripe'].some((name) => name === stage)) &&
+    Array.isArray(world.items) && world.items.length === crateStarts.length + extinguisherStarts.length &&
+    world.items.every((item: unknown, id) => isPose(item) && item.id === id && isNumber(item.y) &&
+      (item.holder === null || (isNumber(item.holder) && reservedIds.has(item.holder))) &&
+      item.kind === (id < crateStarts.length ? 'crate' : 'extinguisher'))
 }
 
 export function islandSaveFile(root: string, port: number, slot = `island-${port}`) {

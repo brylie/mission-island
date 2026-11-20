@@ -8,7 +8,7 @@ import { chargePower } from '../src/charged-actions.ts'
 import { farmPlots, market } from '../src/farm.ts'
 import { jobBoard, jobs, secondIslandGoal } from '../src/jobs.ts'
 import { northernRegions } from '../src/scenery.ts'
-import { groundHeight, maxWadeDepth, waterDepth, waterLevel } from '../src/terrain.ts'
+import { groundHeight, grove, maxWadeDepth, waterDepth, waterLevel } from '../src/terrain.ts'
 import { daySeconds, isNight } from '../src/weather.ts'
 import { crewHomes, jobPay, lookout, offset, skiffStart, spawns, town, truckStart } from '../src/world.ts'
 
@@ -42,7 +42,7 @@ function player(id, point = spawns[id], overrides = {}) {
 
 function setup(t, { saved, players = [], arrange = () => {}, random = () => 0 } = {}) {
   let time = 10000
-  const checkpoint = t.mock.fn()
+  const checkpoint = t.mock.fn(() => game.snapshotForSave())
   const save = saved ?? createGame().snapshotForSave()
   if (!saved) save.crew = players.map((entry, index) => ({ token: tokens[index], player: entry, reserved: true }))
   arrange(save)
@@ -610,7 +610,11 @@ test('market orders can be filled by both players, survive a reload, and count t
   const resumed = setup(t, { saved })
   const seller = resumed.join(tokens[0])
   assert.deepEqual(seller.state.jobs.active, { id: 'market-fish', progress: 1 })
+  resumed.checkpoint.mock.resetCalls()
   seller.request('interact')
+  const checkpoint = resumed.checkpoint.mock.calls[0]?.result
+  assert.deepEqual(checkpoint?.world.jobs, { active: null, completed: secondIslandGoal })
+  assert.deepEqual(checkpoint.crew.map(({ player }) => player.coins), [jobs['market-fish'].coins, jobs['market-fish'].coins])
   resumed.advance()
   assert.deepEqual(seller.player.goods, { fish: 1, carrots: 1 })
   assert.equal(seller.player.coins, jobs['market-fish'].coins)
@@ -623,6 +627,27 @@ test('market orders can be filled by both players, survive a reload, and count t
   assert.equal(seller.player.seeds, 1)
   assert.equal(seller.player.coins, jobs['market-fish'].coins - 1 + 5)
   assert.equal(seller.state.jobs.completed, secondIslandGoal)
+})
+
+test('an extinguisher left by an expired crew member stays reachable on a hill', (t) => {
+  const h = setup(t, {
+    players: [player(0, grove)],
+    arrange(save) {
+      save.world.mission = 'fire'
+      save.world.items[3].holder = 0
+    },
+  })
+  const disconnected = h.join(tokens[0])
+  disconnected.close()
+  h.elapse(12_100)
+  const returning = h.join(tokens[0])
+  const tool = returning.state.items[3]
+  assert.equal(tool.holder, null)
+  assert.ok(tool.y > 2.1)
+  assert.equal(tool.y, groundHeight(tool) + 0.04)
+  returning.request('interact')
+  h.advance()
+  assert.equal(returning.state.items[3].holder, 0)
 })
 
 test('a saved night, held equipment and inventory resume after recreating the host', (t) => {
