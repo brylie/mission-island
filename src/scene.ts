@@ -14,10 +14,10 @@ import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutFire } from './fire-effect'
 import { fisherAt, fisherName } from './harbor-fisher'
 import { createIslandCamera } from './island-camera'
-import {
-  createCrew, createFarmTools, createFlatbed, createSkiffGear, createSupply, playerColors, poseCrew,
-  poseFlatbed, poseFloating, poseSkiffCrew, poseSwimming, swimmingHeight,
-} from './island-assets'
+import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, poseSwimming, swimmingHeight } from './assets/crew'
+import { createFlatbed, poseFlatbed } from './assets/flatbed'
+import { createSupply } from './assets/props'
+import { poseFloating } from './assets/waterfront'
 import { createIslandLighting, createMeshFactory } from './island-meshes'
 import { createIslandWorld } from './island-world'
 import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'

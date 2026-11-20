@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import { multiplayer } from './server/game.ts'
+import { multiplayer } from './server/multiplayer.ts'
 
 export default defineConfig({
   server: { host: '0.0.0.0', port: 5173, strictPort: true },

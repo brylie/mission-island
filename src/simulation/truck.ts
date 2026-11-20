@@ -1,11 +1,11 @@
 import { Body, Box, RaycastVehicle, Vec3 } from 'cannon-es'
 import type { World } from 'cannon-es'
-import type { Input } from '../src/protocol.ts'
-import { groundHeight } from '../src/terrain.ts'
-import { parkedTruckPose, truckPoint, wheelAxles, wheelRadius, wheelTrack } from '../src/truck-pose.ts'
-import type { Truck, TruckPose } from '../src/truck-pose.ts'
-import { offset, truckBed, truckSideRails, truckTailLip } from '../src/world.ts'
-import type { Pose } from '../src/world.ts'
+import type { Input } from '../protocol.ts'
+import { groundHeight } from '../terrain.ts'
+import { parkedTruckPose, truckPoint, wheelAxles, wheelRadius, wheelTrack } from '../truck-pose.ts'
+import type { Truck, TruckPose } from '../truck-pose.ts'
+import { offset, truckBed, truckSideRails, truckTailLip } from '../world.ts'
+import type { Pose } from '../world.ts'
 
 const centreOfMass = 0.68
 const suspensionMount = 0.79

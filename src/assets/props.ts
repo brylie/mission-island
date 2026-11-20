@@ -1,0 +1,75 @@
+import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import type { MeshFactory } from '../island-meshes'
+import { surfaces } from '../materials'
+import { treeTrunkRadius } from '../scenery'
+import { chestSize, crateSize } from '../world'
+import type { Point } from '../world'
+const cream = '#fff3d0'
+
+export const umbrellaColors = ['#e97a59', '#ffce64', '#4faba4']
+
+export function createHomeChest({ scene, box, paintSurface }: MeshFactory, point: Point, color: string) {
+  const root = new TransformNode('Home chest', scene)
+  root.position.set(point.x, 0, point.z)
+  const { width, depth, height } = chestSize
+  const wood = paintSurface('wood', '#a77a52')
+  const boxHeight = height - 0.145
+  box(0, boxHeight / 2, 0, width - 0.045, boxHeight, depth - 0.035, wood, root)
+  box(0, boxHeight - 0.072, -0.014, width - 0.16, 0.1, depth - 0.015, color, root)
+  const hinge = new TransformNode('Chest lid', scene)
+  hinge.parent = root
+  hinge.position.set(0, boxHeight + 0.007, depth / 2)
+  box(0, 0.064, -depth / 2, width, 0.128, depth, wood, hinge)
+  box(0, -0.012, -depth - 0.009, 0.133, 0.16, 0.032, '#dbb26c', hinge)
+  return { root, hinge }
+}
+
+export function createSupply({ scene, box, cylinder }: MeshFactory, kind: 'crate' | 'extinguisher') {
+  const node = new TransformNode('Supply', scene)
+  if (kind === 'crate') {
+    box(0, 0, 0, crateSize, crateSize, crateSize, '#cf8b4f', node)
+    for (const side of [-1, 1]) {
+      box(side * 0.3, 0, 0, 0.11, 0.91, 0.91, '#f9c174', node)
+    }
+    box(0, 0.06, -0.453, 0.35, 0.23, 0.02, '#ffe8b1', node)
+  } else {
+    cylinder(0, 0.48, 0, 0.56, 0.56, 0.83, 12, '#d4513d', node)
+    cylinder(0, 0.57, 0, 0.57, 0.57, 0.18, 12, cream, node)
+    box(0, 0.98, 0, 0.42, 0.15, 0.22, '#2b4445', node)
+    box(0, 0.98, 0.19, 0.15, 0.12, 0.35, '#2b4445', node)
+  }
+  return node
+}
+
+export function createUmbrella({ cylinder, surface }: MeshFactory, x: number, z: number, color: string,
+  heightAt: (point: Point) => number = () => 0) {
+  const y = heightAt({ x, z })
+  cylinder(x, y + 1.25, z, 0.12, 0.16, 2.5, 6, '#8c6545')
+  cylinder(x, y + 2.6, z, 0.15, 3, 0.67, 8, color)
+  // Adjacent woven bands share their hems and follow the sand beneath each corner.
+  const ends = [-1.15, -.99, -.92, -.84, .84, .92, .99, 1.15]
+  for (let i = 1; i < ends.length; i++) {
+    const corners = [[.35, ends[i - 1]], [1.45, ends[i - 1]], [1.45, ends[i]], [.35, ends[i]]]
+    const vertices = corners.flatMap(([dx, dz]) => [x + dx, heightAt({ x: x + dx, z: z + dz }) + .022, z + dz])
+    surface('Beach towel', vertices, [0, 1, 2, 0, 2, 3], i === 2 || i === 6 ? color : '#f4e2b6').freezeWorldMatrix()
+  }
+}
+
+export function createTree({ cylinder, sphere, paintSurface }: MeshFactory, x: number, z: number, height: number, variant: number, ground = 0) {
+  cylinder(x, ground + height * 0.25 - 0.08, z, 0.31, treeTrunkRadius * 2, height * 0.5 + 0.16, 6, paintSurface('wood'))
+  const canopy = paintSurface('leaves', ['#44784b', '#558953', '#366d4c', surfaces.leaves.color][variant % 4])
+  if (variant % 3 === 0) {
+    sphere(x, ground + height * 0.64, z, height * 0.8, height * 0.8, height * 0.77, canopy)
+    sphere(x + height * 0.23, ground + height * 0.54, z + 0.27, height * 0.58, height * 0.57, height * 0.54, paintSurface('leaves', '#619553'))
+  } else {
+    cylinder(x, ground + height * 0.55, z, 0.1, height * 0.67, height * 0.63, 7, canopy)
+    cylinder(x, ground + height * 0.76, z, 0.04, height * 0.48, height * 0.61, 7, paintSurface('leaves', variant % 2 ? '#55894e' : '#3e7852'))
+  }
+}
+
+export function createRock({ sphere, paintSurface }: MeshFactory, x: number, z: number, size: number, angle: number, light: boolean, ground = 0) {
+  const rock = sphere(x, size * 0.12 + ground, z, size, size * 0.78, size * 1.1,
+    paintSurface('stone', light ? '#b0ad91' : surfaces.stone.color))
+  rock.rotation.y = angle
+  return rock
+}

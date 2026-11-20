@@ -1,4 +1,4 @@
-import type { SiteFeature } from '../site-props.ts'
+import type { SiteFeature } from '../worlds/site-feature.ts'
 import { picnicLedge, viaductWalk } from './sites.ts'
 
 export const saltwindFeatures: readonly SiteFeature[] = [

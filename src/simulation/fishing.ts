@@ -1,6 +1,6 @@
-import { waterDepth } from '../src/terrain.ts'
-import { offset, onDock } from '../src/world.ts'
-import type { Pose } from '../src/world.ts'
+import { waterDepth } from '../terrain.ts'
+import { offset, onDock } from '../world.ts'
+import type { Pose } from '../world.ts'
 
 export function castPoint(pose: Pose, power: number) {
   const point = offset(pose, 0, 3.1 + 9.2 * power)

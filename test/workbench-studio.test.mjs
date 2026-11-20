@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import { libraryResults, workspaceOf, workspaces } from '../src/workbench/library.ts'
 import { readSubjectLink, subjectLink } from '../src/workbench/subject-link.ts'
 import { defaultPlacement, draftFeatures, readSiteDrafts, saveSiteDraft } from '../src/workbench/site-drafts.ts'
-import { starterFeatures } from '../src/starter-sites.ts'
+import { starterFeatures } from '../src/worlds/starter/sites.ts'
 
 test('workspace browsing stays scoped and multiword search crosses subject groups', () => {
   const entries = [

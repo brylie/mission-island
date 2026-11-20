@@ -1,6 +1,6 @@
 import { seededRandom } from './seeded-random.ts'
-import { ridgeViewpoint } from './starter-sites.ts'
-import { starterPropTop } from './starter-colliders.ts'
+import { ridgeViewpoint } from './worlds/starter/sites.ts'
+import { starterPropTop } from './worlds/starter/colliders.ts'
 import { distanceToRoute, footpaths, road, shellglassPoint, splitstone } from './routes.ts'
 import { coastRadius, falls, grove, groundHeight, headland, pool, waterDepth } from './terrain.ts'
 import { beach, distance, forest, harbor, island, lookout, town } from './world.ts'

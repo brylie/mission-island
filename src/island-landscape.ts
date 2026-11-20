@@ -1,5 +1,5 @@
 import { juniperCenter } from './juniper-habitat'
-import { onBeachTowel } from './starter-sites'
+import { onBeachTowel } from './worlds/starter/sites'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import { CreateLineSystem } from '@babylonjs/core/Meshes/Builders/linesBuilder'
 import { Color3 } from '@babylonjs/core/Maths/math.color'
