@@ -1,4 +1,5 @@
 import './style.css'
+import { createReferencePane } from './reference-pane'
 import { createVariationLibrary } from './variations'
 import { readSubjectLink, subjectLink } from './subject-link'
 import { starterFeatures } from '../worlds/starter/sites'
@@ -34,6 +35,7 @@ function element<T extends HTMLElement = HTMLElement>(id: string) {
 
 const canvas = element<HTMLCanvasElement>('stage')
 const library = createLibraryPanel()
+const reference = createReferencePane()
 const inspector = element('asset-controls')
 const playback = element('playback')
 const play = element<HTMLButtonElement>('play')
@@ -72,9 +74,9 @@ function readSavedView(): Partial<SavedView> {
   }
 }
 
-const shared = location.hash === '#landscape' ? readLandscapeView(new URLSearchParams(location.search)) : undefined
+const shared = location.hash.split('?')[0] === '#landscape' ? readLandscapeView(new URLSearchParams(location.search)) : undefined
 const saved = readSavedView()
-const sharedRecipe = location.hash === '#biome' ? recipeFromLink(new URLSearchParams(location.search)) : undefined
+const sharedRecipe = location.hash.split('?')[0] === '#biome' ? recipeFromLink(new URLSearchParams(location.search)) : undefined
 if (sharedRecipe) {
   saved.options = { ...saved.options, biome: sharedRecipe }
   Object.assign(saved, { id: 'biome', camera: undefined, time: 0, playing: true })
@@ -124,7 +126,7 @@ function remember() {
   }
   writeStorage('sessionStorage', storeKey, JSON.stringify(view))
   if (asset.id === 'biome' && new URLSearchParams(location.search).has('recipe')) {
-    const link = biomeLink(location.href, readRecipe(values))
+    const link = reference.share(biomeLink(location.href, readRecipe(values)))
     if (link !== location.href) history.replaceState(null, '', link)
   }
 }
@@ -444,7 +446,7 @@ function openSubjectSetup() {
   playing = turntable.checked = false
   time = shot.time
   loadAsset(shot.camera)
-  history.replaceState(history.state, '', location.pathname + '#' + asset.id + (onIsland ? '?stage=island' : ''))
+  history.replaceState(history.state, '', reference.share(new URL('#' + asset.id + (onIsland ? '?stage=island' : ''), location.origin + location.pathname).href))
   remember()
   return true
 }
@@ -460,7 +462,7 @@ function openLinkedStudy() {
   // Apply explicit links once. Reloads during editing restore the working view.
   url.searchParams.delete('view')
   url.hash = 'landscape'
-  history.replaceState(history.state, '', url)
+  history.replaceState(history.state, '', reference.share(url.href))
   return true
 }
 
@@ -523,6 +525,7 @@ scenicView.addEventListener('change', () => {
 window.addEventListener('hashchange', () => {
   const next = entries.find(({ id }) => id === requested())
   if (!next) return
+  reference.select(next.id, next.name)
   const field = Boolean(next.fieldSite && fieldRequested())
   if (next !== asset || field !== onIsland) {
     if (next !== asset) {
@@ -626,8 +629,12 @@ function currentSetupLink() {
     hour: Number(values.hour), rain: Number(values.rain), marketRainAge: Number(values.marketRainAge),
     time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
 }
-bindPlaytestCopy(currentSetupLink)
-const showVariations = createVariationLibrary(currentSetupLink)
+const shareSetup = () => {
+  const link = currentSetupLink()
+  return link && reference.share(link)
+}
+bindPlaytestCopy(shareSetup)
+const showVariations = createVariationLibrary(shareSetup)
 
 let resize: ResizeObserver | undefined
 try {
@@ -637,6 +644,7 @@ try {
 } catch (error) {
   reportError(error instanceof Error ? error.message : 'This browser could not start the 3D preview.')
 }
+reference.select(asset.id, asset.name)
 if (!openSubjectSetup()) loadAsset(saved.id === asset.id && Boolean(saved.field) === onIsland ? saved.camera : undefined)
 openFurnishingLocation()
 const initialUrl = new URL(location.href)

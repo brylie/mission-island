@@ -19,6 +19,30 @@ Open **Construction → Site furnishings → Seabrook village bench**. Select **
 
 Use **Saved variations** to build a named, browser-local collection for a subject. Each variation restores its controls, viewport and clock. Use **Copy setup link** to share a specific model, context, parameter set, camera, lighting and paused time. Use a LAN address when sharing between computers. Landscape studies and biome recipes retain their specialized formats. The map’s **Save layout** and **Export JSON** manage additional placed objects. Scene drafts and setups run separately from multiplayer saves.
 
+## Compare an asset with a reference photo
+
+Open **Reference image** beside the subject title. Paste a direct image URL or a Wikimedia Commons **File:** page, add a **Photo description** of the detail you want to compare, then choose **Load image**. The description is optional and supplies the image’s alternative text. **Search Wikimedia Commons** opens a search for the current asset. For a Commons file page, **File & license** opens the original credit and licensing information. You can orbit, animate, or change the model while the photograph stays in place.
+
+Scroll or pinch over the photo to zoom toward a detail, then drag to pan. The **+** and **−** buttons zoom around the center. Use the four **Pan** buttons to explore the enlarged photo one step at a time. You can also Tab to the photo and press **+** or **−** to zoom, the **arrow keys** to pan, and **Home** to fit. The model camera stays in place. Press **Escape** inside the pane to return to the **Reference image** button.
+
+The Workbench remembers the reference and its framing per asset in this browser. Hide it with **Reference image**, or select **Remove** to forget it. **Copy setup link** includes the visible photo crop alongside the camera and asset settings so a teammate can open the comparison on another computer.
+
+### Prepare a comparison link from the command line
+
+Choose the asset in the Library and use its address or **Copy setup link** to include the model camera and settings. The asset ID follows the first `#` (for example, `clover`). Find a Commons file page showing the feature you want to study and check the credit and license on that page. From the checkout, run the following with the host and port your reviewer can reach.
+
+```sh
+npm run --silent workbench:reference -- \
+  'http://localhost:5173/workbench.html#clover' \
+  'https://commons.wikimedia.org/wiki/File:White_clover.jpg' \
+  --crop '2.25,0.31626,0.56572' \
+  --description 'White clover flower head with many small florets.'
+```
+
+The command writes one URL to standard output and exits nonzero for invalid input. Omit `--crop` to show the whole photo. The three numbers are magnification (above 1 through 8) and the focal point measured from the left and top of the full image (0 through 1). The visible edges depend on the reviewer’s pane size. For a link assembled directly, use `URLSearchParams` in the **fragment** for `ref`, optional `crop`, and optional `refAlt` (up to 300 characters). Keep existing setup and recipe parameters. [Clover reference and license](https://commons.wikimedia.org/wiki/File:White_clover.jpg)
+
+To verify a handoff, open its link in a fresh browser profile. Check the subject title, the photo’s accessible description and magnification, and the source link. Pan the photo and confirm the model camera stays put.
+
 ## Adding a subject
 
 1. Register an `Entry` from `src/workbench/subject.ts` in an appropriate study module. Give it a stable ID, a library group and the path to its source. Group membership determines its workspace.
