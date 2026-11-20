@@ -26,6 +26,8 @@ export const truckStart: Pose = { x: -41, z: -11, heading: Math.PI / 2 }
 export const truckSeatSpeed = 2
 export const skiffStart: Pose = { x: -48.5, z: -35.8, heading: -2.5 }
 export const harborDock = { x: -44, firstZ: -29, planks: 18, spacing: 0.49, width: 3.45, plankDepth: 0.45, top: 0.23 }
+export const harborDockPiles = [-45.6, -42.4].flatMap(x =>
+  [-31, -34, -37].map(z => ({ x, z, bottom: -1.545, top: .705, diameter: .43 })))
 export const dockEndZ = harborDock.firstZ - (harborDock.planks - 1) * harborDock.spacing
 export const ferryTerminal = { x: -32, z: -31, width: 6 }
 export const truckBed = { width: 2.28, length: 3.12, center: -1.39, top: 1.12 }
