@@ -19,34 +19,58 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t
 const ease = (t: number) => t * t * (3 - 2 * t)
 const angleBetween = (a: number, b: number) => Math.atan2(Math.sin(b - a), Math.cos(b - a))
 
+export function crewLegSwing(phase: number, stride: number, side: number) {
+  const recovery = Math.max(0, -side * Math.cos(phase))
+  const bend = stride * (.08 + .88 * recovery ** 2)
+  return { hip: side * Math.sin(phase) * stride - bend * .36, bend }
+}
+
+function swingAnkle(phase: number, stride: number) {
+  const { hip, bend } = crewLegSwing(phase, stride, -1)
+  const pitch = hip + bend
+  return {
+    forward: -crewThigh * Math.sin(hip) - crewShin * Math.sin(pitch),
+    lift: crewThigh * (1 - Math.cos(hip)) + crewShin * (1 - Math.cos(pitch)),
+    pitch,
+  }
+}
+
 function profile(speed: number, scale: number) {
   const walk = Math.min(1, Math.max(0, (speed - 1.5) / (crewWalkSpeed - 1.5)))
   const sprint = Math.min(1, Math.max(0, (speed - crewWalkSpeed) / (crewWalkSpeed * (crewSprintMultiplier - 1))))
-  const cycle = mix(mix(.84, 2.36, walk), 3.6, sprint) * scale
+  const cycle = mix(mix(.84, 3.55, walk), 4.55, sprint) * scale
   // At the game's travel speeds there is a suspension interval between plants.
   // Keep the contact sweep within reach of the model's short legs.
   const contact = Math.min(.66, mix(mix(.43, .60, walk), .66, sprint) * scale)
-  return { cycle, contact, lift: mix(mix(.09, .17, walk), .24, sprint) }
+  return { cycle, contact, stride: mix(mix(.38, .57, walk), .89, sprint), lift: mix(.086, .105, sprint) }
 }
 
-function footfall(cycle: number, distance: number, contact: number, lift: number) {
+function footfall(cycle: number, { cycle: distance, contact, stride, lift }: ReturnType<typeof profile>) {
   const phase = cycle - Math.floor(cycle)
   const duty = contact / distance
   if (phase < duty) return { phase, forward: contact / 2 - phase * distance, lift: 0, pitch: 0, planted: true }
   const swing = (phase - duty) / (1 - duty)
-  const clearance = Math.sin(Math.PI * swing) ** 2
+  // Preserve the original ankle arc and follow-through between the planted endpoints.
+  const ankle = swingAnkle(Math.PI * (swing - .5), stride)
+  const start = swingAnkle(-Math.PI / 2, stride).forward
+  const end = swingAnkle(Math.PI / 2, stride).forward
+  const forward = contact * ((ankle.forward - start) / (end - start) - .5)
+  const easeLift = ease(Math.min(1, Math.min(swing, 1 - swing) / .22))
+  const pitch = ankle.pitch * easeLift
+  const shoeTip = pitch > 0 ? .21 : -.13
+  const requiredClearance = shoeTip * Math.sin(pitch) - .15 * (1 - Math.cos(pitch))
   return {
-    phase, forward: contact * (ease(swing) - .5), lift: lift * clearance,
-    pitch: .30 * Math.sin(2 * Math.PI * swing) * clearance, planted: false,
+    phase, forward, lift: Math.max(requiredClearance, easeLift * (ankle.lift + lift * Math.sin(Math.PI * swing))),
+    pitch, planted: false,
   }
 }
 
 export function crewGaitFrame(cycle: number, speed: number, scale = 1) {
   const amount = ease(Math.min(1, speed / 1.35))
-  const { contact, lift, cycle: distance } = profile(speed, scale)
+  const gait = profile(speed, scale)
   return {
-    cycle, amount, crouch: (.035 + .26 * contact ** 2) * amount, contact, distance,
-    feet: sides.map((_, i) => footfall(cycle + i / 2, distance, contact, lift)),
+    cycle, amount, crouch: .022 * amount, contact: gait.contact, distance: gait.cycle,
+    feet: sides.map((_, i) => footfall(cycle + i / 2, gait)),
   }
 }
 

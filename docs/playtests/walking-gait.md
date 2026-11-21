@@ -8,10 +8,12 @@ The browser sampled the centre of each boot sole in world coordinates at about 6
 
 | Pass | Median drift before | Median drift after | Distance between contacts | Time between contacts |
 | --- | ---: | ---: | ---: | ---: |
-| Walk | 1.71 m | < 0.01 m | 1.18 m | 0.150 s |
-| Sprint | 1.56 m | < 0.01 m | 1.61 m | 0.133 s |
-| Crate carry | 1.31 m | < 0.01 m | 0.99 m | 0.150 s |
-| Mara’s commute | 0.03 m | < 0.01 m | 0.52 m | 0.217 s |
+| Walk | 1.71 m | < 0.01 m | 1.73 m | 0.217 s |
+| Sprint | 1.56 m | < 0.01 m | 2.31 m | 0.183 s |
+| Crate carry | 1.31 m | < 0.01 m | 1.43 m | 0.225 s |
+| Mara’s commute | 0.03 m | < 0.01 m | 0.60 m | 0.250 s |
+
+Playtest feedback described the first foot-plant pass as unnatural. The side view showed bent knees and quick steps. The revised fit uses the original knee and ankle swing during recovery and lets the supporting leg straighten. Walking contacts moved from 0.150 to 0.217 seconds apart, and the supporting soles held against the pavement marks.
 
 The follow and side cameras showed the same contact behaviour. The Crew Workbench used the gameplay cadence at its default stride setting. The server still moves the crew at 8 m/s walking, 12.4 m/s sprinting, and 6.5 m/s carrying on dry level ground. Mara keeps the same five-second commute.
 

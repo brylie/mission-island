@@ -4,7 +4,7 @@ import { createShopAttachments, wornStock } from './shop-garments'
 import { rigCrewKnee } from './crew-knee'
 import { createCrewClothes } from './crew-clothes'
 import { fitCrewGait, relaxCrewGait } from './crew-gait-pose'
-import type { CrewGaitPose } from '../crew-gait'
+import { crewLegSwing, type CrewGaitPose } from '../crew-gait'
 import { createCrewHead } from './crew-head'
 import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
@@ -173,7 +173,7 @@ export function createCrew(meshes: MeshFactory, id: number) {
 
 export function poseCrew(crew: ReturnType<typeof createCrew>, gait: number | CrewGaitPose, stride: number, airborne: boolean,
   carrying?: 'crate' | 'extinguisher' | 'toolbox' | 'tool', reach = 0, blend = 1, winding = 0, throwing = false, rightHandRaised = false) {
-  const phase = (typeof gait === 'number' ? gait : gait.cycle) * Math.PI * 2
+  const phase = (typeof gait === 'number' ? gait : gait.cycle + .25) * Math.PI * 2
   const swing = Math.sin(phase) * stride
   const effort = Math.max(reach, Number(rightHandRaised), winding)
   crew.look(airborne ? -.06 : (carrying === 'crate' ? .13 : effort * .07),
@@ -183,10 +183,9 @@ export function poseCrew(crew: ReturnType<typeof createCrew>, gait: number | Cre
   for (const [i, leg] of crew.legs.entries()) {
     const side = i === 0 ? -1 : 1
     if (typeof gait === 'number') {
-      const recovery = Math.max(0, -side * Math.cos(phase))
-      const bend = airborne ? .46 - side * .19 : stride * (.08 + .88 * recovery * recovery)
-      leg.rotation.x += ((airborne ? side * .35 : swing * side - bend * .36) - leg.rotation.x) * blend
-      crew.knees[i].bend(bend, blend)
+      const step = crewLegSwing(phase, stride, side)
+      leg.rotation.x += ((airborne ? side * .35 : step.hip) - leg.rotation.x) * blend
+      crew.knees[i].bend(airborne ? .46 - side * .19 : step.bend, blend)
     }
     const arm = crew.arms[i]
     arm.rotation.z *= 1 - blend

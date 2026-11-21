@@ -8,6 +8,18 @@ import { crewCarrySpeed, crewSprintMultiplier, crewWalkSpeed } from '../src/worl
 const first = fisherAt(6.05), second = fisherAt(6.1)
 const commuteSpeed = Math.hypot(first.x - second.x, first.z - second.z) / (.05 * daySeconds / 24)
 
+test('the walking foot lifts from the heel and reaches toe-up before planting flat', () => {
+  const { contact, distance } = crewGaitFrame(0, crewWalkSpeed)
+  const stance = contact / distance
+  const early = crewGaitFrame(stance + (1 - stance) * .25, crewWalkSpeed).feet[0]
+  const late = crewGaitFrame(stance + (1 - stance) * .75, crewWalkSpeed).feet[0]
+  const plant = crewGaitFrame(1, crewWalkSpeed).feet[0]
+  assert.ok(early.pitch > .2)
+  assert.ok(late.pitch < -.1)
+  assert.ok(late.forward > early.forward)
+  assert.deepEqual([plant.planted, plant.lift, plant.pitch], [true, 0, 0])
+})
+
 for (const [name, speed] of [['Mara', commuteSpeed], ['carry', crewCarrySpeed], ['walk', crewWalkSpeed],
   ['sprint', crewWalkSpeed * crewSprintMultiplier]]) {
   test(`the ${name} gait plants a sole through stance and advances by rendered distance`, () => {
