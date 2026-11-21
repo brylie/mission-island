@@ -12,8 +12,7 @@ import { materialsFeedback, repairMaterials } from './materials-work'
 import { bindControlsToggle } from './controls-toggle-ui'
 import { bindLookOptions } from './look-options-ui'
 import { createReticleFocus } from './reticle-ui'
-import { gateStepText } from './gate-repair'
-import { favorFeedback } from './resident-notices'
+import { neighborFeedback } from './resident-notices'
 import { ferryFeedback } from './ferry-repair-ui'
 import { createJobBoard } from './job-board-ui'
 import { catchLabel, createJournalPage } from './journal-ui'
@@ -55,7 +54,7 @@ const guideDialog = element<HTMLDialogElement>('crew-guide-dialog')
 const guide = createCrewGuide(guideDialog, (dismissed) => {
   leadDismissed = dismissed
   writeStorage('localStorage', leadKey(), dismissed ? 'yes' : null)
-}, (subject) => send({ type: 'interact', choice: { action: 'accept-favor', subject } }))
+}, (action, subject) => send({ type: 'interact', choice: { action, subject } }))
 const respawn = element<HTMLButtonElement>('respawn')
 bindControlsToggle(element<HTMLButtonElement>('controls-toggle'), element('game-controls'))
 const spray = element('spray-control')
@@ -266,6 +265,8 @@ function connect() {
   socket.addEventListener('open', () => send({ type: 'join', token }))
   socket.addEventListener('message', (event: MessageEvent<string>) => {
     const incoming = JSON.parse(event.data) as ServerMessage
+    const neighborly = neighborFeedback(incoming, id, performance.now())
+    if (neighborly) actionFeedback = neighborly
     switch (incoming.type) {
       case 'welcome':
         if (incoming.scenarios) checkpointControls.setCatalog(incoming.scenarios)
@@ -325,13 +326,6 @@ function connect() {
         break
       case 'field-unavailable':
         actionFeedback = { key: '', label: 'Find a clear view of the subject and try again', until: performance.now() + 1900 }
-        break
-      case 'favor-accepted':
-      case 'favor-pay':
-        actionFeedback = { ...favorFeedback(incoming, id), until: performance.now() + 4200 }
-        break
-      case 'gate-step':
-        actionFeedback = { key: '', label: gateStepText[incoming.step], until: performance.now() + 3200 }
         break
       case 'ferry-progress': case 'ferry-order': case 'ferry-stage': actionFeedback = ferryFeedback(incoming, snapshot)
         break

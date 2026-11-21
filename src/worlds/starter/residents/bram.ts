@@ -1,4 +1,5 @@
 import type { ResidentDefinition } from '../../../residents/definition.ts'
+import { bramRemarks } from './remarks.ts'
 import { jobBoard } from '../../../jobs.ts'
 
 const door = { x: -50, z: -18.9 }
@@ -17,6 +18,7 @@ export const bram: ResidentDefinition = {
     departs: 6.5, returns: 16.5, pace: 30,
     route: () => [door, { x: -46, z: -17.8 }, tally].map((point) => ({ point })),
   },
+  remarks: bramRemarks,
   conversation: {
     lines({ state, kept }) {
       if (kept.includes('bram-staging')) {

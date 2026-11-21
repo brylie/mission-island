@@ -4,6 +4,7 @@ import { clothingCounter, farmPlots, market, nearbyPlot, saleValue, seedPrice } 
 import { canPickUp, gateActions, gateHint, gateOptions, gateTarget } from './gate-repair.ts'
 import { farmActions, farmInteractions, type FarmAction } from './farm-orders.ts'
 import type { GateAction } from './gate-repair.ts'
+import { swellActions, swellHint, swellOptions, type SwellAction } from './gate-swell.ts'
 import { ferryActions, ferryChoiceOnly, ferryDrop, ferryInteractions } from './ferry-repair.ts'
 import type { FerryAction } from './ferry-repair.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, jobBoard, orderContribution } from './jobs.ts'
@@ -18,15 +19,16 @@ import { cottageDoor, crewHomes, distance, lookout } from './world.ts'
 import type { Point } from './world.ts'
 import { starterResidents } from './worlds/starter/residents.ts'
 
-export type InteractionAction = GateAction | ResidentAction | FarmAction | MaterialsAction | FerryAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
-  'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note' | 'record' | 'inspect-field'
+export type InteractionAction = GateAction | SwellAction | ResidentAction | FarmAction | MaterialsAction | FerryAction | 'put-down' |
+  'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' | 'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note' |
+  'record' | 'inspect-field'
 export const interactionActions: readonly InteractionAction[] = [
-  ...gateActions, ...residentActions, ...farmActions, ...materialsActions, ...ferryActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
-  'harvest', 'pick-up', 'welcome-note', 'record', 'inspect-field',
+  ...gateActions, ...swellActions, ...residentActions, ...farmActions, ...materialsActions, ...ferryActions, 'put-down', 'open-wardrobe',
+  'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant', 'harvest', 'pick-up', 'welcome-note', 'record', 'inspect-field',
 ]
 // These change shared progress or speak for the crew, so the host runs them only when the player chose them.
-export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions, ...farmActions, ...materialsActions,
-  ...ferryChoiceOnly, 'record', 'inspect-field']
+export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...swellActions, ...residentActions, ...farmActions,
+  ...materialsActions, ...ferryChoiceOnly, 'record', 'inspect-field']
 
 // What E sends: an action and, for items, farm plots and residents, which one.
 export interface InteractionChoice { action: InteractionAction; subject?: number }
@@ -134,7 +136,9 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
   if (state.farmWork.barrow?.handler === player.id) return farm
   const gate = gateOptions(state, player)
   const residents = residentInteractions(starterResidents, state, player)
-  const options = [...gateInteractions(state, gate.primary), ...(held ? [putDown(state, player, held)] : []),
+  const swell = swellOptions(state, player).map((action): Interaction => ({ action, ...gateTarget(state, 'open'),
+    key: swellHint(action)[0], label: swellHint(action)[1] }))
+  const options = [...swell, ...gateInteractions(state, gate.primary), ...(held ? [putDown(state, player, held)] : []),
     ...homeInteractions(state, player), ...farm, ...workInteractions(state, player), ...(held ? [] : pickups(state, player)),
     ...ferryInteractions(state, player)]
   if (atHomeDoor(player) && !isNight(state.weather.hour)) {

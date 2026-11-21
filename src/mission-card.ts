@@ -9,10 +9,13 @@ import { distance } from './world'
 import { starterResidents } from './worlds/starter/residents'
 
 // The first resident favor under way that has no card of its own.
-function residentFavor(state: Snapshot) {
+function residentFavorCard(state: Snapshot, local: Player) {
   for (const resident of starterResidents) {
     const favor = activeFavor(resident, state)
-    if (favor && !isCustom(favor)) return { resident, favor }
+    if (!favor || isCustom(favor)) continue
+    const guide = favor.guide?.(state, local) ?? favor
+    return { label: 'NEIGHBOR FAVOR', title: guide.title, detail: guide.detail, progress: `${resident.identity.name} is waiting`,
+      value: 0, max: 1, text: 'Not yet done', instruction: guide.next }
   }
 }
 
@@ -69,12 +72,8 @@ export function missionCard(state: Snapshot, id: number) {
     return { label: 'NEIGHBOR FAVOR', title: favor.title, detail: favor.detail, progress: 'Repair steps', value, max: 4,
       text: `${value} / 4 steps`, instruction: favor.next }
   }
-  const asked = residentFavor(state)
-  if (asked) {
-    const { resident, favor } = asked
-    return { label: 'NEIGHBOR FAVOR', title: favor.title, detail: favor.detail, progress: `${resident.identity.name} is waiting`,
-      value: 0, max: 1, text: 'Not yet delivered', instruction: favor.next }
-  }
+  const asked = local && residentFavorCard(state, local)
+  if (asked) return asked
   const materials = local && materialsCard(state, local)
   if (materials) return materials
   const ferry = ferryCard(state)
