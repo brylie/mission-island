@@ -1,4 +1,5 @@
-import { canCast, canSpray, heldItem, inSkiff } from '../src/actions.ts'
+import { canCast, canSpray, inSkiff } from '../src/actions.ts'
+import { heldItem } from '../src/interactions/cargo.ts'
 import { biteSeconds, castTravelSeconds, chargePower } from '../src/charged-actions.ts'
 import { ownsClothing, shopItemFor } from '../src/clothing-catalog.ts'
 import { outfitRequirement, type CrewAppearance } from '../src/crew-appearance.ts'
