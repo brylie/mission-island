@@ -14,3 +14,8 @@ export const yardDrop = { x: -21.5, z: -24, radius: 4 }
 
 // The tally board stands at the yard's south-west corner beside the barrier and faces drivers on the straight.
 export const tallyBoard = { x: -24.8, z: -30.1, heading: 0 }
+
+// Seabrook's timber merchant stacks the ordered crates on the verge south of the main road, west of the beach trail.
+// The flatbed can pull onto the verge, load, and drive back along Harbor Depot road to the ferry.
+export const timberStack = { name: 'Seabrook timber stack', x: 20.8, z: 6.6 }
+export const timberPickups: readonly Point[] = [-1.2, 0, 1.2].map((dx) => ({ x: timberStack.x + dx, z: timberStack.z }))

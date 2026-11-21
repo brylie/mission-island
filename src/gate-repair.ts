@@ -171,8 +171,8 @@ function handsFor(state: GateWorld, player: Player) {
 }
 
 // The one pick-up rule, shared by E's item pickup and the gate, so a swing never hides an item in reach.
-export function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs'>, item: Item, player: Player) {
-  const eligible = item.kind === 'crate' ? deliveryDrop(state) !== undefined
+export function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 'ferryRepair'>, item: Item, player: Player) {
+  const eligible = item.kind === 'crate' ? deliveryDrop(state) !== undefined || state.ferryRepair.haul > 0
     : item.kind === 'toolbox' ? toolboxPickable(state, item) : state.mission === 'fire'
   return eligible && !item.delivered && item.holder === null && distance(item, player) < 2.7 && Math.abs(item.y - player.y) < 2.1
 }
@@ -290,7 +290,7 @@ function toolboxWhere(state: Pick<Snapshot, 'items' | 'players'>, player: Player
   const holder = state.players.find((entry) => entry.id === toolbox.holder)
   if (holder) return holder.connected ? 'Your partner has the toolbox.'
     : `Your partner left with the toolbox. Talk to ${residentName} to have it put back on the mending bench.`
-  if (onBench(toolbox)) return `The toolbox is on ${residentName}’s mending bench by the ferry approach.`
+  if (onBench(toolbox)) return `The toolbox is on ${residentName}’s mending bench by the ferry yard.`
   return atGate(toolbox) ? 'The toolbox is set down by the gate.' : `The toolbox was left away from the gate. Talk to ${residentName} to get it back.`
 }
 

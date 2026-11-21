@@ -3,6 +3,8 @@ import { clothingCounter, farmPlots, market, nearbyPlot, saleValue, seedPrice } 
 import { canPickUp, gateActions, gateHint, gateOptions, gateTarget } from './gate-repair.ts'
 import type { GateAction } from './gate-repair.ts'
 import { atFisher, fisherAt, fisherName } from './harbor-fisher.ts'
+import { ferryActions, ferryDrop, ferryInteractions } from './ferry-repair.ts'
+import type { FerryAction } from './ferry-repair.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, jobBoard, orderContribution } from './jobs.ts'
 import type { Item, Player, Snapshot } from './protocol.ts'
 import { walkingHeight } from './terrain.ts'
@@ -10,10 +12,10 @@ import { isNight } from './weather.ts'
 import { cottageDoor, crewHomes, distance, lookout } from './world.ts'
 import type { Point } from './world.ts'
 
-export type InteractionAction = GateAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
+export type InteractionAction = GateAction | FerryAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
   'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note' | 'talk-fisher'
 export const interactionActions: readonly InteractionAction[] = [
-  ...gateActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
+  ...gateActions, ...ferryActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
   'harvest', 'pick-up', 'welcome-note', 'talk-fisher',
 ]
 
@@ -41,6 +43,7 @@ function putDown(state: Snapshot, player: Player, item: Item): Interaction {
     return state.mission === 'fire' && distance(player, lookout) < 5
       ? { ...option, key: 'Left click', label: 'Hold to spray' } : { ...option, label: 'Set extinguisher down' }
   }
+  if (ferryDrop(state, player, item)) return { ...option, label: 'Stack timber for the ferry repair' }
   const drop = deliveryDrop(state)
   if (drop && distance(player, drop) < deliveryRadius) return { ...option, label: 'Deliver crate' }
   if (byTruckBed(state, player) && freeBed(state) !== undefined) return { ...option, label: 'Load crate' }
@@ -117,7 +120,8 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
   const gate = gateOptions(state, player)
   const held = heldItem(state, player)
   const options = [...gateInteractions(state, gate.primary), ...(held ? [putDown(state, player, held)] : []),
-    ...homeInteractions(state, player), ...workInteractions(state, player), ...(held ? [] : pickups(state, player))]
+    ...homeInteractions(state, player), ...workInteractions(state, player), ...(held ? [] : pickups(state, player)),
+    ...ferryInteractions(state, player)]
   if (atHomeDoor(player) && !isNight(state.weather.hour)) {
     options.push({ action: 'welcome-note', key: 'E', label: 'Read your welcome note', name: 'Your door',
       at: aimedAt(cottageDoor(crewHomes[player.id]), 1.2), radius: .7 })

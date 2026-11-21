@@ -13,6 +13,7 @@ import type { Truck } from './truck-pose'
 import type { JobBoardState, JobId } from './jobs'
 import type { FavorReceipt, GardenGate, GateRepair, GateStep } from './gate-repair'
 import type { InteractionChoice } from './interaction-options'
+import type { FerryRepair } from './ferry-repair'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
 
 export interface Weather {
@@ -112,6 +113,7 @@ export interface Snapshot {
   gateRepair: GateRepair
   residentTrust: { wren: number }
   lastFavorPay?: FavorReceipt
+  ferryRepair: FerryRepair
   aviation: AviationState
 }
 
@@ -122,9 +124,12 @@ export type ServerMessage =
   | { type: 'market-sale'; coins: number }
   | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
   | { type: 'order-pay'; coins: number; id: JobId }
-  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'fisher-chat' | 'wren-chat' | 'open-wardrobe' | 'open-clothing-counter' }
+  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'fisher-chat' | 'wren-chat' | 'ferry-tally' | 'open-wardrobe' | 'open-clothing-counter' }
   | { type: 'favor-pay'; resident: 'wren'; coins: number; trust: number }
   | { type: 'gate-step'; step: GateStep }
+  | { type: 'ferry-progress'; kind: 'coins' | 'timber'; player: number; amount: number }
+  | { type: 'ferry-order'; crates: number }
+  | { type: 'ferry-stage'; stage: number }
   | { type: 'angler-purchase'; result: ClothingPurchaseResult }
   | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }
   | { type: 'flight-result'; result: FlightResult; pilotId: number }

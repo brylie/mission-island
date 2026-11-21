@@ -17,6 +17,7 @@ import { restoreIsland, saveIsland } from './island-state.ts'
 import { updateHeldItems } from './items.ts'
 import { createFreight } from './freight.ts'
 import { createGateRepair } from './gate-repair.ts'
+import { createFerryRepair } from './ferry-repair.ts'
 import { createOrders } from './orders.ts'
 import { toggleSeat, updateRiders } from './riders.ts'
 import type { IslandSave } from './save.ts'
@@ -63,7 +64,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
   const gate = createGateRepair(state, crew.notifyAll)
-  const interactions = createInteractions(state, growth, physics, orders, gate, checkpoint)
+  const ferry = createFerryRepair(state, physics, crew.notifyAll, freight.creditCrate)
+  const interactions = createInteractions(state, growth, physics, orders, gate, ferry, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {

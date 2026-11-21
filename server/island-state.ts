@@ -6,6 +6,7 @@ import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { weatherAt } from '../src/weather.ts'
 import { skiffStart, truckStart } from '../src/world.ts'
 import { initialGateRepair } from '../src/gate-repair.ts'
+import { initialFerryRepair } from '../src/ferry-repair.ts'
 import { makeItems } from './items.ts'
 import type { IslandSave } from './save.ts'
 
@@ -19,7 +20,8 @@ export function restoreIsland(
   const state: Snapshot = {
     crewCoins: save?.crewCoins ?? 0, lastStarterPay: save?.lastStarterPay,
     type: 'state', players: [], skiff: { ...skiffStart, speed: 0 }, items: makeItems(),
-    mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...initialGateRepair(), ...structuredClone(save?.world),
+    mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...initialGateRepair(), ...initialFerryRepair(),
+    ...structuredClone(save?.world),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
     weather: weatherAt(islandTime), islandTime,
     driftwood, juniper: juniper(0, weatherAt(islandTime), []),
@@ -43,14 +45,14 @@ export function restoreIsland(
 }
 
 export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['crew']): IslandSave {
-  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residentTrust, lastFavorPay } = state
+  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residentTrust, lastFavorPay, ferryRepair } = state
   const { x, z, heading } = truck
   const { qualified, surveyed } = state.aviation
   return {
-    version: 3, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
+    version: 4, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
     world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed },
-      gate, gateRepair, residentTrust,
+      gate, gateRepair, residentTrust, ferryRepair,
       ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }

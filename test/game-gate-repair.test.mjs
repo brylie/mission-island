@@ -323,7 +323,7 @@ test('older saves gain the toolbox and gate defaults, and rejected gate data doe
   for (const key of ['gate', 'gateRepair', 'residentTrust']) delete legacy.world[key]
   file.write(legacy)
   const migrated = file.load()
-  assert.equal(migrated.version, 3)
+  assert.equal(migrated.version, 4)
   const { gate, gateRepair, residentTrust } = migrated.world
   assert.deepEqual({ gate, gateRepair, residentTrust }, initialGateRepair())
   assert.ok(onBench(migrated.world.items[toolboxId]))

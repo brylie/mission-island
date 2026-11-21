@@ -1,6 +1,6 @@
 import { byTruckBed, freeBed, heldItem } from '../src/actions.ts'
+import { ferryChoiceOnly, ferryDrop } from '../src/ferry-repair.ts'
 import { gateActions } from '../src/gate-repair.ts'
-import type { GateAction } from '../src/gate-repair.ts'
 import { interactions, sameChoice } from '../src/interaction-options.ts'
 import type { Interaction, InteractionChoice } from '../src/interaction-options.ts'
 import { starterTools } from '../src/inventory.ts'
@@ -15,12 +15,17 @@ import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
+import type { createFerryRepair } from './ferry-repair.ts'
 
 export function createInteractions(
   state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'remove'>,
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
-  gate: Pick<ReturnType<typeof createGateRepair>, 'act'>, checkpoint?: () => void,
+  gate: Pick<ReturnType<typeof createGateRepair>, 'act'>, ferry: ReturnType<typeof createFerryRepair>,
+  checkpoint?: () => void,
 ) {
+  // Gate steps, donations and timber orders change shared progress, so they run only when the player chose them.
+  const choiceOnly: readonly string[] = [...gateActions, ...ferryChoiceOnly]
+
   function useHomeChest(member: CrewMember) {
     const { player } = member
     stopPrimary(member)
@@ -44,7 +49,9 @@ export function createInteractions(
     stopPrimary(member)
     item.holder = null
     const dropoff = deliveryDrop(state)
-    if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
+    if (ferryDrop(state, player, item)) {
+      ferry.deliverCrate(item, player.id)
+    } else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
       orders.deliverCrate(item)
     } else if (item.kind === 'crate') {
       const slot = byTruckBed(state, player) ? freeBed(state) : undefined
@@ -102,6 +109,9 @@ export function createInteractions(
       case 'welcome-note': return member.notify?.({ type: 'crew-note' })
       case 'talk-fisher': return member.notify?.({ type: 'fisher-chat' })
       case 'job-board': return
+      case 'ferry-order':
+      case 'ferry-donate':
+      case 'ferry-tally': return ferry.act(member, action)
       default: return gate.act(member, action)
     }
   }
@@ -115,9 +125,8 @@ export function createInteractions(
       return
     }
     const options = interactions(state, player)
-    // Gate repair steps change shared progress, so they run only when the player chose them.
     const chosen = choice ? options.find((option) => sameChoice(option, choice))
-      : options.find(({ action }) => !gateActions.includes(action as GateAction))
+      : options.find(({ action }) => !choiceOnly.includes(action))
     if (!chosen) return
     perform(member, chosen)
     updateHeldItems(state)
