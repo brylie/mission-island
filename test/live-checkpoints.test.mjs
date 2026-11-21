@@ -66,6 +66,20 @@ for (const { id: checkpoint } of scenarioCatalog) {
           angler.dispatch({ type: 'primary', phase: 'release', aim: player.heading })
           assert.ok(player.casting)
         }
+      } else if (checkpoint === 'ridge-checkout') {
+        assert.equal(state.aviation.qualified, false)
+        if (b) {
+          b.dispatch({ type: 'interact' })
+          assert.equal(game.tick().aviation.marked, true)
+        }
+        a.dispatch({ type: 'interact' })
+        assert.equal(game.tick().aviation.flight?.pilotId, a.id)
+        assert.equal(game.tick().aviation.flight?.outing, 'checkout')
+      } else if (checkpoint === 'ridge-soaring') {
+        assert.equal(state.weather.rain, 0)
+        assert.ok(state.weather.hour > 10 && state.weather.hour < 11)
+        a.dispatch({ type: 'interact' })
+        assert.equal(game.tick().aviation.flight?.outing, 'free')
       } else if (checkpoint === 'village-favors') {
         for (const player of state.players) {
           assert.ok(interactions(state, player).some(({ action, subject }) => action === 'accept-favor' && subject === 3), 'Bram asks')

@@ -33,6 +33,8 @@ Press **O → Live playtest** or open **Live checkpoints** in the Workbench on t
 | `wren-fit` (default) | One player has the toolbox and the other has the pin. In solo play the toolbox rests by the gate. Press **E** to fit the pin and **E** again to test the swing. |
 | `wren-discover` | The crew arrives outside the unrepaired garden. |
 | `wren-morning` | The repair is paid and Wren is about to leave home. |
+| `ridge-checkout` | The crew is unqualified. The first player stands at the Windstone Ridge loan rack facing the meadow. In a pair, the second stands beside the landing sign to mark the meadow. Press **E** to launch the checkout. |
+| `ridge-soaring` | A dry 10:30 with the crew qualified and the Mirror Pool survey done. Both players stand at the rack. Press **E** for an island survey flight and climb in the rising air. |
 | `village-favors` | At 09:30 after the starter shift, the crew stands beside Bram at the depot. Each crewmate carries two fish and two carrots for Ines's and Mara's favors. |
 
 Agents can use the same scenario IDs from the shell. For example, to try fishing alone:
