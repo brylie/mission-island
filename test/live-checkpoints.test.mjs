@@ -66,6 +66,15 @@ for (const { id: checkpoint } of scenarioCatalog) {
           angler.dispatch({ type: 'primary', phase: 'release', aim: player.heading })
           assert.ok(player.casting)
         }
+      } else if (checkpoint === 'ridge-checkout') {
+        assert.equal(state.aviation.qualified, false)
+        if (b) {
+          b.dispatch({ type: 'interact' })
+          assert.equal(game.tick().aviation.marked, true)
+        }
+        a.dispatch({ type: 'interact' })
+        assert.equal(game.tick().aviation.flight?.pilotId, a.id)
+        assert.equal(game.tick().aviation.flight?.outing, 'checkout')
       } else if (checkpoint === 'harbor-delivery') {
         assert.equal(state.mission, 'delivery')
         assert.match(actionHint(state, state.players[0])[1], /crate/i)
