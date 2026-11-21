@@ -72,6 +72,12 @@ test('word gets around: neighbors mention kept favors and a broken promise, but 
   assert.ok(!gossip('mara', 'Mara says you brought her carrots'), 'Mara thanks the crew herself')
   assert.ok(gossip('bram', 'Wren seemed upset'))
   assert.ok(!gossip('wren', 'Wren seemed upset'))
+  // Nobody praises the first repair while the gate is swollen again.
+  const swollen = world(10, 0, { residents, gateRepair: { stage: 'mended', pinHolder: null, mendedAt: 0, swelling: 'swollen' } })
+  const praise = islandRemarks.find(({ text }) => text.startsWith('Wren’s gate swings like new'))
+  const ines = starterResidents.find(({ id }) => id === 'ines')
+  assert.ok(!fits(praise, remarkContext(ines, swollen, listener)))
+  assert.ok(fits(praise, remarkContext(ines, world(10, 0, { residents, gateRepair: { stage: 'mended', pinHolder: null, mendedAt: 0 } }), listener)))
   const wren = starterResidents.find(({ id }) => id === 'wren')
   const wary = wren.remarks.filter(({ standing }) => standing?.includes('wronged'))
   assert.ok(wary.length >= 2 && wary.every((remark) => fits(remark, remarkContext(wren, state, listener))))

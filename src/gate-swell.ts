@@ -1,4 +1,4 @@
-import { atGate, toolboxAtGate, toolboxItem, type GateWorld } from './gate-repair.ts'
+import { atGate, onBench, toolboxAtGate, toolboxItem, type GateWorld } from './gate-repair.ts'
 import type { Player, Snapshot } from './protocol.ts'
 import type { FavorGuide } from './residents/definition.ts'
 import { standing } from './residents/schedule.ts'
@@ -37,7 +37,9 @@ export function swellGuide(state: Pick<Snapshot, 'gateRepair' | 'residents' | 'i
   const toolbox = toolboxItem(state)
   const holding = toolbox?.holder === player.id ? 'You have the toolbox.'
     : toolbox?.holder !== null && toolbox?.holder !== undefined ? 'Your crewmate has the toolbox.'
-      : toolbox && atGate(toolbox) ? 'The toolbox is set down by the gate.' : 'The toolbox is on Wren’s mending bench.'
+      : toolbox && atGate(toolbox) ? 'The toolbox is set down by the gate.'
+        : toolbox && onBench(toolbox) ? 'The toolbox is on Wren’s mending bench.'
+          : 'The toolbox was left away from the gate. Talk to Wren to have it put back on the mending bench.'
   if (finding === 'sound') return { title, detail: 'Your crew’s last swing went clear.', next: 'Tell Wren the gate is fixed.' }
   if (finding === 'fault') {
     return { title, detail: 'Your crew’s last swing caught on the swollen edge.',

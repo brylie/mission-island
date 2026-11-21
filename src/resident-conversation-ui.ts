@@ -45,23 +45,31 @@ export function createResidentConversation(dialog: HTMLDialogElement, act: (acti
       speaker = starterResidents.findIndex((resident) => resident.id === id)
       const resident = starterResidents[speaker]
       if (!resident) return undefined
-      ;[greeting.textContent, advice.textContent] = conversationLines(resident, state)
       const memory = talks.get(id) ?? { count: 0 }
       const seed = (memory.count * 7919 + player.id * 104729 + Math.floor(state.islandTime) + id.length * 131) >>> 0
       const said = chooseRemark(resident, islandRemarks, remarkContext(resident, state, player), seed, memory.last)
       talks.set(id, { count: memory.count + 1, last: said?.template })
       remark.textContent = said ? `“${said.text}”` : ''
       remark.hidden = !said
-      const asking = favorLine(resident, state)
-      favor.textContent = asking ?? ''
+      this.refresh(state, player)
+      return `${resident.identity.name} · ${resident.identity.role}`
+    },
+    // Keeps the lines, the favor and the choices current while the conversation is open. The remark stays put.
+    refresh(state: Snapshot, player: Player) {
+      const resident = starterResidents[speaker]
+      if (!resident) return
+      const lines = conversationLines(resident, state)
+      if (greeting.textContent !== lines[0]) greeting.textContent = lines[0]
+      if (advice.textContent !== lines[1]) advice.textContent = lines[1]
+      const asking = favorLine(resident, state) ?? ''
+      if (favor.textContent !== asking) favor.textContent = asking
       favor.hidden = !asking
       const open = interactions(state, player).filter((option) => option.subject === speaker)
       for (const [action, button] of Object.entries(buttons) as [Choice, HTMLButtonElement][]) {
         const option = open.find((entry) => entry.action === action)
         button.hidden = !option
-        button.textContent = option?.label ?? ''
+        if (button.textContent !== (option?.label ?? '')) button.textContent = option?.label ?? ''
       }
-      return `${resident.identity.name} · ${resident.identity.role}`
     },
   }
 }

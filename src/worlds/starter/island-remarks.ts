@@ -38,7 +38,8 @@ export const islandRemarks: readonly Remark[] = [
   { text: 'Ines’s fish display was the talk of the square.', when: (c) => others(c, 'ines') && kept(c, 'ines', 'ines-display') },
   { text: 'Bram can’t stop going on about that staged load. High praise, from Bram.',
     when: (c) => others(c, 'bram') && kept(c, 'bram', 'bram-staging') },
-  { text: 'Wren’s gate swings like new. Everyone noticed.', when: (c) => others(c, 'wren') && kept(c, 'wren', 'wren-gate') },
+  { text: 'Wren’s gate swings like new. Everyone noticed.', 
+    when: (c) => others(c, 'wren') && kept(c, 'wren', 'wren-gate') && c.state.gateRepair.swelling === undefined },
   { text: 'Wren seemed upset earlier. Something about that gate.', when: (c) => brokenWith(c, 'wren'), weight: 3 },
 
   // How well the resident knows the crew.

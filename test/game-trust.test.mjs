@@ -197,3 +197,12 @@ test('version 4 records gain an empty trust history, and inconsistent breaches o
     assert.throws(() => file.load(), /Could not load island save/, JSON.stringify(broken))
   }
 })
+
+test('the swollen-gate guide says where the toolbox really is, and how to get it back', (t) => {
+  const { a } = crew(t, { record: { active: 'wren-swell' }, swelling: 'swollen' })
+  const where = (toolbox) => swellGuide({ ...a.state, items: a.state.items.map((item, id) => id === toolboxId ? { ...item, ...toolbox } : item) }, a.player).next
+  assert.match(where({}), /set down by the gate/)
+  assert.match(where({ x: mendingBench.x, z: mendingBench.z + .42 }), /on Wren’s mending bench/)
+  assert.match(where({ x: 0, z: 0 }), /left away from the gate\. Talk to Wren/)
+  assert.match(where({ holder: 1 }), /Your crewmate has the toolbox/)
+})

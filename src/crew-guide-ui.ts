@@ -55,7 +55,9 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   }
 
   function update(state: Snapshot, player: Player) {
-    if (!dialog.open || note.hidden) return
+    if (!dialog.open) return
+    // A conversation follows shared progress, so a finding from a crewmate's swing appears while it is open.
+    if (note.hidden) return talk.refresh(state, player)
     const order = state.jobs.active
     const heading = order ? jobs[order.id].title : state.mission === 'complete' ? 'Your next job' : 'Your first shift'
     const direction = order
