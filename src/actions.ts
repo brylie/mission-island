@@ -1,24 +1,12 @@
 import type { Item, Player, Snapshot } from './protocol'
-import { clothingCounter, market, nearbyPlot, seedPrice } from './farm.ts'
-import { cargoSlots, cottageDoor, crateSize, crewHomes, distance, truckBed, truckSeatSpeed } from './world.ts'
-import { truckPoint } from './truck-pose.ts'
+import { market, nearbyPlot, seedPrice } from './farm.ts'
+import { distance, truckSeatSpeed } from './world.ts'
+import { heldItem } from './interactions/cargo.ts'
 import { besideSubject, defaultInteraction } from './interaction-options.ts'
 import type { Interaction, InteractionChoice } from './interaction-options.ts'
 
-export function heldItem(state: Pick<Snapshot, 'items'>, player: Player) {
-  return state.items.find((item) => item.holder === player.id)
-}
-
-export function freeBed(state: Snapshot) {
-  return cargoSlots.find((slot) => {
-    const position = truckPoint(state.truck, 0, truckBed.top + crateSize / 2, slot)
-    return !state.items.some((item) => item.onBed && distance(item, position) < 0.93)
-  })
-}
-
-export function byTruckBed(state: Snapshot, player: Player) {
-  return distance(truckPoint(state.truck, 0, truckBed.top, truckBed.center), player) < 3.5
-}
+export { heldItem }
+export { atClothingCounter, atHomeDoor } from './interactions/home.ts'
 
 export function canSpray(state: Snapshot, player: Player, item?: Item) {
   return state.mission === 'fire' && !player.seat &&
@@ -33,38 +21,6 @@ export function canBoardSkiff(state: Snapshot, player: Player) {
   return !player.seat && player.grounded && !player.onBed && !heldItem(state, player) &&
     Math.abs(state.skiff.speed) < 0.65 && distance(state.skiff, player) < 3.3 &&
     state.players.filter((crew) => inSkiff(crew.seat)).length < 2
-}
-
-export function atHomeChest(player: Player) {
-  const home = crewHomes[player.id]
-  return !player.seat && player.grounded && !player.onBed && home && distance(home.chest, player) < 2
-}
-
-export function atHomeDoor(player: Player) {
-  const home = crewHomes[player.id]
-  if (!home || player.seat || !player.grounded || player.onBed) return false
-  const gap = distance(player, cottageDoor(home))
-  return gap < 1.45 && gap < distance(player, home.chest)
-}
-
-function canBrowseClothing(player: Player) {
-  return player.grounded && !player.seat && !player.onBed && !player.swimming && !player.sleeping && !player.truckSurface
-}
-
-function atHomeWardrobe(player: Player) {
-  const home = crewHomes[player.id]
-  if (!home || !canBrowseClothing(player)) return false
-  const gap = distance(player, home.wardrobe)
-  return gap < 1.45 && gap < distance(player, cottageDoor(home))
-}
-
-export function atClothingCounter(player: Player) {
-  return canBrowseClothing(player) && distance(player, clothingCounter) < 2.15
-}
-
-export function clothingInteraction(player: Player) {
-  if (atHomeWardrobe(player)) return 'open-wardrobe'
-  if (atClothingCounter(player) && distance(player, clothingCounter) < distance(player, market)) return 'open-clothing-counter'
 }
 
 export function canCast(state: Snapshot, player: Player) {

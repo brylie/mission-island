@@ -1,6 +1,6 @@
+import type { InteractionOption, InteractionPolicies } from './interactions/definition.ts'
 import { gateMendedStage, gateWidth, gateway, hingePost } from './gate-layout.ts'
 import type { Item, Player, Snapshot } from './protocol.ts'
-import { deliveryDrop } from './jobs.ts'
 import { residentAt, standing } from './residents/schedule.ts'
 import { walkingHeight } from './terrain.ts'
 import { distance, mendingBench, toolboxHome, wrenCottage } from './world.ts'
@@ -23,8 +23,17 @@ export interface GardenGate {
   open: boolean
   closePending: boolean
 }
-export type GateAction = 'inspect' | 'take-pin' | 'fit' | 'test' | 'open' | 'close' | 'return-toolbox'
-export const gateActions: readonly GateAction[] = ['inspect', 'take-pin', 'fit', 'test', 'open', 'close', 'return-toolbox']
+export const gateActions = {
+  inspect: 'explicit',
+  'take-pin': 'explicit',
+  fit: 'explicit',
+  test: 'explicit',
+  open: 'explicit',
+  close: 'explicit',
+  'return-toolbox': 'explicit',
+} as const satisfies InteractionPolicies
+export type GateAction = keyof typeof gateActions
+
 export const gateStages: readonly GateStage[] = ['sagging', 'accepted', 'inspected', 'fitted', 'mended']
 export type GateStep = 'inspected' | 'pin' | 'fitted' | 'stuck' | 'recalled' | 'returned'
 type GateWorld = Pick<Snapshot, 'gate' | 'gateRepair' | 'items' | 'players' | 'islandTime' | 'mission' | 'jobs'>
@@ -82,7 +91,7 @@ export function onBench(item: Pick<Item, 'x' | 'z' | 'holder'>) {
 }
 
 // The toolbox is on loan from the moment Wren asks. Once it is back on the bench after the repair, it stays there.
-function toolboxPickable(state: Pick<Snapshot, 'gateRepair'>, item: Item) {
+export function toolboxPickable(state: Pick<Snapshot, 'gateRepair'>, item: Item) {
   const { stage } = state.gateRepair
   return stage !== 'sagging' && !(stage === 'mended' && onBench(item))
 }
@@ -105,14 +114,6 @@ function handsFor(state: GateWorld, player: Player) {
   return state.items.find((item) => item.holder === player.id)
 }
 
-// The one pick-up rule, shared by E's item pickup and the gate, so a swing never hides an item in reach.
-// Crates are cargo while a delivery is open, a resident has asked the crew to move one, or ferry timber is on the way.
-export function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 'ferryRepair'>, item: Item, player: Player, cargoWanted = false) {
-  const eligible = item.kind === 'crate' ? deliveryDrop(state) !== undefined || cargoWanted || state.ferryRepair.haul > 0
-    : item.kind === 'toolbox' ? toolboxPickable(state, item) : state.mission === 'fire'
-  return eligible && !item.delivered && item.holder === null && distance(item, player) < 2.7 && Math.abs(item.y - player.y) < 2.1
-}
-
 function repairStep(state: GateWorld, player: Player): GateAction | null {
   if (state.gateRepair.stage === 'accepted') return 'inspect'
   if (canFit(state, player)) return 'fit'
@@ -123,7 +124,7 @@ interface GateOptions { primary: GateAction[]; secondary: GateAction[] }
 
 // Every gate action open to this player. Primary steps outrank setting down a held item; the secondary
 // swing comes after picking up anything nearby. Talking to Wren is a resident interaction.
-export function gateOptions(state: GateWorld, player: Player): GateOptions {
+function gateOptions(state: GateWorld, player: Player): GateOptions {
   const options: GateOptions = { primary: [], secondary: [] }
   if (!standing(player)) return options
   const { stage } = state.gateRepair
@@ -139,7 +140,7 @@ export function gateOptions(state: GateWorld, player: Player): GateOptions {
 }
 
 // Where the reticle finds each gate action: Wren, the bench tray, or the gate itself.
-export function gateTarget(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>, action: GateAction) {
+function gateTarget(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>, action: GateAction) {
   if (action === 'return-toolbox') {
     const wren = wrenAt(state)
     return { name: residentName, at: { x: wren.x, y: walkingHeight(wren) + 1.1, z: wren.z }, radius: .55 }
@@ -148,7 +149,7 @@ export function gateTarget(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>, a
   return { name: `${residentName}’s gate`, at: { x: gateway.x, y: walkingHeight(gateway) + .85, z: gateway.z }, radius: .8 }
 }
 
-export function gateHint(action: GateAction, state: Pick<Snapshot, 'gateRepair'>): [string, string] {
+function gateHint(action: GateAction, state: Pick<Snapshot, 'gateRepair'>): [string, string] {
   const broken = state.gateRepair.stage !== 'mended'
   const labels: Record<GateAction, string> = {
     inspect: 'Inspect the sagging hinge', 'take-pin': 'Take a hinge pin',
@@ -156,6 +157,15 @@ export function gateHint(action: GateAction, state: Pick<Snapshot, 'gateRepair'>
     close: 'Close the gate', 'return-toolbox': `Return the toolbox to ${residentName}`,
   }
   return ['E', labels[action]]
+}
+
+export function gateInteractions(state: GateWorld, player: Player) {
+  const { primary, secondary } = gateOptions(state, player)
+  function option(action: GateAction): InteractionOption<GateAction> {
+    const [key, label] = gateHint(action, state)
+    return { action, key, label, ...gateTarget(state, action) }
+  }
+  return { primary: primary.map(option), secondary: secondary.map(option) }
 }
 
 export const gateStepText: Record<GateStep, string> = {

@@ -1,5 +1,5 @@
 import { plank } from './gate-repair.ts'
-import type { Interaction } from './interaction-options.ts'
+import type { InteractionOption, InteractionPolicies } from './interactions/definition.ts'
 import { deliveryDrop, secondIslandGoal } from './jobs.ts'
 import type { Item, Player, Snapshot } from './protocol.ts'
 import { walkingHeight } from './terrain.ts'
@@ -21,11 +21,12 @@ const tallyRadius = 2.6
 export interface FerryLedger { coins: number[]; crates: number[] }
 export interface FerryRepair { stage: number; ledger: FerryLedger[]; haul: number; restoredAt?: number }
 
-export const ferryActions = ['ferry-order', 'ferry-donate', 'ferry-tally'] as const
-export type FerryAction = typeof ferryActions[number]
-export const isFerryAction = (action: string): action is FerryAction => (ferryActions as readonly string[]).includes(action)
-// Donations and timber orders change shared progress, so the host runs them only when a player chose them.
-export const ferryChoiceOnly: readonly FerryAction[] = ['ferry-order', 'ferry-donate']
+export const ferryActions = {
+  'ferry-order': 'explicit',
+  'ferry-donate': 'explicit',
+  'ferry-tally': 'default',
+} as const satisfies InteractionPolicies
+export type FerryAction = keyof typeof ferryActions
 
 export function emptyLedger(): FerryLedger {
   return { coins: spawns.map(() => 0), crates: spawns.map(() => 0) }
@@ -115,9 +116,9 @@ function boardPoint(dx: number, height: number) {
 }
 
 // The tally board has three things to aim at: the board itself, the coin box and the order slip.
-export function ferryInteractions(state: ProjectState & Pick<Snapshot, 'crewCoins' | 'items'>, player: Player): Interaction[] {
+export function ferryInteractions(state: ProjectState & Pick<Snapshot, 'crewCoins' | 'items'>, player: Player): InteractionOption<FerryAction>[] {
   if (!standing(player) || distance(player, tallyBoard) >= tallyRadius) return []
-  const options: Interaction[] = []
+  const options: InteractionOption<FerryAction>[] = []
   const needs = stageNeeds(state)
   if (needs && canOrderTimber(state)) {
     options.push({ action: 'ferry-order', key: 'E', label: `Order ${plural(needs.cratesLeft, 'timber crate')} from Seabrook`,

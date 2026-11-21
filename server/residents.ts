@@ -1,10 +1,12 @@
 import type { Item, Snapshot } from '../src/protocol.ts'
 import type { FavorDefinition, ResidentDefinition } from '../src/residents/definition.ts'
 import { activeFavor, isCustom, openOffer, recordFor, stagingFavor, wantsCargo } from '../src/residents/favors.ts'
+import type { ResidentAction } from '../src/residents/interactions.ts'
 import { keepFavor } from '../src/residents/trust.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { crateStarts, type Point } from '../src/world.ts'
 import type { CrewMember, CrewNotice } from './crew.ts'
+import type { InteractionHandlers } from './interactions.ts'
 
 type Hooks = Partial<Record<string, (member: CrewMember) => void>>
 
@@ -66,5 +68,10 @@ export function createResidents(state: Snapshot, registry: readonly ResidentDefi
     physics.release(crate, crateStarts[crate.id])
   }
 
-  return { talk, accept, handOver, stageCrate, tick, keep }
+  const interactions = {
+    talk,
+    'accept-favor': accept,
+    'hand-over': handOver,
+  } satisfies InteractionHandlers<ResidentAction>
+  return { interactions, stageCrate, tick, keep }
 }

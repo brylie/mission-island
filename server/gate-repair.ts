@@ -3,6 +3,7 @@ import type { GateAction, GateStep } from '../src/gate-repair.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { distance, toolboxHome } from '../src/world.ts'
 import type { CrewMember, CrewNotice } from './crew.ts'
+import type { InteractionHandlers } from './interactions.ts'
 import { restingY } from './items.ts'
 
 // Host transitions for Wren's gate. The interaction layer has already checked the step is still
@@ -40,40 +41,36 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
     } else if (recallToolbox()) step(member, 'recalled')
   }
 
-  function act(member: CrewMember, intent: GateAction) {
-    const { player } = member
-    const current = repair()
-    switch (intent) {
-      case 'return-toolbox':
-        shelveToolbox()
-        step(member, 'returned')
-        break
-      case 'inspect':
-        current.stage = 'inspected'
-        step(member, 'inspected')
-        break
-      case 'take-pin':
-        current.pinHolder = player.id
-        step(member, 'pin')
-        break
-      case 'fit':
-        Object.assign(current, { stage: 'fitted', pinHolder: null })
-        notifyCrew({ type: 'gate-step', step: 'fitted' })
-        break
-      case 'test':
-        Object.assign(current, { stage: 'mended', mendedAt: state.islandTime })
-        state.gate = { open: true, closePending: false }
-        keepFavor()
-        break
-      case 'open':
-        state.gate = { open: true, closePending: false }
-        if (current.stage !== 'mended') step(member, 'stuck')
-        break
-      case 'close':
-        state.gate.closePending = true
-        break
-    }
-  }
+  const interactions = {
+    'return-toolbox'(member) {
+      shelveToolbox()
+      step(member, 'returned')
+    },
+    inspect(member) {
+      repair().stage = 'inspected'
+      step(member, 'inspected')
+    },
+    'take-pin'(member) {
+      repair().pinHolder = member.player.id
+      step(member, 'pin')
+    },
+    fit() {
+      Object.assign(repair(), { stage: 'fitted', pinHolder: null })
+      notifyCrew({ type: 'gate-step', step: 'fitted' })
+    },
+    test() {
+      Object.assign(repair(), { stage: 'mended', mendedAt: state.islandTime })
+      state.gate = { open: true, closePending: false }
+      keepFavor()
+    },
+    open(member) {
+      state.gate = { open: true, closePending: false }
+      if (repair().stage !== 'mended') step(member, 'stuck')
+    },
+    close() {
+      state.gate.closePending = true
+    },
+  } satisfies InteractionHandlers<GateAction>
 
   // Wren opens a mended gate on the shortcut and closes it behind, once nobody stands in the opening.
   function tick() {
@@ -87,5 +84,5 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
     if (repair().pinHolder === playerId) repair().pinHolder = null
   }
 
-  return { act, talk, tick, releasePin }
+  return { interactions, talk, tick, releasePin }
 }

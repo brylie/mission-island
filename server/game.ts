@@ -11,22 +11,15 @@ import { createCrewRoster, disconnect, stopped, type CrewMember, type CrewNotice
 import { jump, prepareCrewMotion, walkCrew } from './crew-motion.ts'
 import { createEquipment, setAppearance } from './equipment.ts'
 import { advanceIsland } from './island-clock.ts'
-import { createInteractions } from './interactions.ts'
+import { createGameInteractions } from './game-interactions.ts'
 import { restoreIsland, saveIsland } from './island-state.ts'
 import { updateHeldItems } from './items.ts'
 import { createFreight } from './freight.ts'
-import { createGateRepair } from './gate-repair.ts'
 import { createJournal } from './journal.ts'
-import { createFerryRepair } from './ferry-repair.ts'
-import { createResidents } from './residents.ts'
-import { starterResidents } from '../src/worlds/starter/residents.ts'
-import { repairSupplyFavor, wren } from '../src/worlds/starter/residents/wren.ts'
-import { createMaterialsWork } from './materials-work.ts'
 import { createOrders } from './orders.ts'
 import { toggleSeat, updateRiders } from './riders.ts'
 import type { IslandSave } from './save.ts'
 import { farmingQualified } from '../src/farm-orders.ts'
-import { createFarmOrders } from './farm-orders.ts'
 import { stepSkiff } from './skiff.ts'
 
 export const tickSeconds = 1 / 30
@@ -70,8 +63,10 @@ function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoP
 
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
   const physics = createCargoPhysics()
-  const juniper = createJuniperHabitat(), driftwood = createDriftwoodSchool(clock() >>> 0)
-  const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
+  const juniper = createJuniperHabitat()
+  const driftwood = createDriftwoodSchool(clock() >>> 0)
+  const world = restoreIsland(physics, juniper, driftwood.frame(), save)
+  const { state, growth } = world
   const trial = playtest && settleTrial(state, physics, prepareTrial(state, playtest))
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
@@ -79,11 +74,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const journal = createJournal(state, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint)
-  const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0]))
-  const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk, mara: journal.hearMara }, checkpoint)
-  const farm = createFarmOrders(state, crew.notifyAll, clock, checkpoint)
-  const materials = createMaterialsWork(state, crew.notifyAll, () => residents.keep(wren, repairSupplyFavor))
-  const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, materials, createFerryRepair(state, physics, crew.notifyAll, freight.creditCrate), journal, checkpoint)
+  const { interactions, gate, residents, farm } =
+    createGameInteractions(world, physics, { crew, orders, freight, journal, clock, checkpoint })
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {

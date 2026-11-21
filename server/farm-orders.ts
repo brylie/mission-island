@@ -4,7 +4,8 @@ import { pushedBarrowPose } from '../src/barrow.ts'
 import { canPushBarrow } from './barrow-motion.ts'
 import { distance } from '../src/world.ts'
 import { barrowPickup } from '../src/worlds/starter/farm-order-sites.ts'
-import { stopPrimary, stowTool, type CrewMember, type CrewNotice } from './crew.ts'
+import { stopPrimary, stowTool, type CrewNotice } from './crew.ts'
+import type { InteractionHandlers } from './interactions.ts'
 
 export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotice) => void, clock: () => number, checkpoint?: () => void) {
   const work = state.farmWork
@@ -41,52 +42,51 @@ export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotic
     if (canPushBarrow(state, player, player)) Object.assign(barrow, next)
   }
 
-  function act(member: CrewMember, action: FarmAction) {
-    const { player } = member
+  function parkBarrow(recall: boolean) {
     const { barrow } = work
-    switch (action) {
-      case 'accept-produce':
-        progress.stage = 'starter'
-        break
-      case 'accept-barrow-order':
-        progress.stage = 'harvest'
-        break
-      case 'deliver-produce': {
-        const quantity = Math.min(player.goods.carrots, farmOrders.starter.quantity - progress.delivered)
-        player.goods.carrots -= quantity
-        deliver('starter', quantity)
-        break
-      }
-      case 'pack-barrow': {
-        const quantity = Math.min(player.goods.carrots, farmOrders.harvest.quantity - progress.delivered - progress.load)
-        player.goods.carrots -= quantity
-        progress.load += quantity
-        if (barrow?.handler !== player.id) member.reachUntil = clock() + 420
-        break
-      }
-      case 'unload-barrow': {
-        const quantity = progress.load
-        progress.load = 0
-        deliver('harvest', quantity)
-        break
-      }
-      case 'grip-barrow':
-        if (!barrow) return
-        player.casting = null
-        stopPrimary(member)
-        stowTool(member)
-        member.reachUntil = 0
-        if (distance(barrow, player) > .1) player.heading = Math.atan2(barrow.x - player.x, barrow.z - player.z)
-        barrow.handler = player.id
-        break
-      case 'park-barrow':
-      case 'recall-barrow':
-        if (!barrow) return
-        barrow.handler = null
-        if (action === 'recall-barrow') Object.assign(barrow, barrowPickup)
-        break
-    }
+    if (!barrow) return
+    barrow.handler = null
+    if (recall) Object.assign(barrow, barrowPickup)
   }
 
-  return { act, tick, recover }
+  const interactions = {
+    'accept-produce'() {
+      progress.stage = 'starter'
+    },
+    'accept-barrow-order'() {
+      progress.stage = 'harvest'
+    },
+    'deliver-produce'({ player }) {
+      const quantity = Math.min(player.goods.carrots, farmOrders.starter.quantity - progress.delivered)
+      player.goods.carrots -= quantity
+      deliver('starter', quantity)
+    },
+    'pack-barrow'(member) {
+      const { player } = member
+      const quantity = Math.min(player.goods.carrots, farmOrders.harvest.quantity - progress.delivered - progress.load)
+      player.goods.carrots -= quantity
+      progress.load += quantity
+      if (work.barrow?.handler !== player.id) member.reachUntil = clock() + 420
+    },
+    'unload-barrow'() {
+      const quantity = progress.load
+      progress.load = 0
+      deliver('harvest', quantity)
+    },
+    'grip-barrow'(member) {
+      const { barrow } = work
+      if (!barrow) return
+      const { player } = member
+      player.casting = null
+      stopPrimary(member)
+      stowTool(member)
+      member.reachUntil = 0
+      if (distance(barrow, player) > .1) player.heading = Math.atan2(barrow.x - player.x, barrow.z - player.z)
+      barrow.handler = player.id
+    },
+    'park-barrow': () => parkBarrow(false),
+    'recall-barrow': () => parkBarrow(true),
+  } satisfies InteractionHandlers<FarmAction>
+
+  return { interactions, tick, recover }
 }

@@ -1,6 +1,6 @@
 import { cleanCrewName, readAppearance } from '../src/crew-appearance.ts'
 import { isClothingId } from '../src/clothing-catalog.ts'
-import { interactionActions } from '../src/interaction-options.ts'
+import { isInteractionAction } from '../src/interaction-options.ts'
 import { starterTools } from '../src/inventory.ts'
 import { isJobId, type JobId } from '../src/jobs.ts'
 import type { ClientMessage, Input } from '../src/protocol.ts'
@@ -37,10 +37,9 @@ function readInput(raw: unknown): Input {
 function readChoice(raw: unknown) {
   if (!raw || typeof raw !== 'object') return null
   const { action, subject } = raw as Record<string, unknown>
-  const known = interactionActions.find((name) => name === action)
-  if (!known) return null
-  if (subject === undefined) return { action: known }
-  return Number.isSafeInteger(subject) && (subject as number) >= 0 ? { action: known, subject: subject as number } : null
+  if (!isInteractionAction(action)) return null
+  if (subject === undefined) return { action }
+  return Number.isSafeInteger(subject) && (subject as number) >= 0 ? { action, subject: subject as number } : null
 }
 
 export function readCrewCommand(message: Record<string, unknown>): CrewCommand | undefined {

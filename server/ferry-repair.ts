@@ -5,6 +5,7 @@ import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { crateStarts } from '../src/world.ts'
 import { timberPickups } from '../src/worlds/starter/ferry-terminal.ts'
 import type { CrewMember, CrewNotice } from './crew.ts'
+import type { InteractionHandlers } from './interactions.ts'
 
 // Host transitions for the ferry terminal repair. The interaction layer has already checked that the chosen
 // action is still offered to this player, so each effect is recomputed from the current state and never overshoots.
@@ -49,11 +50,11 @@ export function createFerryRepair(
     notifyCrew({ type: 'ferry-order', crates })
   }
 
-  function act(member: CrewMember, action: FerryAction) {
-    if (action === 'ferry-donate') donate(member)
-    else if (action === 'ferry-order') orderTimber()
-    else member.notify?.({ type: 'ferry-tally' })
-  }
+  const interactions = {
+    'ferry-donate': donate,
+    'ferry-order': orderTimber,
+    'ferry-tally': (member) => member.notify?.({ type: 'ferry-tally' }),
+  } satisfies InteractionHandlers<FerryAction>
 
   // The crewmate who sets a timber crate down on the yard stack is credited with it, once.
   function deliverCrate(item: Item, playerId: number) {
@@ -67,5 +68,5 @@ export function createFerryRepair(
     advanceIfComplete()
   }
 
-  return { act, deliverCrate }
+  return { interactions, deliverCrate }
 }

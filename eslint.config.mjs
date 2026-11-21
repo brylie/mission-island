@@ -1,6 +1,7 @@
 import { builtinModules } from 'node:module'
 import js from '@eslint/js'
 import { fixupPluginRules } from '@eslint/compat'
+import stylistic from '@stylistic/eslint-plugin'
 import { defineConfig } from 'eslint/config'
 import security from 'eslint-plugin-security'
 import tseslint from 'typescript-eslint'
@@ -55,6 +56,18 @@ const presentationImports = {
   message: 'Depend on shared rules and world data from simulation code.',
 }
 
+const sharedInteractionFiles = [
+  'src/interaction-options.ts',
+  'src/interactions/**/*.ts',
+  'src/farm-orders.ts',
+  'src/ferry-repair.ts',
+  'src/field-interactions.ts',
+  'src/gate-repair.ts',
+  'src/journal/sightings.ts',
+  'src/materials-interactions.ts',
+  'src/residents/interactions.ts',
+]
+
 export default defineConfig(
   { ignores: ['dist/**', 'coverage/**'] },
   {
@@ -69,6 +82,7 @@ export default defineConfig(
       complexity: complexity(24),
       'max-depth': ['error', 5],
       'no-constant-binary-expression': 'error',
+      '@typescript-eslint/no-import-type-side-effects': 'error',
     },
   },
   {
@@ -88,7 +102,7 @@ export default defineConfig(
     },
   },
   {
-    files: ['src/simulation/**/*.ts', 'src/worlds/**/*.ts'],
+    files: ['src/simulation/**/*.ts', 'src/worlds/**/*.ts', ...sharedInteractionFiles],
     rules: {
       'no-restricted-imports': ['error', { patterns: [...browserImports, presentationImports] }],
     },
@@ -104,6 +118,44 @@ export default defineConfig(
         { regex: '(^|/)(commands|save)([.]ts)?$', allowTypeImports: true, message: 'Use contract types at the boundary and keep decoding or persistence in the adapters.' },
       ] }],
     },
+  },
+  {
+    files: [
+      ...sharedInteractionFiles,
+      'server/*-interactions.ts',
+      'server/interactions.ts',
+      'server/farm-orders.ts',
+      'server/ferry-repair.ts',
+      'server/game.ts',
+      'server/gate-repair.ts',
+      'server/journal.ts',
+      'server/materials-work.ts',
+      'server/orders.ts',
+      'server/residents.ts',
+    ],
+    plugins: { '@stylistic': stylistic },
+    rules: { '@stylistic/comma-dangle': ['error', 'always-multiline'] },
+  },
+  {
+    files: ['src/interaction-options.ts', 'server/game-interactions.ts'],
+    rules: {
+      '@stylistic/list-style': ['error', {
+        overrides: {
+          '()': 'off',
+          '[]': 'off',
+          '{}': 'off',
+          '<>': 'off',
+          ArrayExpression: { singleLine: { maxItems: 4 }, multiLine: { minItems: 1 } },
+          ObjectExpression: { singleLine: { spacing: 'always', maxItems: 4 }, multiLine: { minItems: 1 } },
+        },
+      }],
+      '@stylistic/indent': ['error', 2],
+      '@stylistic/no-trailing-spaces': 'error',
+    },
+  },
+  {
+    files: ['server/game.ts'],
+    rules: { '@typescript-eslint/switch-exhaustiveness-check': 'error' },
   },
   ...Object.entries(existingLimits).map(([file, rules]) => ({ files: [file], rules })),
 )

@@ -1,6 +1,6 @@
 import { habitatNavigation } from './biome-navigation.ts'
 import { outingSubjects, type OutingId } from './journal/outing.ts'
-import type { Interaction } from './interaction-options.ts'
+import type { InteractionOption, InteractionPolicies } from './interactions/definition.ts'
 import { juniperCenter, juniperLayout } from './juniper-habitat.ts'
 import type { Player, Snapshot } from './protocol.ts'
 import { juniperTrail } from './routes.ts'
@@ -9,7 +9,12 @@ import { groundHeight } from './terrain.ts'
 import { distance, type Point } from './world.ts'
 import { driftwoodFoxgloves, driftwoodWrack, shellglassLimpets, shellglassStaff, starterFeatures } from './worlds/starter/sites.ts'
 
-type FieldInteraction = Interaction & { action: 'inspect-field'; subject: number; record: OutingId; at: Anchor }
+export const fieldActions = {
+  'inspect-field': 'feature-recheck',
+} as const satisfies InteractionPolicies
+export type FieldAction = keyof typeof fieldActions
+
+type FieldInteraction = InteractionOption<FieldAction> & { subject: number; record: OutingId; at: Anchor }
 type Anchor = Point & { y: number }
 
 const navigation = habitatNavigation(juniperLayout.patches)

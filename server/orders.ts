@@ -1,4 +1,6 @@
-import { atClothingCounter, heldItem } from '../src/actions.ts'
+import { heldItem } from '../src/interactions/cargo.ts'
+import { atClothingCounter } from '../src/interactions/home.ts'
+import type { OrderAction } from '../src/interactions/work.ts'
 import { clothingCatalog, ownsClothing, type ClothingId } from '../src/clothing-catalog.ts'
 import { market, saleValue, seedPrice } from '../src/farm.ts'
 import { atJobBoard, jobs, orderContribution } from '../src/jobs.ts'
@@ -7,6 +9,7 @@ import type { Item, Player, Snapshot } from '../src/protocol.ts'
 import { crateStarts, distance, starterPay } from '../src/world.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewMember, CrewNotice } from './crew.ts'
+import type { InteractionHandlers } from './interactions.ts'
 
 export function createOrders(
   state: Pick<Snapshot, 'crewCoins' | 'lastStarterPay' | 'items' | 'jobs' | 'mission' | 'islandTime' | 'lookoutFireClearedAt' | 'ferryRepair'>,
@@ -113,5 +116,10 @@ export function createOrders(
     return 'bought'
   }
 
-  return { startJob, deliverCrate, visitMarket, completeFire, buySeed, buyClothing }
+  const interactions = {
+    // The client opens this panel locally. Choosing a job sends the separate take-job command.
+    'job-board': () => {},
+    market: ({ player }) => visitMarket(player),
+  } satisfies InteractionHandlers<OrderAction>
+  return { startJob, deliverCrate, interactions, completeFire, buySeed, buyClothing }
 }

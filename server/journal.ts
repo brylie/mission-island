@@ -1,15 +1,16 @@
 import { inSkiff } from '../src/actions.ts'
-import { fieldInteractions } from '../src/field-interactions.ts'
+import { fieldInteractions, type FieldAction } from '../src/field-interactions.ts'
 import { journalEntry } from '../src/journal/catalog.ts'
 import { fishAt } from '../src/journal/fish.ts'
 import { emptyJournal, placeNear, recordEntry, type Journal, type JournalNote } from '../src/journal/journal.ts'
 import { outingSubjects } from '../src/journal/outing.ts'
-import { sightingEntries } from '../src/journal/sightings.ts'
+import { sightingEntries, type SightingAction } from '../src/journal/sightings.ts'
 import type { Player, Snapshot } from '../src/protocol.ts'
 import { northernRegions, starterDiscoveries } from '../src/scenery.ts'
 import { distance, type Point } from '../src/world.ts'
 import type { IslandSave } from './save.ts'
 import type { CrewMember } from './crew.ts'
+import type { InteractionHandlers } from './interactions.ts'
 
 // A crew that found places before the journal existed keeps them as its first entries.
 export function restoreJournal(save: IslandSave | undefined): Journal {
@@ -40,7 +41,7 @@ export function createJournal(state: Pick<Snapshot, 'journal' | 'islandTime' | '
     if (at) add(ids, player, at)
   }
 
-  function inspect(member: CrewMember, subject: number | undefined) {
+  function inspect(member: CrewMember, subject: number) {
     const option = fieldInteractions(state, member.player).find(choice => choice.subject === subject)
     if (!option) return member.notify?.({ type: 'field-unavailable' })
     const { record: id } = option
@@ -82,5 +83,9 @@ export function createJournal(state: Pick<Snapshot, 'journal' | 'islandTime' | '
     }
   }
 
-  return { record, inspect, hearMara, landed, explore }
+  const interactions = {
+    record: ({ player }, subject) => record(player, subject),
+    'inspect-field': inspect,
+  } satisfies InteractionHandlers<FieldAction | SightingAction>
+  return { interactions, hearMara, landed, explore }
 }

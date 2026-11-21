@@ -71,6 +71,8 @@ mise run audit
 
 The pre-commit hook checks file formats, merge markers, private keys, and large additions. It also runs type-aware ESLint with security and complexity rules, Knip for unused code and dependencies, the mechanics tests, and the production build. The coverage gate requires at least 81% for lines, functions, and branches across the host and shared mechanics. The pre-push hook audits npm dependencies. Run the audit separately with `mise run audit`.
 
+Run `npm run lint:fix` to apply ESLint layout fixes, including trailing commas in interaction files. The shared interaction registries use one entry per line for multiline lists.
+
 On pull requests into `main` and pushes to `main`, GitHub Actions runs the pre-commit and pre-push checks. Open **CI → Quality and tests** to inspect coverage, the build, and the dependency audit.
 
 ## Build and iterate together

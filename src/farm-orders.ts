@@ -1,5 +1,5 @@
 import { farm } from './farm.ts'
-import type { Interaction } from './interaction-options.ts'
+import type { InteractionOption, InteractionPolicies } from './interactions/definition.ts'
 import type { Player } from './protocol.ts'
 import { walkingHeight } from './terrain.ts'
 import { distance, type Point, type Pose } from './world.ts'
@@ -22,14 +22,17 @@ export function restoreFarmWork(progress: FarmProgress = { stage: 'offer', deliv
   return { progress: { ...progress }, barrow: farmingQualified(progress.stage) ? { ...barrowPickup, handler: null } : null }
 }
 
-export const farmActions = [
-  'accept-produce', 'accept-barrow-order', 'deliver-produce', 'grip-barrow', 'park-barrow', 'pack-barrow', 'unload-barrow', 'recall-barrow',
-] as const
-export type FarmAction = typeof farmActions[number]
-
-export function isFarmAction(action: Interaction['action']): action is FarmAction {
-  return farmActions.some((farmAction) => farmAction === action)
-}
+export const farmActions = {
+  'accept-produce': 'explicit',
+  'accept-barrow-order': 'explicit',
+  'deliver-produce': 'explicit',
+  'grip-barrow': 'explicit',
+  'park-barrow': 'explicit',
+  'pack-barrow': 'explicit',
+  'unload-barrow': 'explicit',
+  'recall-barrow': 'explicit',
+} as const satisfies InteractionPolicies
+export type FarmAction = keyof typeof farmActions
 
 function carrotCount(quantity: number) {
   return `${quantity} ${quantity === 1 ? 'carrot' : 'carrots'}`
@@ -52,12 +55,12 @@ export function farmOrderStatus({ progress, barrow }: FarmWork): string {
   return `${delivery} Barrow ${location} · ${load} packed.`
 }
 
-function targeted(action: FarmAction, label: string, name: string, point: Point, height: number): Interaction {
+function targeted(action: FarmAction, label: string, name: string, point: Point, height: number): InteractionOption<FarmAction> {
   return { action, key: 'E', label, name, at: { ...point, y: walkingHeight(point) + height }, radius: .7 }
 }
 
-function produceInteractions(progress: FarmProgress, player: Player): Interaction[] {
-  const options: Interaction[] = []
+function produceInteractions(progress: FarmProgress, player: Player): InteractionOption<FarmAction>[] {
+  const options: InteractionOption<FarmAction>[] = []
   const { stage, delivered } = progress
   const counter = (action: FarmAction, label: string) => targeted(action, label, 'Ines’s produce counter', produceCounter, 1)
   if (distance(player, produceCounter) < 1.15) {
@@ -71,13 +74,13 @@ function produceInteractions(progress: FarmProgress, player: Player): Interactio
   return options
 }
 
-const parkBarrow: Interaction = { action: 'park-barrow', key: 'E', label: 'Set down the barrow', name: 'Farm barrow' }
+const parkBarrow: InteractionOption<FarmAction> = { action: 'park-barrow', key: 'E', label: 'Set down the barrow', name: 'Farm barrow' }
 
-export function farmInteractions({ progress, barrow }: FarmWork, player: Player, handsFull: boolean): Interaction[] {
+export function farmInteractions({ progress, barrow }: FarmWork, player: Player, handsFull: boolean): InteractionOption<FarmAction>[] {
   if (handsFull || player.truckSurface || player.onBed) return []
   const handling = barrow?.handler === player.id
   if (!player.grounded) return handling ? [parkBarrow] : []
-  const options: Interaction[] = []
+  const options: InteractionOption<FarmAction>[] = []
   if (!handling) options.push(...produceInteractions(progress, player))
   const { stage, delivered, load } = progress
   if (!barrow) return options
