@@ -66,7 +66,7 @@ export function setup(t, { saved, players = [], arrange = () => {}, random = () 
   const game = createGame({ save, clock: () => time, random, checkpoint })
   const sessions = createSocketSessions(game)
   const sockets = []
-  t.after(() => sockets.forEach((socket) => socket.close()))
+  t.after(() => sockets.forEach((socket) => void socket.close()))
   function advance(ticks = 1) {
     for (let i = 0; i < ticks; i++) {
       time += 1000 / 30

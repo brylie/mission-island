@@ -19,6 +19,24 @@ const secureRules = {
   'security/detect-unsafe-regex': 'error',
 }
 
+const correctnessRules = {
+  'array-callback-return': ['error', { checkForEach: true, allowVoid: true }],
+  'default-case-last': 'error',
+  'eqeqeq': ['error', 'always', { null: 'ignore' }],
+  'no-constructor-return': 'error',
+  'no-duplicate-imports': ['error', { allowSeparateTypeImports: true }],
+  'no-extend-native': 'error',
+  'no-param-reassign': 'error',
+  'no-promise-executor-return': 'error',
+  'no-self-compare': 'error',
+  'no-sequences': ['error', { allowInParentheses: false }],
+  'no-template-curly-in-string': 'error',
+  'no-unmodified-loop-condition': 'error',
+  'no-unreachable-loop': 'error',
+  'prefer-object-has-own': 'error',
+  'prefer-regex-literals': 'error',
+}
+
 const lineLimit = (max) => ['error', { max, skipBlankLines: true, skipComments: true }]
 const complexity = (max) => ['error', max]
 
@@ -51,7 +69,7 @@ const existingLimits = {
   'src/workbench/landscape-map.ts': { 'max-lines': lineLimit(459), 'max-lines-per-function': lineLimit(379) },
   'src/workbench/landscape-studies.ts': { 'max-lines-per-function': lineLimit(207) },
   'src/workbench/main.ts': { 'max-lines': lineLimit(696) },
-  'src/workbench/reference-pane.ts': { 'max-lines-per-function': lineLimit(141) },
+  'src/workbench/reference-pane.ts': { 'max-lines-per-function': lineLimit(142) },
   'src/workbench/stage.ts': { 'max-lines-per-function': lineLimit(180), 'complexity': complexity(40) },
 }
 
@@ -89,6 +107,7 @@ export default defineConfig(
   {
     files: ['**/*.{cjs,js,mjs,ts}'],
     extends: [stylistic.configs.recommended],
+    linterOptions: { reportUnusedDisableDirectives: 'error', reportUnusedInlineConfigs: 'error' },
     rules: {
       '@stylistic/arrow-parens': ['error', 'always'],
       '@stylistic/linebreak-style': ['error', 'unix'],
@@ -107,6 +126,10 @@ export default defineConfig(
       'max-depth': ['error', 5],
       'no-constant-binary-expression': 'error',
       '@typescript-eslint/no-import-type-side-effects': 'error',
+      '@typescript-eslint/no-unnecessary-qualifier': 'error',
+      '@typescript-eslint/no-unnecessary-template-expression': 'error',
+      '@typescript-eslint/no-unnecessary-type-arguments': 'error',
+      '@typescript-eslint/prefer-readonly': 'error',
     },
   },
   {
@@ -114,6 +137,15 @@ export default defineConfig(
     extends: [js.configs.recommended],
     plugins,
     rules: secureRules,
+  },
+  {
+    files: ['**/*.{cjs,js,mjs,ts}'],
+    rules: correctnessRules,
+  },
+  {
+    files: ['**/*.{cjs,js,mjs,ts}'],
+    ignores: ['test/**'],
+    rules: { 'no-script-url': 'error' },
   },
   {
     files: ['test/**/*.mjs'],
@@ -167,7 +199,7 @@ export default defineConfig(
     },
   },
   {
-    files: ['server/game.ts'],
+    files: ['server/**/*.ts', 'src/{interactions,journal,residents,simulation}/**/*.ts'],
     rules: { '@typescript-eslint/switch-exhaustiveness-check': 'error' },
   },
   ...Object.entries(existingLimits).map(([file, rules]) => ({ files: [file], rules })),

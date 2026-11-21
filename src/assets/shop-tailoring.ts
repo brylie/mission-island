@@ -9,14 +9,15 @@ export type Section = [y: number, x: number, z: number, width: number, depth: nu
 
 // Dye changes share the fabric surface. Adjacent rings give a stripe a crisp woven edge.
 export function tailored(meshes: MeshFactory, root: TransformNode, name: string, color: string, rows: Section[], sides = 24, opening = 0) {
+  let profile = rows
   if (opening) {
     const [y, x, z, w, d, tint = color] = rows[rows.length - 1]
     const lining = Color3.FromHexString(tint).scale(0.46).toHexString()
-    rows = [...rows, [y + 0.001, x, z, w - 0.006, d - 0.006, tint], [y - 0.005, x, z, w - 0.009, d - 0.009, lining], [y - opening, x, z, w * 0.80, d * 0.80, lining]]
+    profile = [...rows, [y + 0.001, x, z, w - 0.006, d - 0.006, tint], [y - 0.005, x, z, w - 0.009, d - 0.009, lining], [y - opening, x, z, w * 0.80, d * 0.80, lining]]
   }
-  const mesh = garment(meshes, root, name, '#ffffff', rows.map(([y, x, z, w, d]) => [y, x, z, w, d]), 0.90, sides)
+  const mesh = garment(meshes, root, name, '#ffffff', profile.map(([y, x, z, w, d]) => [y, x, z, w, d]), 0.90, sides)
   const pigments: number[] = []
-  for (const row of rows) {
+  for (const row of profile) {
     const tone = Color3.FromHexString(row[5] ?? color)
     for (let i = 0; i < sides; i++) pigments.push(tone.r, tone.g, tone.b, 1)
   }

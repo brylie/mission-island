@@ -21,10 +21,11 @@ function distance(a: Point, b: Point) {
 }
 function nearest<T extends Point>(origin: Point, choices: T[], range = Infinity) {
   let best: T | undefined
+  let nearestDistance = range
   for (const choice of choices) {
     const d = distance(origin, choice)
-    if (d < range) {
-      range = d
+    if (d < nearestDistance) {
+      nearestDistance = d
       best = choice
     }
   }

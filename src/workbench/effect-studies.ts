@@ -290,7 +290,7 @@ export const effectStudies: Entry[] = [...studies, ...expandedEffectStudies, ...
         const tuning = { strength: enabled ? strength : 0, footprint: Number(options.footprint), wind: Number(options.wind ?? 0) }
         const seed = Number(options.seed)
         primary.setBurst(start, stop, tuning, seed)
-        accents.forEach((effect, index) => effect.setBurst(start, stop, tuning, seed + (index + 1) * 307))
+        accents.forEach((effect, index) => void effect.setBurst(start, stop, tuning, seed + (index + 1) * 307))
         for (const effect of companion) effect.setBurst(start, stop, { strength: Number(enabled), footprint: 1 })
         peak = 0
       }

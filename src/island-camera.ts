@@ -176,7 +176,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   }
 
   return {
-    update(subject: TransformNode | undefined, seated: boolean, aspect: number, delta: number, ridge?: RidgeView) {
+    update(subject: TransformNode | undefined, aboardVehicle: boolean, aspect: number, delta: number, ridge?: RidgeView) {
       if (!subject) {
         if (tracking) {
           tracking = false
@@ -193,7 +193,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       if (ridge && ridge !== ridgeView) orbitPitch = 0.14
       const snap = !tracking || Vector3.DistanceSquared(anchor, subject.position) > 196
       const blend = snap ? 1 : 1 - Math.exp(-delta * 8)
-      seated ||= ridge === 'flight'
+      const seated = aboardVehicle || ridge === 'flight'
       if (seated !== wasSeated) {
         orbitYaw = seated ? 0 : heading
         wasSeated = seated

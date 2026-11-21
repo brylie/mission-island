@@ -1,10 +1,9 @@
-import { atLandingSign, atRidgeRack, aviationInteraction, nearRidgeCourse, rackBrief, type FlightResult } from './aviation'
+import { aerialProgress, aerialSurveys, atLandingSign, atRidgeRack, aviationInteraction, nearRidgeCourse, rackBrief, type FlightResult } from './aviation'
 import type { Input, Player, ServerMessage, Snapshot } from './protocol'
 import { distance } from './world'
 import { activeLift, aerialReceipt, bearingWord, sightingText, soaringDetail } from './soaring-guide'
 import { ridgeMeadow, ridgeRack } from './worlds/starter/ridge-scout'
 import { mirrorPoolWillow } from './worlds/starter/sites'
-import { aerialProgress, aerialSurveys } from './aviation'
 
 const resultText: Record<FlightResult, string> = {
   qualified: 'Crew aviation qualification earned. The Mirror Pool survey is open to either player.',

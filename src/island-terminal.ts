@@ -105,7 +105,7 @@ function tally(meshes: MeshFactory) {
   const pips = ferryStages.map((_, i) => cell(-0.4 + i * 0.4, 1.88, 0.3))
   const coins = Array.from({ length: maxCoins }, (_, i) => cell(-0.8 + i * (1.6 / maxCoins), 1.6, 1.6 / maxCoins - 0.02))
   const crates = Array.from({ length: maxCrates }, (_, i) => cell(-0.8 + i * (1.6 / maxCrates), 1.3, 1.6 / maxCrates - 0.04))
-  const show = (options: Mesh[], index: number) => options.forEach((mesh, i) => mesh.setEnabled(i === index))
+  const show = (options: Mesh[], index: number) => options.forEach((mesh, i) => void mesh.setEnabled(i === index))
   const owners = (ledger: number[], needed: number, length: number) => {
     const slots = ledger.flatMap((amount, slot) => Array.from({ length: amount }, () => slot + 2))
     return Array.from({ length }, (_, i) => i < slots.length ? slots[i] : i < needed ? 1 : 0)
@@ -114,11 +114,11 @@ function tally(meshes: MeshFactory) {
     const { ferryRepair } = state
     const needs = stageNeeds(state)
     const ledger = ferryRepair.ledger[ferryRepair.stage]
-    pips.forEach((options, i) => show(options, i < ferryRepair.stage ? swatches.length - 1 : i === ferryRepair.stage ? 1 : 0))
+    pips.forEach((options, i) => void show(options, i < ferryRepair.stage ? swatches.length - 1 : i === ferryRepair.stage ? 1 : 0))
     const coinCells = needs && ledger ? owners(ledger.coins, needs.coins, maxCoins) : coins.map(() => swatches.length - 1)
     const crateCells = needs && ledger ? owners(ledger.crates, needs.crates, maxCrates) : crates.map(() => swatches.length - 1)
-    coins.forEach((options, i) => show(options, coinCells[i]))
-    crates.forEach((options, i) => show(options, crateCells[i]))
+    coins.forEach((options, i) => void show(options, coinCells[i]))
+    crates.forEach((options, i) => void show(options, crateCells[i]))
   }
 }
 
@@ -143,7 +143,7 @@ function yard(meshes: MeshFactory) {
   box(last.x + 1.1, 1.3, first.z + 0.2, 0.7, 0.45, 0.05, freshWood)
   return (state: Pick<Snapshot, 'ferryRepair'>) => {
     const count = stageNeeds(state)?.cratesGiven ?? 0
-    stacked.forEach((mesh, i) => mesh.setEnabled(i < count))
+    stacked.forEach((mesh, i) => void mesh.setEnabled(i < count))
   }
 }
 

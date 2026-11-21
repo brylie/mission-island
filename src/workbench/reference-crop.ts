@@ -31,8 +31,8 @@ export function photoFrame(size: PhotoSize, crop: ReferenceCrop) {
 export interface PhotoPoint { x: number, y: number }
 
 // Keep the pixel under the old pointer beneath the new pointer through both pan and zoom.
-export function moveCrop(size: PhotoSize, crop: ReferenceCrop, zoom: number, from: PhotoPoint, to: PhotoPoint): ReferenceCrop {
-  zoom = clamp(zoom, 1, maxZoom)
+export function moveCrop(size: PhotoSize, crop: ReferenceCrop, requestedZoom: number, from: PhotoPoint, to: PhotoPoint): ReferenceCrop {
+  const zoom = clamp(requestedZoom, 1, maxZoom)
   if (zoom === 1) return fitCrop
   const old = photoFrame(size, crop)
   const width = old.width * zoom / crop.zoom, height = old.height * zoom / crop.zoom

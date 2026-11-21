@@ -125,7 +125,7 @@ function start() {
       : stop === tour.length - 1
         ? 'Return to the ferry and start again'
         : 'Follow the route from the last tour position'
-    stopLabels.forEach((label, i) => i === stop ? label.setAttribute('aria-current', 'step') : label.removeAttribute('aria-current'))
+    stopLabels.forEach((label, i) => void (i === stop ? label.setAttribute('aria-current', 'step') : label.removeAttribute('aria-current')))
   }
 
   function setPoint(at: MapPoint, heading: number) {

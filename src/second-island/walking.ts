@@ -16,7 +16,7 @@ interface Block extends MapPoint {
 // shelter posts, beneath rotors and through gates open after graphics batching.
 export class ScenerySolids {
   parkedVehicle?: Block
-  private cells = new Map<string, Block[]>()
+  private readonly cells = new Map<string, Block[]>()
 
   add(block: Block) {
     const c = Math.abs(Math.cos(block.heading)), s = Math.abs(Math.sin(block.heading))

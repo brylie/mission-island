@@ -80,6 +80,10 @@ export function createFreight(crew: Pick<ReturnType<typeof createCrewRoster>, 'p
         if (!cab) return 'Board the truck first.'
         error = drive(cab, command.steps, ticket)
         break
+      case 'leave':
+      case 'accept':
+      case 'load':
+      case 'deliver':
       default:
         if (!cab) return 'Board the truck first.'
         if (Math.abs(cab.pose.speed) > 0.15) return 'Stop the truck first.'

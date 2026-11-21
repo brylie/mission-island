@@ -256,7 +256,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     time += delta
     if (last?.skiff) moveTo(boat, last.skiff, waterLevel, factor)
     poseFloating(boat, time, 0.5, 0.048)
-    buoys.forEach((buoy, index) => poseFloating(buoy, time, index * 1.67))
+    buoys.forEach((buoy, index) => void poseFloating(buoy, time, index * 1.67))
     showDeliveryRoute(last)
     if (last) {
       updateScenery(last, factor, delta)

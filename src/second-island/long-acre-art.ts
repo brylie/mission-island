@@ -169,7 +169,7 @@ export function createLongAcreGarden(meshes: MeshFactory, solids?: ScenerySolids
       }
     }
     let visiting = 0
-    flowers.forEach((bed, j) => bed.forEach((root, i) => {
+    flowers.forEach((bed, j) => void bed.forEach((root, i) => {
       const fed = motion.some((bee) => bee.bed === j && bee.flower === i)
       if (fed) visiting++
       root.rotation.z = (fed ? 0.095 : 0) + Math.sin(frame.time * 2.1 + i * 0.72 + j) * (frame.weather.rain > 0.3 ? 0.037 : 0.019)

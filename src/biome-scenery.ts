@@ -85,13 +85,13 @@ export function createBiomeScenery(meshes: MeshFactory, initial: ReturnType<type
     rotation.y += Math.atan2(Math.sin(turn), Math.cos(turn)) * blend
   }
   function update(frame: BiomeFrame, time: number, blend = 1) {
-    plants.forEach((plant, i) => plant.scaling.setAll(0.28 + 0.72 * frame.clover[i]))
+    plants.forEach((plant, i) => void plant.scaling.setAll(0.28 + 0.72 * frame.clover[i]))
     frame.hares.forEach((animal, i) => {
       const motion = animalPose('hare', animal.behavior, time, i)
       pose(hares[i], animal, motion.height, blend)
       hares[i].rotation.x = motion.pitch
     })
-    frame.foxes.forEach((fox, i) => pose(foxes[i], fox, animalPose('fox', fox.behavior, time, i).height, blend))
+    frame.foxes.forEach((fox, i) => void pose(foxes[i], fox, animalPose('fox', fox.behavior, time, i).height, blend))
   }
   update(biomeFrame(initial), 0)
   return update

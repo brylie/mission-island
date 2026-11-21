@@ -55,7 +55,7 @@ export function createReferencePane() {
     if (pending !== undefined) remember()
   })
 
-  function display(open: boolean, crop = controls.crop, focalX?: number) {
+  function display(open: boolean, crop = controls.crop, initialFocalX?: number) {
     controls.reset(crop)
     pane.hidden = !open
     toggle.setAttribute('aria-expanded', String(open))
@@ -75,6 +75,7 @@ export function createReferencePane() {
     img.alt = description || 'Reference photo for ' + name
     img.referrerPolicy = 'no-referrer'
     status.textContent = 'Loading reference…'
+    let focalX = initialFocalX
     img.onload = () => {
       if (img.parentElement !== picture) return
       status.textContent = 'Reference photo loaded.'

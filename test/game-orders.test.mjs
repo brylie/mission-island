@@ -16,7 +16,7 @@ test('delivering all crates and spraying the fire unlocks repeatable jobs withou
   const h = setup(t, {
     players: [player(0, town), player(1, { x: lookout.x + 2, z: lookout.z + 1 })],
     arrange: (save) => {
-      save.world.items.slice(0, 3).forEach((item, i) => Object.assign(item, { ...town, x: town.x - 1 + i, y: 0.46 }))
+      save.world.items.slice(0, 3).forEach((item, i) => void Object.assign(item, { ...town, x: town.x - 1 + i, y: 0.46 }))
       Object.assign(save.world.items[3], { x: lookout.x + 1, z: lookout.z + 1 })
     },
   })

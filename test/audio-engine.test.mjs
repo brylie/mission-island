@@ -42,7 +42,7 @@ class FakeContext {
       buffer: null,
       addEventListener: (_type, listener) => ended.push(listener),
       start(at) { context.started.push({ at, duration: this.buffer.duration }) },
-      stop() { ended.forEach((listener) => listener()) },
+      stop() { ended.forEach((listener) => void listener()) },
     })
   }
 
@@ -65,9 +65,14 @@ function heldRenderer() {
   const held = []
   return {
     held,
-    renderer: () => ({ render: (rendered) => new Promise((resolve) => held.push(() => resolve(inlineRenderer().render(rendered)))), dispose() {} }),
+    renderer: () => ({
+      render: (rendered) => new Promise((resolve) => {
+        held.push(() => resolve(inlineRenderer().render(rendered)))
+      }),
+      dispose() {},
+    }),
     release: async () => {
-      held.splice(0).forEach((finish) => finish())
+      held.splice(0).forEach((finish) => void finish())
       await settle()
     },
   }

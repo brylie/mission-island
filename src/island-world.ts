@@ -67,7 +67,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     if (index !== substitutions.replaceBuilding) meshes.batchModel(createHouse(meshes, building))
   })
   const homeChests = crewHomes.map(({ chest }, i) => createHomeChest(meshes, chest, playerColors[i]))
-  crewHomes.forEach(({ wardrobe }, i) => createWardrobe(meshes, { ...wardrobe, z: wardrobe.z + 0.49 }, groundHeight(wardrobe), playerColors[i]))
+  crewHomes.forEach(({ wardrobe }, i) => void createWardrobe(meshes, { ...wardrobe, z: wardrobe.z + 0.49 }, groundHeight(wardrobe), playerColors[i]))
   createClothingCounter(meshes, { ...clothingCounter, z: clothingCounter.z - 0.65 }, groundHeight(clothingCounter))
   const showFarm = createFarm(meshes, substitutions.replaceFarm ? [] : undefined)
   showFarm([])
@@ -133,7 +133,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const garden = createGardenGate(meshes)
   const residents = createResidentFigures(meshes, starterResidents, playerColors.length)
 
-  beachUmbrellas.forEach(({ x, z }, index) => createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))
+  beachUmbrellas.forEach(({ x, z }, index) => void createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))
 
   const omittedBuilding = buildings.findIndex((building) => building.x === parallaxCottage)
   const interactive = createIslandShaderEffects(meshes, substitutions.replaceBuilding !== omittedBuilding, boat)

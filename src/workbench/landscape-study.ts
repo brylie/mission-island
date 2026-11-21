@@ -35,7 +35,7 @@ export const landscapeStudy: Entry = {
     let previousSky = ''
     return ({ time, delta, rate, camera, light, rain, seek }, settings) => {
       poseFloating(world.boat, time)
-      world.buoys.forEach((buoy, index) => poseFloating(buoy, time, index * 1.67))
+      world.buoys.forEach((buoy, index) => void poseFloating(buoy, time, index * 1.67))
       const weather = { hour: Number(settings.hour), rain }
       const frame = { time: Number(settings.clockStart ?? 0) + time, delta: delta * rate, seek, weather, camera, threats: [] }
       const sky = weather.hour + '/' + rain

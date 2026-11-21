@@ -65,7 +65,7 @@ export function createSurfPlayer(engine: AudioEngine, seed = 1) {
     },
     dispose() {
       unwatch()
-      voices.forEach((voice) => voice.lane.dispose())
+      voices.forEach((voice) => void voice.lane.dispose())
       voices = []
     },
   }
