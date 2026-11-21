@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createGame } from '../server/game.ts'
 import { gateAction, gateMendedStage, onBench, toolboxItem } from '../src/gate-repair.ts'
-import { checkpoints, checkpointSettings } from '../src/live-checkpoints.ts'
+import { scenarioCatalog, checkpointSettings } from '../server/scenarios/catalog.ts'
 import { actionHint } from '../src/actions.ts'
 import { tokens } from './support/game-harness.mjs'
 
@@ -12,7 +12,7 @@ test('the launcher accepts only known checkpoints and one or two crew members', 
   assert.equal(checkpointSettings('wren-fit', '3'), undefined)
 })
 
-for (const checkpoint of Object.keys(checkpoints)) {
+for (const { id: checkpoint } of scenarioCatalog) {
   for (const seats of [1, 2]) {
     test(`live ${checkpoint} with ${seats} seat(s)`, () => {
       const game = createGame({ playtest: { checkpoint, seats, revision: 1 } })
@@ -21,7 +21,8 @@ for (const checkpoint of Object.keys(checkpoints)) {
       let b
       if (seats === 2) {
         const before = game.tick().islandTime
-        a.dispatch({ type: 'interact', intent: 'fit' })
+        a.dispatch({ type: 'crew-name', name: 'Before start' })
+        assert.equal(game.tick().players[0].name, 'Crew 1')
         assert.equal(game.tick().islandTime, before)
         assert.equal(game.tick().playtest.started, false)
         b = join(1)
@@ -54,7 +55,17 @@ for (const checkpoint of Object.keys(checkpoints)) {
       } else if (checkpoint === 'wren-discover') {
         assert.equal(state.gateRepair.stage, 'sagging')
         assert.ok(onBench(toolboxItem(state)))
-      } else {
+      } else if (checkpoint === 'dock-fishing') {
+        for (const angler of [a, b].filter(Boolean)) {
+          const player = state.players.find(p => p.id === angler.id)
+          assert.deepEqual(player.inventory, ['fishing-rod'])
+          assert.equal(player.equipped, 'fishing-rod')
+          angler.dispatch({ type: 'primary', phase: 'start' })
+          assert.equal(player.charge?.kind, 'cast')
+          angler.dispatch({ type: 'primary', phase: 'release', aim: player.heading })
+          assert.ok(player.casting)
+        }
+      } else if (checkpoint === 'harbor-delivery') {
         assert.equal(state.mission, 'delivery')
         assert.match(actionHint(state, state.players[0])[1], /crate/i)
       }

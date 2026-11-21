@@ -106,7 +106,7 @@ if (!savedToken) writeStorage('localStorage', crewKey, token)
 const leadKey = () => `mission-island-fisher-lead-${token}`
 let leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
 const skipNameKey = () => `mission-island-skip-name-${token}`
-const updateCheckpoint = bindCheckpointControls(optionsDialog, () => token)
+const checkpointControls = bindCheckpointControls(optionsDialog, () => token)
 let offerJoinName = false
 let editingName: { id: number; token: string; name: string } | undefined
 let actionFeedback: { key: string; label: string; until: number } | undefined
@@ -357,7 +357,7 @@ function update(state: Snapshot) {
   const earlier = snapshot?.players.find((player) => player.id === id)
   const previousHour = snapshot?.weather.hour
   snapshot = state
-  updateCheckpoint(state.playtest)
+  checkpointControls.update(state.playtest)
   const hours = Math.floor(state.weather.hour)
   const minutes = Math.floor((state.weather.hour - hours) * 60)
   clock.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} · ${state.weather.rain > 0.3 ? 'Rain' : isNight(hours) ? 'Night' : 'Daylight'}`
@@ -422,6 +422,7 @@ function connect() {
     const incoming = JSON.parse(event.data) as ServerMessage
     switch (incoming.type) {
       case 'welcome':
+        if (incoming.scenarios) checkpointControls.setCatalog(incoming.scenarios)
         offerJoinName = readStorage('localStorage', skipNameKey()) !== 'yes'
         id = incoming.id
         live = true

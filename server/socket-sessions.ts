@@ -1,4 +1,5 @@
 import { WebSocket, type RawData } from 'ws'
+import type { ScenarioSummary } from '../src/live-checkpoints.ts'
 import type { ServerMessage } from '../src/protocol.ts'
 import { readCrewCommand } from './commands.ts'
 import type { createGame } from './game.ts'
@@ -16,7 +17,7 @@ function readMessage(data: RawData): Record<string, unknown> | undefined {
 type Simulation = Pick<ReturnType<typeof createGame>, 'join' | 'tick'>
 type JoinedCrew = Extract<ReturnType<Simulation['join']>, { type: 'joined' }>
 
-export function createSocketSessions(game: Simulation) {
+export function createSocketSessions(game: Simulation, scenarios?: readonly ScenarioSummary[]) {
   const joinedSockets = new Map<WebSocket, { token: string; id: number }>()
 
   function connect(socket: WebSocket) {
@@ -47,7 +48,7 @@ export function createSocketSessions(game: Simulation) {
       crew = result
       joinedSockets.set(socket, { token, id: crew.id })
       clearTimeout(joinTimeout)
-      reply({ type: 'welcome', id: crew.id })
+      reply({ type: 'welcome', id: crew.id, scenarios })
     })
     socket.on('close', () => {
       clearTimeout(joinTimeout)

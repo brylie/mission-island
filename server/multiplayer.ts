@@ -4,7 +4,8 @@ import type { Plugin, ViteDevServer } from 'vite'
 import { WebSocketServer } from 'ws'
 import type { WebSocket } from 'ws'
 import type { FreightAction } from '../src/ore-contracts.ts'
-import { checkpointSettings, type TrialRun } from '../src/live-checkpoints.ts'
+import type { TrialRun } from '../src/live-checkpoints.ts'
+import { checkpointSettings, scenarioCatalog } from './scenarios/catalog.ts'
 import { createGame, tickSeconds } from './game.ts'
 import { islandSaveFile } from './save.ts'
 import { createSocketSessions } from './socket-sessions.ts'
@@ -42,7 +43,7 @@ function freightHandler(freight: ReturnType<typeof createGame>['freight']) {
 }
 
 function initialTrial(): TrialRun {
-  const settings = checkpointSettings(process.env.MISSION_ISLAND_CHECKPOINT ?? 'wren-fit', process.env.MISSION_ISLAND_CREW_SIZE ?? '2')
+  const settings = checkpointSettings(process.env.MISSION_ISLAND_CHECKPOINT ?? scenarioCatalog[0].id, process.env.MISSION_ISLAND_CREW_SIZE ?? '2')
   if (!settings) throw new Error('Unknown MISSION_ISLAND_CHECKPOINT or MISSION_ISLAND_CREW_SIZE. See the live playtest presets in CONTRIBUTING.md.')
   return { ...settings, revision: 1 }
 }
@@ -72,7 +73,7 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
     response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ crewCoins: game.crewCoins }))
   })
   middlewares.use('/api/slatecliff-freight', (request, response) => { void freightHandler(game.freight)(request, response) })
-  let sessions = createSocketSessions(game)
+  let sessions = createSocketSessions(game, trialMode ? scenarioCatalog : undefined)
   const sockets = new WebSocketServer({ noServer: true, maxPayload: 256 })
   const live = new Set<WebSocket>()
   if (trialMode) middlewares.use('/api/live-checkpoint', (req, res) => {
@@ -93,7 +94,7 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
       const reserved = game.join(seat.token, () => {})
       if (reserved.type === 'joined') reserved.disconnect()
     }
-    sessions = createSocketSessions(game)
+    sessions = createSocketSessions(game, scenarioCatalog)
     for (const socket of sockets.clients) socket.terminate()
     stop(200, 'Checkpoint restarted for the crew.')
   })

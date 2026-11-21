@@ -1,4 +1,4 @@
-import { checkpoints, type LiveTrial } from './live-checkpoints'
+import type { LiveTrial, ScenarioSummary } from './live-checkpoints'
 
 export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => string) {
   const panel = dialog.querySelector<HTMLFieldSetElement>('#live-checkpoint')!
@@ -9,9 +9,18 @@ export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => s
   const banner = document.querySelector<HTMLButtonElement>('#checkpoint-banner')!
   const options = document.querySelector<HTMLButtonElement>('#options-button')!
   let current: LiveTrial | undefined
+  let activeTitle = ''
   let pending = false
   banner.onclick = () => options.click()
-  for (const [id, title] of Object.entries(checkpoints)) select.add(new Option(title, id))
+  function setCatalog(scenarios: readonly ScenarioSummary[]) {
+    select.replaceChildren()
+    for (const { id, title, island } of scenarios) {
+      const option = new Option(title, id)
+      option.dataset.island = island
+      select.add(option)
+    }
+    current = undefined
+  }
   function label() {
     start.textContent = current?.checkpoint === select.value && String(current.seats) === seats.value
       ? 'Restart checkpoint' : 'Start checkpoint'
@@ -30,12 +39,15 @@ export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => s
     } catch { message.textContent = 'Could not reach the host. Try again after reconnecting.' }
     finally { pending = start.disabled = false }
   }
-  return (trial: LiveTrial | undefined) => {
+  function update(trial: LiveTrial | undefined) {
     if (!trial) return
     if (current?.revision !== trial.revision) {
       panel.hidden = banner.hidden = false
       current = trial
       select.value = trial.checkpoint
+      const option = select.selectedOptions[0]
+      activeTitle = option?.text ?? trial.checkpoint
+      panel.querySelector('legend')!.textContent = 'Live playtest · ' + (option?.dataset.island ?? 'Island')
       seats.value = String(trial.seats)
       message.textContent = ''
       label()
@@ -44,8 +56,8 @@ export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => s
         queueMicrotask(() => options.click())
       }
     }
-    const title = checkpoints[trial.checkpoint]
-    const text = trial.started ? title : title + ' · Waiting for crew'
+    const text = trial.started ? activeTitle : activeTitle + ' · Waiting for crew'
     if (banner.textContent !== text) banner.textContent = text
   }
+  return { update, setCatalog }
 }
