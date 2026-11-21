@@ -281,7 +281,7 @@
   },
   "src/interactive-shaders/catalog.ts": {
     "no-magic-numbers": {
-      "count": 227
+      "count": 33
     }
   },
   "src/interactive-shaders/effects.ts": {
