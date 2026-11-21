@@ -606,7 +606,7 @@
   },
   "src/second-island/long-acre-art.ts": {
     "no-magic-numbers": {
-      "count": 349
+      "count": 115
     }
   },
   "src/second-island/long-acre.ts": {
