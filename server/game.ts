@@ -3,13 +3,12 @@ import { prepareTrial } from './live-checkpoints.ts'
 import { createDriftwoodSchool } from '../src/simulation/driftwood-school.ts'
 import { createAviation } from './aviation.ts'
 import { inSkiff } from '../src/actions.ts'
-import { chargePower } from '../src/charged-actions.ts'
 import { createJuniperHabitat } from '../src/juniper-habitat.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewCommand } from './commands.ts'
-import { createCrewRoster, disconnect, stopPrimary, stopped, type CrewMember, type CrewNotice } from './crew.ts'
-import { jump, walkCrew } from './crew-motion.ts'
+import { createCrewRoster, disconnect, stopped, type CrewMember, type CrewNotice } from './crew.ts'
+import { jump, prepareCrewMotion, walkCrew } from './crew-motion.ts'
 import { createEquipment, setAppearance } from './equipment.ts'
 import { advanceIsland } from './island-clock.ts'
 import { createInteractions } from './interactions.ts'
@@ -24,9 +23,12 @@ import { createMaterialsWork } from './materials-work.ts'
 import { createOrders } from './orders.ts'
 import { toggleSeat, updateRiders } from './riders.ts'
 import type { IslandSave } from './save.ts'
+import { farmingQualified } from '../src/farm-orders.ts'
+import { createFarmOrders } from './farm-orders.ts'
 import { stepSkiff } from './skiff.ts'
 
 export const tickSeconds = 1 / 30
+const barrowBlockedCommands = new Set<CrewCommand['type']>(['primary', 'equip', 'jump', 'seat', 'buy-seed', 'take-job'])
 
 type GameOptions = {
   clock?: () => number
@@ -43,6 +45,7 @@ function stepVehicles(
 ) {
   const driver = members.find((member) => member.player.seat === 'driver')
   const before = state.truck
+  physics.placeBarrow(state.farmWork.barrow)
   state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds)
   if (driver && active(driver)) freight.recordDrive(driver.player, state.items, Math.hypot(state.truck.x - before.x, state.truck.z - before.z))
   const rowers = members.filter((member) => inSkiff(member.player.seat) && active(member))
@@ -68,8 +71,9 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
   const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0]))
   const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk }, checkpoint)
+  const farm = createFarmOrders(state, crew.notifyAll, clock, checkpoint)
   const materials = createMaterialsWork(state, crew.notifyAll, () => residents.keep(wren, repairSupplyFavor))
-  const interactions = createInteractions(state, growth, physics, orders, gate, residents, materials, checkpoint)
+  const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, materials, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
@@ -91,20 +95,15 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       const { player } = member
       const connected = active(member)
       if (aviation.tick(member, connected)) continue
-      player.reaching = false
-      player.rightHandRaised = false
-      player.throwing = now < member.throwUntil
-      if (!connected) stopPrimary(member)
+      prepareCrewMotion(member, connected, now)
       equipment.updateFishing(member, connected && equipment.isReadyToCast(member) && (!inSkiff(player.seat) || still))
-      if (player.charge && member.primary) {
-        player.charge.power = chargePower(player.charge.kind, (now - member.primary.since) / 1000)
-      }
       if (player.seat) {
         member.verticalSpeed = 0
         member.reachUntil = 0
         continue
       }
       walkCrew(state, member, before, connected, now, tickSeconds, orders.completeFire, checkpoint)
+      farm.tick(player)
     }
     updateHeldItems(state)
     state.driftwood = driftwood.step(state.players, state.skiff)
@@ -129,7 +128,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         equipment.equip(member, message.item)
         break
       case 'appearance':
-        setAppearance(member.player, message.appearance, state.mission)
+        setAppearance(member.player, message.appearance, state.mission, farmingQualified(state.farmWork.progress.stage))
         checkpoint?.()
         break
       case 'crew-name':
@@ -163,15 +162,18 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         break
       case 'respawn':
         interactions.respawn(member)
+        farm.recover(member.player.id)
         break
     }
   }
 
   function dispatch(member: CrewMember, message: CrewCommand) {
+    const pushing = state.farmWork.barrow?.handler === member.player.id
+    if (pushing && barrowBlockedCommands.has(message.type)) return
     if (aviation.hasFlight(member)) {
       if (message.type === 'respawn') aviation.interrupt(member)
       if (message.type !== 'input' && message.type !== 'appearance' && message.type !== 'crew-name') return
-    } else if (message.type === 'interact' && aviation.interact(member)) return
+    } else if (message.type === 'interact' && !pushing && aviation.interact(member)) return
     handleAction(member, message)
   }
 
@@ -189,6 +191,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         if (member.notify !== notify) return
         disconnect(member, clock())
         gate.releasePin(member.player.id)
+        farm.recover(member.player.id)
         aviation.interrupt(member)
       },
     }
