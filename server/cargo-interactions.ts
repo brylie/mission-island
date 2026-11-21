@@ -8,6 +8,9 @@ import { groundHeight } from '../src/terrain.ts'
 import { crateSize, distance, type Point } from '../src/world.ts'
 import { stopPrimary, stowTool, type CrewMember } from './crew.ts'
 import type { InteractionHandlers } from './interactions.ts'
+import { itemGroundClearance } from './items.ts'
+
+const crateDropMinimumY = -0.10
 
 type CargoDestinations = {
   ferry: (item: Item, playerId: number) => void
@@ -37,7 +40,7 @@ export function cargoInteractions(
     else if (item.kind === 'crate') {
       const slot = byTruckBed(state, player) ? freeBed(state) : undefined
       if (slot === undefined) {
-        const drop = canOccupyGround(item, crateSize / 2, -0.10) && !isInsideTruck(state.truck, item) ? item : player
+        const drop = canOccupyGround(item, crateSize / 2, crateDropMinimumY) && !isInsideTruck(state.truck, item) ? item : player
         physics.release(item, drop, item.y)
       }
       else {
@@ -45,7 +48,7 @@ export function cargoInteractions(
       }
     }
     else {
-      item.y = groundHeight(item) + 0.04
+      item.y = groundHeight(item) + itemGroundClearance
     }
   }
 

@@ -7,7 +7,7 @@ import { canOccupyGround } from '../src/simulation/movement.ts'
 import { groundHeight, maxWadeDepth, waterDepth } from '../src/terrain.ts'
 import { crateSize, itemStarts, spawns } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
-import { restingY, updateHeldItems } from './items.ts'
+import { itemGroundClearance, restingY, updateHeldItems } from './items.ts'
 
 export type InteractionHandlers<Action extends InteractionAction = InteractionAction>
   = Record<Action, (member: CrewMember, subject: number) => void>
@@ -51,7 +51,7 @@ export function createInteractions(
       else if (item.kind === 'crate') physics.relocate(item, itemStarts[item.id].start)
       else {
         const point = safe ? player : itemStarts[item.id].start
-        Object.assign(item, { x: point.x, z: point.z, y: safe ? groundHeight(point) + 0.04 : restingY(item.id), spraying: false })
+        Object.assign(item, { x: point.x, z: point.z, y: safe ? groundHeight(point) + itemGroundClearance : restingY(item.id), spraying: false })
       }
     }
     const home = spawns[player.id]

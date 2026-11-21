@@ -3,10 +3,12 @@ import type { Point } from '../src/world.ts'
 import { groundHeight } from '../src/terrain.ts'
 import { crateSize, itemStarts, localPoint, offset } from '../src/world.ts'
 
+export const itemGroundClearance = 0.04
+
 // Where an item rests at its home: on the ground, or on top of a bench for the toolbox.
 export function restingY(id: number) {
   const entry = itemStarts[id]
-  return 'lift' in entry ? groundHeight(entry.start) + entry.lift : 0.04
+  return 'lift' in entry ? groundHeight(entry.start) + entry.lift : itemGroundClearance
 }
 
 export function makeItems(): Item[] {

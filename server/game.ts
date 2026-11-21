@@ -22,7 +22,11 @@ import type { IslandSave } from './save.ts'
 import { farmingQualified } from '../src/farm-orders.ts'
 import { stepSkiff } from './skiff.ts'
 
-export const tickSeconds = 1 / 30
+const hostTicksPerSecond = 30
+const crewInputTimeoutMs = 400
+const juniperUpdateIntervalTicks = 3
+
+export const tickSeconds = 1 / hostTicksPerSecond
 const barrowBlockedCommands = new Set<CrewCommand['type']>(['primary', 'equip', 'jump', 'seat', 'buy-seed', 'take-job'])
 
 type GameOptions = {
@@ -35,7 +39,8 @@ type GameOptions = {
 
 // The truck carries its driver's input and records driven distance; the skiff moves with its rowers.
 // Crate sound cues carry IDs that stay unique for the life of the host process.
-const impactSession = Date.now().toString(36)
+const impactIdRadix = 36
+const impactSession = Date.now().toString(impactIdRadix)
 let impactCount = 0
 
 function stepVehicles(
@@ -98,7 +103,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     residents.tick()
     for (const place of [physics.placeGateLeaf, physics.placeFerry]) place(state)
     const members = crew.members()
-    const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - 400
+    const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - crewInputTimeoutMs
     const { before, still } = stepVehicles(state, members, active, physics, freight, crew.notifyAll)
     for (const item of state.items) item.spraying = false
     for (const member of members) {
@@ -118,7 +123,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     updateHeldItems(state)
     state.driftwood = driftwood.step(state.players, state.skiff)
     // Animal motion follows real simulation ticks, even when the crew sleeps through the night.
-    if (++wildlifeTick % 3 === 0) {
+    if (++wildlifeTick % juniperUpdateIntervalTicks === 0) {
       state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping))
     }
     return state

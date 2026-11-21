@@ -1,5 +1,5 @@
 import type { Item, Player, Snapshot } from './protocol'
-import { market, nearbyPlot, seedPrice } from './farm.ts'
+import { market, marketTradeReach, nearbyPlot, seedPrice } from './farm.ts'
 import { distance, truckSeatSpeed } from './world.ts'
 import { heldItem } from './interactions/cargo.ts'
 import { besideSubject, defaultInteraction } from './interaction-options.ts'
@@ -31,7 +31,7 @@ export function canCast(state: Snapshot, player: Player) {
 
 // Hints for keys other than E, shown when nothing is in reach for E.
 function fallbackHint(state: Snapshot, player: Player): [string, string] {
-  if (player.grounded && !player.onBed && distance(player, market) < 2.25) {
+  if (player.grounded && !player.onBed && distance(player, market) < marketTradeReach) {
     return state.crewCoins >= seedPrice ? ['B', `Buy a carrot seed for ${seedPrice} coin`] : ['', 'Sell fish or carrots to buy seeds']
   }
   const plot = player.grounded && !player.onBed ? state.farm[nearbyPlot(player)] : undefined

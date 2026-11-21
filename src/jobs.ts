@@ -5,6 +5,7 @@ import type { Point } from './world.ts'
 
 export const jobBoard = { x: -43.7, z: -16.1 }
 export const deliveryRadius = 4.5
+export const lookoutSprayReach = 5
 export const secondIslandGoal = 4
 
 type Job = { title: string, quantity: number, coins: number } & (

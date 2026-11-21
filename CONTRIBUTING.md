@@ -80,6 +80,8 @@ The coverage gate runs only in CI, because it takes a few minutes. It fails the 
 
 Run `npm run lint:fix` to apply ESLint layout fixes. First-party JavaScript and TypeScript follow the ESLint Stylistic recommended preset with LF line endings and parentheses around all arrow function parameters. Multiline interaction registries use one entry per line.
 
+Name gameplay thresholds, timeouts, and other numeric settings in the module that owns the rule. Include units in the name when they matter. `no-magic-numbers` also checks numeric object fields in host, simulation, interaction, journal, and resident modules. Authored object data elsewhere and test fixture values can use literals. The `eslint-suppressions.json` baseline counts existing reports per file for this rule. After removing legacy literals, run `npm run lint:full -- --prune-suppressions` and commit the smaller baseline.
+
 On pull requests into `main` and pushes to `main`, GitHub Actions runs the pre-commit and pre-push checks and the coverage gate. Open **CI → Quality and tests** to inspect coverage, the build, and the dependency audit.
 
 ## Build and iterate together

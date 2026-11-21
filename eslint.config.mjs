@@ -22,6 +22,15 @@ const secureRules = {
 const lineLimit = (max) => ['error', { max, skipBlankLines: true, skipComments: true }]
 const complexity = (max) => ['error', max]
 
+const noMagicNumbers = {
+  ignore: [-1, 0, 1],
+  ignoreArrayIndexes: true,
+  ignoreEnums: true,
+  ignoreNumericLiteralTypes: true,
+  ignoreTypeIndexes: true,
+  enforceConst: true,
+}
+
 // Preserve exact ceilings for existing hotspots until the responsible feature is split out.
 const existingLimits = {
   'src/assets/crew-clothes.ts': { 'max-lines-per-function': lineLimit(161) },
@@ -109,6 +118,14 @@ export default defineConfig(
   {
     files: ['test/**/*.mjs'],
     rules: { 'max-lines': lineLimit(350) },
+  },
+  {
+    files: ['server/**/*.ts', 'src/**/*.ts', 'scripts/**/*.{cjs,js,mjs}', 'vite.config.ts'],
+    rules: { 'no-magic-numbers': ['error', noMagicNumbers] },
+  },
+  {
+    files: ['server/**/*.ts', 'src/{interactions,journal,residents,simulation}/**/*.ts'],
+    rules: { 'no-magic-numbers': ['error', { ...noMagicNumbers, detectObjects: true }] },
   },
   {
     files: ['src/**/*.ts'],

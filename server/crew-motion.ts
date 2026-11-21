@@ -1,5 +1,6 @@
 import { chargePower } from '../src/charged-actions.ts'
 import { canSpray, heldItem } from '../src/actions.ts'
+import { lookoutSprayReach } from '../src/jobs.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
 import type { TruckPose } from '../src/truck-pose.ts'
 import { distance, jumpSpeed, lookout, type Point } from '../src/world.ts'
@@ -11,6 +12,8 @@ import { barrowWalk } from '../src/barrow-gait.ts'
 import { barrowTop } from '../src/barrow.ts'
 import { canPushBarrow } from './barrow-motion.ts'
 import { stepPlayer } from '../src/simulation/movement.ts'
+
+const fireExtinguishSeconds = 5
 
 export function prepareCrewMotion(member: CrewMember, active: boolean, now: number) {
   const { player } = member
@@ -75,8 +78,8 @@ function sprayExtinguisher(
   if (!item || !canSpray(state, player, item)) return
   if (!input.spray && !(primary?.kind === 'spray' && primary.itemId === item.id)) return
   item.spraying = true
-  if (distance(player, lookout) >= 5) return
+  if (distance(player, lookout) >= lookoutSprayReach) return
   player.heading = Math.atan2(lookout.x - player.x, lookout.z - player.z)
-  state.fire = Math.max(0, state.fire - tickSeconds / 5)
+  state.fire = Math.max(0, state.fire - tickSeconds / fireExtinguishSeconds)
   if (state.fire === 0) completeFire()
 }

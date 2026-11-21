@@ -2,7 +2,7 @@ import { heldItem } from '../src/interactions/cargo.ts'
 import { atClothingCounter } from '../src/interactions/home.ts'
 import type { OrderAction } from '../src/interactions/work.ts'
 import { clothingCatalog, ownsClothing, type ClothingId } from '../src/clothing-catalog.ts'
-import { market, saleValue, seedPrice } from '../src/farm.ts'
+import { market, marketTradeReach, saleValue, seedPrice } from '../src/farm.ts'
 import { atJobBoard, jobs, orderContribution } from '../src/jobs.ts'
 import type { JobId } from '../src/jobs.ts'
 import type { Item, Player, Snapshot } from '../src/protocol.ts'
@@ -102,7 +102,7 @@ export function createOrders(
 
   function buySeed(player: Player) {
     if (player.seat || !player.grounded || player.onBed || heldItem(state, player)
-      || distance(player, market) >= 2.25 || state.crewCoins < seedPrice) return
+      || distance(player, market) >= marketTradeReach || state.crewCoins < seedPrice) return
     state.crewCoins -= seedPrice
     player.seeds++
     checkpoint?.()
