@@ -54,6 +54,10 @@ For each session, copy the block below. Give each distinct observation a short t
 - In both runs, the players split gathering. After the first delivery, the returning crewmate still carried one unit and the Crew guide showed one remaining. Both browsers sent a final **E** command. Each saw one 5-coin award, and only one pocket lost a unit. On the return to the site, the timber rail or the row of stones was visible against the gravel and the label read **Repaired**.
 - The host tests cover both timber and stone solo, co-op reconnect after the first section, simultaneous final delivery, and reload from a disk save with the completed edging, one award and both sources still available. The browser walk used scripted directions. Human landmark recognition remains on the [#52 checklist](https://github.com/brylie/mission-island/issues/52).
 
+### 2026-11-21 · Starter Island crew feedback
+
+The crew reported traversal, flight, fishing, collectable readability, and world art concerns on current main. See the [provisional findings and backlog cross-check](starter-island-follow-up-2026-11-21.md) for the full record and suggested retests.
+
 ## Triage after the session
 
 Give joining failures, lost progress and incorrect bank entries first attention. If a passenger misses a payment, record the two displayed balances before filing. Different balances call for a synchronization or save test. Matching balances and a surprised passenger call for a feedback test. Hear each player’s explanation before sharing the other person’s answer.
