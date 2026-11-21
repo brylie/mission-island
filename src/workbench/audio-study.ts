@@ -1,6 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { createAudioEngine, type AudioEngine, type Point3 } from '../audio/engine'
-import { metresPerCycle } from '../audio/gait'
+import { crewSwing, strideCycleMetres } from '../island-render-pose'
 import { crateCue, footstepCue, swellCue, swellSeconds, type CrateSurface, type FootSurface, type Rendered } from '../audio/recipes'
 import { control, range, type Entry, type Values } from './subject'
 
@@ -31,7 +31,11 @@ function cue(layer: Layer, values: Values, variant: number): Rendered {
 // Seconds between repeated cues for each layer, from the same pacing the island uses.
 function interval(layer: Layer, values: Values) {
   if (layer === 'surf') return 5.2 * number(values, 'spacing', 1) * (0.85 + Math.random() * 0.3)
-  if (layer === 'footsteps') return metresPerCycle / 2 / Math.max(0.5, number(values, 'pace', 8))
+  if (layer === 'footsteps') {
+    // Half a walk cycle at this pace, matching the legs in the game.
+    const pace = Math.max(0.5, number(values, 'pace', 8))
+    return strideCycleMetres(crewSwing(pace)) / 2 / pace
+  }
   return 1.6
 }
 

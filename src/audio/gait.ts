@@ -1,7 +1,6 @@
-// The crew walk cycle shared by the leg pose and footstep sounds. A foot lands at each half cycle,
-// where the leg swing crosses zero, so footsteps always match the visible gait.
+// Footsteps read the same walk cycle that poses the legs (walkGait in island-render-pose).
+// A foot lands at each half cycle, where the leg swing crosses zero.
 
-export const metresPerCycle = 4.8
 // A rendered jump larger than this is a snap to a new pose, not walking.
 const maxStepMetres = 2
 
@@ -21,9 +20,4 @@ export function groundTravel(from: Planar, to: Planar, carrier: Planar = { x: 0,
 // Feet that landed while the walk cycle advanced from one phase to the next.
 export function countFootfalls(previous: number, next: number) {
   return Math.max(0, Math.floor(next * 2) - Math.floor(previous * 2))
-}
-
-export function advanceGait(cycle: number, travelled: number) {
-  const next = cycle + Math.max(0, travelled) / metresPerCycle
-  return { cycle: next, footfalls: countFootfalls(cycle, next) }
 }

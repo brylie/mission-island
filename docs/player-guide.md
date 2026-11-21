@@ -19,6 +19,7 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | **C** | Switch between the island overview and the close third-person view. |
 | **Mouse** | Look around your character or vehicle. The first gameplay keypress captures the mouse. Aim the reticle at something you can use to choose it: it turns gold and a tooltip names the thing and the key. With nothing under the reticle, **E** uses whatever is nearest. |
 | **Esc** | Release the mouse. Press a gameplay key to capture it again. |
+| **J** | Open the crew's field journal. Press **J** again or **Esc** to close it. |
 | **O** | Open Options for your name, appearance, mouse look (invert either axis, look speed), sound (ambience and effects levels, mute), and **Respawn at home**. |
 
 Bring crates to the tail of the truck to set them on the bed. Amber orbs appear along the recommended route once a crate is loaded. Jump over the low rear lip and ride along on the bed as the truck moves. The side rails and rear lip help keep crates aboard through turns. At Seabrook, step out, collect each crate from the bed, and press **E** with the crate inside the glowing teal delivery circle. The beach has a shallow wading shelf. You slow down as the water gets deeper.
@@ -48,6 +49,14 @@ Wren lives in the lilac-roofed cottage just east of the Blue cottage. The garden
 ## Getting to know the neighbors
 
 Mara fishes from the small dock, Ines keeps the Seabrook Market stall, and Bram keeps the freight tally beside the Harbor Depot job board. Each walks to work in the morning and home in the evening on the shared clock. Aim at a resident and press **E** to talk. When someone needs a hand, the conversation offers **Agree to help**. Mara would like two carrots, Ines two fish, and Bram a crate set down in the yellow bay beside the depot. Either of you can agree, and either can finish it. The crew bank gets five coins once, the resident trusts the crew a little more, and their greeting changes. See [residents and favors](mechanics/resident-favors.md).
+
+## Mara’s field outing
+
+Find Mara at the small fishing dock during the day. Talk to her for walking directions to Shellglass Tide Pool and Juniper Hollow. Either player can open **Field journal → Mara’s outing** to reread the clues. You can split up and compare entries when you get back.
+
+Press **E** when the prompt offers to inspect a detail or record an observation. At Driftwood, look for pink foxglove bells above the sand and a line of weed and shells where the track fades. Shellglass has a mended tide staff and small conical limpets clamped to rock. At Juniper, the trail cairn leads to low white clover with three leaflets and pale flower heads. Stand back to watch brown hares lower their heads to graze. During heavy rain, look for a hare crouching under a pine or beside a fallen trunk.
+
+Each new journal record gives the crew one observation XP. If you have already discovered Shellglass or Juniper, reading its landmark completes an outing step using the existing place entry. Grazing and sheltering are separate observations. Talk to Mara again after the first outing record for her advice about the rain.
 
 ## Windstone Ridge gliding
 
@@ -79,11 +88,13 @@ The delivery and lookout fire missions unlock work outfits for both crewmates. E
 
 The island clock runs one day every eight real minutes. At night, press **E** at your cottage door. Dawn begins when every connected player turns in. Press **E** again or walk away to cancel while waiting.
 
+Both of you share one field journal, opened with **J**. It ticks off a fish when you land it and a place when you walk there. Aim at an animal, a plant or a landmark and press **E** to record it. Which fish you land depends on the hour, the weather and the water. See [field journal](mechanics/field-journal.md).
+
 Follow the northern hills to discover landmarks. Their names fade with distance in the follow view and stay on your island overview after discovery. The minimap keeps the coastline, biomes, route lines, and a simpler set of symbols. One world unit is one metre. The buoy line sits 75 metres offshore.
 
 ## Saves and reconnecting
 
-The host automatically saves in `.mission-island/saves/island-5173.json` for the usual port. The island clock, missions, farm, item positions, crew names, discoveries, and personal progress survive a restart. The same browser profile reclaims its crew identity. For a separate named save, start the host with a lowercase slot name.
+The host automatically saves in `.mission-island/saves/island-5173.json` for the usual port. The island clock, missions, farm, item positions, crew names, discoveries, the field journal, and personal progress survive a restart. The same browser profile reclaims its crew identity. For a separate named save, start the host with a lowercase slot name.
 
 ```sh
 MISSION_ISLAND_SAVE=weekend npm run dev

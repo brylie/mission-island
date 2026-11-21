@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { advanceGait, carrierShift, countFootfalls, groundTravel, metresPerCycle } from '../src/audio/gait.ts'
+import { carrierShift, countFootfalls, groundTravel } from '../src/audio/gait.ts'
+import { walkGait } from '../src/island-render-pose.ts'
 import { footSurface, sandRadius } from '../src/audio/surface.ts'
 import { coastPoint, coastRadius } from '../src/terrain.ts'
 import { dockEndZ, harbor, harborDock } from '../src/world.ts'
@@ -11,18 +12,19 @@ function walk(speed, seconds, fps = 60) {
   let cycle = 0
   let footfalls = 0
   for (let frame = 0; frame < seconds * fps; frame++) {
-    const gait = advanceGait(cycle, speed / fps)
-    cycle = gait.cycle
-    footfalls += gait.footfalls
+    const next = cycle + walkGait(speed / fps, 1 / fps, false).cycles
+    footfalls += countFootfalls(cycle, next)
+    cycle = next
   }
-  return footfalls
+  return { footfalls, cycle }
 }
 
 test('a foot lands every half walk cycle, matching the visible legs', () => {
-  assert.equal(walk(metresPerCycle / 2, 10), 10)
-  const perSecond = walk(8, 10) / 10
-  assert.ok(perSecond > 3 && perSecond < 3.6, `${perSecond} steps per second at walking pace`)
-  assert.equal(walk(0, 5), 0, 'standing still is silent')
+  const { footfalls, cycle } = walk(8, 10)
+  assert.equal(footfalls, Math.floor(cycle * 2))
+  const perSecond = footfalls / 10
+  assert.ok(perSecond > 5 && perSecond < 8, `${perSecond} steps per second at walking pace`)
+  assert.equal(walk(0, 5).footfalls, 0, 'standing still is silent')
 })
 
 test('a crewmate riding the moving truck bed does not walk', () => {

@@ -3,7 +3,7 @@ import { overlapsProp, propTop } from '../scenery.ts'
 import { groundHeight, maxWadeDepth, walkingHeight, waterLevel, withinSkiffBoundary } from '../terrain.ts'
 import { truckPoint, truckSurface } from '../truck-pose.ts'
 import type { TruckPose } from '../truck-pose.ts'
-import { buildings, chestSize, crewHomes, jumpGravity, localPoint, offset, onDock, truckBed, truckHood, truckRoof, truckSideRails, truckTailLip } from '../world.ts'
+import { buildings, chestSize, crewCarrySpeed, crewHomes, crewSprintMultiplier, crewWalkSpeed, jumpGravity, localPoint, offset, onDock, truckBed, truckHood, truckRoof, truckSideRails, truckTailLip } from '../world.ts'
 import type { Point, Pose } from '../world.ts'
 
 function clearFixedWalls(point: Point, radius: number) {
@@ -85,7 +85,7 @@ function moveHorizontally(
   player.heading = Math.atan2(input.x, input.z)
   const depth = player.truckSurface ? 0 : Math.max(0, waterLevel - Math.max(walkingHeight(player), extra(player, 0)))
   const wading = 1 - 0.48 * Math.min(1, depth / maxWadeDepth)
-  const pace = player.swimming ? 3.8 : (limit?.pace ?? (carrying ? 6.5 : 8)) * (input.sprint ? 1.55 : 1) * wading
+  const pace = player.swimming ? 3.8 : (limit?.pace ?? (carrying ? crewCarrySpeed : crewWalkSpeed)) * (input.sprint ? crewSprintMultiplier : 1) * wading
   const walk = offset(player, 0, pace * dt)
   const canWalk = (point: Point) => {
     if (!withinSkiffBoundary(point) || !clearFixedWalls(point, 0.4)) return false

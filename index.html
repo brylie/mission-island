@@ -116,6 +116,7 @@
         <div class="mission-actions">
           <button id="open-crew-guide" type="button" aria-haspopup="dialog" aria-controls="crew-guide-dialog" disabled>Crew guide</button>
           <button id="open-job-board" type="button" aria-haspopup="dialog" aria-controls="job-board-dialog" hidden>Harbor job board</button>
+          <button id="open-journal" type="button" aria-haspopup="dialog" aria-controls="journal-dialog" disabled>Field journal</button>
         </div>
         <p id="farm-hud" class="farm-hud" aria-label="Shared farm order" aria-live="polite" hidden></p>
         <section id="ridge-hud" class="ridge-hud" aria-label="Windstone aviation" hidden>
@@ -146,6 +147,7 @@
         <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Walk / drive</span></div>
         <div><kbd>E</kbd><span>Interact</span></div>
         <div><kbd>F</kbd><span>Enter / exit</span></div>
+        <div><kbd>J</kbd><span>Field journal</span></div>
         <div><kbd>Shift</kbd><span>Sprint / slow drive</span></div>
         <div><kbd>Space</kbd><span>Jump / brake</span></div>
         <div><kbd>Left click</kbd><span>Reach / throw / use tool</span></div>
@@ -198,7 +200,23 @@
         <p id="resident-line"></p>
         <p id="resident-advice"></p>
         <button id="resident-accept" type="button" hidden></button>
+        <section id="resident-field-notes" aria-label="Field clues"></section>
       </div>
+      <form method="dialog"><button type="submit" autofocus>Close</button></form>
+    </dialog>
+
+    <dialog id="journal-dialog" class="options-dialog journal-dialog" aria-labelledby="journal-title">
+      <h2 id="journal-title">Field journal</h2>
+      <p id="journal-tally" role="status"></p>
+      <div class="journal-pages" role="group" aria-label="Journal pages">
+        <button type="button" data-page="fish" aria-pressed="true">Fish <span></span></button>
+        <button type="button" data-page="places" aria-pressed="false">Places <span></span></button>
+        <button type="button" data-page="nature" aria-pressed="false">Nature <span></span></button>
+        <button type="button" data-page="outing" aria-pressed="false">Mara’s outing <span></span></button>
+      </div>
+      <ul id="journal-clues" aria-label="Clues from Mara" hidden></ul>
+      <ul id="journal-list"></ul>
+      <p id="journal-help">The journal notes a fish when you land it and a place when you walk there. Aim at an animal, a plant or a landmark and press E to record it. Both of you share one journal.</p>
       <form method="dialog"><button type="submit" autofocus>Close</button></form>
     </dialog>
 
