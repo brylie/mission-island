@@ -5,7 +5,7 @@ Four residents live on Starter Island. Each one has a home, a walk to work, work
 | Resident | Home | Work | Hours | Favor | Pays |
 | --- | --- | --- | --- | --- | --- |
 | **Mara**, fisher | Porch of the teal-roofed house by the depot trail | Small fishing dock | 06:00–18:00 | **Carrots for Mara’s supper:** give 2 carrots | +5 coins, Mara trust +1 |
-| **Wren**, neighbor | Lilac-roofed cottage east of the Blue cottage | Mending bench by the ferry approach | 07:00–17:00 | In order: **Wren’s gate:** mend the hinge ([Neighbor repairs](neighbor-repairs.md)). **Wren’s swollen gate:** plane the edge and report back ([below](#reporting-back-and-broken-promises)). **Fish for Wren’s pie:** 2 fish. **Carrots for Wren’s soup:** 2 carrots | +5 coins and Wren trust +1 each |
+| **Wren**, neighbor | Lilac-roofed cottage east of the Blue cottage | Mending bench by the ferry approach | 07:00–17:00 | **Wren’s gate:** mend the hinge ([Neighbor repairs](neighbor-repairs.md)). **Wren’s swollen gate:** plane the edge and report back ([below](#reporting-back-and-broken-promises)). Supply [Ferry Approach Edging](repair-materials.md) once the crew is checked out on materials. **Fish for Wren’s pie:** 2 fish, after the swollen gate. **Carrots for Wren’s soup:** 2 carrots | +5 coins and Wren trust +1 each |
 | **Ines**, shopkeeper | Coral house across the Seabrook square | West end of the Seabrook Market stall | 07:30–18:00 | **Fresh fish for the market display:** give 2 fish | +5 coins, Ines trust +1 |
 | **Bram**, harbor steward | Above the Harbor Depot office | Tally spot beside the job board | 06:30–16:30 | **Stage a load for Bram:** set one crate down in the yellow bay beside the depot, off Harbor Depot road. Offered after the starter shift | +5 coins, Bram trust +1 |
 
@@ -44,7 +44,7 @@ Some favors are finished by reporting back. Wren's swollen gate is the first. Af
 
 **Making amends.** Either crewmate can put it right by planing the gate, swinging it clear and telling Wren. The work pays, but earns no trust. Wren thanks the crew and says they will check the next job in person.
 
-**Rebuilding.** Two more kept favors with Wren, the pie and the soup, restore Wren's reliance on the crew. The second adds a point of trust, the receipt says `Wren relies on the crew again`, Wren says they have stopped checking the crew's work, and the toolbox on the bench is the crew's to borrow. A failed swing, a disconnect mid-job or a declined favor never costs trust. See [Shared crew Trust](../design/residents-and-destinations.md#shared-crew-trust).
+**Rebuilding.** Any two more kept favors with Wren, such as the pie and the soup, or the ferry path edging, restore Wren's reliance on the crew. The second adds a point of trust, the receipt says `Wren relies on the crew again`, Wren says they have stopped checking the crew's work, and the toolbox on the bench is the crew's to borrow. A failed swing, a disconnect mid-job or a declined favor never costs trust. See [Shared crew Trust](../design/residents-and-destinations.md#shared-crew-trust).
 
 ## Small talk
 

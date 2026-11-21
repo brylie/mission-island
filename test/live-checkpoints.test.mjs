@@ -1,16 +1,42 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createGame } from '../server/game.ts'
-import { gateMendedStage, onBench, toolboxItem } from '../src/gate-repair.ts'
+import { gateFavor, gateMendedStage, onBench, toolboxItem } from '../src/gate-repair.ts'
 import { interactions } from '../src/interaction-options.ts'
+import { carriedMaterial, initialMaterialsWork } from '../src/materials-work.ts'
 import { scenarioCatalog, checkpointSettings } from '../server/scenarios/catalog.ts'
 import { actionHint } from '../src/actions.ts'
-import { tokens } from './support/game-harness.mjs'
+import { blankRecord } from '../src/residents/trust.ts'
+import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
+import { player, tokens } from './support/game-harness.mjs'
 
 test('the launcher accepts only known checkpoints and one or two crew members', () => {
   assert.deepEqual(checkpointSettings('wren-discover', '1'), { checkpoint: 'wren-discover', seats: 1 })
   assert.equal(checkpointSettings('unknown', '2'), undefined)
   assert.equal(checkpointSettings('wren-fit', '3'), undefined)
+})
+
+test('the materials checkpoint resets a saved repair and the crew’s carried materials', () => {
+  const save = createGame().snapshotForSave()
+  save.islandTime = 160
+  save.world.gateRepair = { stage: 'mended', pinHolder: null, acceptedAt: 10, mendedAt: 20 }
+  save.world.residents.wren = { trust: 2, kept: [gateFavor, repairSupplyFavor.id], active: null }
+  save.world.materialsWork = { checkout: 'qualified', request: { material: 'stone', delivered: 2 }, readyAt: { timber: 161, stone: 162 } }
+  save.crew = tokens.slice(0, 2).map((token, index) => ({ token, reserved: true,
+    player: player(index, undefined, { materials: { timber: 1, stone: 2 } }) }))
+
+  const game = createGame({ save, playtest: { checkpoint: 'materials-checkout', seats: 2, revision: 1 } })
+  for (const token of tokens.slice(0, 2)) assert.equal(game.join(token, () => {}).type, 'joined')
+  const state = game.tick()
+  assert.equal(state.playtest.started, true)
+  assert.deepEqual(state.materialsWork, initialMaterialsWork())
+  assert.deepEqual(state.residents.wren, { ...blankRecord(), trust: 1, kept: [gateFavor] })
+  for (const member of state.players) {
+    assert.equal(carriedMaterial(member, 'timber'), 0)
+    assert.equal(carriedMaterial(member, 'stone'), 0)
+  }
+  assert.deepEqual(save.world.materialsWork.request, { material: 'stone', delivered: 2 })
+  assert.deepEqual(save.crew[0].player.materials, { timber: 1, stone: 2 })
 })
 
 for (const { id: checkpoint } of scenarioCatalog) {

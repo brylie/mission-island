@@ -126,7 +126,7 @@ test('either crewmate makes amends, Wren stays wary, and two kept favors later W
   assert.equal(standingOf(a.state.residents.wren), 'wary')
   assert.deepEqual(notices(a, 'favor-pay').at(-1), { type: 'favor-pay', resident: 'wren', favor: 'wren-swell', coins: 5, trust: 0, restored: false })
   assert.match(favorFeedback(notices(b, 'favor-pay').at(-1), 1).label, /Put right\. Wren will still check your work/)
-  assert.match(conversationLines(wren, a.state)[1], /look at the next job myself/)
+  assert.match(conversationLines(wren, a.state)[0], /look at the next job myself/)
   assert.equal(wrenLendsToolbox(a.state), false)
 
   act(h, a, 'accept-favor', WREN)
@@ -159,7 +159,7 @@ test('a declined favor, a disconnect mid-job and a failed swing never cost trust
 
 test('the ledger rules hold on their own: one breach at a time, amends only on the broken favor', () => {
   const state = { residents: { wren: { ...blankRecord(), trust: 1, active: 'wren-swell' } }, crewCoins: 0, islandTime: 10 }
-  const [, swell, pie] = wren.favors
+  const [swell, pie] = ['wren-swell', 'wren-pie'].map((id) => wren.favors.find((favor) => favor.id === id))
   assert.equal(breakPromise(state, wren, swell), 1, 'trust never goes below zero')
   assert.equal(breakPromise(state, wren, swell), null, 'no second breach before amends')
   assert.equal(breakPromise(state, wren, pie), null, 'only the favor under way can be broken')

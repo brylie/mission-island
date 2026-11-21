@@ -1,4 +1,5 @@
 import { byTruckBed, freeBed, heldItem } from '../src/actions.ts'
+import type { GateAction } from '../src/gate-repair.ts'
 import { deliberateActions, interactions, sameChoice } from '../src/interaction-options.ts'
 import type { Interaction, InteractionChoice } from '../src/interaction-options.ts'
 import { starterTools } from '../src/inventory.ts'
@@ -15,13 +16,38 @@ import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
 import type { createResidents } from './residents.ts'
 import type { createGateSwell } from './gate-swell.ts'
+import type { createMaterialsWork } from './materials-work.ts'
+
+// Residents' conversations and favors, and the repairs done for them.
+function createNeighborly(gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
+  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'report'>,
+  work: { swell: Pick<ReturnType<typeof createGateSwell>, 'act'>; materials: ReturnType<typeof createMaterialsWork> }) {
+  return (member: CrewMember, action: Interaction['action'], subject: number) => {
+    switch (action) {
+      case 'talk': return residents.talk(member, subject)
+      case 'accept-favor': return residents.accept(member, subject)
+      case 'hand-over': return residents.handOver(member, subject)
+      case 'report-sound':
+      case 'report-fault': return residents.report(member, subject, action === 'report-sound' ? 'sound' : 'fault')
+      case 'check-swing':
+      case 'plane': return work.swell.act(action)
+      case 'gather-material':
+      case 'check-material':
+      case 'return-material-sample':
+      case 'choose-repair-material':
+      case 'deliver-repair-material': return work.materials.act(member, action, subject)
+      default: return gate.act(member, action as GateAction)
+    }
+  }
+}
 
 export function createInteractions(
   state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'remove'>,
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
   residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'report' | 'stageCrate'>,
-  swell: Pick<ReturnType<typeof createGateSwell>, 'act'>, checkpoint?: () => void,
+  work: { swell: Pick<ReturnType<typeof createGateSwell>, 'act'>; materials: ReturnType<typeof createMaterialsWork> },
+  checkpoint?: () => void,
 ) {
   function useHomeChest(member: CrewMember) {
     const { player } = member
@@ -91,6 +117,8 @@ export function createInteractions(
     recordCultivation(state, 'harvest', plot, player.id)
   }
 
+  const neighborly = createNeighborly(gate, residents, work)
+
   function perform(member: CrewMember, { action, subject = -1 }: Interaction) {
     const item = state.items[subject]
     switch (action) {
@@ -104,15 +132,8 @@ export function createInteractions(
       case 'plant':
       case 'harvest': return tend(member, subject, action)
       case 'welcome-note': return member.notify?.({ type: 'crew-note' })
-      case 'talk': return residents.talk(member, subject)
-      case 'accept-favor': return residents.accept(member, subject)
-      case 'hand-over': return residents.handOver(member, subject)
-      case 'report-sound':
-      case 'report-fault': return residents.report(member, subject, action === 'report-sound' ? 'sound' : 'fault')
-      case 'check-swing':
-      case 'plane': return swell.act(action)
       case 'job-board': return
-      default: return gate.act(member, action)
+      default: return neighborly(member, action, subject)
     }
   }
 

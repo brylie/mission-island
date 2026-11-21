@@ -20,7 +20,8 @@ import { createGateRepair } from './gate-repair.ts'
 import { createResidents } from './residents.ts'
 import { createGateSwell } from './gate-swell.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
-import { wren } from '../src/worlds/starter/residents/wren.ts'
+import { repairSupplyFavor, wren } from '../src/worlds/starter/residents/wren.ts'
+import { createMaterialsWork } from './materials-work.ts'
 import { createOrders } from './orders.ts'
 import { toggleSeat, updateRiders } from './riders.ts'
 import type { IslandSave } from './save.ts'
@@ -66,10 +67,10 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const freight = createFreight(crew, state, clock, checkpoint)
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
-  const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0]))
-  const swell = createGateSwell(state, crew.notifyAll)
+  const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0])), swell = createGateSwell(state, crew.notifyAll)
   const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { talk: { wren: gate.talk }, ...swell.hooks }, checkpoint)
-  const interactions = createInteractions(state, growth, physics, orders, gate, residents, swell, checkpoint)
+  const materials = createMaterialsWork(state, crew.notifyAll, () => residents.keep(wren, repairSupplyFavor))
+  const interactions = createInteractions(state, growth, physics, orders, gate, residents, { swell, materials }, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {

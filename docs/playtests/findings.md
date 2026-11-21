@@ -48,6 +48,12 @@ For each session, copy the block below. Give each distinct observation a short t
 - Decision — Keep the new spot. The agreement button, the bay and the hand-in all worked from real clicks and **E** presses: staging the crate paid `+5 coins · Stage a load for Bram · Crew bank · Bram trust +1`, and handing Mara two carrots changed her greeting to the tide-pool clue. Aiming was skipped by sending the talk choice over the page's own socket after the camera swung into a wall.
 - Retest — Two people at the depot: one aims at Bram from the road while the other stands at the board. Pass: each gets their own prompt without moving.
 
+### 2026-11-21 · materials-checkout · Ferry Approach Edging
+
+- Two isolated Chromium contexts joined the `materials-checkout` checkpoint. The scripted walk followed Meadow Slope Path to the windfall and Beach Trail past Driftwood Beach and Shellglass Tide Pool to the stone. The small branch and loose stone each had a diamond-shaped marker, a name and an **E** prompt. Each crewmate returned one sample and both earned the qualification.
+- In both runs, the players split gathering. After the first delivery, the returning crewmate still carried one unit and the Crew guide showed one remaining. Both browsers sent a final **E** command. Each saw one 5-coin award, and only one pocket lost a unit. On the return to the site, the timber rail or the row of stones was visible against the gravel and the label read **Repaired**.
+- The host tests cover both timber and stone solo, co-op reconnect after the first section, simultaneous final delivery, and reload from a disk save with the completed edging, one award and both sources still available. The browser walk used scripted directions. Human landmark recognition remains on the [#52 checklist](https://github.com/brylie/mission-island/issues/52).
+
 ### 2026-11-21 · wren-swell · Telling Wren the gate swings clear
 
 - Starting point — `wren-swell` checkpoint, a solo agent session in the browser. Wren trusts the crew once, the swollen-gate job is under way, and the toolbox is beside the gate.

@@ -17,12 +17,12 @@ export function activeFavor(resident: ResidentDefinition, state: Records) {
   return active === null ? undefined : resident.favors.find(({ id }) => id === active)
 }
 
-// The favor a resident is asking for right now: the next one the crew has not kept, while nothing else is under way.
+// The favor a resident is asking for right now: the first one the crew has not kept that the moment allows,
+// while nothing else is under way. A favor waiting on other progress never holds back the ones after it.
 export function openOffer(resident: ResidentDefinition, state: Snapshot) {
   const record = recordFor(state, resident)
   if (record.active !== null) return undefined
-  const next = resident.favors.find(({ id }) => !record.kept.includes(id))
-  return next && (next.available?.(state) ?? true) ? next : undefined
+  return resident.favors.find((favor) => !record.kept.includes(favor.id) && (favor.available?.(state) ?? true))
 }
 
 export function isCustom(favor: FavorDefinition) {
