@@ -70,9 +70,11 @@ mise run quality
 mise run audit
 ```
 
-The pre-commit hook checks file formats, merge markers, private keys, and large additions. It also runs type-aware ESLint with security and complexity rules, the TypeScript type check, and the mechanics tests. ESLint caches its results in `node_modules/.cache/eslint/`, so it only re-checks files that changed; delete that folder if a lint result looks stale.
+The pre-commit hook checks file formats, merge markers, private keys, and large additions. It also runs type-aware ESLint with security and complexity rules, the TypeScript type check, and the mechanics tests. ESLint caches its results in `node_modules/.cache/eslint/`, so it only re-checks files that changed. A cached file can miss a type-aware error when a file it depends on changes, so the pre-push hook lints again without the cache.
 
-The pre-push hook runs Knip for unused code and dependencies, the production build, and the npm dependency audit. `mise run quality` runs both sets of checks except the audit; run the audit separately with `mise run audit`.
+The pre-push hook runs ESLint without the cache, Knip for unused code and dependencies, the production build, and the npm dependency audit.
+
+`mise run quality` runs the npm scripts behind both hooks. It skips the hooks' built-in file checks, such as `detect-private-key` and `check-json`, and the audit. To run every hook check, use `prek run --all-files --hook-stage pre-commit` and `prek run --all-files --hook-stage pre-push`. Run the audit separately with `mise run audit`.
 
 The coverage gate runs only in CI, because it takes a few minutes. It fails the build when lines, functions, or branches drop below 81% across the host and shared mechanics. Run it locally with `npm run coverage`.
 

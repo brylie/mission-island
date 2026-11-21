@@ -21,7 +21,7 @@ repos:
         pass_filenames: false
         always_run: true
       - id: mission-island-quality-push
-        name: Unused code and build
+        name: Uncached lint, unused code and build
         entry: npm run quality:push
         language: system
         stages: [pre-push]
