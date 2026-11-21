@@ -1,8 +1,12 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { createFarmTools, poseCrew } from '../assets/crew'
+import { farmFurrowTop } from '../assets/farm'
 import { createRock } from '../assets/props'
+import { juniperFern, sampleUnderstoryBlade, understoryBladeCount, understoryGroundOffset } from '../assets/understory'
+import { createFarm } from '../island-farm'
 import type { MeshFactory } from '../island-meshes'
+import { seededRandom } from '../seeded-random'
 import { wingedAnimal } from '../wildlife'
 import { contactAge, crewAt, type Fixture } from './effect-fixtures'
 
@@ -30,22 +34,20 @@ export function fernFixture(meshes: MeshFactory): Fixture {
   crew.root.rotation.y = 1.02
   poseCrew(crew, 0, 0, false, undefined, 1)
   const frond = new TransformNode('Brushed frond', meshes.scene)
-  for (let index = 0; index < 5; index++) {
-    const stem = new TransformNode('Fern stem', meshes.scene)
-    stem.parent = index === 0 ? frond : null
-    stem.position.set(0.04, 0.035, 0)
-    stem.rotation.y = index * Math.PI * 0.4
-    stem.rotation.z = 0.42 + 0.15 * (index % 3)
-    for (let tier = 0; tier < 6; tier++) {
-      const y = 0.14 + tier * 0.15
-      const width = 0.43 - tier * 0.049
-      for (const side of [-1, 1]) {
-        meshes.sphere(side * width * 0.38, y, -0.022 * tier, width, 0.075, 0.15, tier % 2 ? '#738f4d' : '#61814d', stem, true, 6).rotation.z = side * 0.45
-      }
-    }
-    meshes.cylinder(0, 0.51, -0.063, 0.034, 0.055, 1.02, 6, '#78904c', stem)
+  const paint = meshes.paint(juniperFern.color)
+  paint.backFaceCulling = false
+  const random = seededRandom(juniperFern.seed)
+  const base = { x: 0, y: understoryGroundOffset, z: 0 }
+  const verticesPerBlade = 6
+  const indices = Array.from({ length: verticesPerBlade }, (_, index) => index)
+  const scale = 1
+  const first = sampleUnderstoryBlade(juniperFern, base, Math.PI, 0, scale, random)
+  meshes.surface(juniperFern.name, first.positions, indices, paint, frond)
+  for (let leaf = 1; leaf < understoryBladeCount; leaf++) {
+    const { positions } = sampleUnderstoryBlade(juniperFern, base, Math.PI, leaf, scale, random)
+    meshes.surface(juniperFern.name, positions, indices, paint)
   }
-  const tip = new Vector3(-0.25, 0.77, -0.11)
+  const tip = Vector3.FromArray(first.tip)
   const pulse = (time: number) => contactAge(time, 0.4, 0.96, 0.56)
   function pose(time: number) {
     const t = pulse(time)
@@ -65,13 +67,9 @@ export function fernFixture(meshes: MeshFactory): Fixture {
 }
 
 export function hoeFixture(meshes: MeshFactory): Fixture {
-  meshes.box(0, 0.055, 0.65, 3.1, 0.11, 2.46, '#946954').receiveShadows = true
-  for (const x of [-0.9, 0.67, 1.12]) {
-    for (let segment = 0; segment < 12; segment++) {
-      const offset = Math.sin(segment * 2.4) * 0.027
-      meshes.sphere(x + offset, 0.115, -0.36 + segment * 0.17, 0.22, 0.08, 0.25, segment % 3 ? '#815544' : '#88614a', undefined, true, 6)
-    }
-  }
+  const plotCenter = { x: -0.36, z: 0.65 }
+  const showPlot = createFarm(meshes, [plotCenter], () => 0)
+  showPlot(['tilled'])
   const crew = crewAt(meshes, 0.37, -0.49)
   const { hoe } = createFarmTools(meshes, crew)
   hoe.setEnabled(true)
@@ -87,7 +85,7 @@ export function hoeFixture(meshes: MeshFactory): Fixture {
       if (contactAge(time, 0.41, 0.89, 0.14) === undefined) return
       pose(time)
       const { x, y, z } = Vector3.TransformCoordinates(blade, hoe.computeWorldMatrix(true))
-      return { x, y: Math.max(0.15, y), z, floor: 0.119 }
+      return { x, y: Math.max(0.15, y), z, floor: farmFurrowTop }
     },
     pose,
   }

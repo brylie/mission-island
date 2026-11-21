@@ -5,6 +5,7 @@ import {
   waterShaderPresets,
   type ShaderStudyPreset,
 } from '../assets/interactive-shader-studies.ts'
+import { streetLampGeometry } from '../assets/geometry/site-props.ts'
 import { falls, meadowHill, pool, streamX, tidePool } from '../terrain.ts'
 import { juniperCenter } from '../juniper-habitat.ts'
 import { market } from '../farm.ts'
@@ -47,7 +48,7 @@ const fieldTargets: Record<StudyId, Point> = {
   'rope-fiber-sheen': { x: harborDock.x + 1.12, z: -32.45 },
   'fernfall-rainbow': { x: falls.x + 2, z: 89.3 },
   'cooling-embers': { x: lookout.x + 0.4, z: lookout.z + 0.2 },
-  'streetlamp-droplets': { x: lampPosts[0].x, z: lampPosts[0].z - 0.31 },
+  'streetlamp-droplets': { x: lampPosts[0].x, z: lampPosts[0].z + streetLampGeometry.bulb.z },
   'meadow-pollen': { x: meadowHill.x - 0.4, z: meadowHill.z + 1.6 },
   'moon-glitter': { x: -44, z: -45 },
 }

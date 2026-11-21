@@ -1,4 +1,5 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { createSaltwindWindow, saltwindWindowRow } from '../assets/saltwind-window'
 import type { MeshFactory } from '../island-meshes'
 import { streetCanopy } from './lots'
 import type { Exterior } from './lots'
@@ -10,12 +11,6 @@ export function createExterior(meshes: MeshFactory, building: Exterior, foundati
   const { width: w, height: h, depth: d, kind, wall, roof } = building
   const box = (x: number, y: number, z: number, width: number, height: number, depth: number, color: string) =>
     meshes.box(x, y, z, width, height, depth, color, root)
-  const window = (x: number, y: number, z: number, w = 1.4) => {
-    box(x, y, z, w + 0.16, 1.28, 0.11, cream)
-    box(x, y, z + 0.064, w, 1.08, 0.044, glass)
-    box(x, y, z + 0.091, 0.065, 1.09, 0.038, cream)
-    box(x, y - 0.64, z + 0.10, w + 0.24, 0.12, 0.29, '#b69e79')
-  }
   const eave = d / 2
   const flat = parts.roof ? parts.roof === 'flat' : ['hospital', 'apartments', 'police', 'mine'].includes(kind)
   box(0, 0.18 - foundation / 2, 0, w + 0.33, foundation + 0.38, d + 0.33, '#a6957d')
@@ -78,9 +73,9 @@ export function createExterior(meshes: MeshFactory, building: Exterior, foundati
   for (const side of [-1, 1]) {
     const floors = kind === 'apartments' ? 3 : kind === 'hospital' ? 2 : 1
     for (let floor = 0; floor < floors; floor++) {
-      const y = 1.95 + floor * (h - 0.5) / floors
-      window(side * w * 0.31, y, eave)
-      if (w > 12 && !['fire', 'hangar', 'mill', 'mine'].includes(kind)) window(side * w * 0.155, y, eave)
+      const y = saltwindWindowRow.centreY + floor * (h - 0.5) / floors
+      createSaltwindWindow(meshes, root, side * w * saltwindWindowRow.edgeFraction, y, eave)
+      if (w > 12 && !['fire', 'hangar', 'mill', 'mine'].includes(kind)) createSaltwindWindow(meshes, root, side * w * 0.155, y, eave)
     }
     for (const z of [-d * 0.28, 0, d * 0.28]) {
       box(side * (w / 2 + 0.045), 2, z, 0.14, 1.3, 1.36, cream)

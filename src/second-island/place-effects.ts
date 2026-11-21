@@ -1,5 +1,6 @@
-import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import { createTimberSaw } from '../assets/effect-props'
+import { createMillVent, createTimberSaw } from '../assets/effect-props'
+import { longAcrePollenHeight } from '../assets/long-acre-flowers'
+import { saltwindWindowRain, saltwindWindowRow } from '../assets/saltwind-window'
 import type { MeshFactory } from '../island-meshes'
 import { daylight } from '../weather'
 import type { WildlifeFrame } from '../wildlife'
@@ -21,19 +22,17 @@ function addMill(meshes: MeshFactory, solids: ScenerySolids) {
   const lot = buildings.find((building) => building.site === 'timber')!
   const x = lot.x + 3.25, z = lot.z + 0.82
   const roofY = groundHeight(lot.x, lot.z) + lot.height + 1.64
-  const vent = new TransformNode('Mill roof vent', meshes.scene)
-  vent.position.set(x, roofY, z)
-  meshes.cylinder(0, 0.06, 0, 0.46, 0.53, 1.55, 10, '#798985', vent)
-  meshes.cylinder(0, 0.79, 0, 0.37, 0.43, 0.12, 10, '#545e55', vent)
+  const vent = createMillVent(meshes)
+  vent.root.position.set(x, roofY, z)
   const saw = createTimberSaw(meshes)
   const base = fromGround({ x: -234, z: 167.8 }, 0.012)
   saw.root.position.set(base.x, base.y, base.z)
   solids.capture(saw.root.getChildMeshes())
-  const dust = { x: base.x + 0.1, y: base.y + 1.12, z: base.z + 0.025, floor: base.y + 0.04 }
+  const dust = { x: base.x + saw.dustOffset.x, y: base.y + saw.dustOffset.y, z: base.z + saw.dustOffset.z, floor: base.y + 0.04 }
   const placements: LocalEffect[] = [
     {
       id: 'workshop-vent-steam',
-      anchor: { x, y: roofY + 0.88, z },
+      anchor: { x, y: roofY + vent.outletHeight, z },
       range: 58,
       tuning: { strength: 0.55, footprint: 1.03, wind: 0.34 },
       opacity: (frame) => working(frame) ? 0.81 : 0,
@@ -86,7 +85,7 @@ function longAcre(): LocalEffect[] {
     }),
     ...flowerBeds.map((bed): LocalEffect => ({
       id: 'pollen-motes',
-      anchor: fromGround(bed, 0.45),
+      anchor: fromGround(bed, longAcrePollenHeight),
       range: 18,
       tuning: { strength: 0.33, footprint: 1 },
       opacity: daylightDry,
@@ -96,9 +95,11 @@ function longAcre(): LocalEffect[] {
 
 function rainyWindows(): LocalEffect[] {
   const lot = buildings.find((building) => building.site === 'apartments')!
+  const base = groundHeight(lot.x, lot.z)
   return [-1, 1].map((side) => {
-    const x = lot.x + side * lot.width * 0.31
-    const anchor = { x, y: groundHeight(lot.x, lot.z) + 2.06, z: lot.z + lot.depth / 2 + 0.148, floor: groundHeight(lot.x, lot.z) + 1.45 }
+    const x = lot.x + side * lot.width * saltwindWindowRow.edgeFraction
+    const { y, z, floor } = saltwindWindowRain
+    const anchor = { x, y: base + y, z: lot.z + lot.depth / 2 + z, floor: base + floor }
     return { id: 'window-spatter', anchor, range: 14, tuning: { strength: 0.63, footprint: 0.57 }, opacity: (frame) => frame.weather.rain }
   })
 }

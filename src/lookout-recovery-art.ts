@@ -15,7 +15,9 @@ const trail = footpaths.find(({ name }) => name === 'Lookout trail')!
 const verge = (point: Point) => distanceToRoute(point, trail.points) - trail.width / 2
 const clamp = (n: number) => Math.max(0, Math.min(1, n))
 
-function buildAsh(meshes: MeshFactory) {
+const worldOrigin = { x: 0, y: 0, z: 0 }
+
+export function createLookoutAsh(meshes: MeshFactory, origin = worldOrigin) {
   const vertices: number[] = [], indices: number[] = [], colors: number[] = []
   const steps = 16
   for (const [index, bed] of recoveryBeds.entries()) {
@@ -26,7 +28,7 @@ function buildAsh(meshes: MeshFactory) {
       const edge = Math.hypot(u, v) + 0.089 * Math.sin(u * 13 + v * 7 + index) * Math.sin(v * 10)
       const dust = (0.77 + 0.16 * Math.sin(u * 47 + v * 11) * Math.cos(v * 46)) * clamp((1 - edge) * 6) * clamp(verge(point) * 5)
       const soot = 0.62 + 0.28 * Math.sin(u * 9 + v * 6.5) ** 2 + 0.09 * Math.cos(u * 51 - v * 18)
-      vertices.push(point.x, groundHeight(point) + 0.017, point.z)
+      vertices.push(point.x - origin.x, groundHeight(point) + 0.017 - origin.y, point.z - origin.z)
       colors.push(soot, soot * 0.98, soot, dust)
       if (i && j) {
         const a = start + j * (steps + 1) + i
@@ -110,7 +112,7 @@ const soil = {
 }
 
 function createLookoutRecovery(meshes: MeshFactory) {
-  const ash = buildAsh(meshes)
+  const ash = createLookoutAsh(meshes)
   const twigs = buildCharredTwigs(meshes)
   const grass = { ash: buildVerge(meshes, 'ash'), shoots: buildVerge(meshes, 'shoots'), established: buildVerge(meshes, 'established') }
   function show(stage: LookoutRecovery) {

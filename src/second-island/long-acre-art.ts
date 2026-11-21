@@ -2,14 +2,14 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import type { WildlifeFrame } from '../wildlife'
 import type { createCrew } from '../assets/crew'
-import { buildHoneyExtractor, buildHoneyHive, buildHoneyKit, buildHoneyShelf, createHoneyGearModels } from '../assets/honey-props'
+import { buildHoneyExtractor, buildHoneyHive, buildHoneyKit, buildHoneyShelf, createHoneyGearModels, honeyHiveEntrance } from '../assets/honey-props'
+import { createLongAcreFlowers, longAcreLeafColors } from '../assets/long-acre-flowers'
 import { apiary, beeCount, flowerBeds, flowerOffsets, hiveEntrances, honeyReward, honeyStops, pollinatorsAt } from './long-acre'
 import type { HoneyOrder } from './long-acre'
 import type { MapPoint } from './sites'
 import { groundHeight, surfaceHeight } from './terrain'
 import type { ScenerySolids } from './walking'
 
-const greens = ['#627e52', '#7d975a', '#91a567']
 const wood = '#af8153', darkWood = '#745741'
 
 function onGround(meshes: MeshFactory, name: string, point: MapPoint) {
@@ -19,7 +19,6 @@ function onGround(meshes: MeshFactory, name: string, point: MapPoint) {
 }
 
 const marketShelfOffsetZ = 0.65
-const hiveEntranceOffsetZ = 0.40
 const kitBenchOffsetX = 1.02
 const extractorBenchOffsetX = 0.68
 
@@ -30,7 +29,7 @@ export function createHoneyMarketStand(meshes: MeshFactory) {
 
 function buildApiary(meshes: MeshFactory) {
   hiveEntrances.forEach((point, i) => {
-    const root = onGround(meshes, 'Long Acre hive ' + (i + 1), { x: point.x, z: point.z - hiveEntranceOffsetZ })
+    const root = onGround(meshes, 'Long Acre hive ' + (i + 1), { x: point.x, z: point.z - honeyHiveEntrance.z })
     buildHoneyHive(meshes, root, i === 0 ? 'light' : 'dark')
   })
 
@@ -42,7 +41,7 @@ function buildApiary(meshes: MeshFactory) {
 
   for (let i = 0; i < 10; i++) {
     const z = 25.2 + i * 0.34, x = 177.7 + 0.15 * Math.cos(i * 1.7), y = groundHeight(x, z)
-    meshes.sphere(x, y + 0.39, z, 0.67, 0.86 + 0.11 * Math.sin(i), 0.61, greens[i % 3], undefined, true, 5)
+    meshes.sphere(x, y + 0.39, z, 0.67, 0.86 + 0.11 * Math.sin(i), 0.61, longAcreLeafColors[i % 3], undefined, true, 5)
   }
   for (const x of [182.4, 184.7, 187]) {
     const y = surfaceHeight(x, 24.25)
@@ -66,21 +65,11 @@ export function createLongAcreGarden(meshes: MeshFactory, solids?: ScenerySolids
       const angle = i * 2.399, radius = 0.21 + 0.21 * (i % 5)
       const x = bed.x + Math.cos(angle) * radius, z = bed.z + Math.sin(angle) * radius * 0.83
       const y = groundHeight(x, z)
-      const leaves = meshes.sphere(x, y + 0.062, z, 0.25 + 0.07 * (i % 3), 0.15, 0.26, greens[(i + j) % 3], undefined, false, 4)
+      const leaves = meshes.sphere(x, y + 0.062, z, 0.25 + 0.07 * (i % 3), 0.15, 0.26, longAcreLeafColors[(i + j) % 3], undefined, false, 4)
       leaves.rotation.y = angle
     }
   })
-  const flowers = flowerBeds.map((bed, j) => flowerOffsets.map(({ x, z, height }, i) => {
-    const root = onGround(meshes, bed.name, { x: bed.x + x, z: bed.z + z })
-    meshes.box(0, height / 2, 0, 0.028, height, 0.034, '#56804d', root, false)
-    meshes.sphere(0.052, height * 0.56, 0, 0.138, 0.042, 0.071, greens[(i + j) % 3], root, false, 4).rotation.z = 0.49
-    for (let k = 0; k < 5; k++) {
-      const a = k * Math.PI * 0.4
-      meshes.sphere(0.069 * Math.cos(a), height, 0.069 * Math.sin(a), 0.117, 0.066, 0.112, bed.petals, root, false, 5)
-    }
-    meshes.sphere(0, height + 0.017, 0, 0.087, 0.061, 0.086, j === 1 ? '#935b37' : '#e9ac53', root, false, 5)
-    return root
-  }))
+  const flowers = flowerBeds.map((bed, j) => createLongAcreFlowers(meshes, bed, j, flowerOffsets, surfaceHeight))
   const bees = Array.from({ length: beeCount }, (_, i) => {
     const root = onGround(meshes, 'Honeybee ' + (i + 1), hiveEntrances[i % 2])
     root.position.y += 0.54

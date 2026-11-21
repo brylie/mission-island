@@ -1,3 +1,4 @@
+import { streetLampGeometry } from '../assets/geometry/site-props'
 import type { MeshFactory } from '../island-meshes'
 import type { MarketRunoff } from '../market-runoff'
 import type { Player, Snapshot } from '../protocol'
@@ -39,7 +40,7 @@ const objectY: Partial<Record<StudyId, number>> = {
   'timber-salt-bloom': (saltBloomPile.top + saltBloomPile.bottom) / 2,
   'window-parallax': 2.074,
   'rope-fiber-sheen': harborDock.top + 0.017,
-  'streetlamp-droplets': 2.53,
+  'streetlamp-droplets': streetLampGeometry.bulb.y,
   'fernfall-rainbow': 2.1,
   'moon-glitter': waterLevel + 0.027,
 }

@@ -1,5 +1,6 @@
 import { poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats } from '../assets/crew'
 import { createSchoolFish } from '../assets/fish'
+import { createFishingFloat } from '../assets/fishing'
 import { createRock } from '../assets/props'
 import { createHarborBoat } from '../assets/waterfront'
 import type { MeshFactory } from '../island-meshes'
@@ -63,7 +64,8 @@ export function fishThrashFixture(meshes: MeshFactory): Fixture {
   const fish = createSchoolFish(meshes, meshes.paint('#a8b293'))
   fish.scaling.setAll(1.64)
   fish.rotation.y = 0.95
-  const bobber = meshes.sphere(-0.52, 0.03, 0.22, 0.13, 0.2, 0.13, '#de7c56')
+  const bobber = createFishingFloat(meshes)
+  bobber.position.set(-0.52, 0.03, 0.22)
   const crew = crewAt(meshes, 1.8, -1.35)
   crew.root.rotation.y = -1.4
   const reach = 0.96

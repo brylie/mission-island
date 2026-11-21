@@ -1,5 +1,7 @@
+import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial'
 import { createRock, createTree } from '../assets/props'
+import { createSaltwindWindow, saltwindWindowRain, saltwindWindowRow } from '../assets/saltwind-window'
 import type { MeshFactory } from '../island-meshes'
 import { contactAge, crewAt, type Fixture } from './effect-fixtures'
 
@@ -19,17 +21,14 @@ export function puddleFixture(meshes: MeshFactory): Fixture {
 }
 
 export function windowFixture(meshes: MeshFactory): Fixture {
-  const glass = '#354f59', wood = '#936b49'
-  meshes.box(0, 1.54, -0.1, 2.4, 1.64, 0.13, glass)
-  for (const x of [-1.17, 0, 1.17]) meshes.box(x, 1.54, 0.001, 0.085, 1.72, 0.107, wood)
-  for (const y of [0.71, 2.38]) meshes.box(0, y, 0.017, 2.44, 0.09, 0.165, wood)
-  for (const x of [-0.93, 0.19]) {
-    const light = meshes.box(x, 1.76, -0.027, 0.076, 0.83, 0.011, '#4c6a73', undefined, false)
-    light.rotation.z = -0.33
-  }
-  meshes.box(0, 0.35, -0.12, 2.68, 0.69, 0.26, '#777361')
-  crewAt(meshes, -1.88, -0.04)
-  return { sourceAt: () => ({ x: 0, y: 1.72, z: -0.016, floor: 0.79 }) }
+  const wallWidth = 2.55
+  const wallHeight = 2.72
+  const wallDepth = 0.18
+  const root = new TransformNode('Saltwind apartment window', meshes.scene)
+  meshes.box(0, wallHeight / 2, -wallDepth / 2, wallWidth, wallHeight, wallDepth, '#d4916b', root)
+  createSaltwindWindow(meshes, root, 0, saltwindWindowRow.centreY, 0)
+  crewAt(meshes, -1.6, -0.04)
+  return { sourceAt: () => ({ x: 0, ...saltwindWindowRain }) }
 }
 
 export function sunbeamFixture(meshes: MeshFactory): Fixture {

@@ -11,6 +11,7 @@ export const market = { x: marketX, z: marketZ }
 export const marketTradeReach = 2.25
 export const clothingCounter = { x: clothingCounterX, z: marketZ }
 export const plotSize = 1.55
+export const plotSurfaceOffset = 0.062
 export const growthSeconds = 24
 export const seedPrice = 1
 const fishSalePrice = 2

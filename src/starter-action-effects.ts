@@ -3,7 +3,8 @@ import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { Scene } from '@babylonjs/core/scene'
 import { inSkiff } from './actions'
 import type { createCrew, createFarmTools, createSkiffGear } from './assets/crew'
-import { farmPlots } from './farm'
+import { paddleBladeOffset, wateringRoseOffset } from './assets/crew'
+import { farmPlots, plotSurfaceOffset } from './farm'
 import { wakeStrength } from './interactive-shaders/skiff-wake'
 import { juniperCenter, juniperLayout } from './juniper-habitat'
 import type { ParticleSource } from './particle-motion'
@@ -18,8 +19,8 @@ import { createMovingEffects } from './world-particles'
 
 type Effects = ReturnType<typeof createMovingEffects>
 type Crew = ReturnType<typeof createCrew>
-const paddleBlade = new Vector3(0, -1.09, 0)
-const wateringRose = new Vector3(0, -0.13, 0.54)
+const paddleBlade = new Vector3(...paddleBladeOffset)
+const wateringRose = new Vector3(...wateringRoseOffset)
 const surface = waterLevel + 0.019
 const clover = juniperLayout.patches.filter((p) => p.kind === 'clover')
   .map((p) => ({ x: juniperCenter.x + p.x, z: juniperCenter.z + p.z }))
@@ -85,7 +86,7 @@ function cultivate(effects: Effects, cue: CultivationCue, rigs: Rigs, state: Sna
   const plot = farmPlots[cue.plot]
   const actor = state.players.find((p) => p.id === cue.actor)
   if (!plot || !actor) return
-  const y = groundHeight(plot) + 0.062
+  const y = groundHeight(plot) + plotSurfaceOffset
   if (cue.kind === 'harvest') effects.burst('carrot-pull-crumbs', { ...plot, y: y + 0.26, floor: y }, 1, 0.85)
   if (cue.kind === 'hoe') effects.burst('hoe-soil-crumbs', { ...plot, y: y + 0.041, floor: y, yaw: actor.heading }, 1, 0.84)
   if (cue.kind === 'water') {

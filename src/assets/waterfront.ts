@@ -7,9 +7,9 @@ import { waterLevel } from '../terrain'
 import type { Point } from '../world'
 import { harborDock, harborDockPiles, skiffStart } from '../world'
 
-export function createDock(meshes: MeshFactory, shaderPile?: Point, deck: Material = meshes.paintRecipe('weathered-board')) {
-  const { box, cylinder, paintSurface } = meshes
-  const { x, top, planks, spacing, width, firstZ, plankDepth, plankThickness } = harborDock
+export function createDockDeck(meshes: MeshFactory, x: number, firstZ: number, top: number, planks: number, deck: Material = meshes.paintRecipe('weathered-board')) {
+  const { box, paintSurface } = meshes
+  const { spacing, width, plankDepth, plankThickness } = harborDock
   const length = (planks - 1) * spacing + plankDepth
   const plankCenterY = top - plankThickness / 2
   const timber = paintSurface('wood')
@@ -25,10 +25,25 @@ export function createDock(meshes: MeshFactory, shaderPile?: Point, deck: Materi
       nail.rotation.y = hash(i, side, 931) * 0.8
     }
   }
+}
+
+export function createDockPile(
+  meshes: MeshFactory,
+  { x, z, top, bottom, diameter }: typeof harborDockPiles[number],
+  material: Material = meshes.paintSurface('wood'),
+  root?: TransformNode,
+) {
+  return meshes.cylinder(x, (top + bottom) / 2, z, diameter, diameter, top - bottom, 7, material, root)
+}
+
+export function createDock(meshes: MeshFactory, shaderPile?: Point, deck: Material = meshes.paintRecipe('weathered-board')) {
+  const { x, firstZ, top, planks } = harborDock
+  createDockDeck(meshes, x, firstZ, top, planks, deck)
   const barnacles = meshes.paintRecipe('barnacle-belt')
-  for (const { x: px, z, top: cap, bottom: foot, diameter } of harborDockPiles) {
+  for (const pile of harborDockPiles) {
+    const { x: px, z, diameter } = pile
     if (px === shaderPile?.x && z === shaderPile.z) continue
-    cylinder(px, (cap + foot) / 2, z, diameter, diameter, cap - foot, 7, timber)
+    createDockPile(meshes, pile)
     // A broken crust hugs the wet outer faces below the deck. Above it,
     // the exposed timber remains bare.
     const vertices: number[] = [], uvs: number[] = [], indices: number[] = []

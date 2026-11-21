@@ -14,12 +14,16 @@ function mergeParts(name: string, parts: Mesh[], pivot: TransformNode) {
   }
 }
 
-export function createFarmPlotModels({ scene, box, sphere, paintSurface }: MeshFactory, points: readonly Point[], plotSize: number) {
+const furrowHeight = 0.03
+const furrowCenterY = 0.053
+export const farmFurrowTop = furrowCenterY + furrowHeight / 2
+
+export function createFarmPlotModels({ scene, box, sphere, paintSurface }: MeshFactory, points: readonly Point[], plotSize: number, heightAt = groundHeight) {
   const dry = paintSurface('gravel', '#98704f')
   const wet = paintSurface('gravel', '#6e4a38')
   const plots = points.map((point) => {
     const root = new TransformNode('Farm plot', scene)
-    root.position.set(point.x, groundHeight(point), point.z)
+    root.position.set(point.x, heightAt(point), point.z)
     const earth = box(0, 0.025, 0, plotSize, 0.05, plotSize, '#788e62', root, false)
     for (const edge of [-1, 1]) {
       box(edge * (plotSize / 2 + 0.039), 0.054, 0, 0.066, 0.081, plotSize + 0.17, '#aa8562', root)
@@ -27,7 +31,7 @@ export function createFarmPlotModels({ scene, box, sphere, paintSurface }: MeshF
     }
     const rows = new TransformNode('Carrot rows', scene)
     rows.parent = root
-    const furrows = [-0.49, 0, 0.49].map((x) => box(x, 0.053, 0, 0.095, 0.03, 1.34, '#694935', rows, false))
+    const furrows = [-0.49, 0, 0.49].map((x) => box(x, furrowCenterY, 0, 0.095, furrowHeight, 1.34, '#694935', rows, false))
     const shoots = new TransformNode('Carrots', scene)
     shoots.parent = root
     const crowns = new TransformNode('Carrot crowns', scene)

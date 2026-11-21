@@ -1,4 +1,5 @@
 import { createCrew } from '../assets/crew'
+import { streetLampGeometry } from '../assets/geometry/site-props'
 import { createHarborBoat } from '../assets/waterfront'
 import type { MeshFactory } from '../island-meshes'
 import { interactiveStudies, type StudyId } from '../interactive-shaders/catalog'
@@ -11,7 +12,7 @@ import { range, type Entry } from './subject'
 
 const studioBase = { x: 0, y: 0, z: 0 }
 const waterStudies = new Set<StudyId>(['skiff-wake', 'wading-rings', 'seabed-caustics', 'water-rain-rings', 'moon-glitter', 'timber-salt-bloom'])
-const wetOrigin: Partial<Record<StudyId, number>> = { 'streetlamp-droplets': 2.59, 'window-parallax': 1.31 }
+const wetOrigin: Partial<Record<StudyId, number>> = { 'streetlamp-droplets': streetLampGeometry.bulb.y, 'window-parallax': 1.31 }
 
 function waterSample(meshes: MeshFactory, id: StudyId) {
   const width = id === 'moon-glitter' ? 23 : id === 'skiff-wake' ? 28 : 12

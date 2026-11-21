@@ -1,3 +1,4 @@
+import { juniperFern, sampleUnderstoryBlade, understoryBladeCount, understoryGroundOffset } from './assets/understory'
 import { createGullFlock, createThermalGulls } from './gull-flock'
 import { starterGullPerches } from './gull-sites'
 import { createCoastalFish } from './school-fish'
@@ -51,7 +52,7 @@ export function createWildflowers(meshes: MeshFactory) {
 export function createUnderstory(meshes: MeshFactory) {
   const ferns: Point[] = []
   for (const habitat of [
-    { name: 'Juniper fern fans', x: grove.x + 2, z: grove.z + 1, radius: 12, height: 0.53, bend: 0.5, color: '#72925d', seed: 1632 },
+    { ...juniperFern, x: grove.x + 2, z: grove.z + 1, radius: 12 },
     { name: 'Mirror Pool rushes', x: pool.x, z: pool.z, radius: 16, height: 1.25, bend: 0.17, color: '#7b9362', seed: 2833 },
     { name: 'Driftwood marram', x: 37, z: -32, radius: 4.4, height: 0.45, bend: 0.24, color: '#a3a677', seed: 3301 },
   ]) {
@@ -63,20 +64,11 @@ export function createUnderstory(meshes: MeshFactory) {
       const point = { x: habitat.x + radius * Math.cos(angle), z: habitat.z + radius * Math.sin(angle) }
       if (onBeachTowel(point) || waterDepth(point) > 0.04 || distanceToRoads(point) < 4.3
         || footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + 0.68)) continue
-      if (habitat.seed === 1632) ferns.push(point)
-      const y = groundHeight(point) - 0.025, scale = 0.66 + random() * 0.82
-      for (let leaf = 0; leaf < 5; leaf++) {
-        const theta = angle + leaf * 2.34 + random() * 0.26
-        const height = habitat.height * scale * (0.7 + random() * 0.4)
-        const bend = habitat.bend * scale * (0.6 + random() * 0.6)
-        const x = Math.cos(theta) * bend, z = Math.sin(theta) * bend
-        const wide = 0.03 + bend * 0.1
-        const wx = Math.sin(theta) * wide, wz = -Math.cos(theta) * wide
-        const root = [point.x + x * 0.07, y, point.z + z * 0.07]
-        const left = [point.x + x * 0.42 - wx, y + height * 0.63, point.z + z * 0.42 - wz]
-        const right = [point.x + x * 0.42 + wx, y + height * 0.63, point.z + z * 0.42 + wz]
-        const tip = [point.x + x, y + height, point.z + z]
-        positions.push(...root, ...left, ...right, ...left, ...tip, ...right)
+      if (habitat.seed === juniperFern.seed) ferns.push(point)
+      const origin = { ...point, y: groundHeight(point) + understoryGroundOffset }
+      const scale = 0.66 + random() * 0.82
+      for (let leaf = 0; leaf < understoryBladeCount; leaf++) {
+        positions.push(...sampleUnderstoryBlade(habitat, origin, angle, leaf, scale, random).positions)
       }
     }
     const paint = meshes.paint(habitat.color)

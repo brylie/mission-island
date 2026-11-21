@@ -41,27 +41,40 @@ function cottageBackAndSides({ box }: MeshFactory) {
   }
 }
 
-// Wren's gate: a leaf on a hinge pivot that the host swings, a hinge whose worn top pin
-// lets the free end drop into a groove, and the mending bench where new pins wait.
-export function createWrenGateModel(meshes: MeshFactory, sagAngle: number) {
-  const { box, cylinder, scene } = meshes
-  for (const { from, to } of fenceRuns) fenceRun(meshes, from, to)
-  cottageBackAndSides(meshes)
-  createWrenGarden(meshes)
-  const base = groundHeight(hingePost)
-  box(hingePost.x, base + 0.8, hingePost.z, 0.14, 1.6, 0.14, timber)
-  box(hingePost.x + 1.12, base + 0.8, hingePost.z, 0.14, 1.6, 0.14, timber)
+export const wrenGateTopRail = {
+  x: gateLeaf.length / 2 + 0.03,
+  y: 1.2,
+  z: 0,
+  width: gateLeaf.length - 0.04,
+  height: 0.09,
+  depth: 0.05,
+} as const
+
+export function createWrenGateAssembly({ box, cylinder, scene }: MeshFactory, { x, y, z }: Point & { y: number }) {
+  box(x, y + 0.8, z, 0.14, 1.6, 0.14, timber)
+  box(x + 1.12, y + 0.8, z, 0.14, 1.6, 0.14, timber)
   const hinge = new TransformNode('Garden gate hinge', scene)
-  hinge.position.set(hingePost.x, base, hingePost.z)
+  hinge.position.set(x, y, z)
   const leaf = new TransformNode('Garden gate leaf', scene)
   leaf.parent = hinge
-  for (const y of [0.3, 1.2]) box(gateLeaf.length / 2 + 0.03, y, 0, gateLeaf.length - 0.04, 0.09, 0.05, timber, leaf)
+  const rail = wrenGateTopRail
+  for (const y of [0.3, rail.y]) box(rail.x, y, rail.z, rail.width, rail.height, rail.depth, timber, leaf)
   for (let x = 0.12; x < gateLeaf.length; x += 0.19) box(x, 0.78, 0.03, 0.075, 1.36, 0.025, cap, leaf)
   const brace = box(gateLeaf.length / 2, 0.75, -0.01, 1.08, 0.07, 0.04, timber, leaf)
   brace.rotation.z = 0.74
   for (const y of [0.32, 1.2]) box(0.12, y, -0.04, 0.2, 0.05, 0.02, iron, leaf)
   const wornPin = box(0.02, 1.2, 0, 0.035, 0.1, 0.035, rust, hinge)
   const newPin = cylinder(0.02, 1.2, 0, 0.045, 0.045, 0.16, 8, brass, hinge)
+  return { hinge, leaf, wornPin, newPin }
+}
+
+// The garden surrounds a hinged leaf whose worn pin lets it scrape a groove.
+export function createWrenGateModel(meshes: MeshFactory, sagAngle: number) {
+  const { box, cylinder, scene } = meshes
+  for (const { from, to } of fenceRuns) fenceRun(meshes, from, to)
+  cottageBackAndSides(meshes)
+  createWrenGarden(meshes)
+  const gate = createWrenGateAssembly(meshes, { ...hingePost, y: groundHeight(hingePost) })
   const groove = new TransformNode('Gate groove', scene)
   for (let angle = -0.05; angle <= sagAngle + 0.25; angle += 0.07) {
     const radius = gateLeaf.length - 0.08
@@ -80,5 +93,5 @@ export function createWrenGateModel(meshes: MeshFactory, sagAngle: number) {
   const benchPin = cylinder(0.35, mendingPinHeight, 0.1, 0.045, 0.045, 0.16, 8, brass, bench)
   const carried = cylinder(0, 0, 0, 0.045, 0.045, 0.16, 8, brass)
 
-  return { hinge, leaf, wornPin, newPin, groove, benchPin, carried }
+  return { ...gate, groove, benchPin, carried }
 }

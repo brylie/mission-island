@@ -1,12 +1,13 @@
 import { createFarmPlotModels } from './assets/farm'
 import { farmPlots, plotSize, type PlotStage } from './farm'
 import type { MeshFactory } from './island-meshes'
+import type { Point } from './world'
 
 const ripeShootScale = 1.38
 const youngShootScale = 0.78
 
-export function createFarm(meshes: MeshFactory, points = farmPlots) {
-  const { plots, dry, wet } = createFarmPlotModels(meshes, points, plotSize)
+export function createFarm(meshes: MeshFactory, points: readonly Point[] = farmPlots, heightAt?: (point: Point) => number) {
+  const { plots, dry, wet } = createFarmPlotModels(meshes, points, plotSize, heightAt)
   const stages: (PlotStage | undefined)[] = []
   return (farm: readonly PlotStage[]) => {
     for (const [i, plot] of plots.entries()) {

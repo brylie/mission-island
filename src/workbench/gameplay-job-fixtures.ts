@@ -1,11 +1,11 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { poseCrew } from '../assets/crew'
-import { createProduceCarrot } from '../assets/effect-props'
+import { buildHarvestedCarrot } from '../assets/barrow'
 import { createFlatbed, poseFlatbed } from '../assets/flatbed'
 import { createSupply } from '../assets/props'
 import type { MeshFactory } from '../island-meshes'
 import { flatbedGroundDrive } from '../vehicles/flatbed'
-import { crateSize, truckBed } from '../world'
+import { crateSize, truckBed, truckTailLip } from '../world'
 import { contactAge, crewAt, type Fixture } from './effect-fixtures'
 
 export function brakeChipsFixture(meshes: MeshFactory): Fixture {
@@ -29,8 +29,11 @@ export function brakeChipsFixture(meshes: MeshFactory): Fixture {
 
 export function grainSpillFixture(meshes: MeshFactory): Fixture {
   const truck = createFlatbed(meshes)
-  truck.root.position.set(0, 0, 1.28)
+  const truckZ = 1.28
+  truck.root.position.z = truckZ
   const sack = new TransformNode('Tipped grain sack', meshes.scene)
+  const sackX = 0.17, bedClearance = 0.12, insideTailgate = 0.38, spoutHeight = 0.66
+  const sackY = truckBed.top + bedClearance, sackZ = truckZ + truckTailLip.z + insideTailgate
   meshes.sphere(0, 0.274, 0, 0.64, 0.73, 0.49, '#b89e73', sack, true, 8)
   meshes.cylinder(0, 0.598, 0, 0.256, 0.37, 0.134, 9, '#b29a70', sack)
   const top = meshes.cylinder(0, 0.672, 0, 0.186, 0.185, 0.017, 8, '#826740', sack)
@@ -44,11 +47,11 @@ export function grainSpillFixture(meshes: MeshFactory): Fixture {
     sourceAt(time) {
       if (time > 0.84 && time < 2.62) {
         const tilt = tip(time)
-        return { x: 0.17, y: truckBed.top + 0.12 + Math.cos(tilt) * 0.66, z: -1.35 + Math.sin(tilt) * 0.66, yaw: Math.PI, speed: 1.3 - time * 0.19, floor: 0.026 }
+        return { x: sackX, y: sackY + Math.cos(tilt) * spoutHeight, z: sackZ + Math.sin(tilt) * spoutHeight, yaw: Math.PI, speed: 1.3 - time * 0.19, floor: 0.026 }
       }
     },
     pose(time) {
-      sack.position.set(0.17, truckBed.top + 0.12, -1.35)
+      sack.position.set(sackX, sackY, sackZ)
       sack.rotation.x = tip(time)
     },
   }
@@ -98,11 +101,12 @@ export function washFixture(meshes: MeshFactory): Fixture {
   meshes.box(0, 0.875, 0, 1.62, 0.037, 0.78, '#548883', undefined, false)
   const crew = crewAt(meshes, 0.19, -0.832, 1)
   poseCrew(crew, 0, 0, false, 'tool', 1, 1, 0, false, true)
+  const carrotTilt = -0.26
   for (let i = 0; i < 5; i++) {
     const carrot = new TransformNode('Produce in rinsing trough', meshes.scene)
     carrot.position.set(0.39 - i * 0.165, 0.923, 0.057 + Math.sin(i * 3) * 0.123)
-    carrot.rotation.set(1.31, i * 1.7, -0.17)
-    createProduceCarrot(meshes, carrot)
+    carrot.rotation.set(carrotTilt, i * 1.7, -0.17)
+    buildHarvestedCarrot(meshes, carrot)
   }
   return {
     sourceAt(time) {

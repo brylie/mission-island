@@ -6,6 +6,8 @@ import { createIslandMaterial } from '../materials'
 
 const cream = '#f8dfb5', copper = '#ad6e48', honey = '#e39a32'
 const wood = '#af8153', darkWood = '#745741'
+const landingBoard = { y: 0.482, z: 0.401, height: 0.043 }
+export const honeyHiveEntrance = { y: 0.536, z: 0.40, width: 0.37, floor: landingBoard.y + landingBoard.height / 2 } as const
 
 function jar(meshes: MeshFactory, parent: TransformNode, filled: boolean, x = 0, y = 0, z = 0) {
   const root = new TransformNode(filled ? 'Capped honey jar' : 'Clean jar', meshes.scene)
@@ -50,8 +52,8 @@ export function buildHoneyHive(meshes: MeshFactory, root: TransformNode, variant
   meshes.box(0, 0.358, 0, 0.85, 0.068, 0.80, '#af9d77', root)
   for (const y of [0.52, 0.77, 1.0]) meshes.box(0, y, 0, 0.79, 0.24, 0.70, light ? '#d9cda3' : '#c6b984', root)
   for (const y of [0.64, 0.884]) meshes.box(0, y, 0.352, 0.755, 0.036, 0.033, '#969479', root)
-  meshes.box(0, 0.482, 0.401, 0.59, 0.043, 0.154, wood, root)
-  meshes.box(0, 0.536, 0.356, 0.37, 0.065, 0.024, '#4b4b3a', root)
+  meshes.box(0, landingBoard.y, landingBoard.z, 0.59, landingBoard.height, 0.154, wood, root)
+  meshes.box(0, honeyHiveEntrance.y, 0.356, honeyHiveEntrance.width, 0.065, 0.024, '#4b4b3a', root)
   for (const x of [-0.41, 0.41]) meshes.box(x, 0.78, 0, 0.042, 0.078, 0.33, darkWood, root)
   const roof = meshes.box(0, 1.16, 0, 0.95, 0.117, 0.86, light ? '#557b73' : '#6f9180', root)
   roof.rotation.x = 0.076

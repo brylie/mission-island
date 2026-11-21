@@ -252,6 +252,9 @@ export function swimmingHeight(time: number) {
   return waterLevel - 1.01 + 0.036 * Math.sin(time * Math.PI * 2 / 1.6)
 }
 
+export const wateringRoseOffset = [0, -0.13, 0.54] as const
+export const paddleBladeOffset = [0, -1.09, 0] as const
+
 export function createFarmTools({ scene, box, cylinder, sphere }: MeshFactory, character: ReturnType<typeof createCrew>) {
   const hoe = new TransformNode('Hoe', scene)
   const can = new TransformNode('Watering can', scene)

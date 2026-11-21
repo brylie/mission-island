@@ -5,6 +5,13 @@ import type { MeshFactory } from '../island-meshes'
 type Vertex = [number, number, number]
 export const barrowFeet = { halfWidth: 0.326, z: -0.355 }
 
+export function buildHarvestedCarrot({ box, cylinder }: MeshFactory, root: TransformNode) {
+  cylinder(0, 0, 0, 0.091, 0.021, 0.231, 9, '#eb8339', root).rotation.x = Math.PI / 2
+  for (const side of [-1, 1]) {
+    box(side * 0.018, 0.009, 0.128, 0.024, 0.024, 0.083, '#6f9749', root).rotation.set(-0.31, side * 0.37, 0)
+  }
+}
+
 function buildTray(meshes: MeshFactory, root: TransformNode) {
   const { rimHeight, trayHalfDepth: depth, trayHalfWidth: width } = barrowRig
   const rim: Vertex[] = [[-width, rimHeight, -depth], [width, rimHeight, -depth], [width * 0.76, rimHeight - 0.04, depth], [-width * 0.76, rimHeight - 0.04, depth]]
@@ -70,10 +77,7 @@ export function createBarrow(meshes: MeshFactory) {
     carrot.position.set((i % 3 - 1) * 0.148, y, i < 3 ? -0.167 : 0.15)
     carrot.rotation.y = [0.62, -0.14, 0.35, -0.66, 0.16, 0.48][i]
     carrot.scaling.setAll(0.91 + (i % 3) * 0.06)
-    cylinder(0, 0, 0, 0.091, 0.021, 0.231, 9, '#eb8339', carrot).rotation.x = Math.PI / 2
-    for (const side of [-1, 1]) {
-      box(side * 0.018, 0.009, 0.128, 0.024, 0.024, 0.083, '#6f9749', carrot).rotation.set(-0.31, side * 0.37, 0)
-    }
+    buildHarvestedCarrot(meshes, carrot)
     carrot.setEnabled(false)
     return { carrot, y }
   })

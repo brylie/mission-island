@@ -163,7 +163,7 @@ const studies: EffectStudy[] = [
     group: 'Jobs',
     seed: 1294,
     width: 4.8,
-    description: 'Pinpricks lift from a small fire and cool to red as they fall away. Use above the Forest Lookout fire bed.',
+    description: 'Pinpricks lift from a small fire and cool to red as they fall away. Use on the burning verge at Forest Lookout.',
     strength: 'Ember intensity',
     footprint: 'Ember scatter',
     field: forestLookout,

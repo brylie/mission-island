@@ -1,7 +1,8 @@
+import { createDockPile } from '../assets/waterfront'
 import { saltBloomPile } from './catalog'
 import { card, createEffect, grid, type Builder } from './render'
 
-const piling: Builder = (meshes, origin, studio) => {
+const piling: Builder = (meshes, origin) => {
   const effect = createEffect(meshes, 'Harborside salt efflorescence', origin, { blend: 'opaque', fragment: `
     vec2 bark = vec2(texCoord.x * 35., localPoint.y * 2.);
     float fibers = .63 * studyNoise(bark) + .37 * studyNoise(bark * vec2(2.31,.38));
@@ -14,7 +15,8 @@ const piling: Builder = (meshes, origin, studio) => {
     ink = vec4(diffuseLight(timber,n),1.);
   ` })
   const { bottom, top, diameter } = saltBloomPile
-  meshes.cylinder(0, 0, 0, studio ? 0.73 : diameter, studio ? 0.78 : diameter, top - bottom, studio ? 18 : 7, effect.material, effect.root)
+  const halfHeight = (top - bottom) / 2
+  createDockPile(meshes, { x: 0, z: 0, bottom: -halfHeight, top: halfHeight, diameter }, effect.material, effect.root)
   return effect
 }
 

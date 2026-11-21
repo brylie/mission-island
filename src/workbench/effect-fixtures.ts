@@ -1,14 +1,17 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
-import { createCrew, createSkiffGear, poseCrew, poseSkiffCrew, skiffCrewSeats } from '../assets/crew'
+import { createCrew, createSkiffGear, paddleBladeOffset, poseCrew, poseSkiffCrew, skiffCrewSeats } from '../assets/crew'
 import { createFlatbed, poseFlatbed } from '../assets/flatbed'
+import { createLongAcreFlowers, longAcrePollenHeight } from '../assets/long-acre-flowers'
 import { createRock, createSupply, createTree } from '../assets/props'
 import { createHarborBoat } from '../assets/waterfront'
 import { extinguisherSource } from '../extinguisher-spray'
 import type { MeshFactory } from '../island-meshes'
 import type { ParticleOrigin, ParticleSource } from '../particle-motion'
+import { flowerBeds, flowerOffsets } from '../second-island/long-acre'
 import { flatbedGroundDrive } from '../vehicles/flatbed'
 import type { particleAccents } from '../assets/particle-shelf-recipes'
 import type { FieldSite } from './field-site'
+import { createMarketRunoffStage } from './market-awning-stage'
 
 export interface Fixture {
   sourceAt: ParticleOrigin
@@ -76,7 +79,7 @@ export function paddleFixture(meshes: MeshFactory): Fixture {
   gear.grip.setEnabled(true)
   gear.rod.setEnabled(false)
   meshes.box(0, -0.14, 0, 7, 0.29, 6.4, water).receiveShadows = true
-  const blade = new Vector3(0, -1.06, 0)
+  const blade = new Vector3(...paddleBladeOffset)
 
   function pose(time: number) {
     const beat = (time - 0.34) * Math.PI * 2 / 0.85
@@ -103,12 +106,8 @@ export function rainFixture(meshes: MeshFactory): Fixture {
 }
 
 export function roofFixture(meshes: MeshFactory): Fixture {
-  for (const x of [-1.4, 1.4]) meshes.box(x, 1.15, -0.68, 0.14, 2.3, 0.15, '#776555')
-  const roof = meshes.box(0, 2.57, -0.65, 3.28, 0.13, 1.55, '#697879')
-  roof.rotation.x = 0.25
-  meshes.box(0, 2.36, 0.12, 3.28, 0.09, 0.12, '#564b41')
-  crewAt(meshes, -1.95, 0.08)
-  return { sourceAt: () => ({ x: 0, y: 2.309, z: 0.14, floor: 0.045 }) }
+  const { curtain } = createMarketRunoffStage(meshes)
+  return { sourceAt: () => curtain }
 }
 
 export function mistFixture(meshes: MeshFactory): Fixture {
@@ -127,14 +126,9 @@ export function leavesFixture(meshes: MeshFactory): Fixture {
 
 export function pollenFixture(meshes: MeshFactory): Fixture {
   crewAt(meshes, -0.8, -0.85)
-  for (let index = 0; index < 15; index++) {
-    const x = Math.cos(index * 2.4) * (index + 3) * 0.077
-    const z = Math.sin(index * 2.4) * (index + 2) * 0.047
-    const height = 0.33 + (index % 4) * 0.096
-    meshes.cylinder(x, height / 2, z, 0.027, 0.034, height, 5, '#63855a')
-    meshes.sphere(x, height, z, 0.16, 0.083, 0.16, index % 4 ? '#e8c967' : '#edd3a8')
-  }
-  return { sourceAt: () => ({ x: 0, y: 0.58, z: 0.02 }) }
+  const trefoilBed = 1
+  createLongAcreFlowers(meshes, { ...flowerBeds[trefoilBed], x: 0, z: 0 }, trefoilBed, flowerOffsets, () => 0)
+  return { sourceAt: () => ({ x: 0, y: longAcrePollenHeight, z: 0 }) }
 }
 
 export function dustFixture(meshes: MeshFactory, x = 0, z = 0): Fixture {
@@ -152,19 +146,7 @@ export function dustFixture(meshes: MeshFactory, x = 0, z = 0): Fixture {
   }
 }
 
-export function fireBed(meshes: MeshFactory) {
-  for (let i = 0; i < 6; i++) {
-    const angle = i * Math.PI / 3
-    createRock(meshes, Math.cos(angle) * 0.85, Math.sin(angle) * 0.62, 0.37, angle, false)
-  }
-  for (const angle of [-0.9, 0.4, 1.8]) {
-    meshes.box(0, 0.16, 0, 1.3, 0.24, 0.22, '#514035').rotation.y = angle
-    meshes.box(0, 0.235, 0, 0.71, 0.095, 0.178, '#c26e37').rotation.y = angle
-  }
-}
-
 export function fireFixture(meshes: MeshFactory, y: number, field?: FieldSite): Fixture {
-  fireBed(meshes)
   crewAt(meshes, -1.65, -0.9)
   return { sourceAt: () => worldSource({ x: 0, y, z: 0 }, field) }
 }
@@ -177,7 +159,6 @@ export function extinguisherFixture(meshes: MeshFactory, busy: boolean): Fixture
   if (busy) {
     const partner = crewAt(meshes, 2.7, 0.9, 1)
     partner.root.rotation.y = -Math.PI * 0.72
-    fireBed(meshes)
   }
   return { sourceAt: () => extinguisherSource(tool) }
 }

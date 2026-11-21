@@ -1,27 +1,32 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
-import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { poseCrew } from '../assets/crew'
+import { fishingFloatRestHeight } from '../assets/fishing'
 import { createFlatbed, poseFlatbed } from '../assets/flatbed'
-import { createHarborBoat } from '../assets/waterfront'
+import { createDockDeck, createDockPile, createHarborBoat } from '../assets/waterfront'
+import { aimFishingRod, createFishingGear, poseCastLine } from '../fishing-line-view'
 import type { MeshFactory } from '../island-meshes'
 import { flatbedGroundDrive } from '../vehicles/flatbed'
+import { harborDockPiles } from '../world'
 import { contactAge, crewAt, type Fixture } from './effect-fixtures'
 
 const dockWood = '#9e7951'
 const water = '#44848d'
 
 export function bobberFixture(meshes: MeshFactory): Fixture {
-  const pier = meshes.paintSurface('wood', dockWood)
+  const dockX = -2.5, firstBoardZ = 1.47, deckTop = 0.1, boardCount = 7
   meshes.box(0, -0.12, 0, 4.35, 0.24, 3.52, water, undefined, false)
-  for (const z of [-1.25, -0.83, -0.42, 0, 0.42, 0.83, 1.25]) meshes.box(-1.65, 0.05, z, 1.05, 0.1, 0.4, pier)
-  const crew = crewAt(meshes, -1.66, -0.08)
-  crew.root.rotation.y = Math.PI / 2
+  createDockDeck(meshes, dockX, firstBoardZ, deckTop, boardCount)
+  const crew = crewAt(meshes, -1.17, -0.08)
+  crew.root.position.y = deckTop
+  const facing = { heading: Math.PI * 0.5, casting: null }
+  crew.root.rotation.y = facing.heading
   poseCrew(crew, 0, 0, false, 'tool', 0.85)
-  const rod = meshes.cylinder(-0.89, 1.23, -0.46, 0.025, 0.051, 1.3, 7, '#6e573f')
-  rod.rotation.z = -1.18
-  const bobber = new TransformNode('Dipping float', meshes.scene)
-  meshes.sphere(0, 0.033, 0, 0.159, 0.182, 0.163, '#d95846', bobber)
-  meshes.sphere(0, 0.08, 0, 0.123, 0.069, 0.128, '#f4dfbc', bobber)
+  const [kit] = createFishingGear(meshes.scene, meshes, [crew])
+  const [hand] = kit.gear
+  hand.grip.setEnabled(true)
+  hand.paddle.setEnabled(false)
+  kit.bobber.isVisible = kit.line.isVisible = true
+  aimFishingRod(facing, kit, 0)
   const tug = (time: number) => contactAge(time, 0.39, 0.94, 0.41) ?? 0
   const tugDistance = (age: number) => Math.sin(age / 0.41 * Math.PI)
   return {
@@ -31,8 +36,8 @@ export function bobberFixture(meshes: MeshFactory): Fixture {
     },
     pose(time) {
       const pull = tugDistance(tug(time))
-      bobber.position.set(0.32 + 0.19 * pull, -0.126 * pull + 0.012 * Math.sin(time * 6.2), 0.02)
-      bobber.rotation.z = pull * -0.36
+      kit.bobber.position.set(0.32 + 0.19 * pull, fishingFloatRestHeight - 0.126 * pull + 0.012 * Math.sin(time * 6.2), 0.02)
+      poseCastLine(kit, 0)
     },
   }
 }
@@ -83,9 +88,14 @@ export function hullDrainFixture(meshes: MeshFactory): Fixture {
 
 export function mooringShakeFixture(meshes: MeshFactory): Fixture {
   meshes.box(0, -0.096, 0, 5.55, 0.193, 3.28, water, undefined, false)
-  meshes.box(0, 0.056, -0.84, 5.35, 0.108, 0.89, meshes.paintSurface('wood', dockWood))
-  for (const x of [-1.65, 1.65]) meshes.cylinder(x, 0.37, -0.18, 0.22, 0.27, 0.75, 8, '#715f43')
-  crewAt(meshes, -1.81, -0.95)
+  const firstBoardZ = -0.63, deckTop = 0.11, boardCount = 2
+  createDockDeck(meshes, 0, firstBoardZ, deckTop, boardCount)
+  const pileZ = -0.18, pileTop = 0.75
+  const [pile] = harborDockPiles
+  const pileBottom = pileTop - (pile.top - pile.bottom)
+  for (const x of [-1.65, 1.65]) createDockPile(meshes, { ...pile, x, z: pileZ, top: pileTop, bottom: pileBottom })
+  const crew = crewAt(meshes, -1.44, -0.95)
+  crew.root.position.y = deckTop
   const rope = Array.from({ length: 12 }, () => meshes.box(0, 0, 0, 0.28, 0.035, 0.041, '#d0ac76', undefined, false))
   const wave = (time: number) => contactAge(time, 0.37, 0.98, 0.63)
   function lineHeight(time: number, along: number) {
@@ -114,20 +124,21 @@ export function mooringShakeFixture(meshes: MeshFactory): Fixture {
 
 export function bootTrailFixture(meshes: MeshFactory): Fixture {
   meshes.box(0, -0.079, 0, 4.05, 0.158, 4.2, water, undefined, false)
-  const wood = meshes.paintSurface('wood', '#b99566')
-  for (let i = 0; i < 18; i++) meshes.box(0, 0.033, (i - 8.5) * 0.23, 1.95, 0.068, 0.224, wood)
+  const firstBoardZ = 1.96, deckTop = 0.067, boardCount = 9
+  createDockDeck(meshes, 0, firstBoardZ, deckTop, boardCount)
   const crew = crewAt(meshes, 0, 0, 1)
   const stride = (time: number) => -1.38 + 0.89 * Math.min(3, time)
+  const footClearance = 0.005, stampClearance = 0.007
   return {
     sourceAt(time) {
       const age = contactAge(time, 0.34, 0.49, 0.09)
       if (age === undefined) return
       const step = Math.floor((time - 0.34) / 0.49)
       const side = step % 2 ? -1 : 1
-      return { x: 0.175 * side, y: 0.074, z: stride(time - age) + 0.21, yaw: side * 0.14 }
+      return { x: 0.175 * side, y: deckTop + stampClearance, z: stride(time - age) + 0.21, yaw: side * 0.14 }
     },
     pose(time) {
-      crew.root.position.set(0, 0.072, stride(time))
+      crew.root.position.set(0, deckTop + footClearance, stride(time))
       poseCrew(crew, (Math.min(time, 3) - 0.34) / 0.98 + 0.25, time > 3 ? 0 : 0.54, false)
     },
   }

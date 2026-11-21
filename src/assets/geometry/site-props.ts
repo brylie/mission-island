@@ -56,7 +56,11 @@ const jobBoardPanel = { width: 1.75, depth: 0.14, height: 0.93, centreY: 1.38 } 
 export const jobBoardGeometry = { panel: jobBoardPanel, supportBoxes: [[jobBoardPanel.width, jobBoardPanel.depth, 1.95]] } as const
 
 const lampPole = { baseDiameter: 0.14, topDiameter: 0.10, height: 2.74, centreY: 1.37 } as const
-export const streetLampGeometry = { pole: lampPole, supportBoxes: [[lampPole.baseDiameter, lampPole.baseDiameter, lampPole.height]] } as const
+export const streetLampGeometry = {
+  pole: lampPole,
+  bulb: { y: 2.53, z: -0.31 },
+  supportBoxes: [[lampPole.baseDiameter, lampPole.baseDiameter, lampPole.height]],
+} as const
 
 const umbrellaPole = { baseDiameter: 0.16, topDiameter: 0.12, height: 2.5, centreY: 1.25 } as const
 export const beachUmbrellaGeometry = { pole: umbrellaPole, supportBoxes: [[umbrellaPole.baseDiameter, umbrellaPole.baseDiameter, 2.27]] } as const

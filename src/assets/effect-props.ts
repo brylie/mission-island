@@ -18,15 +18,6 @@ export function createOilLantern(meshes: MeshFactory) {
   return { root, flame, globe }
 }
 
-export function createProduceCarrot(meshes: MeshFactory, root: TransformNode) {
-  const lower = meshes.cylinder(0, -0.102, 0, 0.129, 0.027, 0.246, 7, '#d58142', root)
-  lower.rotation.z = -0.13
-  meshes.sphere(0, 0.018, 0, 0.133, 0.081, 0.126, '#eb974f', root)
-  for (const side of [-1, 1]) {
-    meshes.sphere(side * 0.052, 0.144, 0, 0.07, 0.248, 0.052, '#789653', root).rotation.z = side * -0.34
-  }
-}
-
 export function createTimberSaw(meshes: MeshFactory) {
   const root = new TransformNode('Timber saw', meshes.scene)
   const wood = meshes.paintSurface('wood', '#a07e54')
@@ -45,8 +36,17 @@ export function createTimberSaw(meshes: MeshFactory) {
     edge.rotation.z = -angle - 0.23
   }
   meshes.box(0.079, 0.158, 0.029, 0.035, 0.061, 0.008, '#556c69', arbor, false).name = 'Blade witness mark'
-  return { root, pose(this: void, time: number) {
+  const dustOffset = { x: 0.1, y: 1.12, z: 0.025 }
+  return { root, dustOffset, pose(this: void, time: number) {
     // The cutting edge moves toward +X where it meets the stock and throws sawdust.
     arbor.rotation.z = -time * 12
   } }
+}
+
+export function createMillVent(meshes: MeshFactory) {
+  const root = new TransformNode('Mill roof vent', meshes.scene)
+  const lidHeight = 0.79
+  meshes.cylinder(0, 0.06, 0, 0.46, 0.53, 1.55, 10, '#798985', root)
+  meshes.cylinder(0, lidHeight, 0, 0.37, 0.43, 0.12, 10, '#545e55', root)
+  return { root, outletHeight: lidHeight + 0.09 }
 }

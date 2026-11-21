@@ -2,6 +2,7 @@ import { Quaternion } from '@babylonjs/core/Maths/math.vector'
 import { createCargoPhysics } from '../simulation/cargo'
 import { castPoint, catchChance, stepFight } from '../simulation/fishing'
 import { castTravelSeconds, biteSeconds } from '../charged-actions'
+import { createFishingFloat } from '../assets/fishing'
 import { createFlatbed } from '../assets/flatbed'
 import { createSupply } from '../assets/props'
 import type { Item } from '../protocol'
@@ -28,7 +29,7 @@ export const mechanicStudies: Entry[] = [
       { key: 'reel', type: 'select', label: 'Reeling strategy', value: 'calm', choices: { calm: 'Reel during calm water', always: 'Always reel', never: 'Let out line' } },
     ],
     create(meshes, _, _error, observe) {
-      const bobber = meshes.sphere(0, 0.09, 0, 0.18, 0.22, 0.18, '#ed9358')
+      const bobber = createFishingFloat(meshes)
       // Frame the entire cast, including its farthest landing point.
       meshes.box(0, 0.1, -6.2, 0.2, 0.2, 12.4, '#fff', undefined, false).isVisible = false
       return ({ time }, values) => {

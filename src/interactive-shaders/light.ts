@@ -1,4 +1,6 @@
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
+import { streetLampGeometry } from '../assets/geometry/site-props'
+import { createStreetLamp } from '../assets/street-lamp'
 import { seededRandom } from '../seeded-random'
 import { groundHeight } from '../terrain'
 import { boundaryFade, card, createEffect, grid, type Builder } from './render'
@@ -56,11 +58,8 @@ const lampHalo: Builder = (meshes, origin, studio) => {
   const veil = card(meshes, effect, 'Lamp halo and falling droplets', 4.3, 4.05, true)
   veil.position.y = -0.70
   if (studio) {
-    meshes.cylinder(0.28, -1.26, 0.03, 0.084, 0.132, 2.57, 8, '#48584e', effect.root)
-    meshes.box(0.12, 0.11, 0, 0.39, 0.084, 0.084, '#4e5b54', effect.root)
-    meshes.cylinder(0, 0.08, 0, 0.20, 0.36, 0.13, 10, '#4e5b54', effect.root)
-    const globe = meshes.paint('#ffdf89', true)
-    meshes.sphere(0, -0.04, 0, 0.22, 0.16, 0.22, globe, effect.root, false, 8)
+    const { y, z } = streetLampGeometry.bulb
+    createStreetLamp(meshes, { x: origin.x, y: origin.y - y, z: origin.z - z }, meshes.paint('#ffe2a2', true))
   }
   return effect
 }

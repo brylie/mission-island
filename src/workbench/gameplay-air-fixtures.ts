@@ -1,8 +1,10 @@
-import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import { createOilLantern } from '../assets/effect-props'
-import { createRock } from '../assets/props'
+import { Vector3 } from '@babylonjs/core/Maths/math.vector'
+import { createMillVent, createOilLantern } from '../assets/effect-props'
+import { createWrenGateAssembly, wrenGateTopRail } from '../assets/wren-gate'
+import { gateLeaf } from '../gate-layout'
 import type { MeshFactory } from '../island-meshes'
 import { contactAge, crewAt, type Fixture } from './effect-fixtures'
+import { createMarketRunoffStage } from './market-awning-stage'
 
 function lanternStand(meshes: MeshFactory, height: number) {
   const lantern = createOilLantern(meshes)
@@ -34,70 +36,60 @@ export function mothFixture(meshes: MeshFactory): Fixture {
 
 export function ventFixture(meshes: MeshFactory): Fixture {
   meshes.box(0, 0.66, -0.57, 2.7, 1.32, 1.37, '#6d766d')
-  meshes.box(0, 1.34, -0.55, 2.95, 0.14, 1.54, '#486360')
-  meshes.cylinder(0.03, 1.52, -0.23, 0.27, 0.29, 0.4, 9, '#8a9990')
-  meshes.cylinder(0.03, 1.728, -0.23, 0.22, 0.22, 0.02, 9, '#405352')
+  const roofCentre = 1.34
+  const roofThickness = 0.14
+  meshes.box(0, roofCentre, -0.55, 2.95, roofThickness, 1.54, '#486360')
+  const vent = createMillVent(meshes)
+  vent.root.position.set(0.03, roofCentre + roofThickness / 2, -0.23)
+  const { x, y, z } = vent.root.position
+  const outlet = { x, y: y + vent.outletHeight, z }
   crewAt(meshes, -1.71, 0.42)
   return {
     sourceAt(time) {
-      if (contactAge(time, 0.25, 1.1, 0.74) !== undefined) return { x: 0.03, y: 1.74, z: -0.23 }
+      if (contactAge(time, 0.25, 1.1, 0.74) !== undefined) return outlet
     },
   }
 }
 
+const frostThickness = 0.016
+const frostContactCount = 7
+const gateSwing = 0.61
+const gateSwingDuration = 3
+
 export function gateFrostFixture(meshes: MeshFactory): Fixture {
-  const gate = new TransformNode('Frosted gate', meshes.scene)
-  gate.position.set(-1.05, 0, -0.13)
-  const wood = '#817861', frost = '#c5d6cb'
-  for (const x of [-1.09, 1.09]) {
-    meshes.box(x, 0.64, -0.13, 0.135, 1.28, 0.16, wood)
-    meshes.box(x, 1.29, -0.13, 0.146, 0.025, 0.17, frost)
-  }
-  for (const y of [0.37, 0.95]) meshes.box(1.02, y, 0, 1.96, 0.122, 0.087, wood, gate)
-  for (let i = 0; i < 7; i++) {
-    const x = 0.17 + i * 0.283
-    meshes.box(x, 0.64, 0.012, 0.124, 0.83, 0.077, wood, gate)
-    meshes.box(x, 1.062, 0.012, 0.131, 0.024, 0.088, frost, gate)
-  }
-  const crew = crewAt(meshes, 1.31, 0.72, 1)
+  const gate = createWrenGateAssembly(meshes, { x: -gateLeaf.length / 2, y: 0, z: 0 })
+  gate.wornPin.setEnabled(false)
+  const rail = wrenGateTopRail
+  const top = rail.y + rail.height / 2
+  meshes.box(rail.x, top + frostThickness / 2, rail.z, rail.width, frostThickness, rail.depth, '#c5d6cb', gate.leaf)
+  const contact = new Vector3(rail.x, top + frostThickness, rail.z)
+  const crew = crewAt(meshes, 1.03, 0.72, 1)
   crew.root.rotation.y = -2.7
-  const angle = (time: number) => 0.61 * Math.sin(Math.min(time, 3) * Math.PI / 3)
+  function pose(time: number) {
+    gate.hinge.rotation.y = gateSwing * Math.sin(Math.min(time, gateSwingDuration) * Math.PI / gateSwingDuration)
+  }
   return {
     sourceAt(time, index) {
       if (contactAge(time, 0.4, 1.05, 0.16) === undefined) return
-      const arm = 0.62 + index % 7 * 0.19
-      const yaw = angle(time)
-      return { x: -1.05 + arm * Math.cos(yaw), z: -0.13 - arm * Math.sin(yaw), y: 1.076, yaw, floor: 0.015 }
+      pose(time)
+      const across = (index % frostContactCount) / (frostContactCount - 1) - 0.5
+      contact.x = rail.x + across * (rail.width - rail.depth)
+      const { x, y, z } = Vector3.TransformCoordinates(contact, gate.leaf.computeWorldMatrix(true))
+      return { x, y, z, yaw: gate.hinge.rotation.y, floor: 0.015 }
     },
-    pose(time) {
-      gate.rotation.y = angle(time)
-    },
+    pose,
   }
 }
 
 export function canvasRunoffFixture(meshes: MeshFactory): Fixture {
-  for (const x of [-1.25, 1.25]) meshes.cylinder(x, 1.02, -0.38, 0.085, 0.097, 2.04, 7, '#7a7159')
-  const tarp = meshes.paint('#57837b')
-  tarp.backFaceCulling = false
-  const edge: number[] = [], indices: number[] = []
-  for (let i = 0; i < 7; i++) {
-    const x = (i - 3) * 0.46, lift = 0.085 * Math.abs(i - 3)
-    edge.push(x, 2.04 + lift, -0.96, x, 1.64 + lift, 0.58)
-    const n = i * 2
-    if (i) indices.push(n - 2, n, n + 1, n - 2, n + 1, n - 1)
-  }
-  meshes.surface('Sloped canvas shelter', edge, indices, tarp)
-  createRock(meshes, 1.58, 0.57, 0.68, 0.8, true)
-  crewAt(meshes, -0.87, -0.55, 1)
-  meshes.box(0, 0.008, 0.78, 2.85, 0.017, 0.53, '#508a8b', undefined, false)
+  const { runway, runoffLane } = createMarketRunoffStage(meshes)
   return {
     sourceAt(time, index) {
-      const lane = (index % 5 - 2) * 0.58
       const surge = contactAge(time, 0.28 + 0.035 * (index % 4), 0.67, 0.24)
-      if (surge !== undefined) return { x: lane, y: 1.64 + Math.abs(lane) * 0.184, z: 0.59, floor: 0.02 }
+      if (surge !== undefined) return runoffLane(index)
     },
     accents: [{ id: 'surface-pops', sourceAt: (time, index) => {
-      if (time >= 0.68) return { x: (index % 5 - 2) * 0.51, y: 0.022, z: 0.84 }
+      if (time >= 0.68) return runway(index)
     } }],
   }
 }

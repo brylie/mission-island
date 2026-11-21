@@ -1,57 +1,63 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { buildHarvestedCarrot } from '../assets/barrow'
 import { poseCrew } from '../assets/crew'
-import { createProduceCarrot } from '../assets/effect-props'
+import { farmFurrowTop } from '../assets/farm'
+import { buildHoneyHive, honeyHiveEntrance } from '../assets/honey-props'
 import { createRock } from '../assets/props'
+import { createGroundCover } from '../biome-scenery'
+import { createFarm } from '../island-farm'
 import type { MeshFactory } from '../island-meshes'
 import { contactAge, crewAt, type Fixture } from './effect-fixtures'
 
 export function carrotPullFixture(meshes: MeshFactory): Fixture {
-  const crew = crewAt(meshes, -0.68, -0.47)
+  const crew = crewAt(meshes, -0.32, -0.65)
   crew.root.rotation.y = 0.83
-  const bed = meshes.box(0, 0.04, 0.28, 2.22, 0.093, 1.53, '#8d6450')
-  bed.receiveShadows = true
-  for (const x of [-0.73, 0, 0.73]) {
-    meshes.box(x, 0.087, 0.29, 0.3, 0.028, 1.27, '#77533e')
-    for (const z of [-0.07, 0.3, 0.67]) {
-      const plant = new TransformNode('Carrot in row', meshes.scene)
-      plant.position.set(x, 0.073, z)
-      createProduceCarrot(meshes, plant)
-    }
-  }
+  const rowCenter = { x: -0.32, z: 0.055 }
+  const showPlot = createFarm(meshes, [rowCenter], () => 0)
+  showPlot(['ripe'])
   const carrot = new TransformNode('Lifted carrot', meshes.scene)
-  createProduceCarrot(meshes, carrot)
+  const liftedRoot = new TransformNode('Upright harvested carrot', meshes.scene)
+  liftedRoot.parent = carrot
+  const quarterTurn = Math.PI / 2
+  liftedRoot.rotation.x = -quarterTurn
+  buildHarvestedCarrot(meshes, liftedRoot)
+  carrot.setEnabled(false)
   const pullAge = (time: number) => contactAge(time, 0.43, 1.02, 0.53) ?? 0
   function lift(time: number) {
     return 0.11 + 0.98 * Math.sin(pullAge(time) / 0.53 * Math.PI) ** 0.74
   }
+  const restingArmPitch = 0.2
+  const reachHeight = 0.44
+  const reachGain = 2.18
   return {
     sourceAt(time) {
       const t = contactAge(time, 0.51, 1.02, 0.15)
-      if (t !== undefined) return { x: -0.3 + t * 0.37, y: Math.max(0.135, lift(time) - 0.16), z: 0.06, floor: 0.107 }
+      if (t !== undefined) return { x: -0.3 + t * 0.37, y: Math.max(0.135, lift(time) - 0.16), z: rowCenter.z, floor: farmFurrowTop }
     },
     pose(time) {
       const height = lift(time)
-      carrot.position.set(-0.32 + pullAge(time) * 0.35, height, 0.055)
-      carrot.rotation.z = -0.29 * Math.sin(pullAge(time) * 5)
-      crew.arms[0].rotation.x = -0.5 - 0.85 * height
+      const age = pullAge(time)
+      showPlot([age > 0 ? 'tilled' : 'ripe'])
+      carrot.setEnabled(age > 0)
+      carrot.position.set(rowCenter.x + age * 0.35, height, rowCenter.z)
+      carrot.rotation.z = -0.29 * Math.sin(age * 5)
+      crew.arms[0].rotation.x = -Math.max(restingArmPitch, (height - reachHeight) * reachGain)
     },
   }
 }
 
 export function hiveTrafficFixture(meshes: MeshFactory): Fixture {
-  const wood = meshes.paintSurface('wood', '#cda974')
-  meshes.box(0, 0.18, 0, 1.22, 0.112, 0.88, '#84765a')
-  for (const x of [-0.47, 0.47]) meshes.box(x, 0.098, 0, 0.095, 0.193, 0.61, '#7b6a51')
-  for (const y of [0.335, 0.525, 0.715]) meshes.box(0, y, 0, 0.97, 0.179, 0.72, wood)
-  meshes.box(0, 0.843, 0, 1.08, 0.086, 0.842, '#849087')
-  meshes.box(0, 0.28, 0.438, 0.84, 0.049, 0.31, '#d6b181')
-  meshes.box(0, 0.337, 0.367, 0.67, 0.047, 0.017, '#514737')
+  const hive = new TransformNode('Long Acre hive', meshes.scene)
+  buildHoneyHive(meshes, hive, 'light')
   crewAt(meshes, -1.25, -0.42, 1)
+  const laneCount = 7
+  const centerLane = 3
+  const laneWidth = honeyHiveEntrance.width / laneCount
   return {
     sourceAt(time, index) {
       const inward = index % 5 === 0 || index % 5 === 1
       const distance = inward ? 0.86 + (index % 4) * 0.18 : 0
-      return { x: (index % 7 - 3) * 0.093, y: 0.357 + distance * 0.28, z: 0.41 + distance, yaw: inward ? Math.PI + Math.sin(time * 5) * 0.09 : 0, pitch: inward ? -0.21 : 0.05, speed: inward ? 1.43 : 1, floor: 0.22 }
+      return { x: (index % laneCount - centerLane) * laneWidth, y: honeyHiveEntrance.y + distance * 0.28, z: honeyHiveEntrance.z + distance, yaw: inward ? Math.PI + Math.sin(time * 5) * 0.09 : 0, pitch: inward ? -0.21 : 0.05, speed: inward ? 1.43 : 1, floor: honeyHiveEntrance.floor }
     },
   }
 }
@@ -59,13 +65,12 @@ export function hiveTrafficFixture(meshes: MeshFactory): Fixture {
 export function cloverStepFixture(meshes: MeshFactory): Fixture {
   meshes.box(0, -0.039, 0, 4.25, 0.078, 2.5, '#698557').receiveShadows = true
   const crew = crewAt(meshes, 0, 0, 1)
-  for (let i = 0; i < 25; i++) {
-    const x = -0.93 + (i % 5) * 0.17 + Math.sin(i * 8) * 0.072
-    const z = -0.94 + Math.floor(i / 5) * 0.43 + Math.sin(i * 3) * 0.094
-    const y = 0.18 + (i % 3) * 0.061
-    meshes.cylinder(x, y / 2, z, 0.014, 0.02, y, 5, '#627b4a')
-    meshes.sphere(x, y, z, 0.096, 0.077, 0.093, i % 3 ? '#e8d5d0' : '#d8a1aa', undefined, true, 6)
-    for (const side of [-1, 1]) meshes.sphere(x + side * 0.047, y * 0.48, z, 0.11, 0.034, 0.065, '#799450')
+  const patchCount = 5
+  for (let i = 0; i < patchCount; i++) {
+    const x = -0.61 + Math.sin(i * 8) * 0.072
+    const z = -0.94 + i * 0.43 + Math.sin(i * 3) * 0.094
+    const patch = createGroundCover(meshes, false)
+    patch.position.set(x, 0, z)
   }
   const path = (time: number) => -1.27 + Math.min(3.05, time) * 0.74
   return {
