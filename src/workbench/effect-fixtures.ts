@@ -9,7 +9,7 @@ import type { MeshFactory } from '../island-meshes'
 import type { ParticleOrigin, ParticleSource } from '../particle-motion'
 import { flowerBeds, flowerOffsets } from '../second-island/long-acre'
 import { flatbedGroundDrive } from '../vehicles/flatbed'
-import type { particleAccents } from '../assets/particle-shelf-recipes'
+import type { particleAccents } from '../assets/recipes/particle-shelf-recipes'
 import type { FieldSite } from './field-site'
 import { createMarketRunoffStage } from './market-awning-stage'
 

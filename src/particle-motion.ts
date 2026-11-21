@@ -1,5 +1,5 @@
 import { particleMotionStyle } from './assets/effects/particle-motion.ts'
-import type { ParticleRecipe } from './assets/particle-recipes.ts'
+import type { ParticleRecipe } from './assets/recipes/particle-recipes.ts'
 import { seededRandom } from './seeded-random.ts'
 
 export interface ParticleSource {

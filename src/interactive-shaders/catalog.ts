@@ -4,7 +4,7 @@ import {
   vegetationShaderPresets,
   waterShaderPresets,
   type ShaderStudyPreset,
-} from '../assets/interactive-shader-studies.ts'
+} from '../assets/recipes/interactive-shader-studies.ts'
 import { streetLampGeometry } from '../assets/geometry/site-props.ts'
 import { falls, meadowHill, pool, streamX, tidePool } from '../terrain.ts'
 import { juniperCenter } from '../juniper-habitat.ts'

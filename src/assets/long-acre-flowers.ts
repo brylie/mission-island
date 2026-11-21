@@ -1,5 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
+import { longAcreFlowerGeometry } from './geometry/long-acre-flowers'
 
 type FlowerBed = { x: number, z: number, name: string, petals: string }
 type FlowerOffset = { x: number, z: number, height: number }
@@ -14,17 +15,19 @@ export function createLongAcreFlowers(
   offsets: readonly FlowerOffset[],
   surfaceHeight: (x: number, z: number) => number,
 ) {
+  const { centre, leaf, petal, stem } = longAcreFlowerGeometry
   return offsets.map(({ x, z, height }, i) => {
     const root = new TransformNode(bed.name, meshes.scene)
     const flowerX = bed.x + x, flowerZ = bed.z + z
     root.position.set(flowerX, surfaceHeight(flowerX, flowerZ), flowerZ)
-    meshes.box(0, height / 2, 0, 0.028, height, 0.034, '#56804d', root, false)
-    meshes.sphere(0.052, height * 0.56, 0, 0.138, 0.042, 0.071, longAcreLeafColors[(i + bedIndex) % 3], root, false, 4).rotation.z = 0.49
-    for (let k = 0; k < 5; k++) {
-      const a = k * Math.PI * 0.4
-      meshes.sphere(0.069 * Math.cos(a), height, 0.069 * Math.sin(a), 0.117, 0.066, 0.112, bed.petals, root, false, 5)
+    meshes.box(0, height * stem.centreHeight, 0, stem.width, height, stem.depth, '#56804d', root, false)
+    const leafColor = longAcreLeafColors[(i + bedIndex) % longAcreLeafColors.length]
+    meshes.sphere(leaf.x, height * leaf.heightRatio, 0, ...leaf.size, leafColor, root, false, leaf.segments).rotation.z = leaf.tilt
+    for (let k = 0; k < petal.count; k++) {
+      const a = k * Math.PI * petal.angleStepInPi
+      meshes.sphere(petal.radius * Math.cos(a), height, petal.radius * Math.sin(a), ...petal.size, bed.petals, root, false, petal.segments)
     }
-    meshes.sphere(0, height + 0.017, 0, 0.087, 0.061, 0.086, bedIndex === 1 ? '#935b37' : '#e9ac53', root, false, 5)
+    meshes.sphere(0, height + centre.rise, 0, ...centre.size, bedIndex === 1 ? '#935b37' : '#e9ac53', root, false, centre.segments)
     return root
   })
 }

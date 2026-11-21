@@ -4,7 +4,7 @@ import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import type { Scene } from '@babylonjs/core/scene'
 import { particleQuad, particleSurfaceShader } from './assets/effects/particle-surface'
 import type { particleAppearance } from './particle-motion'
-import type { ParticleRecipe } from './assets/particle-recipes'
+import type { ParticleRecipe } from './assets/recipes/particle-recipes'
 import { createParticleTexture } from './assets/particle-texture'
 
 type Appearance = ReturnType<typeof particleAppearance>

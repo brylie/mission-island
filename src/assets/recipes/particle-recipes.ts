@@ -1,6 +1,6 @@
 import { gameplayParticleRecipes } from './particle-gameplay-recipes.ts'
 import { shelfParticleRecipes } from './particle-shelf-recipes.ts'
-import type { ParticleShape } from './particle-texture.ts'
+import type { ParticleShape } from '../particle-texture.ts'
 
 type Axis = readonly [number, number, number]
 type Range = readonly [number, number]

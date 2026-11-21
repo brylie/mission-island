@@ -56,6 +56,19 @@ const authoredWorldLayouts = [
   'src/worlds/saltwind/layout/signs.ts',
 ]
 
+const independentAuthoredData = ['src/assets/{audio,effects,geometry}/*.ts', ...authoredWorldLayouts]
+const authoredRecipes = ['src/assets/recipes/*.ts']
+const authoredData = [...independentAuthoredData, ...authoredRecipes]
+
+const executableDataSyntax = [
+  'Program > :not(ImportDeclaration, ExportNamedDeclaration, VariableDeclaration, TSInterfaceDeclaration, TSTypeAliasDeclaration)',
+  'ExportNamedDeclaration > :not(VariableDeclaration, TSInterfaceDeclaration, TSTypeAliasDeclaration)',
+  'VariableDeclaration[kind!="const"]',
+  'FunctionDeclaration, FunctionExpression, ArrowFunctionExpression, ClassDeclaration, ClassExpression',
+  'CallExpression, NewExpression, ImportExpression, TaggedTemplateExpression, AwaitExpression',
+  'AssignmentExpression, UpdateExpression, UnaryExpression[operator="delete"]',
+].join(', ')
+
 // Preserve exact ceilings for existing hotspots until the responsible feature is split out.
 const existingLimits = {
   'src/assets/crew-clothes.ts': { 'max-lines-per-function': lineLimit(161) },
@@ -63,7 +76,7 @@ const existingLimits = {
   'src/biome-model.ts': { 'max-lines-per-function': lineLimit(199) },
   'src/island-camera.ts': { 'max-lines-per-function': lineLimit(169) },
   'src/main.ts': { 'max-lines': lineLimit(731), 'complexity': complexity(38) },
-  'src/assets/particle-shelf-recipes.ts': { 'max-lines': lineLimit(463) },
+  'src/assets/recipes/particle-shelf-recipes.ts': { 'max-lines': lineLimit(463) },
   'src/scene.ts': { 'max-lines': lineLimit(339), 'max-lines-per-function': lineLimit(295), 'complexity': complexity(43) },
   'src/second-island/exteriors.ts': { complexity: complexity(40) },
   'src/second-island/main.ts': { 'max-lines': lineLimit(446), 'max-lines-per-function': lineLimit(412), 'complexity': complexity(25) },
@@ -114,7 +127,7 @@ export default defineConfig(
   {
     files: ['**/*.{cjs,js,mjs,ts}'],
     extends: [stylistic.configs.recommended],
-    linterOptions: { reportUnusedDisableDirectives: 'error', reportUnusedInlineConfigs: 'error' },
+    linterOptions: { noInlineConfig: true },
     rules: {
       '@stylistic/arrow-parens': ['error', 'always'],
       '@stylistic/linebreak-style': ['error', 'unix'],
@@ -160,7 +173,7 @@ export default defineConfig(
   },
   {
     files: ['**/*.{cjs,js,mjs,ts}'],
-    ignores: ['src/assets/**', 'test/**', ...authoredWorldLayouts],
+    ignores: ['test/**', ...authoredData],
     rules: { 'no-magic-numbers': ['error', noMagicNumbers] },
   },
   {
@@ -176,13 +189,28 @@ export default defineConfig(
     },
   },
   {
-    files: ['src/assets/geometry/*.ts', ...authoredWorldLayouts],
+    files: authoredData,
     rules: {
-      'no-restricted-imports': ['error', { patterns: [{ regex: '.', message: 'Geometry and world layout definitions have no module dependencies.' }] }],
       'no-restricted-syntax': ['error', {
-        selector: 'CallExpression, NewExpression, ImportExpression',
-        message: 'Keep geometry and world layout definitions to constants and types.',
+        selector: executableDataSyntax,
+        message: 'Keep authored geometry, recipes, effects, audio, and world layouts to constant data and types.',
       }],
+    },
+  },
+  {
+    files: independentAuthoredData,
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [{ regex: '.', message: 'Keep this authored data independent of module dependencies.' }] }],
+    },
+  },
+  {
+    files: authoredRecipes,
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [{
+        regex: '^(?![.]/[a-z0-9-]+[.]ts$)',
+        allowTypeImports: true,
+        message: 'Import recipe values only from another authored recipe file in this folder.',
+      }] }],
     },
   },
   {

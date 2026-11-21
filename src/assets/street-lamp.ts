@@ -9,10 +9,10 @@ export function createStreetLamp(
   globe: Material,
   bulbs?: TransformNode,
 ) {
-  const { bulb, pole } = streetLampGeometry
+  const { arm, bulb, hood, pole } = streetLampGeometry
   const iron = '#4c584b'
-  cylinder(x, y + pole.centreY, z, pole.topDiameter, pole.baseDiameter, pole.height, 8, iron)
-  box(x, y + 2.71, z - 0.17, 0.1, 0.09, 0.42, iron)
-  cylinder(x, y + 2.65, z + bulb.z, 0.21, 0.39, 0.15, 10, iron)
-  return sphere(x, y + bulb.y, z + bulb.z, 0.24, 0.20, 0.24, globe, bulbs, false)
+  cylinder(x, y + pole.centreY, z, pole.topDiameter, pole.baseDiameter, pole.height, pole.segments, iron)
+  box(x, y + arm.y, z + arm.z, ...arm.size, iron)
+  cylinder(x, y + hood.y, z + bulb.z, hood.topDiameter, hood.baseDiameter, hood.height, hood.segments, iron)
+  return sphere(x, y + bulb.y, z + bulb.z, ...bulb.size, globe, bulbs, false)
 }

@@ -17,7 +17,7 @@ Press **Play** or drag the timeline. The standard emission window runs from 0.25
 
 ![Twelve particle effects at their sources, grouped into Water, Weather and air, Vegetation and loose ground, and Jobs](images/effects-contact-sheet.jpg)
 
-Each row opens a paused setup and gives an example use. The recipe modules define the shapes, lifetimes, and motion. The emitter factory supports preview bursts and live use. [Original recipes](../src/assets/particle-recipes.ts) · [Additional recipes](../src/assets/particle-shelf-recipes.ts) · [Gameplay recipes](../src/assets/particle-gameplay-recipes.ts) · [Emitter factory](../src/particle-effect.ts)
+Each row opens a paused setup and gives an example use. The recipe modules define the shapes, lifetimes, and motion. The emitter factory supports preview bursts and live use. [Original recipes](../src/assets/recipes/particle-recipes.ts) · [Additional recipes](../src/assets/recipes/particle-shelf-recipes.ts) · [Gameplay recipes](../src/assets/recipes/particle-gameplay-recipes.ts) · [Emitter factory](../src/particle-effect.ts)
 
 | Group | Setup | Stable ID | Example use |
 | --- | --- | --- | --- |

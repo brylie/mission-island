@@ -55,10 +55,12 @@ export const sitePropGeometry = {
 const jobBoardPanel = { width: 1.75, depth: 0.14, height: 0.93, centreY: 1.38 } as const
 export const jobBoardGeometry = { panel: jobBoardPanel, supportBoxes: [[jobBoardPanel.width, jobBoardPanel.depth, 1.95]] } as const
 
-const lampPole = { baseDiameter: 0.14, topDiameter: 0.10, height: 2.74, centreY: 1.37 } as const
+const lampPole = { baseDiameter: 0.14, topDiameter: 0.10, height: 2.74, centreY: 1.37, segments: 8 } as const
 export const streetLampGeometry = {
   pole: lampPole,
-  bulb: { y: 2.53, z: -0.31 },
+  arm: { y: 2.71, z: -0.17, size: [0.1, 0.09, 0.42] },
+  hood: { y: 2.65, topDiameter: 0.21, baseDiameter: 0.39, height: 0.15, segments: 10 },
+  bulb: { y: 2.53, z: -0.31, size: [0.24, 0.20, 0.24] },
   supportBoxes: [[lampPole.baseDiameter, lampPole.baseDiameter, lampPole.height]],
 } as const
 

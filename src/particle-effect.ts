@@ -5,7 +5,7 @@ import { launchParticle, maxParticleStrength, particleAppearance, particleDensit
 import type { Particle, ParticleSource, ParticleTuning } from './particle-motion'
 import { particleTextureSize, createParticleTexture } from './assets/particle-texture'
 import { createSurfaceParticles } from './particle-surface'
-import type { ParticleRecipe } from './assets/particle-recipes'
+import type { ParticleRecipe } from './assets/recipes/particle-recipes'
 
 const spareParticles = 2
 const maxStreamDeltaSeconds = 0.08

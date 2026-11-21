@@ -80,9 +80,18 @@ The coverage gate runs only in CI, because it takes a few minutes. It fails the 
 
 Run `npm run lint:fix` to apply ESLint layout fixes. First-party JavaScript and TypeScript follow the ESLint Stylistic recommended preset with LF line endings and parentheses around all arrow function parameters. Multiline interaction registries use one entry per line.
 
-Name gameplay thresholds, timeouts, and other numeric settings in the module that owns the rule. Include units in the name when they matter. `no-magic-numbers` checks first-party JavaScript and TypeScript, including object fields. Procedural assets and authored recipe tables in `src/assets/`, the Saltwind layout files listed in `eslint.config.mjs`, and tests in `test/` can use numeric literals. Keep the Saltwind layout files to dependency-free placement and route data.
+Name gameplay thresholds, timeouts, and other numeric settings in the module that owns the rule. Include units in the name when they matter. `no-magic-numbers` checks first-party JavaScript and TypeScript, including object fields, model builders, and Workbench code. The rule accepts `-1`, `0`, `1`, array indexes, and numeric literals in named enum members and types.
 
-The `eslint-suppressions.json` baseline counts legacy `no-magic-numbers` reports per file. Lint fails when a file exceeds its count. After removing legacy literals, run `npm run lint:full -- --prune-suppressions` and commit the smaller baseline.
+**Approved locations for authored numeric data**
+
+- `src/assets/geometry/*.ts` for dimensions, support volumes, and vertex or placement tuples in local model coordinates.
+- `src/assets/audio/*.ts`, `src/assets/effects/*.ts`, and `src/assets/recipes/*.ts` for authored sound, particle, shader, and lighting data.
+- The Saltwind layout files listed in `eslint.config.mjs` for island placement and route data.
+- `test/` for test inputs and expected values.
+
+Keep the approved production modules to constants and types. ESLint rejects functions, calls, and mutations there. Geometry, audio, effects, and world layouts have no imports. Recipe modules can import types and compose values from neighboring recipe files. Runtime code imports the data and names its own settings. ESLint uses the repository configuration for all source files, including exceptions.
+
+The `eslint-suppressions.json` baseline counts legacy `no-magic-numbers` reports per file. Lint fails when a file exceeds its count. After removing legacy literals, run `npm run lint:full -- --prune-suppressions` and commit the smaller baseline. Keep new literals out of the baseline.
 
 The correctness rules check callback returns, loop control, imports, parameter reassignment, and other common errors. Switches over typed unions in the host and shared gameplay modules must handle every declared case.
 
