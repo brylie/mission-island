@@ -391,7 +391,7 @@ function connect() {
         actionFeedback = { key, label, until: performance.now() + 1900 }
         break
       }
-      case 'farm-pay': case 'barrow-returned': case 'barrow-parked':
+      case 'farm-pay': case 'barrow-returned':
         actionFeedback = { ...farmFeedback(incoming), until: performance.now() + 4200 }
         break
       case 'market-sale':

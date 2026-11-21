@@ -8,10 +8,10 @@ export function updateFarmHud(element: HTMLElement, orders: FarmWork) {
   element.hidden = text === ''
 }
 
-export function farmFeedback(message: Extract<ServerMessage, { type: 'farm-pay' | 'barrow-returned' | 'barrow-parked' }>) {
+export function farmFeedback(message: Extract<ServerMessage, { type: 'farm-pay' | 'barrow-returned' }>) {
   if (message.type !== 'farm-pay') return {
     key: '',
-    label: message.type === 'barrow-returned' ? `Barrow returned to the ${barrowPickupName}` : 'Barrow parked at the obstruction',
+    label: `Barrow returned to the ${barrowPickupName}`,
   }
   return { key: `+${message.coins} coins`, label: `${farmOrders[message.id].title} complete · Crew bank` }
 }

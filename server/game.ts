@@ -43,6 +43,7 @@ function stepVehicles(
 ) {
   const driver = members.find((member) => member.player.seat === 'driver')
   const before = state.truck
+  physics.placeBarrow(state.farmWork.barrow)
   state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds)
   if (driver && active(driver)) freight.recordDrive(driver.player, state.items, Math.hypot(state.truck.x - before.x, state.truck.z - before.z))
   const rowers = members.filter((member) => inSkiff(member.player.seat) && active(member))
@@ -68,7 +69,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
   const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0]))
   const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk }, checkpoint)
-  const farm = createFarmOrders(state, crew.notifyAll, checkpoint)
+  const farm = createFarmOrders(state, crew.notifyAll, clock, checkpoint)
   const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 

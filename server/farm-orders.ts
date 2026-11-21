@@ -1,12 +1,12 @@
 import { farmOrders, restoreFarmWork, type FarmAction, type FarmOrderId } from '../src/farm-orders.ts'
 import type { Player, Snapshot } from '../src/protocol.ts'
-import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
-import { walkingHeight, waterDepth } from '../src/terrain.ts'
-import { distance, offset } from '../src/world.ts'
+import { pushedBarrowPose } from '../src/barrow.ts'
+import { canPushBarrow } from './barrow-motion.ts'
+import { distance } from '../src/world.ts'
 import { barrowPickup } from '../src/worlds/starter/farm-order-sites.ts'
 import { stopPrimary, stowTool, type CrewMember, type CrewNotice } from './crew.ts'
 
-export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotice) => void, checkpoint?: () => void) {
+export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotice) => void, clock: () => number, checkpoint?: () => void) {
   const work = state.farmWork
   const { progress } = work
 
@@ -36,15 +36,9 @@ export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotic
       recover(player.id)
       return
     }
-    const front = offset(player, 0, .88)
-    if (canOccupyGround(front, .45, 0) && waterDepth(front) < .15 && !isInsideTruck(state.truck, front) &&
-      Math.abs(walkingHeight(front) - walkingHeight(player)) < .43) {
-      Object.assign(barrow, { ...front, heading: player.heading })
-    } else if (distance(barrow, player) > 1.8) {
-      barrow.handler = null
-      checkpoint?.()
-      notifyCrew({ type: 'barrow-parked' })
-    }
+    const next = pushedBarrowPose(player)
+    if (next.x === barrow.x && next.z === barrow.z && next.heading === barrow.heading) return
+    if (canPushBarrow(state, player, player)) Object.assign(barrow, next)
   }
 
   function act(member: CrewMember, action: FarmAction) {
@@ -67,6 +61,7 @@ export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotic
         const quantity = Math.min(player.goods.carrots, farmOrders.harvest.quantity - progress.delivered - progress.load)
         player.goods.carrots -= quantity
         progress.load += quantity
+        if (barrow?.handler !== player.id) member.reachUntil = clock() + 420
         break
       }
       case 'unload-barrow': {
@@ -80,6 +75,7 @@ export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotic
         player.casting = null
         stopPrimary(member)
         stowTool(member)
+        member.reachUntil = 0
         if (distance(barrow, player) > .1) player.heading = Math.atan2(barrow.x - player.x, barrow.z - player.z)
         barrow.handler = player.id
         break

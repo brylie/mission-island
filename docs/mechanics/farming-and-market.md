@@ -29,7 +29,7 @@ Read the offer at the **Produce Orders** sign by Ines’s stall, at the west end
 
 One solo player can afford the second seed for the starter order using the two coins from the first delivered harbor crate. Two players can each claim the free seed from their own tool chest. The farm order line in the mission panel shows what Ines still needs and how many carrots are packed.
 
-Collect the barrow at the **Island Farm barrow stand**, just north of the rain barrels. Use **E** to pack, grip, park, or unload as the prompt changes. Once gripping the handles, walk to push it. For a role swap, park it so the other player can grip it. Go east from the stand and turn north along the west side of the market building, then turn east to the produce sign. If the handler disconnects or the host restarts, the barrow returns to the stand with its load. An unattended barrow can also be recovered from the stand.
+Collect the barrow at the **Island Farm barrow stand**, just north of the rain barrels. Use **E** to pack, grip, park, or unload as the prompt changes. Once gripping the handles, walk to push it. A full load slows the barrow, and obstacles stop the push. For a role swap, park it so the other player can grip it. Go east from the stand and turn north along the west side of the market building, then turn east to the produce sign. If the handler disconnects or the host restarts, the barrow returns to the stand with its load. An unattended barrow can also be recovered from the stand.
 
 ![A crewmate wearing Island Farm workwear grips the loaded barrow beside the rain barrels](../images/seabrook-farm-barrow.jpg)
 

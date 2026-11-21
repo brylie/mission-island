@@ -9,6 +9,7 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import { appearancePartKeys, defaultAppearance, everydayColors, hairColors, isEveryday, shirtColor, skinTones, uniformPalette, uniforms, wearsSwimsuit } from '../crew-appearance'
 import type { CrewAppearance } from '../crew-appearance'
+import { barrowLegPose } from '../barrow-gait'
 import { waterLevel } from '../terrain'
 const workwear = {
   courier: { trousers: '#414e64', shoes: '#75533d' },
@@ -172,19 +173,21 @@ export function poseCrew(crew: ReturnType<typeof createCrew>, cycle: number, str
   const phase = cycle * Math.PI * 2
   const swing = Math.sin(phase) * stride
   const effort = Math.max(reach, Number(rightHandRaised), winding)
-  crew.look(airborne ? -.06 : (carrying === 'crate' ? .13 : effort * .07),
+  crew.look(airborne ? -.06 : (carrying === 'crate' || carrying === 'barrow' ? .13 : effort * .07),
     (Number(rightHandRaised) - reach) * .09, -.042 * swing, blend)
   for (const [i, leg] of crew.legs.entries()) {
     const side = i === 0 ? -1 : 1
     const recovery = Math.max(0, -side * Math.cos(phase))
     const bend = airborne ? .46 - side * .19 : stride * (.08 + .88 * recovery * recovery)
-    leg.rotation.x += ((airborne ? side * .35 : swing * side - bend * .36) - leg.rotation.x) * blend
-    crew.knees[i](bend, blend)
+    const pose = carrying === 'barrow' && !airborne ? barrowLegPose(cycle, i, stride)
+      : { hip: airborne ? side * .35 : swing * side - bend * .36, knee: bend }
+    leg.rotation.x += (pose.hip - leg.rotation.x) * blend
+    crew.knees[i](pose.knee, blend)
     const arm = crew.arms[i]
     arm.rotation.z *= 1 - blend
     const swinging = airborne ? -0.8 : -swing * side * 0.77
     const relaxed = throwing ? -1.75 : carrying === 'crate' ? -1.22 - winding * 0.67
-      : carrying === 'barrow' ? -1.03
+      : carrying === 'barrow' ? -1.15
         : (carrying === 'extinguisher' || carrying === 'tool') && i === 0 ? -1.36 : swinging
     const reachAmount = i === 0 ? reach : Number(rightHandRaised)
     const forward = relaxed + (-Math.PI / 2 - relaxed) * reachAmount

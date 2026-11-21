@@ -8,6 +8,7 @@ import { islandSaveFile } from '../server/save.ts'
 import { actionHint } from '../src/actions.ts'
 import { farmOrderStatus } from '../src/farm-orders.ts'
 import { market } from '../src/farm.ts'
+import { interactions } from '../src/interaction-options.ts'
 import { groundHeight } from '../src/terrain.ts'
 import { daySeconds } from '../src/weather.ts'
 import { barrowPickup, produceCounter } from '../src/worlds/starter/farm-order-sites.ts'
@@ -119,7 +120,7 @@ test('both players pack and recover one loaded barrow, and only its handler can 
     [{ x: 33, z: -8 }, { x: 1 }], [{ x: 33, z: 8 }, { z: 1 }], [produceCounter, { x: 1 }],
   ]) {
     const axis = input.x ? 'x' : 'z'
-    for (let i = 0; i < 130 && driver.player[axis] < point[axis] - .2; i++) restart.hold(driver, 1, input)
+    for (let i = 0; i < 330 && driver.player[axis] < point[axis] - .2; i++) restart.hold(driver, 1, input)
     assert.ok(driver.player[axis] >= point[axis] - .2, JSON.stringify(driver.player))
     assert.equal(driver.state.farmWork.barrow.handler, 1, JSON.stringify({ point, barrow: driver.state.farmWork.barrow }))
   }
@@ -160,6 +161,52 @@ test('produce work leaves the regular market, board, and Ines’s fish favor ava
   act(buyer, 'accept-barrow-order')
   h.advance()
   assert.equal(buyer.state.farmWork.progress.stage, 'harvest')
+})
+
+test('setting down the barrow uses a fixed prompt while its handler moves', (t) => {
+  const h = setup(t, {
+    players: [player(0, barrowPickup)],
+    arrange(save) { save.world.produce = { stage: 'harvest', delivered: 0, load: 6 } },
+  })
+  const handler = h.join(tokens[0])
+  act(handler, 'grip-barrow')
+  h.hold(handler, 12, { x: 1 })
+  assert.ok(distance(handler.state.farmWork.barrow, barrowPickup) > 1)
+  for (const grounded of [true, false]) {
+    const walking = { ...handler.player, grounded }
+    const [park] = interactions(handler.state, walking)
+    assert.equal(park.action, 'park-barrow')
+    assert.equal(park.at, undefined)
+    assert.deepEqual(actionHint(handler.state, walking), ['E', 'Set down the barrow'])
+  }
+  act(handler, 'park-barrow')
+  h.advance()
+  assert.equal(handler.state.farmWork.barrow.handler, null)
+  assert.equal(handler.state.farmWork.progress.load, 6)
+})
+
+test('the parked barrow blocks walkers and the loaded barrow stops at farm props', (t) => {
+  const h = setup(t, {
+    players: [player(0, { x: 25.6, z: -8 }), player(1, { x: 28.8, z: -7 })],
+    arrange(save) { save.world.produce = { stage: 'harvest', delivered: 0, load: 6 } },
+  })
+  const walker = h.join(tokens[0])
+  const handler = h.join(tokens[1])
+  h.hold(walker, 28, { x: 1 })
+  assert.ok(walker.player.x > 27 && walker.player.x < barrowPickup.x - .5)
+  act(handler, 'grip-barrow')
+  h.hold(handler, 54, { z: -1 })
+  const stoppedAt = handler.player.z
+  const cart = handler.state.farmWork.barrow
+  assert.ok(stoppedAt < -7.5 && stoppedAt > -9.5)
+  assert.equal(cart.handler, handler.player.id)
+  h.hold(handler, 24, { z: -1 })
+  assert.equal(handler.player.z, stoppedAt)
+  assert.deepEqual(handler.state.farmWork.barrow, cart)
+  act(handler, 'park-barrow')
+  h.advance()
+  assert.equal(handler.state.farmWork.barrow.handler, null)
+  assert.equal(handler.state.farmWork.progress.load, 6)
 })
 
 test('disk saves preserve a partial barrow delivery and reject impossible crop totals', (t) => {

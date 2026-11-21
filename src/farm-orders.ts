@@ -71,10 +71,13 @@ function produceInteractions(progress: FarmProgress, player: Player): Interactio
   return options
 }
 
+const parkBarrow: Interaction = { action: 'park-barrow', key: 'E', label: 'Set down the barrow', name: 'Farm barrow' }
+
 export function farmInteractions({ progress, barrow }: FarmWork, player: Player, handsFull: boolean): Interaction[] {
-  if (handsFull || !player.grounded || player.truckSurface || player.onBed) return []
-  const options: Interaction[] = []
+  if (handsFull || player.truckSurface || player.onBed) return []
   const handling = barrow?.handler === player.id
+  if (!player.grounded) return handling ? [parkBarrow] : []
+  const options: Interaction[] = []
   if (!handling) options.push(...produceInteractions(progress, player))
   const { stage, delivered, load } = progress
   if (!barrow) return options
@@ -88,7 +91,7 @@ export function farmInteractions({ progress, barrow }: FarmWork, player: Player,
       options.push(cart('pack-barrow', `Pack ${carrotCount(pack)} into the barrow`))
     }
   }
-  if (handling) options.push(cart('park-barrow', 'Set down the barrow'))
+  if (handling) options.push(parkBarrow)
   else if (atBarrow && barrow.handler === null) options.push(cart('grip-barrow', 'Grip the barrow · Walk to push'))
   if (barrow.handler === null && distance(barrow, barrowPickup) >= 1.8 && distance(player, barrowPickup) < 1.8) {
     options.push(targeted('recall-barrow', 'Recover the shared barrow here', barrowPickupName, barrowPickup, .8))
