@@ -1,22 +1,25 @@
-import { atHomeChest, atHomeDoor, byTruckBed, clothingInteraction, freeBed, heldItem, nearbyItem } from '../src/actions.ts'
-import { market, nearbyPlot } from '../src/farm.ts'
-import { atFisher } from '../src/harbor-fisher.ts'
+import { byTruckBed, freeBed, heldItem } from '../src/actions.ts'
+import { gateActions } from '../src/gate-repair.ts'
+import type { GateAction } from '../src/gate-repair.ts'
+import { interactions, sameChoice } from '../src/interaction-options.ts'
+import type { Interaction, InteractionChoice } from '../src/interaction-options.ts'
 import { starterTools } from '../src/inventory.ts'
 import { deliveryDrop, deliveryRadius } from '../src/jobs.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
 import { groundHeight, maxWadeDepth, waterDepth } from '../src/terrain.ts'
-import { isNight } from '../src/weather.ts'
-import { crateSize, crateStarts, distance, extinguisherStarts, spawns } from '../src/world.ts'
+import { crateSize, distance, itemStarts, spawns } from '../src/world.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { stopPrimary, stopped, stowTool, type CrewMember } from './crew.ts'
-import { updateHeldItems } from './items.ts'
+import { restingY, updateHeldItems } from './items.ts'
 import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
+import type { createGateRepair } from './gate-repair.ts'
 
 export function createInteractions(
   state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'remove'>,
-  orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>, checkpoint?: () => void,
+  orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
+  gate: Pick<ReturnType<typeof createGateRepair>, 'act'>, checkpoint?: () => void,
 ) {
   function useHomeChest(member: CrewMember) {
     const { player } = member
@@ -56,57 +59,67 @@ export function createInteractions(
     }
   }
 
-  function interact(member: CrewMember) {
+  function pickUp(member: CrewMember, item: Item) {
+    stopPrimary(member)
+    stowTool(member)
+    item.holder = member.player.id
+    item.rotation = null
+    physics.remove(item)
+  }
+
+  function turnIn(member: CrewMember) {
+    stopPrimary(member)
+    member.player.casting = null
+    member.input = stopped
+    member.player.sleeping = true
+  }
+
+  function tend(member: CrewMember, plot: number, action: 'plant' | 'harvest') {
+    const { player } = member
+    if (action === 'plant') {
+      player.seeds--
+      growth[plot] = 0
+      state.farm[plot] = 'planted'
+      return
+    }
+    state.farm[plot] = 'grass'
+    player.goods.carrots++
+    recordCultivation(state, 'harvest', plot, player.id)
+  }
+
+  function perform(member: CrewMember, { action, subject = -1 }: Interaction) {
+    const item = state.items[subject]
+    switch (action) {
+      case 'put-down': return putDown(member, heldItem(state, member.player)!)
+      case 'pick-up': return pickUp(member, item)
+      case 'open-wardrobe':
+      case 'open-clothing-counter': return member.notify?.({ type: action })
+      case 'sleep': return turnIn(member)
+      case 'chest': return useHomeChest(member)
+      case 'market': return orders.visitMarket(member.player)
+      case 'plant':
+      case 'harvest': return tend(member, subject, action)
+      case 'welcome-note': return member.notify?.({ type: 'crew-note' })
+      case 'talk-fisher': return member.notify?.({ type: 'fisher-chat' })
+      case 'job-board': return
+      default: return gate.act(member, action)
+    }
+  }
+
+  // E runs the interaction the player chose, only while it is still open to them; with no choice, the best one in reach.
+  function interact(member: CrewMember, choice?: InteractionChoice) {
     const { player } = member
     if (player.seat) return
     if (player.sleeping) {
       player.sleeping = false
       return
     }
-    const ownDoor = atHomeDoor(player)
-    const item = heldItem(state, player)
-    const clothing = clothingInteraction(player)
-    if (item) {
-      putDown(member, item)
-    } else if (clothing) {
-      member.notify?.({ type: clothing })
-    } else if (ownDoor && isNight(state.weather.hour)) {
-      stopPrimary(member)
-      player.casting = null
-      member.input = stopped
-      player.sleeping = true
-      return
-    } else if (!ownDoor && atHomeChest(player)) {
-      useHomeChest(member)
-    } else if (player.grounded && !player.onBed && distance(player, market) < 2.25) {
-      orders.visitMarket(player)
-    } else {
-      const plot = player.grounded && !player.onBed ? nearbyPlot(player) : -1
-      if (state.farm[plot] === 'tilled') {
-        if (!player.seeds) return
-        player.seeds--
-        growth[plot] = 0
-        state.farm[plot] = 'planted'
-        return
-      }
-      if (state.farm[plot] === 'ripe') {
-        state.farm[plot] = 'grass'
-        player.goods.carrots++
-        recordCultivation(state, 'harvest', plot, player.id)
-        return
-      }
-      const nearby = nearbyItem(state, player)
-      if (!nearby) {
-        if (ownDoor) member.notify?.({ type: 'crew-note' })
-        else if (atFisher(player, state.weather.hour)) member.notify?.({ type: 'fisher-chat' })
-        return
-      }
-      stopPrimary(member)
-      stowTool(member)
-      nearby.holder = player.id
-      nearby.rotation = null
-      physics.remove(nearby)
-    }
+    const options = interactions(state, player)
+    // Gate repair steps change shared progress, so they run only when the player chose them.
+    const chosen = choice ? options.find((option) => sameChoice(option, choice))
+      : options.find(({ action }) => !gateActions.includes(action as GateAction))
+    if (!chosen) return
+    perform(member, chosen)
     updateHeldItems(state)
   }
 
@@ -116,10 +129,10 @@ export function createInteractions(
     if (item) {
       item.holder = null
       const safe = canOccupyGround(player, crateSize / 2, -maxWadeDepth) && waterDepth(player) <= maxWadeDepth
-      if (item.kind === 'crate') physics.release(item, safe ? player : crateStarts[item.id])
+      if (item.kind === 'crate') physics.release(item, safe ? player : itemStarts[item.id].start)
       else {
-        const point = safe ? player : extinguisherStarts[item.id - crateStarts.length]
-        Object.assign(item, { x: point.x, z: point.z, y: groundHeight(point) + 0.04, spraying: false })
+        const point = safe ? player : itemStarts[item.id].start
+        Object.assign(item, { x: point.x, z: point.z, y: safe ? groundHeight(point) + 0.04 : restingY(item.id), spraying: false })
       }
     }
     const home = spawns[player.id]

@@ -33,6 +33,7 @@ function element<T extends HTMLElement = HTMLElement>(id: string) {
   return target as T
 }
 
+element('launch-checkpoint').hidden = import.meta.env.MODE !== 'playtest'
 const canvas = element<HTMLCanvasElement>('stage')
 const library = createLibraryPanel()
 const reference = createReferencePane()

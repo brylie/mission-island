@@ -7,7 +7,7 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | Key | Action |
 | --- | --- |
 | **W A S D** or **arrow keys** | Walk relative to the camera. In the truck or skiff, W/S move forward or reverse and A/D steer. |
-| **E** | Use the action shown in the prompt. Pick up or deliver cargo, work a farm plot, contribute to a market order, or open the job board. |
+| **E** | Use the action shown in the prompt. Pick up or deliver cargo, work a farm plot, contribute to a market order, open the job board, or work on a neighbor's repair. |
 | **F** | Board or leave a stopped truck or skiff. The first player takes the truck wheel. Both skiff seats can paddle. |
 | **Shift** | Hold to sprint on foot or drive slowly and steer gently. |
 | **Space** | Jump on foot or hold to brake while driving. |
@@ -17,9 +17,9 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | **1 / 2 / 3** | Equip or stow your fishing rod, hoe, or watering can. |
 | **R** | Keyboard shortcut for spraying the extinguisher. |
 | **C** | Switch between the island overview and the close third-person view. |
-| **Mouse** | Look around your character or vehicle. The first gameplay keypress captures the mouse. |
+| **Mouse** | Look around your character or vehicle. The first gameplay keypress captures the mouse. Aim the reticle at something you can use to choose it: it turns gold and a tooltip names the thing and the key. With nothing under the reticle, **E** uses whatever is nearest. |
 | **Esc** | Release the mouse. Press a gameplay key to capture it again. |
-| **O** | Open Options for your name, appearance, mouse look, and **Respawn at home**. |
+| **O** | Open Options for your name, appearance, mouse look (invert either axis, look speed), and **Respawn at home**. |
 
 Bring crates to the tail of the truck to set them on the bed. Amber orbs appear along the recommended route once a crate is loaded. Jump over the low rear lip and ride along on the bed as the truck moves. The side rails and rear lip help keep crates aboard through turns. At Seabrook, step out, collect each crate from the bed, and press **E** with the crate inside the glowing teal delivery circle. The beach has a shallow wading shelf. You slow down as the water gets deeper.
 
@@ -34,6 +34,10 @@ The truck has four-wheel suspension and follows the terrain under each wheel. **
 After the lookout fire, press **E** at the Harbor Depot job board to take the next crew order. You can read the board from the mission panel anywhere on the island. Deliver seed crates to Island Farm, take beach gear to Driftwood Beach, or fill fish and carrot orders at Seabrook Market. Either player can contribute to an order. You can keep fishing, farming, or exploring while the order is open.
 
 Each completed order deposits its posted reward once in the crew bank. Both islands show the same balance. Either player can use it to buy seeds or a uniform. Four completed orders mark the crew ready for the future second island. Coins are available to spend along the way. See the [crew orders specification](mechanics/crew-orders.md) for payouts and rules.
+
+## Helping Wren
+
+Wren lives in the lilac-roofed cottage just east of the Blue cottage. The garden gate drags a groove in the path and sticks a short way open. Try it and you can't squeeze through. Talk to Wren at the cottage, or at the mending bench beside the ferry approach during the day. Wren lends you the red toolbox on that bench. Inspect the hinge with **E**, pick up a hinge pin from the tray on the bench, and fit it at the gate with the toolbox close by. Then swing the gate to test it. One of you can do all of it, or split the work: one inspects and holds the toolbox while the other fetches the pin. The crew bank gets five coins once, and Wren remembers who helped. If your crewmate leaves with the toolbox, ask Wren to put it back on the bench. Come back the next morning to see Wren use the gate. See [neighbor repairs](mechanics/neighbor-repairs.md) for the details.
 
 ## Windstone Ridge gliding
 

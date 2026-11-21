@@ -58,6 +58,15 @@ export const crateStarts: Point[] = [
   { x: -49, z: -15 }, { x: -47, z: -17 }, { x: -45, z: -15 },
 ]
 export const extinguisherStarts: Point[] = [{ x: 20, z: 22 }, { x: 22, z: 22 }]
+// Wren works at a mending bench on the grass beside the ferry approach. The loaned toolbox lives on its top.
+export const mendingBench = { x: -27.4, z: -26.6, heading: Math.PI / 2, top: .86 }
+export const toolboxHome: Point = { x: mendingBench.x, z: mendingBench.z + .42 }
+export const itemStarts = [
+  ...crateStarts.map((start) => ({ kind: 'crate' as const, start })),
+  ...extinguisherStarts.map((start) => ({ kind: 'extinguisher' as const, start })),
+  { kind: 'toolbox' as const, start: toolboxHome, lift: mendingBench.top },
+]
+export const wrenCottage = { x: -35.8, z: -2.4, w: 4.5, d: 3.9, h: 3.3, wall: '#e9d6c3', roof: '#6c5c86' }
 
 export const buildings = [
   { x: -50, z: -22, w: 8, d: 5, h: 4.65, wall: '#f3c78e', roof: '#a84632' },
@@ -70,6 +79,7 @@ export const buildings = [
   { x: 25, z: 18, w: 4, d: 4, h: 4.1, wall: '#e47c63', roof: '#a02e30' },
   { x: 10, z: 33, w: 3, d: 3, h: 4.65, wall: '#d6b188', roof: '#12605b' },
   ...crewHomes.map(({ building }) => building),
+  wrenCottage,
 ]
 
 export function onDock(point: Point) {

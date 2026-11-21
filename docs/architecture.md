@@ -43,6 +43,10 @@ The [flatbed's ground-drive definition](../src/vehicles/flatbed.ts) holds its wh
 
 Keep the two models in the asset layer. Let island data choose where each vehicle spawns. When the host supports multiple vehicles, identify the occupied vehicle and seat together so driving and equipment commands reach the right instance. Verify the flatbed's suspension, braking, and cargo behavior before adding the fire truck's equipment.
 
+### Interactions
+
+Every **E** interaction shares one trait, defined in [interaction options](../src/interaction-options.ts): an action, an optional subject such as an item or farm plot, a key and label for the prompt, a name for the tooltip, and a point the reticle can aim at. The list is ordered with the best default first. The prompt, the [reticle](../src/reticle-target.ts) and the host all read the same list. The client sends the interaction the player aimed at, or the default when the reticle is on nothing. The host carries it out only if that interaction is still open to that player, so a stale or simultaneous press changes nothing. To add an interaction, add it to the list with its point and add its handler to the host's dispatch in [interactions](../server/interactions.ts).
+
 ### Animals and plants
 
 - **Animals.** In [Juniper Hollow](../src/juniper-habitat.ts), hares and foxes can share locomotion and [obstacle navigation](../src/biome-navigation.ts) with different speeds and clearances. A hare's threat response can send it toward cover, while a fox can give a nearby player space and then resume its patrol. Position and current behavior belong to each animal.

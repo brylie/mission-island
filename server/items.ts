@@ -1,11 +1,18 @@
 import type { Item, Snapshot } from '../src/protocol.ts'
 import type { Point } from '../src/world.ts'
-import { crateSize, crateStarts, extinguisherStarts, localPoint, offset } from '../src/world.ts'
+import { groundHeight } from '../src/terrain.ts'
+import { crateSize, itemStarts, localPoint, offset } from '../src/world.ts'
+
+// Where an item rests at its home: on the ground, or on top of a bench for the toolbox.
+export function restingY(id: number) {
+  const entry = itemStarts[id]
+  return 'lift' in entry ? groundHeight(entry.start) + entry.lift : 0.04
+}
 
 export function makeItems(): Item[] {
-  return [...crateStarts, ...extinguisherStarts].map((point, id) => ({
-    ...point, id, heading: 0, kind: id < crateStarts.length ? 'crate' : 'extinguisher',
-    holder: null, onBed: false, delivered: false, spraying: false, y: 0.04, rotation: null,
+  return itemStarts.map(({ kind, start }, id) => ({
+    ...start, id, heading: 0, kind,
+    holder: null, onBed: false, delivered: false, spraying: false, y: restingY(id), rotation: null,
   }))
 }
 
@@ -16,9 +23,11 @@ export function updateHeldItems(state: Pick<Snapshot, 'items' | 'players'>) {
     if (holder) {
       const crate = item.kind === 'crate'
       const winding = crate && holder.charge?.kind === 'throw' ? holder.charge.power : 0
-      Object.assign(item, crate ? offset(holder, 0, 0.89) : offset(holder, -0.49, 0.59))
+      // A toolbox hangs from the relaxed left hand; an extinguisher is held out front.
+      const [lateral, forward, lift] = crate ? [0, 0.89, 1.13 + winding * 0.41] : item.kind === 'toolbox' ? [-0.43, 0.08, 0.36] : [-0.49, 0.59, 0.24]
+      Object.assign(item, offset(holder, lateral, forward))
       item.heading = holder.heading
-      item.y = holder.y + (crate ? 1.13 + winding * 0.41 : 0.24)
+      item.y = holder.y + lift
     }
   }
 }

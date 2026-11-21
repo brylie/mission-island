@@ -1,24 +1,12 @@
 import type { Item, Player, Snapshot } from './protocol'
-import { clothingCounter, market, nearbyPlot, saleValue, seedPrice } from './farm.ts'
-import { cargoSlots, cottageDoor, crateSize, crewHomes, distance, lookout, truckBed, truckSeatSpeed } from './world.ts'
+import { clothingCounter, market, nearbyPlot, seedPrice } from './farm.ts'
+import { cargoSlots, cottageDoor, crateSize, crewHomes, distance, truckBed, truckSeatSpeed } from './world.ts'
 import { truckPoint } from './truck-pose.ts'
-import { isNight } from './weather.ts'
-import { atJobBoard, deliveryDrop, deliveryRadius, orderContribution } from './jobs.ts'
-import { atFisher, fisherName } from './harbor-fisher.ts'
+import { interactions } from './interaction-options.ts'
+import type { Interaction, InteractionChoice } from './interaction-options.ts'
 
 export function heldItem(state: Pick<Snapshot, 'items'>, player: Player) {
   return state.items.find((item) => item.holder === player.id)
-}
-
-export function nearbyItem(state: Snapshot, player: Player) {
-  const delivering = deliveryDrop(state) !== undefined
-  return state.items
-    .filter((item) =>
-      !item.delivered && item.holder === null &&
-      (item.kind === 'crate' ? delivering : state.mission === 'fire') &&
-      distance(item, player) < 2.7 && Math.abs(item.y - player.y) < 2.1,
-    )
-    .sort((a, b) => distance(a, player) - distance(b, player))[0]
 }
 
 export function freeBed(state: Snapshot) {
@@ -85,36 +73,22 @@ export function canCast(state: Snapshot, player: Player) {
   return !player.seat && player.grounded && !player.onBed && !player.swimming
 }
 
-function farmOrMarketHint(state: Snapshot, player: Player): [string, string] | undefined {
+// Hints for keys other than E, shown when nothing is in reach for E.
+function fallbackHint(state: Snapshot, player: Player): [string, string] {
   if (player.grounded && !player.onBed && distance(player, market) < 2.25) {
-    const contribution = orderContribution(state, player.goods)
-    if (contribution) {
-      const { goods, quantity } = contribution
-      const label = goods === 'carrots' && quantity === 1 ? 'carrot' : goods
-      return ['E', `Contribute ${quantity} ${label} to crew order`]
-    }
-    const value = saleValue(player.goods)
-    if (value) return ['E / B', `Sell for ${value} coins · buy a carrot seed for ${seedPrice}`]
     return state.crewCoins >= seedPrice ? ['B', `Buy a carrot seed for ${seedPrice} coin`] : ['', 'Sell fish or carrots to buy seeds']
   }
   const plot = player.grounded && !player.onBed ? state.farm[nearbyPlot(player)] : undefined
   if (plot === 'grass') return player.equipped === 'hoe' ? ['Left click', 'Till soil'] : ['2', 'Equip hoe']
-  if (plot === 'tilled') return player.seeds ? ['E', 'Plant a carrot seed']
-    : ['', player.starterSeedClaimed ? 'Buy carrot seeds at Seabrook Market' : 'Pick up a starter seed at home']
+  if (plot === 'tilled') return ['', player.starterSeedClaimed ? 'Buy carrot seeds at Seabrook Market' : 'Pick up a starter seed at home']
   if (plot === 'planted') return player.equipped === 'watering-can' ? ['Left click', 'Water carrots'] : ['3', 'Equip watering can']
   if (plot === 'watered') return ['', state.weather.hour > 6 && state.weather.hour < 18
     ? 'Carrots are growing' : 'Watered · growth resumes at sunrise']
-  if (plot === 'ripe') return ['E', 'Harvest carrots']
-}
-
-function cargoHint(state: Snapshot, player: Player, item: Item): [string, string] {
-  if (item.kind === 'extinguisher') {
-    return state.mission === 'fire' && distance(player, lookout) < 5 ? ['Left click', 'Hold to spray'] : ['E', 'Set extinguisher down']
-  }
-  const drop = deliveryDrop(state)
-  if (drop && distance(player, drop) < deliveryRadius) return ['E', 'Deliver crate']
-  if (byTruckBed(state, player) && freeBed(state) !== undefined) return ['E', 'Load crate']
-  return ['Left click', 'Hold to throw · E to set down']
+  if (player.grounded && !player.onBed && !player.truckSurface && distance(player, state.truck) < 4.5 &&
+    Math.abs(state.truck.speed) <= truckSeatSpeed) return ['F', 'Board truck']
+  if (canBoardSkiff(state, player)) return ['F', 'Board skiff']
+  if (canCast(state, player)) return ['Left click', 'Hold and release to cast']
+  return ['', '']
 }
 
 function ridingHint(state: Snapshot, player: Player): [string, string] {
@@ -127,35 +101,23 @@ function ridingHint(state: Snapshot, player: Player): [string, string] {
   return player.seat === 'driver' ? ['Space', 'Brake to exit truck'] : ['', 'Wait for the truck to stop']
 }
 
-export function actionHint(state: Snapshot, player: Player): [string, string] {
+// The prompt names the interaction under the reticle, or the best one in reach.
+export function actionHint(state: Snapshot, player: Player, focus?: Interaction): [string, string] {
   if (player.sleeping) return ['E', 'Waiting for your crewmate · Cancel']
   if (player.swimming) return canBoardSkiff(state, player) ? ['F', 'Climb into skiff'] : ['WASD', 'Swim to shore']
   const fight = player.casting?.fight
   if (fight) return ['Left click', fight.pulling ? 'Fish pulling · release to ease tension' : 'Fish hooked · hold to reel']
   if (player.casting) return ['', 'Watching the bobber']
   if (player.seat) return ridingHint(state, player)
-  const item = heldItem(state, player)
-  if (item) return cargoHint(state, player, item)
-  const clothing = clothingInteraction(player)
-  if (clothing) return ['E', clothing === 'open-wardrobe' ? 'Open your wardrobe' : 'Browse the clothing counter']
-  const ownDoor = atHomeDoor(player)
-  if (ownDoor && isNight(state.weather.hour)) return ['E', 'Turn in for the night']
-  if (!ownDoor && atHomeChest(player)) {
-    if (!player.starterSeedClaimed) return ['E', player.inventory.length ? 'Collect starter carrot seed' : 'Take tools and a carrot seed']
-    return ['E', player.inventory.length ? 'Store tools' : 'Take starter tools']
-  }
-  if (state.mission === 'complete' && !state.jobs.active && atJobBoard(player)) return ['E', 'Open the harbor job board']
-  const work = farmOrMarketHint(state, player)
-  if (work) return work
-  const nearby = nearbyItem(state, player)
-  if (nearby?.onBed) return ['E', 'Unload crate']
-  if (nearby?.kind === 'crate') return ['E', 'Pick up crate']
-  if (nearby?.kind === 'extinguisher') return ['E', 'Pick up extinguisher']
-  if (ownDoor) return ['E', 'Read your welcome note']
-  if (atFisher(player, state.weather.hour)) return ['E', `Talk to ${fisherName}`]
-  if (player.grounded && !player.onBed && !player.truckSurface && distance(player, state.truck) < 4.5 &&
-    Math.abs(state.truck.speed) <= truckSeatSpeed) return ['F', 'Board truck']
-  if (canBoardSkiff(state, player)) return ['F', 'Board skiff']
-  if (canCast(state, player)) return ['Left click', 'Hold and release to cast']
-  return ['', '']
+  const option = focus ?? interactions(state, player)[0]
+  return option ? [option.key, option.label] : fallbackHint(state, player)
+}
+
+// What E sends: the interaction the player chose, so the host can refuse one that is no longer open.
+export function interactRequest(state: Snapshot, player: Player, focus?: Interaction):
+  { type: 'interact'; choice?: InteractionChoice } | 'open-job-board' {
+  const option = focus ?? interactions(state, player)[0]
+  if (!option) return { type: 'interact' }
+  if (option.action === 'job-board') return 'open-job-board'
+  return { type: 'interact', choice: { action: option.action, ...(option.subject !== undefined && { subject: option.subject }) } }
 }

@@ -20,6 +20,33 @@ MISSION_ISLAND_SAVE=second-shift-trial npm run dev -- --port 5176 --strictPort
 
 Run one host per save. The [player guide](docs/player-guide.md#saves-and-reconnecting) covers save files and browser identity.
 
+## Run a live playtest scenario
+
+Run `npm run playtest` and open the printed **Network** URL on both computers. **Options → Copy LAN link** shares the address. The in-memory host defaults to port 5194 and ignores `MISSION_ISLAND_SAVE`. To use another free port, run `npm run playtest -- --port 5195`.
+
+Press **O → Live playtest** or open **Live checkpoints** in the Workbench on the same host. Select a scenario and crew size. **Start checkpoint** sets up the world, places each player and waits for the requested crew. **Restart checkpoint** restores that scenario’s baseline for everyone. Refreshing a browser rejoins the current run. To change to solo, leave one browser connected.
+
+| Scenario ID | Starting condition |
+| --- | --- |
+| `dock-fishing` | Each angler stands at the end of the fishing dock, facing open water with a rod equipped. Cast immediately to test the current fishing mechanic. |
+| `harbor-delivery` | The crew starts beside the supply crates with the Harbor Depot delivery active. |
+| `wren-fit` (default) | One player has the toolbox and the other has the pin. In solo play the toolbox rests by the gate. Press **E** to fit the pin and **E** again to test the swing. |
+| `wren-discover` | The crew arrives outside the unrepaired garden. |
+| `wren-morning` | The repair is paid and Wren is about to leave home. |
+
+Agents can use the same scenario IDs from the shell. For example, to try fishing alone:
+
+```sh
+MISSION_ISLAND_CHECKPOINT=dock-fishing MISSION_ISLAND_CREW_SIZE=1 npm run playtest
+```
+
+### Add a scenario for a job, mechanic or field test
+
+1. Define a [Scenario](server/scenarios/scenario.ts) alongside the [harbor examples](server/scenarios/harbor.ts). Give it a stable ID, a menu title and its island. Implement `placePlayer` to establish each seat’s position, heading and equipment. Use the seat ID for repeatable co-op roles. The host can call placement again before the crew is ready, so make it safe to repeat.
+2. Use `prepareWorld` for initial time, mission progress, inventory in the world or a balance. Use `startCrew` for conditions that require connected players, such as a carried item or vehicle assignment. It runs once per fresh run after all requested seats have joined.
+3. Register the definition in the [host catalog](server/scenarios/catalog.ts). This supplies the CLI validator and publishes the available choices to browsers. The current live simulation supports Starter Island. A new island needs a playable host for its mechanics before it can offer live scenarios.
+4. Exercise the normal gameplay action from the starting state in solo and two-seat tests. Restart and check that both seats see the original state. For a visual or exploratory outing, record the human observation separately from the automated checks. [Checkpoint tests](test/live-checkpoints.test.mjs) · [Playtest findings](docs/playtests/findings.md)
+
 ## Submit a playable change
 
 Choose a player outcome from the milestone, link its design brief, and describe how someone can reproduce the starting state. The [playable change issue template](.github/ISSUE_TEMPLATE/playable-change.md) works for a mechanic, a destination, or a problem found during play. For a co-op change, describe what each player can do and see, and how one person can finish alone. Link a [playtest finding](docs/playtests/findings.md) when one motivated the change.

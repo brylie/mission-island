@@ -6,6 +6,7 @@ import { groundHeight } from '../src/terrain.ts'
 import { spawns } from '../src/world.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { recoverSceneryOverlap } from '../src/simulation/movement.ts'
+import { gateBlockers, solidTop } from '../src/gate-repair.ts'
 import type { IslandSave } from './save.ts'
 
 export const stopped: Input = { x: 0, z: 0, spray: false, careful: false, sprint: false }
@@ -43,8 +44,8 @@ function restingPlayer(player: Player) {
 }
 
 export function createCrewRoster(
-  state: Pick<Snapshot, 'items' | 'players'>, savedCrew: IslandSave['crew'], clock: () => number,
-  physics: Pick<ReturnType<typeof createCargoPhysics>, 'release'>, checkpoint?: () => void,
+  state: Pick<Snapshot, 'items' | 'players' | 'gate' | 'gateRepair'>, savedCrew: IslandSave['crew'], clock: () => number,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'release'>, checkpoint?: () => void, capacity = spawns.length,
 ) {
   const crew = new Map<string, CrewMember>()
   const profiles = new Map<string, Player>()
@@ -58,7 +59,8 @@ export function createCrewRoster(
 
   for (const { token, player, reserved } of savedCrew) {
     const restored = restingPlayer(structuredClone(player))
-    recoverSceneryOverlap(restored)
+    const gate = gateBlockers(state)
+    recoverSceneryOverlap(restored, (point, padding) => solidTop(gate, point, padding))
     profiles.set(token, restored)
     if (reserved) {
       crew.set(token, crewMember(restored))
@@ -69,7 +71,7 @@ export function createCrewRoster(
   function join(token: string, notify: (message: CrewNotice) => void) {
     const existing = crew.get(token)
     if (existing?.player.connected) return 'duplicate'
-    if (!existing && crew.size >= spawns.length) return 'full'
+    if (!existing && crew.size >= capacity) return 'full'
     const profile = profiles.get(token)
     const open = spawns.flatMap((_, index) => state.players.some((player) => player.id === index) ? [] : [index])
     const id = profile && open.includes(profile.id) ? profile.id : open[0]

@@ -1,3 +1,4 @@
+import type { LiveTrial, ScenarioSummary } from './live-checkpoints.ts'
 import type { FreightTicket } from './ore-contracts'
 import type { AviationState, FlightResult } from './aviation'
 import type { DriftwoodFrame } from './simulation/driftwood-school'
@@ -10,6 +11,8 @@ import type { InventoryItem } from './inventory'
 import type { Goods, PlotStage } from './farm'
 import type { Truck } from './truck-pose'
 import type { JobBoardState, JobId } from './jobs'
+import type { FavorReceipt, GardenGate, GateRepair, GateStep } from './gate-repair'
+import type { InteractionChoice } from './interaction-options'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
 
 export interface Weather {
@@ -68,7 +71,7 @@ export interface Skiff extends Pose {
 
 export interface Item extends Pose {
   id: number
-  kind: 'crate' | 'extinguisher'
+  kind: 'crate' | 'extinguisher' | 'toolbox'
   holder: number | null
   onBed: boolean
   y: number
@@ -87,6 +90,7 @@ export interface CultivationCue {
 }
 
 export interface Snapshot {
+  playtest?: LiveTrial
   driftwood: DriftwoodFrame
   juniper: BiomeFrame
   type: 'state'
@@ -104,17 +108,23 @@ export interface Snapshot {
   weather: Weather
   islandTime: number
   jobs: JobBoardState
+  gate: GardenGate
+  gateRepair: GateRepair
+  residentTrust: { wren: number }
+  lastFavorPay?: FavorReceipt
   aviation: AviationState
 }
 
 export type ServerMessage =
   | Snapshot
-  | { type: 'welcome'; id: number }
+  | { type: 'welcome'; id: number; scenarios?: readonly ScenarioSummary[] }
   | { type: 'fishing-result'; result: FishingResult }
   | { type: 'market-sale'; coins: number }
   | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
   | { type: 'order-pay'; coins: number; id: JobId }
-  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'fisher-chat' | 'open-wardrobe' | 'open-clothing-counter' }
+  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'fisher-chat' | 'wren-chat' | 'open-wardrobe' | 'open-clothing-counter' }
+  | { type: 'favor-pay'; resident: 'wren'; coins: number; trust: number }
+  | { type: 'gate-step'; step: GateStep }
   | { type: 'angler-purchase'; result: ClothingPurchaseResult }
   | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }
   | { type: 'flight-result'; result: FlightResult; pilotId: number }
@@ -132,4 +142,5 @@ export type ClientMessage =
   | { type: 'take-job'; id: JobId }
   | { type: 'buy-angler' | 'buy-seed' }
   | { type: 'buy-clothing'; item: ClothingId }
-  | { type: 'interact' | 'seat' | 'jump' | 'respawn' }
+  | { type: 'interact'; choice?: InteractionChoice }
+  | { type: 'seat' | 'jump' | 'respawn' }

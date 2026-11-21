@@ -1,9 +1,11 @@
+import { fenceHeight, fenceRuns, plank } from '../../gate-repair.ts'
 import { juniperSolids } from '../../juniper-habitat.ts'
 import { jobBoard } from '../../jobs.ts'
 import { beachUmbrellas, lampPosts, ridgeLichenRocks, ridgeLichenSite, shellRocks, starterFeatures } from './sites.ts'
 import { ridgeHeading, ridgeLandingSign, ridgeRack, ridgeWindsock } from './ridge-scout.ts'
+import { flowerBeds, rainBarrel, sawhorse, woodpile } from './wren-garden.ts'
 import { walkingHeight } from '../../terrain.ts'
-import { ferryTerminal, localPoint, offset } from '../../world.ts'
+import { ferryTerminal, localPoint, mendingBench, offset } from '../../world.ts'
 import type { Point } from '../../world.ts'
 
 // Local support volumes in metres. Separate surfaces preserve the seat and taller back,
@@ -42,6 +44,12 @@ export const starterSolids = [
   ...lampPosts.flatMap((post) => solidsAt(post, [[.14, .14, 2.74]])),
   ...beachUmbrellas.flatMap((post) => solidsAt(post, [[.16, .16, 2.27]])),
   ...shellRocks.flatMap((rock) => solidsAt(rock, [[rock.size, rock.size * .65, .17]], rock.heading)),
+  ...fenceRuns.map(({ from, to }) => plank(from, to, .12, fenceHeight)),
+  ...solidsAt(mendingBench, [[1.6, .7, mendingBench.top]], mendingBench.heading),
+  ...flowerBeds.flatMap((bed) => solidsAt(bed, [[bed.width + .1, bed.depth + .1, .16]])),
+  ...solidsAt(woodpile, [[1.05, .65, .6]], woodpile.heading),
+  ...solidsAt(rainBarrel, [[.55, .55, .8]]),
+  ...solidsAt(sawhorse, [[1.1, .4, .75]], sawhorse.heading),
   ...solidsAt(ridgeRack, [[1.62, .27, 1.16]], ridgeHeading),
   ...solidsAt(ridgeWindsock, [[.09, .09, 2.64]]),
   ...solidsAt(ridgeLandingSign, [[.15, .15, 1.26], [1.44, .19, 1.545]], ridgeHeading),

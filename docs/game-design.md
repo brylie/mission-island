@@ -51,5 +51,6 @@ The [roadmap](roadmap.md) records the playtest ideas and future jobs.
 - [Fishing and cast timing](mechanics/fishing.md)
 - [Farming and the market](mechanics/farming-and-market.md)
 - [Crew orders and second-island progress](mechanics/crew-orders.md)
+- [Neighbor repairs: Wren's gate](mechanics/neighbor-repairs.md)
 
 Keep tuning values in the mechanic specification when they change. Update the mechanic's playtest cases when interaction rules or the multiplayer state change.

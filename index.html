@@ -49,6 +49,7 @@
         <div><strong>MISSION ISLAND</strong><small>ISLAND SERVICE CREW</small></div>
       </div>
       <div class="top-actions">
+        <button id="checkpoint-banner" class="camera" type="button" aria-haspopup="dialog" aria-controls="options-dialog" hidden>Live checkpoint</button>
         <a class="camera" href="/second-island.html">Saltwind preview</a>
         <div class="connection" role="status"><i id="status-light"></i><span id="status">Connecting</span></div>
         <div id="island-clock" class="connection">06:00 · Daylight</div>
@@ -137,9 +138,10 @@
         </div>
       </aside>
 
-      <div class="prompt" id="prompt" hidden><kbd id="prompt-key"></kbd><span id="prompt-action"></span></div>
+      <div class="prompt" id="prompt" hidden aria-live="polite"><kbd id="prompt-key"></kbd><span id="prompt-action"></span></div>
       <div class="notice" id="notice" hidden role="status"></div>
-      <footer class="controls" aria-label="Game controls">
+      <button id="controls-toggle" class="controls-toggle" type="button" aria-expanded="false" aria-controls="game-controls">Controls</button>
+      <footer id="game-controls" class="controls" aria-label="Game controls" hidden>
         <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Walk / drive</span></div>
         <div><kbd>E</kbd><span>Interact</span></div>
         <div><kbd>F</kbd><span>Enter / exit</span></div>
@@ -181,6 +183,11 @@
           <p id="guide-work"></p>
           <p id="guide-pay"></p>
         </section>
+        <section id="guide-favor" hidden>
+          <h3 id="guide-favor-title"></h3>
+          <p id="guide-favor-detail"></p>
+          <p id="guide-favor-next"></p>
+        </section>
         <section>
           <h3>Between shifts</h3>
           <p>The gravel turn east of Harbor Depot leads to the closed ferry terminal. The damaged ramp needs a crew to repair it someday.</p>
@@ -192,7 +199,7 @@
       </div>
       <div id="fisher-conversation" hidden>
         <p id="fisher-line"></p>
-        <p>“You’ll find me at the small dock most mornings. Pick up the rod from your cottage chest and cast from the dock if you’d like to try your luck.”</p>
+        <p id="fisher-advice"></p>
       </div>
       <form method="dialog"><button type="submit" autofocus>Close</button></form>
     </dialog>
@@ -210,8 +217,9 @@
         <h2 id="options-title">Options</h2>
         <fieldset>
           <legend>Mouse look</legend>
-          <label><input id="invert-horizontal" type="checkbox" checked autofocus /> Invert horizontal look</label>
-          <label><input id="invert-vertical" type="checkbox" checked /> Invert vertical look</label>
+          <label><input id="invert-horizontal" type="checkbox" autofocus /> Invert horizontal look</label>
+          <label><input id="invert-vertical" type="checkbox" /> Invert vertical look</label>
+          <label class="look-speed">Look speed <input id="look-speed" type="range" min="0.4" max="2" step="0.1" value="1" /></label>
         </fieldset>
         <fieldset class="appearance">
           <legend>Crew appearance</legend>
@@ -226,6 +234,14 @@
             <button id="copy-lan" type="button" disabled>Copy LAN link</button>
           </div>
           <span id="lan-status" role="status"></span>
+        </fieldset>
+        <fieldset id="live-checkpoint" hidden>
+          <legend>Live playtest</legend>
+          <label>Checkpoint <select name="checkpoint"></select></label>
+          <label>Crew <select name="seats"><option value="1">Solo</option><option value="2">Two players over LAN</option></select></label>
+          <p>Starting a checkpoint resets this playtest for both players. Your island save stays separate.</p>
+          <button type="button">Restart checkpoint</button>
+          <span role="status"></span>
         </fieldset>
         <fieldset id="playtest-tools" hidden><legend>Landscape Workbench</legend><button type="button" id="copy-playtest">Copy playtest link</button>
           <span id="copy-status" role="status"></span>

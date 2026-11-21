@@ -5,6 +5,7 @@ import type { TruckPose } from '../src/truck-pose.ts'
 import { distance, jumpSpeed, lookout } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
 import { looseCargoTop } from './items.ts'
+import { gateBlockers, solidTop } from '../src/gate-repair.ts'
 import { stepPlayer } from '../src/simulation/movement.ts'
 
 export function jump(member: CrewMember) {
@@ -26,7 +27,9 @@ export function walkCrew(
   const { player, input } = member
   const { truck } = state
   const item = heldItem(state, player)
-  stepPlayer(member, before, truck, connected ? input : stopped, Boolean(item), tickSeconds, (point, margin) => looseCargoTop(state.items, point, margin))
+  const gate = gateBlockers(state)
+  stepPlayer(member, before, truck, connected ? input : stopped, Boolean(item), tickSeconds,
+    (point, margin) => Math.max(looseCargoTop(state.items, point, margin), solidTop(gate, point, margin)))
   if (!connected) return
   for (const region of starterDiscoveries) {
     if (!player.discoveries.includes(region.id) && distance(player, region.site) < 8) {

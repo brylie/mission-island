@@ -1,5 +1,6 @@
 import { crateDriverXp, haulerUnlockXp } from './ore-contracts'
 import { fisherName } from './harbor-fisher'
+import { gateRepairGuide, residentName, wrenLines } from './gate-repair'
 import { jobs } from './jobs'
 import type { Player, Snapshot } from './protocol'
 import { crewHomes, jobPay, starterPay } from './world'
@@ -9,6 +10,9 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   const note = dialog.querySelector<HTMLElement>('#guide-note')!
   const conversation = dialog.querySelector<HTMLElement>('#fisher-conversation')!
   const greeting = dialog.querySelector<HTMLElement>('#fisher-line')!
+  const advice = dialog.querySelector<HTMLElement>('#fisher-advice')!
+  const favor = dialog.querySelector<HTMLElement>('#guide-favor')!
+  const favorLines = ['#guide-favor-title', '#guide-favor-detail', '#guide-favor-next'].map((selector) => dialog.querySelector<HTMLElement>(selector)!)
   const home = dialog.querySelector<HTMLElement>('#guide-home')!
   const workTitle = dialog.querySelector<HTMLElement>('#guide-work-title')!
   const work = dialog.querySelector<HTMLElement>('#guide-work')!
@@ -46,8 +50,13 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
     const xp = player.deliveryXp ?? 0
     const certification = xp >= haulerUnlockXp ? 'Certified to drive the Slatecliff ore truck.' :
       `Slatecliff ore truck certification takes ${haulerUnlockXp} driver XP. Earn ${crateDriverXp} XP for each crate you haul by truck and your crew delivers.`
+    const neighbor = gateRepairGuide(state, player)
+    const favorPay = state.lastFavorPay ? ` Last favor · ${residentName}’s gate mended · +${state.lastFavorPay.coins} coins.` : ''
+    favor.hidden = false
     for (const [element, value] of [
-      [home, crewHomes[player.id].name], [workTitle, heading], [work, direction], [pay, `${balance}. ${receipt} ${xp} driver XP. ${certification}`],
+      [home, crewHomes[player.id].name], [workTitle, heading], [work, direction],
+      [pay, `${balance}. ${receipt}${favorPay} ${xp} driver XP. ${certification}`],
+      [favorLines[0], neighbor.title], [favorLines[1], neighbor.detail], [favorLines[2], neighbor.next],
     ] as const) {
       if (element.textContent !== value) element.textContent = value
     }
@@ -55,14 +64,15 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
 
   return {
     update,
-    open(state: Snapshot, player: Player, talking: boolean, dismissed: boolean) {
-      title.textContent = talking ? `${fisherName} · Fisher` : 'Crew guide'
+    open(state: Snapshot, player: Player, talking: 'fisher' | 'wren' | false, dismissed: boolean) {
+      title.textContent = talking === 'wren' ? `${residentName} · Neighbor` : talking ? `${fisherName} · Fisher` : 'Crew guide'
       conversation.hidden = !talking
-      note.hidden = talking
+      note.hidden = Boolean(talking)
       if (talking) {
-        greeting.textContent = state.mission === 'complete'
+        [greeting.textContent, advice.textContent] = talking === 'wren' ? wrenLines(state) : [state.mission === 'complete'
           ? '“Thanks for clearing the lookout. You can find more work on the board beside the depot. The ferry ramp down the next gravel turn still needs a crew.”'
-          : '“Welcome to the harbor. The depot has a delivery and a lookout shift for your crew. That ramp east of here is the old ferry terminal. We’ll put it back to work someday.”'
+          : '“Welcome to the harbor. The depot has a delivery and a lookout shift for your crew. That ramp east of here is the old ferry terminal. We’ll put it back to work someday.”',
+        '“You’ll find me at the small dock most mornings. Pick up the rod from your cottage chest and cast from the dock if you’d like to try your luck.”']
       } else {
         showLead(!dismissed)
       }
