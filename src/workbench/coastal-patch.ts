@@ -6,6 +6,13 @@ import { createOystercatcher } from '../assets/oystercatcher'
 import { seededRandom } from '../seeded-random'
 import type { BiomeRecipe } from '../biome-recipe'
 import type { Point } from '../world'
+import { advanceGait, gaitAmount, restingGait, type GaitTiming } from '../simulation/gait'
+
+const oystercatcherTiming = {
+  metresPerCycle: () => .186,
+  speedResponse: 9,
+  fullStrideSpeed: .34,
+} satisfies GaitTiming
 
 // Batch only pieces with a common pivot and material. The spike can still sway independently.
 function batchFlowers(meshes: MeshFactory, root: TransformNode) {
@@ -44,7 +51,7 @@ export function createCoastalPatch(meshes: MeshFactory, recipe: BiomeRecipe) {
     bird.root.position.set(home.x, 0, home.z)
     const phase = random() * 7
     bird.root.rotation.y = phase
-    return { ...bird, home, phase, stride: 0 }
+    return { ...bird, home, phase, gait: restingGait }
   })
   // Leave a bill-length gap when two foragers reach for the same spot.
   function keepSpace(position: Point) {
@@ -72,7 +79,11 @@ export function createCoastalPatch(meshes: MeshFactory, recipe: BiomeRecipe) {
       const angle = time * .18 + bird.phase
       const x = bird.home.x + .55 * Math.sin(time * .24) + .38 * Math.cos(angle)
       const z = bird.home.z + .36 * Math.cos(time * .20) + .29 * Math.sin(angle)
-      if (elapsed < 0 || elapsed > .5) position.set(x, 0, z)
+      if (elapsed < 0 || elapsed > .5) {
+        position.set(x, 0, z)
+        bird.gait = restingGait
+      }
+      const beforeX = position.x, beforeZ = position.z
       const dx = position.x - (walker?.x ?? 20), dz = position.z - (walker?.z ?? 20)
       const distance = Math.hypot(dx, dz)
       const wary = distance < 2.15
@@ -93,9 +104,10 @@ export function createCoastalPatch(meshes: MeshFactory, recipe: BiomeRecipe) {
         position.z += step * Math.cos(rotation.y)
         const radius = Math.hypot(position.x, position.z)
         if (radius > 7.55) position.scaleInPlace(7.55 / radius)
-        bird.stride += step * 2.6
       }
-      bird.pose(stepping ? bird.stride : time + bird.phase, !stepping, stepping ? 1 : 0)
+      const travelled = Math.hypot(position.x - beforeX, position.z - beforeZ)
+      bird.gait = advanceGait(oystercatcherTiming, bird.gait, travelled, dt)
+      bird.pose(time + bird.phase, !stepping, bird.gait.cycle, gaitAmount(oystercatcherTiming, bird.gait.speed))
     }
     return alert
   }

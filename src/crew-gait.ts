@@ -1,4 +1,6 @@
 import { crewSprintMultiplier, crewWalkSpeed, offset, type Point, type Pose } from './world.ts'
+import { advanceGait, gaitAmount, gaitPhase, restingGait, type GaitTiming } from './simulation/gait.ts'
+import { smoothRange } from './simulation/motion-easing.ts'
 
 export const crewHip = { x: .18, y: .68, z: .02 }
 export const crewThigh = .305
@@ -16,7 +18,6 @@ export interface CrewGaitPose {
 
 const sides = [-1, 1] as const
 const mix = (a: number, b: number, t: number) => a + (b - a) * t
-const ease = (t: number) => t * t * (3 - 2 * t)
 const angleBetween = (a: number, b: number) => Math.atan2(Math.sin(b - a), Math.cos(b - a))
 
 export function crewLegSwing(phase: number, stride: number, side: number) {
@@ -45,8 +46,13 @@ function profile(speed: number, scale: number) {
   return { cycle, contact, stride: mix(mix(.38, .57, walk), .89, sprint), lift: mix(.086, .105, sprint) }
 }
 
-function footfall(cycle: number, { cycle: distance, contact, stride, lift }: ReturnType<typeof profile>) {
-  const phase = cycle - Math.floor(cycle)
+const crewTiming = {
+  metresPerCycle: speed => profile(speed, 1).cycle,
+  speedResponse: 12,
+  fullStrideSpeed: 1.35,
+} satisfies GaitTiming
+
+function footfall(phase: number, { cycle: distance, contact, stride, lift }: ReturnType<typeof profile>) {
   const duty = contact / distance
   if (phase < duty) return { phase, forward: contact / 2 - phase * distance, lift: 0, pitch: 0, planted: true }
   const swing = (phase - duty) / (1 - duty)
@@ -55,7 +61,7 @@ function footfall(cycle: number, { cycle: distance, contact, stride, lift }: Ret
   const start = swingAnkle(-Math.PI / 2, stride).forward
   const end = swingAnkle(Math.PI / 2, stride).forward
   const forward = contact * ((ankle.forward - start) / (end - start) - .5)
-  const easeLift = ease(Math.min(1, Math.min(swing, 1 - swing) / .22))
+  const easeLift = smoothRange(0, .22, Math.min(swing, 1 - swing))
   const pitch = ankle.pitch * easeLift
   const shoeTip = pitch > 0 ? .21 : -.13
   const requiredClearance = shoeTip * Math.sin(pitch) - .15 * (1 - Math.cos(pitch))
@@ -66,11 +72,11 @@ function footfall(cycle: number, { cycle: distance, contact, stride, lift }: Ret
 }
 
 export function crewGaitFrame(cycle: number, speed: number, scale = 1) {
-  const amount = ease(Math.min(1, speed / 1.35))
+  const amount = gaitAmount(crewTiming, speed)
   const gait = profile(speed, scale)
   return {
     cycle, amount, crouch: .022 * amount, contact: gait.contact, distance: gait.cycle,
-    feet: sides.map((_, i) => footfall(cycle + i / 2, gait)),
+    feet: sides.map((_, i) => footfall(gaitPhase(cycle, i / 2), gait)),
   }
 }
 
@@ -86,13 +92,13 @@ export function crewGaitPreview(time: number, speed: number, scale: number) {
 
 export function createCrewGait() {
   let previous: GroundPose | undefined
-  let speed = 0, cycle = 0
+  let gait = restingGait
   const plants: (Foot | undefined)[] = [undefined, undefined]
   const releases: (Foot | undefined)[] = [undefined, undefined]
 
   function reset() {
     previous = undefined
-    speed = cycle = 0
+    gait = restingGait
     plants.fill(undefined)
     releases.fill(undefined)
   }
@@ -103,9 +109,8 @@ export function createCrewGait() {
     const travelled = previous ? step : 0
     const last = previous ?? pose
     previous = { ...pose }
-    speed += (travelled / Math.max(delta, .001) - speed) * (1 - Math.exp(-delta * 12))
-    const advance = travelled / profile(speed, 1).cycle
-    cycle += advance
+    const { advance, cycle, speed } = advanceGait(crewTiming, gait, travelled, delta)
+    gait = { cycle, speed }
     const frame = crewGaitFrame(cycle, speed)
     const feet = frame.feet.map((foot, i): Foot => {
       const lateral = crewHip.x * sides[i]
@@ -124,7 +129,7 @@ export function createCrewGait() {
         plant = plants[i] = undefined
       }
       const release = releases[i]
-      const settle = ease(Math.min(1, foot.lift / .028))
+      const settle = smoothRange(0, .028, foot.lift)
       const move = foot.forward > 0 ? 1 : settle
       const recovery = { x: mix(release?.x ?? ideal.x, ideal.x, move), z: mix(release?.z ?? ideal.z, ideal.z, move) }
       const recoveryTurn = angleBetween(pose.heading, release?.heading ?? pose.heading)
@@ -134,13 +139,13 @@ export function createCrewGait() {
       const idle = offset(pose, lateral, crewHip.z)
       const turn = angleBetween(pose.heading, target.heading)
       // Release on sharp pivots before the ankle twists around the planted sole.
-      const pivot = ease(Math.min(1, Math.max(0, (Math.abs(turn) - Math.PI / 3) / (Math.PI / 4))))
+      const pivot = smoothRange(Math.PI / 3, Math.PI * 7 / 12, Math.abs(turn))
       const weight = frame.amount * (plant ? 1 - pivot : 1)
       return { x: mix(idle.x, target.x, weight), y: mix(ground(idle), target.y + foot.lift, weight),
         z: mix(idle.z, target.z, weight), heading: pose.heading + turn * weight, pitch: target.pitch * weight }
     })
     if (frame.amount < .001) {
-      cycle = 0
+      gait = { cycle: 0, speed }
       plants.fill(undefined)
       releases.fill(undefined)
     }
