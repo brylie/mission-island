@@ -78,6 +78,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     crew.expireCrew(now)
     gate.tick()
     physics.placeGateLeaf(state)
+    physics.placeFerry(state)
     const members = crew.members()
     const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - 400
     const { before, still } = stepVehicles(state, members, active, physics, freight)

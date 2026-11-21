@@ -6,7 +6,7 @@ import test from 'node:test'
 import { createGame } from '../server/game.ts'
 import { islandSaveFile } from '../server/save.ts'
 import { actionHint } from '../src/actions.ts'
-import { ferryStages, initialFerryRepair, tallyLines } from '../src/ferry-repair.ts'
+import { deckTop, ferryStages, initialFerryRepair, tallyLines } from '../src/ferry-repair.ts'
 import { interactions } from '../src/interaction-options.ts'
 import { distance } from '../src/world.ts'
 import { tallyBoard, timberPickups, yardDrop } from '../src/worlds/starter/ferry-terminal.ts'
@@ -124,9 +124,10 @@ test('the last coin and crate finish the stage once, restore service, and surviv
   for (const client of [a, b]) assert.deepEqual(client.messages.filter(({ type }) => type === 'ferry-stage'), [{ type: 'ferry-stage', stage: 3 }])
   assert.deepEqual(offered(b), ['ferry-tally'])
 
-  file.write(h.game.snapshotForSave())
+  file.write({ ...h.game.snapshotForSave(), world: { ...h.game.snapshotForSave().world, truck: { x: -30, z: -42, heading: Math.PI } } })
   const resumed = setup(t, { saved: file.load() })
   const c = resumed.join(tokens[1])
+  assert.ok(c.state.truck.y > deckTop(c.state.truck) - .05, 'a truck saved on the ramp parks on the deck')
   assert.equal(c.state.ferryRepair.stage, ferryStages.length)
   assert.equal(c.state.crewCoins, 15)
   assert.equal(tallyLines(c.state).title, 'Ferry terminal · Service restored')

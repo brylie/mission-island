@@ -1,10 +1,11 @@
+import { plank } from './gate-repair.ts'
 import type { Interaction } from './interaction-options.ts'
 import { deliveryDrop, secondIslandGoal } from './jobs.ts'
 import type { Item, Player, Snapshot } from './protocol.ts'
 import { walkingHeight } from './terrain.ts'
-import { crewHomes, distance, spawns } from './world.ts'
+import { crewHomes, distance, ferryTerminal, spawns } from './world.ts'
 import type { Point } from './world.ts'
-import { tallyBoard, timberStack, yardDrop } from './worlds/starter/ferry-terminal.ts'
+import { rampDeck, tallyBoard, timberStack, yardDrop } from './worlds/starter/ferry-terminal.ts'
 
 // The ferry terminal is the crew's first community project. Each stage asks for coins from the crew bank and
 // timber hauled from Seabrook. The amounts are trial values for the balance playtest (#52), not settled prices.
@@ -35,6 +36,32 @@ export function initialFerryRepair(): { ferryRepair: FerryRepair } {
 
 type ProjectState = Pick<Snapshot, 'ferryRepair' | 'jobs' | 'mission'>
 const sum = (values: readonly number[]) => values.reduce((total, value) => total + value, 0)
+
+export function ferryServiceRestored({ ferryRepair }: Pick<Snapshot, 'ferryRepair'>) {
+  return ferryRepair.stage >= ferryStages.length
+}
+
+// Until service is restored the striped barrier closes the lane. Afterwards the barrier arm is raised and the new
+// deck carries the crew and the flatbed out to the berth.
+const { x: laneX, z: barrierZ, width: laneWidth } = ferryTerminal
+export const barrierSolids = [plank({ x: laneX - laneWidth / 2, z: barrierZ }, { x: laneX + laneWidth / 2, z: barrierZ }, .24, 1.12)]
+const deckStep = (rampDeck.near - rampDeck.far) / rampDeck.segments
+export const deckSolids = Array.from({ length: rampDeck.segments }, (_, i) => {
+  const from = { x: laneX, z: rampDeck.near - i * deckStep }
+  const top = rampDeck.nearTop + (rampDeck.farTop - rampDeck.nearTop) * (i + .5) / rampDeck.segments
+  return { ...plank(from, { x: laneX, z: from.z - deckStep }, laneWidth, 0), floor: top - .3, top }
+})
+
+export function ferrySolids(state: Pick<Snapshot, 'ferryRepair'>) {
+  return ferryServiceRestored(state) ? deckSolids : barrierSolids
+}
+
+// The restored deck's surface, for anything that reads height directly rather than through the solids.
+export function deckTop({ x, z }: Point) {
+  if (Math.abs(x - laneX) > laneWidth / 2 || z > rampDeck.near || z < rampDeck.far) return -Infinity
+  const segment = Math.min(rampDeck.segments - 1, Math.floor((rampDeck.near - z) / deckStep))
+  return deckSolids[segment].top
+}
 
 // Four finished harbor orders introduce the repair. The count is the crew's existing readiness milestone.
 function ferryProjectOpen(state: Pick<Snapshot, 'jobs' | 'mission'>) {

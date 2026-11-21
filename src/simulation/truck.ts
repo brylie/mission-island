@@ -1,12 +1,13 @@
 import { Body, Box, Vec3, type World } from 'cannon-es'
 import { groundHeight } from '../terrain.ts'
+import type { Point } from '../world.ts'
 import { flatbedGroundDrive } from '../vehicles/flatbed.ts'
 import { truckBed, truckSideRails, truckTailLip } from '../world.ts'
 import { createGroundDrive } from './ground-drive.ts'
 
 const centreOfMass = 0.68
 
-export function createTruckPhysics(world: World) {
+export function createTruckPhysics(world: World, heightAt: (point: Point) => number = groundHeight) {
   const body = new Body({ mass: 1450, linearDamping: 0.14, angularDamping: 0.45 })
   const box = (x: number, y: number, z: number, width: number, height: number, length: number) =>
     body.addShape(new Box(new Vec3(width / 2, height / 2, length / 2)), new Vec3(x, y - centreOfMass, z))
@@ -20,7 +21,7 @@ export function createTruckPhysics(world: World) {
   }
   box(0, truckBed.top + truckTailLip.height / 2, truckTailLip.z, truckBed.width, truckTailLip.height, truckTailLip.thickness)
 
-  const drive = createGroundDrive(world, body, flatbedGroundDrive, centreOfMass, groundHeight)
+  const drive = createGroundDrive(world, body, flatbedGroundDrive, centreOfMass, heightAt)
   return {
     ...drive,
     matchBedMotion(cargo: Body) {

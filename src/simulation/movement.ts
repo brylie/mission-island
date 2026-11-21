@@ -81,7 +81,7 @@ function moveHorizontally(
 ) {
   if (!input.x && !input.z) return
   player.heading = Math.atan2(input.x, input.z)
-  const depth = player.truckSurface ? 0 : Math.max(0, waterLevel - walkingHeight(player))
+  const depth = player.truckSurface ? 0 : Math.max(0, waterLevel - Math.max(walkingHeight(player), extra(player, 0)))
   const wading = 1 - 0.48 * Math.min(1, depth / maxWadeDepth)
   const pace = player.swimming ? 3.8 : (carrying ? 6.5 : 8) * (input.sprint ? 1.55 : 1) * wading
   const walk = offset(player, 0, pace * dt)

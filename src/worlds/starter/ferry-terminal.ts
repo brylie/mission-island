@@ -19,3 +19,7 @@ export const tallyBoard = { x: -24.8, z: -30.1, heading: 0 }
 // The flatbed can pull onto the verge, load, and drive back along Harbor Depot road to the ferry.
 export const timberStack = { name: 'Seabrook timber stack', x: 20.8, z: 6.6 }
 export const timberPickups: readonly Point[] = [-1.2, 0, 1.2].map((dx) => ({ x: timberStack.x + dx, z: timberStack.z }))
+
+// The landing deck beyond the barrier, restored with the last repair stage. It rises gently out to the ferry berth,
+// in segments shallow enough to walk and drive straight onto.
+export const rampDeck = { near: -36, far: -46.8, nearTop: .02, farTop: .14, segments: 4 }

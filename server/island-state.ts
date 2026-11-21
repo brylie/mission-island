@@ -10,13 +10,17 @@ import { initialFerryRepair } from '../src/ferry-repair.ts'
 import { makeItems } from './items.ts'
 import type { IslandSave } from './save.ts'
 
+const savedFerry = (save?: IslandSave) => save?.world ?? initialFerryRepair()
+
 export function restoreIsland(
-  physics: Pick<ReturnType<typeof createCargoPhysics>, 'parkTruck' | 'restore' | 'release'>,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'parkTruck' | 'restore' | 'release' | 'placeFerry'>,
   juniper: ReturnType<typeof createJuniperHabitat>,
   driftwood: DriftwoodFrame,
   save?: IslandSave,
 ) {
   const islandTime = save?.islandTime ?? 0
+  // Place the barrier or the restored deck before parking, so a truck saved on the ramp parks on it.
+  physics.placeFerry(savedFerry(save))
   const state: Snapshot = {
     crewCoins: save?.crewCoins ?? 0, lastStarterPay: save?.lastStarterPay,
     type: 'state', players: [], skiff: { ...skiffStart, speed: 0 }, items: makeItems(),
