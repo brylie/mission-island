@@ -101,8 +101,8 @@ test('individual reaction times vary and leader history resets at a new disturba
 
 test('the return crossing disturbs the regroup and replays identically at two frame rates', () => {
   const crossing = { side: 'east', returnPass: true }
-  const a = createSchoolTrial(42, 'skiff', '', false, crossing)
-  const b = createSchoolTrial(42, 'skiff', '', false, crossing)
+  const a = createSchoolTrial(125, 'skiff', '', false, crossing)
+  const b = createSchoolTrial(125, 'skiff', '', false, crossing)
   for (let i = 1; i <= 8 * 24; i++) a.seek(i / 24)
   assert.equal(a.school.encounters, 1)
   const firstLeader = a.school.leader
@@ -114,6 +114,20 @@ test('the return crossing disturbs the regroup and replays identically at two fr
   assert.equal(a.school.encounters, 2)
   assert.ok(a.school.leader >= 0 && a.school.leader !== firstLeader)
   assert.deepEqual(frame(a), frame(b))
+})
+
+test('the school avoids a lingering skiff instead of scattering repeatedly', () => {
+  const trial = createSchoolTrial(42, 'skiff', '[[45,0,0]]')
+  trial.seek(7)
+  assert.ok(trial.actor.speed < .001)
+  const leader = trial.school.leader
+  assert.ok(leader >= 0)
+  for (let tick = 211; tick <= 900; tick++) {
+    trial.seek(tick * schoolStep)
+    assert.equal(trial.school.leader, leader)
+    for (const fish of trial.school.fish) assert.ok(Math.hypot(fish.x - trial.actor.x, fish.z - trial.actor.z) >= 2.9)
+  }
+  assert.equal(trial.school.encounters, 1)
 })
 
 test('a lone fish keeps its ID and waits until its projected path is safe to regroup', () => {

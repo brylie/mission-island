@@ -1,5 +1,5 @@
 import type { Point } from '../world.ts'
-import { advanceSchool, createSchool, poolRadius, type SchoolThreat, type SwimHabitat } from './fish-school.ts'
+import { advanceSchool, createSchool, poolRadius, threatBuffer, type SchoolThreat, type SwimHabitat } from './fish-school.ts'
 
 export function createCoastalSchool(seed: number, origin: Point, waterDepth: (point: Point) => number) {
   const toWorld = (p: Point) => ({ x: origin.x + p.x, z: origin.z + p.z })
@@ -29,7 +29,7 @@ export function createCoastalSchool(seed: number, origin: Point, waterDepth: (po
   function step(threats: readonly SchoolThreat[]) {
     const nearby = threats.flatMap(({ x, z, range }) => {
       const dx = x - origin.x, dz = z - origin.z
-      return Math.hypot(dx, dz) < poolRadius + range ? [{ x: dx, z: dz, range }] : []
+      return Math.hypot(dx, dz) < poolRadius + range + threatBuffer ? [{ x: dx, z: dz, range }] : []
     })
     advanceSchool(school, nearby, habitat)
   }

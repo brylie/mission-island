@@ -66,6 +66,29 @@ test('shore observers and empty parked skiffs leave the shoal undisturbed', () =
   }
 })
 
+test('a still swimmer or occupied skiff keeps its space even after the school settles', () => {
+  const position = at(0, -1)
+  const swimmer = player(0, position, { swimming: true })
+  const occupiedSkiff = { ...position, heading: 0, speed: 0 }
+  for (const boarding of [false, true]) {
+    const school = createDriftwoodSchool(42)
+    const crew = boarding ? [{ ...swimmer, seat: 'port' }] : [swimmer]
+    const limit = boarding ? 2.9 : 1.9
+    const skiff = boarding ? occupiedSkiff : undefined
+    let leader = -1
+    for (let tick = 0; tick < 900; tick++) {
+      const next = school.step(crew, skiff)
+      if (tick < 210) continue
+      if (tick === 210) {
+        leader = next.leader
+        assert.ok(leader >= 0)
+      }
+      assert.equal(next.leader, leader)
+      assert.ok(next.fish.every(fish => !fish.startled && Math.hypot(fish.x - position.x, fish.z - position.z) >= limit - .001))
+    }
+  }
+})
+
 test('fish stay submerged and clear of the bed when pincered against the shelf', () => {
   for (const seed of [0, 1, 42, 125, 9999]) {
     const school = createDriftwoodSchool(seed)

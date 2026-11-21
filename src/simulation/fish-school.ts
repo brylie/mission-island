@@ -6,6 +6,7 @@ import type { Point } from '../world.ts'
 export const schoolStep = 1 / 30
 export const poolRadius = 8
 export const schoolSize = 6
+export const threatBuffer = 1.25
 
 export interface SchoolThreat extends Point { range: number }
 export interface SwimHabitat {
@@ -106,6 +107,35 @@ function disturbance(fish: Fish, threats: readonly SchoolThreat[]) {
   return Math.atan2(z, x) + fish.bias
 }
 
+function steerClear(fish: Fish, aim: Point, threats: readonly SchoolThreat[]) {
+  for (const threat of threats) {
+    const dx = fish.x - threat.x, dz = fish.z - threat.z
+    const distance = Math.hypot(dx, dz)
+    const buffer = threat.range + threatBuffer
+    if (distance < .01 || distance >= buffer) continue
+    const nx = dx / distance, nz = dz / distance
+    const urgency = Math.min(1, (buffer - distance) / threatBuffer)
+    const inward = Math.min(0, aim.x * nx + aim.z * nz)
+    // Bend a following or cruising path around a nearby threat after the burst ends.
+    const correction = urgency * (1.25 - inward)
+    aim.x += nx * correction
+    aim.z += nz * correction
+    if (inward < 0) {
+      const side = Math.sign(aim.z * nx - aim.x * nz || fish.vz * nx - fish.vx * nz || fish.bias || 1)
+      aim.x -= nz * urgency * .65 * side
+      aim.z += nx * urgency * .65 * side
+    }
+  }
+}
+
+function crossesThreatRange(fish: Fish, next: Point, threats: readonly SchoolThreat[]) {
+  return threats.some(threat => {
+    const radiusSquared = threat.range * threat.range
+    return (next.x - threat.x) ** 2 + (next.z - threat.z) ** 2 < radiusSquared &&
+      (fish.x - threat.x) ** 2 + (fish.z - threat.z) ** 2 >= radiusSquared
+  })
+}
+
 function swim(fish: Fish, school: School, threats: readonly SchoolThreat[], habitat?: SwimHabitat): Fish {
   const away = disturbance(fish, threats)
   const warningTicks = away === undefined ? 0 : Math.min(fish.warningTicks + 1, fish.responseTicks)
@@ -155,14 +185,17 @@ function swim(fish: Fish, school: School, threats: readonly SchoolThreat[], habi
     aimX += shore.x
     aimZ += shore.z
   }
-  const turn = turnToward(fish, aimX, aimZ, alarm > 0)
+  const aim = { x: aimX, z: aimZ }
+  steerClear(fish, aim, threats)
+  const turn = turnToward(fish, aim.x, aim.z, alarm > 0)
   const speed = Math.hypot(fish.vx, fish.vz)
-  const targetSpeed = Math.max(.15, Math.min(alarm > 0 ? 2.9 : 2.1, Math.hypot(aimX, aimZ)))
+  const targetSpeed = Math.max(.15, Math.min(alarm > 0 ? 2.9 : 2.1, Math.hypot(aim.x, aim.z)))
   const forward = speed + (targetSpeed - speed) * 2 * schoolStep
   const nextVx = forward * Math.cos(turn.heading), nextVz = forward * Math.sin(turn.heading)
   const x = fish.x + nextVx * schoolStep, z = fish.z + nextVz * schoolStep
   const next = { x, z }
-  const blocked = Math.hypot(x, z) >= poolRadius || (habitat && !habitat.navigable(next))
+  // A moving threat can reach the fish first. Let the fish finish its turn without entering from outside.
+  const blocked = Math.hypot(x, z) >= poolRadius || (habitat && !habitat.navigable(next)) || crossesThreatRange(fish, next, threats)
   const position = blocked ? fish : next
   return { ...fish, ...turn, escapeAngle, alarm, warningTicks, wander, x: position.x, z: position.z, vx: nextVx, vz: nextVz }
 }
@@ -189,9 +222,10 @@ export function advanceSchool(school: School, threats: readonly SchoolThreat[], 
   } else if (school.scattered && !school.fish.some(fish => fish.warningTicks > 0)) {
     school.calm += schoolStep
     if (school.calm >= .35) {
-      const eligible = school.fish.filter(fish => !habitat || habitat.navigable({
-        x: fish.x + fish.vx * .25, z: fish.z + fish.vz * .25,
-      }))
+      const eligible = school.fish.filter(fish => {
+        const ahead = { x: fish.x + fish.vx * .25, z: fish.z + fish.vz * .25 }
+        return (!habitat || habitat.navigable(ahead)) && !crossesThreatRange(fish, ahead, threats)
+      })
       if (eligible.length) {
         school.leader = eligible[Math.floor(school.random() * eligible.length)].id
         school.scattered = false

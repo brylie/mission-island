@@ -62,9 +62,7 @@ export function createSchoolTrial(seed: number, kind: Disturbance, raw: unknown,
         actor.x += dx / distance * actor.speed * schoolStep
         actor.z += dz / distance * actor.speed * schoolStep
       }
-      // At either end the wader steps out, or the skiff has drifted clear of the trial.
-      advanceSchool(school, Math.abs(actor.x) < 5.95
-        ? [{ ...actor, range: kind === 'skiff' ? 2.9 : 1.9 }] : [])
+      advanceSchool(school, [{ ...actor, range: kind === 'skiff' ? 2.9 : 1.9 }])
       tick++
       if (tick % 4 === 0) {
         for (const [i, fish] of school.fish.entries()) {
