@@ -21,6 +21,12 @@ For sound, a direction to try is a cue with a recognizable source: boots change 
 
 The [crew character turnaround](crew-character-art.md) sets the proportions and finish for character fittings. The [coastal model studies](coastal-model-studies.md) show how to apply that direction to plants, wildlife, buildings and vehicles with the game’s mesh factories.
 
+### Grass seen from a hill
+
+At a player's feet, individual blades can catch the light. From Windstone Ridge, the meadow should read as a few broad changes in colour that tell you something about the land. Try a greener strip following the damp ground beside a stream and a paler shoulder where the slope is exposed. Keep their edges irregular and soft enough for a path or a grazing animal to stand out. The meadow already fades fine detail with distance and varies its colour in world space. Use those controls to judge which repeated marks still catch the eye.
+
+Start with the saved meadow views at walking, hillside and island distances. Match camera, hour, weather and quality between revisions, then repeat under a second light. Walk down the slope and orbit it. Look for blades close up, a continuous transition into larger patches, and patches that stay anchored as the camera moves. If a row of identical marks still stands out, capture the first distance and angle where you can trace it. [Meadow field setups](../surface-catalog.md#starter-island-field-checks) · [Windstone surface review](https://github.com/brylie/mission-island/issues/117)
+
 ## What we take from our references
 
 | Reference | Quality we are aiming for in Mission Island |
