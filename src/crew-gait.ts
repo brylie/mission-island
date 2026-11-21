@@ -9,11 +9,11 @@ export const crewShin = .225
 type Ground = (point: Point) => number
 type GroundPose = Pose & { y: number }
 type Foot = GroundPose & { pitch: number }
+type LegTarget = Foot & { support: number; bend: number }
 export interface CrewGaitPose {
   cycle: number
   amount: number
-  crouch: number
-  feet: Foot[]
+  feet: LegTarget[]
 }
 
 const sides = [-1, 1] as const
@@ -26,14 +26,10 @@ export function crewLegSwing(phase: number, stride: number, side: number) {
   return { hip: side * Math.sin(phase) * stride - bend * .36, bend }
 }
 
-function swingAnkle(phase: number, stride: number) {
+function swingForward(phase: number, stride: number) {
   const { hip, bend } = crewLegSwing(phase, stride, -1)
   const pitch = hip + bend
-  return {
-    forward: -crewThigh * Math.sin(hip) - crewShin * Math.sin(pitch),
-    lift: crewThigh * (1 - Math.cos(hip)) + crewShin * (1 - Math.cos(pitch)),
-    pitch,
-  }
+  return -crewThigh * Math.sin(hip) - crewShin * Math.sin(pitch)
 }
 
 function profile(speed: number, scale: number) {
@@ -42,8 +38,8 @@ function profile(speed: number, scale: number) {
   const cycle = mix(mix(.84, 3.55, walk), 4.55, sprint) * scale
   // At the game's travel speeds there is a suspension interval between plants.
   // Keep the contact sweep within reach of the model's short legs.
-  const contact = Math.min(.66, mix(mix(.43, .60, walk), .66, sprint) * scale)
-  return { cycle, contact, stride: mix(mix(.38, .57, walk), .89, sprint), lift: mix(.086, .105, sprint) }
+  const contact = Math.min(.66, mix(mix(.36, .50, walk), .66, sprint) * scale)
+  return { cycle, contact, stride: mix(mix(.38, .57, walk), .89, sprint) }
 }
 
 const crewTiming = {
@@ -52,30 +48,44 @@ const crewTiming = {
   fullStrideSpeed: 1.35,
 } satisfies GaitTiming
 
-function footfall(phase: number, { cycle: distance, contact, stride, lift }: ReturnType<typeof profile>) {
-  const duty = contact / distance
-  if (phase < duty) return { phase, forward: contact / 2 - phase * distance, lift: 0, pitch: 0, planted: true }
-  const swing = (phase - duty) / (1 - duty)
-  // Preserve the original ankle arc and follow-through between the planted endpoints.
-  const ankle = swingAnkle(Math.PI * (swing - .5), stride)
-  const start = swingAnkle(-Math.PI / 2, stride).forward
-  const end = swingAnkle(Math.PI / 2, stride).forward
-  const forward = contact * ((ankle.forward - start) / (end - start) - .5)
-  const easeLift = smoothRange(0, .22, Math.min(swing, 1 - swing))
-  const pitch = ankle.pitch * easeLift
-  const shoeTip = pitch > 0 ? .21 : -.13
-  const requiredClearance = shoeTip * Math.sin(pitch) - .15 * (1 - Math.cos(pitch))
+// The gait tracks a footprint on the pavement. Convert it to the ankle
+// above the outsole by rotating the shoe around its contacting edge.
+function soleRoll(pitch: number) {
+  const edge = pitch < 0 ? -.13 : .215
+  const height = crewHip.y - crewThigh - crewShin
   return {
-    phase, forward, lift: Math.max(requiredClearance, easeLift * (ankle.lift + lift * Math.sin(Math.PI * swing))),
-    pitch, planted: false,
+    forward: edge * (1 - Math.cos(pitch)) + height * Math.sin(pitch),
+    lift: edge * Math.sin(pitch) - height * (1 - Math.cos(pitch)),
   }
+}
+
+function footfall(phase: number, { cycle: distance, contact, stride }: ReturnType<typeof profile>) {
+  const duty = contact / distance
+  const heelStrike = -.28, toeOff = .42
+  if (phase < duty) {
+    const stance = phase / duty
+    const pitch = heelStrike * (1 - smoothRange(0, .38, stance)) + toeOff * smoothRange(.5, 1, stance)
+    return { phase, forward: contact / 2 - phase * distance, lift: 0, pitch, support: 1, bend: .12, planted: true }
+  }
+  const swing = (phase - duty) / (1 - duty)
+  const ankle = swingForward(Math.PI * (swing - .5), stride)
+  const start = swingForward(-Math.PI / 2, stride)
+  const end = swingForward(Math.PI / 2, stride)
+  const forward = contact * ((ankle - start) / (end - start) - .5)
+  const pitch = mix(toeOff, heelStrike, smoothRange(.08, .83, swing))
+  // Clearance is a floor for the authored recovery pose.
+  const envelope = Math.sin(Math.PI * swing)
+  const lift = .012 * envelope
+  const support = 1 - smoothRange(0, .22, Math.min(swing, 1 - swing))
+  const bend = mix(crewLegSwing(Math.PI * (swing - .5), stride, -1).bend, .12, support)
+  return { phase, forward, lift, pitch, support, bend, planted: false }
 }
 
 export function crewGaitFrame(cycle: number, speed: number, scale = 1) {
   const amount = gaitAmount(crewTiming, speed)
   const gait = profile(speed, scale)
   return {
-    cycle, amount, crouch: .022 * amount, contact: gait.contact, distance: gait.cycle,
+    cycle, amount, contact: gait.contact, distance: gait.cycle,
     feet: sides.map((_, i) => footfall(gaitPhase(cycle, i / 2), gait)),
   }
 }
@@ -85,7 +95,7 @@ export function crewGaitPreview(time: number, speed: number, scale: number) {
   const frame = crewGaitFrame(time * speed / cycle, speed, scale)
   const feet = frame.feet.map((foot, i) => ({
     x: crewHip.x * sides[i], y: frame.amount * foot.lift, z: crewHip.z + frame.amount * foot.forward,
-    heading: 0, pitch: frame.amount * foot.pitch,
+    heading: 0, pitch: frame.amount * foot.pitch, support: foot.support, bend: frame.amount * foot.bend,
   }))
   return { ...frame, feet }
 }
@@ -112,7 +122,7 @@ export function createCrewGait() {
     const { advance, cycle, speed } = advanceGait(crewTiming, gait, travelled, delta)
     gait = { cycle, speed }
     const frame = crewGaitFrame(cycle, speed)
-    const feet = frame.feet.map((foot, i): Foot => {
+    const feet = frame.feet.map((foot, i): LegTarget => {
       const lateral = crewHip.x * sides[i]
       const ideal = offset(pose, lateral, crewHip.z + foot.forward)
       let plant = plants[i]
@@ -129,7 +139,7 @@ export function createCrewGait() {
         plant = plants[i] = undefined
       }
       const release = releases[i]
-      const settle = smoothRange(0, .028, foot.lift)
+      const settle = smoothRange(0, .12, (foot.phase - frame.contact / frame.distance) / (1 - frame.contact / frame.distance))
       const move = foot.forward > 0 ? 1 : settle
       const recovery = { x: mix(release?.x ?? ideal.x, ideal.x, move), z: mix(release?.z ?? ideal.z, ideal.z, move) }
       const recoveryTurn = angleBetween(pose.heading, release?.heading ?? pose.heading)
@@ -142,7 +152,8 @@ export function createCrewGait() {
       const pivot = smoothRange(Math.PI / 3, Math.PI * 7 / 12, Math.abs(turn))
       const weight = frame.amount * (plant ? 1 - pivot : 1)
       return { x: mix(idle.x, target.x, weight), y: mix(ground(idle), target.y + foot.lift, weight),
-        z: mix(idle.z, target.z, weight), heading: pose.heading + turn * weight, pitch: target.pitch * weight }
+        z: mix(idle.z, target.z, weight), heading: pose.heading + turn * weight, pitch: foot.pitch * weight,
+        support: foot.support, bend: foot.bend * weight }
     })
     if (frame.amount < .001) {
       gait = { cycle: 0, speed }
@@ -164,11 +175,13 @@ export function solveCrewLeg(x: number, y: number, z: number) {
 }
 
 export function crewFootInHipSpace(pose: GroundPose, foot: Foot, side: number, crouch: number) {
-  const dx = foot.x - pose.x, dz = foot.z - pose.z
+  const roll = soleRoll(foot.pitch)
+  const ankle = offset(foot, 0, roll.forward)
+  const dx = ankle.x - pose.x, dz = ankle.z - pose.z
   const c = Math.cos(pose.heading), s = Math.sin(pose.heading)
   return {
     x: dx * c - dz * s - side * crewHip.x,
-    y: foot.y - pose.y - crewThigh - crewShin + crouch,
+    y: foot.y + roll.lift - pose.y - crewThigh - crewShin + crouch,
     z: dx * s + dz * c - crewHip.z,
   }
 }

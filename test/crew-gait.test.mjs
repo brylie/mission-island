@@ -8,7 +8,7 @@ import { crewCarrySpeed, crewSprintMultiplier, crewWalkSpeed } from '../src/worl
 const first = fisherAt(6.05), second = fisherAt(6.1)
 const commuteSpeed = Math.hypot(first.x - second.x, first.z - second.z) / (.05 * daySeconds / 24)
 
-test('the walking foot lifts from the heel and reaches toe-up before planting flat', () => {
+test('the walking foot lifts from the heel and reaches toe-up before the next heel strike', () => {
   const { contact, distance } = crewGaitFrame(0, crewWalkSpeed)
   const stance = contact / distance
   const early = crewGaitFrame(stance + (1 - stance) * .25, crewWalkSpeed).feet[0]
@@ -17,7 +17,9 @@ test('the walking foot lifts from the heel and reaches toe-up before planting fl
   assert.ok(early.pitch > .2)
   assert.ok(late.pitch < -.1)
   assert.ok(late.forward > early.forward)
-  assert.deepEqual([plant.planted, plant.lift, plant.pitch], [true, 0, 0])
+  assert.ok(plant.planted && plant.pitch < -.2)
+  assert.equal(crewGaitFrame(stance * .43, crewWalkSpeed).feet[0].pitch, 0)
+  assert.ok(crewGaitFrame(stance * .98, crewWalkSpeed).feet[0].pitch > .35)
 })
 
 for (const [name, speed] of [['Mara', commuteSpeed], ['carry', crewCarrySpeed], ['walk', crewWalkSpeed],
@@ -48,7 +50,7 @@ for (const [name, speed] of [['Mara', commuteSpeed], ['carry', crewCarrySpeed], 
       highest = Math.max(highest, foot.y - ground(foot))
     }
     assert.ok(contacts >= 1)
-    assert.ok(highest > .07)
+    assert.ok(highest > .01)
   })
 }
 
