@@ -2,11 +2,13 @@ import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import { shopHats, type StockId } from '../wardrobe-stock'
 import { garment, sweptDetail } from './crew-shapes'
+import { fitMarketHat } from './shop-millinery'
 import { tailored } from './shop-tailoring'
 
 export function buildHat(m: MeshFactory, id: StockId<'hat'>, root: TransformNode, dye?: string) {
   const { color: baseColor, trim, detail } = shopHats[id]
   const color = dye ?? baseColor
+  if (fitMarketHat(m, root, id, color)) return
   if (id === 'reed-crown') {
     // Two woven rushes wind around an open center. The wearer's hair shows through.
     for (const phase of [0, Math.PI]) {

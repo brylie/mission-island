@@ -4,6 +4,9 @@ import { shopTops, type StockId } from '../wardrobe-stock'
 import { sweptDetail } from './crew-shapes'
 import { applique, panelSurface, tailored, type Section } from './shop-tailoring'
 
+import { marketTopDetails } from './shop-market-tops'
+import { checkRows, printGingham } from './shop-textiles'
+
 const diamond = [[0, .5], [-.36, 0], [0, -.5], [.36, 0]]
 const leaf = [[0, .53], [-.35, .19], [-.39, -.12], [-.19, -.40], [0, -.52], [.31, -.15], [.34, .14]]
 const star = Array.from({ length: 10 }, (_, i) => {
@@ -11,9 +14,9 @@ const star = Array.from({ length: 10 }, (_, i) => {
   return [r * Math.cos(a), r * Math.sin(a)]
 })
 
-export function buildTopBody(m: MeshFactory, id: StockId<'shirt'>, root: TransformNode, dye?: string) {
+function cutTop(m: MeshFactory, id: StockId<'shirt'>, root: TransformNode, dye?: string) {
   const { color, trim, detail } = shopTops[id]
-  const coat = id === 'squid-coat', stripe = id === 'beacon-top', vest = id === 'kelp-vest'
+  const coat = id === 'squid-coat' || id === 'dock-jacket', stripe = id === 'beacon-top', vest = shopTops[id].sleeveless
   const hem = coat ? .719 : .778
   const rows: Section[] = [
     [hem, 0, .002, coat ? .311 : .281, .193, detail], [hem + .010, 0, .002, coat ? .313 : .287, .199, detail],
@@ -26,12 +29,25 @@ export function buildTopBody(m: MeshFactory, id: StockId<'shirt'>, root: Transfo
     [1.252, 0, -.008, vest ? .200 : .240, .146], [1.267, 0, .001, .158, .122, detail],
     [1.282, 0, .001, .134, .114, detail],
   ]
-  const fabric = tailored(m, root, shopTops[id].name, dye ?? color, rows, 32, .056)
+  const gingham = id === 'picnic-check'
+  const fabric = tailored(m, root, shopTops[id].name, dye ?? color, gingham ? checkRows(rows) : rows, 32, .056)
+  if (gingham) printGingham(fabric, trim)
+  return fabric
+}
+
+export function buildTopBody(m: MeshFactory, id: StockId<'shirt'>, root: TransformNode, dye?: string) {
+  const { trim, detail } = shopTops[id]
+  const fabric = cutTop(m, id, root, dye)
   const front = panelSurface(fabric, 2, 1), back = panelSurface(fabric, 2, -1)
   const surface = (x: number, y: number, side: number) => (side > 0 ? front : back)([x, y, side * .16])
-  function patch(name: string, tint: string, outline: number[][], x: number, y: number, w: number, h: number, side = 1, tilt = 0) {
-    applique(m, root, name, tint, outline, (u, v) => surface(x + u * w + v * tilt, y + v * h, side), [0, 0, side])
+  function patch(name: string, tint: string, outline: number[][], x: number, y: number, w: number, h: number, side = 1, tilt = 0, lift = 0) {
+    applique(m, root, name, tint, outline, (u, v) => {
+      const point = surface(x + u * w + v * tilt, y + v * h, side)
+      point[2] += side * lift
+      return point
+    }, [0, 0, side])
   }
+  if (marketTopDetails(id, trim, detail, patch)) return
   if (id === 'star-knit') {
     const constellation = [[-.154, 1.142], [-.080, 1.095], [.008, 1.144], [.127, 1.117]]
     for (const [i, [x, y]] of constellation.entries()) {
@@ -46,7 +62,7 @@ export function buildTopBody(m: MeshFactory, id: StockId<'shirt'>, root: Transfo
       }
     }
     patch('North star', trim, star, 0, 1.167, .074, .074, -1)
-  } else if (coat) {
+  } else if (id === 'squid-coat') {
     for (const s of [-1, 1]) {
       patch('Oilskin collar', detail, [[-.46, .40], [.21, .50], [.49, -.23], [.10, -.50], [-.36, -.02]], s * .102, 1.235, s * .142, .088, 1, -s * .048)
       for (const y of [.910, 1.032, 1.148]) {
@@ -56,7 +72,7 @@ export function buildTopBody(m: MeshFactory, id: StockId<'shirt'>, root: Transfo
       patch('Storm flap', detail, [[-.5, .5], [.5, .5], [.5, -.17], [0, -.5], [-.5, -.17]], s * .101, 1.153, .192, .083, -1)
       patch('Pocket welt', detail, [[-.5, .5], [.5, .5], [.5, -.5], [-.5, -.5]], s * .160, .877, .089, .011, 1, s * .026)
     }
-  } else if (vest) {
+  } else if (id === 'kelp-vest') {
     for (const s of [-1, 1]) {
       patch('Kelp quilting', detail, leaf, s * .110, 1.047, .121, .236, -1, s * .077)
       patch('Leaf welt pocket', trim, leaf, s * .136, .922, .075, .113, 1, s * .036)

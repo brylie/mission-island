@@ -10,6 +10,7 @@ Use one row per crew session to answer two questions. When does the crew first r
 | Forest Lookout fire | +4 | Completing both opening missions brings a fresh crew to 13 before other sales or purchases. |
 | Sell fish / carrots | +2 per fish / +3 per carrot | The seller supplies the goods from their inventory. |
 | Buy a carrot seed | −1 | The buyer receives one seed. Each personal starter chest also supplies one free seed. |
+| Buy a Seabrook everyday piece | −1 to −6 | The buyer keeps it. A two-coin piece fits a single crate payout. The six-coin cardigan and wellies each cost one farm supplies order. |
 | Buy the Harbor angler uniform | −3 | The buyer unlocks the uniform. |
 | Farm supplies / beach gear order | +6 / +10 | Deliver two seed crates / three beach crates. The whole order pays once. |
 | Fresh fish / carrot order | +6 / +8 | Contribute two fish / two carrots across the crew. Contributed goods have been used up. |

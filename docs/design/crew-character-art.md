@@ -55,12 +55,16 @@ Switch to **Paddle skiff** and orbit along the gunwale. The lower hand works the
 
 ![Five outfits on the crew character, standing from the front and walking away. Left to right are the Squid Slicker, Star Chart Sweater, Kelpwing Vest, Beacon Jersey and Dune Fox Pullover.](../images/seabrook-collection-fitting.jpg)
 
-In **Wardrobe → Crew character**, mix the counter items using **Hat**, **Shirt or swimsuit**, **Bottoms** and **Shoes**. All twenty pieces are available here before purchase. For an in-game check, buy an item at Seabrook’s clothing counter and apply it in the wardrobe.
+In **Wardrobe → Crew character**, mix the counter items using **Hat**, **Shirt or swimsuit**, **Bottoms** and **Shoes**. All forty pieces are available here before purchase. For an in-game check, buy an item at Seabrook’s clothing counter and apply it in the wardrobe.
 
 - Pair the **Reedlight Crown** with each hairstyle and use **Carry crate**. Check the open weave against the crown of the head as the player looks down.
 - Wear the **Kelpwing Vest** and **Shellstrap Sandals** during **Swim**. Orbit behind the figure and check the bare shoulders as the arms gather, then the straps over the toes as the ankles turn.
 - Seat the **Signal Sail Trousers** and **Lighthouse High-Tops** in **Paddle skiff**. Scrub the stroke and check the knee patches, trouser cuffs and boot collars. Switch to **Sprint** and follow the raised heel.
 - Compare the same piece on the market counter and on the player. Keep its cut, one identifying motif and the main color readable at follow-camera distance.
+
+![The second Seabrook collection in the Workbench, from the front at rest and from behind in mid-stride. The five looks feature picnic checks, bramble argyle, dockside denim, trail quilting and a storm sweater.](../images/seabrook-market-day-fitting.jpg)
+
+Try the **Picnic Straw Boater** with **Rail Stripe Jeans**, or the **Bramble Beret** with the original **Beacon Jersey**. Pay attention to the brim against the hairline and to whether the fabric pattern still reads when a crewmate walks away.
 
 ## Review with one playable figure
 

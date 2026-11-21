@@ -4,6 +4,8 @@ import { shopBottoms, shopShoes, type StockId } from '../wardrobe-stock'
 import { sweptDetail } from './crew-shapes'
 import { applique, panelSurface, tailored, type Section } from './shop-tailoring'
 
+import { marketLegDetails, marketShoeDetails } from './shop-market-legwear'
+
 const petal = [[0, .5], [-.36, .25], [-.5, -.05], [-.31, -.39], [0, -.5], [.32, -.34], [.48, .04], [.31, .34]]
 const pocket = [[-.48, .50], [.48, .50], [.46, -.26], [.28, -.48], [-.34, -.48], [-.46, -.32]]
 
@@ -11,7 +13,8 @@ export function buildBottomLeg(m: MeshFactory, id: StockId<'trousers'>, root: Tr
   const { color, trim, detail, short } = shopBottoms[id], x = -s * .032
   const hem = short ? (id === 'salt-shorts' ? -.208 : -.261) : -.463
   const cloud = id === 'cloud-pants', wide = id === 'tide-cuffs'
-  const ankle = wide ? .144 : short ? .120 : .106
+  const cuts: Partial<Record<StockId<'trousers'>, number>> = { 'night-flares': .161, 'oat-culottes': .148, 'plum-pleats': .123 }
+  const ankle = cuts[id] ?? (wide ? .144 : short ? .120 : .106)
   const rows: Section[] = [
     [hem, x, .003, ankle, .124, trim], [hem + .008, x, .003, ankle + .006, .131, trim],
     [hem + .034, x, .002, ankle + .007, .132, trim], [hem + .039, x, .001, ankle + .007, .133],
@@ -21,6 +24,7 @@ export function buildBottomLeg(m: MeshFactory, id: StockId<'trousers'>, root: Tr
     [.055, -s * .043, -.003, .133, .141], [.093, -s * .050, -.012, .117, .119])
   const fabric = tailored(m, root, shopBottoms[id].name, color, rows)
   const outside = panelSurface(fabric, 0, s), front = panelSurface(fabric, 2, 1)
+  if (marketLegDetails(m, root, id, x, s, front, outside, detail, trim)) return
   if (id === 'crab-cargo') {
     const panel = (u: number, v: number) => outside([x + s * .14, -.165 + v * .131, .004 + u * .148])
     applique(m, root, 'Bellows pocket', detail, pocket, panel, [s, 0, 0])
@@ -53,7 +57,7 @@ export function buildBottomLeg(m: MeshFactory, id: StockId<'trousers'>, root: Tr
 // All boot geometry, including the trim, is authored in the hip's bind coordinates.
 export function buildShoe(m: MeshFactory, id: StockId<'shoes'>, root: TransformNode, s: number) {
   const { color, trim, detail, open } = shopShoes[id], x = -s * .032
-  const boot = id === 'kelp-boots', high = id === 'light-tops', toe = id === 'crab-clogs' ? .066 : .052
+  const boot = ['kelp-boots', 'puddle-wellies'].includes(id), high = ['light-tops', 'bracken-hikers'].includes(id), toe = id === 'crab-clogs' ? .066 : .052
   const rows: Section[] = [
     [-.680, x, toe, .114, .169, detail], [-.673, x, toe, .125, .179, detail],
     [-.652, x, toe, .128, .182, detail], [-.646, x, toe, .128, .182, open ? color : detail],
@@ -68,6 +72,7 @@ export function buildShoe(m: MeshFactory, id: StockId<'shoes'>, root: TransformN
   }
   const shoe = tailored(m, root, shopShoes[id].name, color, rows, 24, open ? 0 : .054)
   const vamp = panelSurface(shoe, 1, 1), shaft = panelSurface(shoe, 0, s)
+  if (marketShoeDetails(m, root, id, x, s, vamp, shaft, detail, trim)) return
   if (open) {
     for (const [z, y, width, height] of [[.125, -.635, .109, .055], [-.002, -.632, .096, .076]]) {
       const arch: Parameters<typeof sweptDetail>[4] = [-1, -.82, -.45, 0, .45, .82, 1].map(u =>

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { readdirSync } from 'node:fs'
+import { URL } from 'node:url'
 import { actionHint } from '../src/actions.ts'
 import { clothingCatalog } from '../src/clothing-catalog.ts'
 import { anglerCost } from '../src/crew-appearance.ts'
@@ -166,14 +168,22 @@ test('individual purchases unlock only the buyer’s matching piece and keep the
   assert.equal(swimmer.state.crewCoins, 0)
 })
 
-test('the Seabrook collection prices, unlocks, and restores all twenty pieces independently', t => {
+test('each mix-and-match counter piece has its own shop portrait', () => {
+  const rack = new URL('../src/assets/clothing/', import.meta.url)
+  const images = readdirSync(rack).filter(file => file.endsWith('.webp')).sort()
+  const expected = Object.values(stockedPieces).flatMap(group => Object.keys(group).map(id => id + '.webp'))
+  assert.deepEqual(images, expected.sort())
+})
+
+test('the Seabrook collection prices, unlocks, and restores all forty pieces independently', t => {
   const point = { x: clothingCounter.x, z: clothingCounter.z + 0.82 }
-  const h = setup(t, { players: [player(0, point), player(1, point)], arrange: save => { save.crewCoins = 100 } })
+  const h = setup(t, { players: [player(0, point), player(1, point)], arrange: save => { save.crewCoins = 150 } })
   const buyer = h.join(tokens[0])
   const observer = h.join(tokens[1])
   const collection = Object.values(stockedPieces).flatMap(Object.keys)
-  assert.equal(collection.length, 20)
-  let remaining = 100
+  for (const rack of Object.values(stockedPieces)) assert.equal(Object.keys(rack).length, 10)
+  assert.equal(new Set(collection).size, 40)
+  let remaining = 150
   for (const id of collection) {
     const { price, slot, choice } = clothingCatalog[id]
     const appearance = { uniform: 'default', skin: 'deep', [slot]: choice }
