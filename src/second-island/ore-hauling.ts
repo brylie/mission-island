@@ -1,9 +1,9 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
-import { readStorage, writeStorage } from '../browser-storage'
+import { createFreightRadio } from './freight-radio'
 import { distance, offset, type Point, type Pose } from '../world'
-import { atFreightBay, dispatchBay, haulerUnlockXp, hopperBay, isFreightTicket, oreContracts, oreNames } from '../ore-contracts'
-import type { DriverStatus, FreightAction, Ore } from '../ore-contracts'
+import { atFreightBay, dispatchBay, haulerUnlockXp, hopperBay, parkedHauler, oreContracts, oreNames } from '../ore-contracts'
+import type { DriverStatus, FreightCommand, Ore } from '../ore-contracts'
 import { haulerPose, stepHauler } from './haul-drive'
 import { createOreLoad } from './quarry-art'
 import { vehiclePlacement } from './scenery'
@@ -20,29 +20,6 @@ function createBayMarkers(meshes: MeshFactory) {
     meshes.cylinder(x, .33, 0, .17, .23, .10, 8, '#fff1cc', marker)
   }
   return marker
-}
-
-function parkedSpot(parkingKey: string, data: DriverStatus) {
-  const saved = readStorage('sessionStorage', parkingKey)
-  let spot: unknown
-  try { spot = JSON.parse(saved ?? 'null') } catch { /* Use the quarry bay. */ }
-  if (Array.isArray(spot) && spot.length === 4 && spot.every(Number.isFinite) && spot[0] === data.ticket.revision &&
-    Math.abs(Number(spot[1])) <= 560 && Math.abs(Number(spot[2])) <= 430) {
-    return { x: Number(spot[1]), z: Number(spot[2]), heading: Number(spot[3]) }
-  }
-  return data.ticket.loaded ? hopperBay : dispatchBay
-}
-
-async function dispatchRequest(token: string | null, command?: FreightAction) {
-  const response = await fetch('/api/slatecliff-freight', {
-    method: command ? 'POST' : 'GET', headers: token ? { Authorization: 'Bearer ' + token } : {},
-    body: command && JSON.stringify(command), signal: AbortSignal.timeout(6000),
-  })
-  const data: unknown = await response.json()
-  if (!data || typeof data !== 'object' || !('xp' in data) || typeof data.xp !== 'number' ||
-    !('ticket' in data) || !isFreightTicket(data.ticket)) throw new Error()
-  return { data: { xp: data.xp, ticket: data.ticket }, ok: response.ok,
-    error: 'error' in data && typeof data.error === 'string' ? data.error : undefined }
 }
 
 function freightChoices(select: HTMLSelectElement, mode: string) {
@@ -71,8 +48,18 @@ function bindDispatchControls(select: HTMLSelectElement, action: HTMLButtonEleme
   }
 }
 
-function driverToken() {
-  return readStorage('sessionStorage', 'mission-island-crew') ?? readStorage('localStorage', 'mission-island-crew')
+function oreDisplay(meshes: MeshFactory, truck: TransformNode) {
+  const loads = new Map<Ore, ReturnType<typeof createOreLoad>>()
+  return (ore?: Ore) => {
+    if (ore && !loads.has(ore)) loads.set(ore, createOreLoad(meshes, truck, ore))
+    for (const [id, mesh] of loads) mesh.setEnabled(ore === id)
+  }
+}
+
+function cabSign(status: DriverStatus | undefined, range: number) {
+  if (!status) return 'Contacting dispatch…'
+  if (status.xp < haulerUnlockXp) return `Ore truck certification · ${status.xp}/${haulerUnlockXp} driver XP. Haul crates on Starter Island to earn XP when your crew delivers them.`
+  return 'Certified ore truck driver · ' + range + ' m to the cab.'
 }
 
 export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, walker: ReturnType<typeof placeWalker>,
@@ -82,15 +69,9 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
   const select = get<HTMLSelectElement>('freight-choice'), action = get<HTMLButtonElement>('freight-action')
   const seat = get<HTMLButtonElement>('freight-seat')
   const { root: truck, roll } = createOreHauler(meshes, true)
-  const loads = new Map<Ore, ReturnType<typeof createOreLoad>>()
+  const showLoad = oreDisplay(meshes, truck)
   const marker = createBayMarkers(meshes)
   const pose = { ...dispatchBay, heading: vehiclePlacement('hauler').heading, speed: 0 }
-  let token = driverToken()
-  const parkingKey = () => 'slatecliff-parking-' + token
-  function saveParking() {
-    if (token && status) writeStorage('sessionStorage', parkingKey(), JSON.stringify([status.ticket.revision, pose.x, pose.z, pose.heading]))
-  }
-  window.addEventListener('pagehide', saveParking)
   function placeTruck() {
     const ground = haulerPose(pose)
     truck.position.set(pose.x, ground.y, pose.z)
@@ -109,62 +90,63 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
   function target(): Point | undefined {
     return driving ? destination() : (order() || nearby || qualified()) ? pose : undefined
   }
-  function showLoad() {
-    const ore = status?.ticket.loaded ? order()?.ore : undefined
-    if (ore && !loads.has(ore)) loads.set(ore, createOreLoad(meshes, truck, ore))
-    for (const [id, mesh] of loads) mesh.setEnabled(ore === id)
+  function setSeat(seated: boolean) {
+    if (driving === seated) return
+    driving = seated
+    pose.speed = 0
+    if (!seated) Object.assign(walker, exitPoint(pose, solids) ?? placeWalker(offset(pose, 2.2, 2.2)))
+    placeTruck()
+    changeSeat(seated, pose.heading)
   }
-  async function request(command?: FreightAction) {
+  function disconnected(message: string) {
+    setSeat(false)
+    status = undefined
+    receipt.textContent = message
+    receipt.dataset.offline = 'true'
+    refreshAt = performance.now() + 1000
+  }
+  const radio = createFreightRadio(disconnected)
+  async function request(command?: Exclude<FreightCommand, { action: 'drive' }>) {
     if (busy) return
     busy = true
     const previous = order()
     try {
-      token ??= driverToken()
-      const { data, ok, error } = await dispatchRequest(token, command)
-      if (!status) { Object.assign(pose, parkedSpot(parkingKey(), data)); placeTruck() }
-      status = data
-      if (command && ok) saveParking()
-      showLoad()
-      if (command) receipt.textContent = error ?? (command.action === 'deliver' && previous
+      const reply = await radio.send(command)
+      status = reply.status
+      Object.assign(pose, parkedHauler(status.ticket), { speed: 0 })
+      placeTruck()
+      showLoad(status.ticket.loaded ? order()?.ore : undefined)
+      if (reply.error) {
+        if (!status.boarded) setSeat(false)
+        receipt.textContent = reply.error
+      } else if (command?.action === 'board' || command?.action === 'leave') {
+        setSeat(command.action === 'board')
+        receipt.textContent = ''
+      } else if (command) receipt.textContent = command.action === 'deliver' && previous
         ? previous.buyer.name + ' signed for the load. +' + previous.coins + ' crew coins.'
-        : command.action === 'load' ? 'Weighed and loaded. Your ticket is ready for the buyer.' : 'Dispatch ticket issued.')
-      else if (!ok) throw new Error()
+        : command.action === 'load' ? 'Weighed and loaded. Your ticket is ready for the buyer.' : 'Dispatch ticket issued.'
       else if (receipt.dataset.offline) receipt.textContent = ''
       delete receipt.dataset.offline
-    } catch {
-      receipt.dataset.offline = 'true'
-      receipt.textContent = 'Dispatch radio offline. Reconnecting…'
-    } finally { busy = false; refreshAt = performance.now() + (receipt.dataset.offline ? 3000 : 15000); render() }
+      refreshAt = performance.now() + 15000
+    } catch { disconnected('Dispatch radio offline. Reconnecting…') }
+    finally { busy = false; render() }
   }
   function toggleSeat() {
     if (!enabled || busy || !qualified() || Math.abs(pose.speed) > .15) return
-    if (driving) {
-      const exit = exitPoint(pose, solids)
-      if (!exit) { receipt.textContent = 'Pull forward to give the cab door room.'; return }
-      Object.assign(walker, exit)
-    } else if (distance(walker, pose) > 6) return
-    driving = !driving
-    pose.speed = 0
-    placeTruck()
-    changeSeat(driving, pose.heading)
-    render()
+    if (driving && !exitPoint(pose, solids)) { receipt.textContent = 'Pull forward to give the cab door room.'; return }
+    if (driving || distance(walker, pose) <= 6) void request({ action: driving ? 'leave' : 'board' })
   }
   function interact() {
     if (!enabled || panel.hidden) return false
     if (!driving) { if (distance(walker, pose) > 6) return false; toggleSeat(); return true }
     if (!busy && status && atFreightBay(pose, destination()) && Math.abs(pose.speed) <= .15) {
       const job = order()
-      void request({ action: !job ? 'accept' : status.ticket.loaded ? 'deliver' : 'load',
-        x: pose.x, z: pose.z, choice: select.value, revision: status.ticket.revision })
+      void request(job && status.ticket.loaded ? { action: 'deliver' } : { action: job ? 'load' : 'accept', choice: select.value })
     }
     return true
   }
   function instructions(range: number, braking: boolean) {
-    if (!driving) {
-      if (!status) return 'Contacting dispatch…'
-      if (status.xp < haulerUnlockXp) return `Ore truck certification · ${status.xp}/${haulerUnlockXp} driver XP. Haul crates on Starter Island to earn XP when your crew delivers them.`
-      return 'Certified ore truck driver · ' + range + ' m to the cab.'
-    }
+    if (!driving) return cabSign(status, range)
     const offer = oreContracts.find(o => o.id === select.value)
     if (mode === 'contract' && offer) return offer.purpose + ' · ' + offer.coins + ' coins.'
     const job = order()
@@ -199,19 +181,23 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
   return {
     target, interact, toggleSeat, get driving() { return driving },
     drive(keys: Set<string>, dt: number) {
+      if (busy || radio.full || dt <= 0) return pose
       const key = (a: string, b: string) => Number(keys.has(a) || keys.has(b))
-      const steer = key('d', 'arrowright') - key('a', 'arrowleft')
-      const steering = stepHauler(pose, key('w', 'arrowup') - key('s', 'arrowdown'), steer,
-        keys.has(' ') || busy && pose.speed === 0, dt, solids, Boolean(status?.ticket.loaded))
+      const input = { throttle: key('w', 'arrowup') - key('s', 'arrowdown'), steer: key('d', 'arrowright') - key('a', 'arrowleft'),
+        brake: keys.has(' '), dt }
+      const moving = pose.speed !== 0 || input.throttle !== 0
+      const { steering, step } = stepHauler(pose, input, solids, Boolean(status?.ticket.loaded))
+      if (moving) radio.record(step)
       roll(pose.speed * dt, steering)
       if (pose.speed) placeTruck()
       return pose
     },
     update(available: boolean) {
+      radio.update()
       enabled = available
       nearby = distance(walker, pose) < 45
       if (performance.now() >= nextDraw) { render(); nextDraw = performance.now() + 120 }
-      if ((nearby || driving || !status) && performance.now() >= refreshAt && !busy) void request()
+      if (!driving && (nearby || !status) && performance.now() >= refreshAt && !busy) void request()
     },
   }
 }

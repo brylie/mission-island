@@ -9,10 +9,37 @@ import { arrival, lowerLake, tarn, landBounds, pavedYards, roundYards, runway, s
 import { bridgeAt, deckSection, dryLandKm2, fallsY, nearestRoad, fallsX, groundHeight, shoreAccess, surfaceHeight, waterHeight } from '../src/second-island/terrain.ts'
 import { villageWalks } from '../src/second-island/footways.ts'
 import { clearCameraDistance, placeWalker, ScenerySolids, walkSaltwind } from '../src/second-island/walking.ts'
+import { stepHauler } from '../src/second-island/haul-drive.ts'
+import { advanceHauler } from '../src/simulation/ore-truck.ts'
 import { tour } from '../src/second-island/tour.ts'
 
 const at = ({ x, z }, sample) => sample(x, z)
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z)
+
+test('scenery queries reach neighboring cells and return each intersecting block once', () => {
+  const solids = new ScenerySolids()
+  const post = { x: 9, z: 8.2, width: .2, depth: .2, bottom: 0, top: 2, heading: 0 }
+  const rail = { ...post, x: 8, z: 8, width: 3, depth: 3 }
+  solids.add(post)
+  solids.add(rail)
+  solids.parkedVehicle = { ...post, x: 7.2 }
+  assert.deepEqual(new Set(solids.at(7.9, 7.9, 1.22)), new Set([post, rail, solids.parkedVehicle]))
+  assert.equal(solids.at(7.9, 7.9, 1.22).length, 3)
+  assert.ok(!solids.at(7.9, 7.9, .28).includes(post))
+})
+
+test('a blocked truck step leaves the predicted and host positions together', () => {
+  const solids = new ScenerySolids()
+  const local = { x: 288, z: 156, heading: Math.PI / 2, speed: 4 }
+  const host = { ...local }
+  const y = surfaceHeight(292, 156)
+  solids.add({ x: 292, z: 156, bottom: y, top: y + 3, heading: 0, width: 1, depth: 1 })
+  const result = stepHauler(local, { throttle: 1, steer: 1, brake: false, dt: .05 }, solids, false)
+  assert.equal(result.step, null)
+  advanceHauler(host, result.step, false)
+  assert.deepEqual(host, local)
+  assert.equal(local.speed, 0)
+})
 
 test('Saltwind has a reproducible dry footprint and separate surveyed coast, lake and fairway', () => {
   const area = dryLandKm2(1)

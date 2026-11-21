@@ -1,4 +1,5 @@
-import { distance, type Point } from './world.ts'
+import type { HaulStep } from './simulation/ore-truck.ts'
+import { distance, type Point, type Pose } from './world.ts'
 
 export const crateDriverXp = 10
 export const haulerUnlockXp = 100
@@ -27,16 +28,22 @@ export interface FreightTicket {
   contract: OreContract['id'] | null
   loaded: boolean
   loadedAt: number
+  truck?: Pose
 }
 export interface DriverStatus {
+  boarded: boolean
   xp: number
   ticket: FreightTicket
 }
 export const emptyTicket = (): FreightTicket => ({ revision: 0, contract: null, loaded: false, loadedAt: 0 })
-export interface FreightAction extends Point {
-  action: 'accept' | 'load' | 'deliver'
-  choice: string
-  revision: number
+export type FreightOrder = { action: 'accept' | 'load'; choice: string } | { action: 'deliver' }
+export type FreightCommand = FreightOrder
+  | { action: 'board' } | { action: 'leave' }
+  | { action: 'drive'; steps: HaulStep[] }
+export type FreightAction = FreightCommand & { revision: number }
+
+export function parkedHauler(ticket: FreightTicket) {
+  return ticket.truck ?? { ...(ticket.loaded ? hopperBay : dispatchBay), heading: Math.PI / 2 }
 }
 
 export function isFreightTicket(ticket: unknown): ticket is FreightTicket {
@@ -44,6 +51,7 @@ export function isFreightTicket(ticket: unknown): ticket is FreightTicket {
   const v = ticket as Partial<FreightTicket>
   if (typeof v.revision !== 'number' || !Number.isSafeInteger(v.revision) || v.revision < 0 || typeof v.loaded !== 'boolean' ||
     typeof v.loadedAt !== 'number' || !Number.isFinite(v.loadedAt) || v.loadedAt < 0) return false
+  if (v.truck !== undefined && (!v.truck || ![v.truck.x, v.truck.z, v.truck.heading].every(Number.isFinite))) return false
   const hasContract = oreContracts.some(order => order.id === v.contract)
   return (hasContract || v.contract === null) && (v.loaded ? hasContract : v.loadedAt === 0)
 }
