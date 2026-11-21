@@ -164,11 +164,6 @@
       "count": 6
     }
   },
-  "src/audio/recipes.ts": {
-    "no-magic-numbers": {
-      "count": 135
-    }
-  },
   "src/audio/shore.ts": {
     "no-magic-numbers": {
       "count": 10

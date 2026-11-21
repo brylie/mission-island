@@ -1,3 +1,6 @@
+import { crateImpactRecipe } from '../assets/audio/crate-impact.ts'
+import { footstepRecipe } from '../assets/audio/footsteps.ts'
+import { surfRecipe } from '../assets/audio/surf.ts'
 import { seededRandom } from '../seeded-random.ts'
 import { addMode, addThump, band, finish, lowpass, mixInto, recipeRate, samples, shape, strike, whiteNoise } from './dsp.ts'
 
@@ -6,7 +9,6 @@ import { addMode, addThump, band, finish, lowpass, mixInto, recipeRate, samples,
 
 export type FootSurface = 'gravel' | 'sand' | 'boards' | 'fallback'
 export type CrateSurface = 'ground' | 'bed'
-
 type CrateTraits = { strength: number, surface: CrateSurface }
 type FootstepTraits = { surface: FootSurface, strength: number }
 type SurfTraits = { strength: number }
@@ -25,135 +27,162 @@ export function renderJob(job: RecipeJob): Float32Array {
   return renderSwell(job.traits, job.seed)
 }
 
-const tiers = 3
-const tierOf = (value: number) => Math.min(tiers - 1, Math.max(0, Math.floor(clamp01(value) * tiers)))
-const tierValue = (tier: number) => (tier + 0.5) / tiers
+const strengthTiers = 3
+const half = 0.5
+const tierOf = (value: number) => Math.min(strengthTiers - 1, Math.max(0, Math.floor(clamp01(value) * strengthTiers)))
+const tierValue = (tier: number) => (tier + half) / strengthTiers
 
 function clamp01(value: number) {
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0
 }
 
 // Seeds pick related variants; the recipe name keeps the streams of each family apart.
-function variantRandom(family: string, seed: number, tier: number, extra = 0) {
-  let hash = Math.abs(Math.floor(seed)) * 2654435761 + tier * 97 + extra * 7919
-  for (const char of family) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619)
+const seedHashMultiplier = 2_654_435_761
+const tierHashMultiplier = 97
+const familyHashMultiplier = 16_777_619
+function variantRandom(family: string, seed: number, tier: number) {
+  let hash = Math.abs(Math.floor(seed)) * seedHashMultiplier + tier * tierHashMultiplier
+  for (const char of family) hash = Math.imul(hash ^ char.charCodeAt(0), familyHashMultiplier)
   return seededRandom((hash >>> 0) || 1)
 }
 
-const jitter = (random: () => number, amount: number) => 1 + (random() * 2 - 1) * amount
+const signedRandomRange = 2
+const jitter = (random: () => number, amount: number) => 1 + (random() * signedRandomRange - 1) * amount
 
 export function renderCrate(traits: CrateTraits, seed: number): Float32Array {
-  const strength = tierValue(tierOf(traits.strength))
-  const bed = traits.surface === 'bed'
-  const random = variantRandom(`crate-${traits.surface}`, seed, tierOf(traits.strength))
-  const out = samples(bed ? 0.85 : 0.55)
-  addThump(out, (bed ? 150 : 115) * jitter(random, 0.05), bed ? 74 : 58, bed ? 0.07 : 0.045, 1)
-  const burst = shape(lowpass(whiteNoise(out.length, random), 600 + strength * 900), strike(0.002, 0.014))
-  mixInto(out, burst, 0.7)
-  // A hollow deck rings longer and lower than a crate landing on packed ground.
-  const modes = bed ? [176, 284, 455, 731] : [214, 388, 612]
-  for (const [i, frequency] of modes.entries()) {
-    const decay = (bed ? 0.16 : 0.05) * jitter(random, 0.2) / (1 + i * 0.35)
-    addMode(out, frequency * jitter(random, 0.06), decay, (0.32 + strength * 0.45) / (1 + i * 0.6), random() * 0.002)
+  const tier = tierOf(traits.strength)
+  const strength = tierValue(tier)
+  const { durationSeconds, thump, resonance } = traits.surface === 'bed' ? crateImpactRecipe.bed : crateImpactRecipe.ground
+  const { thumpPitchJitter, burst, wood, splinter } = crateImpactRecipe
+  const random = variantRandom(`crate-${traits.surface}`, seed, tier)
+  const out = samples(durationSeconds)
+  addThump(out, thump.fromHz * jitter(random, thumpPitchJitter), thump.toHz, thump.decaySeconds, 1)
+  const bodyNoise = lowpass(whiteNoise(out.length, random), burst.cutoffHz + strength * burst.strengthCutoffHz)
+  mixInto(out, shape(bodyNoise, strike(...burst.envelopeSeconds)), burst.gain)
+
+  for (const [i, frequency] of resonance.frequenciesHz.entries()) {
+    const decay = resonance.decaySeconds * jitter(random, wood.decayJitter) / (1 + i * wood.decayFalloff)
+    const gain = (wood.baseGain + strength * wood.strengthGain) / (1 + i * wood.gainFalloff)
+    addMode(out, frequency * jitter(random, wood.pitchJitter), decay, gain, random() * wood.maxStartSeconds)
   }
+
   // Harder impacts carry a brighter splintery tick.
-  const tick = shape(band(whiteNoise(out.length, random), 2400, 7000), strike(0.0008, 0.004 + strength * 0.006))
-  mixInto(out, tick, 0.08 + strength * 0.55)
+  const tick = band(whiteNoise(out.length, random), ...splinter.bandHz)
+  mixInto(out, shape(tick, strike(splinter.attackSeconds, splinter.decaySeconds + strength * splinter.strengthDecaySeconds)), splinter.baseGain + strength * splinter.strengthGain)
   return finish(out)
 }
 
 export function crateCue(traits: CrateTraits, seed: number): Rendered {
   const strength = clamp01(traits.strength)
+  const { baseGain, strengthGain } = crateImpactRecipe.playback
   return {
     key: `crate:${traits.surface}:${tierOf(strength)}:${seed}`,
     job: { family: 'crate', traits: { strength: traits.strength, surface: traits.surface }, seed },
-    gain: 0.18 + strength * 0.82,
+    gain: baseGain + strength * strengthGain,
     rate: recipeRate,
   }
 }
 
 function gravelStep(out: Float32Array, random: () => number, strength: number) {
-  mixInto(out, shape(lowpass(whiteNoise(out.length, random), 320), strike(0.004, 0.022)), 0.6)
-  const ticks = 4 + Math.floor(random() * 3 + strength * 3)
+  const { body, grains } = footstepRecipe.gravel
+  mixInto(out, shape(lowpass(whiteNoise(out.length, random), body.cutoffHz), strike(...body.envelopeSeconds)), body.gain)
+  const ticks = grains.baseCount + Math.floor(random() * grains.countVariation + strength * grains.strengthCount)
   for (let i = 0; i < ticks; i++) {
-    const at = Math.round((0.004 + random() * 0.07) * recipeRate)
-    const grain = shape(band(whiteNoise(Math.round(0.012 * recipeRate), random), 1800 + random() * 1600, 6500), strike(0.0005, 0.0025))
-    mixInto(out, grain, (0.25 + random() * 0.6) * (0.6 + strength * 0.5), at)
+    const at = Math.round((grains.startSeconds + random() * grains.startVariationSeconds) * recipeRate)
+    const noise = whiteNoise(Math.round(grains.durationSeconds * recipeRate), random)
+    const grain = shape(band(noise, grains.lowHz + random() * grains.lowVariationHz, grains.highHz), strike(...grains.envelopeSeconds))
+    const gain = (grains.baseGain + random() * grains.gainVariation) * (grains.strengthBase + strength * grains.strengthGain)
+    mixInto(out, grain, gain, at)
   }
 }
 
 function sandStep(out: Float32Array, random: () => number, strength: number) {
-  const scrape = lowpass(whiteNoise(out.length, random), (t) => 950 + strength * 400 - t * 2600)
-  mixInto(out, shape(scrape, strike(0.018, 0.06 + strength * 0.03)), 1)
-  mixInto(out, shape(lowpass(whiteNoise(out.length, random), 180), strike(0.006, 0.03)), 0.5)
+  const { scrape, body } = footstepRecipe.sand
+  const friction = lowpass(whiteNoise(out.length, random), (t) => scrape.cutoffHz + strength * scrape.strengthCutoffHz - t * scrape.cutoffDropHzPerSecond)
+  mixInto(out, shape(friction, strike(scrape.attackSeconds, scrape.decaySeconds + strength * scrape.strengthDecaySeconds)), 1)
+  mixInto(out, shape(lowpass(whiteNoise(out.length, random), body.cutoffHz), strike(...body.envelopeSeconds)), body.gain)
 }
 
 function boardStep(out: Float32Array, random: () => number, strength: number) {
-  mixInto(out, shape(lowpass(whiteNoise(out.length, random), 700), strike(0.002, 0.012)), 0.55)
-  addMode(out, 188 * jitter(random, 0.08), 0.06, 0.6 + strength * 0.2)
-  addMode(out, 337 * jitter(random, 0.08), 0.035, 0.32 + strength * 0.2, 0.001)
-  mixInto(out, shape(band(whiteNoise(out.length, random), 2200, 6000), strike(0.0006, 0.003)), 0.1 + strength * 0.2)
+  const { body, modes, pitchJitter, modeStrengthGain, grain } = footstepRecipe.boards
+  mixInto(out, shape(lowpass(whiteNoise(out.length, random), body.cutoffHz), strike(...body.envelopeSeconds)), body.gain)
+  for (const mode of modes) {
+    addMode(out, mode.frequencyHz * jitter(random, pitchJitter), mode.decaySeconds, mode.gain + strength * modeStrengthGain, mode.startSeconds)
+  }
+  mixInto(out, shape(band(whiteNoise(out.length, random), ...grain.bandHz), strike(...grain.envelopeSeconds)), grain.baseGain + strength * grain.strengthGain)
 }
 
 export function renderFootstep(traits: FootstepTraits, seed: number): Float32Array {
   const tier = tierOf(traits.strength)
   const strength = tierValue(tier)
   const random = variantRandom(`step-${traits.surface}`, seed, tier)
-  const out = samples(traits.surface === 'boards' ? 0.26 : 0.2)
+  const out = samples(traits.surface === 'boards' ? footstepRecipe.boards.durationSeconds : footstepRecipe.durationSeconds)
   if (traits.surface === 'gravel') gravelStep(out, random, strength)
   else if (traits.surface === 'sand') sandStep(out, random, strength)
   else if (traits.surface === 'boards') boardStep(out, random, strength)
-  else mixInto(out, shape(lowpass(whiteNoise(out.length, random), 480), strike(0.005, 0.03)), 1)
+  else {
+    const { cutoffHz, envelopeSeconds } = footstepRecipe.fallback
+    mixInto(out, shape(lowpass(whiteNoise(out.length, random), cutoffHz), strike(...envelopeSeconds)), 1)
+  }
   return finish(out)
 }
 
-const footstepLevel: Record<FootSurface, number> = { gravel: 0.55, sand: 0.42, boards: 0.6, fallback: 0.22 }
-
 export function footstepCue(traits: FootstepTraits, seed: number): Rendered {
   const strength = clamp01(traits.strength)
+  const { baseGain, strengthGain } = footstepRecipe.playback
   return {
     key: `step:${traits.surface}:${tierOf(strength)}:${seed}`,
     job: { family: 'step', traits: { surface: traits.surface, strength: traits.strength }, seed },
-    gain: footstepLevel[traits.surface] * (0.55 + strength * 0.45),
+    gain: footstepRecipe[traits.surface].level * (baseGain + strength * strengthGain),
     rate: recipeRate,
   }
 }
 
-// Surf holds only low, broadband noise, so it renders at half the rate of the sharper cues.
-const surfRate = 12_000
-
 export function swellSeconds(strength: number) {
-  return 3.2 + tierValue(tierOf(strength)) * 1.4
+  return surfRecipe.durationSeconds + tierValue(tierOf(strength)) * surfRecipe.strengthDurationSeconds
 }
 
 // One breaker: a slow, dark swell for the incoming body and a brighter wash that darkens as it recedes.
 export function renderSwell(traits: SurfTraits, seed: number): Float32Array {
+  const { sampleRate, body, wash, crestPhase, crestVariation, edgeFadeSeconds } = surfRecipe
   const tier = tierOf(traits.strength)
   const strength = tierValue(tier)
   const random = variantRandom('surf', seed, tier)
   const seconds = swellSeconds(traits.strength)
-  const out = samples(seconds, surfRate)
-  const crest = seconds * (0.34 + random() * 0.06)
-  const body = lowpass(lowpass(whiteNoise(out.length, random), 300 + strength * 120, surfRate), 520, surfRate)
-  mixInto(out, shape(body, (t) => t < crest ? Math.sin(t / crest * Math.PI / 2) ** 2 : Math.exp(-(t - crest) / (seconds * 0.32)), surfRate), 1.3)
-  const washStart = crest * 0.9
-  const brightness = 1900 + strength * 1900
-  const wash = lowpass(band(whiteNoise(out.length, random), 260, 5500, surfRate), (t) => t < washStart ? brightness : Math.max(420, brightness * Math.exp(-(t - washStart) / (seconds * 0.25))), surfRate)
-  const washLength = seconds * (0.38 + strength * 0.22)
-  mixInto(out, shape(wash, (t) => {
+  const out = samples(seconds, sampleRate)
+  const crest = seconds * (crestPhase + random() * crestVariation)
+  const bodyNoise = lowpass(whiteNoise(out.length, random), body.cutoffHz + strength * body.strengthCutoffHz, sampleRate)
+  mixInto(out, shape(lowpass(bodyNoise, body.secondCutoffHz, sampleRate), (t) => {
+    return t < crest
+      ? Math.sin(t / crest * Math.PI * half) ** body.crestCurve
+      : Math.exp(-(t - crest) / (seconds * body.decayFraction))
+  }, sampleRate), body.gain)
+  const washStart = crest * wash.startBeforeCrest
+  const brightness = wash.cutoffHz + strength * wash.strengthCutoffHz
+  const washNoise = band(whiteNoise(out.length, random), ...wash.bandHz, sampleRate)
+  const sweep = lowpass(washNoise, (t) => {
+    return t < washStart
+      ? brightness
+      : Math.max(wash.minimumCutoffHz, brightness * Math.exp(-(t - washStart) / (seconds * wash.brightnessDecayFraction)))
+  }, sampleRate)
+  const washLength = seconds * (wash.lengthFraction + strength * wash.strengthLengthFraction)
+  mixInto(out, shape(sweep, (t) => {
     const local = t - washStart
     if (local < 0) return 0
-    return local < 0.18 ? local / 0.18 : Math.max(0, 1 - (local - 0.18) / washLength) ** 1.6
-  }, surfRate), 0.35 + strength * 0.5)
-  return finish(out, surfRate, 0.05)
+    return local < wash.attackSeconds
+      ? local / wash.attackSeconds
+      : Math.max(0, 1 - (local - wash.attackSeconds) / washLength) ** wash.decayCurve
+  }, sampleRate), wash.baseGain + strength * wash.strengthGain)
+  return finish(out, sampleRate, edgeFadeSeconds)
 }
 
 export function swellCue(traits: SurfTraits, seed: number): Rendered {
   const strength = clamp01(traits.strength)
+  const { playback, sampleRate } = surfRecipe
   return {
     key: `surf:${tierOf(strength)}:${seed}`,
     job: { family: 'surf', traits: { strength: traits.strength }, seed },
-    gain: 0.35 + strength * 0.65,
-    rate: surfRate,
+    gain: playback.baseGain + strength * playback.strengthGain,
+    rate: sampleRate,
   }
 }
