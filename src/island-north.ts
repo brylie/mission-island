@@ -1,4 +1,5 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { northernRockGeometry, northernTreeGeometry } from './assets/geometry/starter-scenery'
 import { northernRegions } from './scenery'
 import { distance } from './world'
 import type { Point } from './world'
@@ -10,7 +11,8 @@ export function createNorthernScenery(meshes: MeshFactory) {
     const far = new TransformNode(zone.name + ' silhouette', meshes.scene)
     for (const { x, y, z, size, angle, index, tree } of zone.props) {
       if (tree) {
-        meshes.box(x, y + size, z, 0.2, size * 2, 0.23, '#675341', near, false)
+        const { trunkWidth, trunkDepth, trunkHeightRatio } = northernTreeGeometry
+        meshes.box(x, y + size, z, trunkWidth, size * trunkHeightRatio, trunkDepth, '#675341', near, false)
         for (let layer = 0; layer < 3; layer++) {
           const width = (2.25 - layer * 0.43) * size
           meshes.sphere(x, y + (1.45 + layer * 0.68) * size, z, width, size * 1.38, width, zone.color, near, false, 4)
@@ -18,7 +20,8 @@ export function createNorthernScenery(meshes: MeshFactory) {
         if (index % 2 === 0) meshes.sphere(x, y + size * 1.8, z, size * 1.7, size * 3.4, size * 1.7, zone.color, far, false, 3)
       }
       else {
-        const rock = meshes.sphere(x, y + size * 0.27, z, size * 2.3, size, size * 1.6, zone.color, near, false, 4)
+        const { centerHeightRatio, widthRatio, depthRatio } = northernRockGeometry
+        const rock = meshes.sphere(x, y + size * centerHeightRatio, z, size * widthRatio, size, size * depthRatio, zone.color, near, false, 4)
         rock.rotation.y = angle
         if (index % 3 === 0) meshes.sphere(x, y + size * 0.24, z, size * 2, size, size * 1.5, zone.color, far, false, 3)
       }

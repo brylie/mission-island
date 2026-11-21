@@ -1,3 +1,4 @@
+import { harborDock } from './assets/geometry/waterfront.ts'
 import { mendingBenchGeometry } from './assets/geometry/wren-garden.ts'
 
 export interface Point {
@@ -32,7 +33,7 @@ export const jumpGravity = 17
 export const truckStart: Pose = { x: -41, z: -11, heading: Math.PI / 2 }
 export const truckSeatSpeed = 2
 export const skiffStart: Pose = { x: -48.5, z: -35.8, heading: -2.5 }
-export const harborDock = { x: -44, firstZ: -29, planks: 18, spacing: 0.49, width: 3.45, plankDepth: 0.45, top: 0.23 }
+export { harborDock }
 export const harborDockPiles = [-45.6, -42.4].flatMap((x) =>
   [-31, -34, -37].map((z) => ({ x, z, bottom: -1.545, top: 0.705, diameter: 0.43 })))
 export const dockEndZ = harborDock.firstZ - (harborDock.planks - 1) * harborDock.spacing

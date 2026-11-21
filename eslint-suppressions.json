@@ -356,7 +356,7 @@
   },
   "src/island-north.ts": {
     "no-magic-numbers": {
-      "count": 27
+      "count": 21
     }
   },
   "src/island-render-pose.ts": {
@@ -551,7 +551,7 @@
   },
   "src/scenery.ts": {
     "no-magic-numbers": {
-      "count": 124
+      "count": 105
     }
   },
   "src/school-fish.ts": {
@@ -722,11 +722,6 @@
   "src/simulation/cargo-impacts.ts": {
     "no-magic-numbers": {
       "count": 5
-    }
-  },
-  "src/simulation/cargo.ts": {
-    "no-magic-numbers": {
-      "count": 61
     }
   },
   "src/simulation/coastal-school.ts": {
@@ -1146,7 +1141,7 @@
   },
   "src/world.ts": {
     "no-magic-numbers": {
-      "count": 149
+      "count": 142
     }
   },
   "src/worlds/starter/coastline.ts": {

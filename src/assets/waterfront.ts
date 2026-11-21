@@ -9,15 +9,16 @@ import { harborDock, harborDockPiles, skiffStart } from '../world'
 
 export function createDock(meshes: MeshFactory, shaderPile?: Point, deck: Material = meshes.paintRecipe('weathered-board')) {
   const { box, cylinder, paintSurface } = meshes
-  const { x, top, planks, spacing, width, firstZ, plankDepth } = harborDock
+  const { x, top, planks, spacing, width, firstZ, plankDepth, plankThickness } = harborDock
   const length = (planks - 1) * spacing + plankDepth
+  const plankCenterY = top - plankThickness / 2
   const timber = paintSurface('wood')
   for (const side of [-1, 1]) {
     box(x + side * 1.34, top - 0.31, firstZ - (length - plankDepth) / 2, 0.19, 0.25, length, timber)
   }
   for (let i = 0; i < planks; i++) {
     const z = firstZ - i * spacing, offset = (hash(i, 1, 931) - 0.5) * 0.04
-    const plank = box(x + offset, top - 0.1, z, width, 0.2, plankDepth, deck)
+    const plank = box(x + offset, plankCenterY, z, width, plankThickness, plankDepth, deck)
     boxSurfaceUVs(plank, true, hash(i, 0, 931) * 1.7)
     for (const side of [-1, 1]) {
       const nail = box(x + side * 1.34, top + 0.002, z + side * 0.065, 0.035, 0.008, 0.035, '#584e40', undefined, false)

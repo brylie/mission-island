@@ -1,3 +1,4 @@
+import { islandRockGeometry, islandTreeGeometry, northernRockGeometry, northernTreeGeometry } from './assets/geometry/starter-scenery.ts'
 import { seededRandom } from './seeded-random.ts'
 import { ridgeViewpoint } from './worlds/starter/sites.ts'
 import { starterPropTop } from './worlds/starter/colliders.ts'
@@ -7,7 +8,11 @@ import { coastRadius, falls, grove, groundHeight, headland, pool, waterDepth } f
 import { beach, distance, forest, harbor, island, lookout, town } from './world.ts'
 import type { Point } from './world.ts'
 
-export const treeTrunkRadius = 0.265
+const half = 0.5
+const islandRockHalfDepthRatio = islandRockGeometry.depthRatio * half
+const islandRockHalfHeightRatio = islandRockGeometry.heightRatio * half
+const northernRockHalfWidthRatio = northernRockGeometry.widthRatio * half
+const northernRockHalfDepthRatio = northernRockGeometry.depthRatio * half
 
 export { seededRandom }
 
@@ -63,7 +68,7 @@ export const islandRocks = Array.from({ length: 82 }, (_, index) => {
   return { x, z, size, angle, light: index % 3 === 0, ground }
 }).filter((rock) =>
   distance(rock, harbor) >= 8 && distance(rock, town) >= 13 && distance(rock, beach) >= 12
-  && distance(rock, lookout) >= 6 && distanceToRoads(rock) >= 4.2 + rock.size * 0.55
+  && distance(rock, lookout) >= 6 && distanceToRoads(rock) >= 4.2 + rock.size * islandRockHalfDepthRatio
   && !inFerryYard(rock, 1 + rock.size * 0.5)
   && footpaths.every(({ points, width }) => distanceToRoute(rock, points) >= width / 2 + rock.size * 0.56 + 0.5))
 
@@ -74,20 +79,21 @@ for (const [x, z, size, angle] of [[9.7, 80.7, 1.65, 0.8], [9.2, 82.6, 1.45, -0.
 
 export function overlapsProp(point: Point, padding: number) {
   if (starterPropTop(point, padding) > -Infinity) return true
-  const trunk = treeTrunkRadius + padding
+  const trunk = islandTreeGeometry.trunkRadius + padding
   if (islandTrees.some((tree) => (point.x - tree.x) ** 2 + (point.z - tree.z) ** 2 < trunk ** 2)) return true
   if (point.z > 40 && northernProps.some((prop) => {
-    const radius = (prop.tree ? 0.14 : prop.size * 0.9) + padding
+    const radius = (prop.tree ? northernTreeGeometry.walkingRadius : prop.size * northernRockGeometry.walkingRadiusRatio) + padding
     return (point.x - prop.x) ** 2 + (point.z - prop.z) ** 2 < radius ** 2
   })) return true
 
   return islandRocks.some((rock) => {
     const dx = point.x - rock.x
     const dz = point.z - rock.z
-    if (dx * dx + dz * dz > (rock.size * 0.55 + padding) ** 2) return false
+    if (dx * dx + dz * dz > (rock.size * islandRockHalfDepthRatio + padding) ** 2) return false
     const x = dx * Math.cos(rock.angle) - dz * Math.sin(rock.angle)
     const z = dx * Math.sin(rock.angle) + dz * Math.cos(rock.angle)
-    return (x / (rock.size * 0.48 + padding)) ** 2 + (z / (rock.size * 0.53 + padding)) ** 2 < 1
+    const { halfWidthRatio, halfDepthRatio } = islandRockGeometry.walkingFootprint
+    return (x / (rock.size * halfWidthRatio + padding)) ** 2 + (z / (rock.size * halfDepthRatio + padding)) ** 2 < 1
   })
 }
 
@@ -103,19 +109,21 @@ function rockTop(point: Point, rock: Point, angle: number, width: number, depth:
 export function propTop(point: Point, padding: number) {
   let top = starterPropTop(point, padding)
   for (const tree of islandTrees) {
-    if (distance(point, tree) < treeTrunkRadius + padding) top = Math.max(top, groundHeight(tree) + tree.height / 2)
+    if (distance(point, tree) < islandTreeGeometry.trunkRadius + padding) top = Math.max(top, groundHeight(tree) + tree.height * islandTreeGeometry.trunkHeightRatio)
   }
   for (const rock of islandRocks) {
-    if (distance(point, rock) > rock.size * 0.55 + padding) continue
-    top = Math.max(top, rockTop(point, rock, rock.angle, rock.size * 0.5, rock.size * 0.55, rock.ground + rock.size * 0.12, rock.size * 0.39, padding))
+    if (distance(point, rock) > rock.size * islandRockHalfDepthRatio + padding) continue
+    const centerY = rock.ground + rock.size * islandRockGeometry.centerHeightRatio
+    top = Math.max(top, rockTop(point, rock, rock.angle, rock.size * half, rock.size * islandRockHalfDepthRatio, centerY, rock.size * islandRockHalfHeightRatio, padding))
   }
   if (point.z > 40) {
     for (const prop of northernProps) {
       if (prop.tree) {
-        if (distance(point, prop) < 0.14 + padding) top = Math.max(top, prop.y + prop.size * 2)
+        if (distance(point, prop) < northernTreeGeometry.walkingRadius + padding) top = Math.max(top, prop.y + prop.size * northernTreeGeometry.trunkHeightRatio)
       }
-      else if (distance(point, prop) <= prop.size * 1.15 + padding) {
-        top = Math.max(top, rockTop(point, prop, prop.angle, prop.size * 1.15, prop.size * 0.8, prop.y + prop.size * 0.27, prop.size / 2, padding))
+      else if (distance(point, prop) <= prop.size * northernRockHalfWidthRatio + padding) {
+        const centerY = prop.y + prop.size * northernRockGeometry.centerHeightRatio
+        top = Math.max(top, rockTop(point, prop, prop.angle, prop.size * northernRockHalfWidthRatio, prop.size * northernRockHalfDepthRatio, centerY, prop.size * half, padding))
       }
     }
   }

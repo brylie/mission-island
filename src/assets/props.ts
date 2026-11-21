@@ -1,8 +1,8 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { beachUmbrellaGeometry } from './geometry/site-props'
+import { islandRockGeometry, islandTreeGeometry } from './geometry/starter-scenery'
 import type { MeshFactory } from '../island-meshes'
 import { surfaces } from '../materials'
-import { treeTrunkRadius } from '../scenery'
 import { chestSize, crateSize } from '../world'
 import type { Point } from '../world'
 const cream = '#fff3d0'
@@ -91,7 +91,8 @@ export function createUmbrella({ cylinder, surface }: MeshFactory, x: number, z:
 }
 
 export function createTree({ cylinder, sphere, paintSurface }: MeshFactory, x: number, z: number, height: number, variant: number, ground = 0) {
-  cylinder(x, ground + height * 0.25 - 0.08, z, 0.31, treeTrunkRadius * 2, height * 0.5 + 0.16, 6, paintSurface('wood'))
+  const trunkHeight = height * islandTreeGeometry.trunkHeightRatio
+  cylinder(x, ground + trunkHeight / 2 - 0.08, z, 0.31, islandTreeGeometry.trunkRadius * 2, trunkHeight + 0.16, 6, paintSurface('wood'))
   const canopy = paintSurface('leaves', ['#44784b', '#558953', '#366d4c', surfaces.leaves.color][variant % 4])
   if (variant % 3 === 0) {
     sphere(x, ground + height * 0.64, z, height * 0.8, height * 0.8, height * 0.77, canopy)
@@ -104,7 +105,8 @@ export function createTree({ cylinder, sphere, paintSurface }: MeshFactory, x: n
 }
 
 export function createRock({ sphere, paintSurface }: MeshFactory, x: number, z: number, size: number, angle: number, light: boolean, ground = 0) {
-  const rock = sphere(x, size * 0.12 + ground, z, size, size * 0.78, size * 1.1, paintSurface('stone', light ? '#b0ad91' : surfaces.stone.color))
+  const { centerHeightRatio, heightRatio, depthRatio } = islandRockGeometry
+  const rock = sphere(x, size * centerHeightRatio + ground, z, size, size * heightRatio, size * depthRatio, paintSurface('stone', light ? '#b0ad91' : surfaces.stone.color))
   rock.rotation.y = angle
   return rock
 }
