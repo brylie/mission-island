@@ -14,7 +14,7 @@ import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData'
 import type { Scene } from '@babylonjs/core/scene'
 import { createIslandMaterial, createRecipeMaterial, createSurfaceMaterial } from './materials'
-import { surfaceRecipe, type SurfaceRecipe } from './surface-recipes'
+import { surfaceRecipe, type SurfaceRecipe } from './assets/surface-recipes'
 import type { SurfaceName } from './materials'
 
 export function createIslandLighting(scene: Scene) {

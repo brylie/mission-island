@@ -1,7 +1,7 @@
 import { gameplayPatterns } from './gameplay-surface-patterns.ts'
 import { blend, hash, valueNoise, wrap } from './math/noise.ts'
 import { cell, fraction, smooth, wave, type Point, type Sample } from './surface-pattern-tools.ts'
-import type { StandardSurfaceId, SurfaceRecipe, SurfaceSettings } from './surface-recipes.ts'
+import type { StandardSurfaceId, SurfaceRecipe, SurfaceSettings } from './assets/surface-recipes.ts'
 
 function turf({ u, v, n, seed, wear, patch, fine }: Point, dry: boolean): Sample {
   const tuft = cell(u, v, n, seed)

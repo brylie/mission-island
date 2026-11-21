@@ -1,4 +1,9 @@
 {
+  "eslint.config.mjs": {
+    "no-magic-numbers": {
+      "count": 35
+    }
+  },
   "scripts/workbench-reference.mjs": {
     "no-magic-numbers": {
       "count": 1
@@ -149,221 +154,6 @@
       "count": 7
     }
   },
-  "src/assets/barrow.ts": {
-    "no-magic-numbers": {
-      "count": 128
-    }
-  },
-  "src/assets/buildings.ts": {
-    "no-magic-numbers": {
-      "count": 70
-    }
-  },
-  "src/assets/coastal-profiles.ts": {
-    "no-magic-numbers": {
-      "count": 2
-    }
-  },
-  "src/assets/crew-clothes.ts": {
-    "no-magic-numbers": {
-      "count": 508
-    }
-  },
-  "src/assets/crew-ear.ts": {
-    "no-magic-numbers": {
-      "count": 41
-    }
-  },
-  "src/assets/crew-hair.ts": {
-    "no-magic-numbers": {
-      "count": 504
-    }
-  },
-  "src/assets/crew-haircuts.ts": {
-    "no-magic-numbers": {
-      "count": 87
-    }
-  },
-  "src/assets/crew-head.ts": {
-    "no-magic-numbers": {
-      "count": 276
-    }
-  },
-  "src/assets/crew-knee.ts": {
-    "no-magic-numbers": {
-      "count": 6
-    }
-  },
-  "src/assets/crew-scalp.ts": {
-    "no-magic-numbers": {
-      "count": 48
-    }
-  },
-  "src/assets/crew-shapes.ts": {
-    "no-magic-numbers": {
-      "count": 12
-    }
-  },
-  "src/assets/crew-swim-arm.ts": {
-    "no-magic-numbers": {
-      "count": 67
-    }
-  },
-  "src/assets/crew-swimsuit.ts": {
-    "no-magic-numbers": {
-      "count": 129
-    }
-  },
-  "src/assets/crew.ts": {
-    "no-magic-numbers": {
-      "count": 142
-    }
-  },
-  "src/assets/dock-tug.ts": {
-    "no-magic-numbers": {
-      "count": 189
-    }
-  },
-  "src/assets/effect-props.ts": {
-    "no-magic-numbers": {
-      "count": 88
-    }
-  },
-  "src/assets/field-outing.ts": {
-    "no-magic-numbers": {
-      "count": 32
-    }
-  },
-  "src/assets/fish.ts": {
-    "no-magic-numbers": {
-      "count": 33
-    }
-  },
-  "src/assets/flatbed.ts": {
-    "no-magic-numbers": {
-      "count": 98
-    }
-  },
-  "src/assets/foxglove.ts": {
-    "no-magic-numbers": {
-      "count": 76
-    }
-  },
-  "src/assets/gull.ts": {
-    "no-magic-numbers": {
-      "count": 110
-    }
-  },
-  "src/assets/materials-work.ts": {
-    "no-magic-numbers": {
-      "count": 85
-    }
-  },
-  "src/assets/net-shed.ts": {
-    "no-magic-numbers": {
-      "count": 53
-    }
-  },
-  "src/assets/ore-hauler.ts": {
-    "no-magic-numbers": {
-      "count": 403
-    }
-  },
-  "src/assets/oystercatcher.ts": {
-    "no-magic-numbers": {
-      "count": 149
-    }
-  },
-  "src/assets/props.ts": {
-    "no-magic-numbers": {
-      "count": 173
-    }
-  },
-  "src/assets/ridge-flight-orbs.ts": {
-    "no-magic-numbers": {
-      "count": 1
-    }
-  },
-  "src/assets/ridge-glider.ts": {
-    "no-magic-numbers": {
-      "count": 86
-    }
-  },
-  "src/assets/ridge-updraft.ts": {
-    "no-magic-numbers": {
-      "count": 29
-    }
-  },
-  "src/assets/routes.ts": {
-    "no-magic-numbers": {
-      "count": 50
-    }
-  },
-  "src/assets/shop-garments.ts": {
-    "no-magic-numbers": {
-      "count": 26
-    }
-  },
-  "src/assets/shop-hats.ts": {
-    "no-magic-numbers": {
-      "count": 314
-    }
-  },
-  "src/assets/shop-legwear.ts": {
-    "no-magic-numbers": {
-      "count": 291
-    }
-  },
-  "src/assets/shop-market-legwear.ts": {
-    "no-magic-numbers": {
-      "count": 101
-    }
-  },
-  "src/assets/shop-market-tops.ts": {
-    "no-magic-numbers": {
-      "count": 91
-    }
-  },
-  "src/assets/shop-millinery.ts": {
-    "no-magic-numbers": {
-      "count": 247
-    }
-  },
-  "src/assets/shop-tailoring.ts": {
-    "no-magic-numbers": {
-      "count": 28
-    }
-  },
-  "src/assets/shop-textiles.ts": {
-    "no-magic-numbers": {
-      "count": 33
-    }
-  },
-  "src/assets/shop-tops.ts": {
-    "no-magic-numbers": {
-      "count": 280
-    }
-  },
-  "src/assets/site-props.ts": {
-    "no-magic-numbers": {
-      "count": 490
-    }
-  },
-  "src/assets/strand.ts": {
-    "no-magic-numbers": {
-      "count": 43
-    }
-  },
-  "src/assets/waterfront.ts": {
-    "no-magic-numbers": {
-      "count": 143
-    }
-  },
-  "src/assets/wren-garden.ts": {
-    "no-magic-numbers": {
-      "count": 138
-    }
-  },
   "src/audio/dsp.ts": {
     "no-magic-numbers": {
       "count": 10
@@ -371,7 +161,7 @@
   },
   "src/audio/engine.ts": {
     "no-magic-numbers": {
-      "count": 15
+      "count": 18
     }
   },
   "src/audio/gait.ts": {
@@ -391,12 +181,12 @@
   },
   "src/audio/mix.ts": {
     "no-magic-numbers": {
-      "count": 2
+      "count": 6
     }
   },
   "src/audio/recipes.ts": {
     "no-magic-numbers": {
-      "count": 131
+      "count": 135
     }
   },
   "src/audio/shore.ts": {
@@ -416,7 +206,7 @@
   },
   "src/aviation.ts": {
     "no-magic-numbers": {
-      "count": 4
+      "count": 6
     }
   },
   "src/barrow-contact.ts": {
@@ -426,35 +216,40 @@
   },
   "src/barrow-gait.ts": {
     "no-magic-numbers": {
-      "count": 9
+      "count": 12
     }
   },
   "src/barrow.ts": {
     "no-magic-numbers": {
-      "count": 6
+      "count": 19
     }
   },
   "src/biome-model.ts": {
     "no-magic-numbers": {
-      "count": 63
+      "count": 70
     }
   },
   "src/biome-navigation.ts": {
     "no-magic-numbers": {
-      "count": 30
+      "count": 35
     }
   },
   "src/biome-recipe.ts": {
     "no-magic-numbers": {
-      "count": 4
+      "count": 42
     }
   },
   "src/biome-scenery.ts": {
     "no-magic-numbers": {
-      "count": 100
+      "count": 103
     }
   },
   "src/charged-actions.ts": {
+    "no-magic-numbers": {
+      "count": 1
+    }
+  },
+  "src/clothing-catalog.ts": {
     "no-magic-numbers": {
       "count": 1
     }
@@ -486,17 +281,17 @@
   },
   "src/farm-order-view.ts": {
     "no-magic-numbers": {
-      "count": 28
+      "count": 32
     }
   },
   "src/farm-orders.ts": {
     "no-magic-numbers": {
-      "count": 9
+      "count": 14
     }
   },
   "src/farm.ts": {
     "no-magic-numbers": {
-      "count": 5
+      "count": 13
     }
   },
   "src/ferry-repair-ui.ts": {
@@ -506,17 +301,17 @@
   },
   "src/ferry-repair.ts": {
     "no-magic-numbers": {
-      "count": 14
+      "count": 23
     }
   },
   "src/field-interactions.ts": {
     "no-magic-numbers": {
-      "count": 13
+      "count": 19
     }
   },
   "src/fire-effect.ts": {
     "no-magic-numbers": {
-      "count": 36
+      "count": 42
     }
   },
   "src/fishing-line-view.ts": {
@@ -529,11 +324,6 @@
       "count": 705
     }
   },
-  "src/gameplay-surface-recipes.ts": {
-    "no-magic-numbers": {
-      "count": 164
-    }
-  },
   "src/gate-layout.ts": {
     "no-magic-numbers": {
       "count": 3
@@ -541,17 +331,17 @@
   },
   "src/gate-repair.ts": {
     "no-magic-numbers": {
-      "count": 28
+      "count": 36
     }
   },
   "src/gate-scene.ts": {
     "no-magic-numbers": {
-      "count": 146
+      "count": 147
     }
   },
   "src/gull-flight.ts": {
     "no-magic-numbers": {
-      "count": 121
+      "count": 125
     }
   },
   "src/gull-flock.ts": {
@@ -566,12 +356,12 @@
   },
   "src/gull-thermals.ts": {
     "no-magic-numbers": {
-      "count": 37
+      "count": 38
     }
   },
   "src/hare.ts": {
     "no-magic-numbers": {
-      "count": 23
+      "count": 25
     }
   },
   "src/interactions/cargo.ts": {
@@ -581,27 +371,27 @@
   },
   "src/interactive-shaders/catalog.ts": {
     "no-magic-numbers": {
-      "count": 207
+      "count": 227
     }
   },
   "src/interactive-shaders/effects.ts": {
     "no-magic-numbers": {
-      "count": 3
+      "count": 4
     }
   },
   "src/interactive-shaders/island-effects.ts": {
     "no-magic-numbers": {
-      "count": 58
+      "count": 63
     }
   },
   "src/interactive-shaders/light.ts": {
     "no-magic-numbers": {
-      "count": 56
+      "count": 58
     }
   },
   "src/interactive-shaders/render.ts": {
     "no-magic-numbers": {
-      "count": 6
+      "count": 7
     }
   },
   "src/interactive-shaders/skiff-wake.ts": {
@@ -611,27 +401,27 @@
   },
   "src/interactive-shaders/surfaces.ts": {
     "no-magic-numbers": {
-      "count": 83
+      "count": 85
     }
   },
   "src/interactive-shaders/vegetation.ts": {
     "no-magic-numbers": {
-      "count": 99
+      "count": 102
     }
   },
   "src/interactive-shaders/water.ts": {
     "no-magic-numbers": {
-      "count": 30
+      "count": 31
     }
   },
   "src/island-atmosphere.ts": {
     "no-magic-numbers": {
-      "count": 52
+      "count": 56
     }
   },
   "src/island-camera.ts": {
     "no-magic-numbers": {
-      "count": 43
+      "count": 51
     }
   },
   "src/island-farm.ts": {
@@ -641,12 +431,12 @@
   },
   "src/island-landmarks.ts": {
     "no-magic-numbers": {
-      "count": 3
+      "count": 30
     }
   },
   "src/island-landscape.ts": {
     "no-magic-numbers": {
-      "count": 143
+      "count": 149
     }
   },
   "src/island-map.ts": {
@@ -656,7 +446,7 @@
   },
   "src/island-meshes.ts": {
     "no-magic-numbers": {
-      "count": 10
+      "count": 15
     }
   },
   "src/island-north.ts": {
@@ -666,7 +456,7 @@
   },
   "src/island-phenomena.ts": {
     "no-magic-numbers": {
-      "count": 32
+      "count": 45
     }
   },
   "src/island-render-pose.ts": {
@@ -681,22 +471,22 @@
   },
   "src/island-terminal.ts": {
     "no-magic-numbers": {
-      "count": 260
+      "count": 262
     }
   },
   "src/island-wildlife.ts": {
     "no-magic-numbers": {
-      "count": 79
+      "count": 100
     }
   },
   "src/island-world.ts": {
     "no-magic-numbers": {
-      "count": 63
+      "count": 69
     }
   },
   "src/jobs.ts": {
     "no-magic-numbers": {
-      "count": 1
+      "count": 15
     }
   },
   "src/journal/journal.ts": {
@@ -711,7 +501,7 @@
   },
   "src/juniper-habitat.ts": {
     "no-magic-numbers": {
-      "count": 13
+      "count": 26
     }
   },
   "src/lan-invite.ts": {
@@ -726,12 +516,12 @@
   },
   "src/lookout-recovery-art.ts": {
     "no-magic-numbers": {
-      "count": 89
+      "count": 91
     }
   },
   "src/lookout-recovery.ts": {
     "no-magic-numbers": {
-      "count": 1
+      "count": 9
     }
   },
   "src/main.ts": {
@@ -746,7 +536,7 @@
   },
   "src/market-shower.ts": {
     "no-magic-numbers": {
-      "count": 250
+      "count": 270
     }
   },
   "src/materials-interactions.ts": {
@@ -756,7 +546,7 @@
   },
   "src/materials.ts": {
     "no-magic-numbers": {
-      "count": 31
+      "count": 43
     }
   },
   "src/math/noise.ts": {
@@ -771,7 +561,7 @@
   },
   "src/mission-card.ts": {
     "no-magic-numbers": {
-      "count": 5
+      "count": 7
     }
   },
   "src/mission-ui.ts": {
@@ -781,7 +571,7 @@
   },
   "src/objective-marker.ts": {
     "no-magic-numbers": {
-      "count": 7
+      "count": 13
     }
   },
   "src/ocean.ts": {
@@ -791,7 +581,7 @@
   },
   "src/ore-contracts.ts": {
     "no-magic-numbers": {
-      "count": 2
+      "count": 18
     }
   },
   "src/particle-effect.ts": {
@@ -799,29 +589,14 @@
       "count": 3
     }
   },
-  "src/particle-gameplay-recipes.ts": {
-    "no-magic-numbers": {
-      "count": 339
-    }
-  },
   "src/particle-motion.ts": {
     "no-magic-numbers": {
       "count": 19
     }
   },
-  "src/particle-recipes.ts": {
-    "no-magic-numbers": {
-      "count": 208
-    }
-  },
-  "src/particle-shelf-recipes.ts": {
-    "no-magic-numbers": {
-      "count": 446
-    }
-  },
   "src/particle-surface.ts": {
     "no-magic-numbers": {
-      "count": 30
+      "count": 31
     }
   },
   "src/particle-texture.ts": {
@@ -831,7 +606,7 @@
   },
   "src/place-labels.ts": {
     "no-magic-numbers": {
-      "count": 5
+      "count": 7
     }
   },
   "src/playtest-link.ts": {
@@ -881,7 +656,7 @@
   },
   "src/ridge-aviation-view.ts": {
     "no-magic-numbers": {
-      "count": 8
+      "count": 9
     }
   },
   "src/ridge-ui.ts": {
@@ -901,17 +676,17 @@
   },
   "src/routes.ts": {
     "no-magic-numbers": {
-      "count": 31
+      "count": 121
     }
   },
   "src/scene.ts": {
     "no-magic-numbers": {
-      "count": 41
+      "count": 43
     }
   },
   "src/scenery.ts": {
     "no-magic-numbers": {
-      "count": 114
+      "count": 124
     }
   },
   "src/school-fish.ts": {
@@ -921,12 +696,12 @@
   },
   "src/second-island/brinewick-market-art.ts": {
     "no-magic-numbers": {
-      "count": 210
+      "count": 214
     }
   },
   "src/second-island/brinewick-market.ts": {
     "no-magic-numbers": {
-      "count": 4
+      "count": 16
     }
   },
   "src/second-island/crew-bank.ts": {
@@ -936,12 +711,12 @@
   },
   "src/second-island/exteriors.ts": {
     "no-magic-numbers": {
-      "count": 260
+      "count": 261
     }
   },
   "src/second-island/footways.ts": {
     "no-magic-numbers": {
-      "count": 18
+      "count": 21
     }
   },
   "src/second-island/freight-radio.ts": {
@@ -956,7 +731,7 @@
   },
   "src/second-island/haul-drive.ts": {
     "no-magic-numbers": {
-      "count": 12
+      "count": 14
     }
   },
   "src/second-island/honey-delivery.ts": {
@@ -966,47 +741,47 @@
   },
   "src/second-island/landscape.ts": {
     "no-magic-numbers": {
-      "count": 190
+      "count": 192
     }
   },
   "src/second-island/long-acre-art.ts": {
     "no-magic-numbers": {
-      "count": 340
+      "count": 349
     }
   },
   "src/second-island/long-acre.ts": {
     "no-magic-numbers": {
-      "count": 45
+      "count": 113
     }
   },
   "src/second-island/lots.ts": {
     "no-magic-numbers": {
-      "count": 30
+      "count": 96
     }
   },
   "src/second-island/main.ts": {
     "no-magic-numbers": {
-      "count": 70
+      "count": 78
     }
   },
   "src/second-island/map.ts": {
     "no-magic-numbers": {
-      "count": 41
+      "count": 50
     }
   },
   "src/second-island/ore-hauling.ts": {
     "no-magic-numbers": {
-      "count": 41
+      "count": 43
     }
   },
   "src/second-island/place-effects.ts": {
     "no-magic-numbers": {
-      "count": 75
+      "count": 107
     }
   },
   "src/second-island/quarry-art.ts": {
     "no-magic-numbers": {
-      "count": 230
+      "count": 233
     }
   },
   "src/second-island/routes.ts": {
@@ -1021,27 +796,27 @@
   },
   "src/second-island/scenery.ts": {
     "no-magic-numbers": {
-      "count": 483
+      "count": 519
     }
   },
   "src/second-island/site-features.ts": {
     "no-magic-numbers": {
-      "count": 4
+      "count": 33
     }
   },
   "src/second-island/site-signs.ts": {
     "no-magic-numbers": {
-      "count": 29
+      "count": 41
     }
   },
   "src/second-island/sites.ts": {
     "no-magic-numbers": {
-      "count": 4
+      "count": 284
     }
   },
   "src/second-island/stockpiles.ts": {
     "no-magic-numbers": {
-      "count": 14
+      "count": 37
     }
   },
   "src/second-island/tarnstep-spray.ts": {
@@ -1056,7 +831,7 @@
   },
   "src/second-island/vehicles.ts": {
     "no-magic-numbers": {
-      "count": 254
+      "count": 289
     }
   },
   "src/second-island/walking.ts": {
@@ -1066,7 +841,7 @@
   },
   "src/second-island/weather.ts": {
     "no-magic-numbers": {
-      "count": 1
+      "count": 7
     }
   },
   "src/second-island/world-labels.ts": {
@@ -1076,22 +851,27 @@
   },
   "src/shader-review.ts": {
     "no-magic-numbers": {
-      "count": 16
+      "count": 45
+    }
+  },
+  "src/shader-studies.ts": {
+    "no-magic-numbers": {
+      "count": 7
     }
   },
   "src/shellglass-art.ts": {
     "no-magic-numbers": {
-      "count": 73
+      "count": 75
     }
   },
   "src/shellglass-tide.ts": {
     "no-magic-numbers": {
-      "count": 12
+      "count": 31
     }
   },
   "src/shore-depth.ts": {
     "no-magic-numbers": {
-      "count": 16
+      "count": 22
     }
   },
   "src/simulation/cargo-impacts.ts": {
@@ -1151,27 +931,27 @@
   },
   "src/starter-action-effects.ts": {
     "no-magic-numbers": {
-      "count": 106
+      "count": 118
     }
   },
   "src/starter-effect-cues.ts": {
     "no-magic-numbers": {
-      "count": 17
+      "count": 22
     }
   },
   "src/starter-place-effects.ts": {
     "no-magic-numbers": {
-      "count": 72
+      "count": 128
     }
   },
   "src/street-lights.ts": {
     "no-magic-numbers": {
-      "count": 24
+      "count": 25
     }
   },
   "src/surface-maps.ts": {
     "no-magic-numbers": {
-      "count": 29
+      "count": 30
     }
   },
   "src/surface-pattern-tools.ts": {
@@ -1184,14 +964,9 @@
       "count": 447
     }
   },
-  "src/surface-recipes.ts": {
-    "no-magic-numbers": {
-      "count": 168
-    }
-  },
   "src/surface-textures.ts": {
     "no-magic-numbers": {
-      "count": 111
+      "count": 113
     }
   },
   "src/surface-uvs.ts": {
@@ -1201,7 +976,7 @@
   },
   "src/terrain.ts": {
     "no-magic-numbers": {
-      "count": 77
+      "count": 125
     }
   },
   "src/truck-pose.ts": {
@@ -1211,12 +986,17 @@
   },
   "src/vehicles/flatbed.ts": {
     "no-magic-numbers": {
-      "count": 2
+      "count": 30
     }
   },
   "src/wardrobe-preview.ts": {
     "no-magic-numbers": {
-      "count": 13
+      "count": 18
+    }
+  },
+  "src/wardrobe-stock.ts": {
+    "no-magic-numbers": {
+      "count": 36
     }
   },
   "src/wardrobe-ui.ts": {
@@ -1241,12 +1021,12 @@
   },
   "src/wildlife.ts": {
     "no-magic-numbers": {
-      "count": 90
+      "count": 91
     }
   },
   "src/workbench/audio-study.ts": {
     "no-magic-numbers": {
-      "count": 42
+      "count": 48
     }
   },
   "src/workbench/biome-files.ts": {
@@ -1256,22 +1036,22 @@
   },
   "src/workbench/biome-preview.ts": {
     "no-magic-numbers": {
-      "count": 13
+      "count": 18
     }
   },
   "src/workbench/biome-walk.ts": {
     "no-magic-numbers": {
-      "count": 7
+      "count": 10
     }
   },
   "src/workbench/brinewick-market-study.ts": {
     "no-magic-numbers": {
-      "count": 3
+      "count": 6
     }
   },
   "src/workbench/coastal-model-studies.ts": {
     "no-magic-numbers": {
-      "count": 7
+      "count": 8
     }
   },
   "src/workbench/coastal-patch.ts": {
@@ -1281,12 +1061,12 @@
   },
   "src/workbench/crew-fitting.ts": {
     "no-magic-numbers": {
-      "count": 3
+      "count": 10
     }
   },
   "src/workbench/crew-study.ts": {
     "no-magic-numbers": {
-      "count": 21
+      "count": 26
     }
   },
   "src/workbench/driftwood-preview.ts": {
@@ -1296,32 +1076,37 @@
   },
   "src/workbench/effect-air-fixtures.ts": {
     "no-magic-numbers": {
-      "count": 127
+      "count": 143
     }
   },
   "src/workbench/effect-fixtures.ts": {
     "no-magic-numbers": {
-      "count": 165
+      "count": 186
     }
   },
   "src/workbench/effect-job-fixtures.ts": {
     "no-magic-numbers": {
-      "count": 110
+      "count": 131
     }
   },
   "src/workbench/effect-land-fixtures.ts": {
     "no-magic-numbers": {
-      "count": 184
+      "count": 199
     }
   },
   "src/workbench/effect-studies.ts": {
     "no-magic-numbers": {
-      "count": 27
+      "count": 53
     }
   },
   "src/workbench/effect-water-fixtures.ts": {
     "no-magic-numbers": {
-      "count": 156
+      "count": 172
+    }
+  },
+  "src/workbench/expanded-effect-studies.ts": {
+    "no-magic-numbers": {
+      "count": 81
     }
   },
   "src/workbench/furnishing-studies.ts": {
@@ -1331,32 +1116,37 @@
   },
   "src/workbench/gameplay-air-fixtures.ts": {
     "no-magic-numbers": {
-      "count": 152
+      "count": 166
+    }
+  },
+  "src/workbench/gameplay-effect-studies.ts": {
+    "no-magic-numbers": {
+      "count": 80
     }
   },
   "src/workbench/gameplay-job-fixtures.ts": {
     "no-magic-numbers": {
-      "count": 206
+      "count": 225
     }
   },
   "src/workbench/gameplay-land-fixtures.ts": {
     "no-magic-numbers": {
-      "count": 214
+      "count": 228
     }
   },
   "src/workbench/gameplay-water-fixtures.ts": {
     "no-magic-numbers": {
-      "count": 197
+      "count": 208
     }
   },
   "src/workbench/gull-study.ts": {
     "no-magic-numbers": {
-      "count": 4
+      "count": 9
     }
   },
   "src/workbench/island-shader-studies.ts": {
     "no-magic-numbers": {
-      "count": 162
+      "count": 169
     }
   },
   "src/workbench/landscape-layout.ts": {
@@ -1371,7 +1161,7 @@
   },
   "src/workbench/landscape-map.ts": {
     "no-magic-numbers": {
-      "count": 30
+      "count": 36
     }
   },
   "src/workbench/landscape-shot.ts": {
@@ -1386,57 +1176,57 @@
   },
   "src/workbench/landscape-study.ts": {
     "no-magic-numbers": {
-      "count": 12
+      "count": 22
     }
   },
   "src/workbench/landscape-views.ts": {
     "no-magic-numbers": {
-      "count": 10
+      "count": 76
     }
   },
   "src/workbench/lighting.ts": {
     "no-magic-numbers": {
-      "count": 10
+      "count": 20
     }
   },
   "src/workbench/long-acre-study.ts": {
     "no-magic-numbers": {
-      "count": 3
+      "count": 7
     }
   },
   "src/workbench/lookout-recovery-study.ts": {
     "no-magic-numbers": {
-      "count": 3
+      "count": 8
     }
   },
   "src/workbench/main.ts": {
     "no-magic-numbers": {
-      "count": 8
+      "count": 14
     }
   },
   "src/workbench/material-studies.ts": {
     "no-magic-numbers": {
-      "count": 51
+      "count": 53
     }
   },
   "src/workbench/mechanic-studies.ts": {
     "no-magic-numbers": {
-      "count": 24
+      "count": 33
     }
   },
   "src/workbench/nature-studies.ts": {
     "no-magic-numbers": {
-      "count": 3
+      "count": 8
     }
   },
   "src/workbench/reference-controls.ts": {
     "no-magic-numbers": {
-      "count": 20
+      "count": 21
     }
   },
   "src/workbench/reference-crop.ts": {
     "no-magic-numbers": {
-      "count": 8
+      "count": 10
     }
   },
   "src/workbench/reference-link.ts": {
@@ -1451,17 +1241,17 @@
   },
   "src/workbench/resident-routines-study.ts": {
     "no-magic-numbers": {
-      "count": 10
+      "count": 13
     }
   },
   "src/workbench/ridge-scout-study.ts": {
     "no-magic-numbers": {
-      "count": 24
+      "count": 31
     }
   },
   "src/workbench/route-studies.ts": {
     "no-magic-numbers": {
-      "count": 7
+      "count": 10
     }
   },
   "src/workbench/saltwind-studies.ts": {
@@ -1471,7 +1261,7 @@
   },
   "src/workbench/school-study.ts": {
     "no-magic-numbers": {
-      "count": 29
+      "count": 37
     }
   },
   "src/workbench/school-trial.ts": {
@@ -1481,7 +1271,7 @@
   },
   "src/workbench/shader-studies.ts": {
     "no-magic-numbers": {
-      "count": 93
+      "count": 127
     }
   },
   "src/workbench/site-drafts.ts": {
@@ -1491,12 +1281,17 @@
   },
   "src/workbench/stage.ts": {
     "no-magic-numbers": {
-      "count": 76
+      "count": 79
+    }
+  },
+  "src/workbench/starter-building-study.ts": {
+    "no-magic-numbers": {
+      "count": 10
     }
   },
   "src/workbench/starter-prop-studies.ts": {
     "no-magic-numbers": {
-      "count": 14
+      "count": 17
     }
   },
   "src/workbench/subject-link.ts": {
@@ -1506,12 +1301,12 @@
   },
   "src/workbench/surface-studies.ts": {
     "no-magic-numbers": {
-      "count": 39
+      "count": 55
     }
   },
   "src/workbench/vehicle-studies.ts": {
     "no-magic-numbers": {
-      "count": 8
+      "count": 10
     }
   },
   "src/workbench/z-fighting.ts": {
@@ -1526,12 +1321,12 @@
   },
   "src/world.ts": {
     "no-magic-numbers": {
-      "count": 19
+      "count": 150
     }
   },
   "src/worlds/starter/coastline.ts": {
     "no-magic-numbers": {
-      "count": 18
+      "count": 49
     }
   },
   "src/worlds/starter/colliders.ts": {
@@ -1541,62 +1336,77 @@
   },
   "src/worlds/starter/farm-order-sites.ts": {
     "no-magic-numbers": {
-      "count": 1
+      "count": 5
     }
   },
   "src/worlds/starter/ferry-terminal.ts": {
     "no-magic-numbers": {
-      "count": 2
+      "count": 18
     }
   },
   "src/worlds/starter/island-remarks.ts": {
     "no-magic-numbers": {
-      "count": 13
+      "count": 17
     }
   },
   "src/worlds/starter/lift.ts": {
     "no-magic-numbers": {
-      "count": 10
+      "count": 29
+    }
+  },
+  "src/worlds/starter/materials.ts": {
+    "no-magic-numbers": {
+      "count": 16
     }
   },
   "src/worlds/starter/residents/bram.ts": {
     "no-magic-numbers": {
-      "count": 3
+      "count": 14
     }
   },
   "src/worlds/starter/residents/ines.ts": {
     "no-magic-numbers": {
-      "count": 1
+      "count": 12
     }
   },
   "src/worlds/starter/residents/mara.ts": {
     "no-magic-numbers": {
-      "count": 3
+      "count": 11
     }
   },
   "src/worlds/starter/residents/remarks.ts": {
     "no-magic-numbers": {
-      "count": 8
+      "count": 10
     }
   },
   "src/worlds/starter/residents/wren-route.ts": {
     "no-magic-numbers": {
-      "count": 11
+      "count": 16
+    }
+  },
+  "src/worlds/starter/residents/wren.ts": {
+    "no-magic-numbers": {
+      "count": 7
     }
   },
   "src/worlds/starter/ridge-scout.ts": {
     "no-magic-numbers": {
-      "count": 9
+      "count": 30
     }
   },
   "src/worlds/starter/sites.ts": {
     "no-magic-numbers": {
-      "count": 24
+      "count": 90
     }
   },
   "src/worlds/starter/wren-garden.ts": {
     "no-magic-numbers": {
-      "count": 38
+      "count": 47
+    }
+  },
+  "vite.config.ts": {
+    "no-magic-numbers": {
+      "count": 2
     }
   }
 }

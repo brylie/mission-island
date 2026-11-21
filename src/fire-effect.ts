@@ -3,7 +3,7 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { ParticleSystem } from '@babylonjs/core/Particles/particleSystem'
 import type { Scene } from '@babylonjs/core/scene'
 import { createParticleEffect } from './particle-effect'
-import { lookoutParticleHeights, particleRecipes } from './particle-recipes'
+import { lookoutParticleHeights, particleRecipes } from './assets/particle-recipes'
 import { createParticleTexture } from './particle-texture'
 import { groundHeight } from './terrain'
 

@@ -1,6 +1,6 @@
 import { blend, clamp, wrap } from './math/noise.ts'
 import { sampleSurface } from './surface-patterns.ts'
-import type { SurfaceRecipe, SurfaceSettings } from './surface-recipes.ts'
+import type { SurfaceRecipe, SurfaceSettings } from './assets/surface-recipes.ts'
 
 export function components(hex: string) {
   return [1, 3, 5].map((offset) => parseInt(hex.slice(offset, offset + 2), 16))

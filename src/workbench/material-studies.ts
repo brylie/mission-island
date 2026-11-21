@@ -12,7 +12,7 @@ export const materialStudies: Entry[] = [
     id: 'texture-gallery',
     name: 'Texture gallery',
     group: 'Materials',
-    source: 'src/surface-recipes.ts',
+    source: 'src/assets/surface-recipes.ts',
     description: 'Compare 54 named finishes across the Surface catalog and Gameplay surfaces galleries. Open a swatch from the Library to inspect its scale, wear, and relief.',
     cameraRadius: 10.9,
     topView: true,

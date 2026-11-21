@@ -7,7 +7,7 @@ import { extinguisherSource } from '../extinguisher-spray'
 import type { MeshFactory } from '../island-meshes'
 import type { ParticleOrigin, ParticleSource } from '../particle-motion'
 import { flatbedGroundDrive } from '../vehicles/flatbed'
-import type { particleAccents } from '../particle-shelf-recipes'
+import type { particleAccents } from '../assets/particle-shelf-recipes'
 import type { FieldSite } from './field-site'
 
 export interface Fixture {

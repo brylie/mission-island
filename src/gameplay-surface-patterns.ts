@@ -1,4 +1,4 @@
-import type { GameplaySurfaceId } from './gameplay-surface-recipes.ts'
+import type { GameplaySurfaceId } from './assets/gameplay-surface-recipes.ts'
 import { blend, hash, valueNoise, wrap } from './math/noise.ts'
 import { cell, fraction, smooth, wave, type Point, type Sample } from './surface-pattern-tools.ts'
 

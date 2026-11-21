@@ -1,7 +1,7 @@
 import type { Scene } from '@babylonjs/core/scene'
 import { createParticleEffect } from '../particle-effect'
 import { particleLoop } from '../particle-motion'
-import { particleRecipes } from '../particle-recipes'
+import { particleRecipes } from '../assets/particle-recipes'
 import type { WildlifeFrame } from '../wildlife'
 import { phenomenonStrength, smoothRange } from '../wildlife-motion'
 import { fallsX, fallsY } from './terrain'

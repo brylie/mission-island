@@ -5,7 +5,7 @@ import { launchParticle, particleAppearance, particleDensity, particleHeight } f
 import type { Particle, ParticleSource, ParticleTuning } from './particle-motion'
 import { particleTextureSize, createParticleTexture } from './particle-texture'
 import { createSurfaceParticles } from './particle-surface'
-import type { ParticleRecipe } from './particle-recipes'
+import type { ParticleRecipe } from './assets/particle-recipes'
 
 function createBillboards(scene: Scene, name: string, recipe: ParticleRecipe, capacity: number) {
   const manager = new SpriteManager(name, '', capacity, particleTextureSize, scene)

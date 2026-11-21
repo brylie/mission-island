@@ -1,4 +1,4 @@
-import { surfaceFamilies } from '../surface-recipes.ts'
+import { surfaceFamilies } from '../assets/surface-recipes.ts'
 
 // Groups describe the subject. Workspaces describe the work being done.
 export const workspaces = {

@@ -1,7 +1,7 @@
 import type { Material } from '@babylonjs/core/Materials/material'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
-import { surfaceRecipe, surfaceRepeatMeters } from '../surface-recipes'
+import { surfaceRecipe, surfaceRepeatMeters } from './surface-recipes'
 import { cylinderSurfaceUVs } from '../surface-uvs'
 import { offset, type Point } from '../world'
 import type { FeatureModel, SiteFeature } from '../worlds/site-feature'

@@ -2,9 +2,9 @@ import type { Scene } from '@babylonjs/core/scene'
 import type { MeshFactory } from '../island-meshes'
 import { createParticleEffect } from '../particle-effect'
 import { particleBurst, type Particle, type ParticleTuning } from '../particle-motion'
-import { gameplayParticleRecipes } from '../particle-gameplay-recipes'
-import { lookoutParticleHeights, particleRecipes, type ParticleRecipe } from '../particle-recipes'
-import { particleAccents, shelfParticleRecipes as expandedRecipes } from '../particle-shelf-recipes'
+import { gameplayParticleRecipes } from '../assets/particle-gameplay-recipes'
+import { lookoutParticleHeights, particleRecipes, type ParticleRecipe } from '../assets/particle-recipes'
+import { particleAccents, shelfParticleRecipes as expandedRecipes } from '../assets/particle-shelf-recipes'
 import { tarnstepSpraySeed, tarnstepSpraySource } from '../second-island/tarnstep-spray'
 import { groundHeight } from '../terrain'
 import { lookout } from '../world'
@@ -250,8 +250,8 @@ function playbackLabel(time: number, count: number, mode: Values[string]) {
 }
 
 function recipeSource(id: EffectId) {
-  if (id in gameplayParticleRecipes) return 'src/particle-gameplay-recipes.ts'
-  return id in expandedRecipes ? 'src/particle-shelf-recipes.ts' : 'src/particle-recipes.ts'
+  if (id in gameplayParticleRecipes) return 'src/assets/particle-gameplay-recipes.ts'
+  return id in expandedRecipes ? 'src/assets/particle-shelf-recipes.ts' : 'src/assets/particle-recipes.ts'
 }
 
 export const effectStudies: Entry[] = [...studies, ...expandedEffectStudies, ...gameplayEffectStudies].map((study) => ({

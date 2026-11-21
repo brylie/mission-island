@@ -3,7 +3,7 @@ import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { Scene } from '@babylonjs/core/scene'
 import { extinguisherNozzle } from './assets/props'
 import { createParticleEffect } from './particle-effect'
-import { particleRecipes } from './particle-recipes'
+import { particleRecipes } from './assets/particle-recipes'
 
 const { height, center, length } = extinguisherNozzle
 const nozzleTip = new Vector3(0, height, center + length / 2)

@@ -2,8 +2,8 @@ import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTextur
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 import type { MeshFactory } from '../island-meshes'
 import { createRecipeMaterial } from '../materials'
-import { gameplaySurfaceFamilies, standardSurfaceFamilies, surfaceRecipes, surfaceRepeatMeters } from '../surface-recipes'
-import type { SurfaceRecipe, SurfaceSettings } from '../surface-recipes'
+import { gameplaySurfaceFamilies, standardSurfaceFamilies, surfaceRecipes, surfaceRepeatMeters } from '../assets/surface-recipes'
+import type { SurfaceRecipe, SurfaceSettings } from '../assets/surface-recipes'
 import { boxSurfaceUVs, cylinderSurfaceUVs } from '../surface-uvs'
 import { groundHeight } from '../terrain'
 import { harborDock } from '../world'
@@ -69,7 +69,7 @@ export const surfaceStudies: Entry[] = surfaceRecipes.map((recipe) => {
     group: family,
     description,
     swatch: colors[1],
-    source: gameplaySurfaceFamilies.some((group) => group === family) ? 'src/gameplay-surface-recipes.ts' : 'src/surface-recipes.ts',
+    source: gameplaySurfaceFamilies.some((group) => group === family) ? 'src/assets/gameplay-surface-recipes.ts' : 'src/assets/surface-recipes.ts',
     cameraRadius: width * 1.5,
     fieldSite: site && ((values) => {
       const { name, offset, ...view } = site

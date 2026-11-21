@@ -5,7 +5,7 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 import { Color3 } from '@babylonjs/core/Maths/math.color'
 import type { Scene } from '@babylonjs/core/scene'
 import { createRecipeTextures, createTextureSample } from './surface-textures'
-import type { SurfaceRecipe, SurfaceSettings } from './surface-recipes'
+import type { SurfaceRecipe, SurfaceSettings } from './assets/surface-recipes'
 import type { MetalType } from './surface-textures'
 
 export const surfaces = {

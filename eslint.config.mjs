@@ -41,6 +41,7 @@ const lineLimit = (max) => ['error', { max, skipBlankLines: true, skipComments: 
 const complexity = (max) => ['error', max]
 
 const noMagicNumbers = {
+  detectObjects: true,
   ignore: [-1, 0, 1],
   ignoreArrayIndexes: true,
   ignoreEnums: true,
@@ -56,7 +57,7 @@ const existingLimits = {
   'src/biome-model.ts': { 'max-lines-per-function': lineLimit(199) },
   'src/island-camera.ts': { 'max-lines-per-function': lineLimit(169) },
   'src/main.ts': { 'max-lines': lineLimit(731), 'complexity': complexity(38) },
-  'src/particle-shelf-recipes.ts': { 'max-lines': lineLimit(463) },
+  'src/assets/particle-shelf-recipes.ts': { 'max-lines': lineLimit(463) },
   'src/scene.ts': { 'max-lines': lineLimit(339), 'max-lines-per-function': lineLimit(295), 'complexity': complexity(43) },
   'src/second-island/exteriors.ts': { complexity: complexity(40) },
   'src/second-island/main.ts': { 'max-lines': lineLimit(446), 'max-lines-per-function': lineLimit(412), 'complexity': complexity(25) },
@@ -152,12 +153,9 @@ export default defineConfig(
     rules: { 'max-lines': lineLimit(350) },
   },
   {
-    files: ['server/**/*.ts', 'src/**/*.ts', 'scripts/**/*.{cjs,js,mjs}', 'vite.config.ts'],
+    files: ['**/*.{cjs,js,mjs,ts}'],
+    ignores: ['src/assets/**', 'test/**'],
     rules: { 'no-magic-numbers': ['error', noMagicNumbers] },
-  },
-  {
-    files: ['server/**/*.ts', 'src/{interactions,journal,residents,simulation}/**/*.ts'],
-    rules: { 'no-magic-numbers': ['error', { ...noMagicNumbers, detectObjects: true }] },
   },
   {
     files: ['src/**/*.ts'],

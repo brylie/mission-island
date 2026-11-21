@@ -6,7 +6,7 @@ import { libraryResults } from '../src/workbench/library.ts'
 import { readSubjectLink, subjectLink } from '../src/workbench/subject-link.ts'
 import { bakeSurfaceMaps } from '../src/surface-maps.ts'
 import { meadowGroundTone, sampleSurface } from '../src/surface-patterns.ts'
-import { surfaceFamilies, surfaceRecipes, surfaceRepeatMeters } from '../src/surface-recipes.ts'
+import { surfaceFamilies, surfaceRecipes, surfaceRepeatMeters } from '../src/assets/surface-recipes.ts'
 
 test('the library carries three uniquely named, searchable recipes per surface family', () => {
   const entries = surfaceRecipes.map((recipe) => ({ ...recipe, group: recipe.family }))

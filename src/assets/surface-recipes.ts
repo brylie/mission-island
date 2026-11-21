@@ -49,6 +49,8 @@ export interface SurfaceSettings {
   tint?: string
 }
 
+const millimetresPerMetre = 1000
+
 export function surfaceRepeatMeters(recipe: SurfaceRecipe, settings: SurfaceSettings) {
-  return (settings.spacingMm ?? recipe.spacing.mm) * recipe.spacing.cells / 1000
+  return (settings.spacingMm ?? recipe.spacing.mm) * recipe.spacing.cells / millimetresPerMetre
 }

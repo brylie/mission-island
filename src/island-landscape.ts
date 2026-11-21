@@ -1,6 +1,6 @@
 import type { Material } from '@babylonjs/core/Materials/material'
 import { meadowGroundTone } from './surface-patterns'
-import { surfaceRecipe } from './surface-recipes'
+import { surfaceRecipe } from './assets/surface-recipes'
 import { dressStrand } from './assets/strand'
 import { juniperCenter } from './juniper-habitat'
 import { onBeachTowel } from './worlds/starter/sites'
