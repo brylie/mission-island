@@ -1,6 +1,8 @@
+import { lookoutRecoverySubject } from '../lookout-recovery'
 import { brinewickMarketSubject } from '../second-island/brinewick-market'
 import { longAcreSubject } from '../second-island/long-acre'
 import { shellglassCycle } from '../shellglass-tide'
+import { driftwoodShallows } from '../simulation/driftwood-school'
 import { falls } from '../terrain'
 import type { Point } from '../world'
 
@@ -35,6 +37,11 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
     focus: { x: -45, z: -12, height: 0.25 },
     alpha: 2.87, beta: 1.55, radius: 15, hour: 17.4, time: 4,
   },
+  'driftwood-fish': {
+    label: 'Driftwood fish shallows',
+    focus: { ...driftwoodShallows, height: 1.6 },
+    alpha: 1.9, beta: .77, radius: 9.5, hour: 12, time: 0,
+  },
   'seabrook-market-runoff': {
     label: 'Seabrook Market runoff',
     focus: { x: 38.72, z: 5.65, height: 1.60 },
@@ -53,10 +60,11 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
 
 export const scenicChoices = [...Object.entries(landscapeViews).map(([id, view]) => [id, view.label]),
   [longAcreSubject, 'Long Acre Fields pollinators'],
-  [brinewickMarketSubject, 'Brinewick Fish Market routine']]
+  [brinewickMarketSubject, 'Brinewick Fish Market routine'],
+  [lookoutRecoverySubject, 'Forest Lookout recovery']]
 
 export function openFieldView(id: string) {
-  if (id !== longAcreSubject && id !== brinewickMarketSubject) return false
+  if (id !== longAcreSubject && id !== brinewickMarketSubject && id !== lookoutRecoverySubject) return false
   location.hash = id + '?stage=island'
   return true
 }

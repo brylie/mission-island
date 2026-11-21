@@ -3,7 +3,7 @@ import test from 'node:test'
 import { createSchoolTrial, readSchoolRoute } from '../src/workbench/school-trial.ts'
 import { seededRandom } from '../src/seeded-random.ts'
 import { createWander } from '../src/simulation/motion-noise.ts'
-import { poolRadius, schoolStep } from '../src/simulation/fish-school.ts'
+import { advanceSchool, createSchool, poolRadius, schoolStep } from '../src/simulation/fish-school.ts'
 
 function frame(trial) {
   return globalThis.structuredClone({ fish: trial.school.fish, leader: trial.school.leader, actor: trial.actor, tracks: trial.tracks })
@@ -97,6 +97,56 @@ test('individual reaction times vary and leader history resets at a new disturba
   for (let t = 15; t < 30 && !trial.school.scattered; t += .1) trial.seek(t)
   assert.ok(trial.school.scattered)
   assert.deepEqual(trial.school.leaderTrail, [])
+})
+
+test('the return crossing disturbs the regroup and replays identically at two frame rates', () => {
+  const crossing = { side: 'east', returnPass: true }
+  const a = createSchoolTrial(125, 'skiff', '', false, crossing)
+  const b = createSchoolTrial(125, 'skiff', '', false, crossing)
+  for (let i = 1; i <= 8 * 24; i++) a.seek(i / 24)
+  assert.equal(a.school.encounters, 1)
+  const firstLeader = a.school.leader
+  assert.ok(firstLeader >= 0)
+  a.seek(12.5)
+  assert.equal(a.school.leader, -1)
+  for (let i = 301; i <= 20 * 24; i++) a.seek(i / 24)
+  for (let i = 1; i <= 20 * 60; i++) b.seek(i / 60)
+  assert.equal(a.school.encounters, 2)
+  assert.ok(a.school.leader >= 0 && a.school.leader !== firstLeader)
+  assert.deepEqual(frame(a), frame(b))
+})
+
+test('the school avoids a lingering skiff instead of scattering repeatedly', () => {
+  const trial = createSchoolTrial(42, 'skiff', '[[45,0,0]]')
+  trial.seek(7)
+  assert.ok(trial.actor.speed < .001)
+  const leader = trial.school.leader
+  assert.ok(leader >= 0)
+  for (let tick = 211; tick <= 900; tick++) {
+    trial.seek(tick * schoolStep)
+    assert.equal(trial.school.leader, leader)
+    for (const fish of trial.school.fish) assert.ok(Math.hypot(fish.x - trial.actor.x, fish.z - trial.actor.z) >= 2.9)
+  }
+  assert.equal(trial.school.encounters, 1)
+})
+
+test('a lone fish keeps its ID and waits until its projected path is safe to regroup', () => {
+  const school = createSchool(42)
+  school.fish = school.fish.slice(3, 4)
+  const [fish] = school.fish
+  const safe = { steer: () => ({ x: 0, z: 0 }), navigable: () => true }
+  const closed = { ...safe, navigable: () => false }
+  const threats = [{ x: fish.x - .2, z: fish.z, range: 2 }, { x: fish.x + .2, z: fish.z, range: 2 }]
+  for (let i = 0; i < fish.responseTicks; i++) advanceSchool(school, threats, safe)
+  assert.ok(school.fish[0].alarm > 0)
+  for (let i = 0; i < 60; i++) advanceSchool(school, [], closed)
+  assert.equal(school.leader, -1)
+  advanceSchool(school, [], safe)
+  assert.equal(school.leader, fish.id)
+  school.fish = []
+  advanceSchool(school, [], safe)
+  assert.equal(school.leader, -1)
+  assert.deepEqual(school.leaderTrail, [])
 })
 
 test('body heading and swimming direction turn together, with bounded yaw and acceleration', () => {

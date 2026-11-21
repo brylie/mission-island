@@ -1,6 +1,7 @@
 import { createGullFlock } from '../gull-flock'
 import { saltwindGullStops } from '../gull-sites'
 import { createHare } from '../hare'
+import { createCoastalFish } from '../school-fish'
 import { villageWalks } from './footways'
 import type { ScenerySolids } from './walking'
 import { Matrix } from '@babylonjs/core/Maths/math.vector'
@@ -25,10 +26,11 @@ import { islandBuildings } from './lots'
 import { clearAirfield } from './landscape'
 import { createHoneyMarketStand, createLongAcreGarden } from './long-acre-art'
 import { longAcreSubject } from './long-acre'
-import { arrival, helipad, lowerLake, pavedYards, roundYards, sites, discoveryWalks, waterfront } from './sites'
+import { arrival, helipad, lowerLake, pavedYards, roundYards, seaLevel, sites, discoveryWalks, waterfront } from './sites'
 import type { MapPoint } from './sites'
 import { groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
 import { createSaltwindVehicle } from './vehicles'
+import { previewSandspit, sandspitShallows } from './sandspit-school'
 import type { VehicleId } from './vehicles'
 import { buildSigns } from './site-signs'
 import { saltwindFeatures } from './site-features'
@@ -334,9 +336,9 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
     { swim: (time) => ({ x: lowerLake.x - 5 + 4 * Math.sin(time * .23), z: lowerLake.z + 23 + 2 * Math.cos(time * .23) }),
       deep: { x: .15, z: -.99 }, level: lowerLake.y,
       isWater: ({ x, z }) => waterHeight(x, z) === lowerLake.y && groundHeight(x, z) < lowerLake.y - .4 },
-    { swim: (time) => ({ x: -253 + 3 * Math.sin(time * .37), z: -268.5 + 1.5 * Math.cos(time * .37) }),
-      deep: { x: -.15, z: -.99 }, level: 0, isWater: ({ x, z }) => groundHeight(x, z) < -.4 },
   ])
+  const sandspit = previewSandspit()
+  const sandspitFish = createCoastalFish(meshes, sandspitShallows, seaLevel)
   const animals = [
     { name: 'Mallards', x: lowerLake.x, z: lowerLake.z, y: lowerLake.y + .24, span: 12, speed: .25, color: '#598978', kind: 'duck', count: 3 },
     { name: 'Hares', x: 48, z: 53, y: 0, span: 6, speed: .83, color: '#ae8e73', kind: 'hare', count: 2 },
@@ -353,6 +355,8 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
     flocks(frame)
     gulls(frame)
     schools(frame)
+    const school = sandspit(frame.time, frame.threats.map(({ x, z }) => ({ x, z, range: 1.9 })), frame.seek)
+    sandspitFish(frame, overview ? undefined : school)
     const { time, camera } = frame
     for (const animal of animals) {
       const { root, index, x, z, span, kind, speed, y } = animal

@@ -15,7 +15,7 @@ for (const pass of ['wade', 'paddle']) {
     const boating = pass === 'paddle'
     const start = boating ? at(-6, -1.7) : at(0, 3)
     const game = setup(t, {
-      players: [player(0, ashore), player(1, start, { seat: boating ? 'port' : null })],
+      players: [player(0, ashore), player(1, start, { seat: boating ? 'port' : null }), player(2, at(2, 5))],
       arrange(save) {
         if (boating) save.world.skiff = { ...start, heading: Math.PI / 2, speed: 0 }
       },
@@ -43,7 +43,12 @@ for (const pass of ['wade', 'paddle']) {
         assert.deepEqual(active.state.driftwood, observer.state.driftwood)
         rejoined = true
       }
-      if (rejoined && school.leader >= 0) regrouped = true
+      if (rejoined && school.leader >= 0 && !regrouped) {
+        const lateObserver = game.join(tokens[2])
+        assert.equal(lateObserver.state.driftwood.leader, school.leader)
+        assert.deepEqual(lateObserver.state.driftwood, observer.state.driftwood)
+        regrouped = true
+      }
     }
     assert.ok(partial && regrouped && rejoined)
     if (!boating) assert.ok(wading)
@@ -58,6 +63,29 @@ test('shore observers and empty parked skiffs leave the shoal undisturbed', () =
   const gone = player(1, driftwoodShallows, { connected: false, swimming: true })
   for (let tick = 0; tick < 100; tick++) {
     assert.deepEqual(a.step([player(0, ashore), gone], parked), b.step([], harbor))
+  }
+})
+
+test('a still swimmer or occupied skiff keeps its space even after the school settles', () => {
+  const position = at(0, -1)
+  const swimmer = player(0, position, { swimming: true })
+  const occupiedSkiff = { ...position, heading: 0, speed: 0 }
+  for (const boarding of [false, true]) {
+    const school = createDriftwoodSchool(42)
+    const crew = boarding ? [{ ...swimmer, seat: 'port' }] : [swimmer]
+    const limit = boarding ? 2.9 : 1.9
+    const skiff = boarding ? occupiedSkiff : undefined
+    let leader = -1
+    for (let tick = 0; tick < 900; tick++) {
+      const next = school.step(crew, skiff)
+      if (tick < 210) continue
+      if (tick === 210) {
+        leader = next.leader
+        assert.ok(leader >= 0)
+      }
+      assert.equal(next.leader, leader)
+      assert.ok(next.fish.every(fish => !fish.startled && Math.hypot(fish.x - position.x, fish.z - position.z) >= limit - .001))
+    }
   }
 })
 

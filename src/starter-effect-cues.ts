@@ -7,6 +7,10 @@ import type { ParticleSource } from './particle-motion.ts'
 
 type Event = { id: 'bobber-bite-dip' | 'hooked-fish-thrash' | 'crate-landing-grit' | 'wet-ash-steam'; source: ParticleSource; strength: number; length?: number }
 
+export function lookoutSteamCue() {
+  return { id: 'wet-ash-steam', source: { ...lookout, y: groundHeight(lookout) + .28 }, strength: 1.05, length: .92 } as const
+}
+
 export function snapshotEffectCues(before: Snapshot, state: Snapshot) {
   const cues: Event[] = []
   for (const player of state.players) {
@@ -27,7 +31,7 @@ export function snapshotEffectCues(before: Snapshot, state: Snapshot) {
     if (cue) cues.push(cue)
   }
   if (before.mission === 'fire' && state.mission === 'complete') {
-    cues.push({ id: 'wet-ash-steam', source: { ...lookout, y: groundHeight(lookout) + .28 }, strength: 1.05, length: .92 })
+    cues.push(lookoutSteamCue())
   }
   return { cues, cultivation: state.cultivation?.filter(cue => cue.sequence > (before.cultivation?.at(-1)?.sequence ?? 0)) ?? [] }
 }
