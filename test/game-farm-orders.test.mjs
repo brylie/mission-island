@@ -209,13 +209,16 @@ test('the parked barrow blocks walkers and the loaded barrow stops at farm props
   assert.equal(handler.state.farmWork.progress.load, 6)
 })
 
-test('disk saves preserve a partial barrow delivery and reject impossible crop totals', (t) => {
+test('disk saves preserve barrow and materials progress and reject impossible crop totals', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'farm-orders-'))
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const file = islandSaveFile(root, 5173)
   const h = setup(t, {
     players: [player(0, barrowPickup, goods(2))],
-    arrange(save) { save.world.produce = { stage: 'harvest', delivered: 1, load: 2 } },
+    arrange(save) {
+      save.world.produce = { stage: 'harvest', delivered: 1, load: 2 }
+      save.world.materialsWork.readyAt.timber = 2
+    },
   })
   const a = h.join(tokens[0])
   act(a, 'pack-barrow')
@@ -228,6 +231,7 @@ test('disk saves preserve a partial barrow delivery and reject impossible crop t
     progress: { stage: 'harvest', delivered: 1, load: 4 },
     barrow: { ...barrowPickup, handler: null },
   })
+  assert.equal(world.materialsWork.readyAt.timber, 2)
   assert.equal(world.crewCoins, 0)
   save.world.produce.load = 6
   file.write(save)

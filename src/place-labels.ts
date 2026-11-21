@@ -1,6 +1,7 @@
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { hideLandmark, landmarks } from './island-landmarks'
 import { activeJob, deliveryDrop } from './jobs'
+import { repairQuantity, sourceOpen } from './materials-work'
 import type { Player, Snapshot } from './protocol'
 import { northernRegions, starterDiscoveries } from './scenery'
 import { groundHeight } from './terrain'
@@ -34,7 +35,8 @@ export function createPlaceLabels(markers: HTMLElement, residentRoots: { root: T
   function hidden(place: Place, last: Snapshot | undefined, local: Player | undefined, close: boolean, range: number) {
     return (place.mapOnly && close) || hideLandmark(place, local?.id, close, range) ||
       Boolean(place.discovery && !local?.discoveries?.includes(place.discovery)) ||
-      (place.kind === 'equipment' && last?.mission !== 'fire') || (place.kind === 'board' && last?.mission !== 'complete')
+      (place.kind === 'equipment' && last?.mission !== 'fire') || (place.kind === 'board' && last?.mission !== 'complete') ||
+      materialsLabelHidden(place.kind, last)
   }
   function active(place: Place, last: Snapshot | undefined) {
     const job = last && activeJob(last)
@@ -51,6 +53,12 @@ export function createPlaceLabels(markers: HTMLElement, residentRoots: { root: T
         const range = close && local ? distance(place.point, local) : 0
         const opacity = Math.min(1, Math.max(0, (80 - range) / 38))
         place.label.hidden = opacity === 0 || hidden(place, last, local, close, range)
+        if (place.kind === 'materials-repair') {
+          const request = last?.materialsWork.request
+          const remaining = request ? repairQuantity - request.delivered : 0
+          const title = request ? `${place.title} · ${remaining ? `${remaining} ${request.material} needed` : 'Repaired'}` : place.title
+          if (place.label.textContent !== title) place.label.textContent = title
+        }
         place.label.style.opacity = String(opacity)
         place.label.classList.toggle('place--active', active(place, last))
         locate(place.label, place.point.x, groundHeight(place.point) + place.height, place.point.z)
@@ -60,5 +68,14 @@ export function createPlaceLabels(markers: HTMLElement, residentRoots: { root: T
         if (!tag.hidden) locate(tag, position.x, position.y + 2.1, position.z)
       }
     },
+  }
+}
+
+function materialsLabelHidden(kind: string, state?: Snapshot) {
+  switch (kind) {
+    case 'materials-timber': return !state || !sourceOpen(state, 'timber')
+    case 'materials-stone': return !state || !sourceOpen(state, 'stone')
+    case 'materials-repair': return state?.materialsWork.checkout !== 'qualified'
+    default: return false
   }
 }

@@ -18,7 +18,8 @@ import { createFreight } from './freight.ts'
 import { createGateRepair } from './gate-repair.ts'
 import { createResidents } from './residents.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
-import { wren } from '../src/worlds/starter/residents/wren.ts'
+import { repairSupplyFavor, wren } from '../src/worlds/starter/residents/wren.ts'
+import { createMaterialsWork } from './materials-work.ts'
 import { createOrders } from './orders.ts'
 import { toggleSeat, updateRiders } from './riders.ts'
 import type { IslandSave } from './save.ts'
@@ -27,6 +28,7 @@ import { createFarmOrders } from './farm-orders.ts'
 import { stepSkiff } from './skiff.ts'
 
 export const tickSeconds = 1 / 30
+const barrowBlockedCommands = new Set<CrewCommand['type']>(['primary', 'equip', 'jump', 'seat', 'buy-seed', 'take-job'])
 
 type GameOptions = {
   clock?: () => number
@@ -70,7 +72,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0]))
   const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk }, checkpoint)
   const farm = createFarmOrders(state, crew.notifyAll, clock, checkpoint)
-  const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, checkpoint)
+  const materials = createMaterialsWork(state, crew.notifyAll, () => residents.keep(wren, repairSupplyFavor))
+  const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, materials, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
@@ -166,8 +169,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
 
   function dispatch(member: CrewMember, message: CrewCommand) {
     const pushing = state.farmWork.barrow?.handler === member.player.id
-    if (pushing && (message.type === 'primary' || message.type === 'equip' || message.type === 'jump' ||
-      message.type === 'seat' || message.type === 'buy-seed' || message.type === 'take-job')) return
+    if (pushing && barrowBlockedCommands.has(message.type)) return
     if (aviation.hasFlight(member)) {
       if (message.type === 'respawn') aviation.interrupt(member)
       if (message.type !== 'input' && message.type !== 'appearance' && message.type !== 'crew-name') return

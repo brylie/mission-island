@@ -1,11 +1,11 @@
 # Residents and favors
 
-Four residents live on Starter Island. Each one has a home, a walk to work, working hours, a short conversation and one favor. Both players see the same routines on the shared island clock. Trust is shared by the crew and kept separately for each resident.
+Four residents live on Starter Island. Each one has a home, a walk to work, working hours, a short conversation and at least one favor. Both players see the same routines on the shared island clock. Trust is shared by the crew and kept separately for each resident.
 
 | Resident | Home | Work | Hours | Favor | Pays |
 | --- | --- | --- | --- | --- | --- |
 | **Mara**, fisher | Porch of the teal-roofed house by the depot trail | Small fishing dock | 06:00–18:00 | **Carrots for Mara’s supper:** give 2 carrots | +5 coins, Mara trust +1 |
-| **Wren**, neighbor | Lilac-roofed cottage east of the Blue cottage | Mending bench by the ferry approach | 07:00–17:00 | **Wren’s gate:** mend the hinge. See [Neighbor repairs](neighbor-repairs.md) | +5 coins, Wren trust +1 |
+| **Wren**, neighbor | Lilac-roofed cottage east of the Blue cottage | Mending bench by the ferry approach | 07:00–17:00 | Mend [Wren’s gate](neighbor-repairs.md), then supply [Ferry Approach Edging](repair-materials.md) | +5 coins and Wren trust +1 per favor |
 | **Ines**, shopkeeper | Coral house across the Seabrook square | West end of the Seabrook Market stall | 07:30–18:00 | **Fresh fish for the market display:** give 2 fish | +5 coins, Ines trust +1 |
 | **Bram**, harbor steward | Above the Harbor Depot office | Tally spot beside the job board | 06:30–16:30 | **Stage a load for Bram:** set one crate down in the yellow bay beside the depot, off Harbor Depot road. Offered after the starter shift | +5 coins, Bram trust +1 |
 

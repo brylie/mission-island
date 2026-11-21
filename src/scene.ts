@@ -20,6 +20,7 @@ import { createPlaceLabels } from './place-labels'
 import type { LookSettings } from './look-options-ui'
 import { createRidgeAviationView, ridgeCameraMode } from './ridge-aviation-view'
 import { createDeliveryWayfindingView } from './delivery-wayfinding-view'
+import { createMaterialsWorkView } from './assets/materials-work'
 import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight } from './assets/crew'
 import { createFlatbed, poseFlatbed } from './assets/flatbed'
 import { createSupply } from './assets/props'
@@ -56,6 +57,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
   const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden, residents } = createIslandWorld(meshes, { liveParticles: true })
+  const showMaterialsWork = createMaterialsWorkView(meshes)
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
   const dropPad = createObjectiveMarker(meshes, town, deliveryRadius * 2, '#67ecdc')
@@ -130,6 +132,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     showFarm(state.farm)
     residents.update(state, factor, delta, time)
     garden.update(state, factor)
+    showMaterialsWork(state)
     for (const [i, { hinge }] of homeChests.entries()) {
       const withdrawn = state.players.find((player) => player.id === i)?.inventory.length
       hinge.rotation.x += ((withdrawn ? 0.9 : 0) - hinge.rotation.x) * factor
