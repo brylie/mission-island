@@ -1,4 +1,5 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { flowerBedFrame } from './geometry/site-props'
 import { fenceZ, front, gateway } from '../gate-layout'
 import type { MeshFactory } from '../island-meshes'
 import { seededRandom } from '../seeded-random'
@@ -41,7 +42,7 @@ const steppingStones = (() => {
 
 function flowerBed({ box, sphere }: MeshFactory, bed: typeof flowerBeds[number]) {
   const y = groundHeight(bed)
-  box(bed.x, y + 0.07, bed.z, bed.width + 0.1, 0.14, bed.depth + 0.1, plank)
+  box(bed.x, y + 0.07, bed.z, bed.width + flowerBedFrame.overhang, 0.14, bed.depth + flowerBedFrame.overhang, plank)
   box(bed.x, y + 0.15, bed.z, bed.width - 0.04, 0.04, bed.depth - 0.04, soil)
   // Staggered clumps of leaves and blooms so the bed reads as planted, not tiled.
   const across = Math.max(1, Math.round(bed.width / 0.32)), along = Math.max(1, Math.round(bed.depth / 0.32))

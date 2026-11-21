@@ -1,4 +1,5 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { mendingBenchFootprint } from './geometry/site-props'
 import { createWrenGarden } from './wren-garden'
 import { fenceHeight, fenceRuns, gateLeaf, hingePost, mendingPinHeight } from '../gate-layout'
 import type { MeshFactory } from '../island-meshes'
@@ -72,7 +73,7 @@ export function createWrenGateModel(meshes: MeshFactory, sagAngle: number) {
   const bench = new TransformNode('Mending bench', scene)
   bench.position.set(mendingBench.x, benchY, mendingBench.z)
   bench.rotation.y = mendingBench.heading
-  box(0, 0.82, 0, 1.6, 0.08, 0.7, '#a77a52', bench)
+  box(0, 0.82, 0, mendingBenchFootprint.width, 0.08, mendingBenchFootprint.depth, '#a77a52', bench)
   for (const x of [-0.7, 0.7]) for (const z of [-0.27, 0.27]) box(x, 0.4, z, 0.09, 0.8, 0.09, '#7a5a3f', bench)
   box(0, 0.2, 0, 1.4, 0.05, 0.55, '#7a5a3f', bench)
   box(0.35, 0.89, 0.1, 0.4, 0.06, 0.26, '#3f5d5a', bench)

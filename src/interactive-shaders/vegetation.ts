@@ -1,4 +1,5 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { lichenStoneProfile } from '../assets/geometry/site-props'
 import type { MeshFactory } from '../island-meshes'
 import { seededRandom } from '../seeded-random'
 import { groundHeight } from '../terrain'
@@ -76,9 +77,10 @@ const lichen: Builder = (meshes, origin) => {
     float gloss = pow(max(0., dot(reflect(-sunDirection,n), toEye)), 21.) * response * moss * .22;
     ink = vec4(diffuseLight(color,n)+gloss,1.);
   ` })
+  const { centreHeightRatio, heightRatio, depthRatio, headingPerMetre } = lichenStoneProfile
   for (const [x, z, size] of ridgeLichenRocks) {
-    const rock = meshes.sphere(x, size * 0.23, z, size, size * 0.74, size * 0.91, effect.material, effect.root, true, 8)
-    rock.rotation.y = x * 0.62
+    const rock = meshes.sphere(x, size * centreHeightRatio, z, size, size * heightRatio, size * depthRatio, effect.material, effect.root, true, 8)
+    rock.rotation.y = x * headingPerMetre
   }
   return effect
 }

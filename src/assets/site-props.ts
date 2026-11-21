@@ -1,5 +1,6 @@
 import type { Material } from '@babylonjs/core/Materials/material'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { siteBench } from './geometry/site-props'
 import type { MeshFactory } from '../island-meshes'
 import { surfaceRecipe, surfaceRepeatMeters } from './surface-recipes'
 import { cylinderSurfaceUVs } from '../surface-uvs'
@@ -60,9 +61,9 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
   },
   bench({ box }, color) {
     for (const x of [-0.65, 0.65]) box(x, 0.25, 0, 0.18, 0.50, 0.52, metal)
-    box(0, 0.51, 0, 1.7, 0.12, 0.54, lightWood)
+    box(0, 0.51, 0, siteBench.width, 0.12, siteBench.seatDepth, lightWood)
     for (const x of [-0.65, 0.65]) box(x, 0.69, 0.21, 0.13, 0.44, 0.13, metal)
-    box(0, 0.92, 0.22, 1.7, 0.23, 0.105, color)
+    box(0, 0.92, siteBench.backZ, siteBench.width, 0.23, siteBench.backDepth, color)
   },
   splitstone({ face }, color) {
     // The flat opposing faces are a single fracture. Bedding dips the same

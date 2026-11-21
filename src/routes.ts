@@ -53,10 +53,6 @@ export const shellglassPoint = { x: 43.2, z: -31.4 }
 
 export const splitstone = { x: 53.5, z: -20.8 }
 
-export const roadSurface = { width: 6, shoulderWidth: 1.4, shoulder: 0.056, asphalt: 0.084 }
-export const sidewalkLift = 0.065
-export const trailLift = 0.039
-
 export type PathSurface = 'gravel' | 'pavement' | 'desire'
 interface Footpath { name: string, width: number, surface: PathSurface, points: Point[] }
 
@@ -144,27 +140,6 @@ export function laneMarkings(path: readonly Point[]) {
     ])
   }
   return markings
-}
-
-export function ribbonGeometry(strips: ReadonlyArray<readonly Point[]>, width: number, y: number) {
-  const positions: number[] = []
-  const indices: number[] = []
-  for (const points of strips) {
-    const base = positions.length / 3
-    for (const [i, point] of points.entries()) {
-      const before = points[Math.max(0, i - 1)]
-      const after = points[Math.min(i + 1, points.length - 1)]
-      const halfWidth = width / (2 * distance(before, after))
-      const x = (before.z - after.z) * halfWidth
-      const z = (after.x - before.x) * halfWidth
-      positions.push(point.x + x, y, point.z + z, point.x - x, y, point.z - z)
-      if (i > 0) {
-        const a = base + (i - 1) * 2
-        indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2)
-      }
-    }
-  }
-  return { positions, indices }
 }
 
 const sidewalkWidth = 1.55

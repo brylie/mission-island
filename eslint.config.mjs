@@ -85,8 +85,8 @@ const browserImports = [
 ]
 
 const presentationImports = {
-  regex: '^@babylonjs/|(^|/)(assets|workbench|second-island)/|(^|/)(main|scene|island-world|island-meshes|browser-storage|[^/]+-ui)([.]ts)?$',
-  message: 'Depend on shared rules and world data from simulation code.',
+  regex: '^@babylonjs/|(^|/)(workbench|second-island)/|(^|/)assets/(?!geometry/[a-z0-9-]+[.]ts$)|(^|/)(main|scene|island-world|island-meshes|browser-storage|[^/]+-ui)([.]ts)?$',
+  message: 'Depend on shared rules, world data, and geometry definitions from simulation code.',
 }
 
 const sharedInteractionFiles = [
@@ -161,6 +161,16 @@ export default defineConfig(
     files: ['src/**/*.ts'],
     rules: {
       'no-restricted-imports': ['error', { patterns: browserImports }],
+    },
+  },
+  {
+    files: ['src/assets/geometry/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [{ regex: '.', message: 'Geometry definitions have no module dependencies.' }] }],
+      'no-restricted-syntax': ['error', {
+        selector: 'CallExpression, NewExpression, ImportExpression',
+        message: 'Keep geometry definitions to constants and types.',
+      }],
     },
   },
   {

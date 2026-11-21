@@ -1,4 +1,6 @@
-import { beachTrail, ribbonGeometry, roads, roadSurface, sidewalkLift, trailLift, walkways } from './routes.ts'
+import { roadSurface, sidewalkLift, trailLift } from './assets/geometry/route-profiles.ts'
+import { ribbonGeometry } from './math/ribbon.ts'
+import { beachTrail, roads, walkways } from './routes.ts'
 import { groundHeight, walkingHeight } from './terrain.ts'
 import type { Point } from './world.ts'
 

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { roadSurface, sidewalkLift, trailLift } from '../src/assets/geometry/route-profiles.ts'
 import { barrowRig } from '../src/barrow.ts'
 import { barrowWheelGround } from '../src/barrow-contact.ts'
 import { barrowLegPose, barrowWalk } from '../src/barrow-gait.ts'
 import { routeContactHeight } from '../src/route-contact.ts'
-import { roadSurface, sidewalkLift, trailLift } from '../src/routes.ts'
 import { walkingHeight } from '../src/terrain.ts'
 
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-8, `${actual} ≈ ${expected}`)

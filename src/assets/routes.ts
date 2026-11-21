@@ -1,9 +1,11 @@
 import type { Material } from '@babylonjs/core/Materials/material'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
+import { roadSurface, sidewalkLift, trailLift } from './geometry/route-profiles'
 import type { MeshFactory } from '../island-meshes'
+import { ribbonGeometry } from '../math/ribbon'
 import { coastRadius, shoreProfile } from '../terrain'
 import type { PathSurface } from '../routes'
-import { laneMarkings, ribbonGeometry, roadSurface, sidewalkLift, trailLift } from '../routes'
+import { laneMarkings } from '../routes'
 import type { Point } from '../world'
 
 function ribbon({ surface }: MeshFactory, name: string, strips: ReadonlyArray<readonly Point[]>, width: number, y: number, material: string | Material, tile = 2.5, heightAt?: (p: Point) => number) {
@@ -19,7 +21,7 @@ function ribbon({ surface }: MeshFactory, name: string, strips: ReadonlyArray<re
 
 // A branch road sits a few millimetres lower so it joins another without flicker, and its centreline can stop
 // short of the junction.
-export function createRoad(meshes: MeshFactory, points: readonly Point[], width = roadSurface.width, { lift = 0, marked = points }: { lift?: number, marked?: readonly Point[] } = {}) {
+export function createRoad(meshes: MeshFactory, points: readonly Point[], width: number = roadSurface.width, { lift = 0, marked = points }: { lift?: number, marked?: readonly Point[] } = {}) {
   return {
     shoulder: ribbon(meshes, 'Road shoulder', [points], width + roadSurface.shoulderWidth, roadSurface.shoulder + lift, meshes.paintSurface('gravel'), 2.05),
     asphalt: ribbon(meshes, 'Asphalt', [points], width, roadSurface.asphalt + lift, meshes.paintSurface('stone', '#636d65'), 3.0),

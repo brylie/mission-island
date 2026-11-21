@@ -1,5 +1,6 @@
 import type { Material } from '@babylonjs/core/Materials/material'
 import { createFieldOutingScenery } from './assets/field-outing'
+import { shellRockProfile } from './assets/geometry/site-props'
 import { createBuoy, createDock, createHarborBoat } from './assets/waterfront'
 import { createClothingCounter, createHomeChest, createRock, createTree, createUmbrella, createWardrobe, umbrellaColors } from './assets/props'
 import { createHouse } from './assets/buildings'
@@ -87,7 +88,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const updateFieldScenery = createFieldOutingScenery(meshes)
   for (const point of shellRocks) {
     const { size, heading } = point
-    const rock = meshes.sphere(point.x, groundHeight(point) + 0.055, point.z, size, 0.23, size * 0.65, '#798b80')
+    const rock = meshes.sphere(point.x, groundHeight(point) + shellRockProfile.centreHeight, point.z, size, shellRockProfile.height, size * shellRockProfile.depthRatio, '#798b80')
     rock.rotation.y = heading
     meshes.sphere(point.x + 0.025, groundHeight(point) + 0.165, point.z - 0.015, 0.16, 0.055, 0.12, '#ecd3aa')
   }
