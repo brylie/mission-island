@@ -21,7 +21,7 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | **Esc** | Release the mouse. Press a gameplay key to capture it again. |
 | **O** | Open Options for your name, appearance, mouse look, and **Respawn at home**. |
 
-Bring crates to the tail of the truck to set them on the bed. Jump over the low rear lip and ride along on the bed as the truck moves. The side rails and rear lip help keep crates aboard through turns. At Seabrook, step out, collect each crate from the bed, and press **E** with the crate inside the glowing teal delivery circle. The beach has a shallow wading shelf. You slow down as the water gets deeper.
+Bring crates to the tail of the truck to set them on the bed. Amber orbs appear along the recommended route once a crate is loaded. Jump over the low rear lip and ride along on the bed as the truck moves. The side rails and rear lip help keep crates aboard through turns. At Seabrook, step out, collect each crate from the bed, and press **E** with the crate inside the glowing teal delivery circle. The beach has a shallow wading shelf. You slow down as the water gets deeper.
 
 Jump onto or over low rocks and crates. The bed or hood gives you a second jump onto the cab roof.
 
@@ -34,6 +34,14 @@ The truck has four-wheel suspension and follows the terrain under each wheel. **
 After the lookout fire, press **E** at the Harbor Depot job board to take the next crew order. You can read the board from the mission panel anywhere on the island. Deliver seed crates to Island Farm, take beach gear to Driftwood Beach, or fill fish and carrot orders at Seabrook Market. Either player can contribute to an order. You can keep fishing, farming, or exploring while the order is open.
 
 Each completed order deposits its posted reward once in the crew bank. Both islands show the same balance. Either player can use it to buy seeds or a uniform. Four completed orders mark the crew ready for the future second island. Coins are available to spend along the way. See the [crew orders specification](mechanics/crew-orders.md) for payouts and rules.
+
+## Windstone Ridge gliding
+
+Follow the northern hills toward Windstone Ridge. At the orange loan rack, face the windsock and find the landing circle below. Press **E** with free hands to borrow the wing and launch for free. Use **A/D** or **←/→** to bank and turn. Push **W** or **↑** to lower the nose and gain speed. Pull **S** or **↓** to raise the nose and slow the descent. Press **C** to switch views. Follow the airborne blue orbs and land inside the circle. If you come up short, head back uphill to the windsock.
+
+A partner can press **E** beside the orange landing sign to turn the landing circle teal on both screens. After the checkout, either player can borrow the wing for the Mirror Pool survey. Fly past the orange marker by the fallen willow on the east bank, then land in the circle to save the observation. The wing returns to the rack after every flight. Rejoining after an interruption puts the pilot on reachable ground, and the crew keeps its saved qualification and survey.
+
+The blue survey orbs point directly to the willow, then switch to the landing circle after the observation. For an optional climb, bank left briefly after launch toward the rising lights off the ridge shoulder. Hold a bank to turn more tightly back inland with the extra height.
 
 ## Starting tools and island life
 

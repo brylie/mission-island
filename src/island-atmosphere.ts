@@ -14,6 +14,11 @@ import type { ShadowGenerator } from '@babylonjs/core/Lights/Shadows/shadowGener
 import type { Weather } from './protocol'
 import { createSunShafts } from './island-sun-shafts'
 import { seededRandom } from './scenery'
+import { weatherAt } from './weather'
+
+export function sceneWeather(fixed?: Weather, live?: Weather) {
+  return fixed ? { weather: fixed } : { weather: live ?? { hour: 6, rain: 0 }, weatherAt: live && weatherAt }
+}
 
 const skyVertex = `
 precision highp float;

@@ -2,7 +2,7 @@ import { falls, meadowHill, pool, streamX, tidePool } from '../terrain.ts'
 import { juniperCenter } from '../juniper-habitat.ts'
 import { market } from '../farm.ts'
 import { harborDock, harborDockPiles, lookout } from '../world.ts'
-import { lampPosts } from '../worlds/starter/sites.ts'
+import { lampPosts, ridgeLichenSite } from '../worlds/starter/sites.ts'
 import type { Point } from '../world.ts'
 
 export const shaderGroups = ['Water and shore', 'Vegetation and terrain', 'Built surfaces', 'Weather and light'] as const
@@ -100,7 +100,7 @@ const vegetation = {
   'ridge-lichen': {
     name: 'Rain on ridge lichen', description: 'Lichen on upward-facing rock darkens and takes on a deeper color as it drinks rain.',
     control: 'Lichen moisture', baseline: 'Dry crust', preset: 'Rain-fed lichen', value: .9,
-    field: view('Windstone Ridge', 40.2, 131.1, .85, 5.5, -1.45, 1.13, 14, .44),
+    field: view('Windstone Ridge', ridgeLichenSite.x, ridgeLichenSite.z, .85, 5.5, -1.45, 1.13, 14, .44),
     camera: camera(5.45, 1.04, -1.48, .94),
   },
   'closing-flowers': {

@@ -40,9 +40,14 @@ export const meadowPath: Footpath = {
   points: roundCorners([{ x: -27, z: 8 }, meadowFoot, { x: -26.6, z: 17 }, meadowHill], 1.8),
 }
 
+export const beachTrail: Footpath = {
+  name: 'Beach trail', surface: 'pavement', width: 2.6,
+  points: roundCorners([{ x: 35, z: 12 }, { x: 33.1, z: 4 }, { x: 29.6, z: -24.7 }, beach], 4),
+}
+
 export const footpaths: Footpath[] = [
   { name: 'Lookout trail', surface: 'gravel', width: 3.2, points: roundCorners([{ x: 17, z: 12 }, { x: 20, z: 22 }, lookout], 4) },
-  { name: 'Beach trail', surface: 'pavement', width: 2.6, points: roundCorners([{ x: 35, z: 12 }, { x: 33.1, z: 4 }, { x: 29.6, z: -24.7 }, beach], 4) },
+  beachTrail,
   { name: 'Harbor trail', surface: 'gravel', width: 3.1, points: roundCorners([{ x: -46, z: -11 }, harbor, { x: -44, z: -30 }], 3) },
   { name: 'Ferry approach', surface: 'gravel', width: 5,
     points: [{ x: ferryTerminal.x, z: -14 }, ferryTerminal] },

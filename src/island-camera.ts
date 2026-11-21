@@ -5,6 +5,9 @@ import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { Scene } from '@babylonjs/core/scene'
 import { groundHeight, waterLevel } from './terrain'
 import { buildings, houseRoofRise } from './world'
+import { ridgeHeading } from './worlds/starter/ridge-scout'
+
+type RidgeView = 'preflight' | 'flight'
 
 // Include each roof overhang so the camera retracts before it reaches a wall or roof.
 const cameraObstacles = buildings.map(({ x, z, w, h, d }) => ({
@@ -51,6 +54,21 @@ function terrainClearance(origin: Vector3, destination: Vector3, maximum: number
   return clear
 }
 
+function frameOverview(camera: FreeCamera, aspect: number) {
+  const halfHeight = Math.max(106, 125 / Math.max(0.3, aspect))
+  camera.orthoLeft = -halfHeight * aspect
+  camera.orthoRight = halfHeight * aspect
+  camera.orthoTop = halfHeight
+  camera.orthoBottom = -halfHeight
+}
+
+function followArm(vehicleBlend: number, pitch: number) {
+  const radius = 5.92 + vehicleBlend * 3.38
+  const elevation = 0.38 - vehicleBlend * 0.025 + pitch
+  return { distance: radius * Math.cos(elevation), height: 1.55 + radius * Math.sin(elevation),
+    shoulder: .68 * (1 - vehicleBlend), lookAhead: 1.55 + vehicleBlend * 1.35 }
+}
+
 export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   const overview = new FreeCamera('Island overview', new Vector3(0, 174, -120), scene)
   overview.mode = Camera.ORTHOGRAPHIC_CAMERA
@@ -76,6 +94,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   let orbitPitch = 0
   let pitch = 0
   let wasSeated = false
+  let ridgeView: RidgeView | undefined
   let vehicleBlend = 0
   let arm = 1
 
@@ -150,29 +169,30 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   }
 
   return {
-    update(subject: TransformNode | undefined, seated: boolean, aspect: number, delta: number) {
+    update(subject: TransformNode | undefined, seated: boolean, aspect: number, delta: number, ridge?: RidgeView) {
       if (!subject) {
         if (tracking) {
           tracking = false
           releaseMouse()
         }
+        ridgeView = undefined
         scene.activeCamera = overview
         scene.fogStart = 400
         scene.fogEnd = 500
-        const halfHeight = Math.max(106, 125 / Math.max(0.3, aspect))
-        overview.orthoLeft = -halfHeight * aspect
-        overview.orthoRight = halfHeight * aspect
-        overview.orthoTop = halfHeight
-        overview.orthoBottom = -halfHeight
+        frameOverview(overview, aspect)
         return overview
       }
 
+      if (ridge && ridge !== ridgeView) orbitPitch = .14
       const snap = !tracking || Vector3.DistanceSquared(anchor, subject.position) > 196
       const blend = snap ? 1 : 1 - Math.exp(-delta * 8)
+      seated ||= ridge === 'flight'
       if (seated !== wasSeated) {
         orbitYaw = seated ? 0 : heading
         wasSeated = seated
       }
+      if (ridge === 'preflight' && ridge !== ridgeView) orbitYaw = ridgeHeading
+      ridgeView = ridge
       const wantedHeading = (seated ? subject.rotation.y : 0) + orbitYaw
       const turn = wantedHeading - heading
       heading += Math.atan2(Math.sin(turn), Math.cos(turn)) * blend
@@ -182,12 +202,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
 
       const forwardX = Math.sin(heading)
       const forwardZ = Math.cos(heading)
-      const radius = 5.92 + vehicleBlend * 3.38
-      const elevation = 0.38 - vehicleBlend * 0.025 + pitch
-      const distance = radius * Math.cos(elevation)
-      const height = 1.55 + radius * Math.sin(elevation)
-      const shoulder = 0.68 * (1 - vehicleBlend)
-      const lookAhead = 1.55 + vehicleBlend * 1.35
+      const { distance, height, shoulder, lookAhead } = followArm(vehicleBlend, pitch)
 
       pivot.set(anchor.x, anchor.y + 1.55, anchor.z)
       desired.set(anchor.x - forwardX * distance + forwardZ * shoulder, anchor.y + height,

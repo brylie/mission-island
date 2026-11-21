@@ -15,7 +15,7 @@ function readHeading(value: unknown) {
 
 function readInput(raw: unknown): Input {
   if (!raw || typeof raw !== 'object') return stopped
-  const { x, z, spray, aim, careful, sprint, brake, raiseRightHand } = raw as Record<string, unknown>
+  const { x, z, spray, aim, careful, sprint, brake, raiseRightHand, flightTurn, flightPitch } = raw as Record<string, unknown>
   const axis = (value: unknown) => typeof value === 'number' && Number.isFinite(value)
     ? Math.max(-1, Math.min(1, value)) : 0
   return {
@@ -27,6 +27,8 @@ function readInput(raw: unknown): Input {
     sprint: sprint === true,
     brake: brake === true,
     raiseRightHand: raiseRightHand === true,
+    flightTurn: axis(flightTurn),
+    flightPitch: axis(flightPitch),
   }
 }
 

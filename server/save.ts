@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { isFreightTicket } from '../src/ore-contracts.ts'
+import type { AviationProgress } from '../src/aviation.ts'
 import { farmPlots } from '../src/farm.ts'
 import { isJobId, jobs } from '../src/jobs.ts'
 import type { JobBoardState } from '../src/jobs.ts'
@@ -14,7 +15,8 @@ export type IslandSave = {
   lastStarterPay?: Snapshot['lastStarterPay']
   islandTime: number
   growth: number[]
-  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt'> & { truck: Pose; jobs?: JobBoardState }
+  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt'> &
+    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress }
   crew: { token: string; player: Player; reserved: boolean }[]
 }
 
@@ -81,6 +83,16 @@ function isSavedIncident(world: Record<string, unknown>, islandTime: number) {
     (clearedAt === undefined || (isNumber(clearedAt) && clearedAt >= 0 && clearedAt <= islandTime))
 }
 
+function isSavedAviation(value: unknown) {
+  return isRecord(value) && typeof value.qualified === 'boolean' && typeof value.surveyed === 'boolean' &&
+    (!value.surveyed || value.qualified)
+}
+
+function hasValidProgress(world: Record<string, unknown>) {
+  return (world.jobs === undefined || isJobBoard(world.jobs, world.mission)) &&
+    (world.aviation === undefined || isSavedAviation(world.aviation))
+}
+
 function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] {
   if (!isRecord(entry) || !isCrewToken(entry.token) ||
     typeof entry.reserved !== 'boolean' || !isPose(entry.player)) return false
@@ -100,7 +112,7 @@ function isSave(value: unknown): value is IslandSave {
     !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
   const { world } = value
   const reservedIds = new Set(value.crew.filter(({ reserved }) => reserved).map(({ player }) => player.id))
-  if (world.jobs !== undefined && !isJobBoard(world.jobs, world.mission)) return false
+  if (!hasValidProgress(world)) return false
   return isPose(world.truck) && isPose(world.skiff) && isSavedIncident(world, value.islandTime) &&
     Array.isArray(world.farm) && world.farm.length === farmPlots.length &&
     world.farm.every((stage: unknown) => ['grass', 'tilled', 'planted', 'watered', 'ripe'].some((name) => name === stage)) &&

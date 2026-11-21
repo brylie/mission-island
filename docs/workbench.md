@@ -77,6 +77,12 @@ Move toward the birds and watch the wary count rise as they stop probing and wal
 
 For a laptop performance check, hold the same view for a few seconds each at 0/0, 12/5 and 32/12. **Field observations** shows the observed frame rate, milliseconds per frame and active meshes. Record the viewport size and browser with the readings. Repeat while walking through the densest patch to check for stutter during movement.
 
+## Scout Windstone Ridge
+
+Run `npm run dev` and open [Windstone Ridge glider scout](http://localhost:5173/workbench.html#ridge-glider-scout?stage=island). Choose the landing circle or the willow to see a direct line of blue orbs to that destination. Focus the viewport and press **E** to launch, **A/D** to bank and turn, **W** to lower the nose, and **S** to pull up. Drag to orbit, or press **C** to switch between the close and island views. After touchdown, walk uphill to the windsock with **WASD**. Press **R** to reset the scout.
+
+The current course starts at (39, 128) on the south shoulder, about 34 m from and 13 m above the meadow at (61, 102). The return route bends via (48, 116). The original candidate at (38, 132) clips the lichen rocks once the wing and rock geometry are included. The Workbench trial uses these provisional positions and a fixed wind. The [Starter Island manual checklist](https://github.com/brylie/mission-island/issues/52) covers the future two-player outing.
+
 ## Fish schooling trial
 
 In **Ecology → Biome Composer**, choose **Open fish schooling trial**. Six fish cruise in an isolated pool. Watch the default crossing, then choose **Wading player** or **Paddled skiff** and replay the same seed. A click on the water redirects the actor. With the canvas focused, tap **W/A/S/D** to direct it two metres relative to the current view. Press **Space** to pause or resume.
