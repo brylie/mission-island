@@ -1,5 +1,6 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { isFreightTicket } from '../src/ore-contracts.ts'
 import { farmPlots } from '../src/farm.ts'
 import { isJobId, jobs } from '../src/jobs.ts'
 import type { JobBoardState } from '../src/jobs.ts'
@@ -66,6 +67,13 @@ function isJobBoard(value: unknown, mission: unknown) {
     isNumber(active.progress) && Number.isInteger(active.progress) && active.progress >= 0 && active.progress < jobs[active.id].quantity)
 }
 
+function validDrivingRecord(player: Record<string, unknown>) {
+  return (player.deliveryXp === undefined || isCoinBalance(player.deliveryXp)) &&
+    (player.freightTicket === undefined || isFreightTicket(player.freightTicket)) &&
+    (player.drivenCrates === undefined || (Array.isArray(player.drivenCrates) && player.drivenCrates.length === crateStarts.length &&
+      player.drivenCrates.every(metres => isNumber(metres) && metres >= 0)))
+}
+
 function isSavedIncident(world: Record<string, unknown>, islandTime: number) {
   const clearedAt = world.lookoutFireClearedAt
   return isNumber(world.fire) &&
@@ -78,6 +86,7 @@ function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] 
     typeof entry.reserved !== 'boolean' || !isPose(entry.player)) return false
   const player = entry.player
   return isNumber(player.id) && Number.isInteger(player.id) && player.id >= 0 && player.id < spawns.length &&
+    validDrivingRecord(player) &&
     [player.y, player.seeds].every(isNumber) && Array.isArray(player.inventory) &&
     (player.starterSeedClaimed === undefined || typeof player.starterSeedClaimed === 'boolean') &&
     (player.ownedClothes === undefined || (Array.isArray(player.ownedClothes) && player.ownedClothes.every(item => typeof item === 'string'))) &&

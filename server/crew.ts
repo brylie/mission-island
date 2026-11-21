@@ -116,7 +116,7 @@ export function createCrewRoster(
     for (const member of crew.values()) member.notify?.(message)
   }
 
-  return { join, expireCrew, savedProfiles, notifyAll, members: () => [...crew.values()] }
+  return { join, expireCrew, savedProfiles, notifyAll, profile: (token: string) => profiles.get(token), profiles: () => profiles.values(), members: () => [...crew.values()] }
 }
 
 export function disconnect(member: CrewMember, now: number) {

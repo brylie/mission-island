@@ -48,7 +48,7 @@ export function createChart(canvas: HTMLCanvasElement, detailed: boolean) {
   base.fillStyle = '#656e62'
   base.fillRect(start.x, start.z - 2.6, runway.length / (maxX - minX) * chart.width, 5.2)
 
-  return (player: MapPoint, known: Set<string>, selected?: string) => {
+  return (player: MapPoint, known: Set<string>, selected?: string, freight?: MapPoint) => {
     context.drawImage(chart, 0, 0, canvas.width, canvas.height)
     for (const walk of discoveryWalks) {
       if (!detailed || !known.has(walk.id)) continue
@@ -106,6 +106,18 @@ export function createChart(canvas: HTMLCanvasElement, detailed: boolean) {
       context.fillStyle = '#fff1d4'
       context.strokeText(village.name, p.x, p.z + 21)
       context.fillText(village.name, p.x, p.z + 21)
+    }
+    if (freight) {
+      const pin = scale(freight, canvas)
+      context.save()
+      context.translate(pin.x, pin.z)
+      context.rotate(Math.PI / 4)
+      context.fillStyle = '#e79440'
+      context.strokeStyle = '#302e27'
+      context.lineWidth = 2
+      context.fillRect(-5, -5, 10, 10)
+      context.strokeRect(-5, -5, 10, 10)
+      context.restore()
     }
     const at = scale(player, canvas)
     context.beginPath()

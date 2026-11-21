@@ -316,7 +316,7 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
   const coins = state.crewCoins
   const balance = `Crew bank · ${coins} ${coins === 1 ? 'coin' : 'coins'}`
   const { fish, carrots } = player.goods
-  const contents = [balance, `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`,
+  const contents = [balance, player.deliveryXp ? player.deliveryXp + ' driver XP' : '', `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`,
     fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '']
     .filter(Boolean).join(' · ')
   if (fishingWallet.textContent !== contents) fishingWallet.textContent = contents

@@ -1,3 +1,4 @@
+import { dispatchBay, marketBay, schoolBay } from '../ore-contracts.ts'
 import { apiary } from './long-acre.ts'
 export interface MapPoint { x: number; z: number }
 
@@ -59,11 +60,11 @@ export const sites: readonly Site[] = [
   { id: 'grocery', name: 'Brinewick Grocery', x: -313, z: -77, y: 10, width: 40, depth: 32,
     assets: 'Grocery and delivery reserve', access: { x: -315, z: -103 }, stop: { x: -302, z: -78 }, heading: Math.PI },
   { id: 'farmers-market', name: 'Farmers Market', x: 166, z: -35, y: 13.55, width: 64, depth: 45,
-    assets: 'Covered market, stalls, crates and delivery apron', access: { x: 162, z: -65 }, stop: { x: 184, z: -35 }, heading: Math.PI },
+    assets: 'Covered market, stalls, crates and delivery apron', access: { x: 162, z: -65 }, stop: marketBay, heading: Math.PI },
   { id: 'fields', name: 'Long Acre Fields', x: 140, z: 31, y: 17, width: 118, depth: 70,
     assets: 'Planted crop rows and field access', access: { x: 234, z: 35 }, stop: { x: 189, z: 33 }, heading: -Math.PI / 2 },
   { id: 'school', name: 'Barleycross School', x: 264, z: -33, y: 13, width: 47, depth: 42,
-    assets: 'Schoolhouse and sheltered entry', access: { x: 233, z: -26 }, stop: { x: 253, z: -32 }, heading: -Math.PI / 2 },
+    assets: 'Schoolhouse and sheltered entry', access: { x: 233, z: -26 }, stop: schoolBay, heading: -Math.PI / 2 },
   { id: 'hospital', name: 'Saltwind Hospital', x: 116, z: 113, y: 23, width: 72, depth: 47,
     assets: 'Hospital, helipad and ambulance pull-through', access: { x: 116, z: 141 }, stop: { x: 136, z: 113 }, heading: 0 },
   { id: 'church', name: 'Alderwatch Church', x: -23, z: 188, y: 30, width: 33, depth: 32,
@@ -75,7 +76,7 @@ export const sites: readonly Site[] = [
   { id: 'timber', name: 'Alder Timber Works', x: -227, z: 155, y: 30, width: 70, depth: 60,
     assets: 'Sawmill, log yard and bunks', access: { x: -236, z: 127 }, stop: { x: -226, z: 153 }, heading: 0 },
   { id: 'mine', name: 'Slatecliff Mine', x: 266, z: 160, y: 29, width: 67, depth: 63,
-    assets: 'Portal, hopper and truck loop', access: { x: 269, z: 153 }, stop: { x: 288, z: 156 }, heading: Math.PI / 2 },
+    assets: 'Portal and ore hopper. Qualified Starter Island drivers can collect a freight contract at the truck bay', access: { x: 269, z: 153 }, stop: dispatchBay, heading: Math.PI / 2 },
   { id: 'airport', name: 'Saltwind Airstrip', x: 187, z: -126, y: 8, width: 116, depth: 44,
     assets: 'Runway, taxiway, apron, hangar and windsock', access: { x: 219, z: -128 }, stop: { x: 183, z: -132 }, heading: Math.PI },
 ] as const

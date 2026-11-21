@@ -11,7 +11,7 @@ import type { CrewMember, CrewNotice } from './crew.ts'
 export function createOrders(
   state: Pick<Snapshot, 'crewCoins' | 'lastStarterPay' | 'items' | 'jobs' | 'mission' | 'islandTime' | 'lookoutFireClearedAt'>,
   physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'release'>, notifyCrew: (message: CrewNotice) => void,
-  checkpoint?: () => void,
+  creditCrate: (id: number) => void, checkpoint?: () => void,
 ) {
   function payCrew(message: Extract<CrewNotice, { type: 'job-pay' | 'order-pay' | 'market-sale' }>) {
     state.crewCoins += message.coins
@@ -50,6 +50,8 @@ export function createOrders(
   }
 
   function deliverCrate(item: Item) {
+    if (item.delivered) return
+    creditCrate(item.id)
     item.delivered = true
     if (state.jobs.active) {
       advanceOrder(1)

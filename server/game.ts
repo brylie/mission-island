@@ -12,6 +12,7 @@ import { advanceIsland } from './island-clock.ts'
 import { createInteractions } from './interactions.ts'
 import { restoreIsland, saveIsland } from './island-state.ts'
 import { updateHeldItems } from './items.ts'
+import { createFreight } from './freight.ts'
 import { createOrders } from './orders.ts'
 import { toggleSeat, updateRiders } from './riders.ts'
 import type { IslandSave } from './save.ts'
@@ -31,7 +32,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint)
-  const orders = createOrders(state, physics, crew.notifyAll, checkpoint)
+  const freight = createFreight(crew, state, clock, checkpoint)
+  const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
   const interactions = createInteractions(state, growth, physics, orders, checkpoint)
 
@@ -44,6 +46,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     const driver = members.find((member) => member.player.seat === 'driver')
     const before = state.truck
     state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds)
+    if (driver && active(driver)) freight.recordDrive(driver.player, state.items, Math.hypot(state.truck.x - before.x, state.truck.z - before.z))
     const rowers = members.filter((member) => inSkiff(member.player.seat) && active(member))
     const still = stepSkiff(state.skiff, rowers.map((member) => member.input), tickSeconds)
     updateRiders(state)
@@ -149,6 +152,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   return {
     tick,
     join,
+    freight,
     snapshotForSave: () => saveIsland(state, growth, crew.savedProfiles()),
     get crewCoins() { return state.crewCoins },
   }

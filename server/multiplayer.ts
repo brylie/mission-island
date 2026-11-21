@@ -1,11 +1,44 @@
-import type { IncomingMessage } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Duplex } from 'node:stream'
 import type { Plugin, ViteDevServer } from 'vite'
 import { WebSocketServer } from 'ws'
 import type { WebSocket } from 'ws'
+import type { FreightAction } from '../src/ore-contracts.ts'
 import { createGame, tickSeconds } from './game.ts'
 import { islandSaveFile } from './save.ts'
 import { createSocketSessions } from './socket-sessions.ts'
+
+function isCommand(value: unknown): value is FreightAction {
+  if (!value || typeof value !== 'object') return false
+  const command = value as Partial<FreightAction>
+  return ['accept', 'load', 'deliver'].some(action => action === command.action) &&
+    typeof command.choice === 'string' && command.choice.length <= 40 &&
+    Number.isSafeInteger(command.revision) && Number.isFinite(command.x) && Number.isFinite(command.z)
+}
+
+function freightHandler(freight: ReturnType<typeof createGame>['freight']) {
+  return async (request: IncomingMessage, response: ServerResponse) => {
+    response.setHeader('Cache-Control', 'no-store')
+    response.setHeader('Content-Type', 'application/json')
+    const token = /^Bearer ([a-f0-9]{32})$/.exec(request.headers.authorization ?? '')?.[1] ?? ''
+    const send = (code: number, error?: string) =>
+      response.writeHead(code).end(JSON.stringify({ ...freight.status(token), error }))
+    if (request.method === 'GET') { send(200); return }
+    if (request.method !== 'POST') { response.setHeader('Allow', 'GET, POST'); send(405); return }
+    if (!token) { send(401, 'Join Starter Island to register as a driver.'); return }
+    try {
+      let body = ''
+      for await (const chunk of request) {
+        body += chunk
+        if (body.length > 1024) { send(413); return }
+      }
+      const command: unknown = JSON.parse(body)
+      if (!isCommand(command)) { send(400); return }
+      const error = freight.act(token, command)
+      send(error ? 409 : 200, error)
+    } catch { send(400) }
+  }
+}
 
 function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middlewares: ViteDevServer['middlewares'], root: string, port: number) {
   const archive = islandSaveFile(root, port, process.env.MISSION_ISLAND_SAVE)
@@ -30,6 +63,8 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
     }
     response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ crewCoins: game.crewCoins }))
   })
+  const handleFreight = freightHandler(game.freight)
+  middlewares.use('/api/slatecliff-freight', (request, response) => { void handleFreight(request, response) })
   const sessions = createSocketSessions(game)
   const sockets = new WebSocketServer({ noServer: true, maxPayload: 256 })
   const live = new Set<WebSocket>()

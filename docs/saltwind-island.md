@@ -4,6 +4,22 @@ Open `/second-island.html` from the Vite server or use **Saltwind preview** on t
 
 Walking or inspecting a landmark pauses the guided tour. Starting or continuing it returns the crew to the saved position on the route. Restarting a completed tour takes the crew back to the ferry.
 
+## Slatecliff ore hauling
+
+Earn your Slatecliff ore truck certification by hauling ten crates on Starter Island. Drive each crate at least eight metres on the flatbed. When the crew delivers it, each qualifying driver earns 10 personal driver XP. At 100 XP you can board the ore truck and accept freight contracts. After the starter missions, take repeat delivery orders at the Harbor Job Board to finish your practice.
+
+On Saltwind, use **Site map → Slatecliff Mine → Inspect site** and walk to the ochre truck on the turnaround. Press **F** to board. Pick a contract at the dispatch bay, then steer to the cones beside the hopper. Use **W/S** to drive or reverse, **A/D** to steer and **Space** to brake. Choose the ticketed ore and press **Load selected ore**. The orange diamond on the chart follows the current objective. Stop between the buyer’s cones and unload to credit the crew bank. Drive back to dispatch for another ticket.
+
+| At Slatecliff dispatch | Honey calcite loaded at the hopper |
+| --- | --- |
+| ![Ochre quarry truck with a cream cab roof and an empty steel tipper](images/slatecliff-hauler-dispatch.jpg) | ![Rear view of the ribbed tipper carrying honey calcite beside the chute](images/slatecliff-hauler-loaded.jpg) |
+
+| Ore | Buyers and uses |
+| --- | --- |
+| Magnetite | Brinewick freight quay buys workboat ballast. Barleycross School buys specimens for its navigation class. |
+| Malachite | The farmers market buys banded stone for a lapidary stall. The quay buys copper ore for export. |
+| Honey calcite | The school buys geology samples. The farmers market buys carving blocks for its stoneworkers. |
+
 ## Tour
 
 | Stop | X, Z (m) | What to inspect |
@@ -33,7 +49,7 @@ The in-game site chart shows the full route network, named biomes and all survey
 | Alderwatch Cemetery | 20, 190 | 43 × 36 | Low walls and rows of headstones with a south opening. Gate (20, 178). |
 | Alderwatch Fire Station | −57, 188 | 34 × 43 | Two engine bays, drill tower and 24 × 21 m apron with two road approaches. Fire engine (−59, 177). |
 | Alder Timber Works | −227, 155 | 70 × 60 | Sawmill, log stacks and 33 × 35 m yard. Load (−226, 153). |
-| Slatecliff Mine | 266, 160 | 67 × 63 | Portal and hopper exterior, ore piles and 32 m turnaround pad. Load (288, 156). |
+| Slatecliff Mine | 266, 160 | 67 × 63 | Portal and hopper exterior, ore piles and 32 m turnaround pad. Dispatch (288, 156), hopper (282, 171.5). |
 | Saltwind Airstrip | 187, −126 | 116 × 44 | Hangar, windsock, staging apron, taxi connector and parked airplane (183, −132). The separate 420 × 22 m runway is centred at (46, −162) on an east–west heading. Each end has a 105 m approach corridor. |
 
 Other pins include Sandspit Fishing Pier (−253, −260), Brinewick Rescue Slip (−311, −225), the skiff launch (−311, −239), Reedwater Bridge (−351, 12), Mill Bridge (−204, 53), Mirror Lake (−84, 104), Tarnstep Viaduct (−124, 153), and Tarnstep Falls (−120, 184). The chart shows Brinewick Coast, Reedwater Valley, Barley Meadows, Alder Crown and East Bluff.
@@ -50,11 +66,11 @@ Vehicle models are available in **Asset Workbench → Saltwind vehicles**. The n
 | Fire engine | 2.55 × 8.2 × 3.25 | X ±1.03, Z −2.62, −1.42, +2.70. Radius 0.52. | Fire apron (−59, 177), south-facing. |
 | Patrol car | 1.92 × 4.75 × 1.65 | X ±0.74, Z −1.49, +1.37. Radius 0.32. | Police apron (−237, −82), south-facing. |
 | Logging truck | 2.55 × 10.2 × 3.6 | X ±1.02, Z −3.6, −2.35, +3.28. Radius 0.54. | Timber yard (−226, 153), north-facing. Bunk 2.22 × 6.55 × 1.9 m, floor Y 1.29, centre Z −1.35. |
-| Ore truck | 2.55 × 8.8 × 3.4 | X ±1.02, Z −2.97, −1.72, +2.80. Radius 0.54. | Ore pickup (288, 156), east-facing. Bin 2.17 × 5.28 × 1.36 m, floor Y 1.25, centre Z −1.29. |
+| Ore truck | 2.55 × 8.8 × 3.4 | X ±1.02, Z −2.97, −1.72, +2.80. Radius 0.54. | Dispatch (288, 156), east-facing. Bin 2.17 × 5.28 × 1.36 m, floor Y 1.25, centre Z −1.29. |
 | Rescue helicopter | 10.2 × 11.65 × 3.35 | Skids X ±0.90, Y 0. | Hospital helipad (115, 111), heading 0.38 rad. |
 | Utility airplane | 10.8 × 7.6 × 2.8 | Main gear X ±0.98, Z 0.40, nose gear X 0, Z 2.42. Y 0. | Airfield apron (183, −132), south-facing. |
 
-The first pass includes every listed vehicle and site exterior. Queued models and asset work include civic interiors, an actual mine opening and interior, vehicle interiors and animated doors, ambulance equipment, rigging and steering, tied log loads, ore payloads, and aircraft control surfaces. The parked skiff and ferry need moving hull and boarding rigs once travel and rescue gameplay are designed.
+The first pass includes every listed vehicle and site exterior. Queued models and asset work include civic interiors, an actual mine opening and interior, vehicle interiors and animated doors, ambulance equipment, rigging and steering, tied log loads, and aircraft control surfaces. The parked skiff and ferry need moving hull and boarding rigs once travel and rescue gameplay are designed.
 
 ## Future travel and physics
 

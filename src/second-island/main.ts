@@ -1,7 +1,7 @@
 import { Camera } from '@babylonjs/core/Cameras/camera'
 import { FreeCamera } from '@babylonjs/core/Cameras/freeCamera'
 import { Engine } from '@babylonjs/core/Engines/engine'
-import { Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector'
+import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { Scene } from '@babylonjs/core/scene'
 import { createCrew, poseCrew, poseSwimming } from '../assets/crew'
 import { createAtmosphere } from '../island-atmosphere'
@@ -10,13 +10,15 @@ import { clearCameraDistance, placeWalker, ScenerySolids, walkSaltwind } from '.
 import { villageWalks } from './footways'
 import { displayCrewBank } from './crew-bank'
 import { brinewickRainRoof } from './brinewick-market-art'
+import { createOreHauling } from './ore-hauling'
 import { createHoneyDelivery } from './honey-delivery'
 import { saltwindLiveWeather, saltwindRainAt, saltwindWeather } from './weather'
 import { createLandscape } from './landscape'
+import { createWorldLabels } from './world-labels'
 import { createChart } from './map'
 import { routes, sampleRoute } from './routes'
 import { createScenery } from './scenery'
-import { arrival, discoveryWalks, islandName, landmarks, sites, villages, waterfront, waterBounds } from './sites'
+import { arrival, discoveryWalks, islandName, landmarks, sites, waterfront, waterBounds } from './sites'
 import type { MapPoint } from './sites'
 import { dryLandKm2, groundHeight, waterHeight } from './terrain'
 import { createSaltwindEffects } from './place-effects'
@@ -42,7 +44,7 @@ function start() {
   const crew = createCrew(meshes, 0)
   const solids = new ScenerySolids()
   const updateWater = createLandscape(meshes, solids)
-  const updateScenery = createScenery(meshes, solids)
+  const updateScenery = createScenery(meshes, solids, 'hauler')
   const updateEffects = createSaltwindEffects(meshes, solids)
   const follow = new FreeCamera('Saltwind follow', new Vector3(arrival.x, 12, arrival.z - 19), scene)
   const overview = new FreeCamera('Saltwind overview', new Vector3(0, 910, -389), scene)
@@ -82,14 +84,21 @@ function start() {
   let broad = false, stop = 0, playing = false, leg = 0, progress = 0, drag: PointerEvent | undefined
   let jump = false, snapCamera = true
   const honey = createHoneyDelivery(meshes, crew, () => { resumePreview(); canvas.focus() })
-  const worldLabels = landmarks.map((pin) => {
-    const label = document.createElement('span')
-    label.textContent = pin.name
-    label.className = 'world-label'
-    label.hidden = true
-    labels.append(label)
-    return { pin, label }
+  const freight = createOreHauling(meshes, solids, point, (driving, heading) => {
+    resumePreview()
+    stopTour()
+    jump = false
+    keys.clear()
+    yaw = orbit = heading
+    arm = driving ? 16 : 12
+    snapCamera = true
+    journey.classList.toggle('in-cab', driving)
+    for (const id of ['reset', 'inspect', 'tour']) get<HTMLButtonElement>(id).disabled = driving
+    get('walk-keys').hidden = driving
+    get('haul-keys').hidden = !driving
+    canvas.focus()
   })
+  const updateLabels = createWorldLabels(scene, canvas, labels, known)
   const stopLabels = tour.map(({ short }) => {
     const label = document.createElement('span')
     label.textContent = short
@@ -150,7 +159,7 @@ function start() {
     const landmark = landmarks.find(({ id }) => id === select.value) ?? landmarks[0]
     const site = sites.find(({ id }) => id === landmark.id)
     get('site-info').textContent = `${Math.round(landmark.x)} m X · ${Math.round(landmark.z)} m Z${site ? ` · ${site.width} × ${site.depth} m reserve. ${site.assets}.` : ''}`
-    drawMap(point, known, landmark.id)
+    drawMap(point, known, landmark.id, freight.target())
   }
   function openMap() {
     if (atlas.open) return
@@ -209,9 +218,11 @@ function start() {
     }
     if (key === ' ' && (event.target === canvas || event.target === document.body)) {
       event.preventDefault()
-      if (!event.repeat) { resumePreview(); stopTour(); jump = true }
+      if (freight.driving) keys.add(key)
+      else if (!event.repeat) { resumePreview(); stopTour(); jump = true }
     }
-    if (key === 'e' && !event.repeat) honey.interact()
+    if (key === 'f' && !event.repeat) freight.toggleSeat()
+    if (key === 'e' && !event.repeat && !freight.interact()) honey.interact()
     if (key === 'c' && !event.repeat) setOverview(!broad)
     if (key === 'm' && !event.repeat) openMap()
   })
@@ -237,6 +248,12 @@ function start() {
   }, { passive: false })
 
   function walk(dt: number) {
+    if (freight.driving) {
+      const pose = freight.drive(keys, dt)
+      yaw = pose.heading
+      if (!drag && Math.abs(pose.speed) > .2) orbit += Math.atan2(Math.sin(yaw - orbit), Math.cos(yaw - orbit)) * Math.min(1, dt * 3)
+      return 0
+    }
     const side = Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft'))
     const forward = Number(keys.has('w') || keys.has('arrowup')) - Number(keys.has('s') || keys.has('arrowdown'))
     if (side || forward) stopTour()
@@ -271,7 +288,7 @@ function start() {
     }
   }
 
-  const cameraGoal = Vector3.Zero(), subject = Vector3.Zero(), worldIdentity = Matrix.Identity()
+  const cameraGoal = Vector3.Zero(), subject = Vector3.Zero()
   function updateCamera(dt: number) {
     if (broad) return
     const distance = playing ? 30 : arm, angle = playing ? .58 : pitch
@@ -300,24 +317,6 @@ function start() {
       snapCamera = false
     } else Vector3.LerpToRef(follow.position, cameraGoal, 1 - Math.exp(-dt * (playing ? 8 : 12)), follow.position)
     follow.setTarget(subject)
-  }
-
-  function updateLabels() {
-    const camera = scene.activeCamera ?? follow
-    const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
-    const ratioX = canvas.clientWidth / viewport.width, ratioY = canvas.clientHeight / viewport.height
-    const visible = worldLabels.filter(({ pin }) => broad ? villages.some(({ id }) => pin.id === id) || pin.id === 'ferry' :
-      known.has(pin.id) && Math.hypot(pin.x - point.x, pin.z - point.z) < 53).slice(0, broad ? 4 : 6)
-    for (const entry of worldLabels) {
-      const { pin, label } = entry
-      if (!visible.includes(entry)) { label.hidden = true; continue }
-      const y = groundHeight(pin.x, pin.z) + (broad ? 20 : 6)
-      const projected = Vector3.Project(new Vector3(pin.x, y, pin.z), worldIdentity, scene.getTransformMatrix(), viewport)
-      label.hidden = projected.z < 0 || projected.z > 1 || projected.x < 0 || projected.x > viewport.width || projected.y < 0 || projected.y > viewport.height
-      if (label.hidden) continue
-      label.style.left = `${projected.x * ratioX}px`
-      label.style.top = `${projected.y * ratioY}px`
-    }
   }
 
   function resize() {
@@ -371,6 +370,18 @@ function start() {
     else poseCrew(crew, cycle, walking ? Math.min(.85, walking * .1) : 0, !point.grounded,
       honey.carrying() ? 'tool' : undefined, 0, frozen ? 1 : Math.min(1, dt * 10))
   }
+  function discoverLandmarks() {
+    for (const pin of landmarks) if (!known.has(pin.id) && Math.hypot(point.x - pin.x, point.z - pin.z) <= pin.radius) {
+      known.add(pin.id)
+      if (pin.discoverable) {
+        if (playing || freight.driving) select.add(new Option(pin.name, pin.id))
+        else {
+          showSite(pin.id)
+          stage.textContent = 'Discovered on foot'
+        }
+      }
+    }
+  }
   engine.runRenderLoop(() => {
     const dt = Math.min(.065, engine.getDeltaTime() / 1000)
     const simulationDelta = frozen ? 0 : dt
@@ -379,23 +390,15 @@ function start() {
     const walking = speed
     if (playing && !frozen) advance(dt)
     cycle += simulationDelta * walking / 2.8
-    crew.root.setEnabled(!broad && !playing)
+    crew.root.setEnabled(!broad && !playing && !freight.driving)
     crew.root.position.set(point.x, point.y + (point.swimming ? .036 * Math.sin(sceneTime * Math.PI * 1.25) : .02), point.z)
     crew.root.rotation.x = 0
     crew.root.rotation.y = yaw
     crew.blink(sceneTime)
     poseWalkingCrew(walking, dt)
-    honey.update(point, !broad && !playing)
-    for (const pin of landmarks) if (!known.has(pin.id) && Math.hypot(point.x - pin.x, point.z - pin.z) <= pin.radius) {
-      known.add(pin.id)
-      if (pin.discoverable) {
-        if (playing) select.add(new Option(pin.name, pin.id))
-        else {
-          showSite(pin.id)
-          stage.textContent = 'Discovered on foot'
-        }
-      }
-    }
+    honey.update(point, !broad && !playing && !freight.driving)
+    freight.update(freight.driving || (!playing && !broad && !honey.carrying() && !frozen))
+    discoverLandmarks()
     updateCamera(dt)
     const camera = scene.activeCamera ?? follow
     const weather = saltwindWeather(climate.value, sceneTime)
@@ -407,13 +410,13 @@ function start() {
     updateEffects(frame, point, broad, frozen)
     updateWater(sceneTime, light)
     scene.render()
-    updateLabels()
+    updateLabels(point, broad)
     if (sceneTime - lastDraw > .24) {
       lastDraw = sceneTime
       const edge = point.swimming ? ' · Swimming' : point.y < waterHeight(point.x, point.z) ? ' · Wading' : ''
       coordinates.textContent = `X ${Math.round(point.x)} · Z ${Math.round(point.z)} · ${point.y.toFixed(1)} m${edge}`
       discoveries.textContent = `${known.size}/${landmarks.length} found`
-      drawMini(point, known)
+      drawMini(point, known, undefined, freight.target())
       if (showPerformance) performanceLabel.textContent = `${Math.round(engine.getFps())} FPS`
     }
     if (!boot.hidden && scene.isReady()) {
