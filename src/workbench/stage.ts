@@ -114,7 +114,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     const readout = document.getElementById('subject-observations')!
     const update = !field?.surface ? entry.create(meshes, values, reportError, text => {
       if (readout.textContent !== text) readout.textContent = text
-    }) : undefined
+    }, field) : undefined
     if (field && !field.surface) {
       const roots = scene.rootNodes.slice(firstSubjectRoot)
       const anchor = new TransformNode('Field subject', scene)
