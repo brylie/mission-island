@@ -1,6 +1,6 @@
 import { oreNames } from '../ore-contracts'
 import { stockpiles } from '../second-island/stockpiles'
-import { createOreLoad } from '../second-island/quarry-art'
+import { createOreLoad } from '../assets/quarry'
 import { vehiclePlacement } from '../second-island/scenery'
 import { groundHeight as saltwindGround } from '../second-island/terrain'
 import { createExterior } from '../second-island/exteriors'

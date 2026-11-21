@@ -50,7 +50,11 @@ const noMagicNumbers = {
   enforceConst: true,
 }
 
-const authoredWorldLayouts = ['src/worlds/saltwind/layout/routes.ts']
+const authoredWorldLayouts = [
+  'src/worlds/saltwind/layout/quarry.ts',
+  'src/worlds/saltwind/layout/routes.ts',
+  'src/worlds/saltwind/layout/signs.ts',
+]
 
 // Preserve exact ceilings for existing hotspots until the responsible feature is split out.
 const existingLimits = {

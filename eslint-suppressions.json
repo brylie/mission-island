@@ -644,11 +644,6 @@
       "count": 107
     }
   },
-  "src/second-island/quarry-art.ts": {
-    "no-magic-numbers": {
-      "count": 233
-    }
-  },
   "src/second-island/sandspit-school.ts": {
     "no-magic-numbers": {
       "count": 4
@@ -664,19 +659,9 @@
       "count": 33
     }
   },
-  "src/second-island/site-signs.ts": {
-    "no-magic-numbers": {
-      "count": 41
-    }
-  },
   "src/second-island/sites.ts": {
     "no-magic-numbers": {
       "count": 284
-    }
-  },
-  "src/second-island/stockpiles.ts": {
-    "no-magic-numbers": {
-      "count": 37
     }
   },
   "src/second-island/tarnstep-spray.ts": {
