@@ -12,13 +12,15 @@ export function fitCrewGait(crew: ReturnType<typeof createCrew>, frame: CrewGait
     const reachSquared = crewThigh ** 2 + crewShin ** 2 + 2 * crewThigh * crewShin * Math.cos(frame.feet[i].bend)
     return Math.sqrt(Math.max(0, reachSquared - target.x ** 2 - target.z ** 2))
   })
+  // Between plants neither leg supports the pelvis. A trace of weight on
+  // both keeps it at the height they agree on.
   let support = 0, height = 0
   for (const [i, target] of targets.entries()) {
-    const weight = frame.feet[i].support
+    const weight = Math.max(.001, frame.feet[i].support)
     height += (target.y + down[i]) * weight
     support += weight
   }
-  crew.body.position.y = Math.max(-.21, Math.min(.14, height / Math.max(1, support)))
+  crew.body.position.y = Math.max(-.21, Math.min(.14, height / support))
   for (const [i, target] of targets.entries()) {
     const floor = target.y - crew.body.position.y
     const swing = Math.max(floor, -down[i])

@@ -101,14 +101,39 @@ test('the leg solution reaches a planted sole forward and across a gentle slope'
   assert.equal(solveCrewLeg(0, -.7, 0).bend, 0)
 })
 
-test('forward swing velocity joins a stationary footprint smoothly at both boundaries', () => {
+test('the swinging shoe leaves and meets a stationary footprint without moving backward over the ground', () => {
   for (const speed of [commuteSpeed, crewCarrySpeed, crewWalkSpeed, crewWalkSpeed * crewSprintMultiplier]) {
     const { distance, contact } = crewGaitFrame(0, speed)
-    const z = phase => phase * distance + crewGaitFrame(phase, speed).feet[0].forward
+    const foot = phase => crewGaitFrame(phase, speed).feet[0]
+    const footprint = phase => phase * distance + foot(phase).forward
+    const ankle = phase => phase * distance +
+      crewFootInHipSpace({ x: 0, y: 0, z: 0, heading: 0 }, { x: 0, y: 0, z: foot(phase).forward, heading: 0, pitch: foot(phase).pitch }, 0, 0).z
     const h = .0001
     for (const phase of [contact / distance, 1]) {
-      assert.ok(Math.abs(z(phase + h) - z(phase - h)) / (2 * h) * speed / distance < .005)
+      assert.ok(Math.abs(footprint(phase + h) - footprint(phase - h)) / (2 * h) * speed / distance < .005)
     }
-    for (let i = 0; i < 500; i++) assert.ok(z((i + 1) / 500) >= z(i / 500) - 1e-8)
+    const stance = contact / distance
+    for (let i = 0; i < 500; i++) {
+      assert.ok(ankle(stance + (1 - stance) * (i + 1) / 500) >= ankle(stance + (1 - stance) * i / 500) - 1e-8)
+    }
   }
+})
+
+test('a walker brings the rear foot through low and a sprinter folds it up behind the hip', () => {
+  const recovery = speed => {
+    const { distance, contact } = crewGaitFrame(0, speed)
+    const stance = contact / distance
+    const ankles = Array.from({ length: 100 }, (_, i) => {
+      const foot = crewGaitFrame(stance + (1 - stance) * i / 100, speed).feet[0]
+      const ankle = crewFootInHipSpace({ x: 0, y: 0, z: 0, heading: 0 }, { x: 0, y: foot.lift, z: foot.forward, heading: 0, pitch: foot.pitch }, 0, 0)
+      return { z: ankle.z, rise: ankle.y + crewThigh + crewShin, bend: solveCrewLeg(0, ankle.y, ankle.z).bend }
+    })
+    return { highest: ankles.reduce((a, b) => b.rise > a.rise ? b : a), bend: Math.max(...ankles.map(ankle => ankle.bend)) }
+  }
+  const walk = recovery(crewWalkSpeed), sprint = recovery(crewWalkSpeed * crewSprintMultiplier)
+  assert.ok(walk.highest.rise > .06 && walk.highest.rise < .16)
+  assert.ok(walk.bend < 1.25)
+  assert.ok(sprint.highest.rise > .25 && sprint.highest.z < -.05)
+  assert.ok(sprint.bend > 1.8)
+  for (const speed of [commuteSpeed, crewCarrySpeed]) assert.ok(recovery(speed).bend < walk.bend + .1)
 })

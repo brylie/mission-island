@@ -79,7 +79,7 @@ test('the supporting knee extends as the planted boot rolls from heel to toe', a
       Vector3.TransformCoordinates(new Vector3(0, -.15, z), boot), legs[0].computeWorldMatrix(true))
     const pivot = shoePoint(edge)
     assert.ok(Math.abs(pivot.y) < .001)
-    assert.ok(Math.abs(pivot.z - (crewHip.z + frame.contact / 2 + edge)) < .001)
+    assert.ok(Math.abs(pivot.z - (crewHip.z + frame.lead + edge)) < .001)
     assert.ok(skeleton.bones[1].getRotation().x < .22)
     if (stance === 0) assert.ok(shoePoint(.215).y > .07)
     if (stance === .99) assert.ok(shoePoint(-.13).y > .10)

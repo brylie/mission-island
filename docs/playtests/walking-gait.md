@@ -31,4 +31,18 @@ A two-client side recording exposed a pulse in the whole walker as each network 
 
 In Crew Workbench, open **Gait trace** during walk, carry, or sprint. Pick a leg and scrub across the shaded stance interval to see the forward ankle velocity and knee angle on the posed rig. The velocity includes travel over the ground. Playback loops on a whole number of strides.
 
+## Recovery between plants
+
+Playtest feedback on the planted gait was that the crew looked like they were moonwalking. The crew travel at 8 m/s on legs about half a metre long, so a sole that holds its place on the pavement can stay down for only about 0.07 seconds. In that pass the foot spent the remaining 86% of each stride drifting forward about 2 cm above the ground. The eye read the long, low forward drift as a foot sliding along the pavement.
+
+The walk now takes quicker steps with a longer contact sweep, which shortens the time between plants. The rear knee bends to bring the foot through with the shoe held clear of the ground, and the supporting leg stays nearly straight. Contact sits slightly behind the hip so the pelvis is at the same height at landing and push-off. The sprint uses a running recovery instead, where the shin folds up behind the hip before the knee drives forward. Planted soles still hold their place, and travel speeds are unchanged.
+
+| Pass | Distance between contacts | Time between contacts | Share of the stride each sole is down | Largest knee bend in recovery | Head bob |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Walk | 1.25 m | 0.156 s | 25% | 70° | 3.7 cm |
+| Sprint | 1.80 m | 0.145 s | 18% | 131° | 3.9 cm |
+| Crate carry | 1.05 m | 0.161 s | 27% | 67° | 2.9 cm |
+
+These figures come from the gait model on level ground, not from a recording. The earlier walk left 0.217 seconds between contacts with each sole down for 14% of the stride. Because both feet are off the ground between plants at these speeds, the walk is a brisk, low-stepping gait and cannot have the double support of a stroll. Whether it reads as a natural walk in motion still needs a human check in the Seabrook side view.
+
 The human playtest still needs both players to swap roles and record how starts, stops, wall blocks, turns, and slopes feel. [Starter Island playtest record #52](https://github.com/brylie/mission-island/issues/52)

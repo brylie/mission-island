@@ -26,23 +26,33 @@ export function crewLegSwing(phase: number, stride: number, side: number) {
   return { hip: side * Math.sin(phase) * stride - bend * .36, bend }
 }
 
-// Integral of a smoothstep velocity ramp. The foot has zero ground speed
-// and zero acceleration at both ends, with an even sweep between the ramps.
-function swingTravel(t: number, ramp: number): number {
-  if (t > 1 - ramp) return 1 - swingTravel(1 - t, ramp)
-  if (t >= ramp) return (t - ramp / 2) / (1 - ramp)
-  const u = t / ramp
-  return ramp * u ** 3 * (1 - u / 2) / (1 - ramp)
+// Integral of a velocity that ramps up and down as a smoothstep. The foot has
+// zero ground speed and zero acceleration at both ends, with an even sweep
+// between the ramps.
+function swingTravel(t: number, rise: number, settle: number) {
+  const sweep = 1 - (rise + settle) / 2
+  const ramp = (u: number) => u ** 3 * (1 - u / 2)
+  if (t < rise) return rise * ramp(t / rise) / sweep
+  if (t > 1 - settle) return 1 - settle * ramp((1 - t) / settle) / sweep
+  return (t - rise / 2) / sweep
 }
 
 function profile(speed: number, scale: number) {
   const walk = Math.min(1, Math.max(0, (speed - 1.5) / (crewWalkSpeed - 1.5)))
   const sprint = Math.min(1, Math.max(0, (speed - crewWalkSpeed) / (crewWalkSpeed * (crewSprintMultiplier - 1))))
-  const cycle = mix(mix(.84, 3.55, walk), 4.55, sprint) * scale
-  // At the game's travel speeds there is a suspension interval between plants.
+  // The crew cover ground quickly on short legs, so each sole is down
+  // briefly. A long contact sweep and a quick cadence keep the time between
+  // plants short.
+  const cycle = mix(mix(.72, 2.5, walk), 3.6, sprint) * scale
   // Keep the contact sweep within reach of the model's short legs.
-  const contact = Math.min(.66, mix(mix(.36, .50, walk), .66, sprint) * scale)
-  return { cycle, contact, stride: mix(mix(.38, .57, walk), .89, sprint) }
+  const contact = Math.min(.66, mix(mix(.36, .62, walk), .66, sprint) * scale)
+  // A walker lifts the rear foot just enough to bring it through. A sprinter
+  // folds the shin up behind the hip.
+  const clearance = mix(mix(.02, .04, walk), .24, sprint), tuck = mix(mix(.05, .1, walk), .8, sprint)
+  // Land a little closer under the hip than the push-off trails behind it.
+  // A straight leg then holds the pelvis at the same height at both ends of
+  // contact, which keeps the head level.
+  return { cycle, contact, lead: contact / 2 - Math.min(.06, .023 / (contact - .126)), clearance, tuck }
 }
 
 const crewTiming = {
@@ -62,23 +72,47 @@ function soleRoll(pitch: number) {
   }
 }
 
-function footfall(phase: number, { cycle: distance, contact, stride }: ReturnType<typeof profile>) {
+// The supporting knee stays nearly straight, which sets how far the leg reaches.
+const supportKnee = .12
+const supportReach = Math.sqrt(crewThigh ** 2 + crewShin ** 2 + 2 * crewThigh * crewShin * Math.cos(supportKnee))
+
+// Knee bend that carries the pelvis at the given height over this sole.
+function supportBend(forward: number, lift: number, pitch: number, height: number) {
+  const roll = soleRoll(pitch)
+  const reach = Math.hypot(forward + roll.forward, crewThigh + crewShin + height - lift - roll.lift)
+  const cosine = (reach ** 2 - crewThigh ** 2 - crewShin ** 2) / (2 * crewThigh * crewShin)
+  return Math.acos(Math.max(-1, Math.min(1, cosine)))
+}
+
+function footfall(phase: number, { cycle: distance, contact, lead, clearance, tuck }: ReturnType<typeof profile>) {
   const duty = contact / distance
   const heelStrike = -.28, toeOff = .42
+  const from = soleRoll(toeOff), to = soleRoll(heelStrike)
+  // Pelvis heights that a nearly straight supporting leg gives at each end
+  // of contact. Between plants the pelvis settles from one to the other.
+  const pelvis = (ankle: number, lift: number) => lift - crewThigh - crewShin + Math.sqrt(supportReach ** 2 - ankle ** 2)
+  const landing = pelvis(lead + to.forward, to.lift), launch = pelvis(lead - contact + from.forward, from.lift)
   if (phase < duty) {
     const stance = phase / duty
     const pitch = heelStrike * (1 - smoothRange(0, .38, stance)) + toeOff * smoothRange(.5, 1, stance)
-    return { phase, forward: contact / 2 - phase * distance, lift: 0, pitch, support: 1, bend: .12, planted: true }
+    return { phase, forward: lead - phase * distance, lift: 0, pitch, support: 1, bend: supportKnee, planted: true }
   }
   const swing = (phase - duty) / (1 - duty)
-  const ramp = Math.min(.35, .29 / (distance - contact))
-  const forward = -contact / 2 + distance * swingTravel(swing, ramp) - (distance - contact) * swing
-  const pitch = mix(toeOff, heelStrike, smoothRange(.08, .83, swing))
-  // Clearance is a floor for the authored recovery pose.
-  const envelope = Math.sin(Math.PI * swing)
-  const lift = .012 * envelope ** 2
-  const support = 1 - smoothRange(0, .22, Math.min(swing, 1 - swing))
-  const bend = mix(crewLegSwing(Math.PI * (swing - .5), stride, -1).bend, .12, support)
+  // Leave the ground gradually and meet it quickly, so the shoe does not
+  // reach far past its landing before settling.
+  const travel = swingTravel(swing, Math.min(.35, .1 / (distance - contact)), Math.min(.2, .07 / (distance - contact)))
+  // A foot skimming the pavement reads as sliding, so the shoe is carried
+  // clear of it. At a sprint the sole also tips back as the shin folds up.
+  const kick = smoothRange(0, .3, swing) * (1 - smoothRange(.3, .75, swing))
+  const pitch = mix(toeOff, heelStrike, smoothRange(.04, .7, swing)) + tuck * kick
+  // The recovery is authored at the ankle. Convert it back to the footprint
+  // under the tipped sole, which is what the rig follows.
+  const roll = soleRoll(pitch)
+  const forward = lead - contact + distance * travel - (distance - contact) * swing +
+    mix(from.forward, to.forward, travel) - roll.forward
+  const lift = mix(from.lift, to.lift, travel) + clearance * Math.sin(Math.PI * swing ** .75) ** 1.2 - roll.lift
+  const support = 1 - smoothRange(0, .12, Math.min(swing, 1 - swing))
+  const bend = supportBend(forward, lift, pitch, mix(launch, landing, smoothRange(0, 1, swing)))
   return { phase, forward, lift, pitch, support, bend, planted: false }
 }
 
@@ -86,7 +120,7 @@ export function crewGaitFrame(cycle: number, speed: number, scale = 1) {
   const amount = gaitAmount(crewTiming, speed)
   const gait = profile(speed, scale)
   return {
-    cycle, amount, contact: gait.contact, distance: gait.cycle,
+    cycle, amount, contact: gait.contact, lead: gait.lead, distance: gait.cycle,
     feet: sides.map((_, i) => footfall(gaitPhase(cycle, i / 2), gait)),
   }
 }
@@ -133,7 +167,7 @@ export function createCrewGait() {
         const t = advance > 0 ? Math.max(0, 1 - foot.phase / advance) : 1
         const contact = { x: mix(last.x, pose.x, t), z: mix(last.z, pose.z, t),
           heading: last.heading + angleBetween(last.heading, pose.heading) * t }
-        const point = offset(contact, lateral, crewHip.z + frame.contact / 2)
+        const point = offset(contact, lateral, crewHip.z + frame.lead)
         plant = plants[i] = { ...point, y: ground(point), heading: contact.heading, pitch: 0 }
       } else if (!foot.planted && plant) {
         // Carry only the offset introduced by a turn during stance. Blending
@@ -142,7 +176,7 @@ export function createCrewGait() {
         const t = advance > 0 ? Math.max(0, 1 - (foot.phase - duty) / advance) : 1
         const heading = last.heading + angleBetween(last.heading, pose.heading) * t
         const boundary = offset({ x: mix(last.x, pose.x, t), z: mix(last.z, pose.z, t), heading },
-          lateral, crewHip.z - frame.contact / 2)
+          lateral, crewHip.z + frame.lead - frame.contact)
         releases[i] = { ...plant, x: plant.x - boundary.x, z: plant.z - boundary.z }
         plant = plants[i] = undefined
       }
