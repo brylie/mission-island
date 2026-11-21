@@ -69,11 +69,6 @@
       "count": 1
     }
   },
-  "server/multiplayer.ts": {
-    "no-magic-numbers": {
-      "count": 25
-    }
-  },
   "server/resident-save.ts": {
     "no-magic-numbers": {
       "count": 4
@@ -1262,11 +1257,6 @@
   "src/worlds/starter/sites.ts": {
     "no-magic-numbers": {
       "count": 90
-    }
-  },
-  "vite.config.ts": {
-    "no-magic-numbers": {
-      "count": 2
     }
   }
 }

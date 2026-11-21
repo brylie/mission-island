@@ -11,12 +11,28 @@ import { createGame, tickSeconds } from './game.ts'
 import { islandSaveFile } from './save.ts'
 import { createSocketSessions } from './socket-sessions.ts'
 
+const httpOk = 200
+const httpBadRequest = 400
+const httpUnauthorized = 401
+const httpForbidden = 403
+const httpMethodNotAllowed = 405
+const httpConflict = 409
+const httpContentTooLarge = 413
+
+const maxFreightChoiceLength = 40
+const maxFreightBodyLength = 4096
+const maxSocketPayloadBytes = 256
+const millisecondsPerSecond = 1000
+const saveIntervalMs = 2000
+const heartbeatIntervalMs = 10_000
+export const defaultIslandPort = 5173
+
 function isCommand(value: unknown): value is FreightAction {
   if (!value || typeof value !== 'object') return false
   if (!('revision' in value) || !Number.isSafeInteger(value.revision) || !('action' in value)) return false
   switch (value.action) {
     case 'board': case 'leave': case 'deliver': return true
-    case 'accept': case 'load': return 'choice' in value && typeof value.choice === 'string' && value.choice.length <= 40
+    case 'accept': case 'load': return 'choice' in value && typeof value.choice === 'string' && value.choice.length <= maxFreightChoiceLength
     case 'drive': return 'steps' in value && Array.isArray(value.steps) && value.steps.length > 0
       && value.steps.length <= maxHaulSteps && value.steps.every(isHaulStep)
     default: return false
@@ -31,36 +47,36 @@ function freightHandler(freight: ReturnType<typeof createGame>['freight']) {
     const send = (code: number, error?: string) =>
       response.writeHead(code).end(JSON.stringify({ ...freight.status(token), error }))
     if (request.method === 'GET') {
-      send(200)
+      send(httpOk)
       return
     }
     if (request.method !== 'POST') {
       response.setHeader('Allow', 'GET, POST')
-      send(405)
+      send(httpMethodNotAllowed)
       return
     }
     if (!token) {
-      send(401, 'Join Starter Island to register as a driver.')
+      send(httpUnauthorized, 'Join Starter Island to register as a driver.')
       return
     }
     try {
       let body = ''
       for await (const chunk of request) {
         body += chunk
-        if (body.length > 4096) {
-          send(413)
+        if (body.length > maxFreightBodyLength) {
+          send(httpContentTooLarge)
           return
         }
       }
       const command: unknown = JSON.parse(body)
       if (!isCommand(command)) {
-        send(400)
+        send(httpBadRequest)
         return
       }
       const error = freight.act(token, command)
-      send(error ? 409 : 200, error)
+      send(error ? httpConflict : httpOk, error)
     }
-    catch { send(400) }
+    catch { send(httpBadRequest) }
   }
 }
 
@@ -90,30 +106,30 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
   middlewares.use('/api/crew-bank', (request, response) => {
     response.setHeader('Cache-Control', 'no-store')
     if (request.method !== 'GET') {
-      response.writeHead(405, { Allow: 'GET' }).end()
+      response.writeHead(httpMethodNotAllowed, { Allow: 'GET' }).end()
       return
     }
-    response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ crewCoins: game.crewCoins }))
+    response.writeHead(httpOk, { 'Content-Type': 'application/json' }).end(JSON.stringify({ crewCoins: game.crewCoins }))
   })
   middlewares.use('/api/slatecliff-freight', (request, response) => {
     void freightHandler(game.freight)(request, response)
   })
   let sessions = createSocketSessions(game, trialMode ? scenarioCatalog : undefined)
-  const sockets = new WebSocketServer({ noServer: true, maxPayload: 256 })
+  const sockets = new WebSocketServer({ noServer: true, maxPayload: maxSocketPayloadBytes })
   const live = new Set<WebSocket>()
   if (trialMode) middlewares.use('/api/live-checkpoint', (req, res) => {
     res.setHeader('Cache-Control', 'no-store')
     const stop = (code: number, text: string) => {
       res.writeHead(code).end(text)
     }
-    if (req.method !== 'POST') return stop(405, 'Use POST.')
+    if (req.method !== 'POST') return stop(httpMethodNotAllowed, 'Use POST.')
     const seats = sessions.seats()
-    if (!seats.some((seat) => req.headers.authorization === 'Bearer ' + seat.token)) return stop(403, 'Join the crew first.')
+    if (!seats.some((seat) => req.headers.authorization === 'Bearer ' + seat.token)) return stop(httpForbidden, 'Join the crew first.')
     const args = new URL(req.url ?? '/', 'http://localhost').searchParams
     const settings = checkpointSettings(args.get('checkpoint'), args.get('seats'))
-    if (!settings) return stop(400, 'Unknown checkpoint or crew size.')
-    if (String(playtest!.revision) !== args.get('revision')) return stop(409, 'Another player already restarted the checkpoint.')
-    if (settings.seats === 1 && seats.length > 1) return stop(409, 'Both seats are occupied. Leave one game before starting solo.')
+    if (!settings) return stop(httpBadRequest, 'Unknown checkpoint or crew size.')
+    if (String(playtest!.revision) !== args.get('revision')) return stop(httpConflict, 'Another player already restarted the checkpoint.')
+    if (settings.seats === 1 && seats.length > 1) return stop(httpConflict, 'Both seats are occupied. Leave one game before starting solo.')
     playtest = { ...settings, revision: playtest!.revision + 1 }
     game = createGame({ playtest })
     // Reserve the connected players’ roles in their existing order while both browsers reconnect.
@@ -123,16 +139,16 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
     }
     sessions = createSocketSessions(game, scenarioCatalog)
     for (const socket of sockets.clients) socket.terminate()
-    stop(200, 'Checkpoint restarted for the crew.')
+    stop(httpOk, 'Checkpoint restarted for the crew.')
   })
-  const timer = setInterval(() => sessions.tick(), tickSeconds * 1000)
-  const saving = archive && setInterval(checkpoint, 2000)
+  const timer = setInterval(() => sessions.tick(), tickSeconds * millisecondsPerSecond)
+  const saving = archive && setInterval(checkpoint, saveIntervalMs)
   const heartbeat = setInterval(() => {
     for (const socket of sockets.clients) {
       if (!live.delete(socket)) socket.terminate()
       else socket.ping()
     }
-  }, 10_000)
+  }, heartbeatIntervalMs)
   sockets.on('connection', (socket) => {
     live.add(socket)
     socket.on('pong', () => live.add(socket))
@@ -161,7 +177,7 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
 
 function serveLanInvites(server: Pick<ViteDevServer, 'middlewares' | 'resolvedUrls'>) {
   server.middlewares.use('/api/lan-invite', (_request, response) => {
-    response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+    response.writeHead(httpOk, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
     response.end(JSON.stringify(server.resolvedUrls?.network ?? []))
   })
 }
@@ -171,11 +187,11 @@ export function multiplayer(): Plugin {
     name: 'mission-island-multiplayer',
     configureServer(server) {
       serveLanInvites(server)
-      if (server.httpServer) attachGame(server.httpServer, server.middlewares, server.config.root, server.config.server.port ?? 5173, server.config.mode === 'playtest')
+      if (server.httpServer) attachGame(server.httpServer, server.middlewares, server.config.root, server.config.server.port ?? defaultIslandPort, server.config.mode === 'playtest')
     },
     configurePreviewServer(server) {
       serveLanInvites(server)
-      attachGame(server.httpServer, server.middlewares, server.config.root, server.config.preview.port ?? 5173, server.config.mode === 'playtest')
+      attachGame(server.httpServer, server.middlewares, server.config.root, server.config.preview.port ?? defaultIslandPort, server.config.mode === 'playtest')
     },
   }
 }
