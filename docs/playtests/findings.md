@@ -4,7 +4,7 @@ Keep observations from actual sessions here. The [first-payday guide](starter-is
 
 ## Session log
 
-No sessions have been entered yet. For each session, copy the block below. Give each distinct observation a short title so an issue can link to it. Record a moment that worked as carefully as one that blocked progress. Use player roles or aliases.
+For each session, copy the block below. Give each distinct observation a short title so an issue can link to it. Record a moment that worked as carefully as one that blocked progress. Use player roles or aliases.
 
 ```markdown
 ### YYYY-MM-DD · Session ID · Short finding title
@@ -17,6 +17,26 @@ No sessions have been entered yet. For each session, copy the block below. Give 
 - Decision — keep, change, investigate, or observe again. Record why and link the milestone issue if opened.
 - Retest — setup, observable pass condition, owner if assigned, and result/build when repeated.
 ```
+
+### 2026-11-21 · ridge-checkout · Pilot swap on Windstone Ridge
+
+- Starting point: the `ridge-checkout` live checkpoint on an in-memory playtest host, two seats, an unqualified crew. A coding agent played both roles. Crew 1 ran in the in-app browser. Crew 2 started in a second browser tab, and a script on the same host took the seat over for the swap. Nobody new to the game took part.
+- Moment: Crew 2 pressed **E** at the landing sign. Crew 1 borrowed the wing and flew with no input, then landed in the circle. The roles were then swapped: Crew 2 walked back up, borrowed the returned wing and flew the survey with a left bank followed by a right bank. Crew 2 then took a practice flight and disconnected 2.5 s after launch, 9.6 m up.
+- Both screens: the teal meadow mark appeared for both crews and cleared on landing. Crew 1 saw the qualification receipt with "Wing returned to Windstone Ridge". The survey flight recorded the willow 3.5 s after launch and landed at (56.6, 105.4). The rack offered Crew 2 the survey without a checkout, and afterwards a practice flight. When Crew 2 disconnected, Crew 1 saw "Flight interrupted… Wing returned to Windstone Ridge."
+- Outcome: Crew 2 rejoined standing at the launch (39.0, 128.0), with no flight in progress. The crew held one qualification and one survey, and the crew bank had not changed.
+- Interpretation: the checkout, the shared qualification, the role swap and recovery from a mid-flight disconnect behave the same live as in the host tests. One quirk of the test setup: a browser tab that navigated away kept its seat until the tab was closed, so the takeover script was turned away as a duplicate. This looks like the page staying alive in the browser's back-forward cache. The game wasn't checked further for it.
+- Decision: keep. Still untested: the uncoached preflight question with a new pilot, and a walk back after a short landing on purpose. A host restart wasn't tried live because the checkpoint host keeps no save; the disk-restart host test covers it. These stay on the [#52 checklist](https://github.com/brylie/mission-island/issues/52).
+- Retest: two people on two devices. Ask the preflight question before the first launch, then swap roles as above.
+
+### 2026-11-21 · ridge-soaring · Thermal chain to Juniper Hollow
+
+- Starting point: the `ridge-soaring` live checkpoint, solo, with the crew qualified and the Mirror Pool survey done, on a dry day at 10:30. A coding agent flew it with a small in-page autopilot that read the game's own snapshots and held the real **A/D/S** keys. Nobody new to the game took part.
+- Moment: the pilot launched and circled the Windstone shoulder, climbing from 11 m to 30 m. It then glided to the Fernfall ledges thermal (22 → 27 m), on to the Juniper slope ridge lift (13 → 24 m), and passed over Juniper Hollow.
+- Both screens: solo. The HUD showed height, the nearest lift with its bearing and distance, and the next unsurveyed place. It flashed "Mirror Pool spotted from the air" on the way out.
+- Outcome: the pilot landed safely at (−45, 72). The receipt read "Aerial survey recorded: Mirror Pool, Fernfall, Juniper Hollow · 3/6 for the crew. Wing returned to Windstone Ridge."
+- Interpretation: the lift chain works at play speed and the survey loop reads clearly. While airborne, the "n/6" count includes places spotted on the current flight but not yet recorded. The sighting message says a safe landing is still needed, but a player may read the count as already saved. Hypothesis to check with a person.
+- Decision: keep, and observe again with a person. Next questions: can a new pilot find the rising air from the motes and the HUD bearing alone? Does circling with **S** held feel natural? Is a single afternoon long enough to reach Shellglass?
+- Retest: on the `ridge-soaring` checkpoint, ask a pilot to survey Juniper Hollow without directions. Record where they first climbed and how long it took.
 
 ## Triage after the session
 

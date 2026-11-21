@@ -127,7 +127,8 @@ export type ServerMessage =
   | { type: 'gate-step'; step: GateStep }
   | { type: 'angler-purchase'; result: ClothingPurchaseResult }
   | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }
-  | { type: 'flight-result'; result: FlightResult; pilotId: number }
+  | { type: 'flight-result'; result: FlightResult; pilotId: number; aerial?: string[]; recorded?: number }
+  | { type: 'aerial-sighting'; id: string }
   | { type: 'full' | 'duplicate' }
 
 export type ClothingPurchaseResult = 'bought' | 'already-owned' | 'insufficient-funds' | 'away'
