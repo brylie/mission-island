@@ -1,11 +1,11 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { createCrew, poseCrew } from './assets/crew'
 import type { MeshFactory } from './island-meshes'
-import { fenceHeight, fenceRuns, gateLeaf, gateMendedStage, hingePost, leafAngle, mendingBench, sagAngle, wrenAt } from './gate-repair'
+import { fenceHeight, fenceRuns, gateLeaf, gateMendedStage, hingePost, leafAngle, sagAngle, wrenAt } from './gate-repair'
 import { moveTo } from './island-render-pose'
 import type { Snapshot } from './protocol'
 import { groundHeight, walkingHeight } from './terrain'
-import { distance, offset } from './world'
+import { distance, mendingBench, offset } from './world'
 import type { Point } from './world'
 
 const timber = '#9a8263', cap = '#c9b48d', iron = '#4a4644', rust = '#8c5a3c', brass = '#e2b55a', soil = '#5b4532'
@@ -56,7 +56,6 @@ export function createGardenGate(meshes: MeshFactory, residentId: number) {
   box(0, .82, 0, 1.6, .08, .7, '#a77a52', bench)
   for (const x of [-.7, .7]) for (const z of [-.27, .27]) box(x, .4, z, .09, .8, .09, '#7a5a3f', bench)
   box(0, .2, 0, 1.4, .05, .55, '#7a5a3f', bench)
-  box(-.5, .93, -.1, .18, .14, .22, iron, bench)
   box(.35, .89, .1, .4, .06, .26, '#3f5d5a', bench)
   const benchPin = cylinder(.35, .95, .1, .045, .045, .16, 8, brass, bench)
   const carried = cylinder(0, 0, 0, .045, .045, .16, 8, brass)

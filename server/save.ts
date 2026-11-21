@@ -6,6 +6,7 @@ import { isJobId, jobs } from '../src/jobs.ts'
 import type { JobBoardState } from '../src/jobs.ts'
 import type { Player, Snapshot } from '../src/protocol'
 import { gateStages, initialGateRepair } from '../src/gate-repair.ts'
+import { makeItems } from './items.ts'
 import { crateStarts, itemStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
 
@@ -58,10 +59,8 @@ function migrateWallets(value: unknown): unknown {
 function migrateGate(value: unknown): unknown {
   if (!isRecord(value) || value.version !== 2 || !isRecord(value.world) || !Array.isArray(value.world.items)) return value
   const toolbox = itemStarts.findIndex(({ kind }) => kind === 'toolbox')
-  const { start } = itemStarts[toolbox]
   const saved = value.world.items as unknown[]
-  const items = saved.length === toolbox ? [...saved, { ...start, id: toolbox, heading: 0, kind: 'toolbox', holder: null, onBed: false,
-    delivered: false, spraying: false, y: 0.04, rotation: null }] : saved
+  const items = saved.length === toolbox ? [...saved, makeItems()[toolbox]] : saved
   return { ...value, version: 3, world: { ...initialGateRepair(), ...value.world, items } }
 }
 
