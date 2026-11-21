@@ -364,11 +364,6 @@
       "count": 27
     }
   },
-  "src/island-phenomena.ts": {
-    "no-magic-numbers": {
-      "count": 45
-    }
-  },
   "src/island-render-pose.ts": {
     "no-magic-numbers": {
       "count": 1

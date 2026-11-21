@@ -4,12 +4,13 @@ import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import type { Scene } from '@babylonjs/core/scene'
+import { mistLighting, phenomenonLooks, phenomenonPatch, phenomenonShader } from './assets/effects/phenomena'
 import { seededRandom } from './seeded-random'
 import { shaderPresets } from './shader-studies'
 import type { WildlifeFrame } from './wildlife'
 import { phenomenonStrength, smoothRange } from './wildlife-motion'
 
-type Kind = 'mist' | 'spray' | 'glow'
+type Kind = keyof typeof phenomenonLooks
 interface Effect {
   name: string
   kind: Kind
@@ -21,66 +22,22 @@ interface Effect {
   scatter?: boolean
 }
 
-const config = {
-  mist: { tint: '#d8e9d8', count: 9, width: 0.51, height: 0.105, opacity: 0.44 },
-  spray: { tint: '#e0f2ed', count: 13, width: 0.37, height: 0.34, opacity: 0.49 },
-  glow: { tint: '#81e5d1', count: 11, width: 0.14, height: 0.085, opacity: 0.8 },
-}
+const half = 0.5
+const fullTurn = Math.PI + Math.PI
+const hoursPerHalfDay = 12
+const sunriseHour = 6
+const patchAlphaIndex = 2
+const reducedDensityGroupSize = 3
+const omittedPatchIndex = 2
+const visibilityExtentMultiplier = 2.5
+const distanceFadeStart = 0.7
+const minimumVisibleStrength = 0.01
+const { mist: mistLook, spray: sprayLook, glow: glowLook } = phenomenonLooks
 
 export function createPhenomena(scene: Scene, effects: readonly Effect[]) {
   const groups = effects.map((effect) => {
-    const look = config[effect.kind]
-    const material = new ShaderMaterial(effect.name, scene, {
-      vertexSource: `
-        precision highp float;
-        attribute vec3 position;
-        attribute vec2 uv;
-        uniform mat4 worldViewProjection;
-        #ifdef LIT_MIST
-        uniform mat4 world;
-        varying vec3 mistPoint;
-        #endif
-        varying vec2 texCoord;
-        void main() {
-          texCoord = uv;
-          #ifdef LIT_MIST
-          mistPoint = (world * vec4(position, 1.)).xyz;
-          #endif
-          gl_Position = worldViewProjection * vec4(position, 1.);
-        }
-      `,
-      fragmentSource: `
-        precision highp float;
-        varying vec2 texCoord;
-        uniform vec3 tint;
-        uniform float opacity;
-        #ifdef LIT_MIST
-        varying vec3 mistPoint;
-        uniform vec3 mistEye;
-        uniform vec3 morningSun;
-        uniform float scattering;
-        #endif
-        void main() {
-          vec2 p = (texCoord - .5) * 2.;
-          float wisps = 0.9 + sin(p.x * 13. + sin(p.y * 6.) * 1.2) * .1;
-          float weight = max(0., 1. - dot(p,p));
-          vec3 color = tint;
-          float alpha = opacity * weight * weight * wisps;
-          #ifdef LIT_MIST
-          if (scattering > 0.) {
-            vec3 ray = normalize(mistPoint - mistEye);
-            float g = .62;
-            float forward = (1. - g*g) / pow(1. + g*g - 2.*g*dot(ray, morningSun), 1.5);
-            float lowSun = smoothstep(-.035, .045, morningSun.y) * (1. - smoothstep(.15, .52, morningSun.y));
-            float light = (1. - exp(-forward * lowSun * scattering * .22));
-            color = mix(tint * .83, vec3(1., .78, .51), light);
-            alpha += light * weight * weight * wisps * opacity * .52;
-          }
-          #endif
-          gl_FragColor = vec4(color, clamp(alpha, 0., 1.));
-        }
-      `,
-    }, { attributes: ['position', 'uv'], uniforms: ['world', 'worldViewProjection', 'tint', 'opacity', 'mistEye', 'morningSun', 'scattering'], defines: effect.scatter ? ['#define LIT_MIST'] : [], needAlphaBlending: true })
+    const look = phenomenonLooks[effect.kind]
+    const material = new ShaderMaterial(effect.name, scene, phenomenonShader, { attributes: ['position', 'uv'], uniforms: ['world', 'worldViewProjection', 'tint', 'opacity', 'mistEye', 'morningSun', 'scattering'], defines: effect.scatter ? ['#define LIT_MIST'] : [], needAlphaBlending: true })
     material.backFaceCulling = false
     material.setColor3('tint', Color3.FromHexString(look.tint))
     const random = seededRandom(effect.seed)
@@ -88,10 +45,10 @@ export function createPhenomena(scene: Scene, effects: readonly Effect[]) {
       const mesh = CreatePlane(effect.name, { size: 1 }, scene)
       mesh.isPickable = false
       mesh.material = material
-      mesh.alphaIndex = 2
+      mesh.alphaIndex = patchAlphaIndex
       mesh.billboardMode = effect.kind === 'glow' ? Mesh.BILLBOARDMODE_NONE : Mesh.BILLBOARDMODE_ALL
-      if (effect.kind === 'glow') mesh.rotation.x = Math.PI / 2
-      return { mesh, reducedLayer: index % 3 !== 2, side: random() - 0.5, across: random() - 0.5, phase: random(), size: 0.65 + random() * 0.65 }
+      if (effect.kind === 'glow') mesh.rotation.x = Math.PI * half
+      return { mesh, reducedLayer: index % reducedDensityGroupSize !== omittedPatchIndex, side: random() - half, across: random() - half, phase: random(), size: phenomenonPatch.minimumScale + random() * phenomenonPatch.scaleVariation }
     })
     return { effect, look, material, patches }
   })
@@ -100,28 +57,28 @@ export function createPhenomena(scene: Scene, effects: readonly Effect[]) {
     for (const { effect, look, material, patches } of groups) {
       const { x, y, z, kind, extent } = effect
       const distance = Math.hypot(camera.x - x, camera.y - y, camera.z - z)
-      const visibleAt = kind === 'mist' ? 48 + extent * 2.5 : 27 + extent * 2.5
-      const strength = phenomenonStrength(kind, weather) * (1 - smoothRange(visibleAt * 0.7, visibleAt, distance))
+      const visibleAt = look.visibleDistance + extent * visibilityExtentMultiplier
+      const strength = phenomenonStrength(kind, weather) * (1 - smoothRange(visibleAt * distanceFadeStart, visibleAt, distance))
         * (effect.scatter ? mist.mistDensity : 1)
       const reduced = effect.scatter && mist.reduced
-      for (const { mesh, reducedLayer } of patches) mesh.setEnabled(strength > 0.01 && (!reduced || reducedLayer))
-      if (strength <= 0.01) continue
+      for (const { mesh, reducedLayer } of patches) mesh.setEnabled(strength > minimumVisibleStrength && (!reduced || reducedLayer))
+      if (strength <= minimumVisibleStrength) continue
       if (effect.scatter) {
-        const solarAngle = (weather.hour - 6) * Math.PI / 12
-        sun.set(-Math.cos(solarAngle), Math.sin(solarAngle), -0.24).normalize()
+        const solarAngle = (weather.hour - sunriseHour) * Math.PI / hoursPerHalfDay
+        sun.set(-Math.cos(solarAngle), Math.sin(solarAngle), mistLighting.sunDirectionZ).normalize()
         material.setVector3('morningSun', sun)
         material.setVector3('mistEye', camera)
-        material.setFloat('scattering', mist.scattering * (1 - weather.rain * 0.8))
+        material.setFloat('scattering', mist.scattering * (1 - weather.rain * mistLighting.rainScatteringLoss))
       }
-      const flicker = kind === 'glow' ? 0.77 + Math.sin(time * 2.5) * 0.23 : 1
-      material.setFloat('opacity', look.opacity * strength * flicker * (reduced ? 1.2 : 1))
+      const flicker = kind === 'glow' ? glowLook.flickerBase + Math.sin(time * glowLook.flickerSpeed) * glowLook.flickerAmplitude : 1
+      material.setFloat('opacity', look.opacity * strength * flicker * (reduced ? mistLighting.reducedOpacityMultiplier : 1))
       for (const { mesh, side, across, phase, size } of patches) {
         if (!mesh.isEnabled()) continue
-        const progress = (phase + time * (0.24 + weather.rain * 0.16)) % 1
-        const drift = kind === 'mist' ? Math.sin(time * 0.21 + phase * Math.PI * 2) * 0.14 : 0
-        const climb = kind === 'spray' ? Math.sin(progress * Math.PI) * extent * 0.26 : 0
-        const lift = kind === 'mist' ? (0.055 + phase * 0.024) * extent : 0.035
-        mesh.position.set(x + (side + drift) * extent, y + lift + climb, z + (across + (kind === 'spray' ? progress * 0.42 : -drift)) * extent)
+        const progress = (phase + time * (phenomenonPatch.speed + weather.rain * phenomenonPatch.rainSpeedFactor)) % 1
+        const drift = kind === 'mist' ? Math.sin(time * mistLook.driftSpeed + phase * fullTurn) * mistLook.driftExtent : 0
+        const climb = kind === 'spray' ? Math.sin(progress * Math.PI) * extent * sprayLook.climbExtent : 0
+        const lift = kind === 'mist' ? (mistLook.lift + phase * mistLook.liftVariation) * extent : phenomenonPatch.lift
+        mesh.position.set(x + (side + drift) * extent, y + lift + climb, z + (across + (kind === 'spray' ? progress * sprayLook.travelExtent : -drift)) * extent)
         const fade = kind === 'spray' ? Math.sin(progress * Math.PI) : 1
         mesh.scaling.set(look.width * extent * size * fade, look.height * extent * size * fade, 1)
       }
