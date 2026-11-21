@@ -46,6 +46,8 @@ Every place a player can discover on foot also has an **aerial survey**. Once th
 
 The glider has roughly a 3:1 glide, so the ridge alone reaches only the places near it. Rising air sits where the land would make it. The training wind blows from the southeast, so it lifts over slopes that face it. On a sunny day, dark soil, rooftops and bare rock warm faster than the grass around them and send up thermals. Rising motes show each column: lilac for ridge lift, warm gold for a thermal. Circle with the nose up to climb, and leave near the top.
 
+**Gulls in the lift.** From 07:00 to 17:30, two gulls circle in each working lift site with their wings held still. They climb tight in the core and drift wider as they glide back down. A strong thermal holds both birds. An early-morning or showery thermal holds one, and the ridges keep both because the wind still blows. Heavy rain sends them to shelter. A gull joins or leaves only near the top of its climb, so none pops in low beside the pilot. Gulls are an approximate guide: [their tests](../../test/gull-thermals.test.mjs) check that a circling gull always sits in air that would lift the wing. The motes stay the exact readout, including at night when the gulls roost. To watch them, open **Gulls circling the farm thermal** in the Landscape Workbench's scenic views and press Play.
+
 | Lift | Kind | Where and why | Works |
 | --- | --- | --- | --- |
 | Windstone shoulder | Ridge | The windward face of Windstone Ridge | Always |
