@@ -81,3 +81,20 @@ test('a player following Wren out through the mended gate is never shut in, and 
   assert.equal(a.state.gate.open, false)
   assert.ok(a.player.z < fenceZ - 1)
 })
+
+test('a press without a chosen target never starts a gate repair step', (t) => {
+  const h = setup(t, {
+    players: [player(0, lane)],
+    arrange(save) {
+      save.islandTime = noon
+      Object.assign(save.world.gateRepair, { stage: 'accepted', acceptedAt: 0 })
+    },
+  })
+  const a = h.join(tokens[0])
+  a.request('interact')
+  h.advance()
+  assert.equal(a.state.gateRepair.stage, 'accepted')
+  a.request('interact', { choice: { action: 'inspect' } })
+  h.advance()
+  assert.equal(a.state.gateRepair.stage, 'inspected')
+})

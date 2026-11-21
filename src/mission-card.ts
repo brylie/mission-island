@@ -8,8 +8,8 @@ function deliveryInstruction(state: Snapshot, drop: { x: number; z: number }, qu
   const loaded = state.items.filter((item) => item.onBed).length
   const delivered = state.jobs.active?.progress ?? state.items.filter((item) => item.delivered).length
   if (distance(state.truck, drop) < 11) return 'Carry the crates into the teal drop zone. Press E to deliver.'
-  if (loaded > 0 && loaded + delivered === quantity) return 'Drive to the teal drop zone. Hold Shift on corners and Space to brake.'
-  return loaded > 0 ? `${loaded} in the flatbed. Load or recover the remaining crates.` : 'Pick up crates at Harbor Depot and load the flatbed.'
+  if (loaded > 0 && loaded + delivered === quantity) return 'Follow the amber orbs to the teal drop zone. Hold Shift on corners and Space to brake.'
+  return loaded > 0 ? `${loaded} in the flatbed. Load or recover the remaining crates, then follow the amber orbs.` : 'Pick up crates at Harbor Depot and load the flatbed.'
 }
 
 // The mission panel: the current shift, order or neighbor favor, with its progress and next step.

@@ -183,6 +183,9 @@ button:focus-visible { outline: 2px solid #ffc560; outline-offset: 4px; }
 .mission-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
 .mission-actions button { margin-top: 0; }
 .mission-actions button:disabled { opacity: .55; }
+.ridge-hud { margin-top: 11px; border-top: 1px solid #dbcfaf; padding-top: 8px; }
+.ridge-hud strong { color: #234d45; font-size: 12px; }
+.ridge-hud p + p { margin-top: 5px; color: #234d45; font-weight: 780; }
 
 .crew {
   width: 170px;
@@ -396,6 +399,13 @@ kbd {
 }
 @media (max-width: 740px) {
   .prompt { bottom: 56px; }
+  /* With the key list open on a narrow screen, the prompt moves to the left so the panel never covers it. */
+  .playfield:has(#game-controls:not([hidden])) .prompt {
+    left: 16px;
+    transform: none;
+    max-width: calc(100% - 252px);
+    white-space: normal;
+  }
 }
 @media (max-width: 530px) {
   .brand small, .camera kbd { display: none; }
@@ -409,6 +419,7 @@ kbd {
   .controls { bottom: 46px; right: 9px; padding: 5px; }
   .controls-toggle { bottom: 9px; right: 9px; }
   .prompt { bottom: 46px; }
+  .playfield:has(#game-controls:not([hidden])) .prompt { left: 9px; max-width: calc(100% - 226px); }
 }
 
 @media (max-width: 380px) {

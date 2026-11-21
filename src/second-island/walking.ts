@@ -16,8 +16,8 @@ export class ScenerySolids {
 
   add(block: Block) {
     const c = Math.abs(Math.cos(block.heading)), s = Math.abs(Math.sin(block.heading))
-    const reachX = (c * block.width + s * block.depth) / 2 + .4
-    const reachZ = (s * block.width + c * block.depth) / 2 + .4
+    const reachX = (c * block.width + s * block.depth) / 2
+    const reachZ = (s * block.width + c * block.depth) / 2
     for (let x = Math.floor((block.x - reachX) / 8); x <= Math.floor((block.x + reachX) / 8); x++) {
       for (let z = Math.floor((block.z - reachZ) / 8); z <= Math.floor((block.z + reachZ) / 8); z++) {
         const key = x + ',' + z
@@ -47,14 +47,19 @@ export class ScenerySolids {
   }
 
   at(x: number, z: number, radius: number) {
-    const cell = this.cells.get(Math.floor(x / 8) + ',' + Math.floor(z / 8))
-    const candidates = this.parkedVehicle ? [...(cell ?? []), this.parkedVehicle] : cell
-    return candidates?.filter((b) => {
+    const candidates = new Set<Block>()
+    for (let ix = Math.floor((x - radius) / 8); ix <= Math.floor((x + radius) / 8); ix++) {
+      for (let iz = Math.floor((z - radius) / 8); iz <= Math.floor((z + radius) / 8); iz++) {
+        for (const block of this.cells.get(ix + ',' + iz) ?? []) candidates.add(block)
+      }
+    }
+    if (this.parkedVehicle) candidates.add(this.parkedVehicle)
+    return [...candidates].filter((b) => {
       const dx = x - b.x, dz = z - b.z, c = Math.cos(b.heading), s = Math.sin(b.heading)
       const ex = Math.max(0, Math.abs(dx * c - dz * s) - b.width / 2)
       const ez = Math.max(0, Math.abs(dx * s + dz * c) - b.depth / 2)
       return ex * ex + ez * ez <= radius * radius
-    }) ?? []
+    })
   }
 }
 

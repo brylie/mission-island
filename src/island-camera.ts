@@ -6,6 +6,9 @@ import { Scene } from '@babylonjs/core/scene'
 import { groundHeight, waterLevel } from './terrain'
 import { buildings, houseRoofRise } from './world'
 import type { LookSettings } from './look-options-ui'
+import { ridgeHeading } from './worlds/starter/ridge-scout'
+
+type RidgeView = 'preflight' | 'flight'
 
 // Include each roof overhang so the camera retracts before it reaches a wall or roof.
 const cameraObstacles = buildings.map(({ x, z, w, h, d }) => ({
@@ -57,6 +60,22 @@ function reticleRay(origin: Vector3, target: Vector3) {
   return { origin: origin.clone(), direction, reach: 18 * visibleArm(origin, origin.add(direction.scale(18))) }
 }
 
+function frameOverview(camera: FreeCamera, aspect: number) {
+  const halfHeight = Math.max(106, 125 / Math.max(0.3, aspect))
+  camera.orthoLeft = -halfHeight * aspect
+  camera.orthoRight = halfHeight * aspect
+  camera.orthoTop = halfHeight
+  camera.orthoBottom = -halfHeight
+}
+
+// Over-the-shoulder framing: the camera orbits a pivot just above and to the right of the head
+// and always looks through it, so the reticle sits over the shoulder rather than on the character.
+// Looking down tips the aim ray onto the ground just ahead. A vehicle keeps a lower, centred pivot.
+function shoulderRig(vehicleBlend: number, pitch: number) {
+  return { radius: 5.92 + vehicleBlend * 3.38, elevation: 0.32 - vehicleBlend * 0.025 + pitch,
+    shoulder: 0.38 * (1 - vehicleBlend), pivotHeight: 1.55 + 0.5 * (1 - vehicleBlend) }
+}
+
 export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   const overview = new FreeCamera('Island overview', new Vector3(0, 174, -120), scene)
   overview.mode = Camera.ORTHOGRAPHIC_CAMERA
@@ -82,6 +101,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   let orbitPitch = 0
   let pitch = 0
   let wasSeated = false
+  let ridgeView: RidgeView | undefined
   let vehicleBlend = 0
   let arm = 1
 
@@ -156,29 +176,30 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   }
 
   return {
-    update(subject: TransformNode | undefined, seated: boolean, aspect: number, delta: number) {
+    update(subject: TransformNode | undefined, seated: boolean, aspect: number, delta: number, ridge?: RidgeView) {
       if (!subject) {
         if (tracking) {
           tracking = false
           releaseMouse()
         }
+        ridgeView = undefined
         scene.activeCamera = overview
         scene.fogStart = 400
         scene.fogEnd = 500
-        const halfHeight = Math.max(106, 125 / Math.max(0.3, aspect))
-        overview.orthoLeft = -halfHeight * aspect
-        overview.orthoRight = halfHeight * aspect
-        overview.orthoTop = halfHeight
-        overview.orthoBottom = -halfHeight
+        frameOverview(overview, aspect)
         return overview
       }
 
+      if (ridge && ridge !== ridgeView) orbitPitch = .14
       const snap = !tracking || Vector3.DistanceSquared(anchor, subject.position) > 196
       const blend = snap ? 1 : 1 - Math.exp(-delta * 8)
+      seated ||= ridge === 'flight'
       if (seated !== wasSeated) {
         orbitYaw = seated ? 0 : heading
         wasSeated = seated
       }
+      if (ridge === 'preflight' && ridge !== ridgeView) orbitYaw = ridgeHeading
+      ridgeView = ridge
       const wantedHeading = (seated ? subject.rotation.y : 0) + orbitYaw
       const turn = wantedHeading - heading
       heading += Math.atan2(Math.sin(turn), Math.cos(turn)) * blend
@@ -188,13 +209,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
 
       const forwardX = Math.sin(heading)
       const forwardZ = Math.cos(heading)
-      const radius = 5.92 + vehicleBlend * 3.38
-      const elevation = 0.32 - vehicleBlend * 0.025 + pitch
-      // Over-the-shoulder framing: the camera orbits a pivot just above and to the right of the head
-      // and always looks through it, so the reticle sits over the shoulder rather than on the character.
-      // Looking down tips the aim ray onto the ground just ahead. A vehicle keeps a lower, centred pivot.
-      const shoulder = 0.38 * (1 - vehicleBlend)
-      const pivotHeight = 1.55 + 0.5 * (1 - vehicleBlend)
+      const { radius, elevation, shoulder, pivotHeight } = shoulderRig(vehicleBlend, pitch)
       pivot.set(anchor.x + forwardZ * shoulder, anchor.y + pivotHeight, anchor.z - forwardX * shoulder)
       desired.set(pivot.x - forwardX * radius * Math.cos(elevation), pivot.y + radius * Math.sin(elevation),
         pivot.z - forwardZ * radius * Math.cos(elevation))

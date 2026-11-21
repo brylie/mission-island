@@ -1,10 +1,11 @@
 import { fenceHeight, fenceRuns, plank } from '../../gate-repair.ts'
 import { juniperSolids } from '../../juniper-habitat.ts'
 import { jobBoard } from '../../jobs.ts'
-import { beachUmbrellas, lampPosts, shellRocks, starterFeatures } from './sites.ts'
+import { beachUmbrellas, lampPosts, ridgeLichenRocks, ridgeLichenSite, shellRocks, starterFeatures } from './sites.ts'
+import { ridgeHeading, ridgeLandingSign, ridgeRack, ridgeWindsock } from './ridge-scout.ts'
 import { flowerBeds, rainBarrel, sawhorse, woodpile } from './wren-garden.ts'
 import { walkingHeight } from '../../terrain.ts'
-import { ferryTerminal, mendingBench, offset } from '../../world.ts'
+import { ferryTerminal, localPoint, mendingBench, offset } from '../../world.ts'
 import type { Point } from '../../world.ts'
 
 // Local support volumes in metres. Separate surfaces preserve the seat and taller back,
@@ -49,10 +50,29 @@ export const starterSolids = [
   ...solidsAt(woodpile, [[1.05, .65, .6]], woodpile.heading),
   ...solidsAt(rainBarrel, [[.55, .55, .8]]),
   ...solidsAt(sawhorse, [[1.1, .4, .75]], sawhorse.heading),
+  ...solidsAt(ridgeRack, [[1.62, .27, 1.16]], ridgeHeading),
+  ...solidsAt(ridgeWindsock, [[.09, .09, 2.64]]),
+  ...solidsAt(ridgeLandingSign, [[.15, .15, 1.26], [1.44, .19, 1.545]], ridgeHeading),
 ]
 
-export function starterPropTop(point: Point, padding: number) {
+const lichenBase = walkingHeight(ridgeLichenSite)
+const lichenStones = ridgeLichenRocks.map(([x, z, size]) =>
+  ({ x: ridgeLichenSite.x + x, z: ridgeLichenSite.z + z, heading: x * .62, size }))
+
+function lichenTop(point: Point, padding: number) {
+  if (Math.abs(point.x - ridgeLichenSite.x) > 3 + padding || Math.abs(point.z - ridgeLichenSite.z) > 3 + padding) return -Infinity
   let top = -Infinity
+  for (const stone of lichenStones) {
+    const { x, z } = localPoint(stone, point)
+    const { size } = stone
+    const radius = (x / (size * .5 + padding)) ** 2 + (z / (size * .455 + padding)) ** 2
+    if (radius < 1) top = Math.max(top, lichenBase + size * (.23 + .37 * Math.sqrt(1 - radius)))
+  }
+  return top
+}
+
+export function starterPropTop(point: Point, padding: number) {
+  let top = lichenTop(point, padding)
   for (const solid of starterSolids) {
     const dx = point.x - solid.x, dz = point.z - solid.z
     if (Math.abs(dz) > solid.bound + 2 * padding || Math.abs(dx) > solid.bound + 2 * padding) continue

@@ -3,6 +3,7 @@ import type { Duplex } from 'node:stream'
 import type { Plugin, ViteDevServer } from 'vite'
 import { WebSocketServer } from 'ws'
 import type { WebSocket } from 'ws'
+import { isHaulStep, maxHaulSteps } from '../src/simulation/ore-truck.ts'
 import type { FreightAction } from '../src/ore-contracts.ts'
 import type { TrialRun } from '../src/live-checkpoints.ts'
 import { checkpointSettings, scenarioCatalog } from './scenarios/catalog.ts'
@@ -12,10 +13,14 @@ import { createSocketSessions } from './socket-sessions.ts'
 
 function isCommand(value: unknown): value is FreightAction {
   if (!value || typeof value !== 'object') return false
-  const command = value as Partial<FreightAction>
-  return ['accept', 'load', 'deliver'].some(action => action === command.action) &&
-    typeof command.choice === 'string' && command.choice.length <= 40 &&
-    Number.isSafeInteger(command.revision) && Number.isFinite(command.x) && Number.isFinite(command.z)
+  if (!('revision' in value) || !Number.isSafeInteger(value.revision) || !('action' in value)) return false
+  switch (value.action) {
+    case 'board': case 'leave': case 'deliver': return true
+    case 'accept': case 'load': return 'choice' in value && typeof value.choice === 'string' && value.choice.length <= 40
+    case 'drive': return 'steps' in value && Array.isArray(value.steps) && value.steps.length > 0 &&
+      value.steps.length <= maxHaulSteps && value.steps.every(isHaulStep)
+    default: return false
+  }
 }
 
 function freightHandler(freight: ReturnType<typeof createGame>['freight']) {
@@ -32,7 +37,7 @@ function freightHandler(freight: ReturnType<typeof createGame>['freight']) {
       let body = ''
       for await (const chunk of request) {
         body += chunk
-        if (body.length > 1024) { send(413); return }
+        if (body.length > 4096) { send(413); return }
       }
       const command: unknown = JSON.parse(body)
       if (!isCommand(command)) { send(400); return }

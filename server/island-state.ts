@@ -24,6 +24,10 @@ export function restoreIsland(
     weather: weatherAt(islandTime), islandTime,
     driftwood, juniper: juniper(0, weatherAt(islandTime), []),
     jobs: structuredClone(save?.world.jobs ?? { active: null, completed: 0 }),
+    aviation: {
+      qualified: save?.world.aviation?.qualified ?? false, surveyed: save?.world.aviation?.surveyed ?? false,
+      flight: null, marked: false,
+    },
   }
   state.skiff.speed = 0
   // A carried hinge pin goes back to the mending bench when the host stops.
@@ -41,10 +45,12 @@ export function restoreIsland(
 export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['crew']): IslandSave {
   const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residentTrust, lastFavorPay } = state
   const { x, z, heading } = truck
+  const { qualified, surveyed } = state.aviation
   return {
     version: 3, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
-    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, gate, gateRepair, residentTrust,
+    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed },
+      gate, gateRepair, residentTrust,
       ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }

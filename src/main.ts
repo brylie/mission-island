@@ -2,6 +2,7 @@ import { bindCheckpointControls } from './live-checkpoint-ui'
 import './style.css'
 import { boundaryBuoys, buoyBoundaryPoint, coastPoint } from './terrain'
 import { actionHint, atClothingCounter, heldItem, inSkiff, interactRequest } from './actions'
+import { createRidgeHud, drawRidgeMap, flightInput, ridgeActionHint } from './ridge-ui'
 import { readStorage, writeStorage } from './browser-storage'
 import { cleanCrewName, defaultAppearance, shirtColor } from './crew-appearance'
 import { createCrewGuide } from './crew-guide-ui'
@@ -84,6 +85,7 @@ const chargePower = element<HTMLProgressElement>('charge-power')
 const prompt = element('prompt')
 const promptKey = element('prompt-key')
 const promptAction = element('prompt-action')
+const ridgeHud = createRidgeHud(element('ridge-hud'))
 const map = element<HTMLCanvasElement>('map')
 const ink = map.getContext('2d')
 
@@ -220,6 +222,7 @@ function drawMap(state?: Snapshot) {
   const marketOrder = activeJob(state)?.kind === 'market'
   dot(market.x, market.z, marketOrder ? '#acf3da' : '#f2d3bc', marketOrder ? 6 : 3.5)
   if (state.mission === 'complete' && !state.jobs.active) dot(jobBoard.x, jobBoard.z, '#ffd379', 5.5)
+  drawRidgeMap(state, dot)
   const home = crewHomes[id]
   if (home) dot(home.chest.x, home.chest.z, '#fed487', 3)
   for (const player of state.players) {
@@ -307,6 +310,7 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
 function update(state: Snapshot) {
   const earlier = snapshot?.players.find((player) => player.id === id)
   const previousHour = snapshot?.weather.hour
+  if (snapshot?.aviation.flight?.pilotId === id && state.aviation.flight?.pilotId !== id) keys.clear()
   snapshot = state
   checkpointControls.update(state.playtest)
   const hours = Math.floor(state.weather.hour)
@@ -333,6 +337,7 @@ function update(state: Snapshot) {
 
   updateMission(state)
   const player = connected.find((entry) => entry.id === id)
+  ridgeHud.update(state, player)
   if (player) {
     updatePersonalDisplay(state, player, earlier)
     guide.update(state, player)
@@ -352,10 +357,13 @@ function update(state: Snapshot) {
   updateBoard(state, player)
   editCrewName.hidden = !player
   if (player) editCrewName.textContent = player.name ? 'Edit name' : 'Set name'
-  const [key, action] = player?.charge ? ['', 'Release left click']
+  // Refresh the reticle every update, even while feedback holds the prompt, so E never sends a stale target.
+  const focus = reticle.update(state, player, renderer?.aimRay())
+  renderer?.pinTip(reticle.tip, focus?.at)
+  const ridgeHint = player && ridgeActionHint(state, player)
+  const [key, action] = ridgeHint ?? (player?.charge ? ['', 'Release left click']
     : actionFeedback && performance.now() < actionFeedback.until ? [actionFeedback.key, actionFeedback.label]
-    : player ? actionHint(state, player, reticle.update(state, player, renderer?.aimRay())) : ['', '']
-  renderer?.pinTip(reticle.tip, reticle.focus()?.at)
+    : player ? actionHint(state, player, focus) : ['', ''])
   const waiting = checkpointControls.waitingPrompt(state.playtest)
   prompt.hidden = !action && !waiting
   promptKey.hidden = !key || Boolean(waiting)
@@ -440,6 +448,9 @@ function connect() {
       case 'starter-seed':
         actionFeedback = { key: '+1 seed', label: 'Plant it at Island Farm', until: performance.now() + 3200 }
         break
+      case 'flight-result':
+        ridgeHud.showResult(incoming.result)
+        break
       case 'order-unavailable':
         board.reject()
         if (snapshot) updateBoard(snapshot)
@@ -491,6 +502,10 @@ function sendInput() {
   const pressed = (key: string, alias: string) => Number(keys.has(key) || keys.has(alias))
   const x = pressed('KeyD', 'ArrowRight') - pressed('KeyA', 'ArrowLeft')
   const z = pressed('KeyW', 'ArrowUp') - pressed('KeyS', 'ArrowDown')
+  if (snapshot?.aviation.flight?.pilotId === id) {
+    send({ type: 'input', input: flightInput(x, z) })
+    return
+  }
   const seat = snapshot?.players.find((player) => player.id === id)?.seat
   const direction = follow && !seat ? renderer?.walkInput(x, z) : undefined
   const shift = keys.has('ShiftLeft') || keys.has('ShiftRight')

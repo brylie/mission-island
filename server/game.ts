@@ -1,6 +1,7 @@
 import type { TrialRun } from '../src/live-checkpoints.ts'
 import { prepareTrial } from './live-checkpoints.ts'
 import { createDriftwoodSchool } from '../src/simulation/driftwood-school.ts'
+import { createAviation } from './aviation.ts'
 import { inSkiff } from '../src/actions.ts'
 import { chargePower } from '../src/charged-actions.ts'
 import { createJuniperHabitat } from '../src/juniper-habitat.ts'
@@ -23,12 +24,31 @@ import { stepSkiff } from './skiff.ts'
 
 export const tickSeconds = 1 / 30
 
-interface GameOptions {
+type GameOptions = {
   clock?: () => number
   random?: () => number
   playtest?: TrialRun
   save?: IslandSave
   checkpoint?: () => void
+}
+
+// The truck carries its driver's input and records driven distance; the skiff moves with its rowers.
+function stepVehicles(
+  state: Snapshot, members: CrewMember[], active: (member: CrewMember) => boolean,
+  physics: ReturnType<typeof createCargoPhysics>, freight: ReturnType<typeof createFreight>,
+) {
+  const driver = members.find((member) => member.player.seat === 'driver')
+  const before = state.truck
+  state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds)
+  if (driver && active(driver)) freight.recordDrive(driver.player, state.items, Math.hypot(state.truck.x - before.x, state.truck.z - before.z))
+  const rowers = members.filter((member) => inSkiff(member.player.seat) && active(member))
+  const still = stepSkiff(state.skiff, rowers.map((member) => member.input), tickSeconds)
+  updateRiders(state)
+  for (const member of members) {
+    const { player, input } = member
+    player.rowing = Boolean(inSkiff(player.seat) && active(member) && (input.x || input.z))
+  }
+  return { before, still }
 }
 
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
@@ -44,6 +64,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
   const gate = createGateRepair(state, crew.notifyAll)
   const interactions = createInteractions(state, growth, physics, orders, gate, checkpoint)
+  const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
     const now = clock()
@@ -57,21 +78,12 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     physics.placeGateLeaf(state)
     const members = crew.members()
     const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - 400
-    const driver = members.find((member) => member.player.seat === 'driver')
-    const before = state.truck
-    state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds)
-    if (driver && active(driver)) freight.recordDrive(driver.player, state.items, Math.hypot(state.truck.x - before.x, state.truck.z - before.z))
-    const rowers = members.filter((member) => inSkiff(member.player.seat) && active(member))
-    const still = stepSkiff(state.skiff, rowers.map((member) => member.input), tickSeconds)
-    updateRiders(state)
-    for (const member of members) {
-      const { player, input } = member
-      player.rowing = Boolean(inSkiff(player.seat) && active(member) && (input.x || input.z))
-    }
+    const { before, still } = stepVehicles(state, members, active, physics, freight)
     for (const item of state.items) item.spraying = false
     for (const member of members) {
       const { player } = member
       const connected = active(member)
+      if (aviation.tick(member, connected)) continue
       player.reaching = false
       player.rightHandRaised = false
       player.throwing = now < member.throwUntil
@@ -148,6 +160,14 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     }
   }
 
+  function dispatch(member: CrewMember, message: CrewCommand) {
+    if (aviation.hasFlight(member)) {
+      if (message.type === 'respawn') aviation.interrupt(member)
+      if (message.type !== 'input' && message.type !== 'appearance' && message.type !== 'crew-name') return
+    } else if (message.type === 'interact' && aviation.interact(member)) return
+    handleAction(member, message)
+  }
+
   function join(token: string, notify: (message: CrewNotice) => void) {
     const member = crew.join(token, notify)
     if (typeof member === 'string') return { type: member } as const
@@ -156,12 +176,13 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       type: 'joined' as const,
       id: member.player.id,
       dispatch(message: CrewCommand) {
-        if (member.notify === notify && (!trial || state.playtest?.started)) handleAction(member, message)
+        if (member.notify === notify && (!trial || state.playtest?.started)) dispatch(member, message)
       },
       disconnect() {
         if (member.notify !== notify) return
         disconnect(member, clock())
         gate.releasePin(member.player.id)
+        aviation.interrupt(member)
       },
     }
   }
@@ -170,7 +191,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     tick,
     join,
     freight,
-    snapshotForSave: () => saveIsland(state, growth, crew.savedProfiles()),
+    snapshotForSave: () => saveIsland(state, growth, aviation.groundSavedPilot(crew.savedProfiles())),
     get crewCoins() { return state.crewCoins },
   }
 }

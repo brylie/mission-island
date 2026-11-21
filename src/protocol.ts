@@ -1,5 +1,6 @@
 import type { LiveTrial, ScenarioSummary } from './live-checkpoints.ts'
 import type { FreightTicket } from './ore-contracts'
+import type { AviationState, FlightResult } from './aviation'
 import type { DriftwoodFrame } from './simulation/driftwood-school'
 import type { BiomeFrame } from './biome-model'
 import type { Point, Pose, starterPay } from './world'
@@ -28,6 +29,8 @@ export interface Input {
   sprint: boolean
   brake?: boolean
   raiseRightHand?: boolean
+  flightTurn?: number
+  flightPitch?: number
 }
 
 export interface Player extends Pose {
@@ -109,6 +112,7 @@ export interface Snapshot {
   gateRepair: GateRepair
   residentTrust: { wren: number }
   lastFavorPay?: FavorReceipt
+  aviation: AviationState
 }
 
 export type ServerMessage =
@@ -123,6 +127,7 @@ export type ServerMessage =
   | { type: 'gate-step'; step: GateStep }
   | { type: 'angler-purchase'; result: ClothingPurchaseResult }
   | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }
+  | { type: 'flight-result'; result: FlightResult; pilotId: number }
   | { type: 'full' | 'duplicate' }
 
 export type ClothingPurchaseResult = 'bought' | 'already-owned' | 'insufficient-funds' | 'away'

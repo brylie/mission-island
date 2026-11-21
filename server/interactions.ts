@@ -1,4 +1,6 @@
 import { byTruckBed, freeBed, heldItem } from '../src/actions.ts'
+import { gateActions } from '../src/gate-repair.ts'
+import type { GateAction } from '../src/gate-repair.ts'
 import { interactions, sameChoice } from '../src/interaction-options.ts'
 import type { Interaction, InteractionChoice } from '../src/interaction-options.ts'
 import { starterTools } from '../src/inventory.ts'
@@ -113,7 +115,9 @@ export function createInteractions(
       return
     }
     const options = interactions(state, player)
-    const chosen = choice ? options.find((option) => sameChoice(option, choice)) : options[0]
+    // Gate repair steps change shared progress, so they run only when the player chose them.
+    const chosen = choice ? options.find((option) => sameChoice(option, choice))
+      : options.find(({ action }) => !gateActions.includes(action as GateAction))
     if (!chosen) return
     perform(member, chosen)
     updateHeldItems(state)
