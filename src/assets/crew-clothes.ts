@@ -1,6 +1,7 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { Mesh } from '@babylonjs/core/Meshes/mesh'
 import type { MeshFactory } from '../island-meshes'
+import { crewHipHeight } from '../world'
 import { garment, sweptDetail } from './crew-shapes'
 import { createSwimArm } from './crew-swim-arm'
 import { createSwimsuit } from './crew-swimsuit'
@@ -18,7 +19,7 @@ export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
   for (const s of [-1, 1]) {
     const leg = new TransformNode('Hip', meshes.scene)
     leg.parent = root
-    leg.position.set(s * .18, .68, .02)
+    leg.position.set(s * .18, crewHipHeight, .02)
     legs.push(leg)
     const inward = -s * .032
     trousers.push(form(leg, 'Twill trouser leg', [
