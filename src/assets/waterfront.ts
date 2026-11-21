@@ -1,6 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { Material } from '@babylonjs/core/Materials/material'
-import { hash } from '../surface-noise'
+import { hash } from '../math/noise'
 import { boxSurfaceUVs } from '../surface-uvs'
 import type { MeshFactory } from '../island-meshes'
 import { waterLevel } from '../terrain'
