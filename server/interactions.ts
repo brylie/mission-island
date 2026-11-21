@@ -13,13 +13,15 @@ import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
+import { isFarmAction } from '../src/farm-orders.ts'
+import type { createFarmOrders } from './farm-orders.ts'
 import type { createResidents } from './residents.ts'
 
 export function createInteractions(
   state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'remove'>,
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
-  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>, checkpoint?: () => void,
+  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>, farm: Pick<ReturnType<typeof createFarmOrders>, 'act'>, checkpoint?: () => void,
 ) {
   function useHomeChest(member: CrewMember) {
     const { player } = member
@@ -90,6 +92,7 @@ export function createInteractions(
   }
 
   function perform(member: CrewMember, { action, subject = -1 }: Interaction) {
+    if (isFarmAction(action)) return farm.act(member, action)
     const item = state.items[subject]
     switch (action) {
       case 'put-down': return putDown(member, heldItem(state, member.player)!)

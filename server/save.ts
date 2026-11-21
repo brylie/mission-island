@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { isFreightTicket } from '../src/ore-contracts.ts'
 import { aerialSurveys, type AviationProgress } from '../src/aviation.ts'
+import { farmOrders, type FarmProgress } from '../src/farm-orders.ts'
 import { farmPlots } from '../src/farm.ts'
 import { isJobId, jobs } from '../src/jobs.ts'
 import type { JobBoardState } from '../src/jobs.ts'
@@ -20,7 +21,7 @@ export type IslandSave = {
   islandTime: number
   growth: number[]
   world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay'> &
-    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress }
+    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress; produce?: FarmProgress }
   crew: { token: string; player: Player; reserved: boolean }[]
 }
 
@@ -152,9 +153,18 @@ function isSavedAviation(value: unknown) {
       (aerial.length === 0 || value.qualified)))
 }
 
+function isSavedFarmWork(value: unknown) {
+  if (!isRecord(value) || !isCoinBalance(value.delivered) || !isCoinBalance(value.load)) return false
+  const { stage, delivered, load } = value
+  if (stage === 'starter') return delivered < farmOrders.starter.quantity && load === 0
+  if (stage === 'harvest') return delivered < farmOrders.harvest.quantity && delivered + load <= farmOrders.harvest.quantity
+  return (stage === 'offer' || stage === 'qualified' || stage === 'complete') && delivered === 0 && load === 0
+}
+
 function hasValidProgress(world: Record<string, unknown>) {
   return (world.jobs === undefined || isJobBoard(world.jobs, world.mission)) &&
-    (world.aviation === undefined || isSavedAviation(world.aviation))
+    (world.aviation === undefined || isSavedAviation(world.aviation)) &&
+    (world.produce === undefined || isSavedFarmWork(world.produce))
 }
 
 function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] {

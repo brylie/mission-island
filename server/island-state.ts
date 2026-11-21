@@ -1,4 +1,5 @@
 import type { DriftwoodFrame } from '../src/simulation/driftwood-school.ts'
+import { restoreFarmWork } from '../src/farm-orders.ts'
 import { farmPlots } from '../src/farm.ts'
 import type { createJuniperHabitat } from '../src/juniper-habitat.ts'
 import type { AviationProgress } from '../src/aviation.ts'
@@ -34,6 +35,7 @@ export function restoreIsland(
     // A resident added since the save starts as a stranger.
     residents: { ...initialResidents(starterResidents), ...structuredClone(save?.world.residents) },
     aviation: restoreAviation(save?.world.aviation),
+    farmWork: restoreFarmWork(save?.world.produce),
   }
   state.skiff.speed = 0
   // A carried hinge pin goes back to the mending bench when the host stops.
@@ -55,7 +57,7 @@ export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['
   return {
     version: 4, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
-    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial },
+    world: structuredClone({ produce: state.farmWork.progress, truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial },
       gate, gateRepair, residents,
       ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,

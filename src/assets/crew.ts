@@ -168,7 +168,7 @@ export function createCrew(meshes: MeshFactory, id: number) {
 }
 
 export function poseCrew(crew: ReturnType<typeof createCrew>, cycle: number, stride: number, airborne: boolean,
-  carrying?: 'crate' | 'extinguisher' | 'toolbox' | 'tool', reach = 0, blend = 1, winding = 0, throwing = false, rightHandRaised = false) {
+  carrying?: 'crate' | 'extinguisher' | 'toolbox' | 'tool' | 'barrow', reach = 0, blend = 1, winding = 0, throwing = false, rightHandRaised = false) {
   const phase = cycle * Math.PI * 2
   const swing = Math.sin(phase) * stride
   const effort = Math.max(reach, Number(rightHandRaised), winding)
@@ -184,7 +184,8 @@ export function poseCrew(crew: ReturnType<typeof createCrew>, cycle: number, str
     arm.rotation.z *= 1 - blend
     const swinging = airborne ? -0.8 : -swing * side * 0.77
     const relaxed = throwing ? -1.75 : carrying === 'crate' ? -1.22 - winding * 0.67
-      : (carrying === 'extinguisher' || carrying === 'tool') && i === 0 ? -1.36 : swinging
+      : carrying === 'barrow' ? -1.03
+        : (carrying === 'extinguisher' || carrying === 'tool') && i === 0 ? -1.36 : swinging
     const reachAmount = i === 0 ? reach : Number(rightHandRaised)
     const forward = relaxed + (-Math.PI / 2 - relaxed) * reachAmount
     arm.rotation.x += (forward - arm.rotation.x) * blend

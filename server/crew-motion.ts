@@ -1,3 +1,4 @@
+import { chargePower } from '../src/charged-actions.ts'
 import { canSpray, heldItem } from '../src/actions.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
 import { starterDiscoveries } from '../src/scenery.ts'
@@ -7,6 +8,17 @@ import { stopPrimary, stopped, type CrewMember } from './crew.ts'
 import { looseCargoTop } from './items.ts'
 import { gateBlockers, solidTop } from '../src/gate-repair.ts'
 import { stepPlayer } from '../src/simulation/movement.ts'
+
+export function prepareCrewMotion(member: CrewMember, active: boolean, now: number) {
+  const { player } = member
+  player.reaching = false
+  player.rightHandRaised = false
+  player.throwing = now < member.throwUntil
+  if (!active) stopPrimary(member)
+  if (player.charge && member.primary) {
+    player.charge.power = chargePower(player.charge.kind, (now - member.primary.since) / 1000)
+  }
+}
 
 export function jump(member: CrewMember) {
   const { player } = member
@@ -28,7 +40,9 @@ export function walkCrew(
   const { truck } = state
   const item = heldItem(state, player)
   const gate = gateBlockers(state)
-  stepPlayer(member, before, truck, connected ? input : stopped, Boolean(item), tickSeconds,
+  const pushing = state.farmWork.barrow?.handler === player.id
+  const walkingInput = pushing && input.sprint ? { ...input, sprint: false } : input
+  stepPlayer(member, before, truck, connected ? walkingInput : stopped, Boolean(item) || pushing, tickSeconds,
     (point, margin) => Math.max(looseCargoTop(state.items, point, margin), solidTop(gate, point, margin)))
   if (!connected) return
   for (const region of starterDiscoveries) {
@@ -39,7 +53,7 @@ export function walkCrew(
   }
   if (player.charge && input.aim !== undefined && !input.x && !input.z) player.heading = input.aim
   player.reaching = !item && (member.primary?.kind === 'reach' || now < member.reachUntil)
-  player.rightHandRaised = input.raiseRightHand === true && !player.swimming && !player.sleeping &&
+  player.rightHandRaised = !pushing && input.raiseRightHand === true && !player.swimming && !player.sleeping &&
     item?.kind !== 'crate' && !player.throwing
   sprayExtinguisher(state, member, item, tickSeconds, completeFire)
 }

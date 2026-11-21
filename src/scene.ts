@@ -8,6 +8,7 @@ import { createAtmosphere, sceneWeather } from './island-atmosphere'
 import { landscapeLink } from './playtest-link'
 import { inSkiff } from './actions'
 import { castTravelSeconds } from './charged-actions'
+import { createFarmOrderView } from './farm-order-view'
 import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutIncident } from './lookout-recovery-art'
@@ -75,6 +76,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const cycles = crew.map(() => 0)
   const aviation = createRidgeAviationView(meshes, crew)
   const showDeliveryRoute = createDeliveryWayfindingView(meshes)
+  const showFarmOrder = createFarmOrderView(meshes)
   const farmTools = crew.map((character) => createFarmTools(meshes, character))
   const skiffGear = crew.map((character) => {
     const gear = createSkiffGear(meshes, character)
@@ -220,7 +222,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         const stride = delta > 0 ? Math.min(0.92, step / delta * 0.072) : 0
         const winding = player.charge?.kind === 'throw' ? player.charge.power : 0
         if (player.swimming) poseSwimming(character, time + id, Math.min(1, step / Math.max(.001, delta * 3.8)), factor)
-        else poseCrew(character, cycles[id], stride, !player.grounded, held?.kind ?? (player.equipped ? 'tool' : undefined),
+        else poseCrew(character, cycles[id], stride, !player.grounded, held?.kind ?? (state.farmWork.barrow?.handler === id ? 'barrow' : player.equipped ? 'tool' : undefined),
           Number(Boolean(player.reaching || held?.spraying || player.casting)),
           wasVisible ? 1 - Math.exp(-delta * 16) : 1, winding, player.throwing, player.rightHandRaised)
       }
@@ -284,6 +286,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     if (last?.skiff) moveTo(boat, last.skiff, waterLevel, factor)
     poseFloating(boat, time, 0.5, 0.048)
     buoys.forEach((buoy, index) => poseFloating(buoy, time, index * 1.67))
+    showFarmOrder(last?.farmWork, factor)
     showDeliveryRoute(last)
     if (last) {
       updateScenery(last, factor, delta)
