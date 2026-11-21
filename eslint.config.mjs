@@ -50,6 +50,8 @@ const noMagicNumbers = {
   enforceConst: true,
 }
 
+const authoredWorldLayouts = ['src/worlds/saltwind/layout/routes.ts']
+
 // Preserve exact ceilings for existing hotspots until the responsible feature is split out.
 const existingLimits = {
   'src/assets/crew-clothes.ts': { 'max-lines-per-function': lineLimit(161) },
@@ -154,7 +156,7 @@ export default defineConfig(
   },
   {
     files: ['**/*.{cjs,js,mjs,ts}'],
-    ignores: ['src/assets/**', 'test/**'],
+    ignores: ['src/assets/**', 'test/**', ...authoredWorldLayouts],
     rules: { 'no-magic-numbers': ['error', noMagicNumbers] },
   },
   {
@@ -164,19 +166,19 @@ export default defineConfig(
     },
   },
   {
-    files: ['src/assets/geometry/*.ts'],
-    rules: {
-      'no-restricted-imports': ['error', { patterns: [{ regex: '.', message: 'Geometry definitions have no module dependencies.' }] }],
-      'no-restricted-syntax': ['error', {
-        selector: 'CallExpression, NewExpression, ImportExpression',
-        message: 'Keep geometry definitions to constants and types.',
-      }],
-    },
-  },
-  {
     files: ['src/simulation/**/*.ts', 'src/worlds/**/*.ts', ...sharedInteractionFiles],
     rules: {
       'no-restricted-imports': ['error', { patterns: [...browserImports, presentationImports] }],
+    },
+  },
+  {
+    files: ['src/assets/geometry/*.ts', ...authoredWorldLayouts],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [{ regex: '.', message: 'Geometry and world layout definitions have no module dependencies.' }] }],
+      'no-restricted-syntax': ['error', {
+        selector: 'CallExpression, NewExpression, ImportExpression',
+        message: 'Keep geometry and world layout definitions to constants and types.',
+      }],
     },
   },
   {

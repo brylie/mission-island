@@ -654,11 +654,6 @@
       "count": 233
     }
   },
-  "src/second-island/routes.ts": {
-    "no-magic-numbers": {
-      "count": 281
-    }
-  },
   "src/second-island/sandspit-school.ts": {
     "no-magic-numbers": {
       "count": 4

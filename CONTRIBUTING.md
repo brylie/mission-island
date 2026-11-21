@@ -80,7 +80,7 @@ The coverage gate runs only in CI, because it takes a few minutes. It fails the 
 
 Run `npm run lint:fix` to apply ESLint layout fixes. First-party JavaScript and TypeScript follow the ESLint Stylistic recommended preset with LF line endings and parentheses around all arrow function parameters. Multiline interaction registries use one entry per line.
 
-Name gameplay thresholds, timeouts, and other numeric settings in the module that owns the rule. Include units in the name when they matter. `no-magic-numbers` checks first-party JavaScript and TypeScript, including object fields. Procedural assets and authored recipe tables in `src/assets/` and tests in `test/` can use numeric literals.
+Name gameplay thresholds, timeouts, and other numeric settings in the module that owns the rule. Include units in the name when they matter. `no-magic-numbers` checks first-party JavaScript and TypeScript, including object fields. Procedural assets and authored recipe tables in `src/assets/`, the Saltwind road layout in `src/worlds/saltwind/layout/routes.ts`, and tests in `test/` can use numeric literals. Keep the road layout to dependency-free route widths, waypoints, and elevations.
 
 The `eslint-suppressions.json` baseline counts legacy `no-magic-numbers` reports per file. Lint fails when a file exceeds its count. After removing legacy literals, run `npm run lint:full -- --prune-suppressions` and commit the smaller baseline.
 
