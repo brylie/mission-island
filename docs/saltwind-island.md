@@ -10,6 +10,10 @@ Earn your Slatecliff ore truck certification by hauling ten crates on Starter Is
 
 On Saltwind, use **Site map → Slatecliff Mine → Inspect site** and walk to the ochre truck on the turnaround. Press **F** to board. Pick a contract at the dispatch bay, then steer to the cones beside the hopper. Use **W/S** to drive or reverse, **A/D** to steer and **Space** to brake. Choose the ticketed ore and press **Load selected ore**. The orange diamond on the chart follows the current objective. Stop between the buyer’s cones and unload to credit the crew bank. Drive back to dispatch for another ticket.
 
+| At Slatecliff dispatch | Honey calcite loaded at the hopper |
+| --- | --- |
+| ![Ochre quarry truck with a cream cab roof and an empty steel tipper](images/slatecliff-hauler-dispatch.jpg) | ![Rear view of the ribbed tipper carrying honey calcite beside the chute](images/slatecliff-hauler-loaded.jpg) |
+
 | Ore | Buyers and uses |
 | --- | --- |
 | Magnetite | Brinewick freight quay buys workboat ballast. Barleycross School buys specimens for its navigation class. |

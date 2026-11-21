@@ -1,4 +1,5 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { createOreHauler, haulerSpec } from '../assets/ore-hauler'
 import type { MeshFactory } from '../island-meshes'
 
 const cream = '#fff0d0', glass = '#407783', rubber = '#303c39', steel = '#8da3a0'
@@ -10,14 +11,14 @@ export const vehicleSpecs = {
   patrol: { name: 'Patrol car', width: 1.92, length: 4.75, height: 1.65, track: 1.48, axles: [-1.49, 1.37], wheel: 0.32 },
   logger: { name: 'Logging truck', width: 2.55, length: 10.2, height: 3.6, track: 2.04, axles: [-3.6, -2.35, 3.28], wheel: 0.54,
     cargo: { width: 2.22, length: 6.55, height: 1.9, floor: 1.29, z: -1.35 } },
-  hauler: { name: 'Ore truck', width: 2.55, length: 8.8, height: 3.4, track: 2.04, axles: [-2.97, -1.72, 2.8], wheel: 0.54,
-    cargo: { width: 2.17, length: 5.28, height: 1.36, floor: 1.25, z: -1.29 } },
+  hauler: haulerSpec,
   helicopter: { name: 'Rescue helicopter', width: 10.2, length: 11.65, height: 3.35, skids: [-0.90, 0.90] },
   airplane: { name: 'Utility airplane', width: 10.8, length: 7.6, height: 2.8, gear: [[-0.98, 0.4], [0.98, 0.4], [0, 2.42]] },
 } as const
 export type VehicleId = keyof typeof vehicleSpecs
 
 export function createSaltwindVehicle(meshes: MeshFactory, id: VehicleId) {
+  if (id === 'hauler') return createOreHauler(meshes).root
   const root = new TransformNode(vehicleSpecs[id].name, meshes.scene)
   const box = (x: number, y: number, z: number, w: number, h: number, d: number, color: string) =>
     meshes.box(x, y, z, w, h, d, color, root)
@@ -63,7 +64,7 @@ export function createSaltwindVehicle(meshes: MeshFactory, id: VehicleId) {
 
   const spec = vehicleSpecs[id]
   const { width, length, track, axles, wheel: radius } = spec
-  const color = { ambulance: cream, engine: '#c54d3e', patrol: '#385563', logger: '#537d62', hauler: '#dc9e49' }[id]
+  const color = { ambulance: cream, engine: '#c54d3e', patrol: '#385563', logger: '#537d62' }[id]
   const low = id === 'patrol'
   const cabZ = length / 2 - (low ? 1.63 : 1.18)
   const bodyY = low ? .61 : 1.0
@@ -96,16 +97,12 @@ export function createSaltwindVehicle(meshes: MeshFactory, id: VehicleId) {
     for (let i = 0; i < 9; i++) box(0, 2.92, -2.85 + i * .49, .73, .08, .08, steel)
   }
   if (id === 'patrol') for (const x of [-width * .463, width * .463]) box(x, .72, -.25, .035, .41, 1.59, cream)
-  if (id === 'logger' || id === 'hauler') {
+  if (id === 'logger') {
     const cargo = vehicleSpecs[id].cargo
     box(0, cargo.floor - .095, cargo.z, cargo.width + .23, .19, cargo.length, '#48534d')
     for (const side of [-1, 1]) {
       const x = side * (cargo.width + .13) / 2
-      if (id === 'hauler') box(x, cargo.floor + cargo.height / 2, cargo.z, .15, cargo.height, cargo.length, '#b67943')
-      else for (const ratio of [-.42, -.13, .16, .45]) box(x, cargo.floor + cargo.height / 2, cargo.z + ratio * cargo.length, .13, cargo.height, .17, steel)
-    }
-    if (id === 'hauler') for (const end of [-1, 1]) {
-      box(0, cargo.floor + cargo.height / 2, cargo.z + end * (cargo.length - .15) / 2, cargo.width, cargo.height, .15, '#b67943')
+      for (const ratio of [-.42, -.13, .16, .45]) box(x, cargo.floor + cargo.height / 2, cargo.z + ratio * cargo.length, .13, cargo.height, .17, steel)
     }
   }
   return root

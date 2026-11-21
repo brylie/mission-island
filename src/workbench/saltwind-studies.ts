@@ -1,3 +1,6 @@
+import { oreNames } from '../ore-contracts'
+import { stockpiles } from '../second-island/stockpiles'
+import { createOreLoad } from '../second-island/quarry-art'
 import { vehiclePlacement } from '../second-island/scenery'
 import { groundHeight as saltwindGround } from '../second-island/terrain'
 import { createExterior } from '../second-island/exteriors'
@@ -8,13 +11,19 @@ import { control, range, type Entry } from './subject'
 
 export const saltwindAssets: Entry[] = [
   ...(Object.entries(vehicleSpecs) as [VehicleId, typeof vehicleSpecs[VehicleId]][]).map(([id, spec]): Entry => ({
-    id: `saltwind-${id}`, name: spec.name, group: 'Saltwind vehicles', source: 'src/second-island/vehicles.ts',
+    id: `saltwind-${id}`, name: spec.name, group: 'Saltwind vehicles',
+    source: id === 'hauler' ? 'src/assets/ore-hauler.ts' : 'src/second-island/vehicles.ts',
     description: `${spec.width} m wide · ${spec.length} m long · +Z forward. Staged exterior.`,
     fieldSite: () => {
       const offset = vehiclePlacement(id)
       return { name: 'Saltwind', offset, heading: offset.heading, saltwindSubject: id }
     },
-    create(meshes) { createSaltwindVehicle(meshes, id) },
+    controls: id === 'hauler' ? [control('ore', 'Truck bed', 'empty', { empty: 'Empty', ...oreNames }, true)] : undefined,
+    create(meshes, values) {
+      const root = createSaltwindVehicle(meshes, id)
+      const load = id === 'hauler' && stockpiles.find(pile => pile.id === values.ore)
+      if (load) createOreLoad(meshes, root, load.id)
+    },
   })),
   ...saltwindBuildings.map((building): Entry => ({
     id: `saltwind-${building.site}`, name: building.site.split('-').map((word) => word[0].toUpperCase() + word.slice(1)).join(' '),

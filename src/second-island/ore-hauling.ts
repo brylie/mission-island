@@ -8,7 +8,7 @@ import { haulerPose, stepHauler } from './haul-drive'
 import { createOreLoad } from './quarry-art'
 import { vehiclePlacement } from './scenery'
 import { surfaceHeight } from './terrain'
-import { createSaltwindVehicle } from './vehicles'
+import { createOreHauler } from '../assets/ore-hauler'
 import { placeWalker, type ScenerySolids } from './walking'
 
 function createBayMarkers(meshes: MeshFactory) {
@@ -71,17 +71,20 @@ function bindDispatchControls(select: HTMLSelectElement, action: HTMLButtonEleme
   }
 }
 
+function driverToken() {
+  return readStorage('sessionStorage', 'mission-island-crew') ?? readStorage('localStorage', 'mission-island-crew')
+}
+
 export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, walker: ReturnType<typeof placeWalker>,
   changeSeat: (driving: boolean, heading: number) => void) {
   const get = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
   const panel = get('freight'), hint = get('freight-hint'), receipt = get('freight-receipt')
   const select = get<HTMLSelectElement>('freight-choice'), action = get<HTMLButtonElement>('freight-action')
   const seat = get<HTMLButtonElement>('freight-seat')
-  const truck = createSaltwindVehicle(meshes, 'hauler')
+  const { root: truck, roll } = createOreHauler(meshes, true)
   const loads = new Map<Ore, ReturnType<typeof createOreLoad>>()
   const marker = createBayMarkers(meshes)
   const pose = { ...dispatchBay, heading: vehiclePlacement('hauler').heading, speed: 0 }
-  const driverToken = () => readStorage('sessionStorage', 'mission-island-crew') ?? readStorage('localStorage', 'mission-island-crew')
   let token = driverToken()
   const parkingKey = () => 'slatecliff-parking-' + token
   function saveParking() {
@@ -197,8 +200,10 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
     target, interact, toggleSeat, get driving() { return driving },
     drive(keys: Set<string>, dt: number) {
       const key = (a: string, b: string) => Number(keys.has(a) || keys.has(b))
-      stepHauler(pose, key('w', 'arrowup') - key('s', 'arrowdown'), key('d', 'arrowright') - key('a', 'arrowleft'),
+      const steer = key('d', 'arrowright') - key('a', 'arrowleft')
+      const steering = stepHauler(pose, key('w', 'arrowup') - key('s', 'arrowdown'), steer,
         keys.has(' ') || busy && pose.speed === 0, dt, solids, Boolean(status?.ticket.loaded))
+      roll(pose.speed * dt, steering)
       if (pose.speed) placeTruck()
       return pose
     },

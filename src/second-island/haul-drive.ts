@@ -12,8 +12,10 @@ export function stepHauler(pose: Pose & { speed: number }, throttle: number, ste
   const rate = brake ? 18 : !throttle ? 4 : throttle * pose.speed < 0 ? 12 : loaded ? 3.6 : 5
   pose.speed += Math.sign(desired - pose.speed) * Math.min(Math.abs(desired - pose.speed), dt * rate)
   const travel = pose.speed * dt
-  if (!travel) return
-  const heading = pose.heading + steer * travel / (6.1 + .24 * Math.abs(pose.speed))
+  const radius = 6.1 + .24 * Math.abs(pose.speed)
+  const steering = steer * Math.atan((wheels.axles[1] - wheels.axles[0]) / radius)
+  if (!travel) return steering
+  const heading = pose.heading + steer * travel / radius
   const next = { heading, x: pose.x + Math.sin(heading) * travel, z: pose.z + Math.cos(heading) * travel }
   // Sample the bumper sweep as well as the chassis. Road decks are drivable surfaces.
   for (const along of [-3.45, -1.15, 1.15, 3.45]) {
@@ -23,8 +25,9 @@ export function stepHauler(pose: Pose & { speed: number }, throttle: number, ste
     if (waterHeight(x, z) - ground > .38 || Math.abs(surfaceHeight(prev.x, prev.z) - ground) > .28 + Math.abs(travel) * .62 ||
       solids.at(x, z, 1.22).some(b => b.top > ground + .42 && b.bottom < ground + 2.65)) {
       pose.speed = 0
-      return
+      return steering
     }
   }
   Object.assign(pose, next)
+  return steering
 }
