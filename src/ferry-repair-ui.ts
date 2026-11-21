@@ -2,6 +2,8 @@ import { crewName, ferryNextStep, ferryProjectOpen, ferryStages, stageNeeds } fr
 import type { ServerMessage, Snapshot } from './protocol'
 
 type FerryNotice = Extract<ServerMessage, { type: 'ferry-progress' | 'ferry-order' | 'ferry-stage' }>
+const stageNoticeDurationMs = 5200
+const progressNoticeDurationMs = 3200
 
 // The mission card's community project, shown once four orders have opened the repair and no order is running.
 export function ferryCard(state: Snapshot) {
@@ -25,7 +27,7 @@ export function ferryCard(state: Snapshot) {
 
 // What both screens show when someone gives to the repair or a stage is finished.
 export function ferryFeedback(message: FerryNotice, state: Snapshot | undefined) {
-  const until = performance.now() + (message.type === 'ferry-stage' ? 5200 : 3200)
+  const until = performance.now() + (message.type === 'ferry-stage' ? stageNoticeDurationMs : progressNoticeDurationMs)
   if (message.type === 'ferry-order') {
     return { key: `${message.crates} timber`, label: 'Waiting at the Seabrook timber stack · Haul it to the ferry yard', until }
   }

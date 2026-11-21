@@ -289,16 +289,6 @@
       "count": 13
     }
   },
-  "src/ferry-repair-ui.ts": {
-    "no-magic-numbers": {
-      "count": 2
-    }
-  },
-  "src/ferry-repair.ts": {
-    "no-magic-numbers": {
-      "count": 23
-    }
-  },
   "src/field-interactions.ts": {
     "no-magic-numbers": {
       "count": 19
@@ -447,11 +437,6 @@
   "src/island-sun-shafts.ts": {
     "no-magic-numbers": {
       "count": 11
-    }
-  },
-  "src/island-terminal.ts": {
-    "no-magic-numbers": {
-      "count": 262
     }
   },
   "src/island-wildlife.ts": {
@@ -1312,11 +1297,6 @@
   "src/worlds/starter/farm-order-sites.ts": {
     "no-magic-numbers": {
       "count": 5
-    }
-  },
-  "src/worlds/starter/ferry-terminal.ts": {
-    "no-magic-numbers": {
-      "count": 18
     }
   },
   "src/worlds/starter/island-remarks.ts": {
