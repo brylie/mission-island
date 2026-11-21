@@ -1,3 +1,4 @@
+import { bindCheckpointControls } from './live-checkpoint-ui'
 import './style.css'
 import { boundaryBuoys, buoyBoundaryPoint, coastPoint } from './terrain'
 import { actionHint, atClothingCounter, heldItem, inSkiff, interactRequest } from './actions'
@@ -94,7 +95,7 @@ const keys = new Set<string>()
 let primary = false
 let rightButtonHeld = false
 let wasPointerLocked = false
-const crewKey = 'mission-island-crew'
+const crewKey = import.meta.env.MODE === 'playtest' ? 'mission-playtest-crew' : 'mission-island-crew'
 const reloadKey = 'mission-island-reloading'
 const savedToken = readStorage('localStorage', crewKey)
 let token = readStorage('sessionStorage', crewKey) ?? savedToken ?? newToken()
@@ -103,6 +104,7 @@ if (!savedToken) writeStorage('localStorage', crewKey, token)
 const leadKey = () => `mission-island-fisher-lead-${token}`
 let leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
 const skipNameKey = () => `mission-island-skip-name-${token}`
+const updateCheckpoint = bindCheckpointControls(optionsDialog, () => token)
 let offerJoinName = false
 let editingName: { id: number; token: string; name: string } | undefined
 let actionFeedback: { key: string; label: string; until: number } | undefined
@@ -353,6 +355,7 @@ function update(state: Snapshot) {
   const earlier = snapshot?.players.find((player) => player.id === id)
   const previousHour = snapshot?.weather.hour
   snapshot = state
+  updateCheckpoint(state.playtest)
   const hours = Math.floor(state.weather.hour)
   const minutes = Math.floor((state.weather.hour - hours) * 60)
   clock.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} · ${state.weather.rain > 0.3 ? 'Rain' : isNight(hours) ? 'Night' : 'Daylight'}`
@@ -380,7 +383,7 @@ function update(state: Snapshot) {
   if (player) {
     updatePersonalDisplay(state, player, earlier)
     guide.update(state, player)
-    if (offerJoinName && !renderer?.isReviewing() && !document.body.hasAttribute('data-booting') && !modalOpen()) {
+    if (!state.playtest && offerJoinName && !renderer?.isReviewing() && !document.body.hasAttribute('data-booting') && !modalOpen()) {
       offerJoinName = false
       if (!player.name) {
         pauseControls()
@@ -402,7 +405,11 @@ function update(state: Snapshot) {
   prompt.hidden = !action
   promptKey.hidden = !key
   promptKey.textContent = key
-  promptAction.textContent = action
+  if (state.playtest && !state.playtest.started) {
+    prompt.hidden = false
+    promptKey.hidden = true
+    promptAction.textContent = 'Waiting for your crewmate. Press O to copy the LAN link or start solo.'
+  } else promptAction.textContent = action
 }
 
 function connect() {

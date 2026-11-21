@@ -1,3 +1,4 @@
+import type { LiveTrial } from './live-checkpoints.ts'
 import type { FreightTicket } from './ore-contracts'
 import type { DriftwoodFrame } from './simulation/driftwood-school'
 import type { BiomeFrame } from './biome-model'
@@ -85,6 +86,7 @@ export interface CultivationCue {
 }
 
 export interface Snapshot {
+  playtest?: LiveTrial
   driftwood: DriftwoodFrame
   juniper: BiomeFrame
   type: 'state'

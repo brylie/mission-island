@@ -20,6 +20,24 @@ MISSION_ISLAND_SAVE=second-shift-trial npm run dev -- --port 5176 --strictPort
 
 Run one host per save. The [player guide](docs/player-guide.md#saves-and-reconnecting) covers save files and browser identity.
 
+## Start a live mission checkpoint
+
+Run `npm run playtest` in the checkout containing Wren’s gate. Open the printed **Network** URL on both computers, or use **Options → Copy LAN link**. The dedicated host defaults to port 5194. Pass `-- --port 5195` to choose another free port. This mode keeps the entire crew in memory and ignores `MISSION_ISLAND_SAVE`. Stopping the host discards the trial.
+
+Both browsers start outside Wren’s gate. The clock and actions wait for the second player. In **Fit and test**, the first player carries the toolbox and the second carries the pin. Either can press **E** to fit it, then press **E** to swing the gate. The swing earns five crew coins once. In solo mode the player has the pin and the toolbox is beside the gate.
+
+Press **O** to open **Options → Live playtest** while the game has mouse focus. Choose **Restart checkpoint** to restore the crew’s starting equipment, progression, trust, balance and clock. Both browsers reconnect automatically. To switch to **Solo**, leave just one browser connected, select Solo, and choose **Start checkpoint**. Refreshing the page rejoins the current run using ordinary mission recovery rules. Restart the checkpoint to restore a lost pin immediately.
+
+The other starting points are **Discover the problem** (outside the unrepaired garden), **The next morning** (the repair is paid and Wren is about to leave), and **Load the flatbed** (start by the Harbor Depot supply crates). The Workbench on this host also has a **Live checkpoints** link. These four setups use Starter Island’s multiplayer host.
+
+To launch directly into a particular setup from the shell:
+
+```sh
+MISSION_ISLAND_CHECKPOINT=wren-morning MISSION_ISLAND_CREW_SIZE=1 npm run playtest
+```
+
+Use `wren-discover`, `wren-fit`, `wren-morning` or `harbor-delivery`, with a crew size of `1` or `2`.
+
 ## Submit a playable change
 
 Choose a player outcome from the milestone, link its design brief, and describe how someone can reproduce the starting state. The [playable change issue template](.github/ISSUE_TEMPLATE/playable-change.md) works for a mechanic, a destination, or a problem found during play. For a co-op change, describe what each player can do and see, and how one person can finish alone. Link a [playtest finding](docs/playtests/findings.md) when one motivated the change.

@@ -45,7 +45,7 @@ function restingPlayer(player: Player) {
 
 export function createCrewRoster(
   state: Pick<Snapshot, 'items' | 'players' | 'gate' | 'gateRepair'>, savedCrew: IslandSave['crew'], clock: () => number,
-  physics: Pick<ReturnType<typeof createCargoPhysics>, 'release'>, checkpoint?: () => void,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'release'>, checkpoint?: () => void, capacity = spawns.length,
 ) {
   const crew = new Map<string, CrewMember>()
   const profiles = new Map<string, Player>()
@@ -71,7 +71,7 @@ export function createCrewRoster(
   function join(token: string, notify: (message: CrewNotice) => void) {
     const existing = crew.get(token)
     if (existing?.player.connected) return 'duplicate'
-    if (!existing && crew.size >= spawns.length) return 'full'
+    if (!existing && crew.size >= capacity) return 'full'
     const profile = profiles.get(token)
     const open = spawns.flatMap((_, index) => state.players.some((player) => player.id === index) ? [] : [index])
     const id = profile && open.includes(profile.id) ? profile.id : open[0]

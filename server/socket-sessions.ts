@@ -17,7 +17,7 @@ type Simulation = Pick<ReturnType<typeof createGame>, 'join' | 'tick'>
 type JoinedCrew = Extract<ReturnType<Simulation['join']>, { type: 'joined' }>
 
 export function createSocketSessions(game: Simulation) {
-  const joinedSockets = new Set<WebSocket>()
+  const joinedSockets = new Map<WebSocket, { token: string; id: number }>()
 
   function connect(socket: WebSocket) {
     let crew: JoinedCrew | undefined
@@ -45,7 +45,7 @@ export function createSocketSessions(game: Simulation) {
         return
       }
       crew = result
-      joinedSockets.add(socket)
+      joinedSockets.set(socket, { token, id: crew.id })
       clearTimeout(joinTimeout)
       reply({ type: 'welcome', id: crew.id })
     })
@@ -58,10 +58,10 @@ export function createSocketSessions(game: Simulation) {
 
   function tick() {
     const snapshot = JSON.stringify(game.tick())
-    for (const socket of joinedSockets) {
+    for (const socket of joinedSockets.keys()) {
       if (socket.readyState === WebSocket.OPEN && socket.bufferedAmount < 65_536) socket.send(snapshot)
     }
   }
 
-  return { connect, tick }
+  return { connect, tick, seats: () => [...joinedSockets.values()].sort((a, b) => a.id - b.id) }
 }

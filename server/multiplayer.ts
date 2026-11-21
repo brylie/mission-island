@@ -4,6 +4,7 @@ import type { Plugin, ViteDevServer } from 'vite'
 import { WebSocketServer } from 'ws'
 import type { WebSocket } from 'ws'
 import type { FreightAction } from '../src/ore-contracts.ts'
+import { checkpointSettings, type TrialRun } from '../src/live-checkpoints.ts'
 import { createGame, tickSeconds } from './game.ts'
 import { islandSaveFile } from './save.ts'
 import { createSocketSessions } from './socket-sessions.ts'
@@ -40,8 +41,14 @@ function freightHandler(freight: ReturnType<typeof createGame>['freight']) {
   }
 }
 
-function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middlewares: ViteDevServer['middlewares'], root: string, port: number) {
-  const archive = islandSaveFile(root, port, process.env.MISSION_ISLAND_SAVE)
+function initialTrial(): TrialRun {
+  const settings = checkpointSettings(process.env.MISSION_ISLAND_CHECKPOINT ?? 'wren-fit', process.env.MISSION_ISLAND_CREW_SIZE ?? '2')
+  if (!settings) throw new Error('Unknown MISSION_ISLAND_CHECKPOINT or MISSION_ISLAND_CREW_SIZE. See the live playtest presets in CONTRIBUTING.md.')
+  return { ...settings, revision: 1 }
+}
+
+function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middlewares: ViteDevServer['middlewares'], root: string, port: number, trialMode: boolean) {
+  const archive = trialMode ? undefined : islandSaveFile(root, port, process.env.MISSION_ISLAND_SAVE)
   let saveFailed = false
   function checkpoint() {
     if (!archive) return
@@ -53,7 +60,8 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
       saveFailed = true
     }
   }
-  const game = createGame({ save: archive?.load(), checkpoint })
+  let playtest = trialMode ? initialTrial() : undefined
+  let game = createGame({ save: archive?.load(), checkpoint, playtest })
   // Saltwind's survey can read the same bank without reserving a Starter Island crew slot.
   middlewares.use('/api/crew-bank', (request, response) => {
     response.setHeader('Cache-Control', 'no-store')
@@ -63,12 +71,33 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
     }
     response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ crewCoins: game.crewCoins }))
   })
-  const handleFreight = freightHandler(game.freight)
-  middlewares.use('/api/slatecliff-freight', (request, response) => { void handleFreight(request, response) })
-  const sessions = createSocketSessions(game)
+  middlewares.use('/api/slatecliff-freight', (request, response) => { void freightHandler(game.freight)(request, response) })
+  let sessions = createSocketSessions(game)
   const sockets = new WebSocketServer({ noServer: true, maxPayload: 256 })
   const live = new Set<WebSocket>()
-  const timer = setInterval(sessions.tick, tickSeconds * 1000)
+  if (trialMode) middlewares.use('/api/live-checkpoint', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store')
+    const stop = (code: number, text: string) => { res.writeHead(code).end(text) }
+    if (req.method !== 'POST') return stop(405, 'Use POST.')
+    const seats = sessions.seats()
+    if (!seats.some(seat => req.headers.authorization === 'Bearer ' + seat.token)) return stop(403, 'Join the crew first.')
+    const args = new URL(req.url ?? '/', 'http://localhost').searchParams
+    const settings = checkpointSettings(args.get('checkpoint'), args.get('seats'))
+    if (!settings) return stop(400, 'Unknown checkpoint or crew size.')
+    if (String(playtest!.revision) !== args.get('revision')) return stop(409, 'Another player already restarted the checkpoint.')
+    if (settings.seats === 1 && seats.length > 1) return stop(409, 'Both seats are occupied. Leave one game before starting solo.')
+    playtest = { ...settings, revision: playtest!.revision + 1 }
+    game = createGame({ playtest })
+    // Reserve the connected players’ roles in their existing order while both browsers reconnect.
+    for (const seat of seats) {
+      const reserved = game.join(seat.token, () => {})
+      if (reserved.type === 'joined') reserved.disconnect()
+    }
+    sessions = createSocketSessions(game)
+    for (const socket of sockets.clients) socket.terminate()
+    stop(200, 'Checkpoint restarted for the crew.')
+  })
+  const timer = setInterval(() => sessions.tick(), tickSeconds * 1000)
   const saving = archive && setInterval(checkpoint, 2000)
   const heartbeat = setInterval(() => {
     for (const socket of sockets.clients) {
@@ -114,11 +143,11 @@ export function multiplayer(): Plugin {
     name: 'mission-island-multiplayer',
     configureServer(server) {
       serveLanInvites(server)
-      if (server.httpServer) attachGame(server.httpServer, server.middlewares, server.config.root, server.config.server.port ?? 5173)
+      if (server.httpServer) attachGame(server.httpServer, server.middlewares, server.config.root, server.config.server.port ?? 5173, server.config.mode === 'playtest')
     },
     configurePreviewServer(server) {
       serveLanInvites(server)
-      attachGame(server.httpServer, server.middlewares, server.config.root, server.config.preview.port ?? 5173)
+      attachGame(server.httpServer, server.middlewares, server.config.root, server.config.preview.port ?? 5173, server.config.mode === 'playtest')
     },
   }
 }
