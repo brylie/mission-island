@@ -2,14 +2,18 @@ import { propTop } from '../scenery.ts'
 import { groundHeight, waterLevel } from '../terrain.ts'
 import { distance, localPoint, offset } from '../world.ts'
 import type { Point, Pose } from '../world.ts'
+import { liftSites, liftStrength } from '../worlds/starter/lift.ts'
 import { ridgeHeading, ridgeLandingRadius, ridgeLaunch, ridgeLaunchClearance, ridgeMeadow,
-  ridgeUpdraft, ridgeWind, ridgeWing } from '../worlds/starter/ridge-scout.ts'
+  ridgeWind, ridgeWing } from '../worlds/starter/ridge-scout.ts'
 import { canOccupyGround } from './movement.ts'
 
 export const ridgeStep = 1 / 30
 
 type PilotPose = Pose & { y: number }
 type Steering = { turn: number; pitch: number }
+// The island's weather decides how strongly each thermal rises. Midday sun with no rain by default.
+type FlightConditions = { hour: number; rain: number }
+const midday: FlightConditions = { hour: 13, rain: 0 }
 type FlightOutcome = 'field' | 'early' | 'missed' | 'obstruction'
 
 interface Flight {
@@ -29,7 +33,7 @@ const wingProbes = [...surfaces, ...surfaces.map((vertex) => ({
 const response = 1 - Math.exp(-5 * ridgeStep)
 const maxPitch = .24
 const maxBank = .35
-const updraftBase = groundHeight(ridgeUpdraft)
+const liftBases = liftSites.map(site => groundHeight(site))
 
 export function startRidgeFlight(): Flight {
   return {
@@ -59,14 +63,18 @@ function touchdown(point: Point): FlightOutcome {
   return z < -ridgeLandingRadius && range < 32 ? 'early' : 'missed'
 }
 
-function liftAt(pilot: PilotPose) {
-  const radial = 1 - (distance(pilot, ridgeUpdraft) / ridgeUpdraft.radius) ** 2
-  const height = pilot.y - updraftBase
-  const remaining = (ridgeUpdraft.ceiling - height) / 10
-  return ridgeUpdraft.lift * Math.max(0, radial) * Math.max(0, Math.min(1, remaining))
+export function liftAt(pilot: PilotPose, { hour, rain }: FlightConditions = midday) {
+  let lift = 0
+  liftSites.forEach((site, index) => {
+    const radial = 1 - (distance(pilot, site) / site.radius) ** 2
+    if (radial <= 0) return
+    const remaining = (site.ceiling - (pilot.y - liftBases[index])) / 10
+    lift = Math.max(lift, site.lift * liftStrength(site, hour, rain) * radial * Math.max(0, Math.min(1, remaining)))
+  })
+  return lift
 }
 
-export function stepRidgeFlight(flight: Flight, input: Steering) {
+export function stepRidgeFlight(flight: Flight, input: Steering, conditions: FlightConditions = midday) {
   if (flight.outcome) return
   const { pilot } = flight
   flight.elapsed += ridgeStep
@@ -85,7 +93,7 @@ export function stepRidgeFlight(flight: Flight, input: Steering) {
   const surface = Math.max(groundHeight(pilot), waterLevel)
   const initial = Math.min(1, flight.elapsed / 1.6)
   const sink = Math.max(.3, .62 + 1.36 * initial + noseDown * (noseDown > 0 ? 1.74 : .86))
-  const verticalSpeed = liftAt(pilot) - sink
+  const verticalSpeed = liftAt(pilot, conditions) - sink
   flight.climbing = verticalSpeed > 0
   pilot.y += verticalSpeed * ridgeStep
 

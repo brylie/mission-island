@@ -448,8 +448,8 @@ function connect() {
       case 'starter-seed':
         actionFeedback = { key: '+1 seed', label: 'Plant it at Island Farm', until: performance.now() + 3200 }
         break
-      case 'flight-result':
-        ridgeHud.showResult(incoming.result)
+      case 'flight-result': case 'aerial-sighting':
+        ridgeHud.receive(incoming)
         break
       case 'order-unavailable':
         board.reject()

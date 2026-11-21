@@ -3,8 +3,9 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { createGame } from '../server/game.ts'
 import { islandSaveFile } from '../server/save.ts'
-import { rackBrief, surveyClue } from '../src/aviation.ts'
+import { aerialSurveys, rackBrief, surveyClue } from '../src/aviation.ts'
 import { startRidgeFlight, stepRidgeFlight } from '../src/simulation/ridge-flight.ts'
 import { groundHeight } from '../src/terrain.ts'
 import { distance, offset } from '../src/world.ts'
@@ -86,25 +87,99 @@ test('both players see the meadow mark and the second pilot can survey without a
   assert.equal(notice(b, 'qualified').length, 1)
   assert.equal(h.game.crewCoins, 0)
 
-  // Once the survey is recorded, the rack lends the wing for practice that earns nothing more.
+  // Once the survey is recorded, the rack lends the wing for free flights around the island.
   walkTo(h, b, ridgeReturn)
   walkTo(h, b, ridgeLaunch)
   b.request('interact')
   h.advance()
-  assert.equal(a.state.aviation.flight.outing, 'practice')
+  assert.equal(a.state.aviation.flight.outing, 'free')
   h.advanceUntil(() => a.state.aviation.flight === null)
-  assert.equal(notice(a, 'practiced').length, 1)
+  const [landed] = notice(a, 'landed')
+  assert.ok(landed)
+  const reported = [...notice(a, 'surveyed')[0].aerial ?? [], ...landed.aerial ?? []]
+  assert.deepEqual([...reported].sort(), [...a.state.aviation.aerial].sort())
   assert.equal(notice(b, 'surveyed').length, 1)
   assert.deepEqual([b.state.aviation.qualified, b.state.aviation.surveyed, h.game.crewCoins], [true, true, 0])
 })
 
-test('the rack gives the survey clue before launch and names a practice flight afterwards', () => {
+function steerTowards(h, pilot, target, until) {
+  for (let tick = 0; tick < 30 * 60 && pilot.state.aviation.flight; tick++) {
+    const { x, z, heading } = pilot.player
+    const error = Math.atan2(target.x - x, target.z - z) - heading
+    h.input(pilot, { flightTurn: Math.max(-1, Math.min(1, 2 * Math.atan2(Math.sin(error), Math.cos(error)))), flightPitch: -.6 })
+    h.advance()
+    if (until?.()) return
+  }
+}
+
+const flyingCrew = (aerial = []) => ({ players: [player(0, ridgeLaunch), player(1, besideSign)], arrange: save => {
+  save.world.aviation = { qualified: true, surveyed: true, aerial }
+} })
+
+test('a free flight over Mirror Pool records its aerial survey once, after a safe landing, for the whole crew', (t) => {
+  const pool = aerialSurveys.find(({ id }) => id === 'pool')
+  const h = setup(t, flyingCrew())
+  const a = h.join(tokens[0]), b = h.join(tokens[1])
+  a.request('interact')
+  h.advance()
+  steerTowards(h, a, pool.site, () => a.state.aviation.flight?.spotted.includes('pool'))
+  assert.deepEqual(a.messages.filter(m => m.type === 'aerial-sighting').map(m => m.id).filter(id => id === 'pool'), ['pool'])
+  assert.equal(b.messages.filter(m => m.type === 'aerial-sighting').length, 0, 'only the pilot hears a sighting')
+  assert.deepEqual(b.state.aviation.aerial, [], 'nothing is recorded before landing')
+  h.advanceUntil(() => a.state.aviation.flight === null)
+  assert.ok(a.state.aviation.aerial.includes('pool'))
+  for (const client of [a, b]) {
+    const [landed, ...extra] = notice(client, 'landed')
+    assert.equal(extra.length, 0)
+    assert.ok(landed.aerial.includes('pool'))
+    assert.equal(landed.recorded, a.state.aviation.aerial.length)
+  }
+  assert.equal(h.game.crewCoins, 0)
+
+  // A second pass over the same place adds nothing.
+  walkTo(h, a, ridgeReturn)
+  walkTo(h, a, ridgeLaunch)
+  const recorded = a.state.aviation.aerial.length
+  a.request('interact')
+  h.advance()
+  steerTowards(h, a, pool.site)
+  h.advanceUntil(() => a.state.aviation.flight === null)
+  assert.equal(a.state.aviation.aerial.length, recorded)
+  assert.ok(notice(a, 'landed').slice(1).every(result => !result.aerial?.includes('pool')))
+  assert.deepEqual(h.game.snapshotForSave().world.aviation.aerial, a.state.aviation.aerial)
+})
+
+test('an interrupted flight loses its sightings, and the checkout flight records none', (t) => {
+  const pool = aerialSurveys.find(({ id }) => id === 'pool')
+  const h = setup(t, flyingCrew())
+  const a = h.join(tokens[0])
+  a.request('interact')
+  h.advance()
+  steerTowards(h, a, pool.site, () => a.state.aviation.flight?.spotted.includes('pool'))
+  a.request('respawn')
+  h.advance()
+  assert.equal(a.state.aviation.flight, null)
+  assert.deepEqual(a.state.aviation.aerial, [])
+
+  const fresh = setup(t, { players: [player(0, ridgeLaunch)], arrange: save => { delete save.world.aviation } })
+  const pilot = fresh.join(tokens[0])
+  pilot.request('interact')
+  fresh.advance()
+  steerTowards(fresh, pilot, pool.site)
+  fresh.advanceUntil(() => pilot.state.aviation.flight === null)
+  assert.deepEqual(pilot.state.aviation.aerial, [])
+})
+
+test('the rack gives the survey clue before launch and invites an island survey afterwards', () => {
   assert.match(rackBrief({ qualified: false, surveyed: false })[0], /checkout/)
   const [survey, clue] = rackBrief({ qualified: true, surveyed: false })
   assert.match(survey, /Mirror Pool survey/)
   assert.ok(clue.startsWith(surveyClue))
   assert.match(clue, /willow/)
-  assert.match(rackBrief({ qualified: true, surveyed: true })[0], /practice flight/)
+  const [free, brief] = rackBrief({ qualified: true, surveyed: true, aerial: ['pool'] })
+  assert.match(free, /survey the island/)
+  assert.match(brief, new RegExp(`${aerialSurveys.length - 1} of ${aerialSurveys.length} places`))
+  assert.match(rackBrief({ qualified: true, surveyed: true, aerial: aerialSurveys.map(({ id }) => id) })[1], /Every place/)
 })
 
 test('one loan wins simultaneous requests, with no charge and neutral controls after input expires', (t) => {
@@ -244,4 +319,25 @@ test('ground visits and a survey landing without the airborne observation give n
   assert.equal(a.state.aviation.surveyed, false)
   assert.equal(notice(b, 'observation').length, 1)
   assert.equal(h.game.snapshotForSave().world.aviation.surveyed, false)
+})
+
+test('saves keep aerial surveys, older saves start with none, and unknown or duplicate places are rejected', (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'mission-aerial-'))
+  t.after(() => rmSync(directory, { recursive: true, force: true }))
+  const file = islandSaveFile(directory, 0, 'aerial')
+  const write = aviation => {
+    const save = createGame().snapshotForSave()
+    save.world.aviation = aviation
+    file.write(save)
+  }
+  write({ qualified: true, surveyed: true })
+  assert.deepEqual(createGame({ save: file.load() }).tick().aviation.aerial, [])
+  write({ qualified: true, surveyed: true, aerial: ['pool', 'fernfall'] })
+  assert.deepEqual(createGame({ save: file.load() }).tick().aviation.aerial, ['pool', 'fernfall'])
+  for (const aerial of [['pool', 'pool'], ['atlantis'], 'pool']) {
+    write({ qualified: true, surveyed: true, aerial })
+    assert.throws(() => file.load(), /Could not load/)
+  }
+  write({ qualified: false, surveyed: false, aerial: ['pool'] })
+  assert.throws(() => file.load(), /Could not load/)
 })

@@ -75,6 +75,11 @@ for (const { id: checkpoint } of scenarioCatalog) {
         a.dispatch({ type: 'interact' })
         assert.equal(game.tick().aviation.flight?.pilotId, a.id)
         assert.equal(game.tick().aviation.flight?.outing, 'checkout')
+      } else if (checkpoint === 'ridge-soaring') {
+        assert.equal(state.weather.rain, 0)
+        assert.ok(state.weather.hour > 10 && state.weather.hour < 11)
+        a.dispatch({ type: 'interact' })
+        assert.equal(game.tick().aviation.flight?.outing, 'free')
       } else if (checkpoint === 'harbor-delivery') {
         assert.equal(state.mission, 'delivery')
         assert.match(actionHint(state, state.players[0])[1], /crate/i)

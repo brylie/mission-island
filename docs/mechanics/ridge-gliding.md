@@ -31,11 +31,42 @@ These positions come from the playable wing and the [ridge scout definitions](..
 - **What each outing asks.** The rack names the next outing before you borrow:
   - **Checkout:** follow the blue approach orbs and land inside the circle.
   - **Mirror Pool survey:** fly at least 2 m up within 7 m of the fallen willow on the east bank of Mirror Pool, then land inside the circle. The rack gives the willow clue before launch.
-  - **Practice flight:** once the survey is recorded. It earns nothing more.
+  - **Island survey flight:** once the Mirror Pool survey is recorded. Fly anywhere, record aerial surveys and land anywhere safe. See [Soaring the island](#soaring-the-island).
 - **Landing.**
   - The host settles each landing in one step: it awards any credit, returns the wing to the rack and tells both players **Wing returned to Windstone Ridge**.
   - A safe landing leaves the pilot where they touched down, including a short one.
   - A landing in water, on a prop or on the truck puts the pilot back on reachable ground near the launch or the meadow.
+
+## Soaring the island
+
+Every place a player can discover on foot also has an **aerial survey**. Once the Mirror Pool survey is done, the rack lends the wing for island survey flights.
+- **Recording a survey.** Pass within 12 m of a place while at least 4 m above the ground, and the pilot sees that it was spotted. A safe landing anywhere records every place spotted on that flight for the whole crew. A crash, a landing in the sea or a disconnect loses that flight's sightings. A place already recorded adds nothing.
+- **What the pilot sees.** The HUD shows the height above ground, the nearest working lift with its bearing and distance, and the nearest place still unsurveyed. Free flights have no orbs, so pilots steer by the rising air and those bearings. The minimap marks working lift in lilac and unsurveyed places in gold.
+- **Rewards.** Aerial surveys are crew progress, saved with the island. Older saves start with none. They pay no coins, so they suit the planned [field journal](https://github.com/brylie/mission-island/issues/8).
+
+The glider has roughly a 3:1 glide, so the ridge alone reaches only the places near it. Rising air sits where the land would make it. The training wind blows from the southeast, so it lifts over slopes that face it. On a sunny day, dark soil, rooftops and bare rock warm faster than the grass around them and send up thermals. Rising motes show each column: lilac for ridge lift, warm gold for a thermal. Circle with the nose up to climb, and leave near the top.
+
+| Lift | Kind | Where and why | Works |
+| --- | --- | --- | --- |
+| Windstone shoulder | Ridge | The windward face of Windstone Ridge | Always |
+| Juniper slope | Ridge | The southeast face of the Juniper Hollow hill | Always |
+| Fernfall ledges | Thermal | Bare rock ledges beside the falls | About 07:00–19:00 |
+| Lookout clearing | Thermal | The open crown by Forest Lookout | About 07:00–19:00 |
+| Seabrook rooftops | Thermal | Roofs and paving in town | About 07:00–19:00 |
+| Island Farm fields | Thermal | Dark, tilled soil | About 07:00–19:00 |
+
+Thermals build through the morning, peak after noon and fade before dusk. Rain cuts them to a fifth of their strength. The [lift definitions](../../src/worlds/starter/lift.ts) hold the positions, radii, ceilings and strengths.
+
+**Routes the tests fly.** [Island soaring tests](../../test/island-soaring.test.mjs) fly each route from the rack with a patient autopilot, at 09:30, 13:00 and 16:30:
+
+| Place | Route |
+| --- | --- |
+| Mirror Pool | Straight off the launch |
+| Windstone Ridge, Fernfall | Climb on the Windstone shoulder |
+| Juniper Hollow | Windstone shoulder, Fernfall ledges, Juniper slope |
+| Shellglass Tide Pool, Splitstone Narrows | Windstone shoulder, Fernfall ledges, Lookout clearing, Seabrook rooftops |
+
+At night, or in rain, only the places reachable on ridge lift can be surveyed.
 
 ## Credit and recovery
 
@@ -53,7 +84,7 @@ A solo pilot can find the circle from the rack, follow the orbs and finish witho
 ## Playtest
 
 - Before the first launch, without coaching, ask: "Where are you going to land, and what will you do if you come up short?"
-- Fly the checkout while the partner marks the meadow. Swap and fly the survey. Then take a practice flight and check that neither the coins nor the crew's records change.
+- Fly the checkout while the partner marks the meadow. Swap and fly the survey. Then take an island survey flight, pass over a place found on foot, land away from the meadow and check that both players see the same aerial survey count and no coins change.
 - Disconnect mid-flight, then restart the host after qualifying. Check that there is one grounded pilot, one wing on the rack, and that the qualification is still there.
 - Land short on purpose and walk back to the windsock.
 
