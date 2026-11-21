@@ -2,6 +2,8 @@
 
 A session should offer a reason to work and a reason to take the long way home. Longer-term progress should open activities, equipment, relationships, and places the crew can recognize. The Starter Island milestone asks whether players feel attached to the island by the time they can leave it. [At home before the ferry](https://github.com/brylie/mission-island/milestone/4)
 
+Each career can teach a practical skill through useful work. Start by noticing a cue and trying the technique, then open a responsibility that asks the crew to apply it in a different situation. [Learning through island work](learning-and-careers.md)
+
 ## From the cottages to ferry service
 
 | Moment | Playable foundation | Planned next step |
@@ -19,7 +21,7 @@ A session should offer a reason to work and a reason to take the long way home. 
 | Tools, goods, and clothing | Personal, playable. | Bought seeds go into the buyer’s inventory. Buying the Harbor angler uniform unlocks it for that player. |
 | Order and readiness | Shared, playable. | Either player can contribute to the active order. Its completion advances the island’s count once. [Orders and reconnects](../mechanics/crew-orders.md) |
 | Career experience and qualifications | Shared, planned. | Relevant work leads to a practice job and an equipment or responsibility unlock. Hauling is the first Starter Island checkout. [Career progression](https://github.com/brylie/mission-island/issues/18) |
-| Trust | Shared per resident. Preview with Wren; other residents planned. | A favor or meaningful interaction changes how that person greets or helps either player. The resident keeps a home and work routine. Mending Wren's gate raises Wren's trust once and changes the next morning's greeting and route. [Neighbor repairs](../mechanics/neighbor-repairs.md) · [Villagers](https://github.com/brylie/mission-island/issues/3) |
+| Trust | Shared per resident. Wren’s repair award is playable. Other residents, breaches, and recovery are planned. | Mending Wren’s gate raises Trust once and changes the next morning’s greeting and route. The broader design lets kept promises gradually change what a resident entrusts to the crew. A clear breach can cost several favors’ worth of confidence. Making amends and following through on later favors rebuild it. [Shared crew Trust](residents-and-destinations.md#shared-crew-trust) · [Neighbor repairs](../mechanics/neighbor-repairs.md) · [Villagers](https://github.com/brylie/mission-island/issues/3) |
 | Discoveries and observation | Named-place discoveries are recorded per player today. A shared field journal and observation experience are planned. | Either player will be able to record a species, place, or distinctive behavior. First records should earn credit once. [Field journal](https://github.com/brylie/mission-island/issues/8) |
 | Ferry repair | Shared project, planned. | Crew coins and local supplies can become a lasting contribution. Both players should see what was added, what is still needed, and the change at the terminal. [Repair playtest](https://github.com/brylie/mission-island/issues/52) |
 

@@ -15,6 +15,8 @@ The LAN host owns gameplay state, including movement, crew membership, orders, t
 
 ## How to add a feature
 
+Use the [Game Architect skill](../.agents/skills/mission-island-game-architect/SKILL.md) to trace a feature through its owners, decide what is worth sharing, and review the co-op and save behavior it depends on.
+
 - Give each module a specific responsibility and a small public interface. Keep an entry point focused on composition. When a feature adds substantial branching, state or lifecycle code, put it in the owning feature module and pass only the state or callbacks it needs.
 - Keep tick order and transaction boundaries visible. A change to command timing, a checkpoint, or the order of movement, equipment, and physics can affect play and reconnects. Cover those cases through the host integration tests.
 - Share browser-safe rules through feature modules. Keep protocol changes focused on fields that cross the connection. Treat saved records and public Workbench subject IDs as compatibility contracts. Update validation and migration tests when a saved format changes.

@@ -1,0 +1,27 @@
+# Review a change in play
+
+Use this workflow across project reviews. Pick a question a player would care about and the smallest harness that can answer it. Move from an isolated trial into the game when the claim depends on the island, the host, or another player.
+
+## Choose a starting point
+
+| Question | Where to start | What to carry over into the next test |
+| --- | --- | --- |
+| How does an asset, material, effect, or motion read at player scale? | Open the asset in the [Workbench](../workbench.md). Scrub a motion, use a reference image, and orbit or compare under a second light. | Use **Copy setup link** and repeat from the usual gameplay camera at its actual site. |
+| How does a place read on approach, or where does an object meet the terrain? | Use the Landscape Workbench or the Saltwind preview. Save the approach, close view, and relevant overlook. | Use **Copy playtest link** or a saved Landscape study. Walk the same route for collision, clearance, and interaction. |
+| Does a behavior change when a player, skiff, population, or environmental condition changes? | Start with [Biome Composer or the fish schooling trial](../workbench.md#fish-schooling-trial). Pause or replay with the same seed. | Share **Copy recipe link** for a habitat or **Copy setup link** for fish schooling. Check the behavior at its island site where implemented. |
+| Can a new player find the action and explain the result? | Start with a [fresh save](starter-island-first-payout.md) for discovery or a live checkpoint for a focused retry. | Record the first unprompted action, cues missed, any help given, and whether the player could use the skill again in a different situation. |
+| Can players finish an action together and recover from an interruption? | Use a [live checkpoint](../../CONTRIBUTING.md#run-a-live-playtest-scenario). Choose the crew size, assign roles, and restart to compare the same starting state. | Hand off the scenario ID, revision, steps for each seat, and expected result. Use two browsers for replication or interaction questions. |
+| Does the host uphold a rule through simultaneous commands, a restart, or an older save? | Use the [game test harness](../../test/support/game-harness.mjs) and its clock, socket, and save fixtures. Exercise the real command path. | Name the test and expected invariant. Use a playable scenario as well when the question involves feedback or controls. |
+
+## Set up a fair comparison
+
+1. Write down what someone should see or be able to do. Find the closest existing study, recipe, checkpoint, or test fixture. If none can start at the right moment, add the smallest reusable setup through the [scenario catalog](../../CONTRIBUTING.md#add-a-scenario-for-a-job-mechanic-or-field-test) or [Workbench subject](../workbench.md#adding-a-subject) when that work fits the task. Use the normal game action after staging the initial state.
+2. Work in an isolated checkout when other people or agents are editing the same areas. Give each host a free port and check the printed URL. Use the in-memory playtest host for checkpoints. To verify actual save and restart behavior, use a uniquely named disposable save and one host per save. Use separate browser profiles or contexts for different players.
+3. Capture a baseline and change one relevant factor. Hold the others steady, such as camera, hour and weather for shadows, seed and input route for schooling, or start state and roles for a repair. Then move to the vantage point the baseline missed. Try player eye level or a crewmate’s view, an opposite approach, a nearby obstacle, or a restart. Use a still for placement, a clip or replay for motion, and a host assertion for state.
+4. Before handing off, reopen the link or restart the scenario from a fresh context when practical. Include the revision, tool and site or scenario ID, relevant settings, player actions, expected and observed results, and what remains unverified. For a draft, include the exported recipe or layout if the link relies on browser-local state. A teammate should be able to reproduce the starting point without borrowing your save or redoing onboarding. Record findings in the relevant issue, PR, or [playtest log](findings.md).
+
+## Improve the harness when it slows the work
+
+When a missing control or readout forces repeated setup, hides an important cause, or keeps another person from repeating a run, record the tool friction alongside the finding. Name the manual workaround and what it prevented you from measuring or sharing. Propose the smallest reusable control, readout, or export, and describe a second task that would use it. If the limitation recurs, check existing developer tooling issues before suggesting a new one. Keep the tooling proposal distinct from the game behavior it helped investigate so another agent can take it up in parallel.
+
+For example, replaying Pinewoods sunrise with volumetric sunlight on and off takes a manually driven island clock. A saved hour sweep with fixed camera and paired capture would let someone reopen the same comparison, then reuse it at the market wall. The acceptance check is that two captures follow the same hour sequence and preserve the camera and all lighting settings except the chosen layer. [Shadow bands #130](https://github.com/brylie/mission-island/issues/130)

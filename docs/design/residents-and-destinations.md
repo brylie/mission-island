@@ -2,6 +2,12 @@
 
 A crew should be able to give directions using a person and a detail they remember. “Mara fishes off the little dock near our cottages” tells the other player who to look for, where to go, and what they might do when they get there. Use these three briefs together when laying out the first day.
 
+## Shared crew Trust
+
+“What can I count on this crew to do?” Each resident answers that question from their own dealings with the crew. Either player can make a promise, keep it or make amends, and the resident recognizes both players afterward. A greeting, an offer, or the way someone lends a tool should let a returning crewmate understand what happened and why.
+
+Trust grows over several kept promises. One knowingly broken promise can undo the confidence earned over several favors. Making the harm right opens the way back. The resident needs to see the crew follow through on later, separate occasions before extending the same trust again. A missed input, a failed attempt or a disconnect is an opportunity to retry safely. Reserve a loss of Trust for a choice whose stakes the player could understand before acting.
+
 ## Mara and the small fishing dock
 
 **Playable.** Mara leaves the porch at 06:00, reaches the dock at 06:15, leaves work at 18:00 and is home at 18:15. Players can approach Mara for a lead. They can get a rod from their own cottage chest and fish from the shore or the stopped skiff. The dock serves small craft.
@@ -13,6 +19,10 @@ A crew should be able to give directions using a person and a detail they rememb
 ## Wren and the garden gate
 
 **Playable.** Wren lives in the lilac-roofed cottage east of the Blue cottage and works at the mending bench on the grass beside the ferry approach from 07:00 to 17:00. The bench sits by the current ferry terminal and should move with it when the terminal is rebuilt. A tall picket fence closes off the front garden. The gate's worn top hinge pin lets the leaf drop into a groove, so it sticks a short way open. Until it is fixed, Wren goes out the back door and walks the long way round, between the Blue cottage and the fence. Either player can borrow the toolbox and a pin from the bench and mend the gate. From the next dawn Wren takes the shortcut through the gate, the groove has grassed over, and Wren greets the crew as the people who fixed it. [Neighbor repairs](../mechanics/neighbor-repairs.md) · [Gate repair #92](https://github.com/brylie/mission-island/issues/92)
+
+**Proposed Trust story.** The playable gate repair is one kept promise. Swinging the repaired gate earns Wren’s Trust once. Imagine a later favor where the gate still catches during the test and Wren asks whether it is safe to use. The crew can say it needs more work and try again. If a player sees it catch and chooses to tell Wren it is safe, Wren has reason to doubt even a crew that has helped several times. At the next visit Wren could say, “You said it swung clear. I had to go round the back again.”
+
+Either player could return to put the gate right. Wren might thank them and still come outside to check the next repair. After the crew keeps its word on other jobs, Wren might leave the toolbox on the porch for either player with a note about what needs fixing. That first unsupervised loan tells both players what they have earned back.
 
 **Walk it.** Follow Wren's detour and the shortcut at walking height in daylight, rain and at night. Try the sagging gate from both sides. Watch a crewmate follow Wren out through the open gate. Can either player tell from the cottage alone whether the repair has been done?
 

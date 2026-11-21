@@ -21,6 +21,16 @@ For sound, a direction to try is a cue with a recognizable source: boots change 
 
 The [crew character turnaround](crew-character-art.md) sets the proportions and finish for character fittings. The [coastal model studies](coastal-model-studies.md) show how to apply that direction to plants, wildlife, buildings and vehicles with the game’s mesh factories.
 
+### Give forms a reason to look the way they do
+
+Treat the landscape like a painter working from observation. Read the masses of color, where light lands and what shape leads the eye before adding surface detail. Keep a soft, legible toy-scale silhouette from above. At walking distance, let the curve of a branch, the changing edge of a wetland or the wear at a cottage threshold reward a closer look.
+
+For pines, shape a tapered trunk and branches with weight. A branch can leave the trunk on a shallow rise, dip under its foliage and lift at the growing tip. Follow a species reference for the actual curve and vary branch length, spacing and angle. Build the crown from irregular foliage masses with openings where branches divide. Even a bushy round silhouette can have arcing stems and lobes that overlap, with sheltered specimens fuller and exposed crowns bent by the wind. Carry that gesture and the main openings into distant silhouettes. Compare a young tree and a mature one, then look at several seeded trees together for repeated outlines.
+
+Use the same reasoning for rocks, ground and built scenery. A boulder can have a fractured face and settle into the soil. Grasses can follow damp ground around its base. A workshop can keep a straight dock edge where a truck needs it, with a soft verge and worn foot route where people approach. Spend geometry on the readable shape and use materials for smaller marks. Keep procedural controls tied to visible traits such as branch droop, crown openness, exposure, age and season.
+
+Start the art pass with a sheltered Pinewoods pine and an exposed ridge pine. Compare a reference photo in the Workbench, then review both in place, with clear and overcast light and at walking and overlook distance. When seasons are available, capture the same scene twice before adding any new detail. Both versions should still read as the same place. Use the [Art Director skill](../../.agents/skills/mission-island-art-director/SKILL.md) to record the review. [Island climates and seasons](climate-and-seasons.md)
+
 ### Grass seen from a hill
 
 At a player's feet, individual blades can catch the light. From Windstone Ridge, the meadow should read as a few broad changes in colour that tell you something about the land. Try a greener strip following the damp ground beside a stream and a paler shoulder where the slope is exposed. Keep their edges irregular and soft enough for a path or a grazing animal to stand out. The meadow already fades fine detail with distance and varies its colour in world space. Use those controls to judge which repeated marks still catch the eye.
