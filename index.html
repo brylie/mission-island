@@ -263,10 +263,21 @@
         <p id="counter-balance"></p>
         <p id="counter-owner"></p>
       </div>
+      <label class="counter-category">
+        <span>Browse</span>
+        <select id="counter-category" autofocus aria-controls="counter-stock">
+          <option value="all">All clothing</option>
+          <option value="hat">Hats</option>
+          <option value="shirt">Tops and swimwear</option>
+          <option value="trousers">Bottoms</option>
+          <option value="shoes">Footwear</option>
+          <option value="uniform">Outfits</option>
+        </select>
+      </label>
       <ul id="counter-stock" class="counter-stock"></ul>
       <p id="counter-note" role="status"></p>
       <div class="wardrobe-actions">
-        <button type="button" data-close autofocus>Close</button>
+        <button type="button" data-close>Close</button>
       </div>
     </dialog>
 

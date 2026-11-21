@@ -14,6 +14,7 @@ import { landscapeStudy } from './landscape-study'
 import { materialStudies } from './material-studies'
 import { mechanicStudies } from './mechanic-studies'
 import { longAcreStudy } from './long-acre-study'
+import { lookoutRecoveryStudy } from './lookout-recovery-study'
 import { natureEntries } from './nature-studies'
 import { routeStudies } from './route-studies'
 import { saltwindAssets } from './saltwind-studies'
@@ -35,6 +36,7 @@ export const entries: Entry[] = [
   conversationStudy,
   ...furnishingStudies,
   landscapeStudy,
+  lookoutRecoveryStudy,
   crewStudy,
   ...starterSceneryStudies,
   houseStudy,

@@ -51,6 +51,17 @@ For the Lagoon fitting, select **Shirt or swimsuit → Lagoon swimsuit** and **A
 
 Switch to **Paddle skiff** and orbit along the gunwale. The lower hand works the blade on its own side while the opposite palm holds the upper shaft. Both knees bend beneath the seated figure. Use **Carry crate** to check the downward glance, then check the cap strap, nape and collar together from the follow-camera distance in Seabrook.
 
+## Seabrook clothing counter fitting
+
+![Five outfits on the crew character, standing from the front and walking away. Left to right are the Squid Slicker, Star Chart Sweater, Kelpwing Vest, Beacon Jersey and Dune Fox Pullover.](../images/seabrook-collection-fitting.jpg)
+
+In **Wardrobe → Crew character**, mix the counter items using **Hat**, **Shirt or swimsuit**, **Bottoms** and **Shoes**. All twenty pieces are available here before purchase. For an in-game check, buy an item at Seabrook’s clothing counter and apply it in the wardrobe.
+
+- Pair the **Reedlight Crown** with each hairstyle and use **Carry crate**. Check the open weave against the crown of the head as the player looks down.
+- Wear the **Kelpwing Vest** and **Shellstrap Sandals** during **Swim**. Orbit behind the figure and check the bare shoulders as the arms gather, then the straps over the toes as the ankles turn.
+- Seat the **Signal Sail Trousers** and **Lighthouse High-Tops** in **Paddle skiff**. Scrub the stroke and check the knee patches, trouser cuffs and boot collars. Switch to **Sprint** and follow the raised heel.
+- Compare the same piece on the market counter and on the player. Keep its cut, one identifying motif and the main color readable at follow-camera distance.
+
 ## Review with one playable figure
 
 1. Open **Wardrobe → Crew character** in the Asset Workbench. Save the current front, side and rear views. Compare one proposed base in the same light and camera, first bareheaded, then with the existing cap. Use the third-person rear view for the deciding shot.

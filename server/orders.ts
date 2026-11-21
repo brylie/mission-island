@@ -9,7 +9,7 @@ import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewMember, CrewNotice } from './crew.ts'
 
 export function createOrders(
-  state: Pick<Snapshot, 'crewCoins' | 'lastStarterPay' | 'items' | 'jobs' | 'mission'>,
+  state: Pick<Snapshot, 'crewCoins' | 'lastStarterPay' | 'items' | 'jobs' | 'mission' | 'islandTime' | 'lookoutFireClearedAt'>,
   physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'release'>, notifyCrew: (message: CrewNotice) => void,
   checkpoint?: () => void,
 ) {
@@ -55,6 +55,7 @@ export function createOrders(
       advanceOrder(1)
     } else if (state.items.filter((entry) => entry.kind === 'crate').every((crate) => crate.delivered)) {
       state.mission = 'fire'
+      delete state.lookoutFireClearedAt
       payCrew({ type: 'job-pay', job: 'delivery', coins: starterPay.delivery.coins })
     } else {
       payCrew({ type: 'job-pay', job: 'crate', coins: starterPay.crate.coins })
@@ -76,6 +77,7 @@ export function createOrders(
 
   function completeFire() {
     state.mission = 'complete'
+    state.lookoutFireClearedAt = state.islandTime
     payCrew({ type: 'job-pay', job: 'fire', coins: starterPay.fire.coins })
     for (const tool of state.items.filter(({ kind }) => kind === 'extinguisher')) {
       tool.holder = null

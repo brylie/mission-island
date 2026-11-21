@@ -5,7 +5,7 @@ import { NullEngine } from '@babylonjs/core/Engines/nullEngine.js'
 import { Mesh } from '@babylonjs/core/Meshes/mesh.js'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js'
 import { Scene } from '@babylonjs/core/scene.js'
-import { rigCrewKnee } from '../src/assets/crew-knee.ts'
+import { bindLegMesh, rigCrewKnee } from '../src/assets/crew-knee.ts'
 
 test('swapping leg garments while seated preserves the knee and rigid shoe fitting', (t) => {
   const engine = new NullEngine(), scene = new Scene(engine)
@@ -19,7 +19,7 @@ test('swapping leg garments while seated preserves the knee and rigid shoe fitti
   })
   const [trousers, calf] = garments
   calf.setEnabled(false)
-  const pose = rigCrewKnee(hip)
+  const { bend: pose, skeleton } = rigCrewKnee(hip)
   assert.equal(trousers.skeleton, calf.skeleton)
   for (const mesh of garments) {
     const weights = mesh.getVerticesData(VertexBuffer.MatricesWeightsKind)
@@ -32,6 +32,16 @@ test('swapping leg garments while seated preserves the knee and rigid shoe fitti
   trousers.setEnabled(false)
   calf.setEnabled(true)
   assert.ok(Math.abs(shin.getRotation().x - 1.05) < .00001)
+  const boot = new Mesh('Purchased boot', scene)
+  const attachment = new TransformNode('Footwear fitting', scene)
+  attachment.parent = hip
+  boot.parent = attachment
+  boot.setVerticesData(VertexBuffer.PositionKind, [0, -.53, 0])
+  bindLegMesh(boot, skeleton)
+  assert.equal(boot.skeleton, calf.skeleton)
+  assert.deepEqual([...boot.getVerticesData(VertexBuffer.MatricesWeightsKind)], [0, 1, 0, 0])
+  attachment.dispose()
+  assert.ok(scene.skeletons.includes(skeleton))
   pose(0, .5)
   assert.ok(Math.abs(shin.getRotation().x - .525) < .00001)
   pose(0, 1)

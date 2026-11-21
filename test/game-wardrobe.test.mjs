@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { actionHint } from '../src/actions.ts'
+import { clothingCatalog } from '../src/clothing-catalog.ts'
 import { anglerCost } from '../src/crew-appearance.ts'
 import { clothingCounter } from '../src/farm.ts'
 import { crewHomes } from '../src/world.ts'
+import { stockedPieces } from '../src/wardrobe-stock.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
 function atWardrobe(id) {
@@ -162,4 +164,35 @@ test('individual purchases unlock only the buyer’s matching piece and keep the
   assert.equal(swimmer.player.appearance.trousers, 'slate-shorts')
   assert.equal(swimmer.player.appearance.shirt, 'blue')
   assert.equal(swimmer.state.crewCoins, 0)
+})
+
+test('the Seabrook collection prices, unlocks, and restores all twenty pieces independently', t => {
+  const point = { x: clothingCounter.x, z: clothingCounter.z + 0.82 }
+  const h = setup(t, { players: [player(0, point), player(1, point)], arrange: save => { save.crewCoins = 100 } })
+  const buyer = h.join(tokens[0])
+  const observer = h.join(tokens[1])
+  const collection = Object.values(stockedPieces).flatMap(Object.keys)
+  assert.equal(collection.length, 20)
+  let remaining = 100
+  for (const id of collection) {
+    const { price, slot, choice } = clothingCatalog[id]
+    const appearance = { uniform: 'default', skin: 'deep', [slot]: choice }
+    observer.request('appearance', { appearance })
+    buyer.request('buy-clothing', { item: id })
+    buyer.request('buy-clothing', { item: id })
+    assert.equal(buyer.messages.at(-1).result, 'already-owned')
+    buyer.request('appearance', { appearance })
+    h.advance()
+    remaining -= price
+    assert.equal(buyer.state.crewCoins, remaining)
+    assert.equal(observer.state.crewCoins, remaining)
+    assert.equal(buyer.player.appearance[slot], choice)
+    assert.equal(observer.player.appearance[slot], undefined)
+  }
+  assert.deepEqual(buyer.player.ownedClothes, collection)
+  assert.equal(observer.player.ownedClothes, undefined)
+  const restarted = setup(t, { saved: h.game.snapshotForSave() })
+  const returning = restarted.join(tokens[0])
+  assert.deepEqual(returning.player.ownedClothes, collection)
+  assert.equal(returning.state.crewCoins, remaining)
 })

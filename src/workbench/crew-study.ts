@@ -38,11 +38,11 @@ export const crewStudy: Entry = {
   relatedOptions: relatedCrewOptions,
   controls: [
     control('state', 'Animation', 'walk', { idle: 'Idle', walk: 'Walk', sprint: 'Sprint', jump: 'Jump', paddle: 'Paddle skiff', swim: 'Swim', tread: 'Tread water', reach: 'Left reach', raise: 'Raise right hand', carry: 'Carry crate', throw: 'Throw crate', spray: 'Use extinguisher' }, true),
-    control('uniform', 'Outfit preset', 'amber', Object.fromEntries(Object.entries(uniforms).map(([id, uniform]) => [id, uniform.name]))),
+    control('uniform', 'Outfit preset', 'amber', Object.fromEntries(Object.entries(uniforms).map(([id, uniform]) => [id, uniform.name])), true),
     control('skin', 'Skin tone', 'light', Object.fromEntries(Object.entries(skinTones).map(([id, tone]) => [id, tone.name]))),
     ...appearancePartKeys.map(key => {
       const { label, choices } = appearanceParts[key]
-      const select = control(key, label, 'default', { default: 'Default', ...choices })
+      const select = control(key, label, 'default', { default: 'Default', ...choices }, crewClothingSlots.has(key))
       if (crewClothingSlots.has(key)) select.displayValue = (values) => shownCrewChoice(key, values)
       return select
     }),
@@ -53,6 +53,8 @@ export const crewStudy: Entry = {
   ],
   create(meshes, initial, _error, observe) {
     const crew = createCrew(meshes, 0)
+    crew.setAppearance(readAppearance(initial), { dye: initial.dyed ? String(initial.dye) : undefined })
+    crew.setCap(Boolean(initial.cap))
     let alignPaddle: (() => void) | undefined
     if (initial.state === 'paddle') {
       const boat = createHarborBoat(meshes)

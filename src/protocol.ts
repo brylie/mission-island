@@ -91,6 +91,7 @@ export interface Snapshot {
   items: Item[]
   mission: Mission
   fire: number
+  lookoutFireClearedAt?: number
   farm: PlotStage[]
   cultivation?: CultivationCue[]
   weather: Weather
