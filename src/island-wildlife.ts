@@ -1,7 +1,7 @@
 import { createGullFlock } from './gull-flock'
 import { starterGullPerches } from './gull-sites'
-import { createDriftwoodFish } from './driftwood-fish'
-import type { DriftwoodFrame } from './simulation/driftwood-school'
+import { createCoastalFish } from './school-fish'
+import { driftwoodShallows, type DriftwoodFrame } from './simulation/driftwood-school'
 import { onBeachTowel } from './worlds/starter/sites'
 import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
@@ -84,7 +84,7 @@ export function createUnderstory(meshes: MeshFactory) {
 }
 
 export function createStarterWildlife(meshes: MeshFactory) {
-  const driftwood = createDriftwoodFish(meshes)
+  const driftwood = createCoastalFish(meshes, driftwoodShallows, waterLevel)
   const schools = createSchools(meshes, [-2.17, 1.19].map((angle) => {
     const off = coastPoint(angle)
     const length = Math.hypot(off.x, off.z)
