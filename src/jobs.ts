@@ -1,9 +1,10 @@
+import { jobBoardGeometry } from './assets/geometry/site-props.ts'
 import type { Goods } from './farm.ts'
 import type { Player, Snapshot } from './protocol.ts'
 import { distance, town } from './world.ts'
 import type { Point } from './world.ts'
 
-export const jobBoard = { x: -43.7, z: -16.1 }
+export const jobBoard = { x: -43.7, z: -16.1, geometry: jobBoardGeometry }
 export const deliveryRadius = 4.5
 export const lookoutSprayReach = 5
 export const secondIslandGoal = 4

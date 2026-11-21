@@ -1,35 +1,65 @@
 export type SupportBox = readonly [width: number, depth: number, height: number, localX?: number, localZ?: number]
 
-export const siteBench = { width: 1.7, seatDepth: 0.54, backDepth: 0.105, backZ: 0.22 } as const
+const rackWidth = 1.83
+const planterRim = { width: 1.66, depth: 0.57 } as const
+const crateWidth = 0.64
+const bench = { width: 1.7, seatDepth: 0.54, backDepth: 0.105, backZ: 0.22 } as const
+const barrelModels = [{ x: -0.37, size: 0.81 }, { x: 0.34, size: 0.57 }] as const
+const scopeBaseDiameter = 0.76
+const fallenLog = { length: 2.4, branchX: -0.45, branchZ: 0.09 } as const
+const cairnStones = [
+  { x: 0, y: 0.10, width: 0.86, height: 0.25, turn: 0.4 },
+  { x: 0.055, y: 0.31, width: 0.56, height: 0.19, turn: 1.1 },
+  { x: 0.02, y: 0.46, width: 0.32, height: 0.13, turn: 2.3 },
+] as const
+const gaugePoleWidth = 0.14
 
-// Local support volumes in metres. The seat and back, crate tiers, and barrels have separate tops.
-export const sitePropSupportBoxes = {
-  'splitstone': [[1.72, 2.55, 2.035, -1.72, 0.45], [1.55, 2.29, 1.385, 1.61, -0.22]],
-  'bench': [[siteBench.width, siteBench.seatDepth, 0.57], [siteBench.width, siteBench.backDepth, 1.035, 0, siteBench.backZ]],
-  'crates': [[0.64, 0.6, 0.54, -0.36, 0.02], [0.64, 0.61, 1.05, 0.33, -0.065]],
-  'barrels': [[0.61, 0.61, 0.79, -0.37], [0.43, 0.43, 0.56, 0.34]],
-  'rack': [[1.83, 0.16, 1.5]],
-  'planter': [[1.66, 0.57, 0.345]],
-  'scope': [[0.76, 0.76, 0.16], [0.22, 0.22, 1], [0.48, 0.82, 1.27]],
-  'log': [[2.4, 0.45, 0.42], [0.19, 0.2, 0.64, -0.45, 0.09]],
-  'cairn': [[0.86, 0.65, 0.225], [0.56, 0.42, 0.405, 0.055], [0.32, 0.24, 0.525, 0.02]],
-  'tide-staff': [[0.18, 0.24, 1.35]],
-  'gauge': [[0.14, 0.18, 1.35]],
-} as const satisfies Record<string, readonly SupportBox[]>
+// The support boxes approximate the visible models in local metres. Separate boxes allow for stepped surfaces.
+export const sitePropGeometry = {
+  'splitstone': {
+    fins: [
+      { x: -1.73, z: 0.45, height: 2.08, outline: [[-0.94, -0.55], [-0.34, -1.32], [0.71, -0.94], [0.81, 0.96], [0.09, 1.44], [-0.78, 0.77]] },
+      { x: 1.61, z: -0.22, height: 1.43, outline: [[-0.76, -1.09], [0.22, -1.21], [0.91, -0.35], [0.62, 0.82], [-0.12, 1.23], [-0.69, 0.72]] },
+    ],
+    supportBoxes: [[1.72, 2.55, 2.035, -1.72, 0.45], [1.55, 2.29, 1.385, 1.61, -0.22]],
+  },
+  'bench': {
+    ...bench,
+    supportBoxes: [[bench.width, bench.seatDepth, 0.57], [bench.width, bench.backDepth, 1.035, 0, bench.backZ]],
+  },
+  'crates': {
+    width: crateWidth,
+    positions: [[-0.36, 0.28, 0.02], [0.35, 0.28, -0.05], [0.30, 0.79, -0.07]],
+    supportBoxes: [[crateWidth, 0.6, 0.54, -0.36, 0.02], [crateWidth, 0.61, 1.05, 0.33, -0.065]],
+  },
+  'barrels': {
+    bodies: barrelModels,
+    supportBoxes: [[0.61, 0.61, 0.79, barrelModels[0].x], [0.43, 0.43, 0.56, barrelModels[1].x]],
+  },
+  'rack': { width: rackWidth, supportBoxes: [[rackWidth, 0.16, 1.5]] },
+  'planter': { rim: planterRim, supportBoxes: [[planterRim.width, planterRim.depth, 0.345]] },
+  'scope': { baseDiameter: scopeBaseDiameter, supportBoxes: [[scopeBaseDiameter, scopeBaseDiameter, 0.16], [0.22, 0.22, 1], [0.48, 0.82, 1.27]] },
+  'log': { ...fallenLog, supportBoxes: [[fallenLog.length, 0.45, 0.42], [0.19, 0.2, 0.64, fallenLog.branchX, fallenLog.branchZ]] },
+  'cairn': {
+    stones: cairnStones,
+    supportBoxes: [
+      [cairnStones[0].width, 0.65, 0.225],
+      [cairnStones[1].width, 0.42, 0.405, cairnStones[1].x],
+      [cairnStones[2].width, 0.24, 0.525, cairnStones[2].x],
+    ],
+  },
+  'tide-staff': { clampHeights: [0.115, 0.402], supportBoxes: [[0.18, 0.24, 1.35]] },
+  'gauge': { poleWidth: gaugePoleWidth, supportBoxes: [[gaugePoleWidth, 0.18, 1.35]] },
+} as const
 
-export const fixedPropSupportBoxes = {
-  jobBoard: [[1.75, 0.14, 1.95]],
-  lampPost: [[0.14, 0.14, 2.74]],
-  beachUmbrella: [[0.16, 0.16, 2.27]],
-  woodpile: [[1.05, 0.65, 0.6]],
-  rainBarrel: [[0.55, 0.55, 0.8]],
-  sawhorse: [[1.1, 0.4, 0.75]],
-  ridgeRack: [[1.62, 0.27, 1.16]],
-  ridgeWindsock: [[0.09, 0.09, 2.64]],
-  ridgeLandingSign: [[0.15, 0.15, 1.26], [1.44, 0.19, 1.545]],
-} as const satisfies Record<string, readonly SupportBox[]>
+const jobBoardPanel = { width: 1.75, depth: 0.14, height: 0.93, centreY: 1.38 } as const
+export const jobBoardGeometry = { panel: jobBoardPanel, supportBoxes: [[jobBoardPanel.width, jobBoardPanel.depth, 1.95]] } as const
 
-export const mendingBenchFootprint = { width: 1.6, depth: 0.7 } as const
-export const flowerBedFrame = { overhang: 0.1, supportHeight: 0.16 } as const
+const lampPole = { baseDiameter: 0.14, topDiameter: 0.10, height: 2.74, centreY: 1.37 } as const
+export const streetLampGeometry = { pole: lampPole, supportBoxes: [[lampPole.baseDiameter, lampPole.baseDiameter, lampPole.height]] } as const
+
+const umbrellaPole = { baseDiameter: 0.16, topDiameter: 0.12, height: 2.5, centreY: 1.25 } as const
+export const beachUmbrellaGeometry = { pole: umbrellaPole, supportBoxes: [[umbrellaPole.baseDiameter, umbrellaPole.baseDiameter, 2.27]] } as const
+
 export const shellRockProfile = { depthRatio: 0.65, height: 0.23, centreHeight: 0.055, supportHeight: 0.17 } as const
 export const lichenStoneProfile = { depthRatio: 0.91, heightRatio: 0.74, centreHeightRatio: 0.23, headingPerMetre: 0.62 } as const

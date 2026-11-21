@@ -1,3 +1,4 @@
+import { beachUmbrellaGeometry, shellRockProfile, streetLampGeometry, type SupportBox } from '../../assets/geometry/site-props.ts'
 import { shellglassPoint, splitstone } from '../../routes.ts'
 import type { SiteFeature } from '../site-feature.ts'
 
@@ -38,10 +39,17 @@ export const starterFeatures = [
 ] as const satisfies readonly SiteFeature[]
 
 export const beachUmbrellas = [{ x: 26, z: -39.6 }, { x: 33, z: -37.7 }, { x: 38.1, z: -35.3 }]
+  .map((point) => ({ ...point, geometry: beachUmbrellaGeometry }))
 export const lampPosts = [{ x: -55, z: -7.1 }, { x: -39, z: -7.1 }, { x: 34, z: 17.45 }, { x: 46.5, z: 6.45 }]
+  .map((point) => ({ ...point, geometry: streetLampGeometry }))
 
 export const shellRocks = [[0.63, -0.98, 0.68, 0.9], [1.14, -1.55, 0.41, 1.6], [0.05, -1.36, 0.43, -1.1]]
-  .map(([dx, dz, size, heading]) => ({ x: shellglassPoint.x + dx, z: shellglassPoint.z + dz, size, heading }))
+  .map(([dx, dz, size, heading]) => {
+    const depth = size * shellRockProfile.depthRatio
+    const supportBoxes: readonly SupportBox[] = [[size, depth, shellRockProfile.supportHeight]]
+    const geometry = { width: size, depth, height: shellRockProfile.height, centreHeight: shellRockProfile.centreHeight, supportBoxes }
+    return { x: shellglassPoint.x + dx, z: shellglassPoint.z + dz, heading, geometry }
+  })
 
 export function onBeachTowel(point: { x: number, z: number }) {
   return beachUmbrellas.some(({ x, z }) => Math.abs(point.x - x - 0.9) <= 0.7 && Math.abs(point.z - z) <= 1.32)

@@ -1,6 +1,6 @@
 import type { Material } from '@babylonjs/core/Materials/material'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import { siteBench } from './geometry/site-props'
+import { sitePropGeometry } from './geometry/site-props'
 import type { MeshFactory } from '../island-meshes'
 import { surfaceRecipe, surfaceRepeatMeters } from './surface-recipes'
 import { cylinderSurfaceUVs } from '../surface-uvs'
@@ -33,14 +33,15 @@ const wood = '#865d45', lightWood = '#cf9e68', metal = '#5c6964', linen = '#f0de
 const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
   rack({ box, round }, color) {
     for (const x of [-0.83, 0.83]) box(x, 0.75, 0, 0.12, 1.5, 0.15, wood)
-    box(0, 1.42, 0, 1.83, 0.12, 0.14, lightWood)
+    box(0, 1.42, 0, sitePropGeometry.rack.width, 0.12, 0.14, lightWood)
     for (const x of [-0.53, -0.26, 0, 0.26, 0.53]) box(x, 0.96, 0.035, 0.025, 0.76, 0.025, linen)
     for (const y of [0.62, 0.82, 1.02, 1.22]) box(0, y, 0.058, 1.08, 0.025, 0.026, linen)
     for (const x of [-0.53, 0, 0.53]) round(x, 0.58, 0.053, 0.12, 0.12, 0.16, color)
   },
   planter({ box, round, leaf }, color) {
     box(0, 0.15, 0, 1.6, 0.30, 0.5, wood)
-    box(0, 0.30, 0, 1.66, 0.09, 0.57, lightWood)
+    const { width, depth } = sitePropGeometry.planter.rim
+    box(0, 0.30, 0, width, 0.09, depth, lightWood)
     for (const [i, x] of [-0.56, -0.28, 0, 0.28, 0.56].entries()) {
       const height = 0.21 + i % 3 * 0.035
       round(x, 0.34 + height / 2, 0.03, 0.025, 0.041, height, '#638851')
@@ -53,26 +54,24 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     }
   },
   crates({ box }, color) {
-    for (const [x, y, z] of [[-0.36, 0.28, 0.02], [0.35, 0.28, -0.05], [0.30, 0.79, -0.07]]) {
-      box(x, y, z, 0.64, 0.52, 0.53, wood)
+    const { width, positions } = sitePropGeometry.crates
+    for (const [x, y, z] of positions) {
+      box(x, y, z, width, 0.52, 0.53, wood)
       box(x, y, z - 0.275, 0.60, 0.41, 0.04, lightWood)
       box(x, y + 0.03, z - 0.303, 0.22, 0.14, 0.026, color)
     }
   },
   bench({ box }, color) {
+    const { width, seatDepth, backDepth, backZ } = sitePropGeometry.bench
     for (const x of [-0.65, 0.65]) box(x, 0.25, 0, 0.18, 0.50, 0.52, metal)
-    box(0, 0.51, 0, siteBench.width, 0.12, siteBench.seatDepth, lightWood)
+    box(0, 0.51, 0, width, 0.12, seatDepth, lightWood)
     for (const x of [-0.65, 0.65]) box(x, 0.69, 0.21, 0.13, 0.44, 0.13, metal)
-    box(0, 0.92, siteBench.backZ, siteBench.width, 0.23, siteBench.backDepth, color)
+    box(0, 0.92, backZ, width, 0.23, backDepth, color)
   },
   splitstone({ face }, color) {
     // The flat opposing faces are a single fracture. Bedding dips the same
     // way on both sides, even where the shorter eastern fin has weathered away.
-    const fins = [
-      { x: -1.73, z: 0.45, height: 2.08, outline: [[-0.94, -0.55], [-0.34, -1.32], [0.71, -0.94], [0.81, 0.96], [0.09, 1.44], [-0.78, 0.77]] },
-      { x: 1.61, z: -0.22, height: 1.43, outline: [[-0.76, -1.09], [0.22, -1.21], [0.91, -0.35], [0.62, 0.82], [-0.12, 1.23], [-0.69, 0.72]] },
-    ]
-    for (const fin of fins) {
+    for (const fin of sitePropGeometry.splitstone.fins) {
       const ring = (level: number, width: number, cap = false) => fin.outline.map(([x, z]) => [
         fin.x + x * width + level * 0.06,
         level + x * 0.14 + z * 0.09 + (cap ? 0.22 * Math.sin(x * 2 + z) : 0),
@@ -111,21 +110,22 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     box(0.025, 1.026, 0.02, 0.215, 0.020, 0.022, '#d5b87d')
   },
   log({ round }, color) {
-    const trunk = round(0, 0.2, 0, 0.34, 0.52, 2.4, color)
+    const { length, branchX, branchZ } = sitePropGeometry.log
+    const trunk = round(0, 0.2, 0, 0.34, 0.52, length, color)
     trunk.rotation.z = Math.PI / 2
-    const branch = round(-0.45, 0.44, 0.09, 0.11, 0.19, 0.51, wood)
+    const branch = round(branchX, 0.44, branchZ, 0.11, 0.19, 0.51, wood)
     branch.rotation.z = -0.56
     branch.rotation.x = 0.35
   },
   cairn({ round }, color) {
-    for (const [x, y, width, height, turn] of [[0, 0.10, 0.86, 0.25, 0.4], [0.055, 0.31, 0.56, 0.19, 1.1], [0.02, 0.46, 0.32, 0.13, 2.3]]) {
+    for (const { x, y, width, height, turn } of sitePropGeometry.cairn.stones) {
       const stone = round(x, y, 0, width * 0.72, width, height, color)
       stone.scaling.z = 0.75
       stone.rotation.y = turn
     }
   },
   gauge({ box }, color) {
-    box(0, 0.65, 0, 0.14, 1.4, 0.13, wood)
+    box(0, 0.65, 0, sitePropGeometry.gauge.poleWidth, 1.4, 0.13, wood)
     box(0, 0.72, -0.075, 0.13, 1.08, 0.025, color)
     for (let i = 0; i < 10; i++) box(-0.02, 0.26 + i * 0.1, -0.093, i % 2 ? 0.045 : 0.09, 0.022, 0.012, linen)
   },
@@ -133,7 +133,7 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     models.gauge(parts, color)
     // A scarf repair and an old red high-water notch face the beach approach.
     parts.box(0.02, 0.27, 0.081, 0.155, 0.48, 0.057, lightWood)
-    for (const y of [0.115, 0.402]) parts.box(0.005, y, 0.029, 0.173, 0.044, 0.19, '#52685e')
+    for (const y of sitePropGeometry['tide-staff'].clampHeights) parts.box(0.005, y, 0.029, 0.173, 0.044, 0.19, '#52685e')
     parts.box(0.01, 1.11, -0.099, 0.122, 0.042, 0.025, '#a95239')
     parts.box(0.005, 1.055, 0.076, 0.13, 0.035, 0.024, '#a95239')
   },
@@ -162,7 +162,7 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     }
   },
   scope({ box, round }, color) {
-    round(0, 0.08, 0, 0.69, 0.76, 0.16, metal)
+    round(0, 0.08, 0, 0.69, sitePropGeometry.scope.baseDiameter, 0.16, metal)
     round(0, 0.53, 0, 0.18, 0.2, 0.90, wood)
     round(0, 1.02, 0, 0.56, 0.39, 0.81, color).rotation.x = Math.PI / 2 + 0.15
     box(0, 1.09, -0.407, 0.24, 0.20, 0.06, '#537786')
@@ -178,7 +178,7 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     for (const [index, x] of [-0.55, -0.2, 0.18, 0.51].entries()) box(x, 1.58 + index % 2 * 0.06, 0, 0.21, 0.36, 0.045, index % 2 ? linen : color)
   },
   barrels({ round }, color) {
-    for (const [x, size] of [[-0.37, 0.81], [0.34, 0.57]]) {
+    for (const { x, size } of sitePropGeometry.barrels.bodies) {
       round(x, size * 0.47, 0, size * 0.66, size * 0.72, size * 0.95, wood)
       round(x, size * 0.8, 0, size * 0.72, size * 0.72, 0.07, metal)
       round(x, size * 0.24, 0, size * 0.75, size * 0.75, 0.07, metal)

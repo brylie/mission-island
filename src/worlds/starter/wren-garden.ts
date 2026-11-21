@@ -1,3 +1,5 @@
+import type { SupportBox } from '../../assets/geometry/site-props.ts'
+import { flowerBedFrame, rainBarrelGeometry, sawhorseGeometry, woodpileGeometry } from '../../assets/geometry/wren-garden.ts'
 import { fenceZ } from '../../gate-layout.ts'
 import { wrenCottage } from '../../world.ts'
 
@@ -23,8 +25,13 @@ const barrelOffsetX = 1.02
 export const flowerBeds = [
   { x: x + westBedOffsetX, z: fenceZ + westBedOffsetZ, width: westBedWidth, depth: westBedDepth, flowers: ['#b99bd8', '#f4ead0', '#e9c35a'] },
   { x: x + eastBedOffsetX, z: fenceZ + eastBedOffsetZ, width: eastBedWidth, depth: eastBedDepth, flowers: ['#f4ead0', '#b99bd8', '#e98a6b'] },
-]
+].map((bed) => {
+  const width = bed.width + flowerBedFrame.overhang
+  const depth = bed.depth + flowerBedFrame.overhang
+  const supportBoxes: readonly SupportBox[] = [[width, depth, flowerBedFrame.supportHeight]]
+  return { ...bed, geometry: { width, depth, supportBoxes } }
+})
 
-export const woodpile = { x: x + woodpileOffsetX, z: back + behindCottage, heading: 0 }
-export const sawhorse = { x: x + sawhorseOffset, z: back + sawhorseOffset, heading: sawhorseHeading }
-export const rainBarrel = { x: x + barrelOffsetX, z: back + behindCottage }
+export const woodpile = { x: x + woodpileOffsetX, z: back + behindCottage, heading: 0, geometry: woodpileGeometry }
+export const sawhorse = { x: x + sawhorseOffset, z: back + sawhorseOffset, heading: sawhorseHeading, geometry: sawhorseGeometry }
+export const rainBarrel = { x: x + barrelOffsetX, z: back + behindCottage, geometry: rainBarrelGeometry }

@@ -1,10 +1,10 @@
-import { fixedPropSupportBoxes, flowerBedFrame, lichenStoneProfile, mendingBenchFootprint, shellRockProfile, sitePropSupportBoxes, type SupportBox } from '../../assets/geometry/site-props.ts'
+import { lichenStoneProfile, sitePropGeometry, type SupportBox } from '../../assets/geometry/site-props.ts'
 import { fenceHeight, fenceRuns } from '../../gate-layout.ts'
 import { plank, solidTop } from '../../gate-repair.ts'
 import { juniperSolids } from '../../juniper-habitat.ts'
 import { jobBoard } from '../../jobs.ts'
 import { beachUmbrellas, lampPosts, ridgeLichenRocks, ridgeLichenSite, shellRocks, starterFeatures } from './sites.ts'
-import { ridgeHeading, ridgeLandingSign, ridgeRack, ridgeWindsock } from './ridge-scout.ts'
+import { ridgeLandingSign, ridgeRack, ridgeWindsock } from './ridge-scout.ts'
 import { flowerBeds, rainBarrel, sawhorse, woodpile } from './wren-garden.ts'
 import { walkingHeight } from '../../terrain.ts'
 import { localPoint, mendingBench, offset } from '../../world.ts'
@@ -14,10 +14,17 @@ const half = 0.5
 const fenceColliderDepth = 0.12
 const lichenSearchRadius = 3
 
-function solidsAt(point: Point, pieces: readonly SupportBox[], heading = 0, scale = 1) {
+interface SupportedProp extends Point {
+  geometry: { supportBoxes: readonly SupportBox[] }
+  heading?: number
+  scale?: number
+}
+
+function solidsAt({ x, z, geometry, heading = 0, scale = 1 }: SupportedProp) {
+  const point = { x, z, heading }
   const floor = walkingHeight(point)
-  return pieces.map(([width, depth, height, x = 0, z = 0]) => ({
-    ...offset({ ...point, heading }, x * scale, z * scale),
+  return geometry.supportBoxes.map(([width, depth, height, localX = 0, localZ = 0]) => ({
+    ...offset(point, localX * scale, localZ * scale),
     halfWidth: width * scale * half,
     halfDepth: depth * scale * half,
     floor,
@@ -30,21 +37,21 @@ function solidsAt(point: Point, pieces: readonly SupportBox[], heading = 0, scal
 }
 
 export const starterSolids = [
-  ...juniperSolids.flatMap((s) => solidsAt(s, [[s.width, s.depth, s.height]], s.heading)),
-  ...starterFeatures.flatMap((feature) => solidsAt(feature, sitePropSupportBoxes[feature.model], 'heading' in feature ? feature.heading : 0, 'scale' in feature ? feature.scale : 1)),
-  ...solidsAt(jobBoard, fixedPropSupportBoxes.jobBoard),
-  ...lampPosts.flatMap((post) => solidsAt(post, fixedPropSupportBoxes.lampPost)),
-  ...beachUmbrellas.flatMap((post) => solidsAt(post, fixedPropSupportBoxes.beachUmbrella)),
-  ...shellRocks.flatMap((rock) => solidsAt(rock, [[rock.size, rock.size * shellRockProfile.depthRatio, shellRockProfile.supportHeight]], rock.heading)),
+  ...juniperSolids.flatMap((s) => solidsAt({ ...s, geometry: { supportBoxes: [[s.width, s.depth, s.height]] } })),
+  ...starterFeatures.flatMap((feature) => solidsAt({ ...feature, geometry: sitePropGeometry[feature.model] })),
+  ...solidsAt(jobBoard),
+  ...lampPosts.flatMap(solidsAt),
+  ...beachUmbrellas.flatMap(solidsAt),
+  ...shellRocks.flatMap(solidsAt),
   ...fenceRuns.map(({ from, to }) => plank(from, to, fenceColliderDepth, fenceHeight)),
-  ...solidsAt(mendingBench, [[mendingBenchFootprint.width, mendingBenchFootprint.depth, mendingBench.top]], mendingBench.heading),
-  ...flowerBeds.flatMap((bed) => solidsAt(bed, [[bed.width + flowerBedFrame.overhang, bed.depth + flowerBedFrame.overhang, flowerBedFrame.supportHeight]])),
-  ...solidsAt(woodpile, fixedPropSupportBoxes.woodpile, woodpile.heading),
-  ...solidsAt(rainBarrel, fixedPropSupportBoxes.rainBarrel),
-  ...solidsAt(sawhorse, fixedPropSupportBoxes.sawhorse, sawhorse.heading),
-  ...solidsAt(ridgeRack, fixedPropSupportBoxes.ridgeRack, ridgeHeading),
-  ...solidsAt(ridgeWindsock, fixedPropSupportBoxes.ridgeWindsock),
-  ...solidsAt(ridgeLandingSign, fixedPropSupportBoxes.ridgeLandingSign, ridgeHeading),
+  ...solidsAt(mendingBench),
+  ...flowerBeds.flatMap(solidsAt),
+  ...solidsAt(woodpile),
+  ...solidsAt(rainBarrel),
+  ...solidsAt(sawhorse),
+  ...solidsAt(ridgeRack),
+  ...solidsAt(ridgeWindsock),
+  ...solidsAt(ridgeLandingSign),
 ]
 
 const lichenBase = walkingHeight(ridgeLichenSite)

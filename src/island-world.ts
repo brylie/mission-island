@@ -1,6 +1,5 @@
 import type { Material } from '@babylonjs/core/Materials/material'
 import { createFieldOutingScenery } from './assets/field-outing'
-import { shellRockProfile } from './assets/geometry/site-props'
 import { createBuoy, createDock, createHarborBoat } from './assets/waterfront'
 import { createClothingCounter, createHomeChest, createRock, createTree, createUmbrella, createWardrobe, umbrellaColors } from './assets/props'
 import { createHouse } from './assets/buildings'
@@ -74,11 +73,12 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   showFarm([])
   const marketShower = createMarketShower(meshes)
   const boardY = groundHeight(jobBoard)
+  const { panel } = jobBoard.geometry
   for (const dx of [-0.66, 0.66]) meshes.box(jobBoard.x + dx, boardY + 0.91, jobBoard.z, 0.12, 1.82, 0.13, '#765641')
-  meshes.box(jobBoard.x, boardY + 1.38, jobBoard.z, 1.75, 0.93, 0.14, '#996447')
+  meshes.box(jobBoard.x, boardY + panel.centreY, jobBoard.z, panel.width, panel.height, panel.depth, '#996447')
   meshes.box(jobBoard.x, boardY + 1.88, jobBoard.z, 1.98, 0.14, 0.45, '#387e76')
   for (const dx of [-0.52, 0, 0.52]) {
-    meshes.box(jobBoard.x + dx, boardY + 1.38, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
+    meshes.box(jobBoard.x + dx, boardY + panel.centreY, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
   }
   createDock(meshes, saltBloomPile, study?.target === 'dock' ? study.material : undefined)
   const ferry = createFerryTerminal(meshes)
@@ -87,8 +87,8 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const shellglass = createShellglassTide(meshes, features.find((feature) => feature.site === 'shellglass' && feature.model === 'tide-staff'))
   const updateFieldScenery = createFieldOutingScenery(meshes)
   for (const point of shellRocks) {
-    const { size, heading } = point
-    const rock = meshes.sphere(point.x, groundHeight(point) + shellRockProfile.centreHeight, point.z, size, shellRockProfile.height, size * shellRockProfile.depthRatio, '#798b80')
+    const { geometry, heading } = point
+    const rock = meshes.sphere(point.x, groundHeight(point) + geometry.centreHeight, point.z, geometry.width, geometry.height, geometry.depth, '#798b80')
     rock.rotation.y = heading
     meshes.sphere(point.x + 0.025, groundHeight(point) + 0.165, point.z - 0.015, 0.16, 0.055, 0.12, '#ecd3aa')
   }

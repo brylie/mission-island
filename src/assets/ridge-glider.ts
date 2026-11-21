@@ -4,7 +4,7 @@ import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData'
 import type { MeshFactory } from '../island-meshes'
 import { groundHeight } from '../terrain'
 import type { Point } from '../world'
-import { ridgeHeading, ridgeLandingRadius, ridgeLandingSign, ridgeMeadow, ridgeRack, ridgeWind, ridgeWindsock, ridgeWing } from '../worlds/starter/ridge-scout'
+import { ridgeLandingRadius, ridgeLandingSign, ridgeMeadow, ridgeRack, ridgeWind, ridgeWindsock, ridgeWing } from '../worlds/starter/ridge-scout'
 import type { createCrew } from './crew'
 
 const spruce = '#56483b'
@@ -71,23 +71,25 @@ function createLandingCircle({ surface, paint }: MeshFactory) {
 
 export function createRidgeCourse(meshes: MeshFactory) {
   const { box, cylinder, paint } = meshes
-  const rack = siteRoot(meshes, ridgeRack, 'Windstone loan rack', ridgeHeading)
-  for (const side of [-1, 1]) box(side * 0.74, 0.58, 0, 0.14, 1.16, 0.14, spruce, rack)
-  box(0, 1.09, 0, 1.74, 0.14, 0.27, spruce, rack)
+  const rack = siteRoot(meshes, ridgeRack, 'Windstone loan rack', ridgeRack.heading)
+  for (const side of [-1, 1]) box(side * 0.74, 0.58, 0, 0.14, ridgeRack.geometry.postHeight, 0.14, spruce, rack)
+  box(0, 1.09, 0, 1.74, 0.14, ridgeRack.geometry.beamDepth, spruce, rack)
   box(0, 0.81, 0, 0.78, 0.24, 0.16, blue, rack)
 
   const sock = siteRoot(meshes, ridgeWindsock, 'Training windsock', Math.atan2(ridgeWind.x, ridgeWind.z))
-  cylinder(0, 1.32, 0, 0.05, 0.09, 2.64, 8, spruce, sock)
+  const { baseDiameter, height } = ridgeWindsock.geometry.pole
+  cylinder(0, height / 2, 0, 0.05, baseDiameter, height, 8, spruce, sock)
   for (let i = 0; i < 5; i++) {
     const part = cylinder(0, 2.55 - 0.018 * i, 0.13 + i * 0.2, 0.32 - 0.043 * i, 0.36 - 0.043 * i, 0.208, 12, i % 2 ? cream : orange, sock)
     part.rotation.x = Math.PI / 2
   }
 
   const markMeadow = createLandingCircle(meshes)
-  const entrance = siteRoot(meshes, ridgeLandingSign, 'Landing sign', ridgeHeading)
-  box(0, 0.63, 0, 0.15, 1.26, 0.15, spruce, entrance)
-  box(0, 1.29, 0, 1.44, 0.51, 0.19, paint(orange, true), entrance)
-  box(0, 1.29, 0.105, 0.83, 0.1, 0.031, paint(cream, true), entrance, false)
+  const entrance = siteRoot(meshes, ridgeLandingSign, 'Landing sign', ridgeLandingSign.heading)
+  const { post, face } = ridgeLandingSign.geometry
+  box(0, post.height / 2, 0, post.width, post.height, post.depth, spruce, entrance)
+  box(0, face.centreY, 0, face.width, face.height, face.depth, paint(orange, true), entrance)
+  box(0, face.centreY, 0.105, 0.83, 0.1, 0.031, paint(cream, true), entrance, false)
 
   return { rack, markMeadow }
 }

@@ -1,5 +1,4 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import { flowerBedFrame } from './geometry/site-props'
 import { fenceZ, front, gateway } from '../gate-layout'
 import type { MeshFactory } from '../island-meshes'
 import { seededRandom } from '../seeded-random'
@@ -42,7 +41,7 @@ const steppingStones = (() => {
 
 function flowerBed({ box, sphere }: MeshFactory, bed: typeof flowerBeds[number]) {
   const y = groundHeight(bed)
-  box(bed.x, y + 0.07, bed.z, bed.width + flowerBedFrame.overhang, 0.14, bed.depth + flowerBedFrame.overhang, plank)
+  box(bed.x, y + 0.07, bed.z, bed.geometry.width, 0.14, bed.geometry.depth, plank)
   box(bed.x, y + 0.15, bed.z, bed.width - 0.04, 0.04, bed.depth - 0.04, soil)
   // Staggered clumps of leaves and blooms so the bed reads as planted, not tiled.
   const across = Math.max(1, Math.round(bed.width / 0.32)), along = Math.max(1, Math.round(bed.depth / 0.32))
@@ -76,17 +75,19 @@ function cottageCharm({ box, sphere, cylinder }: MeshFactory) {
   box(x + 0.82, y + 2.05, z - d / 2 - 0.1, 0.16, 0.24, 0.14, '#2f3a36')
   box(x + 0.82, y + 2.05, z - d / 2 - 0.17, 0.1, 0.15, 0.02, '#ffd58a', undefined, false)
   box(x, y + 0.06, z - d / 2 - 0.3, 1.3, 0.12, 0.5, '#a9a294')
-  cylinder(rainBarrel.x, groundHeight(rainBarrel) + 0.4, rainBarrel.z, 0.52, 0.48, 0.8, 10, '#6f5a43')
-  for (const ring of [0.18, 0.62]) cylinder(rainBarrel.x, groundHeight(rainBarrel) + ring, rainBarrel.z, 0.55, 0.55, 0.05, 10, '#3f3c37')
+  const { height, rimDiameter } = rainBarrel.geometry
+  cylinder(rainBarrel.x, groundHeight(rainBarrel) + height / 2, rainBarrel.z, 0.52, 0.48, height, 10, '#6f5a43')
+  for (const ring of [0.18, 0.62]) cylinder(rainBarrel.x, groundHeight(rainBarrel) + ring, rainBarrel.z, rimDiameter, rimDiameter, 0.05, 10, '#3f3c37')
 }
 
 function carpentry({ box, cylinder, scene }: MeshFactory) {
   const pile = new TransformNode('Woodpile', scene)
   pile.position.set(woodpile.x, groundHeight(woodpile), woodpile.z)
   pile.rotation.y = woodpile.heading
-  for (let row = 0; row < 3; row++) {
-    for (let i = 0; i < 4 - row; i++) {
-      const piece = cylinder(-0.36 + i * 0.24 + row * 0.12, 0.12 + row * 0.2, 0, 0.21, 0.21, 0.62, 7, log, pile)
+  const { courses, bottomLogCount, logDiameter, logLength } = woodpile.geometry
+  for (let row = 0; row < courses; row++) {
+    for (let i = 0; i < bottomLogCount - row; i++) {
+      const piece = cylinder(-0.36 + i * 0.24 + row * 0.12, 0.12 + row * 0.2, 0, logDiameter, logDiameter, logLength, 7, log, pile)
       piece.rotation.x = Math.PI / 2
       const end = cylinder(-0.36 + i * 0.24 + row * 0.12, 0.12 + row * 0.2, -0.315, 0.17, 0.17, 0.02, 7, logEnd, pile)
       end.rotation.x = Math.PI / 2
@@ -95,7 +96,7 @@ function carpentry({ box, cylinder, scene }: MeshFactory) {
   const horse = new TransformNode('Sawhorse', scene)
   horse.position.set(sawhorse.x, groundHeight(sawhorse), sawhorse.z)
   horse.rotation.y = sawhorse.heading
-  box(0, 0.66, 0, 1.1, 0.1, 0.12, plank, horse)
+  box(0, 0.66, 0, sawhorse.geometry.beamWidth, 0.1, 0.12, plank, horse)
   for (const sx of [-0.42, 0.42]) {
     for (const sz of [-1, 1]) {
       const leg = box(sx, 0.33, sz * 0.13, 0.07, 0.72, 0.07, plank, horse)

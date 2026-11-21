@@ -396,7 +396,7 @@
   },
   "src/island-world.ts": {
     "no-magic-numbers": {
-      "count": 66
+      "count": 61
     }
   },
   "src/jobs.ts": {
@@ -851,7 +851,7 @@
   },
   "src/street-lights.ts": {
     "no-magic-numbers": {
-      "count": 25
+      "count": 21
     }
   },
   "src/surface-uvs.ts": {
@@ -1206,7 +1206,7 @@
   },
   "src/world.ts": {
     "no-magic-numbers": {
-      "count": 150
+      "count": 149
     }
   },
   "src/worlds/starter/coastline.ts": {

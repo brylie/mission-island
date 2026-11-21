@@ -1,4 +1,5 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { beachUmbrellaGeometry } from './geometry/site-props'
 import type { MeshFactory } from '../island-meshes'
 import { surfaces } from '../materials'
 import { treeTrunkRadius } from '../scenery'
@@ -77,7 +78,8 @@ export function createSupply({ scene, box, cylinder }: MeshFactory, kind: 'crate
 
 export function createUmbrella({ cylinder, surface }: MeshFactory, x: number, z: number, color: string, heightAt: (point: Point) => number = () => 0) {
   const y = heightAt({ x, z })
-  cylinder(x, y + 1.25, z, 0.12, 0.16, 2.5, 6, '#8c6545')
+  const { pole } = beachUmbrellaGeometry
+  cylinder(x, y + pole.centreY, z, pole.topDiameter, pole.baseDiameter, pole.height, 6, '#8c6545')
   cylinder(x, y + 2.6, z, 0.15, 3, 0.67, 8, color)
   // Adjacent woven bands share their hems and follow the sand beneath each corner.
   const ends = [-1.15, -0.99, -0.92, -0.84, 0.84, 0.92, 0.99, 1.15]

@@ -1,3 +1,5 @@
+import { mendingBenchGeometry } from './assets/geometry/wren-garden.ts'
+
 export interface Point {
   x: number
   z: number
@@ -67,12 +69,12 @@ export const crateStarts: Point[] = [
 export const extinguisherStarts: Point[] = [{ x: 20, z: 22 }, { x: 22, z: 22 }]
 // Wren works at a mending bench on the grass beside Harbor Depot road, at the north edge of the ferry freight yard.
 // The loaned toolbox lives on its top.
-export const mendingBench = { x: -23.4, z: -15.8, heading: Math.PI / 2, top: 0.86 }
+export const mendingBench = { x: -23.4, z: -15.8, heading: Math.PI / 2, geometry: mendingBenchGeometry }
 export const toolboxHome: Point = { x: mendingBench.x, z: mendingBench.z + 0.42 }
 export const itemStarts = [
   ...crateStarts.map((start) => ({ kind: 'crate' as const, start })),
   ...extinguisherStarts.map((start) => ({ kind: 'extinguisher' as const, start })),
-  { kind: 'toolbox' as const, start: toolboxHome, lift: mendingBench.top },
+  { kind: 'toolbox' as const, start: toolboxHome, lift: mendingBench.geometry.surface.top },
 ]
 export const wrenCottage = { x: -35.8, z: -2.4, w: 4.5, d: 3.9, h: 3.3, wall: '#e9d6c3', roof: '#6c5c86' }
 
