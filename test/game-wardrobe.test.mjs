@@ -20,8 +20,8 @@ test('players find their own wardrobe, see applied pieces, and recover them afte
     client.request('interact')
     assert.equal(client.messages.at(-1).type, 'open-wardrobe')
   }
-  const first = { uniform: 'default', skin: 'warm', shirt: 'blue', hat: 'none', hair: 'short', hairColor: 'black' }
-  const second = { uniform: 'default', skin: 'deep', hat: 'amber', trousers: 'sand', shoes: 'brown', eyes: 'narrow' }
+  const first = { uniform: 'default', skin: 'warm', shirt: 'blue', hat: 'none', hair: 'coils', hairColor: 'black' }
+  const second = { uniform: 'default', skin: 'deep', hair: 'bun', hat: 'amber', trousers: 'sand', shoes: 'brown', eyes: 'narrow' }
   a.request('appearance', { appearance: { ...first, shoes: 'constructor', trousers: 42 } })
   b.request('appearance', { appearance: second })
   h.advance()

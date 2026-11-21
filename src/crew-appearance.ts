@@ -8,10 +8,10 @@ export const uniforms = {
 export const anglerCost = 3
 
 export const skinTones = {
-  light: { name: 'Light', color: '#efbb99' },
-  warm: { name: 'Warm', color: '#d99c6c' },
-  medium: { name: 'Medium', color: '#b57a57' },
-  deep: { name: 'Deep', color: '#81503a' },
+  light: { name: 'Light', color: '#e4b08f' },
+  warm: { name: 'Warm', color: '#c68b61' },
+  medium: { name: 'Medium', color: '#a16b4b' },
+  deep: { name: 'Deep', color: '#67412f' },
 } as const
 
 export const everydayColors = {
@@ -26,7 +26,7 @@ export const hairColors = {
 } as const
 
 export const appearanceParts = {
-  hair: { label: 'Hair', choices: { short: 'Swept curls', bare: 'Shaved' } },
+  hair: { label: 'Hair', choices: { short: 'Swept curls', coils: 'Close coils', bun: 'Low bun', bare: 'Shaved' } },
   hairColor: { label: 'Hair color', choices: { chestnut: 'Chestnut', black: 'Black', blond: 'Honey blond' } },
   eyes: { label: 'Eyes', choices: { round: 'Round', narrow: 'Narrow' } },
   nose: { label: 'Nose', choices: { round: 'Round', small: 'Small' } },

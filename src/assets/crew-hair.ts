@@ -1,6 +1,8 @@
 import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
+import type { CrewAppearance } from '../crew-appearance'
+import { fittedHaircut, lowBun } from './crew-haircuts'
 import { sweptDetail } from './crew-shapes'
 
 const chestnut = '#50382f'
@@ -157,12 +159,19 @@ export function createCrewHair(meshes: MeshFactory, head: TransformNode) {
     mesh: sweptDetail(meshes, curls, name, chestnut, path, crest, 12),
     shade,
   }))
-  return (hex: string, shaved: boolean, cap: boolean) => {
-    root.setEnabled(!shaved)
-    curls.setEnabled(!cap)
+  const coils = fittedHaircut(meshes, root, 'coils', chestnut)
+  const gathered = fittedHaircut(meshes, root, 'bun', chestnut)
+  const bun = lowBun(meshes, root, chestnut)
+  return (hex: string, style: NonNullable<CrewAppearance['hair']>, cap: boolean) => {
+    root.setEnabled(style !== 'bare')
+    curls.setEnabled(!cap && style === 'short')
+    coils.setEnabled(!cap && style === 'coils')
+    gathered.setEnabled(!cap && style === 'bun')
+    bun.setEnabled(style === 'bun')
     cropped.setEnabled(cap)
     const pigment = Color3.FromHexString(hex)
     scalp.material = cropped.material = meshes.paint(pigment.scale(.88).toHexString())
+    coils.material = gathered.material = bun.material = meshes.paint(hex)
     for (const { mesh, shade } of locks) mesh.material = meshes.paint(pigment.scale(shade).toHexString())
   }
 }

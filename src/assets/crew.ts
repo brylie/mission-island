@@ -40,7 +40,7 @@ export function createCrew(meshes: MeshFactory, id: number) {
     const visible = showCap && hatEquipped
     head.cap.setEnabled(visible)
     head.brim.setEnabled(visible)
-    head.hair(hairColors[worn?.hairColor ?? 'chestnut'], worn?.hair === 'bare', visible)
+    head.hair(hairColors[worn?.hairColor ?? 'chestnut'], worn?.hair ?? 'short', visible)
   }
   function setCap(visible: boolean) {
     if (showCap === visible) return
@@ -66,7 +66,7 @@ export function createCrew(meshes: MeshFactory, id: number) {
     const tone = skinTones[appearance.skin === 'default' ? (base === 0 ? 'light' : 'medium') : appearance.skin].color
     const skin = paint(tone)
     const complexion = Color3.FromHexString(tone)
-    const warm = paint(Color3.Lerp(complexion, Color3.FromHexString('#aa6250'), .27).toHexString())
+    const warm = paint(new Color3(complexion.r, complexion.g * .95, complexion.b * .94).toHexString())
     const lips = paint(new Color3(complexion.r * .62, complexion.g * .57, complexion.b * .56).toHexString())
     head.smile.material = lips
     head.grin.material = lips

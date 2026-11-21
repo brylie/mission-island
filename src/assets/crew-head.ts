@@ -4,6 +4,7 @@ import type { Mesh } from '@babylonjs/core/Meshes/mesh'
 import type { MeshFactory } from '../island-meshes'
 import { garment, sweptDetail } from './crew-shapes'
 import { coastalProfile } from './coastal-profiles'
+import { headSection, skull } from './crew-scalp'
 import { createCrewEar } from './crew-ear'
 import { createCrewHair } from './crew-hair'
 
@@ -14,22 +15,12 @@ export function createCrewHead(meshes: MeshFactory, root: TransformNode, skin: M
   head.position.set(0, 1.315, .006)
   head.scaling.set(.90, .85, .92)
   const base = '#dfac83'
-  const skull: Parameters<typeof garment>[4] = [
-    [.012, 0, .052, .085, .104], [.027, 0, .044, .150, .145], [.056, 0, .041, .192, .172],
-    [.109, 0, .038, .232, .192], [.172, 0, .029, .261, .210], [.216, 0, .019, .276, .224],
-    [.303, 0, .010, .278, .224], [.384, 0, .002, .271, .222], [.452, 0, -.005, .251, .205],
-    [.505, 0, -.009, .211, .180], [.543, 0, -.012, .137, .127], [.56, 0, -.011, .027, .035],
-  ]
   const face = garment(meshes, head, 'Jaw, cheeks and brow', base, skull, .91, 36)
   // Drape the lips and brows on the same cheek sections that form the head.
   function facialLine(name: string, color: string, points: [number, number, number, number][]) {
     const line: Parameters<typeof sweptDetail>[4] = points.map(([x, y, width, relief]) => {
-      const row = skull.findIndex(section => section[0] >= y)
-      const lo = skull[row - 1], hi = skull[row]
-      const t = (y - lo[0]) / (hi[0] - lo[0])
-      const radius = lo[3] + (hi[3] - lo[3]) * t
-      const depth = lo[4] + (hi[4] - lo[4]) * t
-      const z = lo[2] + (hi[2] - lo[2]) * t + depth * (1 - Math.abs(x / radius) ** (2 / .91)) ** (.91 / 2)
+      const { center, width: radius, depth } = headSection(y)
+      const z = center + depth * (1 - Math.abs(x / radius) ** (2 / .91)) ** (.91 / 2)
       return [x, y, z, width, relief]
     })
     return sweptDetail(meshes, head, name, color, line, [0, 0, 1])
