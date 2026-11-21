@@ -1,4 +1,5 @@
 import type { DriftwoodFrame } from '../src/simulation/driftwood-school.ts'
+import { restoreFarmWork } from '../src/farm-orders.ts'
 import { farmPlots } from '../src/farm.ts'
 import { initialMaterialsWork } from '../src/materials-work.ts'
 import type { createJuniperHabitat } from '../src/juniper-habitat.ts'
@@ -37,6 +38,7 @@ export function restoreIsland(
     residents: { ...initialResidents(starterResidents), ...structuredClone(save?.world.residents) },
     aviation: restoreAviation(save?.world.aviation),
     journal: restoreJournal(save),
+    farmWork: restoreFarmWork(save?.world.produce),
     materialsWork: structuredClone(save?.world.materialsWork ?? initialMaterialsWork()),
   }
   state.skiff.speed = 0
@@ -60,7 +62,7 @@ export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['
     version: 4, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
     world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial },
-      gate, gateRepair, residents, journal, materialsWork,
+      gate, gateRepair, residents, journal, materialsWork, produce: state.farmWork.progress,
       ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }

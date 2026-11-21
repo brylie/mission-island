@@ -6,7 +6,8 @@ import { createRidgeHud, flightInput, ridgeActionHint } from './ridge-ui'
 import { readStorage, writeStorage } from './browser-storage'
 import { cleanCrewName } from './crew-appearance'
 import { createCrewGuide } from './crew-guide-ui'
-import { missionCard } from './mission-card'
+import { farmFeedback } from './farm-order-ui'
+import { createMissionHud } from './mission-ui'
 import { materialsFeedback, repairMaterials } from './materials-work'
 import { bindControlsToggle } from './controls-toggle-ui'
 import { bindLookOptions } from './look-options-ui'
@@ -43,13 +44,6 @@ const clock = element('island-clock')
 const light = element('status-light')
 const crewCount = element('crew-count')
 const crewRows = [element('crew-0'), element('crew-1')]
-const missionLabel = element('mission-label')
-const missionTitle = element('mission-title')
-const missionDescription = element('mission-description')
-const progress = element('progress-track')
-const segments = Array.from(progress.children)
-const progressLabel = element('progress-label')
-const missionStep = element('mission-step')
 const boardButton = element<HTMLButtonElement>('open-job-board')
 const boardDialog = element<HTMLDialogElement>('job-board-dialog')
 const board = createJobBoard(boardDialog, (id) => send({ type: 'take-job', id }))
@@ -63,6 +57,7 @@ const guide = createCrewGuide(guideDialog, (dismissed) => {
 const respawn = element<HTMLButtonElement>('respawn')
 bindControlsToggle(element<HTMLButtonElement>('controls-toggle'), element('game-controls'))
 const spray = element('spray-control')
+const updateMission = createMissionHud(element, boardButton, spray)
 const cameraButton = element<HTMLButtonElement>('camera')
 const orbitControl = element('orbit-control')
 const optionsButton = element<HTMLButtonElement>('options-button')
@@ -161,25 +156,6 @@ try {
 showNotice()
 drawIslandMap(map, id)
 
-function updateMission(state: Snapshot) {
-  const card = missionCard(state, id)
-  missionLabel.textContent = card.label
-  missionTitle.textContent = card.title
-  missionDescription.textContent = card.detail
-  progress.setAttribute('aria-label', card.progress)
-  progress.setAttribute('aria-valuemax', String(card.max))
-  progress.setAttribute('aria-valuenow', String(card.value))
-  progressLabel.textContent = card.text
-  const count = card.max === 100 ? 3 : card.max
-  segments.forEach((segment, index) => {
-    segment.toggleAttribute('hidden', index >= count)
-    segment.classList.toggle('active', card.value >= (index + 1) * card.max / count)
-  })
-  boardButton.hidden = state.mission !== 'complete'
-  spray.hidden = state.mission !== 'fire'
-  if (missionStep.textContent !== card.instruction) missionStep.textContent = card.instruction
-}
-
 function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player | undefined) {
   const news = journal.update(state, player, earlier)
   if (news) actionFeedback = { key: '', label: news, until: performance.now() + 4200 }
@@ -246,7 +222,7 @@ function update(state: Snapshot) {
       : 'Open'
   })
 
-  updateMission(state)
+  updateMission(state, id)
   const player = connected.find((entry) => entry.id === id)
   ridgeHud.update(state, player)
   if (player) {
@@ -324,6 +300,9 @@ function connect() {
         actionFeedback = { key, label: catchLabel(incoming.fish) ?? label, until: performance.now() + 1900 }
         break
       }
+      case 'farm-pay': case 'barrow-returned':
+        actionFeedback = { ...farmFeedback(incoming), until: performance.now() + 4200 }
+        break
       case 'market-sale':
         actionFeedback = { key: `+${incoming.coins} coins`, label: 'Market sale · Crew bank', until: performance.now() + 2100 }
         break

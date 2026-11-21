@@ -8,6 +8,7 @@ import anglerThumb from './assets/harbor-angler.webp'
 import coralThumb from './assets/coral-shirt.webp'
 import swimsuitThumb from './assets/lagoon-swimsuit.webp'
 import { createWardrobePreview } from './wardrobe-preview'
+import { farmingQualified } from './farm-orders'
 import { pieceSlots } from './wardrobe-stock'
 
 function control<T extends HTMLElement>(dialog: HTMLDialogElement, selector: string) {
@@ -32,6 +33,7 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
   let preview: ReturnType<typeof createWardrobePreview> | undefined
   let draft = defaultAppearance
   let mission: Snapshot['mission'] = 'delivery'
+  let qualifiedFarmer = false
   let owned: ClothingId[] = []
   uniform.append(...optionList(Object.fromEntries(Object.entries(uniforms).map(([id, outfit]) => [id, outfit.name]))))
   skin.append(...optionList(Object.fromEntries(Object.entries(skinTones).map(([id, tone]) => [id, tone.name]))))
@@ -53,7 +55,7 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
   function refreshAccess() {
     for (const option of uniform.options) {
       const id = option.value as Uniform
-      const locked = outfitRequirement(id, mission, owned.includes('angler'))
+      const locked = outfitRequirement(id, mission, owned.includes('angler'), qualifiedFarmer)
       option.textContent = id === 'default' ? 'Everyday clothes' : uniforms[id].name + (locked ? ' · Locked' : '')
     }
     for (const { slot, field } of pieceSelects) {
@@ -66,7 +68,7 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
       .filter(({ field }) => !field.disabled)
       .map(({ slot }) => shopItemFor(slot, draft[slot]))
       .find(id => id && !owned.includes(id)) : undefined
-    const reason = outfitRequirement(draft.uniform, mission, owned.includes('angler')) ??
+    const reason = outfitRequirement(draft.uniform, mission, owned.includes('angler'), qualifiedFarmer) ??
       (item ? `Buy the ${clothingCatalog[item].name} at the Seabrook clothing counter.` : undefined)
     const note = wearsSwimsuit(draft) ? 'The swimsuit covers your top and bottoms.' :
       isEveryday(draft.uniform) ? '' : 'Your everyday clothes are saved for when you change back.'
@@ -85,8 +87,10 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
 
   function update(state: Snapshot, player: Player) {
     const next = clothingIds.filter(id => ownsClothing(player, id))
-    if (state.mission === mission && next.join() === owned.join()) return
+    const farmAccess = farmingQualified(state.farmWork.progress.stage)
+    if (state.mission === mission && next.join() === owned.join() && farmAccess === qualifiedFarmer) return
     mission = state.mission
+    qualifiedFarmer = farmAccess
     owned = next
     if (dialog.open) refreshAccess()
   }

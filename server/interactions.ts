@@ -13,6 +13,8 @@ import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
+import { isFarmAction } from '../src/farm-orders.ts'
+import type { createFarmOrders } from './farm-orders.ts'
 import type { createResidents } from './residents.ts'
 import type { createJournal } from './journal.ts'
 import type { createMaterialsWork } from './materials-work.ts'
@@ -22,7 +24,8 @@ export function createInteractions(
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
   residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>,
-  materials: ReturnType<typeof createMaterialsWork>,
+  farm: Pick<ReturnType<typeof createFarmOrders>, 'act'>,
+  materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>,
   journal: Pick<ReturnType<typeof createJournal>, 'record'>, checkpoint?: () => void,
 ) {
   function useHomeChest(member: CrewMember) {
@@ -93,7 +96,8 @@ export function createInteractions(
     recordCultivation(state, 'harvest', plot, player.id)
   }
 
-  function perform(member: CrewMember, { action, subject = -1 }: Interaction) {
+  function perform(member: CrewMember, action: Exclude<Interaction['action'], 'record'>, subject = -1) {
+    if (isFarmAction(action)) return farm.act(member, action)
     const item = state.items[subject]
     switch (action) {
       case 'put-down': return putDown(member, heldItem(state, member.player)!)
@@ -115,7 +119,6 @@ export function createInteractions(
       case 'choose-repair-material':
       case 'deliver-repair-material': return materials.act(member, action, subject)
       case 'job-board': return
-      case 'record': return journal.record(member.player, subject)
       default: return gate.act(member, action)
     }
   }
@@ -132,7 +135,10 @@ export function createInteractions(
     const chosen = choice ? options.find((option) => sameChoice(option, choice))
       : options.find(({ action }) => !deliberateActions.includes(action))
     if (!chosen) return
-    perform(member, chosen)
+    // A journal record touches nothing the other interactions handle, so it stays out of their switch.
+    const { action, subject } = chosen
+    if (action === 'record') journal.record(player, subject ?? -1)
+    else perform(member, action, subject)
     updateHeldItems(state)
   }
 

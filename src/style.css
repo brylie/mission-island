@@ -183,6 +183,7 @@ button:focus-visible { outline: 2px solid #ffc560; outline-offset: 4px; }
 .mission-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
 .mission-actions button { margin-top: 0; }
 .mission-actions button:disabled { opacity: .55; }
+.farm-hud { margin-top: 8px; border-top: 1px solid #dbcfaf; padding-top: 6px; }
 .ridge-hud { margin-top: 11px; border-top: 1px solid #dbcfaf; padding-top: 8px; }
 .ridge-hud strong { color: #234d45; font-size: 12px; }
 .ridge-hud p + p { margin-top: 5px; color: #234d45; font-weight: 780; }

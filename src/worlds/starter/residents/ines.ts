@@ -1,3 +1,4 @@
+import { farmOrderStatus, farmOffer } from '../../../farm-orders.ts'
 import type { ResidentDefinition } from '../../../residents/definition.ts'
 
 const porch = { x: 43, z: 18.7 }
@@ -15,12 +16,16 @@ export const ines: ResidentDefinition = {
     route: () => [porch, square, stall].map((point) => ({ point })),
   },
   conversation: {
-    lines({ tier, kept }) {
+    lines({ state, tier, kept }) {
+      const stage = state.farmWork.progress.stage
+      const produce = stage === 'offer' || stage === 'qualified'
+        ? `“See the produce counter beside my stall. ${farmOffer(stage === 'offer' ? 'starter' : 'harvest')}.”`
+        : farmOrderStatus(state.farmWork)
       if (kept.includes('ines-display')) {
-        return ['“Morning, you two! The fish display sold out before noon. People asked who caught it.”',
-          '“I set the best produce out first thing. Come by early if your crew has an order to fill.”']
+        return [`“Morning, you two! The fish display sold out before noon. People asked who caught it.” ${produce}`,
+          '“Carrot seed is always in stock.”']
       }
-      return [tier === 'stranger' ? '“Welcome to Seabrook Market. You must be the new harbor crew.”' : '“Good to see the harbor crew again.”',
+      return [`${tier === 'stranger' ? '“Welcome to Seabrook Market.”' : '“Good to see the harbor crew again.”'} ${produce}`,
         '“I buy what the crew catches and grows, and carrot seed is always in stock. Crew orders from the job board come through here too.”']
     },
   },

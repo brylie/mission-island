@@ -149,8 +149,8 @@ export function createEquipment(
   return { handlePrimary, isReadyToCast, updateFishing, equip }
 }
 
-export function setAppearance(player: Player, appearance: CrewAppearance, mission: Snapshot['mission']) {
-  const uniform = outfitRequirement(appearance.uniform, mission, ownsClothing(player, 'angler'))
+export function setAppearance(player: Player, appearance: CrewAppearance, mission: Snapshot['mission'], qualifiedFarmer: boolean) {
+  const uniform = outfitRequirement(appearance.uniform, mission, ownsClothing(player, 'angler'), qualifiedFarmer)
     ? player.appearance?.uniform ?? 'default' : appearance.uniform
   const pieces = pieceSlots.map(slot => {
     const item = shopItemFor(slot, appearance[slot])
