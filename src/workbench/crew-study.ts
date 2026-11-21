@@ -5,11 +5,13 @@ import { chargePower } from '../charged-actions'
 import { clothingCatalog, shopItemFor } from '../clothing-catalog'
 import { appearancePartKeys, appearanceParts, isEveryday, readAppearance, skinTones, uniforms, type CrewAppearance } from '../crew-appearance'
 import { walkingHeight, waterLevel } from '../terrain'
+import { pieceSlots } from '../wardrobe-stock'
 import { jumpGravity, jumpSpeed, skiffStart } from '../world'
 import { control, range, type Entry } from './subject'
 
 const duration = 2.4
 const skiffPreviewHeight = 0.44
+const garmentControls = new Set<string>(pieceSlots)
 
 function describeOutfit(appearance: CrewAppearance) {
   const everyday = isEveryday(appearance.uniform)
@@ -34,11 +36,11 @@ export const crewStudy: Entry = {
   description: 'Play or scrub the crew poses and compare uniform and skin color choices.',
   controls: [
     control('state', 'Animation', 'walk', { idle: 'Idle', walk: 'Walk', sprint: 'Sprint', jump: 'Jump', paddle: 'Paddle skiff', swim: 'Swim', tread: 'Tread water', reach: 'Left reach', raise: 'Raise right hand', carry: 'Carry crate', throw: 'Throw crate', spray: 'Use extinguisher' }, true),
-    control('uniform', 'Uniform', 'amber', Object.fromEntries(Object.entries(uniforms).map(([id, uniform]) => [id, uniform.name]))),
+    control('uniform', 'Uniform', 'amber', Object.fromEntries(Object.entries(uniforms).map(([id, uniform]) => [id, uniform.name])), true),
     control('skin', 'Skin tone', 'light', Object.fromEntries(Object.entries(skinTones).map(([id, tone]) => [id, tone.name]))),
     ...appearancePartKeys.map(key => {
       const { label, choices } = appearanceParts[key]
-      return control(key, label, 'default', { default: 'Default', ...choices })
+      return control(key, label, 'default', { default: 'Default', ...choices }, garmentControls.has(key))
     }),
     { type: 'checkbox', key: 'cap', label: 'Wear uniform cap', value: true },
     { type: 'checkbox', key: 'dyed', label: 'Use custom fabric dye', value: false },
@@ -47,6 +49,8 @@ export const crewStudy: Entry = {
   ],
   create(meshes, initial, _error, observe) {
     const crew = createCrew(meshes, 0)
+    crew.setAppearance(readAppearance(initial), { dye: initial.dyed ? String(initial.dye) : undefined })
+    crew.setCap(Boolean(initial.cap))
     if (initial.state === 'paddle') {
       const boat = createHarborBoat(meshes)
       boat.position.set(0, skiffPreviewHeight, 0)

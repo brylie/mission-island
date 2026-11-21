@@ -1,3 +1,5 @@
+import { isStockPiece, shopBottoms, shopHats, shopShoes, shopTops, stockChoices } from './wardrobe-stock.ts'
+
 export const uniforms = {
   amber: { name: 'Harbor amber', color: '#ffb54d', trim: '#fff3d0', unlock: '' },
   blue: { name: 'Coastal blue', color: '#77dffc', trim: '#e4faff', unlock: '' },
@@ -31,10 +33,10 @@ export const appearanceParts = {
   eyes: { label: 'Eyes', choices: { round: 'Round', narrow: 'Narrow' } },
   nose: { label: 'Nose', choices: { round: 'Round', small: 'Small' } },
   mouth: { label: 'Mouth', choices: { soft: 'Soft smile', wide: 'Wide smile' } },
-  shirt: { label: 'Shirt or swimsuit', choices: { amber: 'Harbor amber', blue: 'Coastal blue', coral: 'Coral shirt', lagoon: 'Lagoon swimsuit' } },
-  hat: { label: 'Hat', choices: { none: 'Bareheaded', amber: 'Amber cap', blue: 'Blue cap' } },
-  trousers: { label: 'Bottoms', choices: { slate: 'Slate trousers', sand: 'Sand trousers', 'slate-shorts': 'Slate shorts', 'sand-shorts': 'Sand shorts' } },
-  shoes: { label: 'Shoes', choices: { dark: 'Dark deck shoes', brown: 'Brown deck shoes', bare: 'Bare feet' } },
+  shirt: { label: 'Shirt or swimsuit', choices: { amber: 'Harbor amber', blue: 'Coastal blue', coral: 'Coral shirt', lagoon: 'Lagoon swimsuit', ...stockChoices(shopTops) } },
+  hat: { label: 'Hat', choices: { none: 'Bareheaded', amber: 'Amber cap', blue: 'Blue cap', ...stockChoices(shopHats) } },
+  trousers: { label: 'Bottoms', choices: { slate: 'Slate trousers', sand: 'Sand trousers', 'slate-shorts': 'Slate shorts', 'sand-shorts': 'Sand shorts', ...stockChoices(shopBottoms) } },
+  shoes: { label: 'Shoes', choices: { dark: 'Dark deck shoes', brown: 'Brown deck shoes', bare: 'Bare feet', ...stockChoices(shopShoes) } },
 } as const
 
 type AppearancePart = keyof typeof appearanceParts
@@ -61,8 +63,8 @@ export function uniformPalette(uniform: Uniform, id: number) {
 }
 
 export function shirtColor(appearance: CrewAppearance, id: number) {
-  return isEveryday(appearance.uniform) && appearance.shirt ? everydayColors[appearance.shirt]
-    : uniformPalette(appearance.uniform, id)
+  if (!isEveryday(appearance.uniform) || !appearance.shirt) return uniformPalette(appearance.uniform, id)
+  return isStockPiece('shirt', appearance.shirt) ? shopTops[appearance.shirt] : everydayColors[appearance.shirt]
 }
 
 export function outfitRequirement(uniform: Uniform, mission: 'delivery' | 'fire' | 'complete', ownsAngler: boolean) {

@@ -306,12 +306,14 @@ kbd {
 #outfit-requirement:empty, #counter-note:empty { display: none; }
 .wardrobe-actions button { margin-left: 0; }
 .wardrobe-actions [data-close] { color: var(--ink); background: #e8d9b4; }
-#clothing-counter-dialog { width: min(390px, calc(100% - 28px)); }
+#clothing-counter-dialog { width: min(665px, calc(100% - 28px)); }
 .counter-account { margin-bottom: 12px; }
 .counter-account p { margin: 0 0 4px; overflow-wrap: anywhere; }
-.counter-stock { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.counter-category { justify-content: space-between; }
+.counter-category select { padding: 5px 7px; font: inherit; color: var(--ink); background: #fffbec; border: 1px solid #c9c3ac; border-radius: 4px; }
+.counter-stock { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 6px; max-height: min(47vh, 460px); overflow-y: auto; margin: 4px 0 0; padding: 0 3px 0 0; list-style: none; }
 .counter-item { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 8px 10px; border: 1px solid #dbcfaf; border-radius: 6px; }
-.counter-item img { display: block; width: clamp(64px, 23vw, 88px); height: auto; border-radius: 5px; }
+.counter-item img { display: block; width: clamp(62px, 22vw, 84px); height: auto; border-radius: 5px; }
 .counter-item > div { overflow-wrap: anywhere; }
 .counter-item h3 { margin: 0; font-size: 16px; }
 .options-dialog .counter-item button { margin: 5px 0 0; }

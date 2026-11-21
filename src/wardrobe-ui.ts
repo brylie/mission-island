@@ -8,6 +8,7 @@ import anglerThumb from './assets/harbor-angler.webp'
 import coralThumb from './assets/coral-shirt.webp'
 import swimsuitThumb from './assets/lagoon-swimsuit.webp'
 import { createWardrobePreview } from './wardrobe-preview'
+import { pieceSlots } from './wardrobe-stock'
 
 function control<T extends HTMLElement>(dialog: HTMLDialogElement, selector: string) {
   return dialog.querySelector<T>(selector)!
@@ -46,7 +47,7 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
     row.append(caption, select)
     control(dialog, key === 'shirt' || key === 'hat' || key === 'trousers' || key === 'shoes' ? '#everyday-pieces' : '#personal-parts').append(row)
   }
-  const shirt = control<HTMLSelectElement>(dialog, '[name=shirt]')
+  const pieceSelects = pieceSlots.map(slot => ({ slot, field: control<HTMLSelectElement>(dialog, `[name=${slot}]`) }))
   const trousers = control<HTMLSelectElement>(dialog, '[name=trousers]')
 
   function refreshAccess() {
@@ -55,13 +56,18 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
       const locked = outfitRequirement(id, mission, owned.includes('angler'))
       option.textContent = id === 'default' ? 'Everyday clothes' : uniforms[id].name + (locked ? ' · Locked' : '')
     }
-    for (const option of shirt.options) {
-      const item = shopItemFor('shirt', option.value)
-      if (item) option.textContent = clothingCatalog[item].name + (owned.includes(item) ? '' : ' · Locked')
+    for (const { slot, field } of pieceSelects) {
+      for (const option of field.options) {
+        const item = shopItemFor(slot, option.value)
+        if (item) option.textContent = clothingCatalog[item].name + (owned.includes(item) ? '' : ' · Locked')
+      }
     }
-    const item = isEveryday(draft.uniform) ? shopItemFor('shirt', draft.shirt) : undefined
+    const item = isEveryday(draft.uniform) ? pieceSelects
+      .filter(({ field }) => !field.disabled)
+      .map(({ slot }) => shopItemFor(slot, draft[slot]))
+      .find(id => id && !owned.includes(id)) : undefined
     const reason = outfitRequirement(draft.uniform, mission, owned.includes('angler')) ??
-      (item && !owned.includes(item) ? `Buy the ${clothingCatalog[item].name} at the Seabrook clothing counter.` : undefined)
+      (item ? `Buy the ${clothingCatalog[item].name} at the Seabrook clothing counter.` : undefined)
     const note = wearsSwimsuit(draft) ? 'The swimsuit covers your top and bottoms.' :
       isEveryday(draft.uniform) ? '' : 'Your everyday clothes are saved for when you change back.'
     availability.textContent = reason ?? note
@@ -121,10 +127,16 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
   return { open, update }
 }
 
-const thumbnails: Record<ClothingId, { src: string; alt: string }> = {
+const starterThumbnails = {
   angler: { src: anglerThumb, alt: 'Shirt, trousers, cap, and shoes displayed separately' },
   'coral-shirt': { src: coralThumb, alt: 'Coral shirt with pale collar and cuffs' },
   'lagoon-swimsuit': { src: swimsuitThumb, alt: 'Teal one-piece swimsuit with short legs' },
+}
+const collectionThumbnails = import.meta.glob<string>('./assets/clothing/*.webp', { eager: true, query: '?url', import: 'default' })
+
+function thumbnail(id: ClothingId) {
+  if (id === 'angler' || id === 'coral-shirt' || id === 'lagoon-swimsuit') return starterThumbnails[id]
+  return { src: collectionThumbnails[`./assets/clothing/${id}.webp`], alt: `${clothingCatalog[id].name} shown by itself` }
 }
 
 function coinAmount(coins: number) {
@@ -136,10 +148,11 @@ export function createClothingCounter(dialog: HTMLDialogElement, buy: (id: Cloth
   const balance = control(dialog, '#counter-balance')
   const note = control(dialog, '#counter-note')
   const stock = control(dialog, '#counter-stock')
+  const category = control<HTMLSelectElement>(dialog, '#counter-category')
   const pending = new Set<ClothingId>()
   const rows = clothingIds.map(id => {
-    const { name, price } = clothingCatalog[id]
-    const { src, alt } = thumbnails[id]
+    const { name, price, slot } = clothingCatalog[id]
+    const { src, alt } = thumbnail(id)
     const card = document.createElement('li')
     card.className = 'counter-item'
     const image = new Image(88, 88)
@@ -159,7 +172,11 @@ export function createClothingCounter(dialog: HTMLDialogElement, buy: (id: Cloth
     details.append(heading, button)
     card.append(image, details)
     stock.append(card)
-    return { id, button, name, price, label: `Buy for ${coinAmount(price)}` }
+    return { id, slot, card, button, name, price, label: `Buy for ${coinAmount(price)}` }
+  })
+  category.addEventListener('change', () => {
+    for (const { slot, card } of rows) card.hidden = category.value !== 'all' && category.value !== slot
+    stock.scrollTop = 0
   })
 
   function update(state: Snapshot, player: Player, atCounter: boolean) {

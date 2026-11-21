@@ -5,13 +5,15 @@ import type { MeshFactory } from '../island-meshes'
 import { appearancePartKeys, defaultAppearance, everydayColors, hairColors, isEveryday, shirtColor, skinTones, uniformPalette, uniforms, wearsSwimsuit } from '../crew-appearance'
 import type { CrewAppearance } from '../crew-appearance'
 import { waterLevel } from '../terrain'
+import { shopBottoms, shopShoes, shopTops, type StockId } from '../wardrobe-stock'
+import { createShopAttachments, wornStock } from './shop-garments'
 const cream = '#fff3d0'
 const workwear = {
   courier: { trousers: '#334957', shoes: '#3d342c' },
   rescue: { trousers: '#47383a', shoes: '#252630' },
   angler: { trousers: '#303f50', shoes: '#4d3a30' },
 }
-const everydayBottoms: Record<NonNullable<CrewAppearance['trousers']>, { color: string; cuff?: string }> = {
+const everydayBottoms: Record<Exclude<NonNullable<CrewAppearance['trousers']>, StockId<'trousers'>>, { color: string; cuff?: string }> = {
   slate: { color: '#36595e' },
   sand: { color: '#b79669' },
   'slate-shorts': { color: '#36595e', cuff: '#55747a' },
@@ -42,9 +44,82 @@ function createCrewLegs({ scene, sphere }: Pick<MeshFactory, 'scene' | 'sphere'>
   return { legs, trousers, shoes, bareShins, shorts, rolledHems }
 }
 
-export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
+
+type BodyMeshes = ReturnType<typeof createCrewLegs> & {
+  fabric: Mesh[]
+  accents: Mesh[]
+  skin: Mesh[]
+  bareArms: Mesh[]
+  torso: Mesh
+  swimSeam: Mesh
+}
+
+function dressMeshes(parts: Mesh[], material: Mesh['material'], visible: boolean) {
+  for (const part of parts) {
+    part.material = material
+    part.setEnabled(visible)
+  }
+}
+
+function styleTop(parts: BodyMeshes, appearance: CrewAppearance, cloth: Mesh['material'], trim: Mesh['material'], tone: Mesh['material']) {
+  const top = wornStock('shirt', appearance)
+  const swimming = wearsSwimsuit(appearance)
+  const sleeveless = swimming || Boolean(top && shopTops[top].sleeveless)
+  dressMeshes([parts.torso], cloth, !top)
+  dressMeshes(parts.fabric, cloth, !top && !swimming)
+  dressMeshes(parts.accents, trim, !top && !swimming)
+  dressMeshes([parts.swimSeam], trim, swimming)
+  dressMeshes(parts.bareArms, tone, sleeveless)
+  for (const mesh of parts.skin) mesh.material = tone
+}
+
+function styleBottoms(paint: MeshFactory['paint'], parts: BodyMeshes, appearance: CrewAppearance,
+  swimsuitCloth: Mesh['material'], tone: Mesh['material'], uniformColor?: string) {
+  const bottom = wornStock('trousers', appearance)
+  const swimming = wearsSwimsuit(appearance)
+  const cut = appearance.trousers
+  const style = isEveryday(appearance.uniform) && (cut === 'sand' || cut === 'slate-shorts' || cut === 'sand-shorts')
+    ? everydayBottoms[cut] : everydayBottoms.slate
+  const cuff = !swimming && style.cuff
+  const shorts = swimming || Boolean(cuff) || Boolean(bottom && shopBottoms[bottom].short)
+  const cloth = paint(uniformColor ?? style.color)
+  dressMeshes(parts.trousers, cloth, !bottom && !shorts)
+  dressMeshes(parts.shorts, swimming ? swimsuitCloth : cloth, !bottom && shorts)
+  dressMeshes(parts.rolledHems, cuff ? paint(cuff) : cloth, !bottom && Boolean(cuff))
+  dressMeshes(parts.bareShins, tone, shorts)
+}
+
+function styleShoes(paint: MeshFactory['paint'], shoes: Mesh[], appearance: CrewAppearance, tone: Mesh['material'], uniformColor?: string) {
+  const footwear = wornStock('shoes', appearance)
+  const open = Boolean(footwear && shopShoes[footwear].open)
+  const barefoot = open || (isEveryday(appearance.uniform) &&
+    (appearance.shoes === 'bare' || (wearsSwimsuit(appearance) && !appearance.shoes)))
+  const color = uniformColor ?? (appearance.shoes === 'brown' ? '#76523a' : '#294343')
+  dressMeshes(shoes, barefoot ? tone : paint(color), !footwear || open)
+  for (const shoe of shoes) {
+    shoe.position.y = barefoot ? -.58 : -.54
+    shoe.scaling.set(barefoot ? .255 : .36, barefoot ? .19 : .28, barefoot ? .41 : .56)
+  }
+}
+
+function createBodyStyle(paint: MeshFactory['paint'], parts: BodyMeshes) {
+  return (appearance: CrewAppearance, base: number, dye?: string) => {
+    const palette = shirtColor(appearance, base)
+    const tone = paint(skinTones[appearance.skin === 'default' ? (base === 0 ? 'light' : 'medium') : appearance.skin].color)
+    const { uniform } = appearance
+    const work = uniform === 'courier' || uniform === 'rescue' || uniform === 'angler' ? workwear[uniform] : undefined
+    const cloth = paint(dye ?? palette.color)
+    styleTop(parts, appearance, cloth, paint(palette.trim), tone)
+    styleBottoms(paint, parts, appearance, cloth, tone, work?.trousers)
+    styleShoes(paint, parts.shoes, appearance, tone, work?.shoes)
+  }
+}
+
+export function createCrew(meshes: MeshFactory, id: number) {
+  const { scene, sphere, paint } = meshes
   const root = new TransformNode(`Crew ${id + 1}`, scene)
-  const { legs, trousers, shoes, bareShins, shorts, rolledHems } = createCrewLegs({ scene, sphere }, root)
+  const legMeshes = createCrewLegs({ scene, sphere }, root)
+  const { legs } = legMeshes
   const arms: TransformNode[] = []
   const fabric: Mesh[] = []
   const accents: Mesh[] = []
@@ -84,66 +159,16 @@ export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
   const cap = sphere(0, 1.712, 0.016, 0.61, 0.31, 0.6, cream, root, true, 16)
   const brim = sphere(0, 1.654, 0.185, 0.615, 0.068, 0.53, cream, root, true, 16)
 
-  function dress(appearance: CrewAppearance, base: number, dye?: string) {
-    const uniform = shirtColor(appearance, base)
-    const tone = skinTones[appearance.skin === 'default' ? (base === 0 ? 'light' : 'medium') : appearance.skin]
-    const outfit = appearance.uniform
-    const work = outfit === 'courier' || outfit === 'rescue' || outfit === 'angler' ? workwear[outfit] : undefined
-    const bottoms = everydayBottoms[isEveryday(outfit) ? appearance.trousers ?? 'slate' : 'slate']
-    const colors = [
-      paint(dye ?? uniform.color), paint(uniform.trim), paint(tone.color),
-      paint(work?.trousers ?? bottoms.color),
-      paint(work?.shoes ?? (appearance.shoes === 'brown' ? '#76523a' : '#294343')),
-    ]
-    for (const [i, parts] of [fabric, accents, skin, trousers, shoes].entries()) {
-      for (const part of parts) part.material = colors[i]
-    }
-    torso.material = colors[0]
-    swimSeam.material = colors[1]
-    const swimming = wearsSwimsuit(appearance)
-    styleBottoms(swimming, swimming ? colors[0] : colors[3], colors[2], bottoms.cuff)
-    styleSkin(appearance, swimming, colors[2])
-  }
-
-  function styleBottoms(swimming: boolean, cloth: Mesh['material'], tone: Mesh['material'], cuff?: string) {
-    const cuffColor = !swimming && cuff ? paint(cuff) : undefined
-    const short = swimming || Boolean(cuffColor)
-    for (const part of trousers) part.setEnabled(!short)
-    for (const leg of shorts) {
-      leg.material = cloth
-      leg.setEnabled(short)
-    }
-    for (const hem of rolledHems) {
-      if (cuffColor) hem.material = cuffColor
-      hem.setEnabled(Boolean(cuffColor))
-    }
-    for (const shin of bareShins) {
-      shin.material = tone
-      shin.setEnabled(short)
-    }
-  }
-
-  function styleSkin(appearance: CrewAppearance, swimming: boolean, tone: Mesh['material']) {
-    const barefoot = isEveryday(appearance.uniform) && (appearance.shoes === 'bare' || (swimming && !appearance.shoes))
-    for (const part of [...fabric, ...accents]) part.setEnabled(!swimming)
-    for (const arm of bareArms) {
-      arm.material = tone
-      arm.setEnabled(swimming)
-    }
-    for (const shoe of shoes) {
-      if (barefoot) shoe.material = tone
-      shoe.position.y = barefoot ? -.58 : -.54
-      shoe.scaling.set(barefoot ? .255 : .36, barefoot ? .19 : .28, barefoot ? .41 : .56)
-    }
-    swimSeam.setEnabled(swimming)
-  }
+  const dress = createBodyStyle(paint, { ...legMeshes, fabric, accents, skin, bareArms, torso, swimSeam })
+  const shop = createShopAttachments(meshes, { root, arms, legs })
 
   let hatEquipped = true
   let showCap = true
   function positionHat() {
     const visible = showCap && hatEquipped
-    cap.setEnabled(visible)
-    brim.setEnabled(visible)
+    const stocked = shop.setHatVisible(visible)
+    cap.setEnabled(visible && !stocked)
+    brim.setEnabled(visible && !stocked)
     hair.position.y = visible ? 1.537 : 1.57
     hair.scaling.set(0.55, visible ? 0.29 : 0.37, visible ? 0.46 : 0.51)
   }
@@ -156,7 +181,7 @@ export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
 
   function styleHead(appearance: CrewAppearance, base: number, dye?: string) {
     const hat = isEveryday(appearance.uniform) ? appearance.hat ?? (wearsSwimsuit(appearance) ? 'none' : undefined) : undefined
-    const capPalette = hat && hat !== 'none' ? everydayColors[hat] : uniformPalette(appearance.uniform, base)
+    const capPalette = hat === 'amber' || hat === 'blue' ? everydayColors[hat] : uniformPalette(appearance.uniform, base)
     cap.material = paint(dye ?? capPalette.color)
     brim.material = paint(capPalette.trim)
     hatEquipped = hat !== 'none'
@@ -178,6 +203,7 @@ export function createCrew({ scene, sphere, paint }: MeshFactory, id: number) {
     lastDye = dye
     lastBase = base
     worn = appearance
+    shop.sync(appearance)
     dress(appearance, base, dye)
     styleHead(appearance, base, dye)
   }

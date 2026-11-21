@@ -51,6 +51,8 @@ Free choices include Amber and Blue shirts and caps, Slate and Sand trousers or 
 
 At Seabrook Market, press **E** at the clothing counter beside the striped awning. Buy the Coral shirt for one crew coin, the Lagoon swimsuit for two, or the Harbor angler outfit for three. Each purchase goes into the buyer’s wardrobe and can be worn again for free. Select the swimsuit under **Shirt or swimsuit**. It covers your top and bottoms while worn, and your chosen trousers or shorts are ready when you change back.
 
+Use **Browse** at the counter to filter hats, tops and swimwear, bottoms, footwear, or complete outfits. The Seabrook collection costs one to three crew coins per piece. You can try on a piece in the wardrobe before you own it.
+
 The delivery and lookout fire missions unlock work outfits for both crewmates. Each player can wear one independently and return to their saved everyday clothes.
 
 The island clock runs one day every eight real minutes. At night, press **E** at your cottage door. Dawn begins when every connected player turns in. Press **E** again or walk away to cancel while waiting.
