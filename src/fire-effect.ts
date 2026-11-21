@@ -7,7 +7,7 @@ import { lookoutParticleHeights, particleRecipes } from './particle-recipes'
 import { createParticleTexture } from './particle-texture'
 import { groundHeight } from './terrain'
 
-export function createLookoutFire(scene: Scene, x: number, z: number) {
+export function createLookoutFire(scene: Scene, x: number, z: number, visitPreview = false) {
   const y = groundHeight({ x, z })
   const flame = new ParticleSystem('Lookout flames', 380, scene)
   flame.particleTexture = createParticleTexture(scene, 'flame')
@@ -41,12 +41,16 @@ export function createLookoutFire(scene: Scene, x: number, z: number) {
       const active = intensity > 0
       if (active !== burning) {
         if (active) flame.start()
-        else flame.stop()
+        else {
+          flame.stop()
+          if (visitPreview) flame.reset()
+        }
         burning = active
       }
       const tuning = { strength: intensity, footprint: 1 }
-      smoke.stream(time, smokeSource, tuning)
-      embers.stream(time, emberSource, tuning)
+      const effectTime = visitPreview && !active ? 0 : time
+      smoke.stream(effectTime, smokeSource, tuning)
+      embers.stream(effectTime, emberSource, tuning)
     },
   }
 }
