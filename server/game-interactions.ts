@@ -8,6 +8,7 @@ import { createFarmOrders } from './farm-orders.ts'
 import { createFerryRepair } from './ferry-repair.ts'
 import type { createFreight } from './freight.ts'
 import { createGateRepair } from './gate-repair.ts'
+import { createGateSwell } from './gate-swell.ts'
 import { homeInteractions } from './home-interactions.ts'
 import { createInteractions } from './interactions.ts'
 import type { createJournal } from './journal.ts'
@@ -32,7 +33,11 @@ export function createGameInteractions(
 ) {
   const { notifyAll: notifyCrew } = crew
   const gate = createGateRepair(state, notifyCrew, () => residents.keep(wren, wren.favors[0]))
-  const residents = createResidents(state, starterResidents, physics, notifyCrew, { wren: gate.talk, mara: journal.hearMara }, checkpoint)
+  const swell = createGateSwell(state, notifyCrew)
+  const residents = createResidents(state, starterResidents, physics, notifyCrew, {
+    talk: { wren: gate.talk, mara: journal.hearMara },
+    ...swell.hooks,
+  }, checkpoint)
   const farm = createFarmOrders(state, notifyCrew, clock, checkpoint)
   const materials = createMaterialsWork(state, notifyCrew, () => residents.keep(wren, repairSupplyFavor))
   const ferry = createFerryRepair(state, physics, notifyCrew, freight.creditCrate)
@@ -43,6 +48,7 @@ export function createGameInteractions(
   })
   const interactions = createInteractions(state, {
     ...gate.interactions,
+    ...swell.interactions,
     ...ferry.interactions,
     ...residents.interactions,
     ...farm.interactions,

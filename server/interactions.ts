@@ -15,7 +15,7 @@ export type InteractionHandlers<Action extends InteractionAction = InteractionAc
 export function createInteractions(
   state: Snapshot,
   handlers: InteractionHandlers,
-  physics: Pick<ReturnType<typeof createCargoPhysics>, 'release'>,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'release' | 'relocate'>,
   checkpoint?: () => void,
 ) {
   // E runs the interaction the player chose, only while it is still open to them; with no choice, the best one in reach.
@@ -45,7 +45,9 @@ export function createInteractions(
     if (item) {
       item.holder = null
       const safe = canOccupyGround(player, crateSize / 2, -maxWadeDepth) && waterDepth(player) <= maxWadeDepth
-      if (item.kind === 'crate') physics.release(item, safe ? player : itemStarts[item.id].start)
+      // A crate carried into danger returns to its start quietly; one set down where the crewmate stands is a real drop.
+      if (item.kind === 'crate' && safe) physics.release(item, player)
+      else if (item.kind === 'crate') physics.relocate(item, itemStarts[item.id].start)
       else {
         const point = safe ? player : itemStarts[item.id].start
         Object.assign(item, { x: point.x, z: point.z, y: safe ? groundHeight(point) + 0.04 : restingY(item.id), spraying: false })

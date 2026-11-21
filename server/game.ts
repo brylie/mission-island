@@ -34,14 +34,20 @@ type GameOptions = {
 }
 
 // The truck carries its driver's input and records driven distance; the skiff moves with its rowers.
+// Crate sound cues carry IDs that stay unique for the life of the host process.
+const impactSession = Date.now().toString(36)
+let impactCount = 0
+
 function stepVehicles(
   state: Snapshot, members: CrewMember[], active: (member: CrewMember) => boolean,
   physics: ReturnType<typeof createCargoPhysics>, freight: ReturnType<typeof createFreight>,
+  notifyAll: (notice: CrewNotice) => void,
 ) {
   const driver = members.find((member) => member.player.seat === 'driver')
   const before = state.truck
   physics.placeBarrow(state.farmWork.barrow)
   state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds)
+  for (const impact of physics.drainImpacts()) notifyAll({ type: 'crate-impact', id: `${impactSession}:${++impactCount}`, ...impact })
   if (driver && active(driver)) freight.recordDrive(driver.player, state.items, Math.hypot(state.truck.x - before.x, state.truck.z - before.z))
   const rowers = members.filter((member) => inSkiff(member.player.seat) && active(member))
   const still = stepSkiff(state.skiff, rowers.map((member) => member.input), tickSeconds)
@@ -63,8 +69,7 @@ function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoP
 
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
   const physics = createCargoPhysics()
-  const juniper = createJuniperHabitat()
-  const driftwood = createDriftwoodSchool(clock() >>> 0)
+  const juniper = createJuniperHabitat(), driftwood = createDriftwoodSchool(clock() >>> 0)
   const world = restoreIsland(physics, juniper, driftwood.frame(), save)
   const { state, growth } = world
   const trial = playtest && settleTrial(state, physics, prepareTrial(state, playtest))
@@ -91,7 +96,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     for (const place of [physics.placeGateLeaf, physics.placeFerry]) place(state)
     const members = crew.members()
     const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - 400
-    const { before, still } = stepVehicles(state, members, active, physics, freight)
+    const { before, still } = stepVehicles(state, members, active, physics, freight, crew.notifyAll)
     for (const item of state.items) item.spraying = false
     for (const member of members) {
       const { player } = member

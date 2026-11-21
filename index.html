@@ -198,9 +198,15 @@
       </div>
       <div id="resident-conversation" hidden>
         <p id="resident-line"></p>
+        <p id="resident-remark"></p>
         <p id="resident-advice"></p>
-        <button id="resident-accept" type="button" hidden></button>
+        <p id="resident-favor" hidden></p>
         <section id="resident-field-notes" aria-label="Field clues"></section>
+        <div class="resident-choices">
+          <button id="resident-accept" type="button" hidden></button>
+          <button id="resident-report-sound" type="button" hidden></button>
+          <button id="resident-report-fault" type="button" hidden></button>
+        </div>
       </div>
       <form method="dialog"><button type="submit" autofocus>Close</button></form>
     </dialog>
@@ -236,6 +242,12 @@
           <label><input id="invert-horizontal" type="checkbox" autofocus /> Invert horizontal look</label>
           <label><input id="invert-vertical" type="checkbox" /> Invert vertical look</label>
           <label class="look-speed">Look speed <input id="look-speed" type="range" min="0.4" max="2" step="0.1" value="1" /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Sound</legend>
+          <label class="look-speed">Ambience <input id="sound-ambience" type="range" min="0" max="1" step="0.05" value="0.7" /></label>
+          <label class="look-speed">Effects <input id="sound-effects" type="range" min="0" max="1" step="0.05" value="0.8" /></label>
+          <label><input id="sound-muted" type="checkbox" /> Mute sound</label>
         </fieldset>
         <fieldset class="appearance">
           <legend>Crew appearance</legend>

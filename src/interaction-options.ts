@@ -2,6 +2,7 @@ import { farmActions, farmInteractions } from './farm-orders.ts'
 import { ferryActions, ferryInteractions } from './ferry-repair.ts'
 import { fieldActions, fieldInteractions } from './field-interactions.ts'
 import { gateActions, gateInteractions } from './gate-repair.ts'
+import { swellActions, swellInteractions } from './gate-swell.ts'
 import { cargoActions, heldItem, pickupOptions, putDownOption } from './interactions/cargo.ts'
 import type { InteractionChoice as Choice, InteractionOption } from './interactions/definition.ts'
 import { homeActions, homeInteractions, welcomeNote } from './interactions/home.ts'
@@ -15,6 +16,7 @@ import { starterResidents } from './worlds/starter/residents.ts'
 
 const actionPolicies = {
   ...gateActions,
+  ...swellActions,
   ...ferryActions,
   ...residentActions,
   ...farmActions,
@@ -55,6 +57,7 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
   const sightings = journalInteractions(state, player).filter(({ at }) =>
     !field.some(inspection => inspection.at.x === at?.x && inspection.at.z === at?.z))
   return [
+    ...swellInteractions(state, player),
     ...gate.primary,
     ...(held ? [putDownOption(state, player, held)] : []),
     ...homeInteractions(state, player),

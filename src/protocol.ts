@@ -140,7 +140,8 @@ export type ServerMessage =
   | { type: 'tide-staff'; time: number }
   | { type: 'field-unavailable' }
   | { type: 'favor-accepted'; resident: string; favor: string; playerId: number }
-  | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number }
+  | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number; restored: boolean }
+  | { type: 'favor-report'; resident: string; favor: string; playerId: number; result: 'honest' | 'broken'; trust: number }
   | { type: 'gate-step'; step: GateStep }
   | { type: 'materials-step'; step: 'gathered' | 'inspected' | 'timber-checked' | 'qualified'; material: RepairMaterial }
   | { type: 'materials-step'; step: 'delivered'; material: RepairMaterial; remaining: number }
@@ -151,6 +152,8 @@ export type ServerMessage =
   | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }
   | { type: 'flight-result'; result: FlightResult; pilotId: number; aerial?: string[]; recorded?: number }
   | { type: 'aerial-sighting'; id: string }
+  // A transient sound cue from host physics. Never saved; clients drop repeated or late IDs.
+  | { type: 'crate-impact'; id: string; item: number; x: number; y: number; z: number; strength: number; surface: 'ground' | 'bed' }
   | { type: 'full' | 'duplicate' }
 
 export type ClothingPurchaseResult = 'bought' | 'already-owned' | 'insufficient-funds' | 'away'

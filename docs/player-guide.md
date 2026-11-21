@@ -20,9 +20,11 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | **Mouse** | Look around your character or vehicle. The first gameplay keypress captures the mouse. Aim the reticle at something you can use to choose it: it turns gold and a tooltip names the thing and the key. With nothing under the reticle, **E** uses whatever is nearest. |
 | **Esc** | Release the mouse. Press a gameplay key to capture it again. |
 | **J** | Open the crew's field journal. Press **J** again or **Esc** to close it. |
-| **O** | Open Options for your name, appearance, mouse look (invert either axis, look speed), and **Respawn at home**. |
+| **O** | Open Options for your name, appearance, mouse look (invert either axis, look speed), sound (ambience and effects levels, mute), and **Respawn at home**. |
 
 Bring crates to the tail of the truck to set them on the bed. Amber orbs appear along the recommended route once a crate is loaded. Jump over the low rear lip and ride along on the bed as the truck moves. The side rails and rear lip help keep crates aboard through turns. At Seabrook, step out, collect each crate from the bed, and press **E** with the crate inside the glowing teal delivery circle. The beach has a shallow wading shelf. You slow down as the water gets deeper.
+
+Sound starts after your first click or key press. Surf grows as you near the shore, and your boots sound different on gravel paths, dock boards and sand. Both crewmates hear a crate land, from where each of them stands, and a harder drop sounds heavier than a gentle set-down. Every cue also has visible feedback, so muting changes nothing you need to finish a job. **Options → Sound** sets ambience and effects levels or mutes this browser.
 
 Jump onto or over low rocks and crates. The bed or hood gives you a second jump onto the cab roof.
 
@@ -46,7 +48,9 @@ Wren lives in the lilac-roofed cottage just east of the Blue cottage. The garden
 
 ## Getting to know the neighbors
 
-Mara fishes from the small dock, Ines keeps the Seabrook Market stall, and Bram keeps the freight tally beside the Harbor Depot job board. Each walks to work in the morning and home in the evening on the shared clock. Aim at a resident and press **E** to talk. When someone needs a hand, the conversation offers **Agree to help**. Mara would like two carrots, Ines two fish, and Bram a crate set down in the yellow bay beside the depot. Either of you can agree, and either can finish it. The crew bank gets five coins once, the resident trusts the crew a little more, and their greeting changes. See [residents and favors](mechanics/resident-favors.md).
+Mara fishes from the small dock, Ines keeps the Seabrook Market stall, and Bram keeps the freight tally beside the Harbor Depot job board. Each walks to work in the morning and home in the evening on the shared clock. Aim at a resident and press **E** to talk. When someone needs a hand, the conversation offers **Agree to help**. Mara would like two carrots, Ines two fish, and Bram a crate set down in the yellow bay beside the depot. Either of you can agree, and either can finish it. The crew bank gets five coins once, the resident trusts the crew a little more, and their greeting changes. Talk again another day and they'll have something new to say about the weather, the island or the neighbors.
+
+Some jobs end with telling the resident how it went. If Wren asks whether the gate swings clear, tell the truth. Saying it does when you saw it catch costs Wren's trust, and it takes the crew a repair and two more favors to win it back. See [residents and favors](mechanics/resident-favors.md).
 
 ## Mara’s field outing
 

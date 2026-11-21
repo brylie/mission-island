@@ -18,6 +18,8 @@ export interface GateRepair {
   pinHolder: number | null
   acceptedAt?: number
   mendedAt?: number
+  // Wren's second repair: after a wet spell the leaf swells and catches until its edge is planed.
+  swelling?: 'swollen' | 'planed'
 }
 export interface GardenGate {
   open: boolean
@@ -35,8 +37,8 @@ export const gateActions = {
 export type GateAction = keyof typeof gateActions
 
 export const gateStages: readonly GateStage[] = ['sagging', 'accepted', 'inspected', 'fitted', 'mended']
-export type GateStep = 'inspected' | 'pin' | 'fitted' | 'stuck' | 'recalled' | 'returned'
-type GateWorld = Pick<Snapshot, 'gate' | 'gateRepair' | 'items' | 'players' | 'islandTime' | 'mission' | 'jobs'>
+export type GateStep = 'inspected' | 'pin' | 'fitted' | 'stuck' | 'recalled' | 'returned' | 'caught' | 'planed' | 'clear'
+export type GateWorld = Pick<Snapshot, 'gate' | 'gateRepair' | 'items' | 'players' | 'islandTime' | 'mission' | 'jobs' | 'residents'>
 
 export function initialGateRepair() {
   return {
@@ -68,7 +70,7 @@ export function wrenAt(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>) {
   return residentAt(wrenSchedule, state)
 }
 
-function atGate(player: Pick<Player, 'x' | 'z'>) {
+export function atGate(player: Pick<Player, 'x' | 'z'>) {
   return distance(player, gateway) <= actionRadius
 }
 
@@ -91,9 +93,15 @@ export function onBench(item: Pick<Item, 'x' | 'z' | 'holder'>) {
 }
 
 // The toolbox is on loan from the moment Wren asks. Once it is back on the bench after the repair, it stays there.
-export function toolboxPickable(state: Pick<Snapshot, 'gateRepair'>, item: Item) {
-  const { stage } = state.gateRepair
-  return stage !== 'sagging' && !(stage === 'mended' && onBench(item))
+// Once Wren relies on the crew without checking their work, the toolbox is theirs to borrow whenever they like.
+export function wrenLendsToolbox(state: Pick<Snapshot, 'residents'>) {
+  const wren = state.residents.wren
+  return Boolean(wren && wren.trust >= 3 && !wren.breach)
+}
+
+export function toolboxPickable(state: Pick<Snapshot, 'gateRepair' | 'residents'>, item: Item) {
+  const { stage, swelling } = state.gateRepair
+  return stage !== 'sagging' && !(stage === 'mended' && onBench(item) && !swelling && !wrenLendsToolbox(state))
 }
 
 function connectedAt(state: GateWorld, id: number | null) {
@@ -104,7 +112,11 @@ function connectedAt(state: GateWorld, id: number | null) {
 // Fit needs the acting player, the single unfitted pin and the toolbox at the gate at the same moment.
 export function canFit(state: GateWorld, player: Player) {
   if (state.gateRepair.stage !== 'inspected' || !standing(player) || !atGate(player)) return false
-  if (!connectedAt(state, state.gateRepair.pinHolder)) return false
+  return Boolean(connectedAt(state, state.gateRepair.pinHolder)) && toolboxAtGate(state)
+}
+
+// The toolbox counts at the gate when it is set down there or carried by a connected crewmate standing there.
+export function toolboxAtGate(state: GateWorld) {
   const toolbox = toolboxItem(state)
   if (!toolbox) return false
   return toolbox.holder === null ? atGate(toolbox) : Boolean(connectedAt(state, toolbox.holder))
@@ -146,6 +158,10 @@ function gateTarget(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>, action: 
     return { name: residentName, at: { x: wren.x, y: walkingHeight(wren) + 1.1, z: wren.z }, radius: .55 }
   }
   if (action === 'take-pin') return { name: 'Hinge pins', at: { x: mendingBench.x, y: walkingHeight(mendingBench) + .95, z: mendingBench.z }, radius: .6 }
+  return gateSwingTarget()
+}
+
+export function gateSwingTarget() {
   return { name: `${residentName}’s gate`, at: { x: gateway.x, y: walkingHeight(gateway) + .85, z: gateway.z }, radius: .8 }
 }
 
@@ -175,12 +191,15 @@ export const gateStepText: Record<GateStep, string> = {
   stuck: 'The gate drags in its groove and sticks',
   recalled: `${residentName} put the toolbox back on the mending bench`,
   returned: `Toolbox back on ${residentName}’s mending bench`,
+  caught: 'The gate catches on its swollen edge · Plane it with the toolbox, then swing it again',
+  planed: 'Swollen edge planed · Swing the gate to check it',
+  clear: `The gate swings clear · Tell ${residentName} it is fixed`,
 }
 
-// The leaf angle follows the host gate state. A mended gate swings clear; a sagging one drags short.
+// The leaf angle follows the host gate state. A mended gate swings clear; a sagging or swollen one stops short.
 export function leafAngle(state: Pick<Snapshot, 'gate' | 'gateRepair'>) {
   if (!state.gate.open) return 0
-  return state.gateRepair.stage === 'mended' ? openAngle : sagAngle
+  return state.gateRepair.stage === 'mended' && state.gateRepair.swelling !== 'swollen' ? openAngle : sagAngle
 }
 
 interface GateSolid {

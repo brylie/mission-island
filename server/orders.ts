@@ -13,7 +13,7 @@ import type { InteractionHandlers } from './interactions.ts'
 
 export function createOrders(
   state: Pick<Snapshot, 'crewCoins' | 'lastStarterPay' | 'items' | 'jobs' | 'mission' | 'islandTime' | 'lookoutFireClearedAt' | 'ferryRepair'>,
-  physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'release'>, notifyCrew: (message: CrewNotice) => void,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'relocate'>, notifyCrew: (message: CrewNotice) => void,
   creditCrate: (id: number) => void, checkpoint?: () => void,
 ) {
   function payCrew(message: Extract<CrewNotice, { type: 'job-pay' | 'order-pay' | 'market-sale' }>) {
@@ -40,7 +40,7 @@ export function createOrders(
         const crate = state.items[i]
         physics.remove(crate)
         Object.assign(crate, { holder: null, heading: 0, delivered: i >= job.quantity })
-        if (!crate.delivered) physics.release(crate, point)
+        if (!crate.delivered) physics.relocate(crate, point)
       }
     }
     checkpoint?.()

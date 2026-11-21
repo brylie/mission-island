@@ -46,7 +46,7 @@ export function putDownOption(state: Snapshot, player: Player, item: Item): Inte
 }
 
 // Crates are cargo while a delivery is open, a resident has asked the crew to move one, or ferry timber is on the way.
-function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 'ferryRepair'>, item: Item, player: Player, cargoWanted: boolean) {
+function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 'residents' | 'ferryRepair'>, item: Item, player: Player, cargoWanted: boolean) {
   const eligible = item.kind === 'crate' ? deliveryDrop(state) !== undefined || cargoWanted || state.ferryRepair.haul > 0
     : item.kind === 'toolbox' ? toolboxPickable(state, item) : state.mission === 'fire'
   return eligible && !item.delivered && item.holder === null && distance(item, player) < 2.7 && Math.abs(item.y - player.y) < 2.1

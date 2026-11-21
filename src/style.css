@@ -376,7 +376,9 @@ kbd {
 .crew-guide-dialog p + p { margin-top: 6px; }
 .crew-guide-dialog #toggle-fisher-lead { margin: 7px 0 0; color: #28473d; background: #e8d9b4; }
 .crew-guide-dialog #guide-favors > section, .crew-guide-dialog #guide-favors + section { margin-top: 12px; padding-top: 11px; border-top: 1px solid #dbcfaf; }
-.crew-guide-dialog #resident-accept { margin: 12px 0 0; }
+.crew-guide-dialog .resident-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.crew-guide-dialog .resident-choices button { margin: 0; }
+.crew-guide-dialog #resident-favor { color: var(--ink); font-weight: 600; }
 #resident-field-notes:not(:empty) { margin-top: 12px; padding-top: 11px; border-top: 1px solid #dbcfaf; }
 
 .job-board-dialog { width: min(560px, calc(100% - 28px)); max-height: calc(100% - 30px); }

@@ -3,6 +3,9 @@ import { interactions } from '../../src/interaction-options.ts'
 import type { Player, Snapshot } from '../../src/protocol.ts'
 import { daySeconds } from '../../src/weather.ts'
 import { updateHeldItems } from '../items.ts'
+import { swellFavor } from '../../src/gate-swell.ts'
+import { blankRecord } from '../../src/residents/trust.ts'
+import { walkingHeight } from '../../src/terrain.ts'
 import { standAt, type Scenario } from './scenario.ts'
 
 function outsideGate(player: Player, setback: number) {
@@ -44,9 +47,21 @@ export const wrenScenarios: Scenario[] = [
       garden.prepareWorld(state)
       state.islandTime = daySeconds + daySeconds * .8 / 24
       state.gateRepair = { stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: daySeconds / 4 }
-      state.residents.wren = { trust: 1, kept: [gateFavor], active: null }
+      state.residents.wren = { ...blankRecord(), trust: 1, kept: [gateFavor] }
       state.crewCoins = favorCoins
       state.lastFavorPay = { resident: 'wren', favor: gateFavor, coins: favorCoins }
+    },
+  },
+  {
+    // Two days on, the crew has agreed to plane the swollen gate. The toolbox is set down by the gate and Wren is
+    // at the mending bench, so the crew can check the swing and walk over to report, honestly or not.
+    ...garden, id: 'wren-swell', title: 'Wren · The swollen gate',
+    prepareWorld(state) {
+      garden.prepareWorld(state)
+      state.islandTime = daySeconds * 2 + daySeconds * 4 / 24
+      state.gateRepair = { stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: daySeconds / 4, swelling: 'swollen' }
+      state.residents.wren = { ...blankRecord(), trust: 1, kept: [gateFavor], active: swellFavor }
+      Object.assign(toolboxItem(state)!, { x: gateway.x + 1, z: gateway.z - 1.2, y: walkingHeight(gateway) + .04, holder: null })
     },
   },
 ]

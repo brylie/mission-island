@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { blankRecord } from '../src/residents/trust.ts'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -105,7 +106,7 @@ test('a solo player borrows the toolbox, finds the fault, fetches a pin and test
   act(h, a, 'talk')
   assert.equal(a.state.gateRepair.stage, 'accepted')
   assert.deepEqual(a.messages.filter(({ type }) => type === 'resident-chat'), [{ type: 'resident-chat', resident: 'wren' }])
-  assert.deepEqual(a.state.residents.wren, { trust: 0, kept: [], active: 'wren-gate' })
+  assert.deepEqual(a.state.residents.wren, { ...blankRecord(), trust: 0, kept: [], active: 'wren-gate' })
   walkTo(h, a, benchRoad[0], byBench)
   assert.deepEqual(actionHint(a.state, a.player), ['E', 'Pick up the toolbox'], 'Wren gives way to the toolbox on the bench')
   a.request('interact')
@@ -131,10 +132,10 @@ test('a solo player borrows the toolbox, finds the fault, fetches a pin and test
   act(h, a, 'test')
   assert.equal(a.state.gateRepair.stage, 'mended')
   assert.equal(a.state.crewCoins, coins + 5)
-  assert.deepEqual(a.state.residents.wren, { trust: 1, kept: ['wren-gate'], active: null })
+  assert.deepEqual(a.state.residents.wren, { ...blankRecord(), trust: 1, kept: ['wren-gate'], active: null })
   assert.deepEqual(a.state.lastFavorPay, { resident: 'wren', favor: 'wren-gate', coins: 5 })
   assert.deepEqual(a.messages.filter(({ type }) => type === 'favor-pay'),
-    [{ type: 'favor-pay', resident: 'wren', favor: 'wren-gate', coins: 5, trust: 1 }])
+    [{ type: 'favor-pay', resident: 'wren', favor: 'wren-gate', coins: 5, trust: 1, restored: false }])
   walkTo(h, a, garden, lane)
   assert.equal(a.state.items[toolboxId].holder, 0)
 })
@@ -297,7 +298,7 @@ test('partial and finished repairs survive a host restart; the next dawn changes
   const finished = createGame().snapshotForSave()
   finished.islandTime = at(10)
   Object.assign(finished.world, { gateRepair: { stage: 'mended', pinHolder: null, acceptedAt: at(8), mendedAt: at(10) },
-    residents: { ...finished.world.residents, wren: { trust: 1, kept: ['wren-gate'], active: null } },
+    residents: { ...finished.world.residents, wren: { ...blankRecord(), trust: 1, kept: ['wren-gate'], active: null } },
     lastFavorPay: { resident: 'wren', favor: 'wren-gate', coins: 5 }, crewCoins: 5 })
   finished.crewCoins = 5
   file.write(finished)
@@ -329,14 +330,14 @@ test('older saves gain the toolbox and gate defaults, and rejected gate data doe
   for (const key of ['gate', 'gateRepair', 'residents']) delete legacy.world[key]
   file.write(legacy)
   const migrated = file.load()
-  assert.equal(migrated.version, 5)
+  assert.equal(migrated.version, 6)
   const { gate, gateRepair, residents } = migrated.world
   assert.deepEqual({ gate, gateRepair }, initialGateRepair())
   assert.deepEqual(residents, current.world.residents)
   assert.ok(onBench(migrated.world.items[toolboxId]))
   assert.equal(migrated.world.items[toolboxId].kind, 'toolbox')
   for (const broken of [{ gateRepair: { stage: 'mended', pinHolder: null } }, { gate: { open: 'yes', closePending: false } },
-    { residents: { wren: { trust: -1, kept: [], active: null } } }, { gateRepair: { stage: 'polished', pinHolder: null } }]) {
+    { residents: { wren: { ...blankRecord(), trust: -1, kept: [], active: null } } }, { gateRepair: { stage: 'polished', pinHolder: null } }]) {
     file.write({ ...current, world: { ...current.world, ...broken } })
     assert.throws(() => file.load(), /Could not load island save/)
   }
