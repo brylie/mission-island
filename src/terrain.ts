@@ -1,9 +1,11 @@
 import { harborDock, island, onDock } from './world.ts'
 import type { Point } from './world.ts'
+import { createStarterCoast, starterCoastSeed } from './worlds/starter/coastline.ts'
 
 export const waterLevel = -0.115
 export const maxWadeDepth = 0.84
 export const offshoreLimitMetres = 75
+export const coastSegments = 512
 
 export const shoreProfile = [
   { radius: 0, y: 0 }, { radius: 0.865, y: 0 }, { radius: 0.905, y: -0.015 },
@@ -19,14 +21,19 @@ export const pool = { x: 23, z: 112 }
 export const grove = { x: -50, z: 72 }
 export const headland = { x: 39, z: 136 }
 
-function shoreShape(angle: number) {
-  const northern = Math.max(0, Math.sin(angle))
-  return (1 + 2.85 * northern ** 2) * (1 + Math.sin(angle * 5 + 0.2) * 0.018 + Math.cos(angle * 9) * 0.013)
-}
+const shoreShape = createStarterCoast(starterCoastSeed)
 
 export function coastPoint(angle: number, radius = 1): Point {
   const scale = radius * shoreShape(angle)
   return { x: Math.cos(angle) * island.width / 2 * scale, z: Math.sin(angle) * island.length / 2 * scale }
+}
+
+export function coastBounds(radius = 1) {
+  const coast = Array.from({ length: coastSegments }, (_, i) => coastPoint(i * 2 * Math.PI / coastSegments, radius))
+  return {
+    west: Math.min(...coast.map(({ x }) => x)), east: Math.max(...coast.map(({ x }) => x)),
+    south: Math.min(...coast.map(({ z }) => z)), north: Math.max(...coast.map(({ z }) => z)),
+  }
 }
 
 export function buoyBoundaryPoint(angle: number): Point {

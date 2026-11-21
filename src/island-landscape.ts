@@ -11,7 +11,7 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { seededRandom } from './scenery'
 import { distanceToRoads, distanceToRoute, footpaths, walkways } from './routes'
 import { inFerryYard } from './worlds/starter/ferry-terminal'
-import { coastPoint, coastRadius, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, pool, shoreProfile, streamX, tidePool, waterLevel } from './terrain'
+import { coastPoint, coastRadius, coastSegments, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, pool, shoreProfile, streamX, tidePool, waterLevel } from './terrain'
 import { buildings, distance, harbor, island, lookout, town } from './world'
 import type { MeshFactory } from './island-meshes'
 import { createOceanMaterial } from './ocean'
@@ -23,15 +23,16 @@ export function createIslandTerrain(meshes: MeshFactory, finish: { material: Mat
   wear: surfaceRecipe('meadow-turf').wear.amount,
 }) {
   const meadow = createMeadowSurface(finish.material)
+  // Refine around the stream and Shellglass. Share the angles at the joined rings.
+  const angleStep = 2 * Math.PI / coastSegments
+  const angles = Array.from({ length: coastSegments }, (_, j) => {
+    const angle = j * angleStep
+    const steps = angle > 1.38 && angle < 1.52 ? 6 : angle > 5.23 && angle < 5.60 ? 3 : 1
+    return Array.from({ length: steps }, (_, k) => angle + k / steps * angleStep)
+  }).flat()
+  angles.push(2 * Math.PI)
+  const segments = angles.length - 1
   function band(name: string, rings: readonly number[], sand: boolean) {
-    // Refine the angular sector around the narrow stream without tessellating every beach.
-    const angles = Array.from({ length: 256 }, (_, j) => {
-      const a = j * Math.PI / 128
-      const steps = a > 1.39 && a < 1.51 ? 12 : sand && a > 5.24 && a < 5.59 ? 5 : 1
-      return Array.from({ length: steps }, (_, k) => a + k / steps * Math.PI / 128)
-    }).flat()
-    angles.push(2 * Math.PI)
-    const segments = angles.length - 1
     const positions: number[] = []
     const uvs: number[] = []
     const colors: number[] = []

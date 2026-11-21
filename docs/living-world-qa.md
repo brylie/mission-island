@@ -33,6 +33,7 @@ For a LAN review, open the preview using the laptop’s LAN address before copyi
 
 ### Repeatable starter checks
 
+- Compare Island view with both shore approaches using seed 101 and reopen the views after a host restart. [Starter Island coastline](starter-coastline.md)
 - Walk both pavements, turn onto each front walk, then buy or sell at the market. Walk into the front of the village bench and jump onto the seat. Drop a loose crate onto the depot freight stack.
 - At Driftwood, walk over the towels and around the parasol poles. Wade out and stop to tread water, swim forward, then turn back toward shore. The eyes and mouth should clear the surface during the entire stroke. The Crew Workbench also has **Swim** and **Tread water** animation states.
 - Focus the Landscape Workbench at (13, 87) and orbit to the downstream bank. Follow the spring water over both ledges to its junction with the creek. Inspect the banks at a low angle and look for exposed sheet edges, submerged foam or spray rising above dry ground.

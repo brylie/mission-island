@@ -1,6 +1,6 @@
 import { footpaths, roads, walkways } from '../routes'
 import { islandTrees, northernProps } from '../scenery'
-import { coastPoint, groundHeight, waterLevel } from '../terrain'
+import { coastPoint, coastSegments, groundHeight, waterLevel } from '../terrain'
 import { buildings, dockEndZ, harborDock } from '../world'
 import type { Point } from '../world'
 import { landscapeMapSize, pointInWorld, pointOnMap } from './landscape-map-projection'
@@ -14,8 +14,8 @@ export function paintLandscapeMap(ink: CanvasRenderingContext2D) {
   }
   function coast(radius: number) {
     ink.beginPath()
-    for (let i = 0; i < 192; i++) {
-      const point = project(coastPoint(i * Math.PI / 96, radius))
+    for (let i = 0; i < coastSegments; i++) {
+      const point = project(coastPoint(i * 2 * Math.PI / coastSegments, radius))
       if (i === 0) ink.moveTo(...point)
       else ink.lineTo(...point)
     }

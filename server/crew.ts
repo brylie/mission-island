@@ -2,7 +2,7 @@ import { heldItem, inSkiff } from '../src/actions.ts'
 import type { ChargeKind } from '../src/charged-actions.ts'
 import { cleanCrewName } from '../src/crew-appearance.ts'
 import type { Input, Player, ServerMessage, Snapshot } from '../src/protocol.ts'
-import { groundHeight } from '../src/terrain.ts'
+import { groundHeight, withinSkiffBoundary } from '../src/terrain.ts'
 import { spawns } from '../src/world.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { recoverSceneryOverlap } from '../src/simulation/movement.ts'
@@ -60,6 +60,12 @@ export function createCrewRoster(
 
   for (const { token, player, reserved } of savedCrew) {
     const restored = restingPlayer(structuredClone(player))
+    // Inside the boundary the normal movement step handles changed depth,
+    // including resuming as a swimmer.
+    if (!restored.seat && !restored.onBed && !restored.truckSurface && !withinSkiffBoundary(restored)) {
+      const spawn = spawns[restored.id]
+      Object.assign(restored, spawn, { y: groundHeight(spawn), grounded: true, swimming: false })
+    }
     const solids = [...gateBlockers(state), ...ferrySolids(state)]
     recoverSceneryOverlap(restored, (point, padding) => solidTop(solids, point, padding))
     profiles.set(token, restored)
