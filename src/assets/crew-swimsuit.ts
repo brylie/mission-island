@@ -51,17 +51,44 @@ export function createSwimsuit(meshes: MeshFactory, root: TransformNode, legs: T
   // Along the outside of the body, follow the right outer arc and the left outer
   // arc in reverse. The shared seam inside that boundary belongs to both thighs.
   let lower = [...thighs[1].pelvis.slice(0, half + 1), ...thighs[0].pelvis.slice(1, half).reverse()]
-  for (const [y, width, depth, z, shoulderRise = 0] of [
+  for (const [y, width, depth, z] of [
     [.786, .265, .173, .002], [.868, .251, .168, -.006], [.948, .253, .177, -.009],
     [1.052, .277, .181, -.009], [1.139, .285, .168, -.010],
-    [1.167, .276, .160, -.010, .028], [1.190, .254, .150, -.008, .044],
-    [1.203, .226, .134, -.005, .053], [1.212, .190, .113, .001, .051],
-    [1.214, .147, .097, .006, .036],
   ]) {
-    // The neckline scoops front and back, with the same fabric rising over the shoulders.
-    const upper = ring((u, v) => vertex(width * u, y + shoulderRise * u ** 2, z + depth * v))
+    const upper = ring((u, v) => vertex(width * u, y, z + depth * v))
     addBand(indices, lower, upper)
     lower = upper
+  }
+
+  // Follow the bib out from its scooped center, across the strap roots and down the armhole.
+  const bib = [
+    [0, 1.179, .158, -.161], [.088, 1.188, .150, -.151],
+    [.124, 1.207, .127, -.146], [.198, 1.208, .122, -.129],
+    [.249, 1.175, .077, -.092], [.275, 1.161, .038, -.059], [.284, 1.155, -.010, -.010],
+  ]
+  const neckline = ring((u, v, i) => {
+    const [x, y, front, back] = bib[Math.min(i % half, half - i % half)]
+    return vertex(Math.sign(u) * x, y, v > 0 ? front : back)
+  })
+  addBand(indices, lower, neckline)
+  for (const side of [-1, 1]) {
+    const at = (i: number) => neckline[(sides + side * i) % sides]
+    let inner = at(10), outer = at(9)
+    // Cross the sloping collarbone and return to the same vertices on the back bib.
+    const rows = [
+      [1.242, .102, 1.244, .110], [1.268, .089, 1.268, .088],
+      [1.280, .079, 1.278, .077], [1.290, .037, 1.292, .038],
+      [1.290, -.010, 1.291, -.010], [1.287, -.056, 1.281, -.053],
+      [1.276, -.095, 1.266, -.086], [1.246, -.128, 1.239, -.114],
+    ]
+    const strap = rows.map(([innerY, innerZ, outerY, outerZ]) =>
+      [vertex(side * .124, innerY, innerZ), vertex(side * .188, outerY, outerZ)])
+    for (const [nextInner, nextOuter] of [...strap, [at(2), at(3)]]) {
+      const quad = [inner, nextInner, outer, outer, nextInner, nextOuter]
+      indices.push(...(side > 0 ? quad : quad.reverse()))
+      inner = nextInner
+      outer = nextOuter
+    }
   }
 
   const mesh = meshes.surface('Fitted one-piece swimsuit', rest, indices, color, root)

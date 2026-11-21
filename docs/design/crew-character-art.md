@@ -33,13 +33,17 @@ The **Swept curls** style has a rolled forelock above one brow, staggered tips a
 
 The face uses a slightly raised brow, compact eyes with a warm iris and one small catchlight, a rounded wedge nose, and an off-center smile. Each ear is a small, smooth shape with a fuller upper edge and a tapered lobe that meets the cheek. Keep the inner surface quiet enough to read at follow-camera distance. The soft and wide smiles each follow the cheeks. Lip color follows skin tone, and a closed blink leaves a short lash line. Compare both smiles and eye shapes in the Workbench across the skin palette under **Daylight** and **Golden hour**.
 
-The revised shirt hem sits about 0.77 m above the soles. The shoulder, hip and tool-grip pivots stay in their existing positions so the same base can carry a crate, paddle and swim. Try a cap, change the hair and skin colors, then switch to swimwear and bare feet. The swimsuit follows the collarbone and uses a single piece of fabric from the torso through both legs. Check the shoulder line and the hip silhouette with arms lowered, through the swim stroke, and seated in the skiff. The approved silhouette is the base for new wardrobe fittings.
+The revised shirt hem sits about 0.77 m above the soles. The shoulder, hip and tool-grip pivots stay in their existing positions so the same base can carry a crate, paddle and swim. Try a cap, change the hair and skin colors, then switch to swimwear and bare feet. The Lagoon swimsuit has two broad straps across the inner shoulders, a scooped neckline in front and back, and bare outer shoulders. The straps share vertices with the body of the suit, which continues through both legs. Check the shoulder line and the hip silhouette with arms lowered, through the swim stroke, and seated in the skiff. The approved silhouette is the base for new wardrobe fittings.
 
 ## Motion and wardrobe fitting
 
 ![Six frames from the playable model showing the swept hair, bareheaded profile, back of the cap, running boots, swimsuit in motion and seated paddle grip.](../images/crew-motion-fitting.jpg)
 
 Start in **Wardrobe → Crew character**. Pause **Sprint** mid-stride and orbit behind the raised heel. The shin and boot should swing together while the planted leg takes the weight. Repeat with bare feet. In **Swim**, watch both knees gather and extend through the stroke, then scrub back to **Idle** and check the shoulders around the neck.
+
+For the Lagoon fitting, select **Shirt or swimsuit → Lagoon swimsuit** and **Animation → Swim**. Pause at 0.0, 0.4, 0.8 and 1.2 seconds, then orbit half a turn and scrub the same poses from behind. Watch where each strap crosses the shoulder as the arms spread and gather.
+
+![Matched front and rear Workbench frames at four points in the Lagoon swimsuit stroke.](../images/crew-swimsuit-stroke.jpg)
 
 Switch to **Paddle skiff** and orbit along the gunwale. The lower hand works the blade on its own side while the opposite palm holds the upper shaft. Both knees bend beneath the seated figure. Use **Carry crate** to check the downward glance, then check the cap strap, nape and collar together from the follow-camera distance in Seabrook.
 
