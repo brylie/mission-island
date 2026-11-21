@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createGame } from '../server/game.ts'
-import { gateAction, gateMendedStage, onPeg, toolboxItem } from '../src/gate-repair.ts'
+import { gateAction, gateMendedStage, onBench, toolboxItem } from '../src/gate-repair.ts'
 import { checkpoints, checkpointSettings } from '../src/live-checkpoints.ts'
 import { actionHint } from '../src/actions.ts'
 import { tokens } from './support/game-harness.mjs'
@@ -53,7 +53,7 @@ for (const checkpoint of Object.keys(checkpoints)) {
         assert.equal(state.residentTrust.wren, 1)
       } else if (checkpoint === 'wren-discover') {
         assert.equal(state.gateRepair.stage, 'sagging')
-        assert.ok(onPeg(toolboxItem(state)))
+        assert.ok(onBench(toolboxItem(state)))
       } else {
         assert.equal(state.mission, 'delivery')
         assert.match(actionHint(state, state.players[0])[1], /crate/i)
