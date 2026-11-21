@@ -482,3 +482,8 @@ kbd {
 .shader-study-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 5px; }
 #shader-workbench { color: #bce8d5; }
 #shader-site { max-width: 240px; }
+
+/* The ferry tally board lists one stage or contribution per line. */
+#fisher-advice {
+  white-space: pre-line;
+}

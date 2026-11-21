@@ -16,6 +16,7 @@ import { restoreIsland, saveIsland } from './island-state.ts'
 import { updateHeldItems } from './items.ts'
 import { createFreight } from './freight.ts'
 import { createGateRepair } from './gate-repair.ts'
+import { createFerryRepair } from './ferry-repair.ts'
 import { createResidents } from './residents.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { repairSupplyFavor, wren } from '../src/worlds/starter/residents/wren.ts'
@@ -58,12 +59,20 @@ function stepVehicles(
   return { before, still }
 }
 
+// A checkpoint can arrange the ferry stage, the truck and loose crates, so physics follows the arranged world.
+function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>, trial: T) {
+  physics.placeFerry(state)
+  state.truck = physics.parkTruck(state.truck)
+  for (const item of state.items) physics.restore(item)
+  return trial
+}
+
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat()
   const driftwood = createDriftwoodSchool(clock() >>> 0)
   const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
-  const trial = playtest && prepareTrial(state, playtest)
+  const trial = playtest && settleTrial(state, physics, prepareTrial(state, playtest))
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
   const freight = createFreight(crew, state, clock, checkpoint)
@@ -73,7 +82,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk }, checkpoint)
   const farm = createFarmOrders(state, crew.notifyAll, clock, checkpoint)
   const materials = createMaterialsWork(state, crew.notifyAll, () => residents.keep(wren, repairSupplyFavor))
-  const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, materials, checkpoint)
+  const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, materials, createFerryRepair(state, physics, crew.notifyAll, freight.creditCrate), checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
@@ -86,7 +95,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     crew.expireCrew(now)
     gate.tick()
     residents.tick()
-    physics.placeGateLeaf(state)
+    for (const place of [physics.placeGateLeaf, physics.placeFerry]) place(state)
     const members = crew.members()
     const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - 400
     const { before, still } = stepVehicles(state, members, active, physics, freight)

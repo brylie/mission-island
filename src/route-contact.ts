@@ -1,4 +1,4 @@
-import { beachTrail, ribbonGeometry, road, roadSurface, sidewalkLift, trailLift, walkways } from './routes.ts'
+import { beachTrail, ribbonGeometry, roads, roadSurface, sidewalkLift, trailLift, walkways } from './routes.ts'
 import { groundHeight, walkingHeight } from './terrain.ts'
 import type { Point } from './world.ts'
 
@@ -24,8 +24,8 @@ function surfaceRibbon(points: readonly Point[], width: number, height: number, 
 
 // Match the visible paving triangles, including squared ends and the overlaps at the village junction.
 const paving = [
-  ...surfaceRibbon(road, roadSurface.width, roadSurface.asphalt),
-  ...surfaceRibbon(road, roadSurface.width + roadSurface.shoulderWidth, roadSurface.shoulder),
+  ...roads.flatMap((path) => [...surfaceRibbon(path, roadSurface.width, roadSurface.asphalt),
+    ...surfaceRibbon(path, roadSurface.width + roadSurface.shoulderWidth, roadSurface.shoulder)]),
   ...walkways.flatMap(({ points, width }) => surfaceRibbon(points, width, sidewalkLift)),
   ...surfaceRibbon(beachTrail.points, beachTrail.width, trailLift, true),
 ]

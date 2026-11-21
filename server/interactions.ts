@@ -1,4 +1,5 @@
 import { byTruckBed, freeBed, heldItem } from '../src/actions.ts'
+import { ferryDrop, isFerryAction } from '../src/ferry-repair.ts'
 import { deliberateActions, interactions, sameChoice } from '../src/interaction-options.ts'
 import type { Interaction, InteractionChoice } from '../src/interaction-options.ts'
 import { starterTools } from '../src/inventory.ts'
@@ -13,7 +14,9 @@ import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
+import type { createFerryRepair } from './ferry-repair.ts'
 import { isFarmAction } from '../src/farm-orders.ts'
+import { isMaterialsAction } from '../src/materials-interactions.ts'
 import type { createFarmOrders } from './farm-orders.ts'
 import type { createResidents } from './residents.ts'
 import type { createMaterialsWork } from './materials-work.ts'
@@ -24,8 +27,10 @@ export function createInteractions(
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
   residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>,
   farm: Pick<ReturnType<typeof createFarmOrders>, 'act'>,
-  materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>, checkpoint?: () => void,
+  materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>, ferry: ReturnType<typeof createFerryRepair>,
+  checkpoint?: () => void,
 ) {
+
   function useHomeChest(member: CrewMember) {
     const { player } = member
     stopPrimary(member)
@@ -49,7 +54,9 @@ export function createInteractions(
     stopPrimary(member)
     item.holder = null
     const dropoff = deliveryDrop(state)
-    if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
+    if (ferryDrop(state, player, item)) {
+      ferry.deliverCrate(item, player.id)
+    } else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
       orders.deliverCrate(item)
     } else if (residents.stageCrate(item, player)) {
       return
@@ -111,13 +118,10 @@ export function createInteractions(
       case 'talk': return residents.talk(member, subject)
       case 'accept-favor': return residents.accept(member, subject)
       case 'hand-over': return residents.handOver(member, subject)
-      case 'gather-material':
-      case 'check-material':
-      case 'return-material-sample':
-      case 'choose-repair-material':
-      case 'deliver-repair-material': return materials.act(member, action, subject)
       case 'job-board': return
-      default: return gate.act(member, action)
+      default:
+        if (isMaterialsAction(action)) return materials.act(member, action, subject)
+        return isFerryAction(action) ? ferry.act(member, action) : gate.act(member, action)
     }
   }
 

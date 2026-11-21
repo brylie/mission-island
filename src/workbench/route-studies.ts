@@ -1,6 +1,6 @@
 import { createRoad, createSidewalk, createTrail } from '../assets/routes'
 import { surfaces } from '../materials'
-import { footpaths, road, walkways } from '../routes'
+import { footpaths, harborRoad, walkways } from '../routes'
 import { control, range, type Entry } from './subject'
 
 export const routeStudies: Entry[] = [
@@ -14,7 +14,7 @@ export const routeStudies: Entry[] = [
       { type: 'checkbox', key: 'markings', label: 'Show markings', value: true },
     ],
     create(meshes, values) {
-      const route = createRoad(meshes, road, Number(values.width))
+      const route = createRoad(meshes, harborRoad, Number(values.width))
       return (_, options) => {
         route.shoulder.setEnabled(Boolean(options.shoulder))
         route.markings.setEnabled(Boolean(options.markings))

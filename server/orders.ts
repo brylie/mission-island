@@ -9,7 +9,7 @@ import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewMember, CrewNotice } from './crew.ts'
 
 export function createOrders(
-  state: Pick<Snapshot, 'crewCoins' | 'lastStarterPay' | 'items' | 'jobs' | 'mission' | 'islandTime' | 'lookoutFireClearedAt'>,
+  state: Pick<Snapshot, 'crewCoins' | 'lastStarterPay' | 'items' | 'jobs' | 'mission' | 'islandTime' | 'lookoutFireClearedAt' | 'ferryRepair'>,
   physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'release'>, notifyCrew: (message: CrewNotice) => void,
   creditCrate: (id: number) => void, checkpoint?: () => void,
 ) {
@@ -19,9 +19,14 @@ export function createOrders(
     notifyCrew(message)
   }
 
+  // Ferry timber rides in the depot crates, so a delivery order waits until the haul is stacked at the yard.
+  function timberOnTheWay(id: JobId | undefined) {
+    return id !== undefined && jobs[id].kind === 'delivery' && state.ferryRepair.haul > 0
+  }
+
   function startJob(member: CrewMember, id: JobId | undefined) {
     if (id === undefined || state.mission !== 'complete' || state.jobs.active || !atJobBoard(member.player) ||
-      member.player.sleeping || heldItem(state, member.player)) {
+      member.player.sleeping || heldItem(state, member.player) || timberOnTheWay(id)) {
       member.notify?.({ type: 'order-unavailable' })
       return
     }
