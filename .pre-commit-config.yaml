@@ -14,10 +14,17 @@ repos:
   - repo: local
     hooks:
       - id: mission-island-quality
-        name: Mission Island quality gate
-        entry: npm run quality
+        name: Lint, type check and tests
+        entry: npm run quality:commit
         language: system
         stages: [pre-commit]
+        pass_filenames: false
+        always_run: true
+      - id: mission-island-quality-push
+        name: Unused code and build
+        entry: npm run quality:push
+        language: system
+        stages: [pre-push]
         pass_filenames: false
         always_run: true
       - id: mission-island-audit

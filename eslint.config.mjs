@@ -56,7 +56,8 @@ const presentationImports = {
 }
 
 export default defineConfig(
-  { ignores: ['dist/**', 'coverage/**'] },
+  // .claude/ holds agent worktrees: full copies of the repo that git ignores but ESLint would walk.
+  { ignores: ['dist/**', 'coverage/**', '.claude/**'] },
   {
     files: ['**/*.ts'],
     extends: [js.configs.recommended, tseslint.configs.recommendedTypeChecked],
