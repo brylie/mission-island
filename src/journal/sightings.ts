@@ -1,6 +1,6 @@
 import { gullAt } from '../gull-flight.ts'
 import { starterGullPerches } from '../gull-sites.ts'
-import type { Interaction } from '../interaction-options.ts'
+import type { InteractionOption, InteractionPolicies } from '../interactions/definition.ts'
 import { juniperCenter, juniperLayout } from '../juniper-habitat.ts'
 import type { Player, Snapshot } from '../protocol.ts'
 import { walkingHeight, waterLevel } from '../terrain.ts'
@@ -8,6 +8,11 @@ import { weatherAt } from '../weather.ts'
 import { distance, ferryTerminal, lookout, type Point } from '../world.ts'
 import { mirrorPoolWillow } from '../worlds/starter/sites.ts'
 import { behaviorId, journalSubjects, type SubjectId } from './catalog.ts'
+
+export const sightingActions = {
+  record: 'explicit',
+} as const satisfies InteractionPolicies
+export type SightingAction = keyof typeof sightingActions
 
 type World = Pick<Snapshot, 'driftwood' | 'juniper' | 'islandTime' | 'weather' | 'journal'>
 // Where one animal, plant or landmark is right now, and what it is visibly doing.
@@ -69,8 +74,8 @@ export function sightingEntries(state: World, player: Point, choice: number) {
 }
 
 // "Record in journal" for everything in range that would add a line. The reticle picks one by aiming at it.
-export function journalInteractions(state: World, player: Player): Interaction[] {
-  const options: Interaction[] = []
+export function journalInteractions(state: World, player: Player): InteractionOption<SightingAction>[] {
+  const options: InteractionOption<SightingAction>[] = []
   for (const [kind, subject] of journalSubjects.entries()) {
     for (const [slot, instance] of instances(state, subject.id).entries()) {
       if (slot >= instanceSlots || distance(player, instance.at) > sightingRange) continue

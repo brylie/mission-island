@@ -1,21 +1,27 @@
-import type { Interaction } from '../interaction-options.ts'
+import type { InteractionOption, InteractionPolicies } from '../interactions/definition.ts'
 import type { Player, Snapshot } from '../protocol.ts'
 import { walkingHeight } from '../terrain.ts'
 import type { ResidentDefinition } from './definition.ts'
 import { activeFavor, isCustom, openOffer, pendingReport } from './favors.ts'
 import { atResident, residentAt } from './schedule.ts'
 
-export type ResidentAction = 'talk' | 'accept-favor' | 'hand-over' | 'report-sound' | 'report-fault'
-export const residentActions: readonly ResidentAction[] = ['talk', 'accept-favor', 'hand-over', 'report-sound', 'report-fault']
+export const residentActions = {
+  talk: 'explicit',
+  'accept-favor': 'explicit',
+  'hand-over': 'explicit',
+  'report-sound': 'explicit',
+  'report-fault': 'explicit',
+} as const satisfies InteractionPolicies
+export type ResidentAction = keyof typeof residentActions
 
-interface ResidentOptions { talk: Interaction[]; accept: Interaction[] }
+interface ResidentOptions { talk: InteractionOption<ResidentAction>[]; accept: InteractionOption<ResidentAction>[] }
 
 function residentTarget(resident: ResidentDefinition, state: Snapshot) {
   const spot = residentAt(resident.schedule, state)
   return { name: resident.identity.name, at: { x: spot.x, y: walkingHeight(spot) + 1.1, z: spot.z }, radius: .55 }
 }
 
-function handOver(resident: ResidentDefinition, state: Snapshot, player: Player, subject: number): Interaction | undefined {
+function handOver(resident: ResidentDefinition, state: Snapshot, player: Player, subject: number): InteractionOption<ResidentAction> | undefined {
   const favor = activeFavor(resident, state)
   if (!favor || !('goods' in favor.kind)) return undefined
   const { goods, quantity } = favor.kind
@@ -33,7 +39,7 @@ export function residentInteractions(registry: readonly ResidentDefinition[], st
   for (const [subject, resident] of registry.entries()) {
     if (!atResident(resident, state, player)) continue
     const { name } = resident.identity
-    const talk: Interaction = { action: 'talk', subject, key: 'E', label: `Talk to ${name}`, ...residentTarget(resident, state) }
+    const talk: InteractionOption<ResidentAction> = { action: 'talk', subject, key: 'E', label: `Talk to ${name}`, ...residentTarget(resident, state) }
     const offer = openOffer(resident, state)
     const give = handOver(resident, state, player, subject)
     if (give) options.talk.push(give)

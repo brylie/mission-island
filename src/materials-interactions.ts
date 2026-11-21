@@ -1,22 +1,27 @@
-import type { Interaction } from './interaction-options.ts'
+import type { InteractionOption, InteractionPolicies } from './interactions/definition.ts'
 import { carriedMaterial, materialsOpen, repairMaterials, repairQuantity, sourceOpen } from './materials-work.ts'
 import type { Player, Snapshot } from './protocol.ts'
 import { walkingHeight } from './terrain.ts'
 import { distance, type Point } from './world.ts'
 import { materialSources, repairChoices, repairSite, sampleTray } from './worlds/starter/materials.ts'
 
-export const materialsActions = ['gather-material', 'check-material', 'return-material-sample', 'choose-repair-material', 'deliver-repair-material'] as const
-export type MaterialsAction = typeof materialsActions[number]
-export const isMaterialsAction = (action: string): action is MaterialsAction => (materialsActions as readonly string[]).includes(action)
+export const materialsActions = {
+  'gather-material': 'explicit',
+  'check-material': 'explicit',
+  'return-material-sample': 'explicit',
+  'choose-repair-material': 'explicit',
+  'deliver-repair-material': 'explicit',
+} as const satisfies InteractionPolicies
+export type MaterialsAction = keyof typeof materialsActions
 
 function target(point: Point, height: number, name: string, radius: number) {
   return { name, at: { ...point, y: walkingHeight(point) + height }, radius, key: 'E' }
 }
 
-export function materialsInteractions(state: Snapshot, player: Player): Interaction[] {
+export function materialsInteractions(state: Snapshot, player: Player): InteractionOption<MaterialsAction>[] {
   if (!materialsOpen(state) || !player.grounded || player.onBed || player.truckSurface ||
     state.items.some(item => item.holder === player.id)) return []
-  const options: Interaction[] = []
+  const options: InteractionOption<MaterialsAction>[] = []
   const { checkout, request, readyAt } = state.materialsWork
   for (const [subject, material] of repairMaterials.entries()) {
     const source = materialSources[material]

@@ -78,6 +78,8 @@ The pre-push hook runs ESLint without the cache, Knip for unused code and depend
 
 The coverage gate runs only in CI, because it takes a few minutes. It fails the build when lines, functions, or branches drop below 81% across the host and shared mechanics. Run it locally with `npm run coverage`.
 
+Run `npm run lint:fix` to apply ESLint layout fixes, including trailing commas in interaction files. The shared interaction registries use one entry per line for multiline lists.
+
 On pull requests into `main` and pushes to `main`, GitHub Actions runs the pre-commit and pre-push checks and the coverage gate. Open **CI → Quality and tests** to inspect coverage, the build, and the dependency audit.
 
 ## Build and iterate together

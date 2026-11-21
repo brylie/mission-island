@@ -48,7 +48,9 @@ Keep the two models in the asset layer. Let island data choose where each vehicl
 
 ### Interactions
 
-Every **E** interaction shares one trait, defined in [interaction options](../src/interaction-options.ts): an action, an optional subject such as an item or farm plot, a key and label for the prompt, a name for the tooltip, and a point the reticle can aim at. The list is ordered with the best default first. The prompt, the [reticle](../src/reticle-target.ts) and the host all read the same list. The client sends the interaction the player aimed at, or the default when the reticle is on nothing. The host carries it out only if that interaction is still open to that player, so a stale or simultaneous press changes nothing. To add an interaction, add it to the list with its point and add its handler to the host's dispatch in [interactions](../server/interactions.ts).
+An **E** interaction has an action ID, an optional subject such as an item or farm plot, a key and label for the prompt, a name for the tooltip, and an optional point the reticle can aim at. The feature's browser-safe module owns its action IDs, which choices require explicit selection, and its prompt rules. Its host module supplies a typed handler for each of those IDs.
+
+[Interaction options](../src/interaction-options.ts) combines the feature policies and lists prompts in priority order. Preserve that order when adding a feature because the prompt and reticle both use it. The client sends the selected interaction. The [host dispatcher](../server/interactions.ts) rebuilds the list from current state, checks the exact action and subject, and calls the feature handler. Requests without a choice use the first eligible default action. Field inspections check the exact target in their host handler so the player receives feedback when it goes out of reach. The [host interaction setup](../server/game-interactions.ts) assembles the handler maps, and TypeScript checks that every registered action has a handler.
 
 ### Residents
 

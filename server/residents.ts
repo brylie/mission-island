@@ -1,10 +1,12 @@
 import type { Item, Snapshot } from '../src/protocol.ts'
 import type { FavorDefinition, ResidentDefinition } from '../src/residents/definition.ts'
 import { activeFavor, isCustom, openOffer, pendingReport, recordFor, stagingFavor, wantsCargo } from '../src/residents/favors.ts'
+import type { ResidentAction } from '../src/residents/interactions.ts'
 import { breakPromise, keepFavor } from '../src/residents/trust.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { crateStarts, type Point } from '../src/world.ts'
 import type { CrewMember, CrewNotice } from './crew.ts'
+import type { InteractionHandlers } from './interactions.ts'
 
 // Resident-specific behavior: talking to a resident by id, and a favor's own world changes by favor id.
 interface Hooks {
@@ -88,5 +90,12 @@ export function createResidents(state: Snapshot, registry: readonly ResidentDefi
     physics.relocate(crate, crateStarts[crate.id])
   }
 
-  return { talk, accept, handOver, report, stageCrate, tick, keep }
+  const interactions = {
+    talk,
+    'accept-favor': accept,
+    'hand-over': handOver,
+    'report-sound': (member, subject) => report(member, subject, 'sound'),
+    'report-fault': (member, subject) => report(member, subject, 'fault'),
+  } satisfies InteractionHandlers<ResidentAction>
+  return { interactions, stageCrate, tick, keep }
 }

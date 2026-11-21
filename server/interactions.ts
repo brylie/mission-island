@@ -1,156 +1,23 @@
-import { byTruckBed, freeBed, heldItem } from '../src/actions.ts'
-import type { GateAction } from '../src/gate-repair.ts'
-import { ferryDrop, isFerryAction } from '../src/ferry-repair.ts'
-import { isMaterialsAction } from '../src/materials-interactions.ts'
-import { deliberateActions, interactions, sameChoice } from '../src/interaction-options.ts'
-import type { Interaction, InteractionChoice } from '../src/interaction-options.ts'
-import { starterTools } from '../src/inventory.ts'
-import { deliveryDrop, deliveryRadius } from '../src/jobs.ts'
-import type { Item, Snapshot } from '../src/protocol.ts'
-import { groundHeight, maxWadeDepth, waterDepth } from '../src/terrain.ts'
-import { crateSize, distance, itemStarts, spawns } from '../src/world.ts'
+import { interactions, rechecksInHandler, requiresExplicitChoice, sameChoice } from '../src/interaction-options.ts'
+import type { InteractionAction, InteractionChoice } from '../src/interaction-options.ts'
+import { heldItem } from '../src/interactions/cargo.ts'
+import type { Snapshot } from '../src/protocol.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
-import { stopPrimary, stopped, stowTool, type CrewMember } from './crew.ts'
+import { canOccupyGround } from '../src/simulation/movement.ts'
+import { groundHeight, maxWadeDepth, waterDepth } from '../src/terrain.ts'
+import { crateSize, itemStarts, spawns } from '../src/world.ts'
+import { stopPrimary, stopped, type CrewMember } from './crew.ts'
 import { restingY, updateHeldItems } from './items.ts'
-import { recordCultivation } from './cultivation-cues.ts'
-import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
-import type { createOrders } from './orders.ts'
-import type { createGateRepair } from './gate-repair.ts'
-import type { createFerryRepair } from './ferry-repair.ts'
-import { isFarmAction } from '../src/farm-orders.ts'
-import type { createFarmOrders } from './farm-orders.ts'
-import type { createResidents } from './residents.ts'
-import type { createGateSwell } from './gate-swell.ts'
-import type { createJournal } from './journal.ts'
-import type { createMaterialsWork } from './materials-work.ts'
 
-// Jobs done in the world for residents and the farm, each with its own host module.
-interface Work {
-  swell: Pick<ReturnType<typeof createGateSwell>, 'act'>
-  materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>
-  farm: Pick<ReturnType<typeof createFarmOrders>, 'act'>
-  ferry: Pick<ReturnType<typeof createFerryRepair>, 'act' | 'deliverCrate'>
-}
-
-// Residents' conversations and favors, and the repairs done for them.
-function createNeighborly(gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
-  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'report'>,
-  work: Work) {
-  return (member: CrewMember, action: Interaction['action'], subject: number) => {
-    switch (action) {
-      case 'talk': return residents.talk(member, subject)
-      case 'accept-favor': return residents.accept(member, subject)
-      case 'hand-over': return residents.handOver(member, subject)
-      case 'report-sound':
-      case 'report-fault': return residents.report(member, subject, action === 'report-sound' ? 'sound' : 'fault')
-      case 'check-swing':
-      case 'plane': return work.swell.act(action)
-      default:
-        if (isMaterialsAction(action)) return work.materials.act(member, action, subject)
-        return isFerryAction(action) ? work.ferry.act(member, action) : gate.act(member, action as GateAction)
-    }
-  }
-}
+export type InteractionHandlers<Action extends InteractionAction = InteractionAction> =
+  Record<Action, (member: CrewMember, subject: number) => void>
 
 export function createInteractions(
-  state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'relocate' | 'remove'>,
-  orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
-  gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
-  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'report' | 'stageCrate'>,
-  work: Work, journal: Pick<ReturnType<typeof createJournal>, 'record' | 'inspect'>, checkpoint?: () => void,
+  state: Snapshot,
+  handlers: InteractionHandlers,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'release' | 'relocate'>,
+  checkpoint?: () => void,
 ) {
-
-  function useHomeChest(member: CrewMember) {
-    const { player } = member
-    stopPrimary(member)
-    const firstVisit = !player.starterSeedClaimed
-    if (firstVisit) {
-      player.starterSeedClaimed = true
-      player.seeds++
-      member.notify?.({ type: 'starter-seed' })
-    }
-    if (!player.inventory.length) {
-      player.inventory = [...starterTools]
-      player.equipped = 'fishing-rod'
-    } else if (!firstVisit) {
-      player.inventory = []
-      stowTool(member)
-    }
-  }
-
-  function putDown(member: CrewMember, item: Item) {
-    const { player } = member
-    stopPrimary(member)
-    item.holder = null
-    const dropoff = deliveryDrop(state)
-    if (ferryDrop(state, player, item)) {
-      work.ferry.deliverCrate(item, player.id)
-    } else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
-      orders.deliverCrate(item)
-    } else if (residents.stageCrate(item, player)) {
-      return
-    } else if (item.kind === 'crate') {
-      const slot = byTruckBed(state, player) ? freeBed(state) : undefined
-      if (slot === undefined) {
-        const drop = canOccupyGround(item, crateSize / 2, -0.10) && !isInsideTruck(state.truck, item) ? item : player
-        physics.release(item, drop, item.y)
-      } else {
-        physics.load(item, state.truck, slot)
-      }
-    } else {
-      item.y = groundHeight(item) + 0.04
-    }
-  }
-
-  function pickUp(member: CrewMember, item: Item) {
-    stopPrimary(member)
-    stowTool(member)
-    item.holder = member.player.id
-    item.rotation = null
-    physics.remove(item)
-  }
-
-  function turnIn(member: CrewMember) {
-    stopPrimary(member)
-    member.player.casting = null
-    member.input = stopped
-    member.player.sleeping = true
-  }
-
-  function tend(member: CrewMember, plot: number, action: 'plant' | 'harvest') {
-    const { player } = member
-    if (action === 'plant') {
-      player.seeds--
-      growth[plot] = 0
-      state.farm[plot] = 'planted'
-      return
-    }
-    state.farm[plot] = 'grass'
-    player.goods.carrots++
-    recordCultivation(state, 'harvest', plot, player.id)
-  }
-
-  const neighborly = createNeighborly(gate, residents, work)
-
-  function perform(member: CrewMember, action: Exclude<Interaction['action'], 'record' | 'inspect-field'>, subject = -1) {
-    if (isFarmAction(action)) return work.farm.act(member, action)
-    const item = state.items[subject]
-    switch (action) {
-      case 'put-down': return putDown(member, heldItem(state, member.player)!)
-      case 'pick-up': return pickUp(member, item)
-      case 'open-wardrobe':
-      case 'open-clothing-counter': return member.notify?.({ type: action })
-      case 'sleep': return turnIn(member)
-      case 'chest': return useHomeChest(member)
-      case 'market': return orders.visitMarket(member.player)
-      case 'plant':
-      case 'harvest': return tend(member, subject, action)
-      case 'welcome-note': return member.notify?.({ type: 'crew-note' })
-      case 'job-board': return
-      default: return neighborly(member, action, subject)
-    }
-  }
-
   // E runs the interaction the player chose, only while it is still open to them; with no choice, the best one in reach.
   function interact(member: CrewMember, choice?: InteractionChoice) {
     const { player } = member
@@ -159,15 +26,16 @@ export function createInteractions(
       player.sleeping = false
       return
     }
-    if (choice?.action === 'inspect-field') return journal.inspect(member, choice.subject)
+    // Field inspections recheck their own targets so a stale choice can tell the player what happened.
+    if (choice && rechecksInHandler(choice.action)) {
+      handlers[choice.action](member, choice.subject ?? -1)
+      return
+    }
     const options = interactions(state, player)
     const chosen = choice ? options.find((option) => sameChoice(option, choice))
-      : options.find(({ action }) => !deliberateActions.includes(action))
-    if (!chosen || chosen.action === 'inspect-field') return
-    // A journal record touches nothing the other interactions handle, so it stays out of their switch.
-    const { action, subject } = chosen
-    if (action === 'record') journal.record(player, subject ?? -1)
-    else perform(member, action, subject)
+      : options.find(({ action }) => !requiresExplicitChoice(action))
+    if (!chosen) return
+    handlers[chosen.action](member, chosen.subject ?? -1)
     updateHeldItems(state)
   }
 
