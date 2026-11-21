@@ -49,6 +49,7 @@
         <div><strong>MISSION ISLAND</strong><small>ISLAND SERVICE CREW</small></div>
       </div>
       <div class="top-actions">
+        <button id="checkpoint-banner" class="camera" type="button" aria-haspopup="dialog" aria-controls="options-dialog" hidden>Live checkpoint</button>
         <a class="camera" href="/second-island.html">Saltwind preview</a>
         <div class="connection" role="status"><i id="status-light"></i><span id="status">Connecting</span></div>
         <div id="island-clock" class="connection">06:00 · Daylight</div>
@@ -226,6 +227,14 @@
             <button id="copy-lan" type="button" disabled>Copy LAN link</button>
           </div>
           <span id="lan-status" role="status"></span>
+        </fieldset>
+        <fieldset id="live-checkpoint" hidden>
+          <legend>Live playtest</legend>
+          <label>Checkpoint <select name="checkpoint"></select></label>
+          <label>Crew <select name="seats"><option value="1">Solo</option><option value="2">Two players over LAN</option></select></label>
+          <p>Starting a checkpoint resets this playtest for both players. Your island save stays separate.</p>
+          <button type="button">Restart checkpoint</button>
+          <span role="status"></span>
         </fieldset>
         <fieldset id="playtest-tools" hidden><legend>Landscape Workbench</legend><button type="button" id="copy-playtest">Copy playtest link</button>
           <span id="copy-status" role="status"></span>

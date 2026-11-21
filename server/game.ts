@@ -1,3 +1,5 @@
+import type { TrialRun } from '../src/live-checkpoints.ts'
+import { prepareTrial } from './live-checkpoints.ts'
 import { createDriftwoodSchool } from '../src/simulation/driftwood-school.ts'
 import { inSkiff } from '../src/actions.ts'
 import { chargePower } from '../src/charged-actions.ts'
@@ -21,18 +23,22 @@ import { stepSkiff } from './skiff.ts'
 
 export const tickSeconds = 1 / 30
 
-export function createGame({ clock = Date.now, random = Math.random, save, checkpoint }: {
+interface GameOptions {
   clock?: () => number
   random?: () => number
+  playtest?: TrialRun
   save?: IslandSave
   checkpoint?: () => void
-} = {}) {
+}
+
+export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat()
   const driftwood = createDriftwoodSchool(clock() >>> 0)
   const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
+  const trial = playtest && prepareTrial(state, playtest)
   let wildlifeTick = 0
-  const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint)
+  const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
   const freight = createFreight(crew, state, clock, checkpoint)
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
@@ -41,6 +47,10 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
 
   function tick(): Readonly<Snapshot> {
     const now = clock()
+    if (trial && !state.playtest?.started && !trial.startWhenReady()) {
+      crew.expireCrew(now)
+      return state
+    }
     advanceIsland(state, growth, tickSeconds, checkpoint)
     crew.expireCrew(now)
     gate.tick()
@@ -141,11 +151,12 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   function join(token: string, notify: (message: CrewNotice) => void) {
     const member = crew.join(token, notify)
     if (typeof member === 'string') return { type: member } as const
+    if (trial && !state.playtest?.started) trial.place(member.player)
     return {
       type: 'joined' as const,
       id: member.player.id,
       dispatch(message: CrewCommand) {
-        if (member.notify === notify) handleAction(member, message)
+        if (member.notify === notify && (!trial || state.playtest?.started)) handleAction(member, message)
       },
       disconnect() {
         if (member.notify !== notify) return

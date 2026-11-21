@@ -1,3 +1,4 @@
+import type { LiveTrial, ScenarioSummary } from './live-checkpoints.ts'
 import type { FreightTicket } from './ore-contracts'
 import type { DriftwoodFrame } from './simulation/driftwood-school'
 import type { BiomeFrame } from './biome-model'
@@ -86,6 +87,7 @@ export interface CultivationCue {
 }
 
 export interface Snapshot {
+  playtest?: LiveTrial
   driftwood: DriftwoodFrame
   juniper: BiomeFrame
   type: 'state'
@@ -111,7 +113,7 @@ export interface Snapshot {
 
 export type ServerMessage =
   | Snapshot
-  | { type: 'welcome'; id: number }
+  | { type: 'welcome'; id: number; scenarios?: readonly ScenarioSummary[] }
   | { type: 'fishing-result'; result: FishingResult }
   | { type: 'market-sale'; coins: number }
   | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
