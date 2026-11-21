@@ -183,11 +183,7 @@
           <p id="guide-work"></p>
           <p id="guide-pay"></p>
         </section>
-        <section id="guide-favor" hidden>
-          <h3 id="guide-favor-title"></h3>
-          <p id="guide-favor-detail"></p>
-          <p id="guide-favor-next"></p>
-        </section>
+        <div id="guide-favors"></div>
         <section>
           <h3>Between shifts</h3>
           <p>The gravel turn east of Harbor Depot leads to the closed ferry terminal. The damaged ramp needs a crew to repair it someday.</p>
@@ -197,9 +193,10 @@
           <button id="toggle-fisher-lead" type="button" aria-controls="guide-lead" aria-expanded="true">Put away Mara’s lead</button>
         </section>
       </div>
-      <div id="fisher-conversation" hidden>
-        <p id="fisher-line"></p>
-        <p id="fisher-advice"></p>
+      <div id="resident-conversation" hidden>
+        <p id="resident-line"></p>
+        <p id="resident-advice"></p>
+        <button id="resident-accept" type="button" hidden></button>
       </div>
       <form method="dialog"><button type="submit" autofocus>Close</button></form>
     </dialog>

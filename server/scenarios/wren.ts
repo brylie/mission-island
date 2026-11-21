@@ -1,4 +1,4 @@
-import { favorCoins, gateway, toolboxItem } from '../../src/gate-repair.ts'
+import { favorCoins, gateFavor, gateway, toolboxItem } from '../../src/gate-repair.ts'
 import { interactions } from '../../src/interaction-options.ts'
 import type { Player, Snapshot } from '../../src/protocol.ts'
 import { daySeconds } from '../../src/weather.ts'
@@ -24,6 +24,7 @@ export const wrenScenarios: Scenario[] = [
     prepareWorld(state) {
       garden.prepareWorld(state)
       state.gateRepair = { stage: 'inspected', pinHolder: null, acceptedAt: 0 }
+      state.residents.wren = { ...state.residents.wren, active: gateFavor }
     },
     startCrew(state, players) {
       const box = toolboxItem(state)!
@@ -43,9 +44,9 @@ export const wrenScenarios: Scenario[] = [
       garden.prepareWorld(state)
       state.islandTime = daySeconds + daySeconds * .8 / 24
       state.gateRepair = { stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: daySeconds / 4 }
-      state.residentTrust.wren = 1
+      state.residents.wren = { trust: 1, kept: [gateFavor], active: null }
       state.crewCoins = favorCoins
-      state.lastFavorPay = { resident: 'wren', coins: favorCoins }
+      state.lastFavorPay = { resident: 'wren', favor: gateFavor, coins: favorCoins }
     },
   },
 ]

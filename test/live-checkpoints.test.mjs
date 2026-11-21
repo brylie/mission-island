@@ -44,7 +44,7 @@ for (const { id: checkpoint } of scenarioCatalog) {
         tester.dispatch({ type: 'interact', choice: { action: 'test' } })
         a.dispatch({ type: 'interact', choice: { action: 'test' } })
         assert.equal(game.tick().crewCoins, baseline + 5)
-        assert.equal(state.residentTrust.wren, 1)
+        assert.equal(state.residents.wren.trust, 1)
         a.disconnect()
         assert.equal(join(0).id, a.id)
         assert.equal(game.tick().gateRepair.stage, 'mended')
@@ -52,7 +52,7 @@ for (const { id: checkpoint } of scenarioCatalog) {
         assert.equal(gateMendedStage(state), 'settled')
         assert.ok(state.weather.hour < 7)
         assert.equal(state.crewCoins, 5)
-        assert.equal(state.residentTrust.wren, 1)
+        assert.equal(state.residents.wren.trust, 1)
       } else if (checkpoint === 'wren-discover') {
         assert.equal(state.gateRepair.stage, 'sagging')
         assert.ok(onBench(toolboxItem(state)))
@@ -66,6 +66,14 @@ for (const { id: checkpoint } of scenarioCatalog) {
           angler.dispatch({ type: 'primary', phase: 'release', aim: player.heading })
           assert.ok(player.casting)
         }
+      } else if (checkpoint === 'village-favors') {
+        for (const player of state.players) {
+          assert.ok(interactions(state, player).some(({ action, subject }) => action === 'accept-favor' && subject === 3), 'Bram asks')
+          assert.deepEqual(player.goods, { fish: 2, carrots: 2 })
+        }
+        a.dispatch({ type: 'interact', choice: { action: 'accept-favor', subject: 3 } })
+        assert.equal(game.tick().residents.bram.active, 'bram-staging')
+        assert.ok(state.items.some(({ kind, delivered }) => kind === 'crate' && !delivered), 'a crate waits in the yard')
       } else if (checkpoint === 'harbor-delivery') {
         assert.equal(state.mission, 'delivery')
         assert.match(actionHint(state, state.players[0])[1], /crate/i)

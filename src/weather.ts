@@ -10,6 +10,11 @@ export function nextDawn(seconds: number) {
   return (Math.floor(seconds / daySeconds) + 1) * daySeconds
 }
 
+// How many dawns have passed between two island times.
+export function dawnsBetween(from: number, to: number) {
+  return Math.floor(to / daySeconds) - Math.floor(from / daySeconds)
+}
+
 export function weatherAt(seconds: number): Weather {
   const day = seconds / daySeconds + 6 / 24
   const index = Math.floor(day)

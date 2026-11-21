@@ -39,6 +39,10 @@ Each completed order deposits its posted reward once in the crew bank. Both isla
 
 Wren lives in the lilac-roofed cottage just east of the Blue cottage. The garden gate drags a groove in the path and sticks a short way open. Try it and you can't squeeze through. Talk to Wren at the cottage, or at the mending bench beside the ferry approach during the day. Wren lends you the red toolbox on that bench. Inspect the hinge with **E**, pick up a hinge pin from the tray on the bench, and fit it at the gate with the toolbox close by. Then swing the gate to test it. One of you can do all of it, or split the work: one inspects and holds the toolbox while the other fetches the pin. The crew bank gets five coins once, and Wren remembers who helped. If your crewmate leaves with the toolbox, ask Wren to put it back on the bench. Come back the next morning to see Wren use the gate. See [neighbor repairs](mechanics/neighbor-repairs.md) for the details.
 
+## Getting to know the neighbors
+
+Mara fishes from the small dock, Ines keeps the Seabrook Market stall, and Bram keeps the freight tally beside the Harbor Depot job board. Each walks to work in the morning and home in the evening on the shared clock. Aim at a resident and press **E** to talk. When someone needs a hand, the conversation offers **Agree to help**. Mara would like two carrots, Ines two fish, and Bram a crate set down in the yellow bay beside the depot. Either of you can agree, and either can finish it. The crew bank gets five coins once, the resident trusts the crew a little more, and their greeting changes. See [residents and favors](mechanics/resident-favors.md).
+
 ## Windstone Ridge gliding
 
 Follow the northern hills toward Windstone Ridge. At the orange loan rack, face the windsock and find the landing circle below. Press **E** with free hands to borrow the wing and launch for free. Use **A/D** or **←/→** to bank and turn. Push **W** or **↑** to lower the nose and gain speed. Pull **S** or **↓** to raise the nose and slow the descent. Press **C** to switch views. Follow the airborne blue orbs and land inside the circle. If you come up short, head back uphill to the windsock.

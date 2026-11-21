@@ -11,7 +11,8 @@ import type { InventoryItem } from './inventory'
 import type { Goods, PlotStage } from './farm'
 import type { Truck } from './truck-pose'
 import type { JobBoardState, JobId } from './jobs'
-import type { FavorReceipt, GardenGate, GateRepair, GateStep } from './gate-repair'
+import type { GardenGate, GateRepair, GateStep } from './gate-repair'
+import type { FavorReceipt, ResidentRecords } from './residents/trust'
 import type { InteractionChoice } from './interaction-options'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
 
@@ -110,7 +111,7 @@ export interface Snapshot {
   jobs: JobBoardState
   gate: GardenGate
   gateRepair: GateRepair
-  residentTrust: { wren: number }
+  residents: ResidentRecords
   lastFavorPay?: FavorReceipt
   aviation: AviationState
 }
@@ -122,8 +123,10 @@ export type ServerMessage =
   | { type: 'market-sale'; coins: number }
   | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
   | { type: 'order-pay'; coins: number; id: JobId }
-  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'fisher-chat' | 'wren-chat' | 'open-wardrobe' | 'open-clothing-counter' }
-  | { type: 'favor-pay'; resident: 'wren'; coins: number; trust: number }
+  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'open-wardrobe' | 'open-clothing-counter' }
+  | { type: 'resident-chat'; resident: string }
+  | { type: 'favor-accepted'; resident: string; favor: string; playerId: number }
+  | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number }
   | { type: 'gate-step'; step: GateStep }
   | { type: 'angler-purchase'; result: ClothingPurchaseResult }
   | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }

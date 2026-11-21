@@ -33,6 +33,7 @@ Press **O → Live playtest** or open **Live checkpoints** in the Workbench on t
 | `wren-fit` (default) | One player has the toolbox and the other has the pin. In solo play the toolbox rests by the gate. Press **E** to fit the pin and **E** again to test the swing. |
 | `wren-discover` | The crew arrives outside the unrepaired garden. |
 | `wren-morning` | The repair is paid and Wren is about to leave home. |
+| `village-favors` | At 09:30 after the starter shift, the crew stands beside Bram at the depot. Each crewmate carries two fish and two carrots for Ines's and Mara's favors. |
 
 Agents can use the same scenario IDs from the shell. For example, to try fishing alone:
 

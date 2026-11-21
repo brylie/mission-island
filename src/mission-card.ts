@@ -2,7 +2,17 @@ import { favorProgress, gateMendedStage, gateRepairGuide } from './gate-repair'
 import { jobDescription, secondIslandProgress } from './job-board-ui'
 import { activeJob, deliveryDrop, secondIslandGoal } from './jobs'
 import type { Snapshot } from './protocol'
+import { activeFavor, isCustom } from './residents/favors'
 import { distance } from './world'
+import { starterResidents } from './worlds/starter/residents'
+
+// The first resident favor under way that has no card of its own.
+function residentFavor(state: Snapshot) {
+  for (const resident of starterResidents) {
+    const favor = activeFavor(resident, state)
+    if (favor && !isCustom(favor)) return { resident, favor }
+  }
+}
 
 function deliveryInstruction(state: Snapshot, drop: { x: number; z: number }, quantity: number) {
   const loaded = state.items.filter((item) => item.onBed).length
@@ -45,6 +55,12 @@ export function missionCard(state: Snapshot, id: number) {
     const favor = gateRepairGuide(state, local), value = favorProgress(state.gateRepair)
     return { label: 'NEIGHBOR FAVOR', title: favor.title, detail: favor.detail, progress: 'Repair steps', value, max: 4,
       text: `${value} / 4 steps`, instruction: favor.next }
+  }
+  const asked = residentFavor(state)
+  if (asked) {
+    const { resident, favor } = asked
+    return { label: 'NEIGHBOR FAVOR', title: favor.title, detail: favor.detail, progress: `${resident.identity.name} is waiting`,
+      value: 0, max: 1, text: 'Not yet delivered', instruction: favor.next }
   }
   const completed = Math.min(state.jobs.completed, secondIslandGoal)
   return {

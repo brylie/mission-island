@@ -66,7 +66,7 @@ test('a player following Wren out through the mended gate is never shut in, and 
   const settled = (save) => {
     save.islandTime = at(6.98, 1)
     Object.assign(save.world.gateRepair, { stage: 'mended', acceptedAt: at(8), mendedAt: at(10) })
-    save.world.residentTrust.wren = 1
+    save.world.residents.wren = { trust: 1, kept: ['wren-gate'], active: null }
   }
   const h = setup(t, { players: [player(0, { x: gateway.x - .5, z: fenceZ + 1.3 })], arrange: settled })
   const a = h.join(tokens[0])
