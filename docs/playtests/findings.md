@@ -28,6 +28,16 @@ For each session, copy the block below. Give each distinct observation a short t
 - Decision: keep. Still untested: the uncoached preflight question with a new pilot, and a walk back after a short landing on purpose. A host restart wasn't tried live because the checkpoint host keeps no save; the disk-restart host test covers it. These stay on the [#52 checklist](https://github.com/brylie/mission-island/issues/52).
 - Retest: two people on two devices. Ask the preflight question before the first launch, then swap roles as above.
 
+### 2026-11-21 · ridge-soaring · Thermal chain to Juniper Hollow
+
+- Starting point: the `ridge-soaring` live checkpoint, solo, with the crew qualified and the Mirror Pool survey done, on a dry day at 10:30. A coding agent flew it with a small in-page autopilot that read the game's own snapshots and held the real **A/D/S** keys. Nobody new to the game took part.
+- Moment: the pilot launched and circled the Windstone shoulder, climbing from 11 m to 30 m. It then glided to the Fernfall ledges thermal (22 → 27 m), on to the Juniper slope ridge lift (13 → 24 m), and passed over Juniper Hollow.
+- Both screens: solo. The HUD showed height, the nearest lift with its bearing and distance, and the next unsurveyed place. It flashed "Mirror Pool spotted from the air" on the way out.
+- Outcome: the pilot landed safely at (−45, 72). The receipt read "Aerial survey recorded: Mirror Pool, Fernfall, Juniper Hollow · 3/6 for the crew. Wing returned to Windstone Ridge."
+- Interpretation: the lift chain works at play speed and the survey loop reads clearly. While airborne, the "n/6" count includes places spotted on the current flight but not yet recorded. The sighting message says a safe landing is still needed, but a player may read the count as already saved. Hypothesis to check with a person.
+- Decision: keep, and observe again with a person. Next questions: can a new pilot find the rising air from the motes and the HUD bearing alone? Does circling with **S** held feel natural? Is a single afternoon long enough to reach Shellglass?
+- Retest: on the `ridge-soaring` checkpoint, ask a pilot to survey Juniper Hollow without directions. Record where they first climbed and how long it took.
+
 ## Triage after the session
 
 Give joining failures, lost progress and incorrect bank entries first attention. If a passenger misses a payment, record the two displayed balances before filing. Different balances call for a synchronization or save test. Matching balances and a surprised passenger call for a feedback test. Hear each player’s explanation before sharing the other person’s answer.

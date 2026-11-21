@@ -34,6 +34,7 @@ Press **O → Live playtest** or open **Live checkpoints** in the Workbench on t
 | `wren-discover` | The crew arrives outside the unrepaired garden. |
 | `wren-morning` | The repair is paid and Wren is about to leave home. |
 | `ridge-checkout` | The crew is unqualified. The first player stands at the Windstone Ridge loan rack facing the meadow. In a pair, the second stands beside the landing sign to mark the meadow. Press **E** to launch the checkout. |
+| `ridge-soaring` | A dry 10:30 with the crew qualified and the Mirror Pool survey done. Both players stand at the rack. Press **E** for an island survey flight and climb in the rising air. |
 
 Agents can use the same scenario IDs from the shell. For example, to try fishing alone:
 
