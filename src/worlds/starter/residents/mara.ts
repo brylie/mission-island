@@ -1,4 +1,5 @@
 import type { ResidentDefinition } from '../../../residents/definition.ts'
+import { maraFieldLines } from '../../../journal/outing.ts'
 import { ferryServiceRestored } from '../../../ferry-repair.ts'
 import { distance, harborDock } from '../../../world.ts'
 
@@ -22,7 +23,7 @@ export const mara: ResidentDefinition = {
     lines({ state, kept }) {
       if (kept.includes('mara-supper')) {
         return ['“There’s the crew that fed me! That stew lasted me three suppers.”',
-          '“Next low tide, walk Driftwood Beach east to the Shellglass pool. Watch what the water leaves behind.”']
+          '“I’ll be back at the dock in the morning if you’d like another walk.”']
       }
       return [ferryServiceRestored(state)
         ? '“The ferry ramp is open again. I watched your crew lay that deck from the dock. The whole harbor is talking about it.”'
@@ -31,6 +32,7 @@ export const mara: ResidentDefinition = {
         : '“Welcome to the harbor. The depot has a delivery and a lookout shift for your crew. That ramp east of here is the old ferry terminal. We’ll put it back to work someday.”',
       '“You’ll find me at the small dock most mornings. Pick up the rod from your cottage chest and cast from the dock if you’d like to try your luck.”']
     },
+    fieldNotes: state => maraFieldLines(state.journal),
   },
   favors: [{
     id: 'mara-supper', title: 'Carrots for Mara’s supper', coins: 5, trust: 1,

@@ -16,6 +16,7 @@ import { restoreIsland, saveIsland } from './island-state.ts'
 import { updateHeldItems } from './items.ts'
 import { createFreight } from './freight.ts'
 import { createGateRepair } from './gate-repair.ts'
+import { createJournal } from './journal.ts'
 import { createFerryRepair } from './ferry-repair.ts'
 import { createResidents } from './residents.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
@@ -69,20 +70,20 @@ function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoP
 
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
   const physics = createCargoPhysics()
-  const juniper = createJuniperHabitat()
-  const driftwood = createDriftwoodSchool(clock() >>> 0)
+  const juniper = createJuniperHabitat(), driftwood = createDriftwoodSchool(clock() >>> 0)
   const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
   const trial = playtest && settleTrial(state, physics, prepareTrial(state, playtest))
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
   const freight = createFreight(crew, state, clock, checkpoint)
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
-  const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
+  const journal = createJournal(state, checkpoint)
+  const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint)
   const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0]))
-  const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk }, checkpoint)
+  const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk, mara: journal.hearMara }, checkpoint)
   const farm = createFarmOrders(state, crew.notifyAll, clock, checkpoint)
   const materials = createMaterialsWork(state, crew.notifyAll, () => residents.keep(wren, repairSupplyFavor))
-  const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, materials, createFerryRepair(state, physics, crew.notifyAll, freight.creditCrate), checkpoint)
+  const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, materials, createFerryRepair(state, physics, crew.notifyAll, freight.creditCrate), journal, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
@@ -111,7 +112,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         member.reachUntil = 0
         continue
       }
-      walkCrew(state, member, before, connected, now, tickSeconds, orders.completeFire, checkpoint)
+      walkCrew(state, member, before, connected, now, tickSeconds, orders.completeFire, journal.explore)
       farm.tick(player)
     }
     updateHeldItems(state)

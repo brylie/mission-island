@@ -53,7 +53,7 @@ export function populate(recipe: BiomeRecipe) {
 
 interface Conditions { hour: number; rain: number }
 
-export function createBiome(recipe: BiomeRecipe, layout = populate(recipe)) {
+export function createBiome(recipe: BiomeRecipe, layout = populate(recipe), clover = { bite: .035, regrowth: 1 }) {
   const navigation = habitatNavigation(layout.patches)
   let state = structuredClone(layout), tick = 0, escapes = 0, grazed = 0, encounters = 0
   let random = seededRandom(recipe.seed + 91017)
@@ -141,7 +141,7 @@ export function createBiome(recipe: BiomeRecipe, layout = populate(recipe)) {
       move(hare, forage, 1.25)
     } else {
       hare.behavior = 'grazing'
-      forage.patch.stock -= .035
+      forage.patch.stock -= clover.bite
       grazed++
       if (forage.patch.stock <= .15) hare.rest = 2
     }
@@ -222,7 +222,7 @@ export function createBiome(recipe: BiomeRecipe, layout = populate(recipe)) {
       random = seededRandom(recipe.seed + 91017)
     }
     const food = state.patches.flatMap((patch, i) => patch.kind === 'clover' && goals[i] ? [{ ...goals[i], patch }] : [])
-    const growth = .001 * (.2 + daylight(conditions.hour)) * (1 + conditions.rain / 100)
+    const growth = .001 * clover.regrowth * (.2 + daylight(conditions.hour)) * (1 + conditions.rain / 100)
     while (tick < target) {
       for (const { patch } of food) patch.stock = Math.min(1, patch.stock + growth)
       for (const hare of state.hares) {

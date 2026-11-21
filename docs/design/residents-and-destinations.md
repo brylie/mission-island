@@ -12,7 +12,9 @@ Trust grows over several kept promises. One knowingly broken promise can undo th
 
 **Playable.** Mara leaves the porch at 06:00, reaches the dock at 06:15, leaves work at 18:00 and is home at 18:15. Players can approach Mara for a lead. They can get a rod from their own cottage chest and fish from the shore or the stopped skiff. The dock serves small craft.
 
-**Playable favor.** Mara asks for two carrots from Island Farm for a stew. Once the crew keeps it, Mara greets them as the crew that fed her and passes on a clue about the Shellglass tide pool. [Residents and favors](../mechanics/resident-favors.md)
+**Playable favor.** Mara asks for two carrots from Island Farm for a stew. Once the crew keeps it, Mara greets them as the crew that fed her. [Residents and favors](../mechanics/resident-favors.md)
+
+**Playable outing.** Mara gives both walking clues on the first conversation. Either player can revisit them in the shared field journal. She acknowledges the crew’s first record and suggests returning to Juniper in heavy rain. [Mara’s field outing](../player-guide.md#maras-field-outing)
 
 **Proposed detail.** A line worn smooth along one side of the dock shows where Mara rests the rod. Leave the boarding edge clear so a crewmate can paddle in while the other talks. A later favor could ask the crew to watch where fish school near the shore and recognize the shared observation. [Field outing #51](https://github.com/brylie/mission-island/issues/51)
 

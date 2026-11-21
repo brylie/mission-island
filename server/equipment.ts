@@ -5,8 +5,9 @@ import { outfitRequirement, type CrewAppearance } from '../src/crew-appearance.t
 import { pieceSlots } from '../src/wardrobe-stock.ts'
 import type { InventoryItem } from '../src/inventory.ts'
 import { nearbyPlot } from '../src/farm.ts'
+import type { FishId } from '../src/journal/fish.ts'
 import type { FishingResult, Player, Snapshot } from '../src/protocol.ts'
-import { crateSize, offset } from '../src/world.ts'
+import { crateSize, offset, type Point } from '../src/world.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewCommand } from './commands.ts'
 import { stopPrimary, stowTool, type CrewMember } from './crew.ts'
@@ -16,10 +17,10 @@ import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 
 export function createEquipment(
   state: Snapshot, physics: Pick<ReturnType<typeof createCargoPhysics>, 'launch'>,
-  tickSeconds: number, random: () => number, checkpoint?: () => void,
+  tickSeconds: number, random: () => number, landed: (player: Player, bobber: Point) => FishId, checkpoint?: () => void,
 ) {
-  function fishResult(member: CrewMember, result: FishingResult) {
-    member.notify?.({ type: 'fishing-result', result })
+  function fishResult(member: CrewMember, result: FishingResult, fish?: FishId) {
+    member.notify?.({ type: 'fishing-result', result, ...(fish && { fish }) })
   }
 
   function isReadyToCast(member: CrewMember) {
@@ -106,7 +107,7 @@ export function createEquipment(
           member.primary?.kind === 'reel', tickSeconds)
         if (result) {
           if (result === 'caught') player.goods.fish++
-          fishResult(member, result)
+          fishResult(member, result, result === 'caught' ? landed(player, cast.bobber) : undefined)
           player.casting = null
           stopPrimary(member)
           if (result === 'caught') checkpoint?.()

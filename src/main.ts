@@ -16,11 +16,12 @@ import { gateStepText } from './gate-repair'
 import { favorFeedback } from './resident-notices'
 import { ferryFeedback } from './ferry-repair-ui'
 import { createJobBoard } from './job-board-ui'
+import { catchLabel, createJournalPage } from './journal-ui'
+import { shellglassTideAt } from './shellglass-tide'
 import { atJobBoard, jobs } from './jobs'
 import { starterTools, toolNames } from './inventory'
 import type { InventoryItem } from './inventory'
 import type { ClientMessage, FishingResult, Input, Player, ServerMessage, Snapshot } from './protocol'
-import { starterDiscoveries } from './scenery'
 import { createRenderer } from './scene'
 import { bindLanInvite } from './lan-invite'
 import { bindPlaytestCopy } from './playtest-link'
@@ -48,6 +49,7 @@ const crewRows = [element('crew-0'), element('crew-1')]
 const boardButton = element<HTMLButtonElement>('open-job-board')
 const boardDialog = element<HTMLDialogElement>('job-board-dialog')
 const board = createJobBoard(boardDialog, (id) => send({ type: 'take-job', id }))
+const journal = createJournalPage(element('journal-dialog'), element('open-journal'), () => live && !modalOpen(), () => pauseControls())
 const guideButton = element<HTMLButtonElement>('open-crew-guide')
 const guideDialog = element<HTMLDialogElement>('crew-guide-dialog')
 const guide = createCrewGuide(guideDialog, (dismissed) => {
@@ -157,10 +159,8 @@ showNotice()
 drawIslandMap(map, id)
 
 function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player | undefined) {
-  if (earlier) {
-    const found = starterDiscoveries.find(({ id }) => player.discoveries.includes(id) && !earlier.discoveries?.includes(id))
-    if (found) actionFeedback = { key: '', label: `Discovered ${found.name}`, until: performance.now() + 4200 }
-  }
+  const news = journal.update(state, player, earlier)
+  if (news) actionFeedback = { key: '', label: news, until: performance.now() + 4200 }
   wardrobe.update(state, player)
   if (counterDialog.open) counter.update(state, player, atClothingCounter(player) && !heldItem(state, player))
   const coins = state.crewCoins
@@ -299,7 +299,7 @@ function connect() {
         break
       case 'fishing-result': {
         const [key, label] = feedbackText[incoming.result]
-        actionFeedback = { key, label, until: performance.now() + 1900 }
+        actionFeedback = { key, label: catchLabel(incoming.fish) ?? label, until: performance.now() + 1900 }
         break
       }
       case 'farm-pay': case 'barrow-returned':
@@ -319,6 +319,12 @@ function connect() {
       case 'resident-chat':
       case 'ferry-tally':
         openGuide('resident' in incoming ? incoming.resident : 'tally')
+        break
+      case 'tide-staff':
+        actionFeedback = { key: '', label: `Shellglass Tide Pool · ${shellglassTideAt(incoming.time).phase}`, until: performance.now() + 3900 }
+        break
+      case 'field-unavailable':
+        actionFeedback = { key: '', label: 'Find a clear view of the subject and try again', until: performance.now() + 1900 }
         break
       case 'favor-accepted':
       case 'favor-pay':
@@ -455,7 +461,7 @@ function openJobBoard() {
 
 function modalOpen() {
   return optionsDialog.open || boardDialog.open || guideDialog.open || joinNameDialog.open ||
-    wardrobeDialog.open || counterDialog.open
+    wardrobeDialog.open || counterDialog.open || journal.dialog.open
 }
 
 function openClothing(fromWardrobe: boolean) {

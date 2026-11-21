@@ -42,7 +42,7 @@ These positions come from the playable wing and the [ridge scout definitions](..
 Every place a player can discover on foot also has an **aerial survey**. Once the Mirror Pool survey is done, the rack lends the wing for island survey flights.
 - **Recording a survey.** Pass within 12 m of a place while at least 4 m above the ground, and the pilot sees that it was spotted. A safe landing anywhere records every place spotted on that flight for the whole crew. A crash, a landing in the sea or a disconnect loses that flight's sightings. A place already recorded adds nothing.
 - **What the pilot sees.** The HUD shows the height above ground, the nearest working lift with its bearing and distance, and the nearest place still unsurveyed. Free flights have no orbs, so pilots steer by the rising air and those bearings. The minimap marks working lift in lilac and unsurveyed places in gold.
-- **Rewards.** Aerial surveys are crew progress, saved with the island. Older saves start with none. They pay no coins, so they suit the planned [field journal](https://github.com/brylie/mission-island/issues/8).
+- **Rewards.** Aerial surveys are crew progress, saved with the island. Older saves start with none. They pay no coins, like the [field journal](field-journal.md).
 
 The glider has roughly a 3:1 glide, so the ridge alone reaches only the places near it. Rising air sits where the land would make it. The training wind blows from the southeast, so it lifts over slopes that face it. On a sunny day, dark soil, rooftops and bare rock warm faster than the grass around them and send up thermals. Rising motes show each column: lilac for ridge lift, warm gold for a thermal. Circle with the nose up to climb, and leave near the top.
 

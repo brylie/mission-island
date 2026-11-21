@@ -1,4 +1,5 @@
 import { atHomeChest, atHomeDoor, byTruckBed, clothingInteraction, freeBed, heldItem } from './actions.ts'
+import { fieldInteractions } from './field-interactions.ts'
 import { clothingCounter, farmPlots, market, nearbyPlot, saleValue, seedPrice } from './farm.ts'
 import { canPickUp, gateActions, gateHint, gateOptions, gateTarget } from './gate-repair.ts'
 import { farmActions, farmInteractions, type FarmAction } from './farm-orders.ts'
@@ -6,6 +7,7 @@ import type { GateAction } from './gate-repair.ts'
 import { ferryActions, ferryChoiceOnly, ferryDrop, ferryInteractions } from './ferry-repair.ts'
 import type { FerryAction } from './ferry-repair.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, jobBoard, orderContribution } from './jobs.ts'
+import { besideRange, journalInteractions } from './journal/sightings.ts'
 import type { Item, Player, Snapshot } from './protocol.ts'
 import { materialsActions, materialsInteractions, type MaterialsAction } from './materials-interactions.ts'
 import { stagingFavor, wantsCargo } from './residents/favors.ts'
@@ -17,14 +19,14 @@ import type { Point } from './world.ts'
 import { starterResidents } from './worlds/starter/residents.ts'
 
 export type InteractionAction = GateAction | ResidentAction | FarmAction | MaterialsAction | FerryAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
-  'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note'
+  'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note' | 'record' | 'inspect-field'
 export const interactionActions: readonly InteractionAction[] = [
   ...gateActions, ...residentActions, ...farmActions, ...materialsActions, ...ferryActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
-  'harvest', 'pick-up', 'welcome-note',
+  'harvest', 'pick-up', 'welcome-note', 'record', 'inspect-field',
 ]
 // These change shared progress or speak for the crew, so the host runs them only when the player chose them.
 export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions, ...farmActions, ...materialsActions,
-  ...ferryChoiceOnly]
+  ...ferryChoiceOnly, 'record', 'inspect-field']
 
 // What E sends: an action and, for items, farm plots and residents, which one.
 export interface InteractionChoice { action: InteractionAction; subject?: number }
@@ -139,7 +141,21 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
     options.push({ action: 'welcome-note', key: 'E', label: 'Read your welcome note', name: 'Your door',
       at: aimedAt(cottageDoor(crewHomes[player.id]), 1.2), radius: .7 })
   }
-  return [...options, ...materialsInteractions(state, player), ...gateInteractions(state, gate.secondary), ...residents.talk, ...residents.accept]
+  const field = fieldInteractions(state, player)
+  const sightings = journalInteractions(state, player).filter(({ at }) =>
+    !field.some(inspection => inspection.at.x === at?.x && inspection.at.z === at?.z))
+  return [...options, ...materialsInteractions(state, player), ...gateInteractions(state, gate.secondary),
+    ...residents.talk, ...residents.accept, ...field, ...sightings]
+}
+
+// What E does with nothing under the reticle. A journal record needs an aim, so it is never the default.
+export function defaultInteraction(state: Snapshot, player: Player) {
+  return interactions(state, player).find(({ action }) => action !== 'record')
+}
+
+// A journal subject the player is standing beside. It can be recorded without an aim when no other key has a use here.
+export function besideSubject(state: Snapshot, player: Player) {
+  return journalInteractions(state, player).find(({ at }) => at && distance(player, at) <= besideRange)
 }
 
 export function sameChoice(a: InteractionChoice, b: InteractionChoice) {

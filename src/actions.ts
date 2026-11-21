@@ -2,7 +2,7 @@ import type { Item, Player, Snapshot } from './protocol'
 import { clothingCounter, market, nearbyPlot, seedPrice } from './farm.ts'
 import { cargoSlots, cottageDoor, crateSize, crewHomes, distance, truckBed, truckSeatSpeed } from './world.ts'
 import { truckPoint } from './truck-pose.ts'
-import { interactions } from './interaction-options.ts'
+import { besideSubject, defaultInteraction } from './interaction-options.ts'
 import type { Interaction, InteractionChoice } from './interaction-options.ts'
 
 export function heldItem(state: Pick<Snapshot, 'items'>, player: Player) {
@@ -101,6 +101,12 @@ function ridingHint(state: Snapshot, player: Player): [string, string] {
   return player.seat === 'driver' ? ['Space', 'Brake to exit truck'] : ['', 'Wait for the truck to stop']
 }
 
+// What E acts on: the interaction under the reticle, else the best one in reach. With nothing else to
+// prompt for, a journal subject within arm's reach counts, so recording does not depend on mouse aim.
+function chosenInteraction(state: Snapshot, player: Player, focus?: Interaction) {
+  return focus ?? defaultInteraction(state, player) ?? (fallbackHint(state, player)[1] ? undefined : besideSubject(state, player))
+}
+
 // The prompt names the interaction under the reticle, or the best one in reach.
 export function actionHint(state: Snapshot, player: Player, focus?: Interaction): [string, string] {
   if (player.sleeping) return ['E', 'Waiting for your crewmate · Cancel']
@@ -109,14 +115,14 @@ export function actionHint(state: Snapshot, player: Player, focus?: Interaction)
   if (fight) return ['Left click', fight.pulling ? 'Fish pulling · release to ease tension' : 'Fish hooked · hold to reel']
   if (player.casting) return ['', 'Watching the bobber']
   if (player.seat) return ridingHint(state, player)
-  const option = focus ?? interactions(state, player)[0]
+  const option = chosenInteraction(state, player, focus)
   return option ? [option.key, option.label] : fallbackHint(state, player)
 }
 
 // What E sends: the interaction the player chose, so the host can refuse one that is no longer open.
 export function interactRequest(state: Snapshot, player: Player, focus?: Interaction):
   { type: 'interact'; choice?: InteractionChoice } | 'open-job-board' {
-  const option = focus ?? interactions(state, player)[0]
+  const option = chosenInteraction(state, player, focus)
   if (!option) return { type: 'interact' }
   if (option.action === 'job-board') return 'open-job-board'
   return { type: 'interact', choice: { action: option.action, ...(option.subject !== undefined && { subject: option.subject }) } }
