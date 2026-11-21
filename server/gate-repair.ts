@@ -1,4 +1,4 @@
-import { gateFavor, gateMendedStage, gateway, gatewayClear, onBench, toolboxItem, wrenAt } from '../src/gate-repair.ts'
+import { atGate, gateFavor, gateMendedStage, gateway, gatewayClear, onBench, toolboxItem, wrenAt } from '../src/gate-repair.ts'
 import type { GateAction, GateStep } from '../src/gate-repair.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { distance, toolboxHome } from '../src/world.ts'
@@ -21,6 +21,8 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
   function recallToolbox() {
     const toolbox = toolboxItem(state)
     if (!toolbox || repair().stage === 'sagging' || onBench(toolbox)) return false
+    // While the swollen gate is being planed, a toolbox set down at the gate is in use, not left behind.
+    if (repair().swelling && toolbox.holder === null && atGate(toolbox)) return false
     const holder = state.players.find((player) => player.id === toolbox.holder)
     if (holder?.connected) return false
     shelveToolbox()
@@ -67,7 +69,7 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
         break
       case 'open':
         state.gate = { open: true, closePending: false }
-        if (current.stage !== 'mended') step(member, 'stuck')
+        if (current.stage !== 'mended' || current.swelling === 'swollen') step(member, 'stuck')
         break
       case 'close':
         state.gate.closePending = true

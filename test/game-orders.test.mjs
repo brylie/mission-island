@@ -118,7 +118,7 @@ test('an older completed shift pools legacy wallets and keeps its order and farm
   assert.equal(newcomer.state.crewCoins, 22)
   file.write(h.game.snapshotForSave())
   const migrated = file.load()
-  assert.equal(migrated.version, 4)
+  assert.equal(migrated.version, 5)
   assert.equal(migrated.lastStarterPay, 'fire')
   assert.ok(migrated.crew.every(({ player }) => !('coins' in player)))
   assert.equal(createGame({ save: migrated }).crewCoins, 22)

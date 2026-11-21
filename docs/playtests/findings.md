@@ -48,6 +48,16 @@ For each session, copy the block below. Give each distinct observation a short t
 - Decision — Keep the new spot. The agreement button, the bay and the hand-in all worked from real clicks and **E** presses: staging the crate paid `+5 coins · Stage a load for Bram · Crew bank · Bram trust +1`, and handing Mara two carrots changed her greeting to the tide-pool clue. Aiming was skipped by sending the talk choice over the page's own socket after the camera swung into a wall.
 - Retest — Two people at the depot: one aims at Bram from the road while the other stands at the board. Pass: each gets their own prompt without moving.
 
+### 2026-11-21 · wren-swell · Telling Wren the gate swings clear
+
+- Starting point — `wren-swell` checkpoint, a solo agent session in the browser. Wren trusts the crew once, the swollen-gate job is under way, and the toolbox is beside the gate.
+- Moment — The crewmate pressed **E** at the gate and saw `The gate catches on its swollen edge`. The mission card switched to the finding. They walked to Wren at the bench and talked; the agent sent the talk choice over the page's socket. The conversation showed a greeting, a remark, advice, Wren's question with the finding in bold, and **Tell Wren it swings clear** beside **Tell Wren it still catches**. Clicked the first.
+- Both screens — Solo. Trust went 1 → 0, the job stayed open, the report buttons disappeared until the next swing, and Wren's next greeting named the false report.
+- Outcome — Found and fixed three things. The mission card said the toolbox was on the bench while it lay by the gate. Wren's greeting still said the gate "swings like new" while it was swollen. Wren's breach line and the neighbors' gossip both said "this morning" a few minutes after the report.
+- Interpretation — The finding beside both answers makes the stakes plain. Hypothesis: a player who didn't do the swing still understands from the bold line what they would be claiming.
+- Decision — Keep. Next, test with two people: one swings, the other reports without talking to the first.
+- Retest — Two people. Pass: the reporting player can say, before choosing, what the last swing showed, and afterward the swinger can explain what happened from Wren's greeting alone.
+
 ## Triage after the session
 
 Give joining failures, lost progress and incorrect bank entries first attention. If a passenger misses a payment, record the two displayed balances before filing. Different balances call for a synchronization or save test. Matching balances and a surprised passenger call for a feedback test. Hear each player’s explanation before sharing the other person’s answer.

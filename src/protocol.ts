@@ -126,7 +126,8 @@ export type ServerMessage =
   | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'open-wardrobe' | 'open-clothing-counter' }
   | { type: 'resident-chat'; resident: string }
   | { type: 'favor-accepted'; resident: string; favor: string; playerId: number }
-  | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number }
+  | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number; restored: boolean }
+  | { type: 'favor-report'; resident: string; favor: string; playerId: number; result: 'honest' | 'broken'; trust: number }
   | { type: 'gate-step'; step: GateStep }
   | { type: 'angler-purchase'; result: ClothingPurchaseResult }
   | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }

@@ -56,11 +56,12 @@ export function missionCard(state: Snapshot, id: number) {
     return { label: 'NEIGHBOR FAVOR', title: favor.title, detail: favor.detail, progress: 'Repair steps', value, max: 4,
       text: `${value} / 4 steps`, instruction: favor.next }
   }
-  const asked = residentFavor(state)
+  const asked = local && residentFavor(state)
   if (asked) {
     const { resident, favor } = asked
-    return { label: 'NEIGHBOR FAVOR', title: favor.title, detail: favor.detail, progress: `${resident.identity.name} is waiting`,
-      value: 0, max: 1, text: 'Not yet delivered', instruction: favor.next }
+    const guide = favor.guide?.(state, local) ?? favor
+    return { label: 'NEIGHBOR FAVOR', title: guide.title, detail: guide.detail, progress: `${resident.identity.name} is waiting`,
+      value: 0, max: 1, text: 'Not yet done', instruction: guide.next }
   }
   const completed = Math.min(state.jobs.completed, secondIslandGoal)
   return {

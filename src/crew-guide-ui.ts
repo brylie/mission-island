@@ -1,8 +1,8 @@
 import { crateDriverXp, haulerUnlockXp } from './ore-contracts'
 import { jobs } from './jobs'
 import type { Player, Snapshot } from './protocol'
-import { conversationLines, favorGuides, isCustom, openOffer } from './residents/favors'
-import { atResident } from './residents/schedule'
+import { createResidentConversation } from './resident-conversation-ui'
+import { favorGuides } from './residents/favors'
 import { crewHomes, jobPay, starterPay } from './world'
 import { starterResident, starterResidents } from './worlds/starter/residents'
 
@@ -10,13 +10,12 @@ function favorTitle(receipt: Snapshot['lastFavorPay']) {
   return receipt && starterResident(receipt.resident)?.favors.find((favor) => favor.id === receipt.favor)?.title
 }
 
-export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismissed: boolean) => void, accept: (subject: number) => void) {
+export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismissed: boolean) => void,
+  act: Parameters<typeof createResidentConversation>[1]) {
   const title = dialog.querySelector<HTMLElement>('#guide-title')!
   const note = dialog.querySelector<HTMLElement>('#guide-note')!
   const conversation = dialog.querySelector<HTMLElement>('#resident-conversation')!
-  const greeting = dialog.querySelector<HTMLElement>('#resident-line')!
-  const advice = dialog.querySelector<HTMLElement>('#resident-advice')!
-  const agree = dialog.querySelector<HTMLButtonElement>('#resident-accept')!
+  const talk = createResidentConversation(dialog, act)
   const favors = dialog.querySelector<HTMLElement>('#guide-favors')!
   const home = dialog.querySelector<HTMLElement>('#guide-home')!
   const workTitle = dialog.querySelector<HTMLElement>('#guide-work-title')!
@@ -25,7 +24,6 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   const lead = dialog.querySelector<HTMLElement>('#guide-lead')!
   const toggle = dialog.querySelector<HTMLButtonElement>('#toggle-fisher-lead')!
   let shownFavors = ''
-  let speaker = -1
 
   function showLead(visible: boolean) {
     lead.hidden = !visible
@@ -38,11 +36,6 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
     setDismissed(lead.hidden)
   })
 
-  // Agreeing goes back through the host, which checks the resident is still in reach and still asking.
-  agree.addEventListener('click', () => {
-    if (speaker >= 0) accept(speaker)
-    dialog.close()
-  })
 
   function showFavors(state: Snapshot, player: Player) {
     const entries = favorGuides(starterResidents, state, player)
@@ -93,19 +86,11 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   return {
     update,
     open(state: Snapshot, player: Player, talking: string | false, dismissed: boolean) {
-      speaker = talking ? starterResidents.findIndex(({ id }) => id === talking) : -1
-      const resident = starterResidents[speaker]
-      title.textContent = resident ? `${resident.identity.name} · ${resident.identity.role}` : 'Crew guide'
-      conversation.hidden = !resident
-      note.hidden = Boolean(resident)
-      if (resident) {
-        [greeting.textContent, advice.textContent] = conversationLines(resident, state)
-        const offer = openOffer(resident, state)
-        agree.hidden = !offer || isCustom(offer) || !atResident(resident, state, player)
-        agree.textContent = `Agree to help ${resident.identity.name}`
-      } else {
-        showLead(!dismissed)
-      }
+      const speaking = talking ? talk.show(state, player, talking) : undefined
+      title.textContent = speaking ?? 'Crew guide'
+      conversation.hidden = !speaking
+      note.hidden = Boolean(speaking)
+      if (!speaking) showLead(!dismissed)
       dialog.showModal()
       update(state, player)
     },

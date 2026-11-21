@@ -14,6 +14,10 @@ Before the repair, anyone can **Try the sagging gate**. The leaf opens about 17Â
 
 The day after the repair, grass grows over the groove. Wren leaves by the front door, opens the gate and takes the shortcut to work, then closes it once the opening is clear. Wren's greeting recognizes the crew. Put the toolbox back on the bench with **Return the toolbox to Wren**. A toolbox put back on the bench after the repair stays there.
 
+## The swollen gate
+
+Two days or more after the repair, Wren mentions that the wet spell has swollen the gate, so it catches halfway again. After either player agrees, the leaf stops short and Wren goes round the back. **Swing the gate to check it** shows both players whether it catches. With the toolbox at the gate, **Plane the swollen edge**, then swing again. Report back to Wren in the conversation. Saying it swings clear after it caught breaks a promise. See [Reporting back and broken promises](resident-favors.md#reporting-back-and-broken-promises). While the job is under way, a toolbox set down at the gate stays there when someone talks to Wren.
+
 ## Prompts and input
 
 **E** acts on the step the prompt shows. The client sends that step with the request, and the host carries it out only if the same step is still available to that player. When two players press at once, the first press is carried out and the second does nothing. A request with no step never moves the job along. A gate step takes priority over setting down a held toolbox. Swinging the gate and talking to Wren both give way to setting down or picking up an item nearby, so the toolbox on Wren's bench can be picked up while Wren is working there. Away from the gate, **E** sets the toolbox down.

@@ -2,6 +2,7 @@ import { atHomeChest, atHomeDoor, byTruckBed, clothingInteraction, freeBed, held
 import { clothingCounter, farmPlots, market, nearbyPlot, saleValue, seedPrice } from './farm.ts'
 import { canPickUp, gateActions, gateHint, gateOptions, gateTarget } from './gate-repair.ts'
 import type { GateAction } from './gate-repair.ts'
+import { swellActions, swellHint, swellOptions, type SwellAction } from './gate-swell.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, jobBoard, orderContribution } from './jobs.ts'
 import type { Item, Player, Snapshot } from './protocol.ts'
 import { stagingFavor, wantsCargo } from './residents/favors.ts'
@@ -12,14 +13,14 @@ import { cottageDoor, crewHomes, distance, lookout } from './world.ts'
 import type { Point } from './world.ts'
 import { starterResidents } from './worlds/starter/residents.ts'
 
-export type InteractionAction = GateAction | ResidentAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
+export type InteractionAction = GateAction | SwellAction | ResidentAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
   'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note'
 export const interactionActions: readonly InteractionAction[] = [
-  ...gateActions, ...residentActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
+  ...gateActions, ...swellActions, ...residentActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
   'harvest', 'pick-up', 'welcome-note',
 ]
 // These change shared progress or speak for the crew, so the host runs them only when the player chose them.
-export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions]
+export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...swellActions, ...residentActions]
 
 // What E sends: an action and, for items, farm plots and residents, which one.
 export interface InteractionChoice { action: InteractionAction; subject?: number }
@@ -124,7 +125,9 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
   const gate = gateOptions(state, player)
   const residents = residentInteractions(starterResidents, state, player)
   const held = heldItem(state, player)
-  const options = [...gateInteractions(state, gate.primary), ...(held ? [putDown(state, player, held)] : []),
+  const swell = swellOptions(state, player).map((action): Interaction => ({ action, ...gateTarget(state, 'open'),
+    key: swellHint(action)[0], label: swellHint(action)[1] }))
+  const options = [...swell, ...gateInteractions(state, gate.primary), ...(held ? [putDown(state, player, held)] : []),
     ...homeInteractions(state, player), ...workInteractions(state, player), ...(held ? [] : pickups(state, player))]
   if (atHomeDoor(player) && !isNight(state.weather.hour)) {
     options.push({ action: 'welcome-note', key: 'E', label: 'Read your welcome note', name: 'Your door',

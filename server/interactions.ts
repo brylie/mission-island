@@ -14,12 +14,14 @@ import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
 import type { createResidents } from './residents.ts'
+import type { createGateSwell } from './gate-swell.ts'
 
 export function createInteractions(
   state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'remove'>,
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
-  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>, checkpoint?: () => void,
+  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'report' | 'stageCrate'>,
+  swell: Pick<ReturnType<typeof createGateSwell>, 'act'>, checkpoint?: () => void,
 ) {
   function useHomeChest(member: CrewMember) {
     const { player } = member
@@ -105,6 +107,10 @@ export function createInteractions(
       case 'talk': return residents.talk(member, subject)
       case 'accept-favor': return residents.accept(member, subject)
       case 'hand-over': return residents.handOver(member, subject)
+      case 'report-sound':
+      case 'report-fault': return residents.report(member, subject, action === 'report-sound' ? 'sound' : 'fault')
+      case 'check-swing':
+      case 'plane': return swell.act(action)
       case 'job-board': return
       default: return gate.act(member, action)
     }

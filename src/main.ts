@@ -59,7 +59,7 @@ const guideDialog = element<HTMLDialogElement>('crew-guide-dialog')
 const guide = createCrewGuide(guideDialog, (dismissed) => {
   leadDismissed = dismissed
   writeStorage('localStorage', leadKey(), dismissed ? 'yes' : null)
-}, (subject) => send({ type: 'interact', choice: { action: 'accept-favor', subject } }))
+}, (action, subject) => send({ type: 'interact', choice: { action, subject } }))
 const respawn = element<HTMLButtonElement>('respawn')
 bindControlsToggle(element<HTMLButtonElement>('controls-toggle'), element('game-controls'))
 const spray = element('spray-control')
@@ -428,8 +428,7 @@ function connect() {
       case 'resident-chat':
         openGuide(incoming.resident)
         break
-      case 'favor-accepted':
-      case 'favor-pay':
+      case 'favor-accepted': case 'favor-report': case 'favor-pay':
         actionFeedback = { ...favorFeedback(incoming, id), until: performance.now() + 4200 }
         break
       case 'gate-step':

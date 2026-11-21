@@ -1,11 +1,11 @@
 # Residents and favors
 
-Four residents live on Starter Island. Each one has a home, a walk to work, working hours, a short conversation and one favor. Both players see the same routines on the shared island clock. Trust is shared by the crew and kept separately for each resident.
+Four residents live on Starter Island. Each one has a home, a walk to work, working hours, a conversation with varied small talk, and at least one favor. Both players see the same routines on the shared island clock. Trust is shared by the crew and kept separately for each resident.
 
 | Resident | Home | Work | Hours | Favor | Pays |
 | --- | --- | --- | --- | --- | --- |
 | **Mara**, fisher | Porch of the teal-roofed house by the depot trail | Small fishing dock | 06:00–18:00 | **Carrots for Mara’s supper:** give 2 carrots | +5 coins, Mara trust +1 |
-| **Wren**, neighbor | Lilac-roofed cottage east of the Blue cottage | Mending bench by the ferry approach | 07:00–17:00 | **Wren’s gate:** mend the hinge. See [Neighbor repairs](neighbor-repairs.md) | +5 coins, Wren trust +1 |
+| **Wren**, neighbor | Lilac-roofed cottage east of the Blue cottage | Mending bench by the ferry approach | 07:00–17:00 | In order: **Wren’s gate:** mend the hinge ([Neighbor repairs](neighbor-repairs.md)). **Wren’s swollen gate:** plane the edge and report back ([below](#reporting-back-and-broken-promises)). **Fish for Wren’s pie:** 2 fish. **Carrots for Wren’s soup:** 2 carrots | +5 coins and Wren trust +1 each |
 | **Ines**, shopkeeper | Coral house across the Seabrook square | West end of the Seabrook Market stall | 07:30–18:00 | **Fresh fish for the market display:** give 2 fish | +5 coins, Ines trust +1 |
 | **Bram**, harbor steward | Above the Harbor Depot office | Tally spot beside the job board | 06:30–16:30 | **Stage a load for Bram:** set one crate down in the yellow bay beside the depot, off Harbor Depot road. Offered after the starter shift | +5 coins, Bram trust +1 |
 
@@ -30,13 +30,31 @@ Keeping a favor pays the crew bank once and raises that resident's trust by one.
 | --- | --- | --- |
 | 0 | Stranger | The resident has not yet relied on the crew. |
 | 1–2 | Familiar | The crew has kept at least one favor. Greetings recognize the crew. |
-| 3 or more | Trusted | Reserved for later favors that lend a tool or ask more of the crew. |
+| 3 or more | Trusted | The resident relies on the crew. Wren lends the toolbox from the bench without being asked. |
 
-Each favor counts once. Breaking a promise and making amends are planned with a clearly signposted breach moment. See [Shared crew Trust](../design/residents-and-destinations.md#shared-crew-trust).
+Each favor counts once. Alongside the tier, each resident has a **standing**: *steady*, *wronged* after a broken promise, or *wary* once the crew has put it right.
+
+## Reporting back and broken promises
+
+Some favors are finished by reporting back. Wren's swollen gate is the first. After agreeing, the crew swings the gate to check it. A swing that catches is shown to both players (`The gate catches on its swollen edge`), and the crew guide records the finding. Planing the edge needs the toolbox at the gate, and then another swing. The conversation with Wren shows what the last swing found, next to two buttons: **Tell Wren it swings clear** and **Tell Wren it still catches**.
+
+- **Telling Wren it still catches** costs nothing. Wren waits, and both players see that the crew was honest.
+- **Telling Wren it swings clear after a clean swing** keeps the favor.
+- **Telling Wren it swings clear after it caught** breaks the promise. This is the only way to lose trust. Wren's trust drops by two (never below zero), and both players see `Your crewmate told Wren it was fixed, but it wasn’t · Wren trust −2`. Wren goes round the back again, and the next greeting says why, to either player, after a late join or a host restart. The finding is cleared, so the crew has to swing the gate again before saying anything more.
+
+**Making amends.** Either crewmate can put it right by planing the gate, swinging it clear and telling Wren. The work pays, but earns no trust. Wren thanks the crew and says they will check the next job in person.
+
+**Rebuilding.** Two more kept favors with Wren, the pie and the soup, restore Wren's reliance on the crew. The second adds a point of trust, the receipt says `Wren relies on the crew again`, Wren says they have stopped checking the crew's work, and the toolbox on the bench is the crew's to borrow. A failed swing, a disconnect mid-job or a declined favor never costs trust. See [Shared crew Trust](../design/residents-and-destinations.md#shared-crew-trust).
+
+## Small talk
+
+Every conversation adds one remark chosen for the moment, between the greeting and the advice. A remark can depend on the hour, the rain, where the resident is (home, work or walking), the crew's trust tier and standing, or anything both players can see in the shared world. For example, a resident might mention smoke over the lookout, a glider seen over Windstone Ridge, ripe carrots at Island Farm, or how far the crew is from the second island. Residents also pass on gossip: once Mara has had her carrots, Ines might mention it, and after a broken promise to Wren the other residents notice Wren is upset.
+
+Remarks fill small tokens, such as a time-of-day hello, the weather, and the name of the crewmate talking, from pools chosen for the moment. So the same remark comes out in several ways. Each crewmate's client picks the remark from a seed and never repeats the previous one for that resident. The island's shared remarks are in [`island-remarks.ts`](../../src/worlds/starter/island-remarks.ts), and each resident's own lines are in [`residents/remarks.ts`](../../src/worlds/starter/residents/remarks.ts). To add a line, give it the conditions it suits. A line with no conditions fits any moment.
 
 ## Saved state
 
-The island save keeps one record per resident: trust, the favors kept, and the favor under way. It also keeps the last favor receipt. Island saves are version 4. A version 3 save carries Wren's trust and the gate's progress into Wren's record. A resident added after a save was made starts as a stranger, with no migration.
+The island save keeps one record per resident: trust, the favors kept, the favor under way, the crew's last finding on checked work, any broken promise with its amends and rebuilding count, and how many breaches have been rebuilt. It also keeps the last favor receipt and whether Wren's gate is swollen or planed. Island saves are version 5. A version 4 save starts every record with no breach, and a version 3 save carries Wren's trust and the gate's progress into Wren's record. A resident added after a save was made starts as a stranger, with no migration.
 
 ## Adding a resident
 
@@ -51,3 +69,6 @@ Start `MISSION_ISLAND_CHECKPOINT=village-favors npm run playtest`. Both crewmate
 - Stage a crate for Bram while the partner drives the flatbed past the bay. Does the truck lane stay clear?
 - Restart the host with a favor under way, then join late as the second player. Is the favor in the crew guide?
 - Sleep through a night and find each resident again by the clock.
+- Talk to the same resident several times, in rain and sun and at different hours. Do the remarks feel like this person, and does any line jar with the moment?
+
+For the breach, start `MISSION_ISLAND_CHECKPOINT=wren-swell npm run playtest`. One player swings the gate and sees it catch. The other walks to Wren and must choose what to say. Afterwards, can the player who wasn't there explain what happened from Wren's next greeting alone?

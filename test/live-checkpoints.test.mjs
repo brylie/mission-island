@@ -53,6 +53,12 @@ for (const { id: checkpoint } of scenarioCatalog) {
         assert.ok(state.weather.hour < 7)
         assert.equal(state.crewCoins, 5)
         assert.equal(state.residents.wren.trust, 1)
+      } else if (checkpoint === 'wren-swell') {
+        assert.equal(state.residents.wren.active, 'wren-swell')
+        for (const player of state.players) assert.equal(interactions(state, player)[0]?.action, 'check-swing')
+        a.dispatch({ type: 'interact', choice: { action: 'check-swing' } })
+        assert.equal(game.tick().residents.wren.checked, 'fault')
+        assert.equal(interactions(state, state.players[0])[0]?.action, 'plane', 'the toolbox is already at the gate')
       } else if (checkpoint === 'wren-discover') {
         assert.equal(state.gateRepair.stage, 'sagging')
         assert.ok(onBench(toolboxItem(state)))

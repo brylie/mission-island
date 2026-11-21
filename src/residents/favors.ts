@@ -2,11 +2,11 @@ import { activeJob } from '../jobs.ts'
 import type { Player, Snapshot } from '../protocol.ts'
 import { distance, type Point } from '../world.ts'
 import type { FavorDefinition, FavorGuide, ResidentDefinition } from './definition.ts'
-import { trustTier, type ResidentRecord } from './trust.ts'
+import { blankRecord, standingOf, trustTier } from './trust.ts'
 
 type Registry = readonly ResidentDefinition[]
 type Records = Pick<Snapshot, 'residents'>
-const blank: ResidentRecord = { trust: 0, kept: [], active: null }
+const blank = blankRecord()
 
 export function recordFor(state: Records, resident: ResidentDefinition) {
   return state.residents[resident.id] ?? blank
@@ -29,14 +29,25 @@ export function isCustom(favor: FavorDefinition) {
   return 'custom' in favor.kind
 }
 
-// The resident's own lines, with the ask or the reminder in place of the advice while a favor is open.
-export function conversationLines(resident: ResidentDefinition, state: Snapshot): [string, string] {
+export function conversationContext(resident: ResidentDefinition, state: Snapshot) {
   const record = recordFor(state, resident)
-  const [greeting, advice] = resident.conversation.lines({ state, tier: trustTier(record.trust), kept: record.kept })
+  return { state, tier: trustTier(record.trust), standing: standingOf(record), kept: record.kept, forgiven: record.forgiven }
+}
+
+// The resident's own greeting and advice.
+export function conversationLines(resident: ResidentDefinition, state: Snapshot): [string, string] {
+  return resident.conversation.lines(conversationContext(resident, state))
+}
+
+// What the resident says about a favor: the ask, the reminder, or the question about checked work with what
+// the crew last found, so whoever answers knows the stakes. Custom favors speak through the resident's own lines.
+export function favorLine(resident: ResidentDefinition, state: Snapshot) {
+  const waiting = pendingReport(resident, state)
+  if (waiting) return `${waiting.report.question} ${waiting.report.found[waiting.checked]}`
   const active = activeFavor(resident, state)
   const favor = active ?? openOffer(resident, state)
-  if (!favor || isCustom(favor)) return [greeting, advice]
-  return [greeting, active ? favor.reminder : favor.offer]
+  if (!favor || isCustom(favor)) return undefined
+  return active ? favor.reminder : favor.offer
 }
 
 // Crew guide entries for every favor under way. Built from the shared snapshot, so a crewmate who joins mid-favor sees it too.
@@ -64,4 +75,11 @@ export function wantsCargo(registry: Registry, state: Snapshot) {
 // The cargo favor a crate set down here would complete.
 export function stagingFavor(registry: Registry, state: Snapshot, point: Point) {
   return cargoFavors(registry, state).find(({ kind }) => distance(point, kind.drop) < kind.radius)
+}
+
+// A favor waiting for the crew's word on checked work.
+export function pendingReport(resident: ResidentDefinition, state: Snapshot) {
+  const favor = activeFavor(resident, state)
+  const { checked } = recordFor(state, resident)
+  return favor?.report && checked ? { favor, report: favor.report, checked } : undefined
 }

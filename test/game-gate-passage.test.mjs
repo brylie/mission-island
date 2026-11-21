@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { blankRecord } from '../src/residents/trust.ts'
 import test from 'node:test'
 import { actionHint, interactRequest } from '../src/actions.ts'
 import { fenceZ, gateway, wrenAt } from '../src/gate-repair.ts'
@@ -66,7 +67,7 @@ test('a player following Wren out through the mended gate is never shut in, and 
   const settled = (save) => {
     save.islandTime = at(6.98, 1)
     Object.assign(save.world.gateRepair, { stage: 'mended', acceptedAt: at(8), mendedAt: at(10) })
-    save.world.residents.wren = { trust: 1, kept: ['wren-gate'], active: null }
+    save.world.residents.wren = { ...blankRecord(), trust: 1, kept: ['wren-gate'], active: null }
   }
   const h = setup(t, { players: [player(0, { x: gateway.x - .5, z: fenceZ + 1.3 })], arrange: settled })
   const a = h.join(tokens[0])

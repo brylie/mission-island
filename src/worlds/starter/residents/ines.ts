@@ -1,4 +1,5 @@
 import type { ResidentDefinition } from '../../../residents/definition.ts'
+import { inesRemarks } from './remarks.ts'
 
 const porch = { x: 43, z: 18.7 }
 const square = { x: 42, z: 12 }
@@ -14,6 +15,7 @@ export const ines: ResidentDefinition = {
     departs: 7.5, returns: 18, pace: 40,
     route: () => [porch, square, stall].map((point) => ({ point })),
   },
+  remarks: inesRemarks,
   conversation: {
     lines({ tier, kept }) {
       if (kept.includes('ines-display')) {

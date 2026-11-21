@@ -2,11 +2,11 @@ import type { Interaction } from '../interaction-options.ts'
 import type { Player, Snapshot } from '../protocol.ts'
 import { walkingHeight } from '../terrain.ts'
 import type { ResidentDefinition } from './definition.ts'
-import { activeFavor, isCustom, openOffer } from './favors.ts'
+import { activeFavor, isCustom, openOffer, pendingReport } from './favors.ts'
 import { atResident, residentAt } from './schedule.ts'
 
-export type ResidentAction = 'talk' | 'accept-favor' | 'hand-over'
-export const residentActions: readonly ResidentAction[] = ['talk', 'accept-favor', 'hand-over']
+export type ResidentAction = 'talk' | 'accept-favor' | 'hand-over' | 'report-sound' | 'report-fault'
+export const residentActions: readonly ResidentAction[] = ['talk', 'accept-favor', 'hand-over', 'report-sound', 'report-fault']
 
 interface ResidentOptions { talk: Interaction[]; accept: Interaction[] }
 
@@ -39,6 +39,12 @@ export function residentInteractions(registry: readonly ResidentDefinition[], st
     if (give) options.talk.push(give)
     options.talk.push(talk)
     if (offer && !isCustom(offer)) options.accept.push({ action: 'accept-favor', subject, key: 'E', label: `Agree to help ${name}`, name })
+    // Reporting back is a choice in the conversation too: both answers are always offered side by side.
+    const waiting = pendingReport(resident, state)
+    if (waiting) {
+      options.accept.push({ action: 'report-sound', subject, key: 'E', label: waiting.report.sound, name },
+        { action: 'report-fault', subject, key: 'E', label: waiting.report.fault, name })
+    }
   }
   return options
 }

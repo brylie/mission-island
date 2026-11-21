@@ -18,6 +18,7 @@ import { updateHeldItems } from './items.ts'
 import { createFreight } from './freight.ts'
 import { createGateRepair } from './gate-repair.ts'
 import { createResidents } from './residents.ts'
+import { createGateSwell } from './gate-swell.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { wren } from '../src/worlds/starter/residents/wren.ts'
 import { createOrders } from './orders.ts'
@@ -66,8 +67,9 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
   const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0]))
-  const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk }, checkpoint)
-  const interactions = createInteractions(state, growth, physics, orders, gate, residents, checkpoint)
+  const swell = createGateSwell(state, crew.notifyAll)
+  const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { talk: { wren: gate.talk }, ...swell.hooks }, checkpoint)
+  const interactions = createInteractions(state, growth, physics, orders, gate, residents, swell, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
