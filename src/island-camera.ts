@@ -189,26 +189,23 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       const forwardX = Math.sin(heading)
       const forwardZ = Math.cos(heading)
       const radius = 5.92 + vehicleBlend * 3.38
-      const elevation = 0.38 - vehicleBlend * 0.025 + pitch
-      const distance = radius * Math.cos(elevation)
-      const height = 1.55 + radius * Math.sin(elevation)
-      // A slight shoulder offset keeps the character in view without pulling the reticle off what is ahead.
-      const shoulder = 0.24 * (1 - vehicleBlend)
-      const lookAhead = 1.55 + vehicleBlend * 1.35
-
-      pivot.set(anchor.x, anchor.y + 1.55, anchor.z)
-      desired.set(anchor.x - forwardX * distance + forwardZ * shoulder, anchor.y + height,
-        anchor.z - forwardZ * distance - forwardX * shoulder)
+      const elevation = 0.32 - vehicleBlend * 0.025 + pitch
+      // Over-the-shoulder framing: the camera orbits a pivot just above and to the right of the head
+      // and always looks through it, so the reticle sits over the shoulder rather than on the character.
+      // Looking down tips the aim ray onto the ground just ahead. A vehicle keeps a lower, centred pivot.
+      const shoulder = 0.38 * (1 - vehicleBlend)
+      const pivotHeight = 1.55 + 0.5 * (1 - vehicleBlend)
+      pivot.set(anchor.x + forwardZ * shoulder, anchor.y + pivotHeight, anchor.z - forwardX * shoulder)
+      desired.set(pivot.x - forwardX * radius * Math.cos(elevation), pivot.y + radius * Math.sin(elevation),
+        pivot.z - forwardZ * radius * Math.cos(elevation))
       const clear = terrainClearance(pivot, desired, visibleArm(pivot, desired))
       arm = snap ? clear : Math.min(clear, arm + (clear - arm) * blend)
       Vector3.LerpToRef(pivot, desired, arm, follow.position)
-      // In tight spaces keep a view over the character's shoulder as the arm retracts.
-      follow.position.y = Math.max(Math.max(groundHeight(follow.position), waterLevel) + 0.35,
-        pivot.y + (desired.y - pivot.y) * (0.65 + 0.35 * arm))
-      const lookUp = Math.max(0, -pitch - 0.28) * 2.4
-      // Looking down lowers the aim point so the reticle reaches benches, crates and the ground ahead.
-      const lookDown = Math.max(0, pitch) * 1.45
-      target.set(anchor.x + forwardX * lookAhead, anchor.y + 1.35 + lookUp - lookDown, anchor.z + forwardZ * lookAhead)
+      follow.position.y = Math.max(Math.max(groundHeight(follow.position), waterLevel) + 0.35, follow.position.y)
+      // Aim through the pivot from wherever the camera ended up, even when the ground lifted it.
+      pivot.subtractToRef(follow.position, target)
+      if (target.lengthSquared() < 0.0025) target.set(forwardX, 0, forwardZ)
+      target.normalize().scaleInPlace(6 + vehicleBlend * 3).addInPlace(pivot)
       follow.setTarget(target)
       if (!tracking) {
         tracking = true
