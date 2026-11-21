@@ -18,6 +18,15 @@ For each session, copy the block below. Give each distinct observation a short t
 - Retest — setup, observable pass condition, owner if assigned, and result/build when repeated.
 ```
 
+### 2026-11-21 · field-outing · A shared journal from the shore to Juniper
+
+- Starting point — Two isolated Brave sessions joined the fresh `field-outing` checkpoint at 07:30. The walkthrough used scripted waypoints with normal host movement input, keyboard **E**, and the live journal buttons. Mara’s written clues contained landmarks and directions.
+- Split route — Crew 1 followed the road through Seabrook and entered Shellglass along the Driftwood spur. The foxgloves stood on turf, and the dirt tread faded at the sand beside the wrack. Crew 1 stood on the dry rim to read the staff and record a limpet. Separating the limpet cluster from the staff let each prompt read clearly on approach.
+- Juniper — Crew 2 walked the worn track between the cottages, passed the cairn and reached the clover lookout on foot. The approach went around the tree just uphill from the cairn. Crew 2 recorded a grazing hare around 08:44. In an earlier pass, the grazing prompt disappeared before the key press. Slower consumption and faster regrowth gave the final run time to read and record the behavior.
+- Both screens — The first visit showed the same seven entries and seven observation XP. Crew 1 returned to Mara, who recognized the first record at Juniper and offered the rain clue. Crew 2 walked back down to the cairn and returned to the lookout during the shower. A sheltering hare earned the eighth record around 10:42, with both journals showing eight records and eight XP after Crew 2 reloaded.
+- Capture — Crew 2’s journal after reconnect shows the eight-record tally alongside the two connected crew slots. [Journal screenshot](../images/field-outing-journal.png)
+- Retest — Start `field-outing` with two seats. Give two new players only Mara’s clues and observe where they turn or stop. Navigation by first-time players remains unverified. The host test covers duplicate credit, stale observations, older saves and disk restart. [Field outing #51](https://github.com/brylie/mission-island/issues/51)
+
 ### 2026-11-21 · ridge-checkout · Pilot swap on Windstone Ridge
 
 - Starting point: the `ridge-checkout` live checkpoint on an in-memory playtest host, two seats, an unqualified crew. A coding agent played both roles. Crew 1 ran in the in-app browser. Crew 2 started in a second browser tab, and a script on the same host took the seat over for the swap. Nobody new to the game took part.

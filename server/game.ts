@@ -10,6 +10,7 @@ import type { CrewCommand } from './commands.ts'
 import { createCrewRoster, disconnect, stopped, type CrewMember, type CrewNotice } from './crew.ts'
 import { jump, prepareCrewMotion, walkCrew } from './crew-motion.ts'
 import { createEquipment, setAppearance } from './equipment.ts'
+import { createFieldJournal } from './field-journal.ts'
 import { advanceIsland } from './island-clock.ts'
 import { createInteractions } from './interactions.ts'
 import { restoreIsland, saveIsland } from './island-state.ts'
@@ -70,10 +71,11 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
   const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0]))
-  const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk }, checkpoint)
+  const journal = createFieldJournal(state, crew.notifyAll)
+  const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk, mara: journal.hearMara }, checkpoint)
   const farm = createFarmOrders(state, crew.notifyAll, clock, checkpoint)
   const materials = createMaterialsWork(state, crew.notifyAll, () => residents.keep(wren, repairSupplyFavor))
-  const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, materials, checkpoint)
+  const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, materials, journal, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
@@ -149,8 +151,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       case 'interact':
         interactions.interact(member, message.choice)
         // Save order progress, completion, and crew payouts together.
-        checkpoint?.()
-        break
+        return checkpoint?.()
       case 'seat':
         if (!member.player.sleeping) toggleSeat(state, member)
         break

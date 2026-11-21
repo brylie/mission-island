@@ -1,6 +1,6 @@
 import { byTruckBed, freeBed, heldItem } from '../src/actions.ts'
 import { deliberateActions, interactions, sameChoice } from '../src/interaction-options.ts'
-import type { Interaction, InteractionChoice } from '../src/interaction-options.ts'
+import type { InteractionAction, InteractionChoice } from '../src/interaction-options.ts'
 import { starterTools } from '../src/inventory.ts'
 import { deliveryDrop, deliveryRadius } from '../src/jobs.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
@@ -13,10 +13,11 @@ import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
-import { isFarmAction } from '../src/farm-orders.ts'
+import { isFarmAction, type FarmAction } from '../src/farm-orders.ts'
 import type { createFarmOrders } from './farm-orders.ts'
 import type { createResidents } from './residents.ts'
 import type { createMaterialsWork } from './materials-work.ts'
+import type { createFieldJournal } from './field-journal.ts'
 
 export function createInteractions(
   state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'remove'>,
@@ -24,7 +25,8 @@ export function createInteractions(
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
   residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>,
   farm: Pick<ReturnType<typeof createFarmOrders>, 'act'>,
-  materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>, checkpoint?: () => void,
+  materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>,
+  journal: Pick<ReturnType<typeof createFieldJournal>, 'inspect'>, checkpoint?: () => void,
 ) {
   function useHomeChest(member: CrewMember) {
     const { player } = member
@@ -94,8 +96,7 @@ export function createInteractions(
     recordCultivation(state, 'harvest', plot, player.id)
   }
 
-  function perform(member: CrewMember, { action, subject = -1 }: Interaction) {
-    if (isFarmAction(action)) return farm.act(member, action)
+  function perform(member: CrewMember, action: Exclude<InteractionAction, FarmAction | 'inspect-field'>, subject = -1) {
     const item = state.items[subject]
     switch (action) {
       case 'put-down': return putDown(member, heldItem(state, member.player)!)
@@ -129,11 +130,13 @@ export function createInteractions(
       player.sleeping = false
       return
     }
+    if (choice?.action === 'inspect-field') return journal.inspect(member, choice.subject)
     const options = interactions(state, player)
     const chosen = choice ? options.find((option) => sameChoice(option, choice))
       : options.find(({ action }) => !deliberateActions.includes(action))
-    if (!chosen) return
-    perform(member, chosen)
+    if (!chosen || chosen.action === 'inspect-field') return
+    if (isFarmAction(chosen.action)) farm.act(member, chosen.action)
+    else perform(member, chosen.action, chosen.subject)
     updateHeldItems(state)
   }
 

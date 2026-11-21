@@ -1,6 +1,7 @@
 import type { DriftwoodFrame } from '../src/simulation/driftwood-school.ts'
 import { restoreFarmWork } from '../src/farm-orders.ts'
 import { farmPlots } from '../src/farm.ts'
+import { restoreJournal } from '../src/field-journal.ts'
 import { initialMaterialsWork } from '../src/materials-work.ts'
 import type { createJuniperHabitat } from '../src/juniper-habitat.ts'
 import type { AviationProgress } from '../src/aviation.ts'
@@ -16,6 +17,11 @@ import type { IslandSave } from './save.ts'
 
 function restoreAviation(saved: AviationProgress | undefined): Snapshot['aviation'] {
   return { qualified: saved?.qualified ?? false, surveyed: saved?.surveyed ?? false, aerial: [...saved?.aerial ?? []], flight: null, marked: false }
+}
+
+function restoreCrewJournal(save: IslandSave | undefined) {
+  const discoveries = save?.crew.flatMap(({ player }) => Array.isArray(player.discoveries) ? player.discoveries : []) ?? []
+  return restoreJournal(save?.world.journal, discoveries)
 }
 
 export function restoreIsland(
@@ -38,6 +44,7 @@ export function restoreIsland(
     aviation: restoreAviation(save?.world.aviation),
     farmWork: restoreFarmWork(save?.world.produce),
     materialsWork: structuredClone(save?.world.materialsWork ?? initialMaterialsWork()),
+    journal: restoreCrewJournal(save),
   }
   state.skiff.speed = 0
   // A carried hinge pin goes back to the mending bench when the host stops.
@@ -60,7 +67,7 @@ export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['
     version: 4, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
     world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial },
-      gate, gateRepair, residents, materialsWork, produce: state.farmWork.progress,
+      gate, gateRepair, residents, materialsWork, produce: state.farmWork.progress, journal: state.journal,
       ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }

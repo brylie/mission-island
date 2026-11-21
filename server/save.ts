@@ -4,6 +4,7 @@ import { isFreightTicket } from '../src/ore-contracts.ts'
 import { aerialSurveys, type AviationProgress } from '../src/aviation.ts'
 import { farmOrders, type FarmProgress } from '../src/farm-orders.ts'
 import { farmPlots } from '../src/farm.ts'
+import { knownFieldId } from '../src/field-journal.ts'
 import { isJobId, jobs } from '../src/jobs.ts'
 import type { JobBoardState } from '../src/jobs.ts'
 import type { Player, Snapshot } from '../src/protocol'
@@ -23,7 +24,8 @@ export type IslandSave = {
   islandTime: number
   growth: number[]
   world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay'> &
-    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress; produce?: FarmProgress; materialsWork?: Snapshot['materialsWork'] }
+    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress; produce?: FarmProgress;
+      materialsWork?: Snapshot['materialsWork']; journal?: Snapshot['journal'] }
   crew: { token: string; player: Player; reserved: boolean }[]
 }
 
@@ -163,10 +165,29 @@ function isSavedFarmWork(value: unknown) {
   return (stage === 'offer' || stage === 'qualified' || stage === 'complete') && delivered === 0 && load === 0
 }
 
-function hasValidProgress(world: Record<string, unknown>) {
+function hasValidProgress(world: Record<string, unknown>, islandTime: number) {
   return (world.jobs === undefined || isJobBoard(world.jobs, world.mission)) &&
     (world.aviation === undefined || isSavedAviation(world.aviation)) &&
-    (world.produce === undefined || isSavedFarmWork(world.produce))
+    (world.produce === undefined || isSavedFarmWork(world.produce)) &&
+    isSavedJournal(world.journal, islandTime)
+}
+
+function isSavedJournal(value: unknown, islandTime: number) {
+  if (value === undefined) return true
+  if (!isRecord(value) || typeof value.heardMara !== 'boolean' || !Array.isArray(value.records)) return false
+  const ids = new Set<string>()
+  for (const record of value.records) {
+    if (!isRecord(record) || !knownFieldId(record.id) || ids.has(record.id)) return false
+    ids.add(record.id)
+    if (record.seen === undefined) {
+      if (!record.id.startsWith('place:')) return false
+      continue
+    }
+    const { seen } = record
+    if (!isRecord(seen) || !isNumber(seen.time) || seen.time < 0 || seen.time > islandTime ||
+      !isNumber(seen.rain) || seen.rain < 0 || seen.rain > 1) return false
+  }
+  return true
 }
 
 function isSavedMaterials(world: Record<string, unknown>, islandTime: number) {
@@ -216,7 +237,7 @@ function isSave(value: unknown): value is IslandSave {
     !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
   const { world } = value
   const reservedIds = new Set(value.crew.filter(({ reserved }) => reserved).map(({ player }) => player.id))
-  if (!hasValidProgress(world)) return false
+  if (!hasValidProgress(world, value.islandTime)) return false
   return isPose(world.truck) && isPose(world.skiff) && isSavedIncident(world, value.islandTime) && isGateRepair(world, value.islandTime) &&
     isSavedMaterials(world, value.islandTime) &&
     Array.isArray(world.farm) && world.farm.length === farmPlots.length &&

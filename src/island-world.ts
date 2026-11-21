@@ -1,4 +1,5 @@
 import type { Material } from '@babylonjs/core/Materials/material'
+import { createFieldOutingScenery } from './assets/field-outing'
 import { createBuoy, createDock, createHarborBoat } from './assets/waterfront'
 import { createClothingCounter, createHomeChest, createRock, createTree, createUmbrella, createWardrobe, umbrellaColors } from './assets/props'
 import { createHouse } from './assets/buildings'
@@ -83,6 +84,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const features = (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site)
   placeSiteFeatures(meshes, features, walkingHeight)
   const shellglass = createShellglassTide(meshes, features.find(feature => feature.site === 'shellglass' && feature.model === 'tide-staff'))
+  const updateFieldScenery = createFieldOutingScenery(meshes)
   for (const point of shellRocks) {
     const { size, heading } = point
     const rock = meshes.sphere(point.x, groundHeight(point) + .055, point.z, size, .23, size * .65, '#798b80')
@@ -143,6 +145,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     } = {}) {
     northernScenery.update(frame.camera, close)
     wildlife(frame, driftwood)
+    updateFieldScenery(frame.time)
     marketShower(frame.time, frame.camera, runoff)
     lights(frame.camera, nightLighting(frame.weather.hour))
     shore.quality = quality

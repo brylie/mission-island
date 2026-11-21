@@ -115,6 +115,7 @@
         <p id="mission-step" class="mission-step">Pick up crates and load the flatbed.</p>
         <div class="mission-actions">
           <button id="open-crew-guide" type="button" aria-haspopup="dialog" aria-controls="crew-guide-dialog" disabled>Crew guide</button>
+          <button id="open-field-journal" type="button" aria-haspopup="dialog" aria-controls="field-journal-dialog" disabled>Field journal</button>
           <button id="open-job-board" type="button" aria-haspopup="dialog" aria-controls="job-board-dialog" hidden>Harbor job board</button>
         </div>
         <p id="farm-hud" class="farm-hud" aria-label="Shared farm order" aria-live="polite" hidden></p>
@@ -198,7 +199,23 @@
         <p id="resident-line"></p>
         <p id="resident-advice"></p>
         <button id="resident-accept" type="button" hidden></button>
+        <section id="resident-field-notes" aria-label="Field clues"></section>
       </div>
+      <form method="dialog"><button type="submit" autofocus>Close</button></form>
+    </dialog>
+
+    <dialog id="field-journal-dialog" class="options-dialog crew-guide-dialog field-journal-dialog" aria-labelledby="journal-title">
+      <h2 id="journal-title">Crew field journal</h2>
+      <p id="journal-progress"></p>
+      <section aria-labelledby="journal-clues-title">
+        <h3 id="journal-clues-title">Clues from Mara</h3>
+        <ul id="journal-clues"></ul>
+      </section>
+      <section aria-labelledby="journal-records-title">
+        <h3 id="journal-records-title">Observations</h3>
+        <p id="journal-empty">Look for Inspect or Record prompts on the walk.</p>
+        <ul id="journal-records"></ul>
+      </section>
       <form method="dialog"><button type="submit" autofocus>Close</button></form>
     </dialog>
 

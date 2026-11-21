@@ -16,6 +16,7 @@ import type { FavorReceipt, ResidentRecords } from './residents/trust'
 import type { InteractionChoice } from './interaction-options'
 import type { FarmOrderId, FarmWork } from './farm-orders'
 import type { MaterialPockets, MaterialsWork, RepairMaterial } from './materials-work'
+import type { FieldJournal, FieldSubject } from './field-journal'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
 
 export interface Weather {
@@ -119,6 +120,7 @@ export interface Snapshot {
   lastFavorPay?: FavorReceipt
   materialsWork: MaterialsWork
   aviation: AviationState
+  journal: FieldJournal
 }
 
 export type ServerMessage =
@@ -132,6 +134,8 @@ export type ServerMessage =
   | { type: 'order-pay'; coins: number; id: JobId }
   | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'open-wardrobe' | 'open-clothing-counter' }
   | { type: 'resident-chat'; resident: string }
+  | { type: 'field-record'; id: FieldSubject; time: number; credited: boolean }
+  | { type: 'field-unavailable' }
   | { type: 'favor-accepted'; resident: string; favor: string; playerId: number }
   | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number }
   | { type: 'gate-step'; step: GateStep }

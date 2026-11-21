@@ -16,6 +16,7 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   const conversation = dialog.querySelector<HTMLElement>('#resident-conversation')!
   const greeting = dialog.querySelector<HTMLElement>('#resident-line')!
   const advice = dialog.querySelector<HTMLElement>('#resident-advice')!
+  const fieldNotes = dialog.querySelector<HTMLElement>('#resident-field-notes')!
   const agree = dialog.querySelector<HTMLButtonElement>('#resident-accept')!
   const favors = dialog.querySelector<HTMLElement>('#guide-favors')!
   const home = dialog.querySelector<HTMLElement>('#guide-home')!
@@ -100,6 +101,11 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
       note.hidden = Boolean(resident)
       if (resident) {
         [greeting.textContent, advice.textContent] = conversationLines(resident, state)
+        fieldNotes.replaceChildren(...(resident.conversation.fieldNotes?.(state) ?? []).map(line => {
+          const paragraph = document.createElement('p')
+          paragraph.textContent = line
+          return paragraph
+        }))
         const offer = openOffer(resident, state)
         agree.hidden = !offer || isCustom(offer) || !atResident(resident, state, player)
         agree.textContent = `Agree to help ${resident.identity.name}`

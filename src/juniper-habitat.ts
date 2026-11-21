@@ -34,7 +34,8 @@ export const juniperSolids = habitatObstacles(juniperLayout.patches).flatMap(o =
 })
 
 export function createJuniperHabitat() {
-  const biome = createBiome(recipe, juniperLayout)
+  // Keep a few feeding bouts long enough to watch from the trail after the crew walks here.
+  const biome = createBiome(recipe, juniperLayout, { bite: .009, regrowth: 4 })
   return (time: number, weather: Weather, players: readonly Point[]) => {
     const visitors = players.filter(p => distance(p, juniperCenter) < 14)
       .map(p => ({ x: p.x - juniperCenter.x, z: p.z - juniperCenter.z }))

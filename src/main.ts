@@ -12,6 +12,9 @@ import { materialsFeedback, repairMaterials } from './materials-work'
 import { bindControlsToggle } from './controls-toggle-ui'
 import { bindLookOptions } from './look-options-ui'
 import { createReticleFocus } from './reticle-ui'
+import { createFieldJournalUI } from './field-journal-ui'
+import { recordLabel } from './field-journal'
+import { shellglassTideAt } from './shellglass-tide'
 import { gateStepText } from './gate-repair'
 import { favorFeedback } from './resident-notices'
 import { createJobBoard } from './job-board-ui'
@@ -49,6 +52,9 @@ const boardDialog = element<HTMLDialogElement>('job-board-dialog')
 const board = createJobBoard(boardDialog, (id) => send({ type: 'take-job', id }))
 const guideButton = element<HTMLButtonElement>('open-crew-guide')
 const guideDialog = element<HTMLDialogElement>('crew-guide-dialog')
+const journalButton = element<HTMLButtonElement>('open-field-journal')
+const journalDialog = element<HTMLDialogElement>('field-journal-dialog')
+const journal = createFieldJournalUI(journalDialog)
 const guide = createCrewGuide(guideDialog, (dismissed) => {
   leadDismissed = dismissed
   writeStorage('localStorage', leadKey(), dismissed ? 'yes' : null)
@@ -241,6 +247,8 @@ function update(state: Snapshot) {
     }
   }
   guideButton.disabled = !player
+  journalButton.disabled = !player
+  journal.update(state.journal)
   openWardrobe.disabled = !player
   updateBoard(state, player)
   editCrewName.hidden = !player
@@ -318,6 +326,17 @@ function connect() {
       case 'resident-chat':
         openGuide(incoming.resident)
         break
+      case 'field-record': {
+        const name = recordLabel(incoming.id)
+        const label = incoming.id === 'place:shellglass'
+          ? `${name} · ${shellglassTideAt(incoming.time).phase}`
+          : incoming.credited ? `${name} added to the crew journal` : `${name} is in the crew journal`
+        actionFeedback = { key: incoming.credited ? '+1 observation XP' : '', label, until: performance.now() + 3900 }
+        break
+      }
+      case 'field-unavailable':
+        actionFeedback = { key: '', label: 'Find a clear view of the subject and try again', until: performance.now() + 1900 }
+        break
       case 'favor-accepted':
       case 'favor-pay':
         actionFeedback = { ...favorFeedback(incoming, id), until: performance.now() + 4200 }
@@ -356,6 +375,8 @@ function connect() {
     if (joinNameDialog.open) joinNameDialog.close()
     if (wardrobeDialog.open) wardrobeDialog.close()
     if (counterDialog.open) counterDialog.close()
+    if (journalDialog.open) journalDialog.close()
+    journalButton.disabled = true
     respawn.disabled = true
     writeStorage('sessionStorage', reloadKey, 'yes')
     actionFeedback = undefined
@@ -451,7 +472,7 @@ function openJobBoard() {
 
 function modalOpen() {
   return optionsDialog.open || boardDialog.open || guideDialog.open || joinNameDialog.open ||
-    wardrobeDialog.open || counterDialog.open
+    wardrobeDialog.open || counterDialog.open || journalDialog.open
 }
 
 function openClothing(fromWardrobe: boolean) {
@@ -634,6 +655,12 @@ openWardrobe.addEventListener('click', () => {
 })
 boardButton.addEventListener('click', openJobBoard)
 guideButton.addEventListener('click', () => openGuide())
+journalButton.addEventListener('click', () => {
+  if (!live || !snapshot || modalOpen()) return
+  pauseControls()
+  journalDialog.showModal()
+  journal.update(snapshot.journal)
+})
 respawn.addEventListener('click', () => {
   if (!live) return
   send({ type: 'respawn' })

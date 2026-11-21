@@ -5,6 +5,15 @@ export const ridgeViewpoint = { x: 36.5, z: 134 }
 export const ridgeLichenSite = { x: 40.2, z: 131.1 }
 export const ridgeLichenRocks = [[0, 0, 2.85], [-1.3, .78, 1.25], [.95, .71, .83]] as const
 export const mirrorPoolWillow = { x: 44.5, z: 106 }
+export const shellglassStaff = { x: 44.65, z: -31.45 }
+export const driftwoodWrack = { x: 42.6, z: -30.99 }
+export const driftwoodFoxgloves = [
+  { x: 40.4, z: -28.45 }, { x: 39.9, z: -28.18 }, { x: 40.78, z: -28.25 },
+  { x: 40.25, z: -27.95 }, { x: 41, z: -28.02 },
+]
+export const shellglassLimpets = [
+  { x: 45.62, z: -31.27 }, { x: 45.75, z: -31.34 }, { x: 45.86, z: -31.25 },
+]
 
 export const starterFeatures = [
   { site: 'harbor', name: 'Depot freight stack', model: 'crates', color: '#d99752', x: -52.5, z: -17.8 },
@@ -20,7 +29,7 @@ export const starterFeatures = [
   { site: 'pool', name: 'Mirror Pool fallen willow', model: 'log', color: '#80705b', heading: Math.PI / 2, ...mirrorPoolWillow },
   { site: 'ridge', name: 'Windstone survey scope', model: 'scope', color: '#e9af62', heading: -0.8, ...ridgeViewpoint },
   { site: 'splitstone', name: 'Splitstone sandstone cleft', model: 'splitstone', color: '#a78c6d', ...splitstone },
-  { site: 'shellglass', name: 'Mended Shellglass tide staff', model: 'tide-staff', color: '#6caca6', heading: Math.PI, scale: 0.72, x: 43, z: -36 },
+  { site: 'shellglass', name: 'Mended Shellglass tide staff', model: 'tide-staff', color: '#6caca6', heading: Math.PI, scale: 0.72, ...shellglassStaff },
 ] as const satisfies readonly SiteFeature[]
 
 export const beachUmbrellas = [{ x: 26, z: -39.6 }, { x: 33, z: -37.7 }, { x: 38.1, z: -35.3 }]
