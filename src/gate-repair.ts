@@ -118,9 +118,9 @@ function handsFor(state: GateWorld, player: Player) {
 }
 
 // The one pick-up rule, shared by E's item pickup and the gate, so a swing never hides an item in reach.
-// Crates are cargo while a delivery is open or a resident has asked the crew to move one.
-export function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 'residents'>, item: Item, player: Player, cargoWanted = false) {
-  const eligible = item.kind === 'crate' ? deliveryDrop(state) !== undefined || cargoWanted
+// Crates are cargo while a delivery is open, a resident has asked the crew to move one, or ferry timber is on the way.
+export function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 'residents' | 'ferryRepair'>, item: Item, player: Player, cargoWanted = false) {
+  const eligible = item.kind === 'crate' ? deliveryDrop(state) !== undefined || cargoWanted || state.ferryRepair.haul > 0
     : item.kind === 'toolbox' ? toolboxPickable(state, item) : state.mission === 'fire'
   return eligible && !item.delivered && item.holder === null && distance(item, player) < 2.7 && Math.abs(item.y - player.y) < 2.1
 }
@@ -239,7 +239,7 @@ function toolboxWhere(state: Pick<Snapshot, 'items' | 'players'>, player: Player
   const holder = state.players.find((entry) => entry.id === toolbox.holder)
   if (holder) return holder.connected ? 'Your partner has the toolbox.'
     : `Your partner left with the toolbox. Talk to ${residentName} to have it put back on the mending bench.`
-  if (onBench(toolbox)) return `The toolbox is on ${residentName}’s mending bench by the ferry approach.`
+  if (onBench(toolbox)) return `The toolbox is on ${residentName}’s mending bench by the ferry yard.`
   return atGate(toolbox) ? 'The toolbox is set down by the gate.' : `The toolbox was left away from the gate. Talk to ${residentName} to get it back.`
 }
 
@@ -248,7 +248,7 @@ export function gateRepairGuide(state: Pick<Snapshot, 'gateRepair' | 'items' | '
   const { stage, pinHolder } = state.gateRepair
   const title = `${residentName}’s gate`
   if (stage === 'sagging') return { title, detail: `${residentName}’s garden gate drags a groove in the path.`,
-    next: `Talk to ${residentName} at the lilac-roofed cottage east of the Blue cottage, or at the mending bench by the ferry approach during the day.` }
+    next: `Talk to ${residentName} at the lilac-roofed cottage east of the Blue cottage, or at the mending bench by the ferry freight yard during the day.` }
   if (stage === 'mended') {
     const settled = gateMendedStage(state) === 'settled'
     return { title, detail: 'Gate repaired. The crew earned a favor with Wren.',
@@ -259,7 +259,7 @@ export function gateRepairGuide(state: Pick<Snapshot, 'gateRepair' | 'items' | '
   const tools = toolboxWhere(state, player)
   if (stage === 'accepted') return { title, detail, next: `${tools} Inspect the hinge at ${residentName}’s gate, east of the Blue cottage.` }
   if (stage === 'fitted') return { title, detail: 'The new pin is in.', next: 'Swing the gate to test it.' }
-  const pin = pinHolder === null ? 'Pick up a hinge pin at the mending bench by the ferry approach.'
+  const pin = pinHolder === null ? 'Pick up a hinge pin at the mending bench by the ferry freight yard.'
     : pinHolder === player.id ? 'You have the hinge pin. Bring it to the gate.' : 'Your partner has the hinge pin.'
   return { title, detail, next: `${tools} ${pin} Fit it at the gate with the toolbox close by.` }
 }

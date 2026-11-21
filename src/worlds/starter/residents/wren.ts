@@ -70,7 +70,7 @@ export const repairSupplyFavor: FavorDefinition = {
 // The pie and the soup are the favors that rebuild trust after the swollen gate, so they wait for it.
 const afterSwell = (state: Snapshot) => Boolean(state.residents.wren?.kept.includes(swellFavor))
 
-// Wren mends things at the bench by the ferry approach and lives in the lilac-roofed cottage.
+// Wren mends things at the bench by the ferry freight yard and lives in the lilac-roofed cottage.
 // The garden gate is a custom favor: talking accepts it, and its steps live in the gate repair.
 // The swollen gate is checked in the world and finished by reporting back, so it can break a promise.
 export const wren: ResidentDefinition = {

@@ -1,6 +1,6 @@
 import { jobs } from './jobs.ts'
 import type { Snapshot } from './protocol.ts'
-import { beachTrail, road } from './routes.ts'
+import { beachTrail, depotLane, harborRoad } from './routes.ts'
 import { groundHeight } from './terrain.ts'
 import { waypointsAlongPath } from './wayfinding.ts'
 import { distance, harbor, town, type Point } from './world.ts'
@@ -23,7 +23,8 @@ function routeUntil(path: Point[], end: Point) {
   return [...path.slice(0, segment), point]
 }
 
-const trunk = [{ x: harbor.x, z: road[0].z }, ...road.slice(1)]
+// From the depot, deliveries follow the depot lane east to the fork, then Harbor Depot road to Seabrook.
+const trunk = [{ x: harbor.x, z: depotLane[0].z }, ...depotLane.slice(1), ...harborRoad.filter(({ z }) => z > depotLane[0].z)]
 const branch = routeUntil(trunk, beachTrail.points[0])
 const farmDrop = jobs['farm-supplies'].drop
 const beachDrop = jobs['beach-gear'].drop

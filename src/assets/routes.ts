@@ -18,11 +18,14 @@ function ribbon({ surface }: MeshFactory, name: string, strips: ReadonlyArray<re
   return surface(name, positions, indices, material, undefined, uvs).freezeWorldMatrix()
 }
 
-export function createRoad(meshes: MeshFactory, points: readonly Point[], width = roadSurface.width) {
+// A branch road sits a few millimetres lower so it joins another without flicker, and its centreline can stop
+// short of the junction.
+export function createRoad(meshes: MeshFactory, points: readonly Point[], width = roadSurface.width,
+  { lift = 0, marked = points }: { lift?: number; marked?: readonly Point[] } = {}) {
   return {
-    shoulder: ribbon(meshes, 'Road shoulder', [points], width + roadSurface.shoulderWidth, roadSurface.shoulder, meshes.paintSurface('gravel'), 2.05),
-    asphalt: ribbon(meshes, 'Asphalt', [points], width, roadSurface.asphalt, meshes.paintSurface('stone', '#636d65'), 3.0),
-    markings: ribbon(meshes, 'Centerline', laneMarkings(points), 0.17, 0.099, '#e0cd9f'),
+    shoulder: ribbon(meshes, 'Road shoulder', [points], width + roadSurface.shoulderWidth, roadSurface.shoulder + lift, meshes.paintSurface('gravel'), 2.05),
+    asphalt: ribbon(meshes, 'Asphalt', [points], width, roadSurface.asphalt + lift, meshes.paintSurface('stone', '#636d65'), 3.0),
+    markings: ribbon(meshes, 'Centerline', laneMarkings(marked), 0.17, 0.099 + lift, '#e0cd9f'),
   }
 }
 

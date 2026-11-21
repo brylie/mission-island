@@ -5,7 +5,7 @@ import { beachUmbrellas, lampPosts, ridgeLichenRocks, ridgeLichenSite, shellRock
 import { ridgeHeading, ridgeLandingSign, ridgeRack, ridgeWindsock } from './ridge-scout.ts'
 import { flowerBeds, rainBarrel, sawhorse, woodpile } from './wren-garden.ts'
 import { walkingHeight } from '../../terrain.ts'
-import { ferryTerminal, localPoint, mendingBench, offset } from '../../world.ts'
+import { localPoint, mendingBench, offset } from '../../world.ts'
 import type { Point } from '../../world.ts'
 
 // Local support volumes in metres. Separate surfaces preserve the seat and taller back,
@@ -40,7 +40,6 @@ export const starterSolids = [
   ...starterFeatures.flatMap((feature) => solidsAt(feature, shapes[feature.model],
     'heading' in feature ? feature.heading : 0, 'scale' in feature ? feature.scale : 1)),
   ...solidsAt(jobBoard, [[1.75, .14, 1.95]]),
-  ...solidsAt(ferryTerminal, [[ferryTerminal.width, .24, 1.12]]),
   ...lampPosts.flatMap((post) => solidsAt(post, [[.14, .14, 2.74]])),
   ...beachUmbrellas.flatMap((post) => solidsAt(post, [[.16, .16, 2.27]])),
   ...shellRocks.flatMap((rock) => solidsAt(rock, [[rock.size, rock.size * .65, .17]], rock.heading)),

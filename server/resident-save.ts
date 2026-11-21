@@ -26,12 +26,12 @@ export function migrateResidents(value: unknown): unknown {
   return { ...value, version: 4, world: { ...world, residents, ...receipt && { lastFavorPay: receipt } } }
 }
 
-// Version 5 gives each record what the crew last found on checked work, any broken promise, and rebuilt breaches.
+// Version 6 gives each record what the crew last found on checked work, any broken promise, and rebuilt breaches.
 export function migrateTrust(value: unknown): unknown {
-  if (!isRecord(value) || value.version !== 4 || !isRecord(value.world) || !isRecord(value.world.residents)) return value
+  if (!isRecord(value) || value.version !== 5 || !isRecord(value.world) || !isRecord(value.world.residents)) return value
   const residents = Object.fromEntries(Object.entries(value.world.residents)
     .map(([id, record]) => [id, isRecord(record) ? { ...blankRecord(), ...record } : record]))
-  return { ...value, version: 5, world: { ...value.world, residents } }
+  return { ...value, version: 6, world: { ...value.world, residents } }
 }
 
 // A breach names a favor of this resident. Until amends it is the favor still under way; after, it is kept.

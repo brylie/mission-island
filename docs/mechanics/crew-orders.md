@@ -13,7 +13,7 @@ Crates are staged at the depot. Put them in the flatbed, drive to the teal circl
 
 The host saves the active order, its progress, the count of completed orders, and one bank balance for the crew. Completing an order deposits its posted pay once, regardless of who contributed or who is online. Returning and new players see the current balance. When loading a save with personal wallets, the host pools all unspent coins, including those of offline profiles. Later restarts load the saved bank directly.
 
-After four completed board orders the crew is marked ready for the second island. The readiness count belongs to the island save. Buying seeds or clothing draws on the shared bank and gives the purchase to the buyer. The travel route and loading behavior will be defined with the second island.
+After four completed board orders the crew is marked ready, and the [ferry terminal repair](ferry-terminal.md) opens. The readiness count belongs to the island save. While ferry timber is on the way, the board refuses delivery orders, because the timber rides in the depot crates. Market orders still work. Buying seeds or clothing draws on the shared bank and gives the purchase to the buyer. The travel route and loading behavior will be defined with the second island.
 
 ## Playtest
 

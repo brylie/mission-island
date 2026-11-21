@@ -2,13 +2,14 @@ import { front, fenceZ, gateMendedStage, gateway } from '../../../gate-layout.ts
 import type { Leg, ScheduleTrait } from '../../../residents/definition.ts'
 import { mendingBench, wrenCottage } from '../../../world.ts'
 
-// Wren's day: home in the garden, the mending bench by the ferry approach from 07:00 to 17:00.
+// Wren's day: home in the garden, the mending bench by the ferry freight yard from 07:00 to 17:00.
 const home = { x: gateway.x, z: fenceZ + 1.6 }
 const frontDoor = { x: gateway.x, z: front - .35 }
 const backDoor = { x: gateway.x, z: wrenCottage.z + wrenCottage.d / 2 + .35 }
 const lane = { x: gateway.x, z: fenceZ - 1.4 }
 const work = { x: mendingBench.x - 1.3, z: mendingBench.z }
-const toFerry = [lane, { x: -31.6, z: -12.5 }, { x: -31.4, z: work.z }, work]
+// Wren crosses Harbor Depot road just south of the fork, where drivers slow for the depot lane.
+const toFerry = [lane, { x: -26.4, z: -13.4 }, work]
 // The long way round: out the back door, between the Blue cottage and the fence, then down to the road.
 const westPath = gateway.x - 4.6
 const detour: Leg[] = [

@@ -54,7 +54,7 @@ Remarks fill small tokens, such as a time-of-day hello, the weather, and the nam
 
 ## Saved state
 
-The island save keeps one record per resident: trust, the favors kept, the favor under way, the crew's last finding on checked work, any broken promise with its amends and rebuilding count, and how many breaches have been rebuilt. It also keeps the last favor receipt and whether Wren's gate is swollen or planed. Island saves are version 5. A version 4 save starts every record with no breach, and a version 3 save carries Wren's trust and the gate's progress into Wren's record. A resident added after a save was made starts as a stranger, with no migration.
+The island save keeps one record per resident: trust, the favors kept, the favor under way, the crew's last finding on checked work, any broken promise with its amends and rebuilding count, and how many breaches have been rebuilt. It also keeps the last favor receipt and whether Wren's gate is swollen or planed. Island saves are version 6. A version 5 save starts every record with no breach, and a version 3 save carries Wren's trust and the gate's progress into Wren's record. A resident added after a save was made starts as a stranger, with no migration.
 
 ## Adding a resident
 

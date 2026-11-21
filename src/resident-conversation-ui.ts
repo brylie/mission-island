@@ -32,6 +32,14 @@ export function createResidentConversation(dialog: HTMLDialogElement, act: (acti
   }
 
   return {
+    // A notice board read in the same dialog: plain lines, nobody to answer and nothing to choose.
+    board(lines: readonly string[]) {
+      speaker = -1
+      greeting.textContent = lines[0] ?? ''
+      advice.textContent = lines.slice(1).join('\n')
+      for (const element of [remark, favor, ...Object.values(buttons)]) element.hidden = true
+      return true
+    },
     // Fills the conversation and returns the title, or undefined when the id is not a resident.
     show(state: Snapshot, player: Player, id: string) {
       speaker = starterResidents.findIndex((resident) => resident.id === id)

@@ -7,6 +7,7 @@ import { materialSources, repairChoices, repairSite, sampleTray } from './worlds
 
 export const materialsActions = ['gather-material', 'check-material', 'return-material-sample', 'choose-repair-material', 'deliver-repair-material'] as const
 export type MaterialsAction = typeof materialsActions[number]
+export const isMaterialsAction = (action: string): action is MaterialsAction => (materialsActions as readonly string[]).includes(action)
 
 function target(point: Point, height: number, name: string, radius: number) {
   return { name, at: { ...point, y: walkingHeight(point) + height }, radius, key: 'E' }

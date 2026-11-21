@@ -6,7 +6,7 @@ import { activeJob, deliveryDrop, jobBoard } from './jobs'
 import { materialsWaypoint } from './materials-work'
 import type { Player, Snapshot } from './protocol'
 import { drawRidgeMap } from './ridge-ui'
-import { footpaths, road, walkways } from './routes'
+import { footpaths, roads, walkways } from './routes'
 import { northernRegions, starterDiscoveries } from './scenery'
 import { boundaryBuoys, buoyBoundaryPoint, coastBounds, coastPoint, coastSegments, offshoreLimitMetres } from './terrain'
 import { crewHomes, ferryTerminal, harbor, lookout } from './world'
@@ -43,13 +43,13 @@ function drawWork(state: Snapshot, local: Player | undefined, dot: MapDot) {
   drawRidgeMap(state, dot)
 }
 
-function drawIslandPaths(drawRoute: (points: typeof road, width: number, color: string) => void) {
+function drawIslandPaths(drawRoute: (points: readonly { x: number; z: number }[], width: number, color: string) => void) {
   for (const { points, surface } of footpaths) {
     if (surface === 'desire') drawRoute(points, .85, '#b5a77e')
     else drawRoute(points, 2, surface === 'pavement' ? '#c4c9c1' : '#a5a77e')
   }
   for (const { points } of walkways) drawRoute(points, 2, '#c4c9c1')
-  drawRoute(road, 4, '#c7bb9a')
+  for (const path of roads) drawRoute(path, 4, '#c7bb9a')
 }
 
 export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapshot) {

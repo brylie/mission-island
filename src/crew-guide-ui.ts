@@ -1,4 +1,5 @@
 import { crateDriverXp, haulerUnlockXp } from './ore-contracts'
+import { tallyLines } from './ferry-repair'
 import { jobs } from './jobs'
 import type { Player, Snapshot } from './protocol'
 import { createResidentConversation } from './resident-conversation-ui'
@@ -60,10 +61,10 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
     const direction = order
       ? 'Your crew already has an order. Follow the progress and destination on the mission card.'
       : state.mission === 'complete'
-        ? 'The Harbor Job Board is open beside the Harbor Depot freight yard. Walk up and press E to choose an order with your crewmate.'
+        ? 'The Harbor Job Board is open beside Harbor Depot. Walk up and press E to choose an order with your crewmate. Four finished orders open the ferry repair.'
         : state.mission === 'fire'
           ? 'Pick up the extinguishers at Fire Supplies and head to Forest Lookout. Putting out the fire opens the Harbor Job Board back at the depot.'
-          : 'Cross the main road to the Harbor Depot freight yard south of the cottages. One crewmate can load the flatbed from the back with E while the other boards with F. Once loaded, follow the road east to Seabrook. Next comes the lookout fire, then the job board beside the depot.'
+          : 'Cross the depot lane to the Harbor Depot crate stack south of the cottages. One crewmate can load the flatbed from the back with E while the other boards with F. Once loaded, follow the road east to Seabrook. Next comes the lookout fire, then the job board beside the depot.'
     const balance = `Crew bank · ${state.crewCoins} ${state.crewCoins === 1 ? 'coin' : 'coins'}`
     const latest = state.lastStarterPay && starterPay[state.lastStarterPay]
     const receipt = latest
@@ -86,8 +87,10 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   return {
     update,
     open(state: Snapshot, player: Player, talking: string | false, dismissed: boolean) {
-      const speaking = talking ? talk.show(state, player, talking) : undefined
-      title.textContent = speaking ?? 'Crew guide'
+      // The ferry tally board opens in the same dialog as a conversation, without a resident to answer.
+      const board = talking === 'tally' ? tallyLines(state) : undefined
+      const speaking = board ? talk.board(board.lines) && board.title : talking ? talk.show(state, player, talking) : undefined
+      title.textContent = speaking || 'Crew guide'
       conversation.hidden = !speaking
       note.hidden = Boolean(speaking)
       if (!speaking) showLead(!dismissed)

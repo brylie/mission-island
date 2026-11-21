@@ -35,6 +35,16 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
     focus: { x: -44.5, z: -34, height: .9 },
     alpha: -2.41, beta: 1.31, radius: 12.5, hour: 12, time: 33.5,
   },
+  'ferry-approach': {
+    label: 'Ferry approach from Harbor Depot road',
+    focus: { x: -30, z: -30, height: 1.2 },
+    alpha: Math.PI / 2 - .05, beta: 1.32, radius: 24, hour: 11, time: 0,
+  },
+  'ferry-yard': {
+    label: 'Ferry freight yard and tally board',
+    focus: { x: -25, z: -26, height: .8 },
+    alpha: .55, beta: .95, radius: 21, hour: 14, time: 0,
+  },
   'harbor-sunset': {
     label: 'Harbor sunset',
     focus: { x: -45, z: -12, height: 0.25 },

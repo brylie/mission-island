@@ -11,17 +11,18 @@ import { gateStages, initialGateRepair } from '../src/gate-repair.ts'
 import { materialRefillSeconds, repairMaterials, repairQuantity } from '../src/materials-work.ts'
 import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
 import { isFavorReceipt, isResidentRecords, migrateResidents, migrateTrust } from './resident-save.ts'
+import { initialFerryRepair, isFerryRepair } from '../src/ferry-repair.ts'
 import { makeItems } from './items.ts'
 import { crateStarts, itemStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
 
 export type IslandSave = {
-  version: 5
+  version: 6
   crewCoins: number
   lastStarterPay?: Snapshot['lastStarterPay']
   islandTime: number
   growth: number[]
-  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay'> &
+  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay' | 'ferryRepair'> &
     { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress; produce?: FarmProgress; materialsWork?: Snapshot['materialsWork'] }
   crew: { token: string; player: Player; reserved: boolean }[]
 }
@@ -69,8 +70,14 @@ function migrateGate(value: unknown): unknown {
   return { ...value, version: 3, world: { ...initialGateRepair(), residentTrust: { wren: 0 }, ...value.world, items } }
 }
 
+// Version 5 added the ferry terminal repair: its stage, each stage's contributions and any timber on the way.
+function migrateFerry(value: unknown): unknown {
+  if (!isRecord(value) || value.version !== 4 || !isRecord(value.world)) return value
+  return { ...value, version: 5, world: { ...initialFerryRepair(), ...value.world } }
+}
+
 function migrateSave(value: unknown) {
-  return migrateTrust(migrateResidents(migrateGate(migrateWallets(value))))
+  return migrateTrust(migrateFerry(migrateResidents(migrateGate(migrateWallets(value)))))
 }
 
 function isGateRepair(world: Record<string, unknown>, islandTime: number) {
@@ -176,8 +183,13 @@ function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] 
     isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
 }
 
+// Shared repair work: Wren's materials checkout and the ferry terminal.
+function isSavedProjects(world: Record<string, unknown>, islandTime: number) {
+  return isSavedMaterials(world, islandTime) && isFerryRepair(world.ferryRepair, islandTime)
+}
+
 function isSave(value: unknown): value is IslandSave {
-  if (!isRecord(value) || value.version !== 5 || !isCoinBalance(value.crewCoins) ||
+  if (!isRecord(value) || value.version !== 6 || !isCoinBalance(value.crewCoins) ||
     !validReceipt(value.lastStarterPay) || !isNumber(value.islandTime) || value.islandTime < 0 ||
     !Array.isArray(value.growth) || value.growth.length !== farmPlots.length || !value.growth.every(isNumber) ||
     !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
@@ -185,7 +197,7 @@ function isSave(value: unknown): value is IslandSave {
   const reservedIds = new Set(value.crew.filter(({ reserved }) => reserved).map(({ player }) => player.id))
   if (!hasValidProgress(world)) return false
   return isPose(world.truck) && isPose(world.skiff) && isSavedIncident(world, value.islandTime) && isGateRepair(world, value.islandTime) &&
-    isSavedMaterials(world, value.islandTime) &&
+    isSavedProjects(world, value.islandTime) &&
     Array.isArray(world.farm) && world.farm.length === farmPlots.length &&
     world.farm.every((stage: unknown) => ['grass', 'tilled', 'planted', 'watered', 'ripe'].some((name) => name === stage)) &&
     Array.isArray(world.items) && world.items.length === itemStarts.length &&

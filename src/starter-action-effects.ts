@@ -8,7 +8,7 @@ import { wakeStrength } from './interactive-shaders/skiff-wake'
 import { juniperCenter, juniperLayout } from './juniper-habitat'
 import type { ParticleSource } from './particle-motion'
 import type { CultivationCue, Player, Snapshot } from './protocol'
-import { distanceToRoute, footpaths, road } from './routes'
+import { distanceToRoads, distanceToRoute, footpaths } from './routes'
 import { snapshotEffectCues } from './starter-effect-cues'
 import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
 import { truckPoint } from './truck-pose'
@@ -53,7 +53,7 @@ function wheelEffects(effects: Effects, truck: Snapshot['truck'], rain: number) 
     const owner = String(side)
     const point = truckPoint(truck, side * (halfTrack + .1), .045, axles[truck.braking ? 1 : 0])
     const depth = waterDepth(point)
-    const paved = distanceToRoute(point, road) < 3.3 ||
+    const paved = distanceToRoads(point) < 3.3 ||
       footpaths.some(path => path.surface === 'pavement' && distanceToRoute(point, path.points) < path.width / 2)
     const strength = Math.min(1, speed / 8)
     const ground = groundHeight(point)

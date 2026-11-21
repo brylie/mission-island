@@ -16,6 +16,7 @@ import { restoreIsland, saveIsland } from './island-state.ts'
 import { updateHeldItems } from './items.ts'
 import { createFreight } from './freight.ts'
 import { createGateRepair } from './gate-repair.ts'
+import { createFerryRepair } from './ferry-repair.ts'
 import { createResidents } from './residents.ts'
 import { createGateSwell } from './gate-swell.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
@@ -59,22 +60,39 @@ function stepVehicles(
   return { before, still }
 }
 
+// A checkpoint can arrange the ferry stage, the truck and loose crates, so physics follows the arranged world.
+function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>, trial: T) {
+  physics.placeFerry(state)
+  state.truck = physics.parkTruck(state.truck)
+  for (const item of state.items) physics.restore(item)
+  return trial
+}
+
+// The residents and the jobs done in the world for them, the farm and the ferry, wired together.
+function createNeighborhood(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>, notify: (notice: CrewNotice) => void,
+  creditCrate: ReturnType<typeof createFreight>['creditCrate'], clock: () => number, checkpoint?: () => void) {
+  const gate = createGateRepair(state, notify, () => residents.keep(wren, wren.favors[0]))
+  const swell = createGateSwell(state, notify)
+  const residents = createResidents(state, starterResidents, physics, notify, { talk: { wren: gate.talk }, ...swell.hooks }, checkpoint)
+  const farm = createFarmOrders(state, notify, clock, checkpoint)
+  const work = { swell, farm, ferry: createFerryRepair(state, physics, notify, creditCrate),
+    materials: createMaterialsWork(state, notify, () => residents.keep(wren, repairSupplyFavor)) }
+  return { gate, residents, farm, work }
+}
+
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat()
   const driftwood = createDriftwoodSchool(clock() >>> 0)
   const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
-  const trial = playtest && prepareTrial(state, playtest)
+  const trial = playtest && settleTrial(state, physics, prepareTrial(state, playtest))
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
   const freight = createFreight(crew, state, clock, checkpoint)
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
-  const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0])), swell = createGateSwell(state, crew.notifyAll)
-  const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { talk: { wren: gate.talk }, ...swell.hooks }, checkpoint)
-  const farm = createFarmOrders(state, crew.notifyAll, clock, checkpoint)
-  const materials = createMaterialsWork(state, crew.notifyAll, () => residents.keep(wren, repairSupplyFavor))
-  const interactions = createInteractions(state, growth, physics, orders, gate, residents, { swell, materials, farm }, checkpoint)
+  const { gate, residents, farm, work } = createNeighborhood(state, physics, crew.notifyAll, freight.creditCrate, clock, checkpoint)
+  const interactions = createInteractions(state, growth, physics, orders, gate, residents, work, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
@@ -87,7 +105,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     crew.expireCrew(now)
     gate.tick()
     residents.tick()
-    physics.placeGateLeaf(state)
+    for (const place of [physics.placeGateLeaf, physics.placeFerry]) place(state)
     const members = crew.members()
     const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - 400
     const { before, still } = stepVehicles(state, members, active, physics, freight)

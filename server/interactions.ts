@@ -1,5 +1,7 @@
 import { byTruckBed, freeBed, heldItem } from '../src/actions.ts'
 import type { GateAction } from '../src/gate-repair.ts'
+import { ferryDrop, isFerryAction } from '../src/ferry-repair.ts'
+import { isMaterialsAction } from '../src/materials-interactions.ts'
 import { deliberateActions, interactions, sameChoice } from '../src/interaction-options.ts'
 import type { Interaction, InteractionChoice } from '../src/interaction-options.ts'
 import { starterTools } from '../src/inventory.ts'
@@ -14,6 +16,7 @@ import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
+import type { createFerryRepair } from './ferry-repair.ts'
 import { isFarmAction } from '../src/farm-orders.ts'
 import type { createFarmOrders } from './farm-orders.ts'
 import type { createResidents } from './residents.ts'
@@ -25,6 +28,7 @@ interface Work {
   swell: Pick<ReturnType<typeof createGateSwell>, 'act'>
   materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>
   farm: Pick<ReturnType<typeof createFarmOrders>, 'act'>
+  ferry: Pick<ReturnType<typeof createFerryRepair>, 'act' | 'deliverCrate'>
 }
 
 // Residents' conversations and favors, and the repairs done for them.
@@ -40,12 +44,9 @@ function createNeighborly(gate: Pick<ReturnType<typeof createGateRepair>, 'act'>
       case 'report-fault': return residents.report(member, subject, action === 'report-sound' ? 'sound' : 'fault')
       case 'check-swing':
       case 'plane': return work.swell.act(action)
-      case 'gather-material':
-      case 'check-material':
-      case 'return-material-sample':
-      case 'choose-repair-material':
-      case 'deliver-repair-material': return work.materials.act(member, action, subject)
-      default: return gate.act(member, action as GateAction)
+      default:
+        if (isMaterialsAction(action)) return work.materials.act(member, action, subject)
+        return isFerryAction(action) ? work.ferry.act(member, action) : gate.act(member, action as GateAction)
     }
   }
 }
@@ -57,6 +58,7 @@ export function createInteractions(
   residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'report' | 'stageCrate'>,
   work: Work, checkpoint?: () => void,
 ) {
+
   function useHomeChest(member: CrewMember) {
     const { player } = member
     stopPrimary(member)
@@ -80,7 +82,9 @@ export function createInteractions(
     stopPrimary(member)
     item.holder = null
     const dropoff = deliveryDrop(state)
-    if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
+    if (ferryDrop(state, player, item)) {
+      work.ferry.deliverCrate(item, player.id)
+    } else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
       orders.deliverCrate(item)
     } else if (residents.stageCrate(item, player)) {
       return
