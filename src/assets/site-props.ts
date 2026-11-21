@@ -7,23 +7,36 @@ import { cylinderSurfaceUVs } from '../surface-uvs'
 import { offset, type Point } from '../world'
 import type { FeatureModel, SiteFeature } from '../worlds/site-feature'
 
+type Position = readonly [x: number, y: number, z: number]
+type BoxPart = { center: Position, size: readonly [width: number, height: number, depth: number] }
+type RoundPart = { center: Position, size: readonly [topDiameter: number, baseDiameter: number, height: number] }
+
+const half = 0.5
+const quarterTurn = Math.PI * half
+const sides = [-1, 1] as const
+const alternatingPeriod = 2
+const roundSegments = 10
+const vertexComponents = 3
+const firstTriangleCorner = 2
+const slopeSampleDistance = 1
+const slopeSampleSpan = slopeSampleDistance + slopeSampleDistance
+
 function featurePieces(meshes: MeshFactory, root: TransformNode) {
+  const { leaves } = sitePropGeometry.planter
   return {
     paintRecipe: meshes.paintRecipe,
     paintSurface: meshes.paintSurface,
     face: (vertices: number[], color: string) => {
       const indices = []
-      for (let i = 2; i < vertices.length / 3; i++) indices.push(0, i - 1, i)
+      for (let i = firstTriangleCorner; i < vertices.length / vertexComponents; i++) indices.push(0, i - 1, i)
       meshes.surface('Sandstone fracture', vertices, indices, color, root)
     },
-    box: (x: number, y: number, z: number, width: number, height: number, depth: number, color: string) => {
-      return meshes.box(x, y, z, width, height, depth, color, root)
-    },
-    round: (x: number, y: number, z: number, top: number, bottom: number, height: number, color: string | Material) => {
-      return meshes.cylinder(x, y, z, top, bottom, height, 10, color, root)
-    },
-    leaf: (x: number, y: number, z: number, color: string) =>
-      meshes.sphere(x, y, z, 0.091, 0.17, 0.045, color, root, false, 5),
+    box: ({ center, size }: BoxPart, color: string) =>
+      meshes.box(...center, ...size, color, root),
+    round: ({ center, size }: RoundPart, color: string | Material) =>
+      meshes.cylinder(...center, ...size, roundSegments, color, root),
+    leaf: (center: Position, color: string) =>
+      meshes.sphere(...center, ...leaves.size, color, root, false, leaves.segments),
   }
 }
 
@@ -32,169 +45,207 @@ const wood = '#865d45', lightWood = '#cf9e68', metal = '#5c6964', linen = '#f0de
 
 const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
   rack({ box, round }, color) {
-    for (const x of [-0.83, 0.83]) box(x, 0.75, 0, 0.12, 1.5, 0.15, wood)
-    box(0, 1.42, 0, sitePropGeometry.rack.width, 0.12, 0.14, lightWood)
-    for (const x of [-0.53, -0.26, 0, 0.26, 0.53]) box(x, 0.96, 0.035, 0.025, 0.76, 0.025, linen)
-    for (const y of [0.62, 0.82, 1.02, 1.22]) box(0, y, 0.058, 1.08, 0.025, 0.026, linen)
-    for (const x of [-0.53, 0, 0.53]) round(x, 0.58, 0.053, 0.12, 0.12, 0.16, color)
+    const { posts, beam, netWarps, netWefts, floats } = sitePropGeometry.rack
+    for (const x of posts.x) box({ center: [x, posts.y, 0], size: posts.size }, wood)
+    box(beam, lightWood)
+    for (const x of netWarps.x) box({ center: [x, netWarps.y, netWarps.z], size: netWarps.size }, linen)
+    for (const y of netWefts.y) box({ center: [0, y, netWefts.z], size: netWefts.size }, linen)
+    for (const x of floats.x) round({ center: [x, floats.y, floats.z], size: floats.size }, color)
   },
   planter({ box, round, leaf }, color) {
-    box(0, 0.15, 0, 1.6, 0.30, 0.5, wood)
-    const { width, depth } = sitePropGeometry.planter.rim
-    box(0, 0.30, 0, width, 0.09, depth, lightWood)
-    for (const [i, x] of [-0.56, -0.28, 0, 0.28, 0.56].entries()) {
-      const height = 0.21 + i % 3 * 0.035
-      round(x, 0.34 + height / 2, 0.03, 0.025, 0.041, height, '#638851')
-      for (const side of [-1, 1]) {
-        const blade = leaf(x + side * 0.066, 0.37 + height * 0.54, 0.055 + side * 0.014, side < 0 ? '#638c55' : '#8ba661')
-        blade.rotation.z = -side * 1.02
-        blade.rotation.y = i * 0.61
+    const { trough, rim, stalks, leaves, blossom } = sitePropGeometry.planter
+    box(trough, wood)
+    box(rim, lightWood)
+    for (const [i, x] of stalks.x.entries()) {
+      const height = stalks.baseHeight + i % stalks.variations * stalks.heightStep
+      round({ center: [x, stalks.baseY + height * half, stalks.z], size: [...stalks.diameters, height] }, '#638851')
+      for (const side of sides) {
+        const blade = leaf(
+          [x + side * leaves.xOffset, leaves.y + height * leaves.heightRatio, leaves.z + side * leaves.zOffset],
+          side < 0 ? '#638c55' : '#8ba661',
+        )
+        blade.rotation.z = -side * leaves.tilt
+        blade.rotation.y = i * leaves.turnStep
       }
-      round(x, 0.34 + height, 0.03, 0.133, 0.046, 0.075, color)
+      round({ center: [x, stalks.baseY + height, stalks.z], size: blossom }, color)
     }
   },
   crates({ box }, color) {
-    const { width, positions } = sitePropGeometry.crates
-    for (const [x, y, z] of positions) {
-      box(x, y, z, width, 0.52, 0.53, wood)
-      box(x, y, z - 0.275, 0.60, 0.41, 0.04, lightWood)
-      box(x, y + 0.03, z - 0.303, 0.22, 0.14, 0.026, color)
+    const { body, positions, face, badge } = sitePropGeometry.crates
+    for (const { x, y, z } of positions) {
+      box({ center: [x, y, z], size: body }, wood)
+      box({ center: [x, y, z - face.distance], size: face.size }, lightWood)
+      box({ center: [x, y + badge.lift, z - badge.distance], size: badge.size }, color)
     }
   },
   bench({ box }, color) {
-    const { width, seatDepth, backDepth, backZ } = sitePropGeometry.bench
-    for (const x of [-0.65, 0.65]) box(x, 0.25, 0, 0.18, 0.50, 0.52, metal)
-    box(0, 0.51, 0, width, 0.12, seatDepth, lightWood)
-    for (const x of [-0.65, 0.65]) box(x, 0.69, 0.21, 0.13, 0.44, 0.13, metal)
-    box(0, 0.92, backZ, width, 0.23, backDepth, color)
+    const { feet, seat, backPosts, back } = sitePropGeometry.bench
+    for (const x of feet.x) box({ center: [x, feet.y, 0], size: feet.size }, metal)
+    box(seat, lightWood)
+    for (const x of backPosts.x) box({ center: [x, backPosts.y, backPosts.z], size: backPosts.size }, metal)
+    box(back, color)
   },
   splitstone({ face }, color) {
     // The flat opposing faces are a single fracture. Bedding dips the same
     // way on both sides, even where the shorter eastern fin has weathered away.
-    for (const fin of sitePropGeometry.splitstone.fins) {
-      const ring = (level: number, width: number, cap = false) => fin.outline.map(([x, z]) => [
-        fin.x + x * width + level * 0.06,
-        level + x * 0.14 + z * 0.09 + (cap ? 0.22 * Math.sin(x * 2 + z) : 0),
+    const { fins, courses, bedding, cap } = sitePropGeometry.splitstone
+    for (const fin of fins) {
+      const ring = (level: number, width: number, capUndulation = 0) => fin.outline.map(([x, z]) => [
+        fin.x + x * width + level * bedding.lean,
+        level + x * bedding.xSlope + z * bedding.zSlope + (capUndulation ? capUndulation * Math.sin(x * cap.xFrequency + z) : 0),
         fin.z + z * width,
       ])
-      const layers = [ring(-0.32, 1.04), ring(0.62, 0.98), ring(0.74, 0.95), ring(fin.height, 0.82, true)]
+      const top = ring(fin.height, cap.width, cap.undulation)
+      const layers = [...courses.map((course) => ({ points: ring(course.level, course.width), color: course.color ?? color })), { points: top, color }]
       for (let k = 1; k < layers.length; k++) {
-        const low = layers[k - 1], high = layers[k]
+        const low = layers[k - 1].points, high = layers[k]
         for (let a = 0; a < low.length; a++) {
           const b = (a + 1) % low.length
-          face([...low[a], ...low[b], ...high[b], ...high[a]], k === 2 ? '#c7a87f' : color)
+          face([...low[a], ...low[b], ...high.points[b], ...high.points[a]], high.color)
         }
       }
-      face(layers[3].flat(), '#ad9775')
+      face(top.flat(), '#ad9775')
     }
   },
-  picnic(parts, color) {
+  picnic({ box, round }, color) {
     // A low seat built into the rock, with a basket and folded cloth at one end.
-    const { box, round } = parts
-    for (const x of [-0.82, 0.82]) box(x, 0.19, 0, 0.38, 0.46, 0.68, '#817f6d')
-    box(0, 0.46, 0, 2.16, 0.13, 0.60, lightWood)
-    box(0.66, 0.54, 0.015, 0.65, 0.035, 0.64, color)
-    box(0.66, 0.685, 0.012, 0.40, 0.255, 0.31, '#b88655')
-    for (const y of [0.622, 0.713]) box(0.66, y, 0.012, 0.413, 0.025, 0.32, '#dbb887')
-    for (const dx of [-0.15, 0.15]) round(0.66 + dx, 0.865, 0.01, 0.028, 0.03, 0.13, wood)
-    box(0.66, 0.93, 0.01, 0.32, 0.04, 0.045, wood)
+    const { footings, seat, cloth, basket, basketBands, handleUprights, handleGrip } = sitePropGeometry.picnic
+    for (const x of footings.x) box({ center: [x, footings.y, 0], size: footings.size }, '#817f6d')
+    box(seat, lightWood)
+    box(cloth, color)
+    box(basket, '#b88655')
+    for (const y of basketBands.y) box({ center: [basketBands.x, y, basketBands.z], size: basketBands.size }, '#dbb887')
+    for (const x of handleUprights.offsets) round({
+      center: [handleUprights.x + x, handleUprights.y, handleUprights.z],
+      size: handleUprights.size,
+    }, wood)
+    box(handleGrip, wood)
   },
   benchmark({ round, box, paintRecipe, paintSurface }, color) {
-    const base = round(0, 0.18, 0, 0.9, 1.15, 0.47, paintRecipe('lichen-clock'))
-    base.scaling.z = 0.8
-    cylinderSurfaceUVs(base, 0.92, 0.47, surfaceRepeatMeters(surfaceRecipe('lichen-clock'), {}))
-    const stone = round(0.025, 0.65, 0.02, 0.53, 0.77, 0.66, paintSurface('stone', '#a59e86'))
-    stone.scaling.z = 0.86
-    round(0.025, 0.997, 0.02, 0.43, 0.48, 0.044, color)
-    box(0.025, 1.025, 0.02, 0.024, 0.019, 0.35, '#d5b87d')
-    box(0.025, 1.026, 0.02, 0.215, 0.020, 0.022, '#d5b87d')
+    const { base, stone, cap, meridian, crossbar } = sitePropGeometry.benchmark
+    const baseMesh = round(base, paintRecipe('lichen-clock'))
+    baseMesh.scaling.z = base.depthScale
+    const [, , height] = base.size
+    cylinderSurfaceUVs(baseMesh, base.uvDiameter, height, surfaceRepeatMeters(surfaceRecipe('lichen-clock'), {}))
+    round(stone, paintSurface('stone', '#a59e86')).scaling.z = stone.depthScale
+    round(cap, color)
+    box(meridian, '#d5b87d')
+    box(crossbar, '#d5b87d')
   },
   log({ round }, color) {
-    const { length, branchX, branchZ } = sitePropGeometry.log
-    const trunk = round(0, 0.2, 0, 0.34, 0.52, length, color)
-    trunk.rotation.z = Math.PI / 2
-    const branch = round(branchX, 0.44, branchZ, 0.11, 0.19, 0.51, wood)
-    branch.rotation.z = -0.56
-    branch.rotation.x = 0.35
+    const { trunk, branch } = sitePropGeometry.log
+    round(trunk, color).rotation.z = quarterTurn
+    const twig = round(branch, wood)
+    twig.rotation.z = branch.tilt
+    twig.rotation.x = branch.rake
   },
   cairn({ round }, color) {
-    for (const { x, y, width, height, turn } of sitePropGeometry.cairn.stones) {
-      const stone = round(x, y, 0, width * 0.72, width, height, color)
-      stone.scaling.z = 0.75
+    const { stones, topDiameterRatio, depthScale } = sitePropGeometry.cairn
+    for (const { x, y, width, height, turn } of stones) {
+      const stone = round({ center: [x, y, 0], size: [width * topDiameterRatio, width, height] }, color)
+      stone.scaling.z = depthScale
       stone.rotation.y = turn
     }
   },
   gauge({ box }, color) {
-    box(0, 0.65, 0, sitePropGeometry.gauge.poleWidth, 1.4, 0.13, wood)
-    box(0, 0.72, -0.075, 0.13, 1.08, 0.025, color)
-    for (let i = 0; i < 10; i++) box(-0.02, 0.26 + i * 0.1, -0.093, i % 2 ? 0.045 : 0.09, 0.022, 0.012, linen)
+    const { pole, face, ticks } = sitePropGeometry.gauge
+    box(pole, wood)
+    box(face, color)
+    for (let i = 0; i < ticks.count; i++) box({
+      center: [ticks.x, ticks.startY + i * ticks.spacing, ticks.z],
+      size: [i % alternatingPeriod ? ticks.short : ticks.long, ticks.height, ticks.depth],
+    }, linen)
   },
   'tide-staff'(parts, color) {
     models.gauge(parts, color)
+    const { box } = parts
+    const { splice, clamps, frontMark, backMark } = sitePropGeometry['tide-staff']
     // A scarf repair and an old red high-water notch face the beach approach.
-    parts.box(0.02, 0.27, 0.081, 0.155, 0.48, 0.057, lightWood)
-    for (const y of sitePropGeometry['tide-staff'].clampHeights) parts.box(0.005, y, 0.029, 0.173, 0.044, 0.19, '#52685e')
-    parts.box(0.01, 1.11, -0.099, 0.122, 0.042, 0.025, '#a95239')
-    parts.box(0.005, 1.055, 0.076, 0.13, 0.035, 0.024, '#a95239')
+    box(splice, lightWood)
+    for (const y of clamps.y) box({ center: [clamps.x, y, clamps.z], size: clamps.size }, '#52685e')
+    box(frontMark, '#a95239')
+    box(backMark, '#a95239')
   },
   marker({ box, round }, color) {
-    box(0, 0.13, 0, 0.95, 0.26, 0.72, metal)
-    box(0, 0.58, 0, 0.49, 0.67, 0.40, wood)
-    box(0, 0.91, 0, 0.7, 0.13, 0.56, color)
-    round(0, 0.98, 0, 0.26, 0.26, 0.04, linen)
+    const { base, post, cap, badge } = sitePropGeometry.marker
+    box(base, metal)
+    box(post, wood)
+    box(cap, color)
+    round(badge, linen)
   },
   shelter({ box }, color) {
-    for (const x of [-1.42, 1.42]) for (const z of [-0.76, 0.76]) box(x, 1.17, z, 0.11, 2.34, 0.11, wood)
-    box(0, 2.37, 0, 3.18, 0.15, 1.94, color).rotation.x = -0.06
-    for (const y of [0.53, 0.76, 0.99, 1.22]) box(0, y, 0.76, 2.81, 0.18, 0.08, lightWood)
-    box(0, 0.47, 0.44, 2.61, 0.12, 0.47, lightWood)
-    for (const x of [-1, 1]) box(x, 0.22, 0.43, 0.12, 0.44, 0.35, metal)
-    box(0.89, 1.58, 0.75, 0.55, 0.67, 0.09, wood)
-    box(0.89, 1.58, 0.69, 0.46, 0.58, 0.025, linen)
-    for (let i = 0; i < 4; i++) box(0.89, 1.73 - i * 0.1, 0.67, 0.31, 0.019, 0.012, metal)
+    const { posts, roof, backSlats, seat, seatLegs, sign, signFace, signLines } = sitePropGeometry.shelter
+    for (const x of posts.x) for (const z of posts.z) box({ center: [x, posts.y, z], size: posts.size }, wood)
+    box(roof, color).rotation.x = roof.rake
+    for (const y of backSlats.y) box({ center: [0, y, backSlats.z], size: backSlats.size }, lightWood)
+    box(seat, lightWood)
+    for (const x of sides) box({ center: [x, seatLegs.y, seatLegs.z], size: seatLegs.size }, metal)
+    box(sign, wood)
+    box(signFace, linen)
+    for (let i = 0; i < signLines.count; i++) box({
+      center: [signLines.x, signLines.firstY - i * signLines.step, signLines.z],
+      size: signLines.size,
+    }, metal)
   },
   lifebuoy({ box }, color) {
-    box(0, 0.88, 0, 0.14, 1.76, 0.16, wood)
-    box(0, 1.48, -0.08, 0.45, 0.08, 0.12, metal)
-    for (let i = 0; i < 16; i++) {
-      const angle = i * Math.PI / 8
-      box(0.34 * Math.cos(angle), 1.16 + 0.34 * Math.sin(angle), -0.19, 0.155, 0.151, 0.13, i % 4 < 2 ? linen : color).rotation.z = angle
+    const { post, hanger, ring } = sitePropGeometry.lifebuoy
+    box(post, wood)
+    box(hanger, metal)
+    for (let i = 0; i < ring.segments; i++) {
+      const angle = i * Math.PI / ring.angleDivisor
+      const segment = box({
+        center: [ring.radius * Math.cos(angle), ring.y + ring.radius * Math.sin(angle), ring.z],
+        size: ring.size,
+      }, i % ring.stripePeriod < ring.paleSegments ? linen : color)
+      segment.rotation.z = angle
     }
   },
   scope({ box, round }, color) {
-    round(0, 0.08, 0, 0.69, sitePropGeometry.scope.baseDiameter, 0.16, metal)
-    round(0, 0.53, 0, 0.18, 0.2, 0.90, wood)
-    round(0, 1.02, 0, 0.56, 0.39, 0.81, color).rotation.x = Math.PI / 2 + 0.15
-    box(0, 1.09, -0.407, 0.24, 0.20, 0.06, '#537786')
+    const { base, post, barrel, glass } = sitePropGeometry.scope
+    round(base, metal)
+    round(post, wood)
+    round(barrel, color).rotation.x = quarterTurn + barrel.elevation
+    box(glass, '#537786')
   },
   rail({ box }, color) {
-    for (const x of [-0.85, 0, 0.85]) box(x, 0.36, 0, 0.14, 0.72, 0.16, wood)
-    box(0, 0.68, 0, 1.91, 0.16, 0.13, color)
-    box(0, 0.38, 0, 1.77, 0.09, 0.10, lightWood)
+    const { posts, cap, crossbar } = sitePropGeometry.rail
+    for (const x of posts.x) box({ center: [x, posts.y, 0], size: posts.size }, wood)
+    box(cap, color)
+    box(crossbar, lightWood)
   },
   pennant({ box, round }, color) {
-    for (const x of [-0.81, 0.81]) round(x, 0.95, 0, 0.12, 0.15, 1.9, wood)
-    box(0, 1.77, 0, 1.63, 0.035, 0.038, linen)
-    for (const [index, x] of [-0.55, -0.2, 0.18, 0.51].entries()) box(x, 1.58 + index % 2 * 0.06, 0, 0.21, 0.36, 0.045, index % 2 ? linen : color)
+    const { posts, cord, flags } = sitePropGeometry.pennant
+    for (const x of posts.x) round({ center: [x, posts.y, 0], size: posts.size }, wood)
+    box(cord, linen)
+    for (const [index, x] of flags.x.entries()) {
+      const alternate = index % alternatingPeriod
+      box({ center: [x, flags.y + alternate * flags.stagger, 0], size: flags.size }, alternate ? linen : color)
+    }
   },
   barrels({ round }, color) {
-    for (const { x, size } of sitePropGeometry.barrels.bodies) {
-      round(x, size * 0.47, 0, size * 0.66, size * 0.72, size * 0.95, wood)
-      round(x, size * 0.8, 0, size * 0.72, size * 0.72, 0.07, metal)
-      round(x, size * 0.24, 0, size * 0.75, size * 0.75, 0.07, metal)
-      round(x, size * 0.94, 0, size * 0.67, size * 0.65, 0.05, color)
+    const { bodies, walls, hoops, lid } = sitePropGeometry.barrels
+    for (const { x, size } of bodies) {
+      round({
+        center: [x, size * walls.centerRatio, 0],
+        size: [size * walls.topRatio, size * walls.baseRatio, size * walls.heightRatio],
+      }, wood)
+      for (const hoop of hoops) {
+        const diameter = size * hoop.diameterRatio
+        round({ center: [x, size * hoop.centerRatio, 0], size: [diameter, diameter, hoop.height] }, metal)
+      }
+      round({ center: [x, size * lid.centerRatio, 0], size: [size * lid.topRatio, size * lid.baseRatio, lid.height] }, color)
     }
   },
   hose({ box, round }, color) {
-    for (const x of [-0.72, 0.72]) box(x, 0.65, 0, 0.14, 1.32, 0.23, metal)
-    box(0, 1.23, 0, 1.6, 0.14, 0.24, color)
-    for (const x of [-0.36, 0.36]) {
-      const mount = round(x, 0.86, 0.135, 0.65, 0.65, 0.17, '#976d56')
-      mount.rotation.x = Math.PI / 2
-      for (const [diameter, z] of [[0.57, 0.25], [0.46, 0.29], [0.35, 0.323]]) {
-        round(x, 0.86, z, diameter, diameter, 0.068, color).rotation.x = Math.PI / 2
+    const { uprights, beam, mounts, coils, nozzle } = sitePropGeometry.hose
+    for (const x of uprights.x) box({ center: [x, uprights.y, 0], size: uprights.size }, metal)
+    box(beam, color)
+    for (const x of mounts.x) {
+      round({ center: [x, mounts.y, mounts.z], size: mounts.size }, '#976d56').rotation.x = quarterTurn
+      for (const { diameter, z } of coils.rings) {
+        round({ center: [x, coils.y, z], size: [diameter, diameter, coils.width] }, color).rotation.x = quarterTurn
       }
-      round(x + 0.24, 0.57, 0.31, 0.079, 0.095, 0.32, '#bcb99b').rotation.z = -0.23
+      round({ center: [x + nozzle.xOffset, nozzle.y, nozzle.z], size: nozzle.size }, '#bcb99b').rotation.z = nozzle.tilt
     }
   },
 }
@@ -204,7 +255,9 @@ export function poseSiteFeature(root: TransformNode, feature: SiteFeature, heigh
   root.rotation.y = feature.heading ?? 0
   if (feature.followSlope) {
     const pose = { ...feature, heading: root.rotation.y }
-    root.rotation.z = Math.atan2(heightAt(offset(pose, 1, 0)) - heightAt(offset(pose, -1, 0)), 2)
+    const right = heightAt(offset(pose, slopeSampleDistance, 0))
+    const left = heightAt(offset(pose, -slopeSampleDistance, 0))
+    root.rotation.z = Math.atan2(right - left, slopeSampleSpan)
   }
   root.scaling.setAll(feature.scale ?? 1)
 }

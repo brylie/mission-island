@@ -4,23 +4,52 @@ import { createShopAttachments, wornStock } from './shop-garments'
 import { rigCrewKnee } from './crew-knee'
 import { createCrewClothes } from './crew-clothes'
 import { createCrewHead } from './crew-head'
-import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import { appearancePartKeys, defaultAppearance, everydayColors, hairColors, isEveryday, shirtColor, skinTones, uniformPalette, uniforms, wearsSwimsuit } from '../crew-appearance'
 import type { CrewAppearance } from '../crew-appearance'
-import { barrowLegPose } from '../barrow-gait'
-import { waterLevel } from '../terrain'
+import { crewHeadFit } from './geometry/crew-face'
+
+export { createFarmTools, createSkiffGear, paddleBladeOffset, skiffCrewSeats, wateringRoseOffset } from './crew-equipment'
+export { poseCrew, poseSkiffCrew, poseSwimming, swimmingHeight } from './crew-poses'
+
 const workwear = {
   courier: { trousers: '#414e64', shoes: '#75533d' },
   rescue: { trousers: '#47383a', shoes: '#252630' },
   angler: { trousers: '#303f50', shoes: '#4d3a30' },
 }
 
-const everydayTrousers = { 'default': '#405464', 'slate': '#617c90', 'sand': '#bd9b6e', 'slate-shorts': '#617c90', 'sand-shorts': '#bd9b6e' }
+const slateTrouserDye = '#617c90'
+const sandTrouserDye = '#bd9b6e'
+const everydayTrousers = { 'default': '#405464', 'slate': slateTrouserDye, 'sand': sandTrouserDye, 'slate-shorts': slateTrouserDye, 'sand-shorts': sandTrouserDye }
 
 export const playerColors = [uniforms.amber.color, uniforms.blue.color]
-export const skiffCrewSeats = [new Vector3(-0.44, -0.39, 0.25), new Vector3(0.44, -0.39, 0.25)]
+
+const outsoleShade = 0.67
+const noseGreenScale = 0.95
+const noseBlueScale = 0.94
+const lipRedScale = 0.62
+const lipGreenScale = 0.57
+const lipBlueScale = 0.56
+const yokeShade = 0.81
+const collarShade = 0.90
+const browShade = 0.78
+const smallNoseScale = 0.76
+const noseHeightRatio = 0.83
+
+const breathSpeed = 1.65
+const breathPhasePerCrew = 2.1
+const breathTravel = 0.004
+const breathNod = 0.009
+const idleLookYaw = 0.027
+const idleLookSpeed = 0.81
+const blinkStartOffset = 4.1
+const blinkPhasePerCrew = 1.59
+const blinkInterval = 5.8
+const blinkIntervalPerCrew = 0.47
+const blinkHalfDuration = 0.11
+const closedEyeScale = 0.20
+const narrowEyeScale = 0.72
 
 function legPalette(appearance: CrewAppearance) {
   const job = appearance.uniform === 'courier' || appearance.uniform === 'rescue' || appearance.uniform === 'angler' ? workwear[appearance.uniform] : undefined
@@ -55,7 +84,7 @@ export function createCrew(meshes: MeshFactory, id: number) {
     fitHat()
   }
   function dressFeet(shoeColor: string, skin: ReturnType<typeof paint>, calvesVisible: boolean, bare: boolean, customShoe: boolean) {
-    const sole = paint(Color3.FromHexString(shoeColor).scale(0.67).toHexString())
+    const sole = paint(Color3.FromHexString(shoeColor).scale(outsoleShade).toHexString())
     for (const mesh of kit.shoes) {
       mesh.material = mesh.name === 'Boot outsole' ? sole : paint(shoeColor)
       mesh.setEnabled(!bare && !customShoe)
@@ -103,8 +132,8 @@ export function createCrew(meshes: MeshFactory, id: number) {
     const tone = skinTones[appearance.skin === 'default' ? (base === 0 ? 'light' : 'medium') : appearance.skin].color
     const skin = paint(tone)
     const complexion = Color3.FromHexString(tone)
-    const warm = paint(new Color3(complexion.r, complexion.g * 0.95, complexion.b * 0.94).toHexString())
-    const lips = paint(new Color3(complexion.r * 0.62, complexion.g * 0.57, complexion.b * 0.56).toHexString())
+    const warm = paint(new Color3(complexion.r, complexion.g * noseGreenScale, complexion.b * noseBlueScale).toHexString())
+    const lips = paint(new Color3(complexion.r * lipRedScale, complexion.g * lipGreenScale, complexion.b * lipBlueScale).toHexString())
     head.smile.material = lips
     head.grin.material = lips
     for (const mesh of kit.skin) mesh.material = skin
@@ -113,7 +142,7 @@ export function createCrew(meshes: MeshFactory, id: number) {
     const shirted = !swim && !top
     const sleeveless = swim || Boolean(top && shopTops[top].sleeveless)
     const canvas = Color3.FromHexString(dye ?? shirt.color)
-    kit.yoke.material = paint(canvas.scale(0.81).toHexString())
+    kit.yoke.material = paint(canvas.scale(yokeShade).toHexString())
     kit.yoke.setEnabled(shirted)
     kit.torso.setEnabled(shirted)
     kit.torso.material = cloth
@@ -121,7 +150,7 @@ export function createCrew(meshes: MeshFactory, id: number) {
     kit.swimSeam.material = trim
     kit.swimSeam.setEnabled(swim)
     for (const mesh of kit.cloth) {
-      mesh.material = mesh.name === 'Folded canvas collar' ? paint(canvas.scale(0.90).toHexString()) : cloth
+      mesh.material = mesh.name === 'Folded canvas collar' ? paint(canvas.scale(collarShade).toHexString()) : cloth
       mesh.setEnabled(shirted)
     }
     for (const mesh of kit.shoulders) {
@@ -159,10 +188,10 @@ export function createCrew(meshes: MeshFactory, id: number) {
     hatEquipped = hat !== 'none'
     fitHat()
     const browColor = Color3.FromHexString(hairColors[appearance.hairColor ?? 'chestnut'])
-    const brow = paint(browColor.scale(0.78).toHexString())
+    const brow = paint(browColor.scale(browShade).toHexString())
     for (const mesh of head.brows) mesh.material = brow
-    const noseSize = appearance.nose === 'small' ? 0.76 : 1
-    head.nose.scaling.set(noseSize, noseSize * 0.83, noseSize)
+    const noseSize = appearance.nose === 'small' ? smallNoseScale : 1
+    head.nose.scaling.set(noseSize, noseSize * noseHeightRatio, noseSize)
     const wideSmile = appearance.mouth === 'wide'
     head.smile.setEnabled(!wideSmile)
     head.grin.setEnabled(wideSmile)
@@ -176,19 +205,19 @@ export function createCrew(meshes: MeshFactory, id: number) {
     head.pivot.rotation.set(lookDown + breathPitch, lookSide + idleYaw, headRoll)
   }
   function blink(time: number) {
-    const breath = Math.sin(time * 1.65 + id * 2.1)
+    const breath = Math.sin(time * breathSpeed + id * breathPhasePerCrew)
     // Keep the collar and grips fixed; only the head settles with each breath.
-    head.pivot.position.y = 1.315 + 0.004 * breath
-    breathPitch = 0.009 * breath
-    idleYaw = 0.027 * Math.sin(time * 0.81 + id)
+    head.pivot.position.y = crewHeadFit.position[1] + breathTravel * breath
+    breathPitch = breathNod * breath
+    idleYaw = idleLookYaw * Math.sin(time * idleLookSpeed + id)
     head.pivot.rotation.set(lookDown + breathPitch, lookSide + idleYaw, headRoll)
-    const phase = (time + 4.1 + id * 1.59) % (5.8 + id * 0.47)
-    const openness = Math.min(1, Math.abs(phase - 0.11) / 0.11)
-    const closed = openness < 0.20
+    const phase = (time + blinkStartOffset + id * blinkPhasePerCrew) % (blinkInterval + id * blinkIntervalPerCrew)
+    const openness = Math.min(1, Math.abs(phase - blinkHalfDuration) / blinkHalfDuration)
+    const closed = openness < closedEyeScale
     for (const { pivot, fill } of head.eyes) {
       // At full closure only the upper lash is visible.
       if (fill.isEnabled() === closed) fill.setEnabled(!closed)
-      pivot.scaling.y = Math.max(0.20, openness) * (worn?.eyes === 'narrow' ? 0.72 : 1)
+      pivot.scaling.y = Math.max(closedEyeScale, openness) * (worn?.eyes === 'narrow' ? narrowEyeScale : 1)
     }
   }
   function fitSwimwear() {
@@ -198,122 +227,4 @@ export function createCrew(meshes: MeshFactory, id: number) {
   }
   setAppearance()
   return { root, arms: kit.arms, legs: kit.legs, setAppearance, blink, setCap, fitSwimwear, knees: knees.map((knee) => knee.bend), look }
-}
-
-export function poseCrew(crew: ReturnType<typeof createCrew>, cycle: number, stride: number, airborne: boolean, carrying?: 'crate' | 'extinguisher' | 'toolbox' | 'tool' | 'barrow', reach = 0, blend = 1, winding = 0, throwing = false, rightHandRaised = false) {
-  const phase = cycle * Math.PI * 2
-  const swing = Math.sin(phase) * stride
-  const effort = Math.max(reach, Number(rightHandRaised), winding)
-  crew.look(airborne ? -0.06 : (carrying === 'crate' || carrying === 'barrow' ? 0.13 : effort * 0.07), (Number(rightHandRaised) - reach) * 0.09, -0.042 * swing, blend)
-  for (const [i, leg] of crew.legs.entries()) {
-    const side = i === 0 ? -1 : 1
-    const recovery = Math.max(0, -side * Math.cos(phase))
-    const bend = airborne ? 0.46 - side * 0.19 : stride * (0.08 + 0.88 * recovery * recovery)
-    const pose = carrying === 'barrow' && !airborne
-      ? barrowLegPose(cycle, i, stride)
-      : { hip: airborne ? side * 0.35 : swing * side - bend * 0.36, knee: bend }
-    leg.rotation.x += (pose.hip - leg.rotation.x) * blend
-    crew.knees[i](pose.knee, blend)
-    const arm = crew.arms[i]
-    arm.rotation.z *= 1 - blend
-    const swinging = airborne ? -0.8 : -swing * side * 0.77
-    const relaxed = throwing
-      ? -1.75
-      : carrying === 'crate'
-        ? -1.22 - winding * 0.67
-        : carrying === 'barrow'
-          ? -1.15
-          : (carrying === 'extinguisher' || carrying === 'tool') && i === 0 ? -1.36 : swinging
-    const reachAmount = i === 0 ? reach : Number(rightHandRaised)
-    const forward = relaxed + (-Math.PI / 2 - relaxed) * reachAmount
-    arm.rotation.x += (forward - arm.rotation.x) * blend
-  }
-  crew.fitSwimwear()
-}
-
-export function poseSwimming(crew: ReturnType<typeof createCrew>, time: number, speed: number, blend = 1) {
-  const stroke = time * Math.PI * 2 / 1.6
-  crew.root.rotation.x = 0.06 + 0.22 * speed
-  crew.look(-crew.root.rotation.x * 0.64, 0.025 * Math.sin(stroke), 0, blend)
-  for (const [i, arm] of crew.arms.entries()) {
-    const side = i === 0 ? -1 : 1
-    const reach = -0.86 - Math.cos(stroke) * (0.2 + 0.46 * speed)
-    const sweep = side * (0.7 + Math.sin(stroke) * 0.44)
-    arm.rotation.x += (reach - arm.rotation.x) * blend
-    arm.rotation.z += (sweep - arm.rotation.z) * blend
-    const kick = 0.5 + 0.5 * Math.cos(stroke)
-    crew.legs[i].rotation.x = 0.21 - kick * (0.18 + 0.21 * speed) + side * 0.05 * Math.sin(stroke)
-    crew.knees[i](0.13 + kick * (0.33 + 0.42 * speed), blend)
-  }
-  crew.fitSwimwear()
-}
-
-export function swimmingHeight(time: number) {
-  return waterLevel - 1.01 + 0.036 * Math.sin(time * Math.PI * 2 / 1.6)
-}
-
-export const wateringRoseOffset = [0, -0.13, 0.54] as const
-export const paddleBladeOffset = [0, -1.09, 0] as const
-
-export function createFarmTools({ scene, box, cylinder, sphere }: MeshFactory, character: ReturnType<typeof createCrew>) {
-  const hoe = new TransformNode('Hoe', scene)
-  const can = new TransformNode('Watering can', scene)
-  for (const grip of [hoe, can]) {
-    grip.parent = character.arms[0]
-    grip.position.set(-0.12, -0.53, 0.017)
-    grip.setEnabled(false)
-  }
-  hoe.rotation.z = -0.8
-  cylinder(0, -0.36, 0, 0.068, 0.068, 1.29, 9, '#ab784d', hoe)
-  box(0, -0.99, 0.08, 0.21, 0.082, 0.34, '#58716e', hoe)
-  sphere(0, -0.16, 0.15, 0.33, 0.42, 0.32, '#608f87', can)
-  box(0, -0.16, 0.35, 0.073, 0.09, 0.25, '#6a9990', can).rotation.x = -0.35
-  sphere(0, -0.13, 0.48, 0.117, 0.11, 0.09, '#d0ae72', can)
-  return { hoe, can }
-}
-
-export function poseSkiffCrew(crew: ReturnType<typeof createCrew>, stroke: number, side: number, fishing: boolean, blend: number) {
-  crew.look(fishing ? 0.10 : 0.055 + stroke * 0.035, side * (fishing ? 0.15 : 0.07 * stroke), 0, blend)
-  for (const [i, leg] of crew.legs.entries()) {
-    crew.knees[i](1.05, blend)
-    leg.rotation.x += (-1.27 - leg.rotation.x) * blend
-    const arm = crew.arms[i]
-    const outerArm = i === (side < 0 ? 0 : 1)
-    const across = fishing ? 0 : side * (outerArm ? 0.38 : 0.96)
-    arm.rotation.z += (across - arm.rotation.z) * blend
-    const pose = fishing ? (outerArm ? -1.39 : -1.07) : outerArm ? -0.58 + stroke * 0.60 : -1.88 + stroke * 0.35
-    arm.rotation.x += (pose - arm.rotation.x) * blend
-  }
-  crew.fitSwimwear()
-}
-
-export function createSkiffGear({ scene, box, cylinder, sphere }: MeshFactory, character: ReturnType<typeof createCrew>) {
-  const inverseGrip = Matrix.Identity(), toOtherHand = Vector3.Zero()
-  const up = Vector3.Up()
-  const gear = [-1, 1].map((side, i) => {
-    const grip = new TransformNode('Skiff gear', scene)
-    grip.parent = character.arms[i]
-    grip.position.set(side * 0.12, -0.53, 0.017)
-    const paddle = new TransformNode('Paddle', scene)
-    paddle.parent = grip
-    paddle.rotationQuaternion = Quaternion.Identity()
-    cylinder(0, 0.12, 0, 0.052, 0.052, 1.98, 8, '#8f6746', paddle)
-    box(0, -0.96, 0, 0.25, 0.4, 0.068, '#c29862', paddle)
-    const rod = new TransformNode('Fishing rod', scene)
-    rod.parent = grip
-    cylinder(0, -0.6, 0, 0.04, 0.013, 1.65, 8, '#496552', rod)
-    sphere(0, -0.12, 0.06, 0.13, 0.12, 0.09, '#cbd4bd', rod, false)
-    grip.setEnabled(false)
-    return { grip, paddle, rod }
-  })
-  return gear.map((tool, i) => ({
-    ...tool,
-    alignPaddle: () => {
-      tool.grip.computeWorldMatrix(true).invertToRef(inverseGrip)
-      const opposite = gear[1 - i].grip
-      opposite.computeWorldMatrix(true)
-      Vector3.TransformCoordinatesToRef(opposite.absolutePosition, inverseGrip, toOtherHand)
-      Quaternion.FromUnitVectorsToRef(up, toOtherHand.normalize(), tool.paddle.rotationQuaternion!)
-    },
-  }))
 }

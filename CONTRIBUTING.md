@@ -91,6 +91,8 @@ Name gameplay thresholds, timeouts, and other numeric settings in the module tha
 
 Keep the approved production modules to constants and types. ESLint rejects functions, calls, and mutations there. Geometry, audio, effects, and world layouts have no imports. Recipe modules can import types and compose values from neighboring recipe files. Runtime code imports the data and names its own settings. ESLint uses the repository configuration for all source files, including exceptions.
 
+Name shared colors for their role in the palette. Share a constant when several assets are meant to use the same paint or material. Keep a model’s individual finishes with its geometry.
+
 The `eslint-suppressions.json` baseline counts legacy `no-magic-numbers` reports per file. Lint fails when a file exceeds its count. After removing legacy literals, run `npm run lint:full -- --prune-suppressions` and commit the smaller baseline. Keep new literals out of the baseline.
 
 The correctness rules check callback returns, loop control, imports, parameter reassignment, and other common errors. Switches over typed unions in the host and shared gameplay modules must handle every declared case.

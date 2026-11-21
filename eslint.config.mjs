@@ -73,7 +73,6 @@ const executableDataSyntax = [
 
 // Preserve exact ceilings for existing hotspots until the responsible feature is split out.
 const existingLimits = {
-  'src/assets/crew-clothes.ts': { 'max-lines-per-function': lineLimit(161) },
   'src/assets/crew.ts': { 'max-lines-per-function': lineLimit(165) },
   'src/biome-model.ts': { 'max-lines-per-function': lineLimit(199) },
   'src/island-camera.ts': { 'max-lines-per-function': lineLimit(169) },

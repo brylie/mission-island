@@ -7,130 +7,94 @@ import { coastalProfile } from './coastal-profiles'
 import { headSection, skull } from './crew-scalp'
 import { createCrewEar } from './crew-ear'
 import { createCrewHair } from './crew-hair'
+import { crewCanvasCap, crewFace, crewHeadFit, type FaceLinePoint } from './geometry/crew-face'
+
+const positionComponents = 3
+const ellipsePower = 2
+const squaredDistance = 2
 
 export function createCrewHead(meshes: MeshFactory, root: TransformNode, skin: Mesh[]) {
   // Headwear, face and hair share this fitting space; the existing neck and grip pivots stay in world metres.
   const head = new TransformNode('Head fitting', meshes.scene)
   head.parent = root
-  head.position.set(0, 1.315, 0.006)
-  head.scaling.set(0.90, 0.85, 0.92)
-  const base = '#dfac83'
-  const face = garment(meshes, head, 'Jaw, cheeks and brow', base, skull, 0.91, 36)
+  head.position.set(...crewHeadFit.position)
+  head.scaling.set(...crewHeadFit.scale)
+  const { base, skull: { softness, sides }, complexion, nose: noseShape, eye: eyeShape, features } = crewFace
+  const face = garment(meshes, head, 'Jaw, cheeks and brow', base, skull, softness, sides)
   // Drape the lips and brows on the same cheek sections that form the head.
-  function facialLine(name: string, color: string, points: [number, number, number, number][]) {
+  function facialLine(name: string, color: string, points: readonly FaceLinePoint[]) {
     const line: Parameters<typeof sweptDetail>[4] = points.map(([x, y, width, relief]) => {
       const { center, width: radius, depth } = headSection(y)
-      const z = center + depth * (1 - Math.abs(x / radius) ** (2 / 0.91)) ** (0.91 / 2)
+      const z = center + depth * (1 - Math.abs(x / radius) ** (ellipsePower / softness)) ** (softness / ellipsePower)
       return [x, y, z, width, relief]
     })
-    return sweptDetail(meshes, head, name, color, line, [0, 0, 1])
+    return sweptDetail(meshes, head, name, color, line, features.normal)
   }
   // Warm the cheeks and ear line gently across the sculpt. Vertex colors follow every selected skin tone.
   const positions = face.getVerticesData(VertexBuffer.PositionKind)!
   const tones: number[] = []
-  for (let i = 0; i < positions.length; i += 3) {
-    const x = Math.abs(positions[i]), y = positions[i + 1], z = positions[i + 2]
-    const cheek = Math.exp(-(((x - 0.177) / 0.095) ** 2 + ((y - 0.181) / 0.062) ** 2 + ((z - 0.18) / 0.12) ** 2))
-    const shade = 0.91 + 0.09 * Math.min(1, y / 0.16)
-    tones.push(shade, shade * (1 - 0.13 * cheek), shade * (1 - 0.17 * cheek), 1)
+  const { cheek, baseTone, heightBlend, toneRiseHeight } = complexion
+  for (let i = 0; i < positions.length; i += positionComponents) {
+    const yIndex = i + 1
+    const x = Math.abs(positions[i]), y = positions[yIndex], z = positions[yIndex + 1]
+    const lateral = (x - cheek.center.x) / cheek.spread.x
+    const vertical = (y - cheek.center.y) / cheek.spread.y
+    const forward = (z - cheek.center.z) / cheek.spread.z
+    const blush = Math.exp(-(lateral ** squaredDistance + vertical ** squaredDistance + forward ** squaredDistance))
+    const shade = baseTone + heightBlend * Math.min(1, y / toneRiseHeight)
+    tones.push(shade, shade * (1 - cheek.greenAttenuation * blush), shade * (1 - cheek.blueAttenuation * blush), 1)
   }
   face.setVerticesData(VertexBuffer.ColorKind, tones)
   skin.push(face)
-  const nose = coastalProfile(meshes, head, 'Nose', base, [
-    [-0.022, 0.027, 0.031, 0.067],
-    [0.010, 0.019, 0.035, 0.059],
-    [0.036, -0.004, 0.048, 0.036],
-    [0.055, -0.015, 0.044, 0.020],
-    [0.064, -0.014, 0.028, 0.012],
-  ], 16)
-  nose.position.set(0, 0.205, 0.232)
+
+  const nose = coastalProfile(meshes, head, 'Nose', base, noseShape.sections, noseShape.sides)
+  nose.position.set(...noseShape.position)
   skin.push(nose)
   const eyes: { pivot: TransformNode, fill: TransformNode }[] = [], brows: Mesh[] = []
-  for (const s of [-1, 1]) {
-    skin.push(createCrewEar(meshes, head, s, base))
+  const { position, heading, gazeOffsetX, white, iris, pupil, glint, upperLid } = eyeShape
+  const { brow, mouth } = features
+  for (const side of [-1, 1]) {
+    skin.push(createCrewEar(meshes, head, side, base))
     const eye = new TransformNode('Blink at lash line', meshes.scene)
     eye.parent = head
-    eye.position.set(s * 0.109, 0.256, 0.218)
-    eye.rotation.y = s * 0.36
+    eye.position.set(side * position.x, position.y, position.z)
+    eye.rotation.y = side * heading
     const fill = new TransformNode('Eye under the upper lid', meshes.scene)
     fill.parent = eye
     eyes.push({ pivot: eye, fill })
-    meshes.sphere(0, 0, 0.002, 0.110, 0.063, 0.022, '#e9d7b5', fill, false, 12)
-    meshes.sphere(-s * 0.003, -0.001, 0.013, 0.076, 0.060, 0.016, '#69452f', fill, false, 12)
-    meshes.sphere(-s * 0.003, 0, 0.020, 0.050, 0.049, 0.010, '#322927', fill, false, 10)
-    meshes.sphere(-0.010, 0.012, 0.024, 0.012, 0.013, 0.005, '#fff0db', fill, false, 6)
-    sweptDetail(meshes, eye, 'Upper lid', '#543a30', [
-      [-0.055, -0.003, 0.004, 0.002, 0.003],
-      [-0.039, 0.018, 0.010, 0.006, 0.004],
-      [0, 0.028, 0.013, 0.008, 0.005],
-      [0.041, 0.019, 0.009, 0.006, 0.005],
-      [0.057, -0.001, 0.004, 0.002, 0.003],
-    ], [0, 0, 1])
+    meshes.sphere(...white.center, ...white.size, white.color, fill, false, white.segments)
+    meshes.sphere(side * gazeOffsetX, iris.y, iris.z, ...iris.size, iris.color, fill, false, iris.segments)
+    meshes.sphere(side * gazeOffsetX, pupil.y, pupil.z, ...pupil.size, pupil.color, fill, false, pupil.segments)
+    meshes.sphere(...glint.center, ...glint.size, glint.color, fill, false, glint.segments)
+    sweptDetail(meshes, eye, 'Upper lid', upperLid.color, upperLid.path, upperLid.normal)
     // A slight lift over one eye carries through the neutral expression.
-    const lift = s === 1 ? 0.007 : 0
-    brows.push(facialLine('Expressive brow', '#49362e', [
-      [s * 0.049, 0.323 + lift, 0.007, 0.005],
-      [s * 0.083, 0.332 + lift, 0.015, 0.007],
-      [s * 0.130, 0.332 + lift, 0.014, 0.007],
-      [s * 0.171, 0.321 + lift, 0.009, 0.006],
-      [s * 0.187, 0.310 + lift, 0.003, 0.003],
-    ]))
+    const lift = side === 1 ? brow.rightSideLift : 0
+    brows.push(facialLine('Expressive brow', brow.color, brow.path.map(([x, y, width, relief]) => [side * x, y + lift, width, relief])))
   }
-  const smile = facialLine('Soft smile', '#824d3e', [
-    [-0.095, 0.124, 0.002, 0.002],
-    [-0.073, 0.111, 0.005, 0.004],
-    [-0.017, 0.102, 0.006, 0.004],
-    [0.044, 0.107, 0.005, 0.004],
-    [0.083, 0.120, 0.005, 0.004],
-    [0.098, 0.137, 0.002, 0.002],
-  ])
-  const grin = facialLine('Wide smile', '#824d3e', [
-    [-0.122, 0.140, 0.002, 0.002],
-    [-0.088, 0.119, 0.007, 0.004],
-    [-0.032, 0.101, 0.009, 0.005],
-    [0.040, 0.105, 0.009, 0.005],
-    [0.093, 0.124, 0.007, 0.004],
-    [0.121, 0.150, 0.003, 0.002],
-  ])
+  const smile = facialLine('Soft smile', mouth.color, mouth.softSmile)
+  const grin = facialLine('Wide smile', mouth.color, mouth.wideSmile)
   const hair = createCrewHair(meshes, head)
-  const cap = garment(meshes, head, 'Seamed canvas cap', '#658775', [
-    [0.374, 0, 0.002, 0.280, 0.233],
-    [0.383, 0, 0.003, 0.290, 0.245],
-    [0.404, 0, 0.001, 0.292, 0.245],
-    [0.414, -0.002, 0, 0.292, 0.244],
-    [0.461, -0.006, -0.010, 0.276, 0.233],
-    [0.513, -0.012, -0.018, 0.245, 0.210],
-    [0.551, -0.016, -0.023, 0.182, 0.160],
-    [0.576, -0.020, -0.020, 0.086, 0.081],
-    [0.580, -0.020, -0.020, 0.028, 0.025],
-  ], 0.96, 48)
+
+  const { crown, brim: brimShape, strap: strapShape, keeper: keeperShape } = crewCanvasCap
+  const cap = garment(meshes, head, 'Seamed canvas cap', crown.color, crown.contour, crown.softness, crown.sides)
   const capTones: number[] = []
-  const crown = cap.getVerticesData(VertexBuffer.PositionKind)!
-  for (let i = 0; i < crown.length; i += 3) {
-    const [x, y, z] = [crown[i], crown[i + 1], crown[i + 2]]
-    const meridian = Math.atan2(z + 0.008, x + 0.006)
-    const seam = Math.abs(Math.cos(3 * meridian)) ** 28
-    const tone = y <= 0.405 ? 0.85 : 1 - 0.12 * seam
+  const crownPositions = cap.getVerticesData(VertexBuffer.PositionKind)!
+  const { seams, band } = crown
+  for (let i = 0; i < crownPositions.length; i += positionComponents) {
+    const yIndex = i + 1
+    const x = crownPositions[i], y = crownPositions[yIndex], z = crownPositions[yIndex + 1]
+    const meridian = Math.atan2(z + seams.meridianOffsetZ, x + seams.meridianOffsetX)
+    const seam = Math.abs(Math.cos(seams.pairs * meridian)) ** seams.sharpness
+    const tone = y <= band.top ? band.tone : 1 - seams.darkening * seam
     capTones.push(tone, tone, tone, 1)
   }
   cap.setVerticesData(VertexBuffer.ColorKind, capTones)
   // A shallow curve shades the eyes; the bound edge is visible in profile.
-  const brim = meshes.sphere(0, 0.379, 0.202, 0.466, 0.034, 0.307, '#c4b189', head, true, 24)
-  brim.rotation.x = 0.085
-  const strap = sweptDetail(meshes, cap, 'Rear cap strap', '#73614b', [
-    [-0.116, 0.400, -0.216, 0.008, 0.004],
-    [-0.076, 0.397, -0.237, 0.014, 0.006],
-    [0, 0.395, -0.247, 0.015, 0.006],
-    [0.071, 0.396, -0.239, 0.014, 0.006],
-    [0.104, 0.397, -0.227, 0.009, 0.004],
-  ], [0, 0, -1])
+  const brim = meshes.sphere(...brimShape.center, ...brimShape.size, brimShape.color, head, true, brimShape.segments)
+  brim.rotation.x = brimShape.tilt
+  const strap = sweptDetail(meshes, cap, 'Rear cap strap', strapShape.color, strapShape.path, strapShape.normal)
   meshes.shadows.removeShadowCaster(strap, false)
-  const keeper = garment(meshes, cap, 'Brass strap keeper', '#ab895b', [
-    [0.379, 0.047, -0.244, 0.010, 0.006],
-    [0.383, 0.047, -0.245, 0.011, 0.007],
-    [0.406, 0.047, -0.245, 0.011, 0.007],
-    [0.411, 0.047, -0.244, 0.009, 0.005],
-  ], 0.7, 12)
+  const keeper = garment(meshes, cap, 'Brass strap keeper', keeperShape.color, keeperShape.contour, keeperShape.softness, keeperShape.sides)
   meshes.shadows.removeShadowCaster(keeper, false)
   // At face scale the island shadow map aliases lashes and the smile onto the cheeks.
   // Keep direct shape lighting and cast the head's silhouette onto the scene.

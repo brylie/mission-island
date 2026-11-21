@@ -1,7 +1,7 @@
 {
   "eslint.config.mjs": {
     "no-magic-numbers": {
-      "count": 34
+      "count": 33
     }
   },
   "scripts/workbench-reference.mjs": {
@@ -149,59 +149,14 @@
       "count": 2
     }
   },
-  "src/assets/crew-clothes.ts": {
-    "no-magic-numbers": {
-      "count": 510
-    }
-  },
-  "src/assets/crew-ear.ts": {
-    "no-magic-numbers": {
-      "count": 41
-    }
-  },
-  "src/assets/crew-hair.ts": {
-    "no-magic-numbers": {
-      "count": 516
-    }
-  },
-  "src/assets/crew-haircuts.ts": {
-    "no-magic-numbers": {
-      "count": 88
-    }
-  },
-  "src/assets/crew-head.ts": {
-    "no-magic-numbers": {
-      "count": 277
-    }
-  },
   "src/assets/crew-knee.ts": {
     "no-magic-numbers": {
       "count": 7
     }
   },
-  "src/assets/crew-scalp.ts": {
-    "no-magic-numbers": {
-      "count": 48
-    }
-  },
-  "src/assets/crew-shapes.ts": {
-    "no-magic-numbers": {
-      "count": 12
-    }
-  },
   "src/assets/crew-swim-arm.ts": {
     "no-magic-numbers": {
       "count": 67
-    }
-  },
-  "src/assets/crew-swimsuit.ts": {
-    "no-magic-numbers": {
-      "count": 129
-    }
-  },
-  "src/assets/crew.ts": {
-    "no-magic-numbers": {
-      "count": 147
     }
   },
   "src/assets/dock-tug.ts": {
@@ -319,29 +274,9 @@
       "count": 26
     }
   },
-  "src/assets/shop-hats.ts": {
-    "no-magic-numbers": {
-      "count": 315
-    }
-  },
-  "src/assets/shop-legwear.ts": {
-    "no-magic-numbers": {
-      "count": 294
-    }
-  },
-  "src/assets/shop-market-legwear.ts": {
-    "no-magic-numbers": {
-      "count": 102
-    }
-  },
   "src/assets/shop-market-tops.ts": {
     "no-magic-numbers": {
       "count": 91
-    }
-  },
-  "src/assets/shop-millinery.ts": {
-    "no-magic-numbers": {
-      "count": 248
     }
   },
   "src/assets/shop-tailoring.ts": {
@@ -357,11 +292,6 @@
   "src/assets/shop-tops.ts": {
     "no-magic-numbers": {
       "count": 281
-    }
-  },
-  "src/assets/site-props.ts": {
-    "no-magic-numbers": {
-      "count": 430
     }
   },
   "src/assets/stockpile-profile.ts": {

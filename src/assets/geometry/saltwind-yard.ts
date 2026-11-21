@@ -5,6 +5,7 @@ export const vehicleBayMarkings = {
 
 export const yardSurfaces = {
   pavingThickness: 0.24,
+  pavingColor: '#858780',
   mineTurnaround: { thickness: 0.22, sides: 42 },
   helipad: { thickness: 0.18, sides: 40, color: '#677670' },
   helipadMarking: {
@@ -25,7 +26,7 @@ export const timberStackGeometry = {
 
 export const graveMarkerGeometry = {
   base: { centreY: 0.07, size: [0.98, 0.14, 0.48], color: '#989888' },
-  slab: { rise: 0.1, width: 0.74, depth: 0.30, minHeight: 0.76, heightStep: 0.09, heightVariants: 3, color: '#8a9185' },
+  slab: { rise: 0.1, width: 0.74, depth: 0.30, minHeight: 0.76, heightStep: 0.09, heightVariants: 3 },
   crest: { size: [0.74, 0.27, 0.31], segments: 8 },
   pot: { x: 0.28, z: -0.4, centreY: 0.14, rim: 0.19, base: 0.14, height: 0.28, sides: 7, color: '#a58167' },
   flowers: {

@@ -11,6 +11,7 @@ import '@babylonjs/core/Meshes/thinInstanceMesh'
 import { createHarborBoat } from '../assets/waterfront'
 import { createBrinewickFerry } from '../assets/brinewick-ferry'
 import { quayBollard, quayCrateStack, rescueSkiffOutboard, rescueSlipPosts } from '../assets/geometry/brinewick-waterfront'
+import { saltwindSceneryPalette } from '../assets/geometry/saltwind-palette'
 import { createTree } from '../assets/props'
 import { createPhenomena } from '../island-phenomena'
 import { createTarnstepSpray } from './tarnstep-spray'
@@ -89,12 +90,13 @@ function buildWaterfront(meshes: MeshFactory) {
   const { x: lorryX, y: lorryY, z: lorryZ } = ferryQuay.parkedHauler
   lorry.position.set(lorryX, lorryY, lorryZ)
   meshes.batchModel(lorry)
-  const { top, body, cap } = quayBollard
+  const { top, body, capSize } = quayBollard
+  const { slateGrey, warmWhite } = saltwindSceneryPalette
   for (const { x, z } of ferryQuay.bollards) {
     const floor = groundHeight(x, z)
     const height = top - floor
-    meshes.cylinder(x, floor + height * half, z, body.topDiameter, body.bottomDiameter, height, body.sides, body.color)
-    meshes.sphere(x, top, z, ...cap.size, cap.color)
+    meshes.cylinder(x, floor + height * half, z, body.topDiameter, body.bottomDiameter, height, body.sides, slateGrey)
+    meshes.sphere(x, top, z, ...capSize, warmWhite)
   }
   const { x, z } = waterfront.rescue
   const posts = rescueSlipPosts

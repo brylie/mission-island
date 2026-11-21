@@ -1,5 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { cemeteryWall, graveMarkerGeometry, timberStackGeometry, vehicleBayMarkings, yardSurfaces } from '../assets/geometry/saltwind-yard'
+import { saltwindSceneryPalette } from '../assets/geometry/saltwind-palette'
 import type { MeshFactory } from '../island-meshes'
 import { alderwatchCemetery, markedVehicleBays, timberStacks } from '../worlds/saltwind/layout/sites'
 import { createExterior } from './exteriors'
@@ -8,7 +9,7 @@ import { buildTarnstepLedges } from './quarry-art'
 import { helipad, pavedYards, roundYards, sites } from './sites'
 import { groundHeight, surfaceHeight } from './terrain'
 
-const cream = '#f5e5c2', pavement = '#858780'
+const { slateGrey, warmWhite } = saltwindSceneryPalette
 const half = 0.5
 const quarterTurn = Math.PI * half
 const diameterPerRadius = 2
@@ -16,9 +17,9 @@ const diameterPerRadius = 2
 function paintBay(meshes: MeshFactory, x: number, y: number, z: number, width: number, depth: number) {
   const { endLine, sideLine } = vehicleBayMarkings
   for (const side of [-1, 1]) {
-    meshes.box(x + side * width * half, y + sideLine.raise, z, sideLine.width, sideLine.thickness, depth, cream, undefined, false)
+    meshes.box(x + side * width * half, y + sideLine.raise, z, sideLine.width, sideLine.thickness, depth, warmWhite, undefined, false)
   }
-  meshes.box(x, y + endLine.raise, z - depth * half, width, endLine.thickness, endLine.depth, cream, undefined, false)
+  meshes.box(x, y + endLine.raise, z - depth * half, width, endLine.thickness, endLine.depth, warmWhite, undefined, false)
 }
 
 function buildTimberStacks(meshes: MeshFactory) {
@@ -44,8 +45,8 @@ function buildCemetery(meshes: MeshFactory) {
     const variant = (x + z) % slab.heightVariants
     const height = slab.minHeight + variant * slab.heightStep
     meshes.box(x, y + base.centreY, z, ...base.size, base.color)
-    meshes.box(x, y + height * half + slab.rise, z, slab.width, height, slab.depth, slab.color)
-    meshes.sphere(x, y + height + slab.rise, z, ...crest.size, slab.color, undefined, true, crest.segments)
+    meshes.box(x, y + height * half + slab.rise, z, slab.width, height, slab.depth, slateGrey)
+    meshes.sphere(x, y + height + slab.rise, z, ...crest.size, slateGrey, undefined, true, crest.segments)
     if (variant === 0) {
       const potX = x + pot.x, potZ = z + pot.z
       meshes.cylinder(potX, y + pot.centreY, potZ, pot.rim, pot.base, pot.height, pot.sides, pot.color)
@@ -68,8 +69,8 @@ function buildHelipad(meshes: MeshFactory) {
   const diameter = radius * diameterPerRadius
   meshes.cylinder(x, y + pad.thickness * half, z, diameter, diameter, pad.thickness, pad.sides, pad.color)
   const { upright, crossbar } = helipadMarking
-  for (const side of [-1, 1]) meshes.box(x + side * upright.x, y + upright.raise, z, ...upright.size, cream, undefined, false)
-  meshes.box(x, y + crossbar.raise, z, ...crossbar.size, cream, undefined, false)
+  for (const side of [-1, 1]) meshes.box(x + side * upright.x, y + upright.raise, z, ...upright.size, warmWhite, undefined, false)
+  meshes.box(x, y + crossbar.raise, z, ...crossbar.size, warmWhite, undefined, false)
   const lightsPerHalfTurn = lights.count * half
   for (let i = 0; i < lights.count; i++) {
     const angle = i * Math.PI / lightsPerHalfTurn
@@ -95,14 +96,14 @@ export function buildYards(meshes: MeshFactory, omit?: string) {
     meshes.batchModel(model)
   }
 
-  const { pavingThickness, mineTurnaround } = yardSurfaces
+  const { pavingThickness, pavingColor, mineTurnaround } = yardSurfaces
   for (const pad of pavedYards.filter(({ id }) => !['runway', 'taxi', 'air-apron'].includes(id))) {
-    meshes.box(pad.x, pad.y - pavingThickness * half, pad.z, pad.width, pavingThickness, pad.depth, pavement, undefined, false)
+    meshes.box(pad.x, pad.y - pavingThickness * half, pad.z, pad.width, pavingThickness, pad.depth, pavingColor, undefined, false)
   }
   const [, mine] = roundYards
   const padRoot = new TransformNode('Mine turnaround', meshes.scene)
   const diameter = mine.radius * diameterPerRadius
-  const turnaround = meshes.cylinder(mine.x, mine.y - mineTurnaround.thickness * half, mine.z, diameter, diameter, mineTurnaround.thickness, mineTurnaround.sides, pavement, padRoot)
+  const turnaround = meshes.cylinder(mine.x, mine.y - mineTurnaround.thickness * half, mine.z, diameter, diameter, mineTurnaround.thickness, mineTurnaround.sides, pavingColor, padRoot)
   turnaround.receiveShadows = true
   meshes.shadows.removeShadowCaster(turnaround)
   for (const { id, stop } of sites) {

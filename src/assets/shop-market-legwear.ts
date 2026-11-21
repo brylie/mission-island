@@ -1,35 +1,56 @@
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import type { StockId } from '../wardrobe-stock'
+import { marketShoeTrim, marketTrimOutlines, marketTrouserTrim } from './geometry/shop-market-legwear'
 import { applique, panelSurface } from './shop-tailoring'
 
 type Surface = ReturnType<typeof panelSurface>
-const strip = [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]
-const shield = [[-0.5, 0.5], [0.5, 0.5], [0.47, -0.12], [0, -0.5], [-0.47, -0.12]]
-const oval = Array.from({ length: 12 }, (_, i) => [0.5 * Math.cos(i * Math.PI / 6), 0.5 * Math.sin(i * Math.PI / 6)])
+type Seam = { y: number, width: number, height: number, lean: number }
+type VampEmblem = { x: number, z: number, width: number, depth: number, tilt?: number }
+type ShaftEmblem = { y: number, z: number, width: number, height: number }
+
+const { strip, shield, oval: ovalProfile } = marketTrimOutlines
+const half = 0.5
+const semicircleSamples = ovalProfile.samples * half
+const oval = Array.from({ length: ovalProfile.samples }, (_, i) => {
+  const angle = i * Math.PI / semicircleSamples
+  return [ovalProfile.radius * Math.cos(angle), ovalProfile.radius * Math.sin(angle)]
+})
+const mirrorSides = [-1, 1] as const
 
 export function marketLegDetails(m: MeshFactory, root: TransformNode, id: StockId<'trousers'>, x: number, s: number, front: Surface, outside: Surface, detail: string, trim: string) {
-  function seam(name: string, color: string, offset: number, y: number, width: number, height: number, lean = 0) {
-    applique(m, root, name, color, strip, (u, v) => front([x + offset + u * width + v * lean, y + v * height, 0.14]), [0, 0, 1])
+  const { linenPleat, pressedCrease, engineerStripe, fernPocket, pencilLoop, hemBraid, frontSeamZ } = marketTrouserTrim
+  function seam(name: string, color: string, { y, width, height, lean }: Seam, offset: number, side = 1) {
+    const slant = side * lean
+    applique(m, root, name, color, strip, (u, v) => front([x + offset + u * width + v * slant, y + v * height, frontSeamZ]), [0, 0, 1])
   }
   switch (id) {
     case 'oat-culottes':
-      seam('Linen box pleat', detail, s * 0.046, -0.141, 0.012, 0.182, s * 0.015)
-      seam('Pleat highlight', trim, s * 0.057, -0.141, 0.007, 0.182, s * 0.015)
+      seam('Linen box pleat', detail, linenPleat.body, s * linenPleat.body.x, s)
+      seam('Pleat highlight', trim, linenPleat.highlight, s * linenPleat.highlight.x, s)
       break
     case 'plum-pleats':
-      for (const dx of [-0.032, 0.018]) seam('Pressed front crease', detail, dx, -0.225, 0.011, 0.347, s * 0.014)
+      for (const dx of pressedCrease.x) seam('Pressed front crease', detail, pressedCrease, dx, s)
       break
     case 'rail-denim':
-      for (const dx of [-0.069, -0.024, 0.021, 0.066]) seam('Engineer stripe', trim, dx, -0.244, 0.009, 0.344)
+      for (const dx of engineerStripe.x) seam('Engineer stripe', trim, engineerStripe, dx)
       break
     case 'fern-shorts':
-      applique(m, root, 'Map pocket', detail, shield, (u, v) => outside([x + s * 0.13, -0.124 + v * 0.103, 0.007 + u * 0.138]), [s, 0, 0])
-      applique(m, root, 'Pocket pencil loop', trim, strip, (u, v) => front([x + s * 0.057 + u * 0.020, -0.092 + v * 0.069, 0.13]), [0, 0, 1])
+      applique(m, root, 'Map pocket', detail, shield, (u, v) => outside([
+        x + s * fernPocket.x,
+        fernPocket.y + v * fernPocket.height,
+        fernPocket.z + u * fernPocket.width,
+      ]), [s, 0, 0])
+      applique(m, root, 'Pocket pencil loop', trim, strip, (u, v) => front([
+        x + s * pencilLoop.x + u * pencilLoop.width,
+        pencilLoop.y + v * pencilLoop.height,
+        pencilLoop.z,
+      ]), [0, 0, 1])
       break
     case 'night-flares':
-      for (const y of [-0.379, -0.407]) {
-        applique(m, root, 'Hem braid', trim, strip, (u, v) => front([x + u * 0.167, y + v * 0.012 + Math.abs(u) * 0.038, 0.135]), [0, 0, 1])
+      for (const y of hemBraid.y) {
+        applique(m, root, 'Hem braid', trim, strip, (u, v) =>
+          front([x + u * hemBraid.width, y + v * hemBraid.height + Math.abs(u) * hemBraid.lift, hemBraid.z]), [0, 0, 1])
       }
       break
     default: return false
@@ -38,34 +59,37 @@ export function marketLegDetails(m: MeshFactory, root: TransformNode, id: StockI
 }
 
 export function marketShoeDetails(m: MeshFactory, root: TransformNode, id: StockId<'shoes'>, x: number, s: number, vamp: Surface, shaft: Surface, detail: string, trim: string) {
-  function top(name: string, color: string, shape: number[][], dx: number, z: number, w: number, d: number, tilt = 0) {
-    applique(m, root, name, color, shape, (u, v) => vamp([x + dx + u * w, -0.57, z + v * d + u * tilt]), [0, 1, 0])
+  const { vampY, shaftX, ribbon, loafer, sneaker, hiker, wellies } = marketShoeTrim
+  function top(name: string, color: string, shape: number[][], { x: dx, z, width, depth, tilt = 0 }: VampEmblem) {
+    applique(m, root, name, color, shape, (u, v) => vamp([x + dx + u * width, vampY, z + v * depth + u * tilt]), [0, 1, 0])
   }
-  function side(name: string, color: string, shape: number[][], y: number, z: number, w: number, h: number) {
-    applique(m, root, name, color, shape, (u, v) => shaft([x + s * 0.12, y + v * h, z + u * w]), [s, 0, 0])
+  function side(name: string, color: string, shape: number[][], { y, z, width, height }: ShaftEmblem) {
+    applique(m, root, name, color, shape, (u, v) => shaft([x + s * shaftX, y + v * height, z + u * width]), [s, 0, 0])
   }
   switch (id) {
     case 'ribbon-flats':
-      for (const sign of [-1, 1]) top('Ribbon loop', trim, shield, sign * 0.036, 0.133, 0.069, 0.056, sign * 0.030)
-      top('Ribbon knot', detail, oval, 0, 0.133, 0.032, 0.032)
+      for (const sign of mirrorSides) {
+        top('Ribbon loop', trim, shield, { ...ribbon.loops, x: sign * ribbon.loops.x, tilt: sign * ribbon.loops.tilt })
+      }
+      top('Ribbon knot', detail, oval, ribbon.knot)
       break
     case 'penny-loafers':
-      top('Saddle strap', detail, strip, 0, 0.129, 0.188, 0.040)
-      top('Brass penny', trim, oval, 0, 0.159, 0.043, 0.020)
+      top('Saddle strap', detail, strip, loafer.saddle)
+      top('Brass penny', trim, oval, loafer.penny)
       break
     case 'quay-sneakers':
-      for (const z of [0.124, 0.154]) top('Canvas lace', trim, strip, 0, z, 0.119, 0.009)
-      top('Rubber toe guard', trim, oval, 0, 0.203, 0.155, 0.037)
+      for (const z of sneaker.laces.z) top('Canvas lace', trim, strip, { ...sneaker.laces, z })
+      top('Rubber toe guard', trim, oval, sneaker.toeGuard)
       break
     case 'bracken-hikers':
-      for (const z of [0.142, 0.169]) for (const sign of [-1, 1]) {
-        top('Cross lace', trim, strip, sign * 0.029, z, 0.057, 0.009, sign * 0.026)
+      for (const z of hiker.crossLaces.z) for (const sign of mirrorSides) {
+        top('Cross lace', trim, strip, { ...hiker.crossLaces, z, x: sign * hiker.crossLaces.x, tilt: sign * hiker.crossLaces.tilt })
       }
-      side('Leather ankle guard', detail, shield, -0.466, 0.016, 0.103, 0.085)
+      side('Leather ankle guard', detail, shield, hiker.ankleGuard)
       break
     case 'puddle-wellies':
-      side('Rubber maker stamp', detail, oval, -0.400, 0.018, 0.075, 0.071)
-      top('Rubber toe cap', trim, oval, 0, 0.193, 0.162, 0.047)
+      side('Rubber maker stamp', detail, oval, wellies.stamp)
+      top('Rubber toe cap', trim, oval, wellies.toeCap)
       break
     default: return false
   }
