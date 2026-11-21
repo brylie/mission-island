@@ -1,3 +1,4 @@
+import { crewSwing, strideCycleMetres } from '../island-render-pose'
 import { createCrew, createSkiffGear, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats } from '../assets/crew'
 import { createSupply } from '../assets/props'
 import { createHarborBoat } from '../assets/waterfront'
@@ -5,7 +6,7 @@ import { chargePower } from '../charged-actions'
 import { clothingCatalog, shopItemFor } from '../clothing-catalog'
 import { appearancePartKeys, appearanceParts, isEveryday, readAppearance, skinTones, uniforms, type CrewAppearance } from '../crew-appearance'
 import { walkingHeight, waterLevel } from '../terrain'
-import { jumpGravity, jumpSpeed, skiffStart } from '../world'
+import { crewCarrySpeed, crewSprintMultiplier, crewWalkSpeed, jumpGravity, jumpSpeed, skiffStart } from '../world'
 import { control, range, type Entry } from './subject'
 import { crewClothingSlots, relatedCrewOptions, shownCrewChoice } from './crew-outfit'
 
@@ -86,7 +87,9 @@ export const crewStudy: Entry = {
       const elevation = jumping ? Math.max(0, jumpSpeed * jumpTime - jumpGravity / 2 * jumpTime * jumpTime) : 0
       const paddling = values.state === 'paddle'
       if (!paddling) crew.root.position.y = elevation
-      const stride = Number(values.stride) * (sprinting ? 0.89 : walking ? 0.57 : 0)
+      // Travel speeds and swing from the game, so the preview steps as the crew do.
+      const pace = sprinting ? crewWalkSpeed * crewSprintMultiplier : values.state === 'carry' ? crewCarrySpeed : walking ? crewWalkSpeed : 0
+      const stride = Number(values.stride) * crewSwing(pace)
       const appearance = readAppearance(values)
       crew.setAppearance(appearance, { dye: values.dyed ? String(values.dye) : undefined })
       crew.setCap(Boolean(values.cap))
@@ -96,7 +99,7 @@ export const crewStudy: Entry = {
       crew.root.rotation.x = 0
       if (paddling) poseSkiffCrew(crew, Math.sin(time * 4 * Math.PI / duration), -1, false, 1)
       else if (values.state === 'swim' || values.state === 'tread') poseSwimming(crew, time, Number(values.state === 'swim'))
-      else poseCrew(crew, time * (sprinting ? 2.5 : 5 / 3), stride, elevation > 0.08,
+      else poseCrew(crew, time * pace / strideCycleMetres(stride), stride, elevation > 0.08,
         carrying ? 'crate' : spraying ? 'extinguisher' : undefined, reach, 1, power, throwing, values.state === 'raise')
       alignPaddle?.()
       crate.setEnabled(carrying)

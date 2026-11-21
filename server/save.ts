@@ -5,6 +5,7 @@ import { aerialSurveys, type AviationProgress } from '../src/aviation.ts'
 import { farmOrders, type FarmProgress } from '../src/farm-orders.ts'
 import { farmPlots } from '../src/farm.ts'
 import { isJobId, jobs } from '../src/jobs.ts'
+import type { Journal } from '../src/journal/journal.ts'
 import type { JobBoardState } from '../src/jobs.ts'
 import type { Player, Snapshot } from '../src/protocol'
 import { gateStages, initialGateRepair } from '../src/gate-repair.ts'
@@ -13,6 +14,7 @@ import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
 import { isFavorReceipt, isResidentRecords, migrateResidents, migrateTrust } from './resident-save.ts'
 import { initialFerryRepair, isFerryRepair } from '../src/ferry-repair.ts'
 import { makeItems } from './items.ts'
+import { readJournal } from './journal-save.ts'
 import { crateStarts, itemStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
 
@@ -23,7 +25,7 @@ export type IslandSave = {
   islandTime: number
   growth: number[]
   world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay' | 'ferryRepair'> &
-    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress; produce?: FarmProgress; materialsWork?: Snapshot['materialsWork'] }
+    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress; journal?: Journal; produce?: FarmProgress; materialsWork?: Snapshot['materialsWork'] }
   crew: { token: string; player: Player; reserved: boolean }[]
 }
 
@@ -188,7 +190,9 @@ function isSavedProjects(world: Record<string, unknown>, islandTime: number) {
   return isSavedMaterials(world, islandTime) && isFerryRepair(world.ferryRepair, islandTime)
 }
 
-function isSave(value: unknown): value is IslandSave {
+type SaveFields = Omit<IslandSave, 'world'> & { world: Omit<IslandSave['world'], 'journal'> & { journal?: unknown } }
+
+function isSave(value: unknown): value is SaveFields {
   if (!isRecord(value) || value.version !== 6 || !isCoinBalance(value.crewCoins) ||
     !validReceipt(value.lastStarterPay) || !isNumber(value.islandTime) || value.islandTime < 0 ||
     !Array.isArray(value.growth) || value.growth.length !== farmPlots.length || !value.growth.every(isNumber) ||
@@ -218,7 +222,10 @@ export function islandSaveFile(root: string, port: number, slot = `island-${port
       try {
         const parsed = migrateSave(JSON.parse(readFileSync(path, 'utf8')))
         if (!isSave(parsed)) throw new Error('Unsupported or malformed save')
-        return parsed
+        const { journal: stored, ...world } = parsed.world
+        const journal = stored === undefined ? undefined : readJournal(stored, parsed.islandTime)
+        if (stored !== undefined && !journal) throw new Error('Unsupported or malformed save')
+        return { ...parsed, world: { ...world, ...(journal && { journal }) } }
       } catch (error) {
         if (isRecord(error) && error.code === 'ENOENT') return undefined
         throw new Error(`Could not load island save ${path}`, { cause: error })

@@ -15,6 +15,7 @@ export function createResidentConversation(dialog: HTMLDialogElement, act: (acti
   const remark = dialog.querySelector<HTMLElement>('#resident-remark')!
   const advice = dialog.querySelector<HTMLElement>('#resident-advice')!
   const favor = dialog.querySelector<HTMLElement>('#resident-favor')!
+  const fieldNotes = dialog.querySelector<HTMLElement>('#resident-field-notes')!
   const buttons: Record<Choice, HTMLButtonElement> = {
     'accept-favor': dialog.querySelector('#resident-accept')!,
     'report-sound': dialog.querySelector('#resident-report-sound')!,
@@ -38,6 +39,7 @@ export function createResidentConversation(dialog: HTMLDialogElement, act: (acti
       greeting.textContent = lines[0] ?? ''
       advice.textContent = lines.slice(1).join('\n')
       for (const element of [remark, favor, ...Object.values(buttons)]) element.hidden = true
+      fieldNotes.replaceChildren()
       return true
     },
     // Fills the conversation and returns the title, or undefined when the id is not a resident.
@@ -64,6 +66,11 @@ export function createResidentConversation(dialog: HTMLDialogElement, act: (acti
       const asking = favorLine(resident, state) ?? ''
       if (favor.textContent !== asking) favor.textContent = asking
       favor.hidden = !asking
+      // Field clues a resident passes on, such as Mara's tide-pool outing, follow the shared journal too.
+      const notes = resident.conversation.fieldNotes?.(state) ?? []
+      if (notes.join('\n') !== [...fieldNotes.children].map(({ textContent }) => textContent).join('\n')) {
+        fieldNotes.replaceChildren(...notes.map((line) => Object.assign(document.createElement('p'), { textContent: line })))
+      }
       const open = interactions(state, player).filter((option) => option.subject === speaker)
       for (const [action, button] of Object.entries(buttons) as [Choice, HTMLButtonElement][]) {
         const option = open.find((entry) => entry.action === action)

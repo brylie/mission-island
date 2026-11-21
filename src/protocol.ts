@@ -14,6 +14,8 @@ import type { JobBoardState, JobId } from './jobs'
 import type { GardenGate, GateRepair, GateStep } from './gate-repair'
 import type { FavorReceipt, ResidentRecords } from './residents/trust'
 import type { InteractionChoice } from './interaction-options'
+import type { FishId } from './journal/fish'
+import type { Journal } from './journal/journal'
 import type { FerryRepair } from './ferry-repair'
 import type { FarmOrderId, FarmWork } from './farm-orders'
 import type { MaterialPockets, MaterialsWork, RepairMaterial } from './materials-work'
@@ -121,12 +123,13 @@ export interface Snapshot {
   ferryRepair: FerryRepair
   materialsWork: MaterialsWork
   aviation: AviationState
+  journal: Journal
 }
 
 export type ServerMessage =
   | Snapshot
   | { type: 'welcome'; id: number; scenarios?: readonly ScenarioSummary[] }
-  | { type: 'fishing-result'; result: FishingResult }
+  | { type: 'fishing-result'; result: FishingResult; fish?: FishId }
   | { type: 'market-sale'; coins: number }
   | { type: 'farm-pay'; id: FarmOrderId; coins: number }
   | { type: 'barrow-returned' }
@@ -134,6 +137,8 @@ export type ServerMessage =
   | { type: 'order-pay'; coins: number; id: JobId }
   | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'ferry-tally' | 'open-wardrobe' | 'open-clothing-counter' }
   | { type: 'resident-chat'; resident: string }
+  | { type: 'tide-staff'; time: number }
+  | { type: 'field-unavailable' }
   | { type: 'favor-accepted'; resident: string; favor: string; playerId: number }
   | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number; restored: boolean }
   | { type: 'favor-report'; resident: string; favor: string; playerId: number; result: 'honest' | 'broken'; trust: number }

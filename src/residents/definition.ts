@@ -42,6 +42,7 @@ export interface ConversationContext {
 export interface ConversationTrait {
   // A greeting and a piece of advice. Pure, so a crewmate who joins late or a restarted host hears the same.
   lines(context: ConversationContext): [string, string]
+  fieldNotes?(state: Snapshot): readonly string[]
 }
 
 export type FavorKind =

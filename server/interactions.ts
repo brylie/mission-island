@@ -21,6 +21,7 @@ import { isFarmAction } from '../src/farm-orders.ts'
 import type { createFarmOrders } from './farm-orders.ts'
 import type { createResidents } from './residents.ts'
 import type { createGateSwell } from './gate-swell.ts'
+import type { createJournal } from './journal.ts'
 import type { createMaterialsWork } from './materials-work.ts'
 
 // Jobs done in the world for residents and the farm, each with its own host module.
@@ -56,7 +57,7 @@ export function createInteractions(
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
   residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'report' | 'stageCrate'>,
-  work: Work, checkpoint?: () => void,
+  work: Work, journal: Pick<ReturnType<typeof createJournal>, 'record' | 'inspect'>, checkpoint?: () => void,
 ) {
 
   function useHomeChest(member: CrewMember) {
@@ -131,7 +132,7 @@ export function createInteractions(
 
   const neighborly = createNeighborly(gate, residents, work)
 
-  function perform(member: CrewMember, { action, subject = -1 }: Interaction) {
+  function perform(member: CrewMember, action: Exclude<Interaction['action'], 'record' | 'inspect-field'>, subject = -1) {
     if (isFarmAction(action)) return work.farm.act(member, action)
     const item = state.items[subject]
     switch (action) {
@@ -158,11 +159,15 @@ export function createInteractions(
       player.sleeping = false
       return
     }
+    if (choice?.action === 'inspect-field') return journal.inspect(member, choice.subject)
     const options = interactions(state, player)
     const chosen = choice ? options.find((option) => sameChoice(option, choice))
       : options.find(({ action }) => !deliberateActions.includes(action))
-    if (!chosen) return
-    perform(member, chosen)
+    if (!chosen || chosen.action === 'inspect-field') return
+    // A journal record touches nothing the other interactions handle, so it stays out of their switch.
+    const { action, subject } = chosen
+    if (action === 'record') journal.record(player, subject ?? -1)
+    else perform(member, action, subject)
     updateHeldItems(state)
   }
 

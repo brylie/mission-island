@@ -37,7 +37,7 @@ function ready({ coins = 30, completed = 4, repair, holding, arrange } = {}) {
 test('the tally board introduces the repair at four orders, and E alone never spends the crew bank', (t) => {
   const early = setup(t, { players: [player(0, atTally)], arrange: ready({ completed: 3 }) })
   const a = early.join(tokens[0])
-  assert.deepEqual(offered(a), ['ferry-tally'])
+  assert.deepEqual(offered(a), ['ferry-tally', 'record'])
   assert.match(tallyLines(a.state).lines[0], /finished 4 harbor orders \(3\/4\)/)
   a.request('interact')
   early.advance()
@@ -45,7 +45,7 @@ test('the tally board introduces the repair at four orders, and E alone never sp
 
   const h = setup(t, { players: [player(0, atTally)], arrange: ready() })
   const b = h.join(tokens[0])
-  assert.deepEqual(offered(b), ['ferry-order', 'ferry-donate', 'ferry-tally'])
+  assert.deepEqual(offered(b), ['ferry-order', 'ferry-donate', 'ferry-tally', 'record'])
   assert.deepEqual(actionHint(b.state, b.player), ['E', 'Order 2 timber crates from Seabrook'])
   b.request('interact')
   h.advance()
@@ -122,7 +122,7 @@ test('the last coin and crate finish the stage once, restore service, and surviv
   assert.ok(Number.isFinite(b.state.ferryRepair.restoredAt))
   assert.equal(b.state.ferryRepair.ledger.length, ferryStages.length)
   for (const client of [a, b]) assert.deepEqual(client.messages.filter(({ type }) => type === 'ferry-stage'), [{ type: 'ferry-stage', stage: 3 }])
-  assert.deepEqual(offered(b), ['ferry-tally'])
+  assert.deepEqual(offered(b), ['ferry-tally', 'record'])
 
   file.write({ ...h.game.snapshotForSave(), world: { ...h.game.snapshotForSave().world, truck: { x: -30, z: -42, heading: Math.PI } } })
   const resumed = setup(t, { saved: file.load() })

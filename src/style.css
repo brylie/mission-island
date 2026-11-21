@@ -379,6 +379,7 @@ kbd {
 .crew-guide-dialog .resident-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .crew-guide-dialog .resident-choices button { margin: 0; }
 .crew-guide-dialog #resident-favor { color: var(--ink); font-weight: 600; }
+#resident-field-notes:not(:empty) { margin-top: 12px; padding-top: 11px; border-top: 1px solid #dbcfaf; }
 
 .job-board-dialog { width: min(560px, calc(100% - 28px)); max-height: calc(100% - 30px); }
 .job-board-dialog h2 { margin-bottom: 8px; }
@@ -391,6 +392,35 @@ kbd {
 #job-list p { color: var(--muted); }
 #job-list button { align-self: start; margin: auto 0 0; }
 #job-list button:disabled { opacity: 0.55; cursor: default; }
+
+/* The field journal reads as a ruled paper page filled in with pencil. */
+.journal-dialog {
+  --pencil: #3d3b37;
+  --rule: #c9d6d8;
+  width: min(480px, calc(100% - 28px));
+  max-height: calc(100% - 30px);
+  color: var(--pencil);
+  background: #f7f0da;
+  border: 1px solid #e3d8b8;
+  border-left: 5px double #d99b8c;
+  font-family: "Bradley Hand", "Segoe Print", "Marker Felt", "Comic Sans MS", cursive;
+}
+.journal-dialog h2 { margin-bottom: 4px; }
+.journal-dialog p { margin: 0; font-size: 14px; line-height: 1.45; }
+.journal-dialog #journal-help { margin-top: 12px; color: #55524b; }
+.journal-pages { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.options-dialog .journal-pages button { margin: 0; padding: 5px 10px; color: var(--pencil); background: transparent; border: 1.5px solid #8d877a; border-radius: 4px 9px 5px 8px; font: inherit; font-size: 14px; }
+.options-dialog .journal-pages button[aria-pressed="true"] { background: #e9dfc0; border-color: var(--pencil); text-decoration: underline; text-underline-offset: 3px; }
+.journal-pages button span { font-size: 12px; }
+#journal-clues { margin: 10px 0; padding-inline-start: 20px; font-size: 14px; line-height: 1.45; }
+#journal-clues li + li { margin-top: 6px; }
+#journal-list { margin: 8px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+.journal-row { display: flex; gap: 10px; align-items: flex-start; padding: 7px 2px; border-bottom: 1px solid var(--rule); }
+.journal-behavior { padding-left: 28px; }
+.journal-box { flex: none; width: 17px; height: 17px; margin-top: 2px; border: 1.5px solid #6d685d; border-radius: 2px 4px 3px 4px; transform: rotate(-2deg); font-size: 19px; line-height: 12px; text-align: center; }
+.journal-row strong { display: block; font-size: 15px; font-weight: 400; color: #55524b; }
+.journal-row[data-recorded] strong { font-weight: 700; color: var(--pencil); }
+.journal-row small { display: block; font-size: 13px; color: #55524b; }
 
 @media (max-width: 830px), (max-height: 570px) {
   .masthead { height: 55px; }
