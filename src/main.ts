@@ -6,11 +6,10 @@ import { createRidgeHud, drawRidgeMap, flightInput, ridgeActionHint } from './ri
 import { readStorage, writeStorage } from './browser-storage'
 import { cleanCrewName, defaultAppearance, shirtColor } from './crew-appearance'
 import { createCrewGuide } from './crew-guide-ui'
-import { missionCard } from './mission-card'
+import { favorFeedback, missionCard } from './mission-card'
 import { bindControlsToggle } from './controls-toggle-ui'
 import { bindLookOptions } from './look-options-ui'
 import { createReticleFocus } from './reticle-ui'
-import { gateStepText, residentName } from './gate-repair'
 import { farm, market } from './farm'
 import { createJobBoard } from './job-board-ui'
 import { activeJob, atJobBoard, deliveryDrop, jobBoard, jobs } from './jobs'
@@ -426,14 +425,15 @@ function connect() {
         break
       case 'fisher-chat':
       case 'wren-chat':
-        openGuide(incoming.type === 'wren-chat' ? 'wren' : 'fisher')
+      case 'ferry-tally':
+        openGuide(incoming.type === 'wren-chat' ? 'wren' : incoming.type === 'ferry-tally' ? 'tally' : 'fisher')
         break
       case 'favor-pay':
-        actionFeedback = { key: `+${incoming.coins} coins`, label: `${residentName}’s gate mended · Crew bank · ${residentName} trust +${incoming.trust}`,
-          until: performance.now() + 4200 }
-        break
       case 'gate-step':
-        actionFeedback = { key: '', label: gateStepText[incoming.step], until: performance.now() + 3200 }
+      case 'ferry-progress':
+      case 'ferry-order':
+      case 'ferry-stage':
+        actionFeedback = favorFeedback(incoming, snapshot)
         break
       case 'open-wardrobe':
       case 'open-clothing-counter':
@@ -570,7 +570,7 @@ function openClothing(fromWardrobe: boolean) {
   else counter.open(snapshot, player, atClothingCounter(player) && !heldItem(snapshot, player))
 }
 
-function openGuide(talking: 'fisher' | 'wren' | false = false) {
+function openGuide(talking: 'fisher' | 'wren' | 'tally' | false = false) {
   if (!snapshot || modalOpen()) return
   const player = snapshot.players.find((entry) => entry.id === id)
   if (!player) return

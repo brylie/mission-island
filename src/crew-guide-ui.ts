@@ -1,5 +1,6 @@
 import { crateDriverXp, haulerUnlockXp } from './ore-contracts'
 import { fisherName } from './harbor-fisher'
+import { ferryServiceRestored, tallyLines } from './ferry-repair'
 import { gateRepairGuide, residentName, wrenLines } from './gate-repair'
 import { jobs } from './jobs'
 import type { Player, Snapshot } from './protocol'
@@ -38,10 +39,10 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
     const direction = order
       ? 'Your crew already has an order. Follow the progress and destination on the mission card.'
       : state.mission === 'complete'
-        ? 'The Harbor Job Board is open beside the Harbor Depot freight yard. Walk up and press E to choose an order with your crewmate.'
+        ? 'The Harbor Job Board is open beside Harbor Depot. Walk up and press E to choose an order with your crewmate. Four finished orders open the ferry repair.'
         : state.mission === 'fire'
           ? 'Pick up the extinguishers at Fire Supplies and head to Forest Lookout. Putting out the fire opens the Harbor Job Board back at the depot.'
-          : 'Cross the main road to the Harbor Depot freight yard south of the cottages. One crewmate can load the flatbed from the back with E while the other boards with F. Once loaded, follow the road east to Seabrook. Next comes the lookout fire, then the job board beside the depot.'
+          : 'Cross the depot lane to the Harbor Depot crate stack south of the cottages. One crewmate can load the flatbed from the back with E while the other boards with F. Once loaded, follow the road east to Seabrook. Next comes the lookout fire, then the job board beside the depot.'
     const balance = `Crew bank · ${state.crewCoins} ${state.crewCoins === 1 ? 'coin' : 'coins'}`
     const latest = state.lastStarterPay && starterPay[state.lastStarterPay]
     const receipt = latest
@@ -64,13 +65,18 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
 
   return {
     update,
-    open(state: Snapshot, player: Player, talking: 'fisher' | 'wren' | false, dismissed: boolean) {
-      title.textContent = talking === 'wren' ? `${residentName} · Neighbor` : talking ? `${fisherName} · Fisher` : 'Crew guide'
+    open(state: Snapshot, player: Player, talking: 'fisher' | 'wren' | 'tally' | false, dismissed: boolean) {
+      const board = talking === 'tally' ? tallyLines(state) : undefined
+      title.textContent = board?.title ?? (talking === 'wren' ? `${residentName} · Neighbor` : talking ? `${fisherName} · Fisher` : 'Crew guide')
       conversation.hidden = !talking
       note.hidden = Boolean(talking)
-      if (talking) {
-        [greeting.textContent, advice.textContent] = talking === 'wren' ? wrenLines(state) : [state.mission === 'complete'
-          ? '“Thanks for clearing the lookout. You can find more work on the board beside the depot. The ferry ramp down the next gravel turn still needs a crew.”'
+      if (board) {
+        [greeting.textContent, advice.textContent] = [board.lines[0], board.lines.slice(1).join('\n')]
+      } else if (talking) {
+        [greeting.textContent, advice.textContent] = talking === 'wren' ? wrenLines(state) : [ferryServiceRestored(state)
+          ? '“The ferry ramp is open again. I watched your crew lay that deck from the dock. The whole harbor is talking about it.”'
+          : state.mission === 'complete'
+          ? '“Thanks for clearing the lookout. You can find more work on the board beside the depot. The ferry terminal at the end of Harbor Depot road still needs a crew.”'
           : '“Welcome to the harbor. The depot has a delivery and a lookout shift for your crew. That ramp east of here is the old ferry terminal. We’ll put it back to work someday.”',
         '“You’ll find me at the small dock most mornings. Pick up the rod from your cottage chest and cast from the dock if you’d like to try your luck.”']
       } else {

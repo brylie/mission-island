@@ -25,7 +25,7 @@ export const landmarks: Landmark[] = [
   { point: clothingCounter, title: 'Clothing counter', kind: 'clothing', height: 1.48, closeRange: 16 },
   { point: jobBoard, title: 'Harbor job board', kind: 'board', height: 2.35 },
   { point: { x: 21, z: 22 }, title: 'Fire Supplies', kind: 'equipment', height: 2.4 },
-  { point: ferryTerminal, title: 'Ferry terminal · Closed', kind: 'ferry', height: 2.1 },
+  { point: ferryTerminal, title: 'Ferry terminal', kind: 'ferry', height: 2.1 },
   ...crewHomes.flatMap((home, owner) => [
     { point: cottageDoor(home), title: `Your home · ${home.name}`, kind: 'home', height: 2.5, owner },
     { point: home.chest, title: 'Your tool chest', kind: 'chest', height: 0.95, owner, closeRange: 12 },

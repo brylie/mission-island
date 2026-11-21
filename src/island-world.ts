@@ -78,7 +78,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     meshes.box(jobBoard.x + dx, boardY + 1.38, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
   }
   createDock(meshes, saltBloomPile, study?.target === 'dock' ? study.material : undefined)
-  createFerryTerminal(meshes)
+  const ferry = createFerryTerminal(meshes)
   const features = (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site)
   placeSiteFeatures(meshes, features, walkingHeight)
   const shellglass = createShellglassTide(meshes, features.find(feature => feature.site === 'shellglass' && feature.model === 'tide-staff'))
@@ -158,5 +158,5 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     return tide
   }
 
-  return { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden }
+  return { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden, ferry }
 }

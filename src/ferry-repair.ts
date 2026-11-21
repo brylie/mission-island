@@ -64,7 +64,7 @@ export function deckTop({ x, z }: Point) {
 }
 
 // Four finished harbor orders introduce the repair. The count is the crew's existing readiness milestone.
-function ferryProjectOpen(state: Pick<Snapshot, 'jobs' | 'mission'>) {
+export function ferryProjectOpen(state: Pick<Snapshot, 'jobs' | 'mission'>) {
   return state.mission === 'complete' && state.jobs.completed >= secondIslandGoal
 }
 
@@ -148,9 +148,11 @@ export function ferryNextStep(state: ProjectState & Pick<Snapshot, 'items' | 'cr
   if (!needs) return 'Ferry service restored. Crossings are being arranged.'
   const { haul } = state.ferryRepair
   if (haul > 0) {
-    const loaded = timberCrates(state).some((item) => item.onBed)
-    return loaded ? `Drive the timber to the ferry yard and stack ${plural(haul, 'crate')} by the tally board`
-      : `Collect ${plural(haul, 'timber crate')} from the ${timberStack.name} and haul them to the ferry yard`
+    const timber = timberCrates(state)
+    if (timber.some((item) => item.onBed)) return `Drive the timber to the ferry yard and stack ${plural(haul, 'crate')} by the tally board`
+    return timber.some((item) => distance(item, timberStack) < 8)
+      ? `Collect ${plural(haul, 'timber crate')} from the ${timberStack.name} and haul them to the ferry yard`
+      : `Stack ${plural(haul, 'timber crate')} on the ferry yard pallet by the tally board`
   }
   if (needs.cratesLeft > 0 && canOrderTimber(state)) return 'Order timber at the ferry tally board'
   if (needs.cratesLeft > 0) return 'Finish the current delivery, then order timber at the ferry tally board'

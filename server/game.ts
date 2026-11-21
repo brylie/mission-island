@@ -52,12 +52,20 @@ function stepVehicles(
   return { before, still }
 }
 
+// A checkpoint can arrange the ferry stage, the truck and loose crates, so physics follows the arranged world.
+function settleTrial(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>) {
+  physics.placeFerry(state)
+  state.truck = physics.parkTruck(state.truck)
+  for (const item of state.items) physics.restore(item)
+}
+
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat()
   const driftwood = createDriftwoodSchool(clock() >>> 0)
   const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
   const trial = playtest && prepareTrial(state, playtest)
+  if (trial) settleTrial(state, physics)
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
   const freight = createFreight(crew, state, clock, checkpoint)

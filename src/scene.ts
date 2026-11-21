@@ -55,7 +55,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
-  const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden } = createIslandWorld(meshes, { liveParticles: true })
+  const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden, ferry } = createIslandWorld(meshes, { liveParticles: true })
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
   const dropPad = createObjectiveMarker(meshes, town, deliveryRadius * 2, '#67ecdc')
@@ -137,7 +137,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     if (resident.walking) fisherCycle += delta * 1.8
     poseCrew(fisher, fisherCycle, resident.walking ? 0.65 : 0, false, undefined, 0, factor)
     fisher.blink(time)
-    garden.update(state, factor, delta, time)
+    for (const scenery of [garden, ferry]) scenery.update(state, factor, delta, time)
     for (const [i, { hinge }] of homeChests.entries()) {
       const withdrawn = state.players.find((player) => player.id === i)?.inventory.length
       hinge.rotation.x += ((withdrawn ? 0.9 : 0) - hinge.rotation.x) * factor

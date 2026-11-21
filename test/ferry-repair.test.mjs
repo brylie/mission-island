@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { timberStack } from '../src/worlds/starter/ferry-terminal.ts'
 import { canOrderTimber, crewName, donationAmount, ferryNextStep, ferryProgress, ferryStages, initialFerryRepair,
   isFerryRepair, stageNeeds, tallyLines } from '../src/ferry-repair.ts'
 
@@ -18,8 +19,11 @@ test('the next step follows the crew from readiness to restored service', () => 
   assert.equal(ferryNextStep(project()), 'Order timber at the ferry tally board')
   assert.match(ferryNextStep(project({ active: { id: 'farm-supplies', progress: 0 } })), /Finish the current delivery/)
   const hauling = { stage: 0, ledger: [{ coins: [0, 0], crates: [0, 0] }], haul: 2 }
-  assert.match(ferryNextStep(project({ repair: hauling, items: [crate({ delivered: false }), crate({ delivered: false })] })),
+  const atSeabrook = { delivered: false, x: timberStack.x, z: timberStack.z }
+  assert.match(ferryNextStep(project({ repair: hauling, items: [crate(atSeabrook), crate(atSeabrook)] })),
     /Collect 2 timber crates from the Seabrook timber stack/)
+  assert.match(ferryNextStep(project({ repair: hauling, items: [crate({ delivered: false, x: -20, z: -24 })] })),
+    /Stack 2 timber crates on the ferry yard pallet/)
   assert.match(ferryNextStep(project({ repair: hauling, items: [crate({ delivered: false, onBed: true })] })),
     /Drive the timber to the ferry yard and stack 2 crates/)
   const timbered = { stage: 0, ledger: [{ coins: [5, 0], crates: [2, 0] }], haul: 0 }
