@@ -12,7 +12,9 @@ Trust grows over several kept promises. One knowingly broken promise can undo th
 
 **Playable.** Mara leaves the porch at 06:00, reaches the dock at 06:15, leaves work at 18:00 and is home at 18:15. Players can approach Mara for a lead. They can get a rod from their own cottage chest and fish from the shore or the stopped skiff. The dock serves small craft.
 
-**Proposed detail and favor.** A line worn smooth along one side of the dock shows where Mara rests the rod. Leave the boarding edge clear so a crewmate can paddle in while the other talks. Mara could ask the crew to watch where fish school near the shore. On a later visit, Mara could recognize the shared observation and offer a clue about the tide pool. Tie the change in greeting to the recorded favor once. [Field outing #51](https://github.com/brylie/mission-island/issues/51)
+**Playable favor.** Mara asks for two carrots from Island Farm for a stew. Once the crew keeps it, Mara greets them as the crew that fed her and passes on a clue about the Shellglass tide pool. [Residents and favors](../mechanics/resident-favors.md)
+
+**Proposed detail.** A line worn smooth along one side of the dock shows where Mara rests the rod. Leave the boarding edge clear so a crewmate can paddle in while the other talks. A later favor could ask the crew to watch where fish school near the shore and recognize the shared observation. [Field outing #51](https://github.com/brylie/mission-island/issues/51)
 
 **Walk it.** Follow Mara from the porch to work and back. Talk while the partner boards the skiff. Skip a night together and find Mara again by the clock. Can a first-time visitor still identify this as a fishing place after Mara goes home?
 
@@ -30,7 +32,9 @@ Either player could return to put the gate right. Wren might thank them and stil
 
 **Playable.** The striped awning is where players sell fish and carrots or buy a carrot seed. Both see the money change. The seed goes to the buyer. The nearby starter freight drop gives players a reason to learn the road to town.
 
-**Proposed resident and favor.** Give the shopkeeper a home within walking distance and a morning routine of setting out produce. Nest empty crates by the service side of the stall, with room for a flatbed and a pedestrian carrying a crate. A label from Harbor Depot makes an empty crate an invitation to take a [return load](second-shift.md). Later the shopkeeper could greet either crew member as the people who cleared space for the morning delivery. Pick the house, commute and hours during an on-island walkthrough.
+**Playable resident.** Ines lives in the coral house across the Seabrook square and sets out produce at the west end of the stall from 07:30 to 18:00. Her first favor asks for two fresh fish for the morning display. The market works whether or not she is there.
+
+**Proposed detail.** Give the morning routine visible produce. Nest empty crates by the service side of the stall, with room for a flatbed and a pedestrian carrying a crate. A label from Harbor Depot makes an empty crate an invitation to take a [return load](second-shift.md). Later the shopkeeper could greet either crew member as the people who cleared space for the morning delivery. Pick the house, commute and hours during an on-island walkthrough.
 
 **Walk it.** Approach from the delivery circle and from the footpath. Can one person find the seller while the other unloads? Compare the sale and return-load prompts with a fish in hand. Visit after closing and check that a resident’s schedule preserves access to the existing market interactions.
 
@@ -38,7 +42,9 @@ Either player could return to put the gate right. Wren might thank them and stil
 
 **Playable foundation.** Harbor Depot stages the starter freight and houses the job board. Harbor Depot road leads to the future ferry site. The small dock near the cottages already serves the skiff. The repair and a working ferry belong to the milestone.
 
-**Proposed resident and favor.** The steward walks from a harbor-side home to the yard to check the morning freight. A tally board by the bay marks outgoing loads. Farther down the road, a stack of replacement planks and a gap in the landing show where the crew’s repair materials will go. For a first favor, have the steward ask the crew to stage a load without blocking that road. After the first shared hauling checkout, either player can ask the steward what the terminal needs next. Choose a home and schedule that let players meet the steward both on foot and at work. [First hauling qualification #50](https://github.com/brylie/mission-island/issues/50) · [Ferry restoration #4](https://github.com/brylie/mission-island/issues/4)
+**Playable resident.** Bram, the harbor steward, lives above the depot office and keeps the freight tally beside the job board from 06:30 to 16:30. After the starter shift, his first favor asks the crew to set one crate in the yellow staging bay beside the depot, clear of Harbor Depot road. Once it is kept, Bram names what the ferry terminal needs.
+
+**Proposed detail.** The steward walks from a harbor-side home to the yard to check the morning freight. A tally board by the bay marks outgoing loads. Farther down the road, a stack of replacement planks and a gap in the landing show where the crew’s repair materials will go. For a first favor, have the steward ask the crew to stage a load without blocking that road. After the first shared hauling checkout, either player can ask the steward what the terminal needs next. Choose a home and schedule that let players meet the steward both on foot and at work. [First hauling qualification #50](https://github.com/brylie/mission-island/issues/50) · [Ferry restoration #4](https://github.com/brylie/mission-island/issues/4)
 
 **Walk it.** Drive to the yard while a partner follows the foot route. From the cab, check the sightline to the waiting player and the loading bay. From ground level, ask the walker to point to the ferry works and then lead the driver to the fishing dock. Record the clue that helped them distinguish the two.
 

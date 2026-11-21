@@ -1,4 +1,4 @@
-import { favorCoins, gateMendedStage, gateway, gatewayClear, onBench, toolboxItem, wrenAt } from '../src/gate-repair.ts'
+import { gateFavor, gateMendedStage, gateway, gatewayClear, onBench, toolboxItem, wrenAt } from '../src/gate-repair.ts'
 import type { GateAction, GateStep } from '../src/gate-repair.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { distance, toolboxHome } from '../src/world.ts'
@@ -7,7 +7,8 @@ import { restingY } from './items.ts'
 
 // Host transitions for Wren's gate. The interaction layer has already checked the step is still
 // open to this player, so a stale or simultaneous request never reaches here.
-export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNotice) => void) {
+// Keeping the favor goes through the shared resident ledger, so Wren's trust rises once for the crew.
+export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNotice) => void, keepFavor: () => void) {
   const repair = () => state.gateRepair
 
   function shelveToolbox() {
@@ -30,15 +31,19 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
     member.notify?.({ type: 'gate-step', step: value })
   }
 
+  // Talking to Wren accepts the favor, or has Wren fetch back a toolbox left lying about.
+  function talk(member: CrewMember) {
+    const current = repair()
+    if (current.stage === 'sagging') {
+      Object.assign(current, { stage: 'accepted', acceptedAt: state.islandTime })
+      state.residents.wren = { ...state.residents.wren, active: gateFavor }
+    } else if (recallToolbox()) step(member, 'recalled')
+  }
+
   function act(member: CrewMember, intent: GateAction) {
     const { player } = member
     const current = repair()
     switch (intent) {
-      case 'talk':
-        if (current.stage === 'sagging') Object.assign(current, { stage: 'accepted', acceptedAt: state.islandTime })
-        else if (recallToolbox()) step(member, 'recalled')
-        member.notify?.({ type: 'wren-chat' })
-        break
       case 'return-toolbox':
         shelveToolbox()
         step(member, 'returned')
@@ -58,10 +63,7 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
       case 'test':
         Object.assign(current, { stage: 'mended', mendedAt: state.islandTime })
         state.gate = { open: true, closePending: false }
-        state.crewCoins += favorCoins
-        state.residentTrust.wren += 1
-        state.lastFavorPay = { resident: 'wren', coins: favorCoins }
-        notifyCrew({ type: 'favor-pay', resident: 'wren', coins: favorCoins, trust: 1 })
+        keepFavor()
         break
       case 'open':
         state.gate = { open: true, closePending: false }
@@ -85,5 +87,5 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
     if (repair().pinHolder === playerId) repair().pinHolder = null
   }
 
-  return { act, tick, releasePin }
+  return { act, talk, tick, releasePin }
 }

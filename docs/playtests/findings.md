@@ -38,6 +38,22 @@ For each session, copy the block below. Give each distinct observation a short t
 - Decision: keep, and observe again with a person. Next questions: can a new pilot find the rising air from the motes and the HUD bearing alone? Does circling with **S** held feel natural? Is a single afternoon long enough to reach Shellglass?
 - Retest: on the `ridge-soaring` checkpoint, ask a pilot to survey Juniper Hollow without directions. Record where they first climbed and how long it took.
 
+### 2026-11-21 · village-favors · Bram hidden behind the job board
+
+- Starting point — `village-favors` checkpoint, solo agent session in the browser. 09:30 after the starter shift, carrying two fish and two carrots.
+- Moment — Bram's first tally spot was 1.5 m from the job board, on the yard side. From the default camera behind the crew, Bram stood in front of the board, and the board's larger aim target took the reticle every time it crossed him. His label also overlapped the board's.
+- Both screens — Solo. A bare **E** opened the board as intended, but there was no way to aim at Bram.
+- Outcome — Moved the tally spot 2.5 m east of the board. Both labels now read in full, and a crewmate standing at the board is out of Bram's talking range, so the two never compete.
+- Interpretation — A resident's spot needs its own line of sight from where players approach, not just walkable ground.
+- Decision — Keep the new spot. The agreement button, the bay and the hand-in all worked from real clicks and **E** presses: staging the crate paid `+5 coins · Stage a load for Bram · Crew bank · Bram trust +1`, and handing Mara two carrots changed her greeting to the tide-pool clue. Aiming was skipped by sending the talk choice over the page's own socket after the camera swung into a wall.
+- Retest — Two people at the depot: one aims at Bram from the road while the other stands at the board. Pass: each gets their own prompt without moving.
+
+### 2026-11-21 · materials-checkout · Ferry Approach Edging
+
+- Two isolated Chromium contexts joined the `materials-checkout` checkpoint. The scripted walk followed Meadow Slope Path to the windfall and Beach Trail past Driftwood Beach and Shellglass Tide Pool to the stone. The small branch and loose stone each had a diamond-shaped marker, a name and an **E** prompt. Each crewmate returned one sample and both earned the qualification.
+- In both runs, the players split gathering. After the first delivery, the returning crewmate still carried one unit and the Crew guide showed one remaining. Both browsers sent a final **E** command. Each saw one 5-coin award, and only one pocket lost a unit. On the return to the site, the timber rail or the row of stones was visible against the gravel and the label read **Repaired**.
+- The host tests cover both timber and stone solo, co-op reconnect after the first section, simultaneous final delivery, and reload from a disk save with the completed edging, one award and both sources still available. The browser walk used scripted directions. Human landmark recognition remains on the [#52 checklist](https://github.com/brylie/mission-island/issues/52).
+
 ## Triage after the session
 
 Give joining failures, lost progress and incorrect bank entries first attention. If a passenger misses a payment, record the two displayed balances before filing. Different balances call for a synchronization or save test. Matching balances and a surprised passenger call for a feedback test. Hear each player’s explanation before sharing the other person’s answer.

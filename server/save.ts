@@ -6,19 +6,23 @@ import { farmPlots } from '../src/farm.ts'
 import { isJobId, jobs } from '../src/jobs.ts'
 import type { JobBoardState } from '../src/jobs.ts'
 import type { Player, Snapshot } from '../src/protocol'
-import { gateStages, initialGateRepair } from '../src/gate-repair.ts'
+import { gateFavor, gateStages, initialGateRepair } from '../src/gate-repair.ts'
+import { materialRefillSeconds, repairMaterials, repairQuantity } from '../src/materials-work.ts'
+import { initialResidents } from '../src/residents/trust.ts'
+import { starterResident, starterResidents } from '../src/worlds/starter/residents.ts'
+import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
 import { makeItems } from './items.ts'
 import { crateStarts, itemStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
 
 export type IslandSave = {
-  version: 3
+  version: 4
   crewCoins: number
   lastStarterPay?: Snapshot['lastStarterPay']
   islandTime: number
   growth: number[]
-  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residentTrust' | 'lastFavorPay'> &
-    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress }
+  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay'> &
+    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress; materialsWork?: Snapshot['materialsWork'] }
   crew: { token: string; player: Player; reserved: boolean }[]
 }
 
@@ -62,19 +66,52 @@ function migrateGate(value: unknown): unknown {
   const toolbox = itemStarts.findIndex(({ kind }) => kind === 'toolbox')
   const saved = value.world.items as unknown[]
   const items = saved.length === toolbox ? [...saved, makeItems()[toolbox]] : saved
-  return { ...value, version: 3, world: { ...initialGateRepair(), ...value.world, items } }
+  return { ...value, version: 3, world: { ...initialGateRepair(), residentTrust: { wren: 0 }, ...value.world, items } }
+}
+
+// Version 4 keeps one record per resident in place of Wren's trust, and names the favor on the last receipt.
+function migrateResidents(value: unknown): unknown {
+  if (!isRecord(value) || value.version !== 3 || !isRecord(value.world)) return value
+  const { residentTrust, lastFavorPay, ...world } = value.world
+  const stage = isRecord(world.gateRepair) ? world.gateRepair.stage : undefined
+  const residents = initialResidents(starterResidents)
+  residents.wren = {
+    trust: isRecord(residentTrust) ? residentTrust.wren as number : 0,
+    kept: stage === 'mended' ? [gateFavor] : [],
+    active: stage === 'accepted' || stage === 'inspected' || stage === 'fitted' ? gateFavor : null,
+  }
+  const receipt = isRecord(lastFavorPay) ? { ...lastFavorPay, favor: gateFavor } : undefined
+  return { ...value, version: 4, world: { ...world, residents, ...receipt && { lastFavorPay: receipt } } }
 }
 
 function migrateSave(value: unknown) {
-  return migrateGate(migrateWallets(value))
+  return migrateResidents(migrateGate(migrateWallets(value)))
+}
+
+// Known residents only, each with whole trust, distinct kept favors of their own, and at most one other under way.
+// A resident missing from the save is added as a stranger.
+function isResidentRecords(value: unknown) {
+  if (!isRecord(value)) return false
+  return Object.entries(value).every(([id, record]) => {
+    const resident = starterResident(id)
+    const owns = (favor: unknown) => resident?.favors.some((entry) => entry.id === favor)
+    return resident && isRecord(record) && isCoinBalance(record.trust) && Array.isArray(record.kept) &&
+      new Set(record.kept).size === record.kept.length && record.kept.every(owns) &&
+      (record.active === null || (owns(record.active) && !record.kept.includes(record.active)))
+  })
+}
+
+function isFavorReceipt(value: unknown) {
+  return isRecord(value) && isCoinBalance(value.coins) && typeof value.resident === 'string' &&
+    Boolean(starterResident(value.resident)?.favors.some((favor) => favor.id === value.favor))
 }
 
 function isGateRepair(world: Record<string, unknown>, islandTime: number) {
-  const { gate, gateRepair, residentTrust, lastFavorPay } = world
+  const { gate, gateRepair, residents, lastFavorPay } = world
   const time = (value: unknown) => value === undefined || (isNumber(value) && value >= 0 && value <= islandTime)
   if (!isRecord(gate) || typeof gate.open !== 'boolean' || typeof gate.closePending !== 'boolean') return false
-  if (!isRecord(residentTrust) || !isCoinBalance(residentTrust.wren)) return false
-  if (lastFavorPay !== undefined && (!isRecord(lastFavorPay) || lastFavorPay.resident !== 'wren' || !isCoinBalance(lastFavorPay.coins))) return false
+  if (!isResidentRecords(residents)) return false
+  if (lastFavorPay !== undefined && !isFavorReceipt(lastFavorPay)) return false
   return isRecord(gateRepair) && gateStages.some((stage) => stage === gateRepair.stage) &&
     (gateRepair.pinHolder === null || (isNumber(gateRepair.pinHolder) && Number.isInteger(gateRepair.pinHolder))) &&
     time(gateRepair.acceptedAt) && time(gateRepair.mendedAt) && (gateRepair.stage !== 'mended' || gateRepair.mendedAt !== undefined)
@@ -122,12 +159,40 @@ function hasValidProgress(world: Record<string, unknown>) {
     (world.aviation === undefined || isSavedAviation(world.aviation))
 }
 
+function isSavedMaterials(world: Record<string, unknown>, islandTime: number) {
+  const work = world.materialsWork
+  const residents = world.residents as Snapshot['residents']
+  const gate = world.gateRepair as Snapshot['gateRepair']
+  const kept = residents.wren?.kept.includes(repairSupplyFavor.id) ?? false
+  const active = residents.wren?.active === repairSupplyFavor.id
+  if (work === undefined) return !active && !kept
+  if (!isRecord(work) || (work.checkout !== 'qualified' && !repairMaterials.some(material => material === work.checkout))) return false
+  const { readyAt, request } = work
+  if (!isRecord(readyAt) || !repairMaterials.every((material) => {
+    const time = readyAt[material]
+    return isNumber(time) && time >= 0 && time <= islandTime + materialRefillSeconds
+  })) return false
+  if (gate.stage !== 'mended' && work.checkout !== 'timber') return false
+  if (request === null) return !active && !kept
+  if (!isRecord(request) || work.checkout !== 'qualified' || !repairMaterials.some(material => material === request.material) ||
+    !isCoinBalance(request.delivered) || request.delivered > repairQuantity) return false
+  return request.delivered === repairQuantity ? kept && !active : active && !kept
+}
+
+function isSavedMaterialPocket(value: unknown) {
+  return value === undefined || (isRecord(value) && repairMaterials.every((material) => {
+    const count = value[material]
+    return isCoinBalance(count) && count <= repairQuantity
+  }))
+}
+
 function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] {
   if (!isRecord(entry) || !isCrewToken(entry.token) ||
     typeof entry.reserved !== 'boolean' || !isPose(entry.player)) return false
   const player = entry.player
   return isNumber(player.id) && Number.isInteger(player.id) && player.id >= 0 && player.id < spawns.length &&
     validDrivingRecord(player) &&
+    isSavedMaterialPocket(player.materials) &&
     [player.y, player.seeds].every(isNumber) && Array.isArray(player.inventory) &&
     (player.starterSeedClaimed === undefined || typeof player.starterSeedClaimed === 'boolean') &&
     (player.ownedClothes === undefined || (Array.isArray(player.ownedClothes) && player.ownedClothes.every(item => typeof item === 'string'))) &&
@@ -135,7 +200,7 @@ function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] 
 }
 
 function isSave(value: unknown): value is IslandSave {
-  if (!isRecord(value) || value.version !== 3 || !isCoinBalance(value.crewCoins) ||
+  if (!isRecord(value) || value.version !== 4 || !isCoinBalance(value.crewCoins) ||
     !validReceipt(value.lastStarterPay) || !isNumber(value.islandTime) || value.islandTime < 0 ||
     !Array.isArray(value.growth) || value.growth.length !== farmPlots.length || !value.growth.every(isNumber) ||
     !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
@@ -143,6 +208,7 @@ function isSave(value: unknown): value is IslandSave {
   const reservedIds = new Set(value.crew.filter(({ reserved }) => reserved).map(({ player }) => player.id))
   if (!hasValidProgress(world)) return false
   return isPose(world.truck) && isPose(world.skiff) && isSavedIncident(world, value.islandTime) && isGateRepair(world, value.islandTime) &&
+    isSavedMaterials(world, value.islandTime) &&
     Array.isArray(world.farm) && world.farm.length === farmPlots.length &&
     world.farm.every((stage: unknown) => ['grass', 'tilled', 'planted', 'watered', 'ripe'].some((name) => name === stage)) &&
     Array.isArray(world.items) && world.items.length === itemStarts.length &&
