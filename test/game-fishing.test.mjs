@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { canWalkAt } from '../src/simulation/movement.ts'
 import { actionHint } from '../src/actions.ts'
 import { fisherAt } from '../src/harbor-fisher.ts'
-import { footpaths } from '../src/routes.ts'
+import { harborRoad } from '../src/routes.ts'
 import { maxWadeDepth, walkingHeight, waterLevel } from '../src/terrain.ts'
 import { daySeconds } from '../src/weather.ts'
 import { ferryTerminal, skiffStart } from '../src/world.ts'
@@ -98,9 +98,9 @@ test('Mara moves between walkable stops and either crewmate can talk at the fish
     client.request('interact')
     assert.deepEqual(client.messages.at(-1), { type: 'fisher-chat' })
   }
-  const approach = footpaths.find(({ name }) => name === 'Ferry approach').points
-  assert.deepEqual(approach.at(-1), ferryTerminal)
-  for (let z = approach[0].z; z > ferryTerminal.z + 1; z -= .5) {
+  // Harbor Depot road ends at the ferry barrier, and its straight ramp lane can be walked to the terminal.
+  assert.deepEqual(harborRoad[0], { x: ferryTerminal.x, z: ferryTerminal.z })
+  for (let z = harborRoad[1].z; z > ferryTerminal.z + 1; z -= .5) {
     assert.ok(canWalkAt({ x: ferryTerminal.x, z }, .5, waterLevel - maxWadeDepth))
   }
 })

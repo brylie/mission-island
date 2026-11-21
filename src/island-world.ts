@@ -21,7 +21,7 @@ import { createPhenomena } from './island-phenomena'
 import { createFerryTerminal } from './island-terminal'
 import { createStarterWildlife, createUnderstory, createWildflowers } from './island-wildlife'
 import { jobBoard } from './jobs'
-import { footpaths, road, walkways } from './routes'
+import { depotJunction, depotLane, footpaths, harborRoad, walkways } from './routes'
 import { createShellglassTide } from './shellglass-art'
 import { islandRocks, islandTrees } from './scenery'
 import type { SiteFeature } from './worlds/site-feature'
@@ -57,7 +57,8 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const paving = createSurfaceMaterial(meshes.scene, 'concrete')
   const wetPaving = createWetPaving(paving)
   for (const path of walkways) createSidewalk(meshes, path, paving)
-  createRoad(meshes, road)
+  createRoad(meshes, harborRoad)
+  createRoad(meshes, depotLane, 6, { lift: -.003, marked: [depotLane[0], { x: depotJunction.x - 4, z: depotJunction.z }] })
 
   buildings.forEach((building, index) => {
     if (index !== substitutions.replaceBuilding) meshes.batchModel(createHouse(meshes, building))

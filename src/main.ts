@@ -17,7 +17,7 @@ import { activeJob, atJobBoard, deliveryDrop, jobBoard, jobs } from './jobs'
 import { starterTools, toolNames } from './inventory'
 import type { InventoryItem } from './inventory'
 import type { ClientMessage, FishingResult, Input, Player, ServerMessage, Snapshot } from './protocol'
-import { footpaths, road, walkways } from './routes'
+import { footpaths, roads, walkways } from './routes'
 import { northernRegions, starterDiscoveries } from './scenery'
 import { createRenderer } from './scene'
 import { bindLanInvite } from './lan-invite'
@@ -189,7 +189,7 @@ function drawMap(state?: Snapshot) {
   }
   ink.lineJoin = 'round'
   ink.lineCap = 'round'
-  function drawRoute(points: typeof road, width: number, color: string) {
+  function drawRoute(points: readonly { x: number; z: number }[], width: number, color: string) {
     if (!ink) return
     ink.lineWidth = width
     ink.strokeStyle = color
@@ -206,7 +206,7 @@ function drawMap(state?: Snapshot) {
     else drawRoute(points, 2, surface === 'pavement' ? '#c4c9c1' : '#a5a77e')
   }
   for (const { points } of walkways) drawRoute(points, 2, '#c4c9c1')
-  drawRoute(road, 4, '#c7bb9a')
+  roads.forEach((path) => drawRoute(path, 4, '#c7bb9a'))
   const drop = state && deliveryDrop(state)
   if (state?.mission === 'fire') dot(lookout.x, lookout.z, '#f7a17d', 6)
   else if (drop) {

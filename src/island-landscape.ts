@@ -9,7 +9,8 @@ import { CreateLineSystem } from '@babylonjs/core/Meshes/Builders/linesBuilder'
 import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { seededRandom } from './scenery'
-import { distanceToRoute, footpaths, road, walkways } from './routes'
+import { distanceToRoads, distanceToRoute, footpaths, walkways } from './routes'
+import { inFerryYard } from './worlds/starter/ferry-terminal'
 import { coastPoint, coastRadius, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, pool, shoreProfile, streamX, tidePool, waterLevel } from './terrain'
 import { buildings, distance, harbor, island, lookout, town } from './world'
 import type { MeshFactory } from './island-meshes'
@@ -164,7 +165,7 @@ export function createGrassTufts(meshes: MeshFactory) {
     const z = center.z + (random() - .5) * extent.length
     const point = { x, z }
     if (onBeachTowel(point) || coastRadius(point) > 0.91 || distance(point, harbor) < 5 || distance(point, town) < 8 ||
-      distance(point, lookout) < 5.5 || distanceToRoute(point, road) < 4.2 ||
+      distance(point, lookout) < 5.5 || distanceToRoads(point) < 4.2 || inFerryYard(point, .5) ||
       footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + 0.3) ||
       walkways.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + 0.3) ||
       buildings.some((entry) => Math.abs(entry.x - x) < entry.w / 2 + 0.15 && Math.abs(entry.z - z) < entry.d / 2 + 0.15)) continue

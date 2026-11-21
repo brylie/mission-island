@@ -1,4 +1,4 @@
-import { footpaths, road, walkways } from '../routes'
+import { footpaths, roads, walkways } from '../routes'
 import { islandTrees, northernProps } from '../scenery'
 import { coastPoint, groundHeight, waterLevel } from '../terrain'
 import { buildings, dockEndZ, harborDock } from '../world'
@@ -71,8 +71,8 @@ export function paintLandscapeMap(ink: CanvasRenderingContext2D) {
   }
   for (const trail of footpaths) route(trail.points, trail.width, '#c4b98c')
   for (const trail of walkways) route(trail.points, trail.width, '#c8caab')
-  route(road, 6.8, '#534f45')
-  route(road, 4.9, '#b5ab90')
+  for (const path of roads) route(path, 6.8, '#534f45')
+  for (const path of roads) route(path, 4.9, '#b5ab90')
   route([{ x: harborDock.x, z: harborDock.firstZ + 0.3 }, { x: harborDock.x, z: dockEndZ - 0.3 }], harborDock.width, '#a98a64')
   for (const { x, z, w, d } of buildings) {
     ink.fillStyle = '#e2c8a0'

@@ -5,7 +5,7 @@ import { driftwoodShallows, type DriftwoodFrame } from './simulation/driftwood-s
 import { onBeachTowel } from './worlds/starter/sites'
 import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
-import { distanceToRoute, footpaths, road } from './routes'
+import { distanceToRoads, distanceToRoute, footpaths } from './routes'
 import { islandTrees, seededRandom } from './scenery'
 import { coastPoint, coastRadius, groundHeight, grove, pool, waterDepth, waterLevel } from './terrain'
 import { createFlocks, createSchools } from './wildlife'
@@ -58,7 +58,7 @@ export function createUnderstory(meshes: MeshFactory) {
       const angle = random() * Math.PI * 2
       const radius = habitat.radius * (.68 + random() * .5)
       const point = { x: habitat.x + radius * Math.cos(angle), z: habitat.z + radius * Math.sin(angle) }
-      if (onBeachTowel(point) || waterDepth(point) > .04 || distanceToRoute(point, road) < 4.3 ||
+      if (onBeachTowel(point) || waterDepth(point) > .04 || distanceToRoads(point) < 4.3 ||
         footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + .68)) continue
       if (habitat.seed === 1632) ferns.push(point)
       const y = groundHeight(point) - .025, scale = .66 + random() * .82

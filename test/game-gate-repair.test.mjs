@@ -21,9 +21,9 @@ const toolboxId = itemStarts.findIndex(({ kind }) => kind === 'toolbox')
 const at = (hour, day = 0) => day * daySeconds + ((hour - 6 + 24) % 24) * daySeconds / 24
 const lane = { x: gateway.x, z: fenceZ - .9 }
 const garden = { x: gateway.x, z: fenceZ + 1.8 }
-const byWren = { x: -29.8, z: -25.6 }
-const byBench = { x: -26.4, z: -26.6 }
-const benchRoad = [{ x: -26.4, z: -24.8 }, { x: -31.4, z: -24.8 }, { x: -31.6, z: -12.5 }]
+const byWren = { x: -25.8, z: -14.8 }
+const byBench = { x: -22.4, z: -15.8 }
+const benchRoad = [{ x: -22.4, z: -14.2 }, { x: -26.4, z: -13.4 }, { x: -31.6, z: -11.8 }]
 const toBench = [...benchRoad].reverse()
 
 function walkTo(h, client, ...targets) {
