@@ -45,4 +45,8 @@ The walk now takes quicker steps with a longer contact sweep, which shortens the
 
 These figures come from the gait model on level ground, not from a recording. The earlier walk left 0.217 seconds between contacts with each sole down for 14% of the stride. Because both feet are off the ground between plants at these speeds, the walk is a brisk, low-stepping gait and cannot have the double support of a stroll. Whether it reads as a natural walk in motion still needs a human check in the Seabrook side view.
 
+## Late updates from the host
+
+A later playtest on a heavily loaded machine showed the whole walker stuttering. A recording of the rendered position showed the walker halting for up to seven frames whenever host updates arrived more than a tenth of a second late, then jumping ahead when they resumed. The position track now coasts at the last known pace for a short distance and eases off, and it follows the host's pace when the host runs slower than real time. Replaying the recorded arrival pattern through the track, halted frames went from 11 in 569 to none, and the spread of frame-to-frame speed dropped from 1.63 to 0.50 m/s. This was measured on a replay, not in the live game.
+
 The human playtest still needs both players to swap roles and record how starts, stops, wall blocks, turns, and slopes feel. [Starter Island playtest record #52](https://github.com/brylie/mission-island/issues/52)
