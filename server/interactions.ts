@@ -14,14 +14,23 @@ import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
+import { isFarmAction } from '../src/farm-orders.ts'
+import type { createFarmOrders } from './farm-orders.ts'
 import type { createResidents } from './residents.ts'
 import type { createGateSwell } from './gate-swell.ts'
 import type { createMaterialsWork } from './materials-work.ts'
 
+// Jobs done in the world for residents and the farm, each with its own host module.
+interface Work {
+  swell: Pick<ReturnType<typeof createGateSwell>, 'act'>
+  materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>
+  farm: Pick<ReturnType<typeof createFarmOrders>, 'act'>
+}
+
 // Residents' conversations and favors, and the repairs done for them.
 function createNeighborly(gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
   residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'report'>,
-  work: { swell: Pick<ReturnType<typeof createGateSwell>, 'act'>; materials: ReturnType<typeof createMaterialsWork> }) {
+  work: Work) {
   return (member: CrewMember, action: Interaction['action'], subject: number) => {
     switch (action) {
       case 'talk': return residents.talk(member, subject)
@@ -46,8 +55,7 @@ export function createInteractions(
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
   residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'report' | 'stageCrate'>,
-  work: { swell: Pick<ReturnType<typeof createGateSwell>, 'act'>; materials: ReturnType<typeof createMaterialsWork> },
-  checkpoint?: () => void,
+  work: Work, checkpoint?: () => void,
 ) {
   function useHomeChest(member: CrewMember) {
     const { player } = member
@@ -120,6 +128,7 @@ export function createInteractions(
   const neighborly = createNeighborly(gate, residents, work)
 
   function perform(member: CrewMember, { action, subject = -1 }: Interaction) {
+    if (isFarmAction(action)) return work.farm.act(member, action)
     const item = state.items[subject]
     switch (action) {
       case 'put-down': return putDown(member, heldItem(state, member.player)!)

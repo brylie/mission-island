@@ -1,3 +1,4 @@
+import { restoreFarmWork } from '../farm-orders'
 import { createCrew, poseCrew } from '../assets/crew'
 import type { Snapshot } from '../protocol'
 import { conversationLines, favorLine } from '../residents/favors'
@@ -30,8 +31,8 @@ function rehearsal(values: Values) {
   residents[subject.id] = { ...residents[subject.id], trust: Number(values.trust), breach, forgiven: values.standing === 'forgiven' ? 1 : 0,
     kept: values.favor === 'kept' ? [favor.id] : [], active: values.favor === 'active' ? favor.id : null }
   const weather = { hour: Number(values.hour), rain: values.rain ? 1 : 0 }
-  return { islandTime, weather, mission: 'complete', jobs: { active: null, completed: 0 }, farm: [], aviation: { qualified: false },
-    residents, gateRepair: { stage: 'sagging', pinHolder: null } } as unknown as Snapshot
+  return { islandTime, weather, farmWork: restoreFarmWork(), mission: 'complete', jobs: { active: null, completed: 0 }, farm: [],
+    aviation: { qualified: false }, residents, gateRepair: { stage: 'sagging', pinHolder: null } } as unknown as Snapshot
 }
 
 export const residentRoutinesStudy: Entry = {

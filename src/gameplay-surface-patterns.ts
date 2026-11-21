@@ -1,5 +1,5 @@
 import type { GameplaySurfaceId } from './gameplay-surface-recipes.ts'
-import { blend, hash, valueNoise, wrap } from './surface-noise.ts'
+import { blend, hash, valueNoise, wrap } from './math/noise.ts'
 import { cell, fraction, smooth, wave, type Point, type Sample } from './surface-pattern-tools.ts'
 
 function centered(phase: number) {

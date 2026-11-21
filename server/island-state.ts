@@ -1,4 +1,5 @@
 import type { DriftwoodFrame } from '../src/simulation/driftwood-school.ts'
+import { restoreFarmWork } from '../src/farm-orders.ts'
 import { farmPlots } from '../src/farm.ts'
 import { initialMaterialsWork } from '../src/materials-work.ts'
 import type { createJuniperHabitat } from '../src/juniper-habitat.ts'
@@ -6,12 +7,13 @@ import type { AviationProgress } from '../src/aviation.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { weatherAt } from '../src/weather.ts'
-import { skiffStart, truckStart } from '../src/world.ts'
+import { truckStart } from '../src/world.ts'
 import { initialGateRepair } from '../src/gate-repair.ts'
 import { initialResidents } from '../src/residents/trust.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { makeItems } from './items.ts'
 import type { IslandSave } from './save.ts'
+import { restoreSkiff } from './skiff.ts'
 
 function restoreAviation(saved: AviationProgress | undefined): Snapshot['aviation'] {
   return { qualified: saved?.qualified ?? false, surveyed: saved?.surveyed ?? false, aerial: [...saved?.aerial ?? []], flight: null, marked: false }
@@ -26,8 +28,9 @@ export function restoreIsland(
   const islandTime = save?.islandTime ?? 0
   const state: Snapshot = {
     crewCoins: save?.crewCoins ?? 0, lastStarterPay: save?.lastStarterPay,
-    type: 'state', players: [], skiff: { ...skiffStart, speed: 0 }, items: makeItems(),
+    type: 'state', players: [], items: makeItems(),
     mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...initialGateRepair(), ...structuredClone(save?.world),
+    skiff: restoreSkiff(save?.world.skiff),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
     weather: weatherAt(islandTime), islandTime,
     driftwood, juniper: juniper(0, weatherAt(islandTime), []),
@@ -35,9 +38,9 @@ export function restoreIsland(
     // A resident added since the save starts as a stranger.
     residents: { ...initialResidents(starterResidents), ...structuredClone(save?.world.residents) },
     aviation: restoreAviation(save?.world.aviation),
+    farmWork: restoreFarmWork(save?.world.produce),
     materialsWork: structuredClone(save?.world.materialsWork ?? initialMaterialsWork()),
   }
-  state.skiff.speed = 0
   // A carried hinge pin goes back to the mending bench when the host stops.
   state.gateRepair.pinHolder = null
   const growth = save?.growth.slice() ?? farmPlots.map(() => 0)
@@ -58,7 +61,7 @@ export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['
     version: 5, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
     world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial },
-      gate, gateRepair, residents, materialsWork,
+      gate, gateRepair, residents, materialsWork, produce: state.farmWork.progress,
       ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }

@@ -13,7 +13,7 @@ import { canFit, fenceZ, gateMendedStage, gateRepairGuide, gateway, initialGateR
 import { jobBoard } from '../src/jobs.ts'
 import { canWalkAt } from '../src/simulation/movement.ts'
 import { daySeconds } from '../src/weather.ts'
-import { coastRadius, shoreProfile } from '../src/terrain.ts'
+import { coastPoint, coastRadius, shoreProfile } from '../src/terrain.ts'
 import { crateStarts, distance, itemStarts, mendingBench, toolboxHome, wrenCottage } from '../src/world.ts'
 import { starterFeatures } from '../src/worlds/starter/sites.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
@@ -345,7 +345,7 @@ test('older saves gain the toolbox and gate defaults, and rejected gate data doe
 
 test('the toolbox goes home from an unsafe respawn, and the repair sites stay clear of the freight yard', (t) => {
   const h = setup(t, {
-    players: [player(0, { x: -71, z: -5 })],
+    players: [player(0, coastPoint(Math.PI, 1.07))],
     arrange: repairStage('accepted', { arrange: (save) => { save.world.items[toolboxId].holder = 0 } }),
   })
   const a = h.join(tokens[0])

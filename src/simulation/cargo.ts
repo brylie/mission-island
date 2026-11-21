@@ -3,11 +3,12 @@ import { Body, Box, Heightfield, SAPBroadphase, Sphere, Vec3, World } from 'cann
 import type { Input, Item, Snapshot } from '../protocol.ts'
 import { gateBlockers } from '../gate-repair.ts'
 import { buildings, chestSize, crateSize, crateStarts, crewHomes, dockEndZ, harborDock, truckBed } from '../world.ts'
-import type { Point } from '../world.ts'
+import type { Point, Pose } from '../world.ts'
+import { barrowSolids } from '../barrow.ts'
 import { truckPoint, truckSurface } from '../truck-pose.ts'
 import type { Truck, TruckPose } from '../truck-pose.ts'
 import { islandRocks, islandTrees, northernProps, treeTrunkRadius } from '../scenery.ts'
-import { coastPoint, groundHeight, maxWadeDepth, shoreProfile, waterDepth, waterLevel } from '../terrain.ts'
+import { coastBounds, groundHeight, maxWadeDepth, shoreProfile, walkingHeight, waterDepth, waterLevel } from '../terrain.ts'
 import { createTruckPhysics } from './truck.ts'
 
 // The garden gate leaf moves with host state, so crates meet it where players see it.
@@ -24,6 +25,23 @@ function gateLeafBody(world: World) {
   }
 }
 
+function barrowBody(world: World) {
+  const body = new Body({ type: Body.KINEMATIC })
+  for (const { halfWidth, halfDepth, height, z } of barrowSolids) {
+    body.addShape(new Box(new Vec3(halfWidth, height / 2, halfDepth)), new Vec3(0, height / 2, z))
+  }
+  return (cart: Pose | null) => {
+    if (!cart) {
+      if (body.world) world.removeBody(body)
+      return
+    }
+    body.position.set(cart.x, walkingHeight(cart), cart.z)
+    body.quaternion.setFromEuler(0, cart.heading, 0)
+    body.aabbNeedsUpdate = true
+    if (!body.world) world.addBody(body)
+  }
+}
+
 export function createCargoPhysics() {
   const world = new World({ gravity: new Vec3(0, -9.82, 0) })
   world.broadphase = new SAPBroadphase(world)
@@ -32,11 +50,11 @@ export function createCargoPhysics() {
 
   // Cover the whole island, including the wading shelf and a margin for falling cargo.
   const outerRadius = shoreProfile[shoreProfile.length - 1].radius
-  const coast = Array.from({ length: 256 }, (_, i) => coastPoint(i * Math.PI / 128, outerRadius))
-  const west = Math.floor(Math.min(...coast.map(({ x }) => x))) - 2
-  const east = Math.ceil(Math.max(...coast.map(({ x }) => x))) + 2
-  const north = Math.ceil(Math.max(...coast.map(({ z }) => z))) + 2
-  const south = Math.floor(Math.min(...coast.map(({ z }) => z))) - 2
+  const coast = coastBounds(outerRadius)
+  const west = Math.floor(coast.west) - 2
+  const east = Math.ceil(coast.east) + 2
+  const north = Math.ceil(coast.north) + 2
+  const south = Math.floor(coast.south) - 2
   const heights = Array.from({ length: east - west + 1 }, (_, i) =>
     Array.from({ length: north - south + 1 }, (_, j) => groundHeight({ x: west + i, z: north - j })))
   const ground = new Body({ position: new Vec3(west, 0, north), shape: new Heightfield(heights, { elementSize: 1 }) })
@@ -174,5 +192,5 @@ export function createCargoPhysics() {
     return after
   }
 
-  return { release, launch, load, remove, restore, step, placeGateLeaf: gateLeafBody(world), parkTruck: truck.park }
+  return { release, launch, load, remove, restore, step, placeBarrow: barrowBody(world), placeGateLeaf: gateLeafBody(world), parkTruck: truck.park }
 }

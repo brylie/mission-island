@@ -1,4 +1,4 @@
-import { blend, clamp, wrap } from './surface-noise.ts'
+import { blend, clamp, wrap } from './math/noise.ts'
 import { sampleSurface } from './surface-patterns.ts'
 import type { SurfaceRecipe, SurfaceSettings } from './surface-recipes.ts'
 
