@@ -32,6 +32,10 @@ export const shellglassPoint = { x: 43.2, z: -31.4 }
 
 export const splitstone = { x: 53.5, z: -20.8 }
 
+export const roadSurface = { width: 6, shoulderWidth: 1.4, shoulder: .056, asphalt: .084 }
+export const sidewalkLift = .065
+export const trailLift = .039
+
 export type PathSurface = 'gravel' | 'pavement' | 'desire'
 interface Footpath { name: string; width: number; surface: PathSurface; points: Point[] }
 

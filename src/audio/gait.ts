@@ -7,13 +7,23 @@ const maxStepMetres = 2
 
 type Planar = { x: number; z: number }
 
+// What the truck moved underneath a crewmate riding its bed or roof this frame.
+export function carrierShift(player: { onBed: boolean; truckSurface?: string }, truck: Planar) {
+  return player.onBed || player.truckSurface ? truck : undefined
+}
+
 // Movement over the ground, ignoring what a carrier such as the truck bed moved underneath.
 export function groundTravel(from: Planar, to: Planar, carrier: Planar = { x: 0, z: 0 }) {
   const travelled = Math.hypot(to.x - from.x - carrier.x, to.z - from.z - carrier.z)
   return travelled < maxStepMetres ? travelled : 0
 }
 
+// Feet that landed while the walk cycle advanced from one phase to the next.
+export function countFootfalls(previous: number, next: number) {
+  return Math.max(0, Math.floor(next * 2) - Math.floor(previous * 2))
+}
+
 export function advanceGait(cycle: number, travelled: number) {
   const next = cycle + Math.max(0, travelled) / metresPerCycle
-  return { cycle: next, footfalls: Math.floor(next * 2) - Math.floor(cycle * 2) }
+  return { cycle: next, footfalls: countFootfalls(cycle, next) }
 }

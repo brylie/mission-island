@@ -1,12 +1,27 @@
+import { chargePower } from '../src/charged-actions.ts'
 import { canSpray, heldItem } from '../src/actions.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
 import { starterDiscoveries } from '../src/scenery.ts'
 import type { TruckPose } from '../src/truck-pose.ts'
-import { distance, jumpSpeed, lookout } from '../src/world.ts'
+import { distance, jumpSpeed, lookout, type Point } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
 import { looseCargoTop } from './items.ts'
 import { gateBlockers, solidTop } from '../src/gate-repair.ts'
+import { barrowWalk } from '../src/barrow-gait.ts'
+import { barrowTop } from '../src/barrow.ts'
+import { canPushBarrow } from './barrow-motion.ts'
 import { stepPlayer } from '../src/simulation/movement.ts'
+
+export function prepareCrewMotion(member: CrewMember, active: boolean, now: number) {
+  const { player } = member
+  player.reaching = false
+  player.rightHandRaised = false
+  player.throwing = now < member.throwUntil
+  if (!active) stopPrimary(member)
+  if (player.charge && member.primary) {
+    player.charge.power = chargePower(player.charge.kind, (now - member.primary.since) / 1000)
+  }
+}
 
 export function jump(member: CrewMember) {
   const { player } = member
@@ -28,8 +43,14 @@ export function walkCrew(
   const { truck } = state
   const item = heldItem(state, player)
   const gate = gateBlockers(state)
-  stepPlayer(member, before, truck, connected ? input : stopped, Boolean(item), tickSeconds,
-    (point, margin) => Math.max(looseCargoTop(state.items, point, margin), solidTop(gate, point, margin)))
+  const { barrow, progress } = state.farmWork
+  const pushing = barrow?.handler === player.id
+  const walkingInput = pushing ? { ...input, sprint: false } : input
+  const extraSurface = (point: Point, margin: number) =>
+    Math.max(looseCargoTop(state.items, point, margin), solidTop(gate, point, margin),
+      barrow && !pushing ? barrowTop(barrow, point, margin) : -Infinity)
+  stepPlayer(member, before, truck, connected ? walkingInput : stopped, Boolean(item), tickSeconds, extraSurface,
+    pushing ? { pace: progress.load ? barrowWalk.loadedSpeed : barrowWalk.emptySpeed, allows: (pose) => canPushBarrow(state, player, pose) } : undefined)
   if (!connected) return
   for (const region of starterDiscoveries) {
     if (!player.discoveries.includes(region.id) && distance(player, region.site) < 8) {
@@ -39,7 +60,7 @@ export function walkCrew(
   }
   if (player.charge && input.aim !== undefined && !input.x && !input.z) player.heading = input.aim
   player.reaching = !item && (member.primary?.kind === 'reach' || now < member.reachUntil)
-  player.rightHandRaised = input.raiseRightHand === true && !player.swimming && !player.sleeping &&
+  player.rightHandRaised = !pushing && input.raiseRightHand === true && !player.swimming && !player.sleeping &&
     item?.kind !== 'crate' && !player.throwing
   sprayExtinguisher(state, member, item, tickSeconds, completeFire)
 }

@@ -50,9 +50,9 @@ export function createIslandAudio(target: Window = window) {
       const seed = notice.item * variants + Number.parseInt(notice.id.split(':').pop() ?? '0', 10) % variants
       engine.play(crateCue(notice, seed), { position: notice })
     },
-    // Called on each footfall of the visible gait; speed sets how firmly the foot lands.
-    footstep(player: Player, point: Point3, speed: number, own: boolean) {
-      const surface = footSurface(point, player)
+    // Called each frame with the feet that landed in the visible gait; speed sets how firmly they land.
+    footsteps(footfalls: number, player: Player, point: Point3, speed: number, own: boolean) {
+      const surface = footfalls > 0 ? footSurface(point, player) : null
       if (!surface || engine.state() !== 'running') return
       const count = (steps.get(player.id) ?? 0) + 1
       steps.set(player.id, count)

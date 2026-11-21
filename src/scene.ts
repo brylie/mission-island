@@ -5,14 +5,16 @@ import { Scene } from '@babylonjs/core/scene'
 import { createAtmosphere, sceneWeather } from './island-atmosphere'
 import { landscapeLink } from './playtest-link'
 import { inSkiff } from './actions'
+import { routeContactHeight } from './route-contact'
+import { createFarmOrderView } from './farm-order-view'
 import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutIncident } from './lookout-recovery-art'
-import { moveTo } from './island-render-pose'
+import { moveTo, walkGait } from './island-render-pose'
 import { createIslandCamera } from './island-camera'
 import { aimFishingRod, createFishingGear, updateFishingLine } from './fishing-line-view'
 import { createIslandAudio, type CrateImpactNotice } from './audio/island-audio'
-import { advanceGait, groundTravel } from './audio/gait'
+import { carrierShift, countFootfalls, groundTravel } from './audio/gait'
 import type { SoundSettings } from './audio/mix'
 import { createPlaceLabels } from './place-labels'
 import type { LookSettings } from './look-options-ui'
@@ -79,6 +81,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const truckStep = { x: 0, z: 0 }
   const aviation = createRidgeAviationView(meshes, crew)
   const showDeliveryRoute = createDeliveryWayfindingView(meshes)
+  const showFarmOrder = createFarmOrderView(meshes, crew.map(character => character.root))
   const farmTools = crew.map((character) => createFarmTools(meshes, character))
   const skiffGear = createFishingGear(scene, meshes, crew)
   // One mesh per host item, built from the same table the host uses.
@@ -175,21 +178,22 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       } else {
         node.rotation.x = 0
         node.rotation.z = 0
+        const pushing = state.farmWork.barrow?.handler === id
         const { x, z } = node.position
         moveTo(node, player, player.swimming ? swimmingHeight(time + id) : player.y + 0.05, factor)
         if (player.grounded && !player.onBed && !player.swimming) {
-          node.position.y = Math.max(node.position.y, walkingHeight(node.position) + 0.05)
+          const floor = pushing ? routeContactHeight(node.position) : walkingHeight(node.position)
+          node.position.y = Math.max(node.position.y, floor + .05)
         }
         // Riding the truck bed moves the crew without walking.
-        const step = wasVisible ? groundTravel({ x, z }, node.position, player.onBed || player.truckSurface ? truckStep : undefined) : 0
+        const step = wasVisible ? groundTravel({ x, z }, node.position, carrierShift(player, truckStep)) : 0
         const held = state.items.find((item) => item.holder === id)
-        const gait = advanceGait(cycles[id], step)
-        cycles[id] = gait.cycle
-        if (gait.footfalls && !player.swimming) audio.footstep(player, node.position, step / Math.max(delta, .001), id === viewer)
-        const stride = delta > 0 ? Math.min(0.92, step / delta * 0.072) : 0
+        const gait = walkGait(step, delta, pushing)
+        const footfalls = countFootfalls(cycles[id], cycles[id] += gait.cycles)
+        audio.footsteps(footfalls, player, node.position, step / Math.max(delta, .001), id === viewer)
         const winding = player.charge?.kind === 'throw' ? player.charge.power : 0
         if (player.swimming) poseSwimming(character, time + id, Math.min(1, step / Math.max(.001, delta * 3.8)), factor)
-        else poseCrew(character, cycles[id], stride, !player.grounded, held?.kind ?? (player.equipped ? 'tool' : undefined),
+        else poseCrew(character, cycles[id], gait.stride, !player.grounded, held?.kind ?? (pushing ? 'barrow' : player.equipped ? 'tool' : undefined),
           Number(Boolean(player.reaching || held?.spraying || player.casting)),
           wasVisible ? 1 - Math.exp(-delta * 16) : 1, winding, player.throwing, player.rightHandRaised)
       }
@@ -273,6 +277,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       firePad.setEnabled(false)
       equipmentPad.setEnabled(false)
     }
+    showFarmOrder(last, factor)
     aviation.update(last, time)
     const local = last?.players.find((player) => player.id === viewer && player.connected)
     const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? truck : crew[local.id].root) : undefined

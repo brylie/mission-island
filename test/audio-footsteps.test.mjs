@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { advanceGait, groundTravel, metresPerCycle } from '../src/audio/gait.ts'
+import { advanceGait, carrierShift, countFootfalls, groundTravel, metresPerCycle } from '../src/audio/gait.ts'
 import { footSurface, sandRadius } from '../src/audio/surface.ts'
 import { coastPoint, coastRadius } from '../src/terrain.ts'
 import { dockEndZ, harbor, harborDock } from '../src/world.ts'
@@ -30,6 +30,10 @@ test('a crewmate riding the moving truck bed does not walk', () => {
   assert.equal(groundTravel({ x: 0, z: 0 }, { x: 0.2, z: 0.05 }, carrier), 0)
   assert.ok(groundTravel({ x: 0, z: 0 }, { x: 0.3, z: 0.05 }, carrier) > 0.09)
   assert.equal(groundTravel({ x: 0, z: 0 }, { x: 5, z: 0 }), 0, 'a snap to a new pose is not a stride')
+  assert.equal(carrierShift({ onBed: true }, carrier), carrier)
+  assert.equal(carrierShift({ onBed: false, truckSurface: 'roof' }, carrier), carrier)
+  assert.equal(carrierShift({ onBed: false }, carrier), undefined)
+  assert.equal(countFootfalls(0.4, 1.1), 2, 'any cycle rate, such as pushing a barrow, lands feet at half cycles')
 })
 
 test('dock boards win over terrain and the harbor trail is gravel', () => {

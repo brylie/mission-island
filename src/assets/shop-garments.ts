@@ -60,9 +60,11 @@ function createShopGarment(meshes: MeshFactory, rig: GarmentRig, id: StockId, dy
   return roots
 }
 
+const farmWorkwear = { shirt: 'dock-jacket', trousers: 'crab-cargo', shoes: 'puddle-wellies', hat: 'rain-brim' } as const
+
 export function wornStock<Slot extends PieceSlot>(slot: Slot, appearance: CrewAppearance) {
-  if (!isEveryday(appearance.uniform) || (slot === 'trousers' && wearsSwimsuit(appearance))) return
-  const id = appearance[slot]
+  if (appearance.uniform !== 'farmer' && (!isEveryday(appearance.uniform) || (slot === 'trousers' && wearsSwimsuit(appearance)))) return
+  const id = appearance.uniform === 'farmer' ? farmWorkwear[slot] : appearance[slot]
   return isStockPiece(slot, id) ? id : undefined
 }
 
