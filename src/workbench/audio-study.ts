@@ -46,7 +46,8 @@ function createAudition() {
     const rendered = cue(layer, values, variant++)
     const spatial = values.spatial !== false
     const placed = engine.play(rendered, {
-      bus: layer === 'surf' ? 'ambience' : 'effects', at,
+      // An audition waits for a buffer rendered on demand rather than skipping the cue.
+      bus: layer === 'surf' ? 'ambience' : 'effects', at, lateness: 2,
       position: spatial ? source(number(values, 'distance', 6)) : undefined,
     })
     if (placed) last = `${layer} · ${rendered.key} · gain ${rendered.gain.toFixed(2)}`

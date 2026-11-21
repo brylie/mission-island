@@ -11,7 +11,19 @@ type CrateTraits = { strength: number; surface: CrateSurface }
 type FootstepTraits = { surface: FootSurface; strength: number }
 type SurfTraits = { strength: number }
 
-export type Rendered = { key: string; render: () => Float32Array; gain: number; rate: number }
+// A recipe job is plain data, so a worker can render it off the UI thread.
+export type RecipeJob =
+  | { family: 'crate'; traits: CrateTraits; seed: number }
+  | { family: 'step'; traits: FootstepTraits; seed: number }
+  | { family: 'surf'; traits: SurfTraits; seed: number }
+
+export type Rendered = { key: string; job: RecipeJob; gain: number; rate: number }
+
+export function renderJob(job: RecipeJob): Float32Array {
+  if (job.family === 'crate') return renderCrate(job.traits, job.seed)
+  if (job.family === 'step') return renderFootstep(job.traits, job.seed)
+  return renderSwell(job.traits, job.seed)
+}
 
 const tiers = 3
 const tierOf = (value: number) => Math.min(tiers - 1, Math.max(0, Math.floor(clamp01(value) * tiers)))
@@ -54,7 +66,7 @@ export function crateCue(traits: CrateTraits, seed: number): Rendered {
   const strength = clamp01(traits.strength)
   return {
     key: `crate:${traits.surface}:${tierOf(strength)}:${seed}`,
-    render: () => renderCrate(traits, seed),
+    job: { family: 'crate', traits: { strength: traits.strength, surface: traits.surface }, seed },
     gain: 0.18 + strength * 0.82,
     rate: recipeRate,
   }
@@ -101,11 +113,14 @@ export function footstepCue(traits: FootstepTraits, seed: number): Rendered {
   const strength = clamp01(traits.strength)
   return {
     key: `step:${traits.surface}:${tierOf(strength)}:${seed}`,
-    render: () => renderFootstep(traits, seed),
+    job: { family: 'step', traits: { surface: traits.surface, strength: traits.strength }, seed },
     gain: footstepLevel[traits.surface] * (0.55 + strength * 0.45),
     rate: recipeRate,
   }
 }
+
+// Surf holds only low, broadband noise, so it renders at half the rate of the sharper cues.
+const surfRate = 12_000
 
 export function swellSeconds(strength: number) {
   return 3.2 + tierValue(tierOf(strength)) * 1.4
@@ -117,28 +132,29 @@ export function renderSwell(traits: SurfTraits, seed: number): Float32Array {
   const strength = tierValue(tier)
   const random = variantRandom('surf', seed, tier)
   const seconds = swellSeconds(traits.strength)
-  const out = samples(seconds)
+  const out = samples(seconds, surfRate)
   const crest = seconds * (0.34 + random() * 0.06)
-  const body = lowpass(lowpass(whiteNoise(out.length, random), 300 + strength * 120), 520)
-  mixInto(out, shape(body, (t) => t < crest ? Math.sin(t / crest * Math.PI / 2) ** 2 : Math.exp(-(t - crest) / (seconds * 0.32))), 1.3)
+  const body = lowpass(lowpass(whiteNoise(out.length, random), 300 + strength * 120, surfRate), 520, surfRate)
+  mixInto(out, shape(body, (t) => t < crest ? Math.sin(t / crest * Math.PI / 2) ** 2 : Math.exp(-(t - crest) / (seconds * 0.32)), surfRate), 1.3)
   const washStart = crest * 0.9
   const brightness = 1900 + strength * 1900
-  const wash = lowpass(band(whiteNoise(out.length, random), 260, 9000), (t) => t < washStart ? brightness : Math.max(420, brightness * Math.exp(-(t - washStart) / (seconds * 0.25))))
+  const wash = lowpass(band(whiteNoise(out.length, random), 260, 5500, surfRate),
+    (t) => t < washStart ? brightness : Math.max(420, brightness * Math.exp(-(t - washStart) / (seconds * 0.25))), surfRate)
   const washLength = seconds * (0.38 + strength * 0.22)
   mixInto(out, shape(wash, (t) => {
     const local = t - washStart
     if (local < 0) return 0
     return local < 0.18 ? local / 0.18 : Math.max(0, 1 - (local - 0.18) / washLength) ** 1.6
-  }), 0.35 + strength * 0.5)
-  return finish(out, recipeRate, 0.05)
+  }, surfRate), 0.35 + strength * 0.5)
+  return finish(out, surfRate, 0.05)
 }
 
 export function swellCue(traits: SurfTraits, seed: number): Rendered {
   const strength = clamp01(traits.strength)
   return {
     key: `surf:${tierOf(strength)}:${seed}`,
-    render: () => renderSwell(traits, seed),
+    job: { family: 'surf', traits: { strength: traits.strength }, seed },
     gain: 0.35 + strength * 0.65,
-    rate: recipeRate,
+    rate: surfRate,
   }
 }

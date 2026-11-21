@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { highpass, recipeRate } from '../src/audio/dsp.ts'
 import { createImpactInbox } from '../src/audio/impact-inbox.ts'
 import { busGains, defaultSound } from '../src/audio/mix.ts'
-import { crateCue, footstepCue, renderCrate, renderFootstep, renderSwell, swellCue, swellSeconds } from '../src/audio/recipes.ts'
+import { crateCue, footstepCue, renderCrate, renderFootstep, renderJob, renderSwell, swellCue, swellSeconds } from '../src/audio/recipes.ts'
 
 const rms = (buffer) => Math.sqrt(buffer.reduce((sum, value) => sum + value * value, 0) / buffer.length)
 // Share of energy above 2 kHz, a stand-in for brightness.
@@ -32,8 +32,10 @@ test('recipes are deterministic per seed, vary across seeds and stay bounded', (
 test('a harder crate landing is louder and brighter, and the bed rings longer than the ground', () => {
   const soft = crateCue({ strength: 0.1, surface: 'ground' }, 1)
   const hard = crateCue({ strength: 0.95, surface: 'ground' }, 1)
-  assert.ok(hard.gain * rms(hard.render()) > soft.gain * rms(soft.render()) * 1.5)
-  assert.ok(brightness(hard.render()) > brightness(soft.render()))
+  assert.ok(hard.gain * rms(renderJob(hard.job)) > soft.gain * rms(renderJob(soft.job)) * 1.5)
+  assert.ok(brightness(renderJob(hard.job)) > brightness(renderJob(soft.job)))
+  assert.deepEqual(renderJob(swellCue({ strength: 0.5 }, 2).job), renderSwell({ strength: 0.5 }, 2), 'a job renders the same buffer as its recipe')
+  assert.deepEqual(renderJob(footstepCue({ surface: 'sand', strength: 0.5 }, 2).job), renderFootstep({ surface: 'sand', strength: 0.5 }, 2))
   assert.ok(renderCrate({ strength: 0.5, surface: 'bed' }, 1).length > renderCrate({ strength: 0.5, surface: 'ground' }, 1).length)
 })
 

@@ -1,4 +1,5 @@
 import { busGains, defaultSound, voiceBudget, type SoundSettings } from './mix.ts'
+import { workerRenderer, type RecipeRenderer } from './recipe-renderer.ts'
 import type { Rendered } from './recipes.ts'
 
 export type AudioState = 'locked' | 'running' | 'suspended' | 'closed'
@@ -14,11 +15,13 @@ export type Lane = {
   readonly input: AudioNode
 }
 
-type PlayOptions = { bus?: Bus; position?: Point3; lane?: Lane; at?: number; gain?: number }
+// lateness: how long after its start time a cue may still begin if its buffer was not ready.
+type PlayOptions = { bus?: Bus; position?: Point3; lane?: Lane; at?: number; gain?: number; lateness?: number }
 
 type Voice = { source: AudioBufferSourceNode; gain: GainNode; bus: Bus }
 
 const fadeSeconds = 0.03
+const lateSeconds = 0.15
 
 // Babylon uses a left-handed frame and Web Audio a right-handed one; mirror z so left stays left.
 function place(panner: PannerNode, { x, y, z }: Point3, at: number) {
@@ -37,24 +40,90 @@ function spatial(context: BaseAudioContext) {
   return panner
 }
 
-function createBufferCache(size: number) {
+// Buffers are rendered by the recipe renderer, usually a worker, and kept by key in recent-use order.
+function createBufferCache(size: number, renderer: () => RecipeRenderer) {
   const cache = new Map<string, AudioBuffer>()
+  const pending = new Map<string, Promise<AudioBuffer>>()
+  function peek(key: string) {
+    const cached = cache.get(key)
+    if (cached) {
+      cache.delete(key)
+      cache.set(key, cached)
+    }
+    return cached
+  }
   return {
-    get(context: BaseAudioContext, rendered: Rendered) {
-      const cached = cache.get(rendered.key)
-      if (cached) {
-        cache.delete(rendered.key)
-        cache.set(rendered.key, cached)
-        return cached
-      }
-      const data = rendered.render()
-      const created = context.createBuffer(1, data.length, rendered.rate)
-      created.copyToChannel(data as Float32Array<ArrayBuffer>, 0)
-      cache.set(rendered.key, created)
-      if (cache.size > size) cache.delete(cache.keys().next().value!)
-      return created
+    peek,
+    load(context: BaseAudioContext, rendered: Rendered) {
+      const ready = peek(rendered.key)
+      if (ready) return Promise.resolve(ready)
+      const loading = pending.get(rendered.key) ?? renderer().render(rendered).then((data) => {
+        const created = context.createBuffer(1, data.length, rendered.rate)
+        created.copyToChannel(data as Float32Array<ArrayBuffer>, 0)
+        pending.delete(rendered.key)
+        cache.set(rendered.key, created)
+        if (cache.size > size) cache.delete(cache.keys().next().value!)
+        return created
+      })
+      pending.set(rendered.key, loading)
+      return loading
     },
-    clear: () => cache.clear(),
+    clear() {
+      cache.clear()
+      pending.clear()
+    },
+  }
+}
+
+// Playing one-shots, kept within each bus's voice budget. The oldest voice fades out to make room.
+function createVoicePool() {
+  const voices: Voice[] = []
+  function release(voice: Voice, at: number) {
+    voice.gain.gain.cancelScheduledValues(at)
+    voice.gain.gain.setTargetAtTime(0, at, fadeSeconds / 3)
+    try {
+      voice.source.stop(at + fadeSeconds * 2)
+    } catch {
+      // A source that never started or already stopped needs no stop.
+    }
+  }
+  function forget(voice: Voice) {
+    const index = voices.indexOf(voice)
+    if (index >= 0) voices.splice(index, 1)
+    voice.source.disconnect()
+    voice.gain.disconnect()
+  }
+  return {
+    start(context: BaseAudioContext, output: AudioNode, bus: Bus, buffer: AudioBuffer, level: number,
+      { position, lane, at }: Pick<PlayOptions, 'position' | 'lane' | 'at'>) {
+      const playing = voices.filter((voice) => voice.bus === bus)
+      if (playing.length >= voiceBudget[bus]) {
+        release(playing[0], context.currentTime)
+        forget(playing[0])
+      }
+      const source = context.createBufferSource()
+      source.buffer = buffer
+      const gain = context.createGain()
+      gain.gain.value = Math.max(0, level)
+      source.connect(gain)
+      if (lane) gain.connect(lane.input)
+      else if (position) {
+        const panner = spatial(context)
+        place(panner, position, context.currentTime)
+        gain.connect(panner)
+        panner.connect(output)
+        source.addEventListener('ended', () => panner.disconnect())
+      } else gain.connect(output)
+      const voice = { source, gain, bus }
+      voices.push(voice)
+      source.addEventListener('ended', () => forget(voice))
+      source.start(Math.max(context.currentTime, at ?? context.currentTime))
+      return true
+    },
+    stopAll(at: number) {
+      for (const voice of voices.slice()) release(voice, at)
+    },
+    count: (bus?: Bus) => voices.filter((voice) => !bus || voice.bus === bus).length,
   }
 }
 
@@ -95,14 +164,20 @@ function placeListener(context: BaseAudioContext, point: Point3, forward: Point3
   listener.forwardZ.setTargetAtTime(-forward.z, at, 0.03)
 }
 
-export function createAudioEngine(makeContext: () => AudioContext = () => new AudioContext(), cacheSize = 64) {
+type EngineOptions = { cacheSize?: number; makeRenderer?: () => RecipeRenderer }
+
+export function createAudioEngine(makeContext: () => AudioContext = () => new AudioContext(),
+  { cacheSize = 160, makeRenderer = workerRenderer }: EngineOptions = {}) {
   let context: AudioContext | null = null
+  let renderer: RecipeRenderer | null = null
+  // Stopping or hiding starts a new generation, so a buffer that finishes later cannot start an old cue.
+  let generation = 0
   let buses: Record<'master' | Bus, GainNode> | null = null
   let hidden = false
   let settings = defaultSound
   let reported: AudioState = 'locked'
-  const cache = createBufferCache(cacheSize)
-  const voices: Voice[] = []
+  const cache = createBufferCache(cacheSize, () => renderer ??= makeRenderer())
+  const pool = createVoicePool()
   const watchers = new Set<(state: AudioState) => void>()
 
   function state(): AudioState {
@@ -146,53 +221,29 @@ export function createAudioEngine(makeContext: () => AudioContext = () => new Au
     return resumed.then(report, report)
   }
 
-  function release(voice: Voice, at = context?.currentTime ?? 0) {
-    voice.gain.gain.cancelScheduledValues(at)
-    voice.gain.gain.setTargetAtTime(0, at, fadeSeconds / 3)
-    try {
-      voice.source.stop(at + fadeSeconds * 2)
-    } catch {
-      // A source that never started or already stopped needs no stop.
-    }
-  }
-
-  function forget(voice: Voice) {
-    const index = voices.indexOf(voice)
-    if (index >= 0) voices.splice(index, 1)
-    voice.source.disconnect()
-    voice.gain.disconnect()
-  }
-
-  function play(rendered: Rendered, { bus = 'effects', position, lane, at, gain = 1 }: PlayOptions = {}) {
-    if (state() !== 'running' || !context || !buses) return false
-    const playing = voices.filter((voice) => voice.bus === bus)
-    if (playing.length >= voiceBudget[bus]) {
-      release(playing[0])
-      forget(playing[0])
-    }
-    const start = Math.max(context.currentTime, at ?? context.currentTime)
-    const source = context.createBufferSource()
-    source.buffer = cache.get(context, rendered)
-    const level = context.createGain()
-    level.gain.value = Math.max(0, rendered.gain * gain)
-    source.connect(level)
-    if (lane) level.connect(lane.input)
-    else if (position) {
-      const panner = spatial(context)
-      place(panner, position, context.currentTime)
-      level.connect(panner)
-      panner.connect(buses[bus])
-      source.addEventListener('ended', () => panner.disconnect())
-    } else level.connect(buses[bus])
-    const voice = { source, gain: level, bus }
-    voices.push(voice)
-    source.addEventListener('ended', () => forget(voice))
-    source.start(start)
+  // Starts at once when the buffer is cached. Otherwise the cue starts when its buffer arrives,
+  // if playback is still running in the same generation and the cue is not too late.
+  function play(rendered: Rendered, options: PlayOptions = {}) {
+    if (state() !== 'running' || !context) return false
+    const ready = cache.peek(rendered.key)
+    if (ready) return start(ready, rendered, options)
+    const owner = context
+    const current = generation
+    const latest = Math.max(owner.currentTime, options.at ?? 0) + (options.lateness ?? lateSeconds)
+    void cache.load(owner, rendered).then((buffer) => {
+      if (state() === 'running' && context === owner && generation === current && owner.currentTime <= latest) start(buffer, rendered, options)
+    })
     return true
   }
 
+  function start(buffer: AudioBuffer, rendered: Rendered, { bus = 'effects', gain = 1, ...route }: PlayOptions) {
+    if (!context || !buses) return false
+    return pool.start(context, buses[bus], bus, buffer, rendered.gain * gain, route)
+  }
+
   function stopAll() {
-    for (const voice of voices.slice()) release(voice)
+    generation++
+    pool.stopAll(context?.currentTime ?? 0)
   }
 
   return {
@@ -219,8 +270,12 @@ export function createAudioEngine(makeContext: () => AudioContext = () => new Au
       return () => watchers.delete(watch)
     },
     now: () => context?.currentTime ?? 0,
-    voices: (bus?: Bus) => voices.filter((voice) => !bus || voice.bus === bus).length,
+    voices: (bus?: Bus) => pool.count(bus),
     play,
+    // Render buffers ahead of need, in the background, so the first cue of each kind is ready.
+    warm(cues: Rendered[]) {
+      if (context) for (const rendered of cues) void cache.load(context, rendered)
+    },
     lane: (bus: Bus, positioned: boolean) => context && buses ? createLane(context, buses[bus], positioned) : null,
     setListener(point: Point3, forward: Point3) {
       if (context) placeListener(context, point, forward)
@@ -235,6 +290,7 @@ export function createAudioEngine(makeContext: () => AudioContext = () => new Au
       stopAll()
       watchers.clear()
       cache.clear()
+      renderer?.dispose()
       if (context && context.state !== 'closed') void context.close().catch(() => {})
       report()
     },

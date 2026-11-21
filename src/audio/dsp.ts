@@ -1,6 +1,7 @@
 // Small offline signal helpers for recipe buffers. Everything here is pure and deterministic.
 
 // Recipes render at a modest rate: their content sits well below 12 kHz and buffers stay small.
+// Plain indexed loops keep each buffer to a few milliseconds of main-thread work.
 export const recipeRate = 24_000
 
 export function samples(seconds: number, rate = recipeRate) {
@@ -14,13 +15,17 @@ export function whiteNoise(length: number, random: () => number) {
 }
 
 const coefficient = (cutoff: number, rate: number) => 1 - Math.exp(-2 * Math.PI * Math.max(1, cutoff) / rate)
+// A moving cutoff is resampled every few samples; the sweep is far slower than that.
+const sweepBlock = 16
 
 // One-pole lowpass. The cutoff may change over the buffer to darken a tail.
 export function lowpass(input: Float32Array, cutoff: number | ((t: number) => number), rate = recipeRate) {
   const out = new Float32Array(input.length)
+  const moving = typeof cutoff === 'function'
+  let a = moving ? 0 : coefficient(cutoff, rate)
   let y = 0
   for (let i = 0; i < input.length; i++) {
-    const a = coefficient(typeof cutoff === 'number' ? cutoff : cutoff(i / rate), rate)
+    if (moving && i % sweepBlock === 0) a = coefficient(cutoff(i / rate), rate)
     y += a * (input[i] - y)
     out[i] = y
   }
@@ -28,8 +33,9 @@ export function lowpass(input: Float32Array, cutoff: number | ((t: number) => nu
 }
 
 export function highpass(input: Float32Array, cutoff: number, rate = recipeRate) {
-  const low = lowpass(input, cutoff, rate)
-  return input.map((value, i) => value - low[i])
+  const out = lowpass(input, cutoff, rate)
+  for (let i = 0; i < out.length; i++) out[i] = input[i] - out[i]
+  return out
 }
 
 // A band of noise between two one-pole corners.
@@ -39,7 +45,8 @@ export function band(input: Float32Array, low: number, high: number, rate = reci
 
 // Shape a signal with an envelope sampled in seconds.
 export function shape(input: Float32Array, envelope: (t: number) => number, rate = recipeRate) {
-  return input.map((value, i) => value * envelope(i / rate))
+  for (let i = 0; i < input.length; i++) input[i] *= envelope(i / rate)
+  return input
 }
 
 // Attack-decay envelope with an exponential tail.

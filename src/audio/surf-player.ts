@@ -9,7 +9,9 @@ type SurfSettings = { strength: number; spacing: number }
 // Average seconds between breakers on one voice before seeded variation.
 const baseSpacing = 5.2
 const lookahead = 0.6
-const swellVariants = 3
+export const swellVariants = 3
+
+export const swellSeed = (count: number, voice: number) => count % swellVariants + voice * swellVariants
 
 type Voice = { lane: Lane; next: number; random: () => number; count: number }
 
@@ -50,12 +52,14 @@ export function createSurfPlayer(engine: AudioEngine, seed = 1) {
         voice.lane.setGain(gain, 1.2)
         // Silent voices keep their rhythm, so walking back to the shore finds the same breakers.
         while (voice.next < now + lookahead) {
-          const strength = Math.min(1, Math.max(0, settings.strength * (0.8 + voice.random() * 0.4)))
+          // The weather sets each breaker's shape; individual breakers vary only in loudness,
+          // so the few cached variants cover the whole shore.
+          const loudness = 0.8 + voice.random() * 0.4
           if (gain > 0.005) {
-            engine.play(swellCue({ strength }, voice.count++ % swellVariants + i * swellVariants), { bus: 'ambience', lane: voice.lane, at: voice.next })
+            engine.play(swellCue({ strength: settings.strength }, swellSeed(voice.count++, i)), { bus: 'ambience', lane: voice.lane, at: voice.next, gain: loudness })
           }
           const spacing = baseSpacing * settings.spacing * (0.75 + voice.random() * 0.5)
-          voice.next = Math.max(voice.next + Math.min(spacing, swellSeconds(strength) * 1.4), now)
+          voice.next = Math.max(voice.next + Math.min(spacing, swellSeconds(settings.strength) * 1.4), now)
         }
       }
     },
