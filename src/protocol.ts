@@ -140,7 +140,8 @@ export type ServerMessage =
   | { type: 'tide-staff'; time: number }
   | { type: 'field-unavailable' }
   | { type: 'favor-accepted'; resident: string; favor: string; playerId: number }
-  | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number }
+  | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number; restored: boolean }
+  | { type: 'favor-report'; resident: string; favor: string; playerId: number; result: 'honest' | 'broken'; trust: number }
   | { type: 'gate-step'; step: GateStep }
   | { type: 'materials-step'; step: 'gathered' | 'inspected' | 'timber-checked' | 'qualified'; material: RepairMaterial }
   | { type: 'materials-step'; step: 'delivered'; material: RepairMaterial; remaining: number }

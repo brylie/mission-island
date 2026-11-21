@@ -72,6 +72,16 @@ For each session, copy the block below. Give each distinct observation a short t
 - In both runs, the players split gathering. After the first delivery, the returning crewmate still carried one unit and the Crew guide showed one remaining. Both browsers sent a final **E** command. Each saw one 5-coin award, and only one pocket lost a unit. On the return to the site, the timber rail or the row of stones was visible against the gravel and the label read **Repaired**.
 - The host tests cover both timber and stone solo, co-op reconnect after the first section, simultaneous final delivery, and reload from a disk save with the completed edging, one award and both sources still available. The browser walk used scripted directions. Human landmark recognition remains on the [#52 checklist](https://github.com/brylie/mission-island/issues/52).
 
+### 2026-11-21 · wren-swell · Telling Wren the gate swings clear
+
+- Starting point — `wren-swell` checkpoint, a solo agent session in the browser. Wren trusts the crew once, the swollen-gate job is under way, and the toolbox is beside the gate.
+- Moment — The crewmate pressed **E** at the gate and saw `The gate catches on its swollen edge`. The mission card switched to the finding. They walked to Wren at the bench and talked; the agent sent the talk choice over the page's socket. The conversation showed a greeting, a remark, advice, Wren's question with the finding in bold, and **Tell Wren it swings clear** beside **Tell Wren it still catches**. Clicked the first.
+- Both screens — Solo. Trust went 1 → 0, the job stayed open, the report buttons disappeared until the next swing, and Wren's next greeting named the false report.
+- Outcome — Found and fixed three things. The mission card said the toolbox was on the bench while it lay by the gate. Wren's greeting still said the gate "swings like new" while it was swollen. Wren's breach line and the neighbors' gossip both said "this morning" a few minutes after the report.
+- Interpretation — The finding beside both answers makes the stakes plain. Hypothesis: a player who didn't do the swing still understands from the bold line what they would be claiming.
+- Decision — Keep. Next, test with two people: one swings, the other reports without talking to the first.
+- Retest — Two people. Pass: the reporting player can say, before choosing, what the last swing showed, and afterward the swinger can explain what happened from Wren's greeting alone.
+
 ## Triage after the session
 
 Give joining failures, lost progress and incorrect bank entries first attention. If a passenger misses a payment, record the two displayed balances before filing. Different balances call for a synchronization or save test. Matching balances and a surprised passenger call for a feedback test. Hear each player’s explanation before sharing the other person’s answer.

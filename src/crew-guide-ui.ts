@@ -2,8 +2,8 @@ import { crateDriverXp, haulerUnlockXp } from './ore-contracts'
 import { tallyLines } from './ferry-repair'
 import { jobs } from './jobs'
 import type { Player, Snapshot } from './protocol'
-import { conversationLines, favorGuides, isCustom, openOffer } from './residents/favors'
-import { atResident } from './residents/schedule'
+import { createResidentConversation } from './resident-conversation-ui'
+import { favorGuides } from './residents/favors'
 import { crewHomes, jobPay, starterPay } from './world'
 import { starterResident, starterResidents } from './worlds/starter/residents'
 
@@ -11,14 +11,12 @@ function favorTitle(receipt: Snapshot['lastFavorPay']) {
   return receipt && starterResident(receipt.resident)?.favors.find((favor) => favor.id === receipt.favor)?.title
 }
 
-export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismissed: boolean) => void, accept: (subject: number) => void) {
+export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismissed: boolean) => void,
+  act: Parameters<typeof createResidentConversation>[1]) {
   const title = dialog.querySelector<HTMLElement>('#guide-title')!
   const note = dialog.querySelector<HTMLElement>('#guide-note')!
   const conversation = dialog.querySelector<HTMLElement>('#resident-conversation')!
-  const greeting = dialog.querySelector<HTMLElement>('#resident-line')!
-  const advice = dialog.querySelector<HTMLElement>('#resident-advice')!
-  const fieldNotes = dialog.querySelector<HTMLElement>('#resident-field-notes')!
-  const agree = dialog.querySelector<HTMLButtonElement>('#resident-accept')!
+  const talk = createResidentConversation(dialog, act)
   const favors = dialog.querySelector<HTMLElement>('#guide-favors')!
   const home = dialog.querySelector<HTMLElement>('#guide-home')!
   const workTitle = dialog.querySelector<HTMLElement>('#guide-work-title')!
@@ -27,7 +25,6 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   const lead = dialog.querySelector<HTMLElement>('#guide-lead')!
   const toggle = dialog.querySelector<HTMLButtonElement>('#toggle-fisher-lead')!
   let shownFavors = ''
-  let speaker = -1
 
   function showLead(visible: boolean) {
     lead.hidden = !visible
@@ -40,11 +37,6 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
     setDismissed(lead.hidden)
   })
 
-  // Agreeing goes back through the host, which checks the resident is still in reach and still asking.
-  agree.addEventListener('click', () => {
-    if (speaker >= 0) accept(speaker)
-    dialog.close()
-  })
 
   function showFavors(state: Snapshot, player: Player) {
     const entries = favorGuides(starterResidents, state, player)
@@ -63,7 +55,9 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   }
 
   function update(state: Snapshot, player: Player) {
-    if (!dialog.open || note.hidden) return
+    if (!dialog.open) return
+    // A conversation follows shared progress, so a finding from a crewmate's swing appears while it is open.
+    if (note.hidden) return talk.refresh(state, player)
     const order = state.jobs.active
     const heading = order ? jobs[order.id].title : state.mission === 'complete' ? 'Your next job' : 'Your first shift'
     const direction = order
@@ -97,28 +91,11 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
     open(state: Snapshot, player: Player, talking: string | false, dismissed: boolean) {
       // The ferry tally board opens in the same dialog as a conversation, without a resident to answer.
       const board = talking === 'tally' ? tallyLines(state) : undefined
-      speaker = talking && !board ? starterResidents.findIndex(({ id }) => id === talking) : -1
-      const resident = starterResidents[speaker]
-      title.textContent = board?.title ?? (resident ? `${resident.identity.name} · ${resident.identity.role}` : 'Crew guide')
-      conversation.hidden = !resident && !board
-      note.hidden = Boolean(resident || board)
-      if (board) {
-        [greeting.textContent, advice.textContent] = [board.lines[0], board.lines.slice(1).join('\n')]
-        fieldNotes.replaceChildren()
-        agree.hidden = true
-      } else if (resident) {
-        [greeting.textContent, advice.textContent] = conversationLines(resident, state)
-        fieldNotes.replaceChildren(...(resident.conversation.fieldNotes?.(state) ?? []).map(line => {
-          const paragraph = document.createElement('p')
-          paragraph.textContent = line
-          return paragraph
-        }))
-        const offer = openOffer(resident, state)
-        agree.hidden = !offer || isCustom(offer) || !atResident(resident, state, player)
-        agree.textContent = `Agree to help ${resident.identity.name}`
-      } else {
-        showLead(!dismissed)
-      }
+      const speaking = board ? talk.board(board.lines) && board.title : talking ? talk.show(state, player, talking) : undefined
+      title.textContent = speaking || 'Crew guide'
+      conversation.hidden = !speaking
+      note.hidden = Boolean(speaking)
+      if (!speaking) showLead(!dismissed)
       dialog.showModal()
       update(state, player)
     },

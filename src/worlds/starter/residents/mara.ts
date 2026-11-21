@@ -1,6 +1,7 @@
 import type { ResidentDefinition } from '../../../residents/definition.ts'
 import { maraFieldLines } from '../../../journal/outing.ts'
 import { ferryServiceRestored } from '../../../ferry-repair.ts'
+import { maraRemarks } from './remarks.ts'
 import { distance, harborDock } from '../../../world.ts'
 
 const porch = { x: -38.6, z: -24 }
@@ -19,6 +20,7 @@ export const mara: ResidentDefinition = {
     departs: 6, returns: 18, pace: (distance(porch, landing) + distance(landing, dock)) / commuteHours,
     route: () => route,
   },
+  remarks: maraRemarks,
   conversation: {
     lines({ state, kept }) {
       if (kept.includes('mara-supper')) {

@@ -8,9 +8,9 @@ import { islandSaveFile } from '../server/save.ts'
 import { actionHint } from '../src/actions.ts'
 import { interactions } from '../src/interaction-options.ts'
 import { favorFeedback } from '../src/resident-notices.ts'
-import { conversationLines, favorGuides, openOffer } from '../src/residents/favors.ts'
+import { conversationLines, favorGuides, favorLine, openOffer } from '../src/residents/favors.ts'
 import { atResident, residentAt } from '../src/residents/schedule.ts'
-import { initialResidents, keepFavor, trustTier } from '../src/residents/trust.ts'
+import { blankRecord, initialResidents, keepFavor, trustTier } from '../src/residents/trust.ts'
 import { canWalkAt } from '../src/simulation/movement.ts'
 import { maxWadeDepth, walkingHeight, waterLevel } from '../src/terrain.ts'
 import { dawnsBetween, daySeconds } from '../src/weather.ts'
@@ -75,14 +75,14 @@ test('a resident asks, either crewmate agrees in the conversation, and the partn
     choose(a, 'talk', id)
     h.advance()
     assert.deepEqual(a.messages.at(-1), { type: 'resident-chat', resident: id })
-    assert.match(conversationLines(resident, a.state)[1], new RegExp(goods === 'fish' ? 'two from the harbor' : 'couple of carrots'))
+    assert.match(favorLine(resident, a.state), new RegExp(goods === 'fish' ? 'two from the harbor' : 'couple of carrots'))
     assert.equal(a.state.residents[id].trust, 0, 'talking earns nothing')
 
     // Both press Agree on the same tick: the favor opens once for the crew.
     choose(a, 'accept-favor', id)
     choose(b, 'accept-favor', id)
     h.advance()
-    assert.deepEqual(a.state.residents[id], { trust: 0, kept: [], active: resident.favors[0].id })
+    assert.deepEqual(a.state.residents[id], { ...blankRecord(), trust: 0, kept: [], active: resident.favors[0].id })
     assert.equal(count(a, 'favor-accepted'), 1)
     assert.equal(count(b, 'favor-accepted'), 1)
     assert.match(favorFeedback(b.messages.find(({ type }) => type === 'favor-accepted'), 1).label, /^Your crewmate agreed to help/)
@@ -104,17 +104,17 @@ test('a resident asks, either crewmate agrees in the conversation, and the partn
     h.advance()
     assert.equal(b.player.goods[goods], 1, 'two handed over, once')
     assert.equal(b.state.crewCoins, coins + 5)
-    assert.deepEqual(b.state.residents[id], { trust: 1, kept: [resident.favors[0].id], active: null })
+    assert.deepEqual(b.state.residents[id], { ...blankRecord(), trust: 1, kept: [resident.favors[0].id], active: null })
     for (const client of [a, b]) {
       assert.deepEqual(client.messages.filter(({ type }) => type === 'favor-pay'),
-        [{ type: 'favor-pay', resident: id, favor: resident.favors[0].id, coins: 5, trust: 1 }])
+        [{ type: 'favor-pay', resident: id, favor: resident.favors[0].id, coins: 5, trust: 1, restored: false }])
     }
     assert.match(favorFeedback(a.messages.find(({ type }) => type === 'favor-pay'), 0).label, new RegExp(`${resident.identity.name} trust \\+1`))
     assert.equal(openOffer(resident, b.state), undefined, 'a kept favor is not asked again')
     choose(a, 'talk', id)
     h.advance()
     assert.equal(a.state.residents[id].trust, 1, 'a repeated greeting adds nothing')
-    assert.notEqual(conversationLines(resident, a.state)[0], resident.conversation.lines({ state: a.state, tier: 'stranger', kept: [] })[0])
+    assert.notEqual(conversationLines(resident, a.state)[0], resident.conversation.lines({ state: a.state, tier: 'stranger', standing: 'steady', kept: [], forgiven: 0 })[0])
   }
 })
 
@@ -124,7 +124,7 @@ test('walking away declines without penalty, and a resident out of reach cannot 
   assert.equal(atResident(byId('ines'), a.state, a.player), false, 'Ines has gone home')
   choose(a, 'accept-favor', 'ines')
   h.advance()
-  assert.deepEqual(a.state.residents.ines, { trust: 0, kept: [], active: null })
+  assert.deepEqual(a.state.residents.ines, { ...blankRecord(), trust: 0, kept: [], active: null })
   assert.ok(openOffer(byId('ines'), a.state), 'the offer waits for the next visit')
 })
 
@@ -144,7 +144,7 @@ test('Bram’s staged crate completes his favor, and during a delivery order the
   // A crewmate carrying that crate sets it down in the bay.
   const carrying = (save) => {
     allCratesDelivered(save)
-    save.world.residents.bram = { trust: 0, kept: [], active: 'bram-staging' }
+    save.world.residents.bram = { ...blankRecord(), trust: 0, kept: [], active: 'bram-staging' }
     Object.assign(save.world.items[0], { holder: 1, delivered: false })
     Object.assign(save.crew[1].player, { x: stagingBay.x + .4, z: stagingBay.z, y: walkingHeight(stagingBay) })
   }
@@ -156,7 +156,7 @@ test('Bram’s staged crate completes his favor, and during a delivery order the
   staged.h.advance()
   assert.equal(b.state.items[0].delivered, true)
   assert.equal(b.state.crewCoins, coins + 5)
-  assert.deepEqual(b.state.residents.bram, { trust: 1, kept: ['bram-staging'], active: null })
+  assert.deepEqual(b.state.residents.bram, { ...blankRecord(), trust: 1, kept: ['bram-staging'], active: null })
   assert.equal(count(staged.a, 'favor-pay'), 1)
   staged.h.advance(5)
   assert.ok(b.state.items.filter(({ kind }) => kind === 'crate').every(({ delivered }) => delivered), 'no spare crate after the favor')
@@ -192,7 +192,7 @@ test('a favor under way and a kept favor survive a host restart and reach a late
   file.write(resumed.game.snapshotForSave())
   const after = setup(t, { saved: file.load() })
   const partner = after.join(tokens[1])
-  assert.deepEqual(partner.state.residents.mara, { trust: 1, kept: ['mara-supper'], active: null })
+  assert.deepEqual(partner.state.residents.mara, { ...blankRecord(), trust: 1, kept: ['mara-supper'], active: null })
   assert.deepEqual(partner.state.lastFavorPay, { resident: 'mara', favor: 'mara-supper', coins: 5 })
   assert.match(conversationLines(byId('mara'), partner.state)[0], /crew that fed me/)
 })
@@ -209,8 +209,8 @@ test('version 3 saves carry Wren’s trust into the resident records, and malfor
   }
   file.write(v3({ stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: 0 }, 1, { resident: 'wren', coins: 5 }))
   const mended = file.load()
-  assert.equal(mended.version, 5)
-  assert.deepEqual(mended.world.residents, { ...initialResidents(starterResidents), wren: { trust: 1, kept: ['wren-gate'], active: null } })
+  assert.equal(mended.version, 6)
+  assert.deepEqual(mended.world.residents, { ...initialResidents(starterResidents), wren: { ...blankRecord(), trust: 1, kept: ['wren-gate'], active: null } })
   assert.deepEqual(mended.world.lastFavorPay, { resident: 'wren', favor: 'wren-gate', coins: 5 })
   file.write(v3({ stage: 'inspected', pinHolder: null, acceptedAt: 0 }, 0))
   assert.equal(file.load().world.residents.wren.active, 'wren-gate')
@@ -219,11 +219,11 @@ test('version 3 saves carry Wren’s trust into the resident records, and malfor
   const older = { ...current.world.residents }
   delete older.ines
   file.write({ ...current, world: { ...current.world, residents: older } })
-  assert.deepEqual(createGame({ save: file.load() }).tick().residents.ines, { trust: 0, kept: [], active: null })
+  assert.deepEqual(createGame({ save: file.load() }).tick().residents.ines, { ...blankRecord(), trust: 0, kept: [], active: null })
 
-  for (const residents of [{ stranger: { trust: 0, kept: [], active: null } }, { mara: { trust: 1, kept: ['ines-display'], active: null } },
-    { mara: { trust: 2, kept: ['mara-supper', 'mara-supper'], active: null } }, { mara: { trust: 1, kept: ['mara-supper'], active: 'mara-supper' } },
-    { mara: { trust: .5, kept: [], active: null } }]) {
+  for (const residents of [{ stranger: { ...blankRecord(), trust: 0, kept: [], active: null } }, { mara: { ...blankRecord(), trust: 1, kept: ['ines-display'], active: null } },
+    { mara: { ...blankRecord(), trust: 2, kept: ['mara-supper', 'mara-supper'], active: null } }, { mara: { ...blankRecord(), trust: 1, kept: ['mara-supper'], active: 'mara-supper' } },
+    { mara: { ...blankRecord(), trust: .5, kept: [], active: null } }]) {
     file.write({ ...current, world: { ...current.world, residents: { ...current.world.residents, ...residents } } })
     assert.throws(() => file.load(), /Could not load island save/)
   }
@@ -235,7 +235,7 @@ test('trust tiers rise with kept favors, a favor credits once, and dawns count a
   assert.deepEqual([0, 1, 2, 3, 9].map(trustTier), ['stranger', 'familiar', 'familiar', 'trusted', 'trusted'])
   const state = { residents: initialResidents(starterResidents), crewCoins: 0 }
   const mara = byId('mara')
-  assert.deepEqual(keepFavor(state, mara, mara.favors[0]), { resident: 'mara', favor: 'mara-supper', coins: 5 })
+  assert.deepEqual(keepFavor(state, mara, mara.favors[0]), { resident: 'mara', favor: 'mara-supper', coins: 5, trust: 1, restored: false })
   assert.equal(keepFavor(state, mara, mara.favors[0]), null)
   assert.equal(state.crewCoins, 5)
   assert.equal(state.residents.mara.trust, 1)

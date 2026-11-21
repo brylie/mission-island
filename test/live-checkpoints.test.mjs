@@ -6,6 +6,7 @@ import { interactions } from '../src/interaction-options.ts'
 import { carriedMaterial, initialMaterialsWork } from '../src/materials-work.ts'
 import { scenarioCatalog, checkpointSettings } from '../server/scenarios/catalog.ts'
 import { actionHint } from '../src/actions.ts'
+import { blankRecord } from '../src/residents/trust.ts'
 import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
 import { player, tokens } from './support/game-harness.mjs'
 
@@ -29,7 +30,7 @@ test('the materials checkpoint resets a saved repair and the crew’s carried ma
   const state = game.tick()
   assert.equal(state.playtest.started, true)
   assert.deepEqual(state.materialsWork, initialMaterialsWork())
-  assert.deepEqual(state.residents.wren, { trust: 1, kept: [gateFavor], active: null })
+  assert.deepEqual(state.residents.wren, { ...blankRecord(), trust: 1, kept: [gateFavor] })
   for (const member of state.players) {
     assert.equal(carriedMaterial(member, 'timber'), 0)
     assert.equal(carriedMaterial(member, 'stone'), 0)
@@ -78,6 +79,12 @@ for (const { id: checkpoint } of scenarioCatalog) {
         assert.ok(state.weather.hour < 7)
         assert.equal(state.crewCoins, 5)
         assert.equal(state.residents.wren.trust, 1)
+      } else if (checkpoint === 'wren-swell') {
+        assert.equal(state.residents.wren.active, 'wren-swell')
+        for (const player of state.players) assert.equal(interactions(state, player)[0]?.action, 'check-swing')
+        a.dispatch({ type: 'interact', choice: { action: 'check-swing' } })
+        assert.equal(game.tick().residents.wren.checked, 'fault')
+        assert.equal(interactions(state, state.players[0])[0]?.action, 'plane', 'the toolbox is already at the gate')
       } else if (checkpoint === 'wren-discover') {
         assert.equal(state.gateRepair.stage, 'sagging')
         assert.ok(onBench(toolboxItem(state)))

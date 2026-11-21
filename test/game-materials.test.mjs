@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { blankRecord } from '../src/residents/trust.ts'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -25,7 +26,7 @@ function afterGate(save) {
   save.islandTime = 480
   Object.assign(save.world, { mission: 'complete', fire: 0,
     gateRepair: { stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: 0 } })
-  save.world.residents.wren = { trust: 1, kept: [gateFavor], active: null }
+  save.world.residents.wren = { ...blankRecord(), trust: 1, kept: [gateFavor] }
   save.crewCoins = 5
   // An island made before material progress existed can start the checkout.
   delete save.world.materialsWork
@@ -134,7 +135,7 @@ for (const material of repairMaterials) {
     assert.equal(carriedMaterial(a.player, material), 0)
     assert.equal(a.state.crewCoins, 10)
     assert.equal(awardCount(a), 1)
-    assert.deepEqual(a.state.residents.wren, { trust: 2, kept: [gateFavor, repairSupplyFavor.id], active: null })
+    assert.deepEqual(a.state.residents.wren, { ...blankRecord(), trust: 2, kept: [gateFavor, repairSupplyFavor.id] })
   })
 
   test(`split ${material} collection, reconnect, and concurrent final delivery award and consume once`, (t) => {
