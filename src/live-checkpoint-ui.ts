@@ -59,5 +59,9 @@ export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => s
     const text = trial.started ? activeTitle : activeTitle + ' · Waiting for crew'
     if (banner.textContent !== text) banner.textContent = text
   }
-  return { update, setCatalog }
+  // Until every seat is filled, the prompt tells players how to bring in a crewmate or start alone.
+  function waitingPrompt(trial: LiveTrial | undefined) {
+    return trial && !trial.started ? 'Waiting for your crewmate. Press O to copy the LAN link or start solo.' : undefined
+  }
+  return { update, setCatalog, waitingPrompt }
 }

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createGame } from '../server/game.ts'
-import { gateAction, gateMendedStage, onBench, toolboxItem } from '../src/gate-repair.ts'
+import { gateMendedStage, onBench, toolboxItem } from '../src/gate-repair.ts'
+import { interactions } from '../src/interaction-options.ts'
 import { scenarioCatalog, checkpointSettings } from '../server/scenarios/catalog.ts'
 import { actionHint } from '../src/actions.ts'
 import { tokens } from './support/game-harness.mjs'
@@ -34,14 +35,14 @@ for (const { id: checkpoint } of scenarioCatalog) {
         const box = toolboxItem(state)
         assert.equal(box.holder, seats === 1 ? null : a.id)
         assert.equal(state.gateRepair.pinHolder, b?.id ?? a.id)
-        for (const player of state.players) assert.equal(gateAction(state, player), 'fit')
+        for (const player of state.players) assert.equal(interactions(state, player)[0]?.action, 'fit')
         const baseline = state.crewCoins
-        a.dispatch({ type: 'interact', intent: 'fit' })
+        a.dispatch({ type: 'interact', choice: { action: 'fit' } })
         assert.equal(game.tick().gateRepair.stage, 'fitted')
         assert.equal(state.crewCoins, baseline)
         const tester = b ?? a
-        tester.dispatch({ type: 'interact', intent: 'test' })
-        a.dispatch({ type: 'interact', intent: 'test' })
+        tester.dispatch({ type: 'interact', choice: { action: 'test' } })
+        a.dispatch({ type: 'interact', choice: { action: 'test' } })
         assert.equal(game.tick().crewCoins, baseline + 5)
         assert.equal(state.residentTrust.wren, 1)
         a.disconnect()

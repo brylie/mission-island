@@ -5,13 +5,14 @@ import { actionHint, atClothingCounter, heldItem, inSkiff, interactRequest } fro
 import { readStorage, writeStorage } from './browser-storage'
 import { cleanCrewName, defaultAppearance, shirtColor } from './crew-appearance'
 import { createCrewGuide } from './crew-guide-ui'
+import { missionCard } from './mission-card'
 import { bindControlsToggle } from './controls-toggle-ui'
 import { bindLookOptions } from './look-options-ui'
 import { createReticleFocus } from './reticle-ui'
-import { favorProgress, gateMendedStage, gateRepairGuide, gateStepText, residentName } from './gate-repair'
+import { gateStepText, residentName } from './gate-repair'
 import { farm, market } from './farm'
-import { createJobBoard, jobDescription, secondIslandProgress } from './job-board-ui'
-import { activeJob, atJobBoard, deliveryDrop, jobBoard, jobs, secondIslandGoal } from './jobs'
+import { createJobBoard } from './job-board-ui'
+import { activeJob, atJobBoard, deliveryDrop, jobBoard, jobs } from './jobs'
 import { starterTools, toolNames } from './inventory'
 import type { InventoryItem } from './inventory'
 import type { ClientMessage, FishingResult, Input, Player, ServerMessage, Snapshot } from './protocol'
@@ -22,7 +23,7 @@ import { bindLanInvite } from './lan-invite'
 import { bindPlaytestCopy } from './playtest-link'
 import { isNight } from './weather'
 import { createClothingCounter, createWardrobe } from './wardrobe-ui'
-import { crewHomes, distance, ferryTerminal, harbor, lookout, starterPay } from './world'
+import { crewHomes, ferryTerminal, harbor, lookout, starterPay } from './world'
 
 function element<T extends HTMLElement>(id: string) {
   const node = document.getElementById(id)
@@ -248,58 +249,8 @@ try {
 showNotice()
 drawMap()
 
-function deliveryInstruction(state: Snapshot, drop: { x: number; z: number }, quantity: number) {
-  const loaded = state.items.filter((item) => item.onBed).length
-  const delivered = state.jobs.active?.progress ?? state.items.filter((item) => item.delivered).length
-  if (distance(state.truck, drop) < 11) return 'Carry the crates into the teal drop zone. Press E to deliver.'
-  if (loaded > 0 && loaded + delivered === quantity) return 'Drive to the teal drop zone. Hold Shift on corners and Space to brake.'
-  return loaded > 0 ? `${loaded} in the flatbed. Load or recover the remaining crates.` : 'Pick up crates at Harbor Depot and load the flatbed.'
-}
-
-function missionCard(state: Snapshot) {
-  const job = activeJob(state)
-  const drop = deliveryDrop(state)
-  if (drop) {
-    const quantity = job?.quantity ?? 3
-    const value = state.jobs.active?.progress ?? state.items.filter((item) => item.delivered).length
-    return {
-      label: job ? 'CREW ORDER' : 'MISSION 01 / 02', title: job?.title ?? 'Harbor delivery',
-      detail: job ? jobDescription(job) : 'Bring three supply crates from Harbor Depot to Seabrook.',
-      progress: 'Crates delivered', value, max: quantity, text: `${value} / ${quantity} delivered`,
-      instruction: deliveryInstruction(state, drop, quantity),
-    }
-  }
-  if (state.mission === 'fire') {
-    const value = Math.round((1 - state.fire) * 100)
-    return {
-      label: 'MISSION 02 / 02', title: 'Forest lookout fire', detail: 'Collect extinguishers at Fire Supplies and head to Forest Lookout.',
-      progress: 'Fire extinguished', value, max: 100, text: `${value}% extinguished`, instruction: 'Hold left click near the fire to put it out.',
-    }
-  }
-  if (job?.kind === 'market') {
-    const value = state.jobs.active?.progress ?? 0
-    return {
-      label: 'CREW ORDER', title: job.title, detail: jobDescription(job), progress: 'Goods contributed',
-      value, max: job.quantity, text: `${value} / ${job.quantity} ${job.goods}`, instruction: 'Press E at the market awning to contribute.',
-    }
-  }
-  const local = state.players.find((entry) => entry.id === id)
-  if (local && state.gateRepair.stage !== 'sagging' && gateMendedStage(state) !== 'settled') {
-    const favor = gateRepairGuide(state, local), value = favorProgress(state.gateRepair)
-    return { label: 'NEIGHBOR FAVOR', title: favor.title, detail: favor.detail, progress: 'Repair steps', value, max: 4,
-      text: `${value} / 4 steps`, instruction: favor.next }
-  }
-  const completed = Math.min(state.jobs.completed, secondIslandGoal)
-  return {
-    label: 'ISLAND SERVICE', title: 'Choose your next job', detail: 'Visit the job board at Harbor Depot. You can fish, farm, or explore between orders.',
-    progress: 'Second island progress', value: completed, max: secondIslandGoal,
-    text: `${completed} / ${secondIslandGoal}`,
-    instruction: completed === secondIslandGoal ? secondIslandProgress(completed) : 'Complete orders to prepare for the second island.',
-  }
-}
-
 function updateMission(state: Snapshot) {
-  const card = missionCard(state)
+  const card = missionCard(state, id)
   missionLabel.textContent = card.label
   missionTitle.textContent = card.title
   missionDescription.textContent = card.detail
@@ -405,14 +356,11 @@ function update(state: Snapshot) {
     : actionFeedback && performance.now() < actionFeedback.until ? [actionFeedback.key, actionFeedback.label]
     : player ? actionHint(state, player, reticle.update(state, player, renderer?.aimRay())) : ['', '']
   renderer?.pinTip(reticle.tip, reticle.focus()?.at)
-  prompt.hidden = !action
-  promptKey.hidden = !key
+  const waiting = checkpointControls.waitingPrompt(state.playtest)
+  prompt.hidden = !action && !waiting
+  promptKey.hidden = !key || Boolean(waiting)
   promptKey.textContent = key
-  if (state.playtest && !state.playtest.started) {
-    prompt.hidden = false
-    promptKey.hidden = true
-    promptAction.textContent = 'Waiting for your crewmate. Press O to copy the LAN link or start solo.'
-  } else promptAction.textContent = action
+  promptAction.textContent = waiting ?? action
 }
 
 function connect() {

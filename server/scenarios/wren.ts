@@ -1,4 +1,5 @@
-import { favorCoins, gateAction, gateway, toolboxItem } from '../../src/gate-repair.ts'
+import { favorCoins, gateway, toolboxItem } from '../../src/gate-repair.ts'
+import { interactions } from '../../src/interaction-options.ts'
 import type { Player, Snapshot } from '../../src/protocol.ts'
 import { daySeconds } from '../../src/weather.ts'
 import { updateHeldItems } from '../items.ts'
@@ -31,7 +32,7 @@ export const wrenScenarios: Scenario[] = [
       Object.assign(box, { x: carrier.x - .4, z: carrier.z, y: carrier.y + .04, holder: partner ? carrier.id : null })
       state.gateRepair.pinHolder = (partner ?? carrier).id
       updateHeldItems(state)
-      if (!players.every(player => gateAction(state, player) === 'fit')) throw new Error('Unreachable hinge in fit checkpoint')
+      if (!players.every(player => interactions(state, player)[0]?.action === 'fit')) throw new Error('Unreachable hinge in fit checkpoint')
     },
   },
   { ...garden, id: 'wren-discover', title: 'Wren · Discover the problem' },
