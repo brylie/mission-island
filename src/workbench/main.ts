@@ -7,14 +7,14 @@ import { editedFeature, readSiteDrafts, saveSiteDraft } from './site-drafts'
 import { workspaceOf } from './library'
 import { createLibraryPanel } from './library-panel'
 import { bindBiomeRecipes } from './biome-files'
-import { biomeLink, codex, readRecipe, recipeFromLink } from '../biome-recipe'
+import { biomeLink, habitatCodex, readRecipe, recipeFromLink } from '../biome-recipe'
 import { dryMarketRainAge } from '../market-runoff'
 import { bindPlaytestCopy, landscapeLink, landscapeWindow, readLandscapeView } from '../playtest-link'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { readStorage, writeStorage } from '../browser-storage'
 import { entries as initialEntries } from './catalog'
-import { restoreOptions, type Control, type Values } from './subject'
+import { applyRelatedOptions, createInspectorSelect, restoreOptions, type Control, type Values } from './subject'
 import type { FieldSite } from './field-site'
 import { createStage } from './stage'
 import type { Angle, CameraState } from './stage'
@@ -78,7 +78,7 @@ const shared = location.hash.split('?')[0] === '#landscape' ? readLandscapeView(
 const saved = readSavedView()
 const sharedRecipe = location.hash.split('?')[0] === '#biome' ? recipeFromLink(new URLSearchParams(location.search)) : undefined
 if (sharedRecipe) {
-  saved.options = { ...saved.options, biome: sharedRecipe }
+  saved.options = { ...saved.options, biome: { ...sharedRecipe, walk: Boolean(sharedRecipe.foxgloves || sharedRecipe.oystercatchers) } }
   Object.assign(saved, { id: 'biome', camera: undefined, time: 0, playing: true })
 }
 if (shared) {
@@ -149,7 +149,7 @@ function renderAssetControls() {
   let group = ''
   for (const control of asset.controls ?? []) {
     if (onIsland && control.key === 'shape') continue
-    const organism = asset.id === 'biome' ? codex.find(item => item.key === control.key) : undefined
+    const organism = asset.id === 'biome' ? habitatCodex.find(item => item.key === control.key) : undefined
     const heading = organism?.group ?? 'Conditions'
     if (asset.id === 'biome' && heading !== group) {
       group = heading
@@ -165,15 +165,7 @@ function renderAssetControls() {
 
     if (control.type === 'select') {
       row.className = 'row'
-      const select = document.createElement('select')
-      select.setAttribute('aria-labelledby', name.id)
-      for (const [value, title] of Object.entries(control.choices)) {
-        const option = document.createElement('option')
-        option.value = value
-        option.textContent = title
-        select.append(option)
-      }
-      select.value = String(values[control.key])
+      const select = createInspectorSelect(control, values, name.id)
       select.addEventListener('change', () => setOption(control, select.value))
       row.append(name, select)
     } else {
@@ -284,6 +276,7 @@ function cameraAtSameSite(previous?: FieldSite) {
 function setOption(control: Control, value: Values[string], save = true) {
   const oldSite = fieldSite()
   values[control.key] = value
+  if (asset.relatedOptions) applyRelatedOptions(inspector, asset, values, control.key)
   if (asset.actions) refreshActions()
   zFightingResult.replaceChildren()
   seek = true
@@ -614,9 +607,9 @@ element('reset').addEventListener('click', () => {
 
 bindBiomeRecipes(() => readRecipe(values), recipe => {
   if (asset.id !== 'biome') return
-  optionsByAsset.biome = { ...recipe }
+  optionsByAsset.biome = { ...recipe, walk: Boolean(recipe.foxgloves || recipe.oystercatchers) }
   time = 0
-  loadAsset(stage?.getCamera())
+  loadAsset()
   remember()
 })
 

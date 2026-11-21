@@ -45,6 +45,17 @@ function stageWeather(entry: Entry, time: number, settings: Values) {
   }
 }
 
+function applyStageLighting(sceneLighting: ReturnType<typeof createIslandLighting>, preset: LightingPreset, crew: boolean) {
+  const { ambient, sun, color, direction } = lightingPresets[preset]
+  const { sky, sunlight, shadows } = sceneLighting
+  sky.intensity = crew && preset === 'daylight' ? .84 : ambient
+  sunlight.intensity = sun
+  sunlight.diffuse = Color3.FromHexString(color)
+  const key = crew ? new Vector3(direction.x, direction.y, -1.3) : direction
+  sunlight.direction.copyFrom(key.normalizeToNew())
+  if (crew) shadows.setDarkness(.50)
+}
+
 function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Entry, values: Values,
   subject: AbstractMesh[], field?: FieldSite) {
   const biome = entry.id === 'biome'
@@ -104,7 +115,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
   try {
     scene.clearColor = Color4.FromHexString('#1b292aff')
     const sceneLighting = createIslandLighting(scene)
-    const { sky, sunlight, shadows } = sceneLighting
+    const { sunlight, shadows } = sceneLighting
     const atmosphere = stageAtmosphere(scene, sceneLighting, entry, field)
     const surroundings = field ? createFieldScenery(createMeshFactory(scene, shadows), field) : undefined
     if (field) scene.clearColor = Color4.FromHexString('#b7d3d7ff')
@@ -150,7 +161,8 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     grid.alpha = 0.21
     grid.isPickable = false
 
-    sunlight.position.set(center.x - 14, Math.max(21, size), center.z - 16)
+    const studioCrew = entry.id === 'crew' && !field
+    sunlight.position.set(center.x - 14, Math.max(21, size), center.z + (studioCrew ? 16 : -16))
     sunlight.shadowMaxZ = Math.max(biome ? 160 : 55, size * 4)
     let lighting: LightingPreset = 'daylight'
     let wireframe = false
@@ -224,11 +236,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       },
       setLighting(preset: LightingPreset) {
         lighting = preset
-        const { ambient, sun, color, direction } = lightingPresets[preset]
-        sky.intensity = ambient
-        sunlight.intensity = sun
-        sunlight.diffuse = Color3.FromHexString(color)
-        sunlight.direction.copyFrom(direction.normalizeToNew())
+        applyStageLighting(sceneLighting, preset, studioCrew)
       },
       setGrid(visible: boolean) { grid.setEnabled(visible) },
       setWireframe(visible: boolean) { wireframe = visible },

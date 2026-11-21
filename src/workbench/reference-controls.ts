@@ -99,11 +99,18 @@ export function createPhotoControls(picture: HTMLElement, changed: () => void) {
       picture.tabIndex = -1
       picture.classList.remove('pannable')
     },
-    attach(img: HTMLImageElement) {
+    attach(img: HTMLImageElement, focalX?: number) {
       image = img
       img.draggable = false
       bar.hidden = false
       picture.tabIndex = 0
+      if (focalX !== undefined) {
+        const view = size(), frame = photoFrame(view, fitCrop)
+        if (frame.height > 0) {
+          crop = { zoom: Math.max(1, Math.min(maxZoom, view.height / frame.height)), x: focalX, y: .5 }
+          changed()
+        }
+      }
       draw()
     },
   }

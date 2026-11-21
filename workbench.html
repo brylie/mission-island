@@ -35,6 +35,7 @@
             <p id="asset-description"></p>
           </div>
           <div class="scene-actions">
+            <a class="asset-link" id="crew-fitting" href="#crew?fitting=turnaround" hidden>Compare turnaround</a>
             <button type="button" id="reference-toggle" aria-controls="asset-reference" aria-expanded="false">Reference image</button>
             <a class="asset-link" id="return-to-biome" href="#biome" hidden>Biome Composer</a>
             <nav id="field-switch" aria-label="Preview setting" hidden><a id="inspect-alone">Studio</a><a id="inspect-field">On island</a></nav>
@@ -97,8 +98,12 @@
           </div>
           <aside id="asset-reference" aria-labelledby="reference-heading" hidden>
             <header><h3 id="reference-heading">Reference image</h3><a id="reference-source" target="_blank" rel="noopener noreferrer" hidden></a></header>
+            <nav class="layout-actions" id="turnaround-angles" aria-label="Match model and reference angle" hidden>
+              <a href="#crew?fitting=turnaround">Front</a><a href="#crew?fitting=profile">Side</a><a href="#crew?fitting=back">Back</a>
+            </nav>
             <div id="reference-picture" role="group" aria-label="Reference photo" aria-describedby="photo-gestures" tabindex="-1"></div>
-            <div id="photo-controls" hidden>
+            <details id="photo-controls" open hidden>
+              <summary>Zoom and pan</summary>
               <div class="layout-actions" role="group" aria-label="Photo zoom">
                 <button type="button" data-photo="out" aria-label="Zoom photo out">−</button>
                 <output aria-label="Photo magnification" aria-live="off">100%</output>
@@ -114,8 +119,10 @@
               </div>
               <p id="photo-gestures">Scroll or pinch to zoom. Drag to pan. With the photo focused, use + and − to zoom, arrows to pan, and Home to fit.</p>
               <span id="photo-position" class="sr-only" role="status"></span>
-            </div>
+            </details>
             <p id="reference-status" role="status"></p>
+            <details id="reference-editor" open>
+              <summary>Image source and description</summary>
             <form>
               <label for="reference-url">Image URL or Commons file page</label>
               <input id="reference-url" type="url" required placeholder="https://…" autocomplete="off" />
@@ -127,6 +134,7 @@
               </div>
             </form>
             <a id="reference-search" target="_blank" rel="noopener noreferrer">Search Wikimedia Commons ↗</a>
+            </details>
           </aside>
         </div>
 

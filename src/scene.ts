@@ -216,6 +216,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         node.setEnabled(true)
         const stroke = player.rowing ? Math.sin(time * 5.2 + id * 2.2) : 0
         poseSkiffCrew(character, stroke, side, rod, wasVisible ? factor : 1)
+        if (!rod) gear[seatIndex].alignPaddle()
       } else {
         node.rotation.x = 0
         node.rotation.z = 0

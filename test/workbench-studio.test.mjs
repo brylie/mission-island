@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { URL, URLSearchParams } from 'node:url'
 import { test } from 'node:test'
+import { relatedCrewOptions, shownCrewChoice } from '../src/workbench/crew-outfit.ts'
 import { libraryResults, workspaceOf, workspaces } from '../src/workbench/library.ts'
 import { readSubjectLink, subjectLink } from '../src/workbench/subject-link.ts'
 import { defaultPlacement, draftFeatures, readSiteDrafts, saveSiteDraft } from '../src/workbench/site-drafts.ts'
@@ -57,4 +58,30 @@ test('furnishing drafts survive reopening and preserve the canonical island plac
   assert.deepEqual(readSiteDrafts(), {})
   data.set(key, 'broken')
   assert.deepEqual(draftFeatures(), starterFeatures)
+})
+
+test('editing a clothing slot in the Workbench switches from a full uniform to everyday clothes', () => {
+  for (const [key, value] of [['shirt', 'lagoon'], ['shoes', 'bare'], ['trousers', 'sand']]) {
+    assert.deepEqual(relatedCrewOptions(key, { uniform: 'courier', [key]: value }), { uniform: 'amber' })
+  }
+  assert.deepEqual(relatedCrewOptions('hat', { uniform: 'rescue', hat: 'blue', cap: false }), { uniform: 'amber', cap: true })
+  for (const control of ['uniform', 'skin', 'hair', 'state', 'dyed']) {
+    assert.equal(relatedCrewOptions(control, { uniform: 'rescue' }), undefined)
+  }
+})
+
+test('everyday wardrobe choices resolve hidden trousers and caps together with the edited slot', () => {
+  assert.deepEqual(relatedCrewOptions('trousers', { uniform: 'blue', shirt: 'lagoon', trousers: 'sand' }), { shirt: 'default' })
+  assert.deepEqual(relatedCrewOptions('hat', { uniform: 'amber', hat: 'none', cap: true }), { cap: false })
+  assert.deepEqual(relatedCrewOptions('cap', { uniform: 'amber', hat: 'none', cap: true }), { hat: 'default' })
+  assert.deepEqual(relatedCrewOptions('cap', { uniform: 'blue', shirt: 'lagoon', hat: 'default', cap: true }), { hat: 'blue' })
+})
+
+test('the inspector displays active clothes and keeps saved everyday choices for switching back', () => {
+  const outfit = { uniform: 'courier', trousers: 'sand', shoes: 'brown' }
+  assert.equal(shownCrewChoice('trousers', outfit), 'default')
+  assert.equal(shownCrewChoice('shoes', outfit), 'default')
+  assert.equal(shownCrewChoice('trousers', { ...outfit, uniform: 'amber', shirt: 'lagoon' }), 'default')
+  assert.equal(shownCrewChoice('trousers', { ...outfit, uniform: 'amber' }), 'sand')
+  assert.equal(shownCrewChoice('shoes', { ...outfit, uniform: 'amber' }), 'brown')
 })

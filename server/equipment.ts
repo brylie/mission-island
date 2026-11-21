@@ -2,6 +2,7 @@ import { canCast, canSpray, heldItem, inSkiff } from '../src/actions.ts'
 import { biteSeconds, castTravelSeconds, chargePower } from '../src/charged-actions.ts'
 import { ownsClothing, shopItemFor } from '../src/clothing-catalog.ts'
 import { outfitRequirement, type CrewAppearance } from '../src/crew-appearance.ts'
+import { pieceSlots } from '../src/wardrobe-stock.ts'
 import type { InventoryItem } from '../src/inventory.ts'
 import { nearbyPlot } from '../src/farm.ts'
 import type { FishingResult, Player, Snapshot } from '../src/protocol.ts'
@@ -150,7 +151,9 @@ export function createEquipment(
 export function setAppearance(player: Player, appearance: CrewAppearance, mission: Snapshot['mission']) {
   const uniform = outfitRequirement(appearance.uniform, mission, ownsClothing(player, 'angler'))
     ? player.appearance?.uniform ?? 'default' : appearance.uniform
-  const item = shopItemFor('shirt', appearance.shirt)
-  const shirt = item && !ownsClothing(player, item) ? player.appearance?.shirt : appearance.shirt
-  player.appearance = { ...appearance, uniform, shirt }
+  const pieces = pieceSlots.map(slot => {
+    const item = shopItemFor(slot, appearance[slot])
+    return [slot, item && !ownsClothing(player, item) ? player.appearance?.[slot] : appearance[slot]] as const
+  })
+  player.appearance = { ...appearance, uniform, ...Object.fromEntries(pieces) }
 }

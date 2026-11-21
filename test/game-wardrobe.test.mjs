@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { readdirSync } from 'node:fs'
+import { URL } from 'node:url'
 import { actionHint } from '../src/actions.ts'
+import { clothingCatalog } from '../src/clothing-catalog.ts'
 import { anglerCost } from '../src/crew-appearance.ts'
 import { clothingCounter } from '../src/farm.ts'
 import { crewHomes } from '../src/world.ts'
+import { stockedPieces } from '../src/wardrobe-stock.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
 function atWardrobe(id) {
@@ -20,8 +24,8 @@ test('players find their own wardrobe, see applied pieces, and recover them afte
     client.request('interact')
     assert.equal(client.messages.at(-1).type, 'open-wardrobe')
   }
-  const first = { uniform: 'default', skin: 'warm', shirt: 'blue', hat: 'none', hair: 'short', hairColor: 'black' }
-  const second = { uniform: 'default', skin: 'deep', hat: 'amber', trousers: 'sand-shorts', shoes: 'brown', eyes: 'narrow' }
+  const first = { uniform: 'default', skin: 'warm', shirt: 'blue', hat: 'none', hair: 'coils', hairColor: 'black' }
+  const second = { uniform: 'default', skin: 'deep', hair: 'bun', hat: 'amber', trousers: 'sand-shorts', shoes: 'brown', eyes: 'narrow' }
   a.request('appearance', { appearance: { ...first, shoes: 'constructor', trousers: 42 } })
   b.request('appearance', { appearance: second })
   h.advance()
@@ -162,4 +166,43 @@ test('individual purchases unlock only the buyer’s matching piece and keep the
   assert.equal(swimmer.player.appearance.trousers, 'slate-shorts')
   assert.equal(swimmer.player.appearance.shirt, 'blue')
   assert.equal(swimmer.state.crewCoins, 0)
+})
+
+test('each mix-and-match counter piece has its own shop portrait', () => {
+  const rack = new URL('../src/assets/clothing/', import.meta.url)
+  const images = readdirSync(rack).filter(file => file.endsWith('.webp')).sort()
+  const expected = Object.values(stockedPieces).flatMap(group => Object.keys(group).map(id => id + '.webp'))
+  assert.deepEqual(images, expected.sort())
+})
+
+test('the Seabrook collection prices, unlocks, and restores all forty pieces independently', t => {
+  const point = { x: clothingCounter.x, z: clothingCounter.z + 0.82 }
+  const h = setup(t, { players: [player(0, point), player(1, point)], arrange: save => { save.crewCoins = 150 } })
+  const buyer = h.join(tokens[0])
+  const observer = h.join(tokens[1])
+  const collection = Object.values(stockedPieces).flatMap(Object.keys)
+  for (const rack of Object.values(stockedPieces)) assert.equal(Object.keys(rack).length, 10)
+  assert.equal(new Set(collection).size, 40)
+  let remaining = 150
+  for (const id of collection) {
+    const { price, slot, choice } = clothingCatalog[id]
+    const appearance = { uniform: 'default', skin: 'deep', [slot]: choice }
+    observer.request('appearance', { appearance })
+    buyer.request('buy-clothing', { item: id })
+    buyer.request('buy-clothing', { item: id })
+    assert.equal(buyer.messages.at(-1).result, 'already-owned')
+    buyer.request('appearance', { appearance })
+    h.advance()
+    remaining -= price
+    assert.equal(buyer.state.crewCoins, remaining)
+    assert.equal(observer.state.crewCoins, remaining)
+    assert.equal(buyer.player.appearance[slot], choice)
+    assert.equal(observer.player.appearance[slot], undefined)
+  }
+  assert.deepEqual(buyer.player.ownedClothes, collection)
+  assert.equal(observer.player.ownedClothes, undefined)
+  const restarted = setup(t, { saved: h.game.snapshotForSave() })
+  const returning = restarted.join(tokens[0])
+  assert.deepEqual(returning.player.ownedClothes, collection)
+  assert.equal(returning.state.crewCoins, remaining)
 })

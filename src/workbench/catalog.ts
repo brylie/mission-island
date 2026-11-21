@@ -1,3 +1,4 @@
+import { coastalModelStudies } from './coastal-model-studies'
 import { islandShaderStudies } from './island-shader-studies'
 import { shaderStudies } from './shader-studies'
 import { schoolStudy } from './school-study'
@@ -27,6 +28,7 @@ export const entries: Entry[] = [
   biomeEntry,
   schoolStudy,
   ...natureEntries,
+  ...coastalModelStudies,
   longAcreStudy,
   gullStudy,
   brinewickMarketStudy,

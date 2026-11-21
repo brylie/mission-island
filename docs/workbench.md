@@ -33,6 +33,10 @@ Scroll or pinch over the photo to zoom toward a detail, then drag to pan. The **
 
 The Workbench remembers the reference and its framing per asset in this browser. Hide it with **Reference image**, or select **Remove** to forget it. **Copy setup link** includes the visible photo crop alongside the camera and asset settings so a teammate can open the comparison on another computer.
 
+For the player model, open **Wardrobe → Crew character → Compare turnaround**, or use the [crew fitting shortcut](http://localhost:5173/workbench.html#crew?fitting=turnaround) on the default development port. **Front**, **Side** and **Back** frame the corresponding figure in the concept sheet and turn the model to match. Each starts with the same bareheaded courier in daylight. You can then orbit, try another outfit or scrub a pose beside the drawing. Under **Zoom and pan**, choose **Fit** to see the full sheet. Use **Copy setup link** after making adjustments to share that exact view.
+
+In the crew inspector, **Outfit preset** previews a complete uniform. Picking a shirt, swimsuit, hat, trousers, or shoes switches a work uniform to everyday clothes so the piece is visible. The inspector shows **Default** for slots supplied by a uniform and restores your everyday selections when you return to everyday clothes. Picking trousers replaces a swimsuit with the default shirt. **Show cap** controls visibility, and selecting a specific cap turns it back on. Turn off **Use custom shirt and cap dye** to compare the stock colors.
+
 ### Prepare a comparison link from the command line
 
 Choose the asset in the Library and use its address or **Copy setup link** to include the model camera and settings. The asset ID follows the first `#` (for example, `clover`). Find a Commons file page showing the feature you want to study and check the credit and license on that page. From the checkout, run the following with the host and port your reviewer can reach.
@@ -62,6 +66,16 @@ To verify a handoff, open its link in a fresh browser profile. Check the subject
 The cargo trial steps the actual Cannon simulation at the server’s fixed rate. The fishing trial uses the server’s cast validation, bite probability and fight rules. It guarantees a bite after a valid cast so reeling strategies can be compared. The farm preview exposes crop states. The conversation rehearsal uses the game’s market order quantities and contribution rule. Dialogue, range gating, and handover in that rehearsal are Workbench fixtures.
 
 Further work can add named plant species backed by shared generators, production villager schedules and friendship once those systems exist, collision updates for edited scenery, and a versioned catalog of approved material and building recipes. Each can use the existing subject, field site and setup-link conventions.
+
+## Walk the coastal meadow
+
+Open **Ecology → Biome Composer**, select **Coastal meadow** and choose **Apply**. The crew member starts at the edge of a 16 m clearing with 12 foxgloves and five oystercatchers. Click or Tab to the viewport and hold **W/A/S/D** to walk relative to the camera. Drag to orbit and scroll to change distance. Clear **Walk the clearing** to return to the overview.
+
+Move toward the birds and watch the wary count rise as they stop probing and walk away. Change **Foxglove stems** (0–32) and **Oystercatchers** (0–12) separately. The seed keeps plant and bird starting locations comparable across counts. A population edit rebuilds the habitat and keeps the walker's position. **Copy recipe link** and **Export JSON** include both counts.
+
+![Third-person walk between foxglove patches with oystercatchers ahead and the live frame-time readout.](images/coastal-meadow-walk.jpg)
+
+For a laptop performance check, hold the same view for a few seconds each at 0/0, 12/5 and 32/12. **Field observations** shows the observed frame rate, milliseconds per frame and active meshes. Record the viewport size and browser with the readings. Repeat while walking through the densest patch to check for stutter during movement.
 
 ## Fish schooling trial
 

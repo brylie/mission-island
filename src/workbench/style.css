@@ -424,3 +424,8 @@ input[type="color"] { width: 34px; height: 25px; padding: 2px; background: #2636
   #asset-reference button, #reference-toggle, #asset-reference [data-pan], #asset-reference [data-photo] { min-width: 44px; min-height: 44px; }
 }
 #reference-toggle[aria-expanded=true] { border-color: var(--accent); color: var(--accent); }
+
+#reference-editor summary, #photo-controls summary { cursor: pointer; }
+#reference-editor[open] summary, #photo-controls[open] summary { margin-bottom: 8px; }
+#turnaround-angles a { padding: 4px 8px; }
+#asset-reference:not(.crew-comparison) :is(#reference-editor, #photo-controls) > summary { display: none; }

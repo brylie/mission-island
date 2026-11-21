@@ -9,13 +9,20 @@ export const codex = [
   { key: 'foxes', label: 'Foxes', group: 'Wildlife', max: 4, note: 'Patrol until a hare is in range. At dusk and at night they range farther for prey.' },
 ] as const
 
-type Counts = Record<typeof codex[number]['key'], number>
+const coastalCodex = [
+  { key: 'foxgloves', label: 'Foxglove stems', group: 'Coastal meadow', max: 32, note: 'Seeded flower spikes grow in loose patches along the bank.' },
+  { key: 'oystercatchers', label: 'Oystercatchers', group: 'Coastal meadow', max: 12, note: 'Forage together and step away from a nearby walker.' },
+] as const
+export const habitatCodex = [...codex, ...coastalCodex]
+
+type Counts = Record<typeof habitatCodex[number]['key'], number>
 export type BiomeRecipe = Counts & { seed: number; hour: number; rain: number; ground: 'grass' | 'soil' | 'stone' }
 
 export const presets = {
-  'Meadow edge': { seed: 42, hour: 15, rain: 0, ground: 'grass', clover: 12, grass: 8, trees: 2, logs: 2, stones: 3, hares: 5, foxes: 1 },
-  'Pine hollow': { seed: 73, hour: 8, rain: 75, ground: 'soil', clover: 5, grass: 3, trees: 7, logs: 4, stones: 1, hares: 3, foxes: 1 },
-  'Stony heath': { seed: 115, hour: 18, rain: 0, ground: 'stone', clover: 4, grass: 9, trees: 0, logs: 1, stones: 9, hares: 4, foxes: 2 },
+  'Meadow edge': { seed: 42, hour: 15, rain: 0, ground: 'grass', foxgloves: 0, oystercatchers: 0, clover: 12, grass: 8, trees: 2, logs: 2, stones: 3, hares: 5, foxes: 1 },
+  'Pine hollow': { seed: 73, hour: 8, rain: 75, ground: 'soil', foxgloves: 0, oystercatchers: 0, clover: 5, grass: 3, trees: 7, logs: 4, stones: 1, hares: 3, foxes: 1 },
+  'Stony heath': { seed: 115, hour: 18, rain: 0, ground: 'stone', foxgloves: 0, oystercatchers: 0, clover: 4, grass: 9, trees: 0, logs: 1, stones: 9, hares: 4, foxes: 2 },
+  'Coastal meadow': { seed: 86, hour: 14, rain: 0, ground: 'grass', clover: 2, grass: 6, trees: 0, logs: 0, stones: 0, hares: 0, foxes: 0, foxgloves: 12, oystercatchers: 5 },
 } satisfies Record<string, BiomeRecipe>
 
 export function readRecipe(values: Record<string, unknown>): BiomeRecipe {
@@ -24,7 +31,7 @@ export function readRecipe(values: Record<string, unknown>): BiomeRecipe {
     const n = values[key]
     return typeof n === 'number' && Number.isFinite(n) ? Math.min(max, Math.max(0, Math.round(n))) : Number(recipe[key])
   }
-  for (const { key, max } of codex) recipe[key] = integer(key, max)
+  for (const { key, max } of habitatCodex) recipe[key] = integer(key, max)
   recipe.seed = integer('seed', 9999)
   recipe.hour = integer('hour', 23)
   recipe.rain = integer('rain', 100)
@@ -60,6 +67,8 @@ export function parseRecipeFile(text: string) {
   const values = file.recipe as Record<string, unknown>
   const recipe = readRecipe(values)
   for (const [key, value] of Object.entries(recipe)) {
+    // Original version 1 files predate the coastal species.
+    if (!(key in values) && coastalCodex.some(item => item.key === key)) continue
     if (value !== values[key]) throw new Error('Check the recipe value for ' + key + '.')
   }
   return recipe
