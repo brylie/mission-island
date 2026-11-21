@@ -25,6 +25,6 @@ export const wrenSchedule: ScheduleTrait = {
   home: { ...home, heading: Math.PI },
   work: { ...work, heading: Math.PI / 2 },
   departs: 7, returns: 17, pace: 30,
-  // Once the mended gate has settled overnight, Wren takes the shortcut through it.
-  route: (state) => gateMendedStage(state) === 'settled' ? shortcut : detour,
+  // Once the mended gate has settled overnight, Wren takes the shortcut through it, unless the leaf has swollen shut.
+  route: (state) => gateMendedStage(state) === 'settled' && state.gateRepair.swelling !== 'swollen' ? shortcut : detour,
 }

@@ -48,7 +48,9 @@ Wren lives in the lilac-roofed cottage just east of the Blue cottage. The garden
 
 ## Getting to know the neighbors
 
-Mara fishes from the small dock, Ines keeps the Seabrook Market stall, and Bram keeps the freight tally beside the Harbor Depot job board. Each walks to work in the morning and home in the evening on the shared clock. Aim at a resident and press **E** to talk. When someone needs a hand, the conversation offers **Agree to help**. Mara would like two carrots, Ines two fish, and Bram a crate set down in the yellow bay beside the depot. Either of you can agree, and either can finish it. The crew bank gets five coins once, the resident trusts the crew a little more, and their greeting changes. See [residents and favors](mechanics/resident-favors.md).
+Mara fishes from the small dock, Ines keeps the Seabrook Market stall, and Bram keeps the freight tally beside the Harbor Depot job board. Each walks to work in the morning and home in the evening on the shared clock. Aim at a resident and press **E** to talk. When someone needs a hand, the conversation offers **Agree to help**. Mara would like two carrots, Ines two fish, and Bram a crate set down in the yellow bay beside the depot. Either of you can agree, and either can finish it. The crew bank gets five coins once, the resident trusts the crew a little more, and their greeting changes. Talk again another day and they'll have something new to say about the weather, the island or the neighbors.
+
+Some jobs end with telling the resident how it went. If Wren asks whether the gate swings clear, tell the truth. Saying it does when you saw it catch costs Wren's trust, and it takes the crew a repair and two more favors to win it back. See [residents and favors](mechanics/resident-favors.md).
 
 ## Mara’s field outing
 

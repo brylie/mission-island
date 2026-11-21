@@ -52,13 +52,13 @@ Every **E** interaction shares one trait, defined in [interaction options](../sr
 
 ### Residents
 
-A [resident definition](../src/residents/definition.ts) combines traits the same way a vehicle does. Identity and appearance dress a crew rig. A schedule gives a home, a workplace, hours, a walking pace and a route. A conversation turns the shared snapshot and the crew's trust tier into a greeting and a piece of advice. A list of favors names what the resident asks of the crew, as goods, cargo, or a custom job like Wren's gate.
+A [resident definition](../src/residents/definition.ts) combines traits the same way a vehicle does. Identity and appearance dress a crew rig. A schedule gives a home, a workplace, hours, a walking pace and a route. A conversation turns the shared snapshot and the crew's trust tier into a greeting and a piece of advice. A list of favors names what the resident asks of the crew, as goods, cargo, checked work finished by reporting back, or a custom job like Wren's gate. Optional remarks add the resident's own small talk. The [remark system](../src/residents/remarks.ts) mixes them with the island's shared remarks and picks one that fits the moment.
 
 | Responsibility | Where it lives |
 | --- | --- |
 | Definition | One file per resident in [`src/worlds/starter/residents/`](../src/worlds/starter/residents), listed in the island's [registry](../src/worlds/starter/residents.ts). The registry index is each resident's interaction subject. |
 | Behavior | [Schedules](../src/residents/schedule.ts) place a resident from the island clock, so every client and the host agree. [Favors](../src/residents/favors.ts) decide what a resident is asking, and [resident interactions](../src/residents/interactions.ts) add **Talk**, **Agree to help** and the hand-in to the shared interaction list. |
-| Instance state | The host keeps one [record](../src/residents/trust.ts) per resident in the snapshot and the save: trust, kept favors and the favor under way. [Host residents](../server/residents.ts) accept, credit each favor once through `keepFavor`, and keep a crate in the yard for a cargo favor. |
+| Instance state | The host keeps one [record](../src/residents/trust.ts) per resident in the snapshot and the save: trust, kept favors, the favor under way, the last finding on checked work, and any broken promise. [Host residents](../server/residents.ts) accept, credit each favor once through `keepFavor`, and keep a crate in the yard for a cargo favor. |
 | Appearance and placement | The [resident scene](../src/resident-scene.ts) builds and poses one rig per definition, marks cargo bays, and gives the place labels their names. The world layer chooses homes, stops and bays. |
 
 To add a villager, write a definition file and append it to the registry. A visitor arriving by ferry can use the same traits once the ferry runs. A save made before the resident existed loads them as a stranger. Walk the route with the Workbench's **Resident routines** study and the walkability test in [the resident tests](../test/game-residents.test.mjs). See [Residents and favors](mechanics/resident-favors.md) for the playable rules.

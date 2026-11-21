@@ -48,7 +48,7 @@ Until the last stage is finished, the barrier is a solid across the full lane. O
 
 ## Saved state
 
-The host saves the stage, a ledger of coins and crates for each stage and each crew slot, the timber still on the way, and the island time when service was restored. Island saves are version 5. Version 4 and earlier saves start the repair untouched. The host rejects a save whose progress does not add up:
+The host saves the stage, a ledger of coins and crates for each stage and each crew slot, the timber still on the way, and the island time when service was restored. Island saves are version 6; version 5 added the ferry repair. Version 4 and earlier saves start the repair untouched. The host rejects a save whose progress does not add up:
 
 - a finished stage that did not exactly meet its needs,
 - a current stage that has overshot,

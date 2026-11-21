@@ -19,6 +19,7 @@ import { createGateRepair } from './gate-repair.ts'
 import { createJournal } from './journal.ts'
 import { createFerryRepair } from './ferry-repair.ts'
 import { createResidents } from './residents.ts'
+import { createGateSwell } from './gate-swell.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { repairSupplyFavor, wren } from '../src/worlds/starter/residents/wren.ts'
 import { createMaterialsWork } from './materials-work.ts'
@@ -74,6 +75,19 @@ function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoP
   return trial
 }
 
+// The residents and the jobs done in the world for them, the farm and the ferry, wired together.
+function createNeighborhood(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>, notify: (notice: CrewNotice) => void,
+  creditCrate: ReturnType<typeof createFreight>['creditCrate'], clock: () => number,
+  journal: Pick<ReturnType<typeof createJournal>, 'hearMara'>, checkpoint?: () => void) {
+  const gate = createGateRepair(state, notify, () => residents.keep(wren, wren.favors[0]))
+  const swell = createGateSwell(state, notify)
+  const residents = createResidents(state, starterResidents, physics, notify, { talk: { wren: gate.talk, mara: journal.hearMara }, ...swell.hooks }, checkpoint)
+  const farm = createFarmOrders(state, notify, clock, checkpoint)
+  const work = { swell, farm, ferry: createFerryRepair(state, physics, notify, creditCrate),
+    materials: createMaterialsWork(state, notify, () => residents.keep(wren, repairSupplyFavor)) }
+  return { gate, residents, farm, work }
+}
+
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat(), driftwood = createDriftwoodSchool(clock() >>> 0)
@@ -85,11 +99,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const journal = createJournal(state, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint)
-  const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0]))
-  const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk, mara: journal.hearMara }, checkpoint)
-  const farm = createFarmOrders(state, crew.notifyAll, clock, checkpoint)
-  const materials = createMaterialsWork(state, crew.notifyAll, () => residents.keep(wren, repairSupplyFavor))
-  const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, materials, createFerryRepair(state, physics, crew.notifyAll, freight.creditCrate), journal, checkpoint)
+  const { gate, residents, farm, work } = createNeighborhood(state, physics, crew.notifyAll, freight.creditCrate, clock, journal, checkpoint)
+  const interactions = createInteractions(state, growth, physics, orders, gate, residents, work, journal, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {

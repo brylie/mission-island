@@ -1,5 +1,7 @@
 import { byTruckBed, freeBed, heldItem } from '../src/actions.ts'
+import type { GateAction } from '../src/gate-repair.ts'
 import { ferryDrop, isFerryAction } from '../src/ferry-repair.ts'
+import { isMaterialsAction } from '../src/materials-interactions.ts'
 import { deliberateActions, interactions, sameChoice } from '../src/interaction-options.ts'
 import type { Interaction, InteractionChoice } from '../src/interaction-options.ts'
 import { starterTools } from '../src/inventory.ts'
@@ -16,20 +18,46 @@ import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
 import type { createFerryRepair } from './ferry-repair.ts'
 import { isFarmAction } from '../src/farm-orders.ts'
-import { isMaterialsAction } from '../src/materials-interactions.ts'
 import type { createFarmOrders } from './farm-orders.ts'
 import type { createResidents } from './residents.ts'
+import type { createGateSwell } from './gate-swell.ts'
 import type { createJournal } from './journal.ts'
 import type { createMaterialsWork } from './materials-work.ts'
+
+// Jobs done in the world for residents and the farm, each with its own host module.
+interface Work {
+  swell: Pick<ReturnType<typeof createGateSwell>, 'act'>
+  materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>
+  farm: Pick<ReturnType<typeof createFarmOrders>, 'act'>
+  ferry: Pick<ReturnType<typeof createFerryRepair>, 'act' | 'deliverCrate'>
+}
+
+// Residents' conversations and favors, and the repairs done for them.
+function createNeighborly(gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
+  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'report'>,
+  work: Work) {
+  return (member: CrewMember, action: Interaction['action'], subject: number) => {
+    switch (action) {
+      case 'talk': return residents.talk(member, subject)
+      case 'accept-favor': return residents.accept(member, subject)
+      case 'hand-over': return residents.handOver(member, subject)
+      case 'report-sound':
+      case 'report-fault': return residents.report(member, subject, action === 'report-sound' ? 'sound' : 'fault')
+      case 'check-swing':
+      case 'plane': return work.swell.act(action)
+      default:
+        if (isMaterialsAction(action)) return work.materials.act(member, action, subject)
+        return isFerryAction(action) ? work.ferry.act(member, action) : gate.act(member, action as GateAction)
+    }
+  }
+}
 
 export function createInteractions(
   state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'relocate' | 'remove'>,
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
-  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>,
-  farm: Pick<ReturnType<typeof createFarmOrders>, 'act'>,
-  materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>, ferry: ReturnType<typeof createFerryRepair>,
-  journal: Pick<ReturnType<typeof createJournal>, 'record' | 'inspect'>, checkpoint?: () => void,
+  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'report' | 'stageCrate'>,
+  work: Work, journal: Pick<ReturnType<typeof createJournal>, 'record' | 'inspect'>, checkpoint?: () => void,
 ) {
 
   function useHomeChest(member: CrewMember) {
@@ -56,7 +84,7 @@ export function createInteractions(
     item.holder = null
     const dropoff = deliveryDrop(state)
     if (ferryDrop(state, player, item)) {
-      ferry.deliverCrate(item, player.id)
+      work.ferry.deliverCrate(item, player.id)
     } else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
       orders.deliverCrate(item)
     } else if (residents.stageCrate(item, player)) {
@@ -102,8 +130,10 @@ export function createInteractions(
     recordCultivation(state, 'harvest', plot, player.id)
   }
 
+  const neighborly = createNeighborly(gate, residents, work)
+
   function perform(member: CrewMember, action: Exclude<Interaction['action'], 'record' | 'inspect-field'>, subject = -1) {
-    if (isFarmAction(action)) return farm.act(member, action)
+    if (isFarmAction(action)) return work.farm.act(member, action)
     const item = state.items[subject]
     switch (action) {
       case 'put-down': return putDown(member, heldItem(state, member.player)!)
@@ -116,13 +146,8 @@ export function createInteractions(
       case 'plant':
       case 'harvest': return tend(member, subject, action)
       case 'welcome-note': return member.notify?.({ type: 'crew-note' })
-      case 'talk': return residents.talk(member, subject)
-      case 'accept-favor': return residents.accept(member, subject)
-      case 'hand-over': return residents.handOver(member, subject)
       case 'job-board': return
-      default:
-        if (isMaterialsAction(action)) return materials.act(member, action, subject)
-        return isFerryAction(action) ? ferry.act(member, action) : gate.act(member, action)
+      default: return neighborly(member, action, subject)
     }
   }
 

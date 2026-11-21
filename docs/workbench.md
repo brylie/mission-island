@@ -73,7 +73,7 @@ Open **Effects → Sound → Starter Island sound**. Choose a **Sound layer**, t
 
 ## Scope of the trials
 
-The cargo trial steps the actual Cannon simulation at the server’s fixed rate. The fishing trial uses the server’s cast validation, bite probability and fight rules. It guarantees a bite after a valid cast so reeling strategies can be compared. The farm preview exposes crop states. The **Resident routines** study reads each resident's real schedule and conversation. Choose a resident and an hour, then set the crew's trust and the favor's state to hear what they would say. On the island, the stage moves to where that resident is at that hour.
+The cargo trial steps the actual Cannon simulation at the server’s fixed rate. The fishing trial uses the server’s cast validation, bite probability and fight rules. It guarantees a bite after a valid cast so reeling strategies can be compared. The farm preview exposes crop states. The **Resident routines** study reads each resident's real schedule and conversation. Choose a resident and an hour, then set the crew's trust, the resident's standing, the favor's state and the rain to hear what they would say. Change the remark seed to hear other small talk that fits the same moment. On the island, the stage moves to where that resident is at that hour.
 
 Further work can add named plant species backed by shared generators, collision updates for edited scenery, and a versioned catalog of approved material and building recipes. Each can use the existing subject, field site and setup-link conventions.
 

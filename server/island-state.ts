@@ -66,7 +66,7 @@ export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['
   const { x, z, heading } = truck
   const { qualified, surveyed, aerial } = state.aviation
   return {
-    version: 5, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
+    version: 6, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
     world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial },
       gate, gateRepair, residents, journal, materialsWork, ferryRepair, produce: state.farmWork.progress,
