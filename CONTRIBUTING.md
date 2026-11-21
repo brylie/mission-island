@@ -49,6 +49,8 @@ MISSION_ISLAND_CHECKPOINT=dock-fishing MISSION_ISLAND_CREW_SIZE=1 npm run playte
 
 ## Submit a playable change
 
+Use the [shared review workflow](docs/playtests/review-workflow.md) to choose the right harness, share a reproducible starting point, and report a tool gap that affected the review.
+
 Choose a player outcome from the milestone, link its design brief, and describe how someone can reproduce the starting state. The [playable change issue template](.github/ISSUE_TEMPLATE/playable-change.md) works for a mechanic, a destination, or a problem found during play. For a co-op change, describe what each player can do and see, and how one person can finish alone. Link a [playtest finding](docs/playtests/findings.md) when one motivated the change.
 
 In the pull request, include the issue, what you tried, and any untested part. For visual changes include a screenshot or a reproducible Workbench view. Update the relevant mechanic spec when the player-facing behavior changes.

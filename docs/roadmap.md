@@ -2,7 +2,7 @@
 
 This is the running record of ideas from the playtests. The [game design](game-design.md) and linked mechanic specifications describe the current rules.
 
-The [Starter Island milestone](https://github.com/brylie/mission-island/milestone/4) connects the first payday, local friendships, a field outing, and ferry restoration. See [crew progression](design/progression.md) for the player journey and [design decisions](design/decisions.md) for the choices still open.
+The [Starter Island milestone](https://github.com/brylie/mission-island/milestone/4) connects the first payday, local relationships, a field outing, and ferry restoration. See [crew progression](design/progression.md) for the player journey and [design decisions](design/decisions.md) for the choices still open.
 
 ## Playable now
 
@@ -25,12 +25,13 @@ The [Starter Island milestone](https://github.com/brylie/mission-island/mileston
 ## Captured for later
 
 - The [Living islands milestone](https://github.com/brylie/mission-island/milestone/2) applies [generativity](game-design.md#generativity) to biome placement, flora, fauna, and natural phenomena while giving each destination a recognizable identity.
-- [Villagers](https://github.com/brylie/mission-island/issues/3) offer conversations and favors, build shared friendship with the crew, and follow daily work and home routines.
+- [Villagers](https://github.com/brylie/mission-island/issues/3) offer conversations and favors, build shared Trust with the crew, and follow daily work and home routines.
 - [Community projects and ferry dock restoration](https://github.com/brylie/mission-island/issues/4) give the crew lasting changes to work toward. The planned terminal belongs at the end of Harbor Depot road. Completing its repair restores ferry service in the Starter Island milestone. The existing dock serves small fishing vessels.
 - [Rotating Harbor Job Board orders](https://github.com/brylie/mission-island/issues/5) bring a mix of short errands and longer outings. An accepted order stays available until the crew finishes it.
 - [Co-op cargo handling and loading](https://github.com/brylie/mission-island/issues/6) gives players jobs at both ends of an awkward load or lets one spot while the other backs the truck in.
 - [Shared map pins](https://github.com/brylie/mission-island/issues/7) let either player mark places for the crew on the overview and minimap.
 - [Island field journal](https://github.com/brylie/mission-island/issues/8) records catches, discoveries, and camera sightings of fish, flora, fauna, and landmarks. First sightings and distinctive behaviors earn shared observation experience and completion credit alongside career progress.
+- [Shared seasons](https://github.com/brylie/mission-island/issues/32) change familiar habitats and give crews reasons to return for seasonal sightings or gatherings. Start with a matched Pinewoods comparison and a crew calendar on Starter Island. [Climate and season design](design/climate-and-seasons.md)
 - [Village market days](https://github.com/brylie/mission-island/issues/9) bring villagers to Seabrook Market for special orders and conversations.
 - Give the shovel, pickaxe, and axe usable jobs. Start with buried finds, marked rock deposits, and fallen branches.
 - Add more crops, sale goods, outfits, trade jobs, and practical upgrades for coins. Expand beyond the initial farming, fishing, and delivery work.
