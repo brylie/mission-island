@@ -484,21 +484,6 @@
       "count": 18
     }
   },
-  "src/particle-effect.ts": {
-    "no-magic-numbers": {
-      "count": 3
-    }
-  },
-  "src/particle-motion.ts": {
-    "no-magic-numbers": {
-      "count": 19
-    }
-  },
-  "src/particle-surface.ts": {
-    "no-magic-numbers": {
-      "count": 31
-    }
-  },
   "src/place-labels.ts": {
     "no-magic-numbers": {
       "count": 7
