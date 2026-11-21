@@ -1,4 +1,4 @@
-import { aviationInteraction, nextOuting, type FlightResult } from '../src/aviation.ts'
+import { aerialSighting, aviationInteraction, nextOuting, type AviationState, type FlightResult } from '../src/aviation.ts'
 import type { Player, Snapshot } from '../src/protocol.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import { startRidgeFlight, stepRidgeFlight } from '../src/simulation/ridge-flight.ts'
@@ -17,6 +17,13 @@ const meadowPose = { ...ridgeMeadow, heading: ridgeHeading }
 function landedPose({ x, z, heading }: Pose) {
   return { x, z, heading, y: groundHeight({ x, z }), grounded: true, seat: null,
     swimming: false, onBed: false, truckSurface: undefined, reaching: false, rightHandRaised: false, throwing: false }
+}
+
+function landingResult(record: NonNullable<AviationState['flight']>, outcome: 'field' | 'early' | 'missed'): FlightResult {
+  if (record.outing === 'free') return 'landed'
+  if (outcome !== 'field') return outcome === 'early' ? 'short' : 'missed'
+  if (record.outing === 'checkout') return record.approach ? 'qualified' : 'approach'
+  return record.observed ? 'surveyed' : 'observation'
 }
 
 export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice) => void, checkpoint?: () => void) {
@@ -62,7 +69,7 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
     resetPilot(member)
     flight = startRidgeFlight()
     aviation.flight = { pilotId: player.id, outing: nextOuting(aviation),
-      bank: 0, pitch: 0, climbing: false, approach: false, observed: false }
+      bank: 0, pitch: 0, climbing: false, approach: false, observed: false, spotted: [] }
     Object.assign(player, flight.pilot, { grounded: false, reaching: false, throwing: false, rightHandRaised: false })
     // The checkpoint uses the pilot's recovery pose while the loan is active.
     checkpoint?.()
@@ -71,6 +78,7 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
 
   function finish(member: CrewMember, result: FlightResult, recover: boolean) {
     const { player } = member
+    const spotted = aviation.flight?.spotted ?? []
     Object.assign(player, recover ? recoveryPose(player) : landedPose(player))
     resetPilot(member)
     flight = undefined
@@ -78,36 +86,41 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
     aviation.marked = false
     if (result === 'qualified') aviation.qualified = true
     if (result === 'surveyed') aviation.surveyed = true
+    // Aerial surveys count only after a safe landing. A crash or an interruption loses this flight's sightings.
+    const aerial = recover ? [] : spotted.filter(id => !aviation.aerial?.includes(id))
+    if (aerial.length) aviation.aerial = [...aviation.aerial ?? [], ...aerial]
     checkpoint?.()
-    notifyCrew({ type: 'flight-result', result, pilotId: player.id })
+    notifyCrew({ type: 'flight-result', result, pilotId: player.id, ...aerial.length ? { aerial, recorded: aviation.aerial?.length } : {} })
+  }
+
+  // Notes what the pilot has flown through or over so far on this flight.
+  function observe(member: CrewMember, record: NonNullable<AviationState['flight']>, pilot: Point & { y: number }) {
+    const { x, z } = localPoint(meadowPose, pilot)
+    record.approach ||= Math.abs(x) < ridgeApproach.halfWidth && z >= ridgeApproach.start && z < -ridgeLandingRadius
+    const height = pilot.y - groundHeight(pilot)
+    if (record.outing === 'survey' && height >= 2 && distance(pilot, mirrorPoolWillow) <= 7) record.observed = true
+    const sighting = record.outing !== 'checkout' && aerialSighting(pilot, [...aviation.aerial ?? [], ...record.spotted])
+    if (sighting) {
+      record.spotted.push(sighting.id)
+      member.notify?.({ type: 'aerial-sighting', id: sighting.id })
+    }
   }
 
   function tick(member: CrewMember, inputFresh: boolean) {
     const record = aviation.flight
     if (!record || !flight || record.pilotId !== member.player.id) return false
     const input = inputFresh ? member.input : stopped
-    stepRidgeFlight(flight, { turn: input.flightTurn ?? 0, pitch: input.flightPitch ?? 0 })
+    stepRidgeFlight(flight, { turn: input.flightTurn ?? 0, pitch: input.flightPitch ?? 0 }, state.weather)
     const { pilot, outcome, bank, pitch, climbing } = flight
     Object.assign(member.player, pilot)
     record.bank = bank
     record.pitch = pitch
     record.climbing = climbing
     const truck = state.truck
-    if (pilot.y < truck.y + truckRoof.top && isInsideTruck(truck, pilot)) {
-      finish(member, 'obstruction', true)
-    } else if (outcome) {
-      if (outcome === 'obstruction' || !safeGround(pilot)) finish(member, 'obstruction', true)
-      else if (outcome === 'field') {
-        const result = record.outing === 'checkout' ? (record.approach ? 'qualified' : 'approach')
-          : record.outing === 'survey' ? (record.observed ? 'surveyed' : 'observation') : 'practiced'
-        finish(member, result, false)
-      } else finish(member, outcome === 'early' ? 'short' : 'missed', false)
-    } else {
-      const { x, z } = localPoint(meadowPose, pilot)
-      record.approach ||= Math.abs(x) < ridgeApproach.halfWidth && z >= ridgeApproach.start && z < -ridgeLandingRadius
-      const height = pilot.y - groundHeight(pilot)
-      if (record.outing === 'survey' && height >= 2 && distance(pilot, mirrorPoolWillow) <= 7) record.observed = true
-    }
+    if (pilot.y < truck.y + truckRoof.top && isInsideTruck(truck, pilot)) finish(member, 'obstruction', true)
+    else if (outcome === 'obstruction' || (outcome && !safeGround(pilot))) finish(member, 'obstruction', true)
+    else if (outcome) finish(member, landingResult(record, outcome), false)
+    else observe(member, record, pilot)
     return true
   }
 
