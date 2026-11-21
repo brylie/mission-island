@@ -1,3 +1,4 @@
+import { ferryCard } from './ferry-repair-ui'
 import { favorProgress, gateRepairGuide } from './gate-repair'
 import { jobDescription, secondIslandProgress } from './job-board-ui'
 import { activeJob, deliveryDrop, secondIslandGoal } from './jobs'
@@ -76,11 +77,13 @@ export function missionCard(state: Snapshot, id: number) {
   }
   const materials = local && materialsCard(state, local)
   if (materials) return materials
+  const ferry = ferryCard(state)
+  if (ferry) return ferry
   const completed = Math.min(state.jobs.completed, secondIslandGoal)
   return {
     label: 'ISLAND SERVICE', title: 'Choose your next job', detail: 'Visit the job board at Harbor Depot. You can fish, farm, or explore between orders.',
     progress: 'Second island progress', value: completed, max: secondIslandGoal,
     text: `${completed} / ${secondIslandGoal}`,
-    instruction: completed === secondIslandGoal ? secondIslandProgress(completed) : 'Complete orders to prepare for the second island.',
+    instruction: completed === secondIslandGoal ? secondIslandProgress(completed) : 'Complete four orders to open the ferry terminal repair.',
   }
 }

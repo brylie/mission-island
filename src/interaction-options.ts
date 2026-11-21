@@ -3,6 +3,8 @@ import { clothingCounter, farmPlots, market, nearbyPlot, saleValue, seedPrice } 
 import { canPickUp, gateActions, gateHint, gateOptions, gateTarget } from './gate-repair.ts'
 import { farmActions, farmInteractions, type FarmAction } from './farm-orders.ts'
 import type { GateAction } from './gate-repair.ts'
+import { ferryActions, ferryChoiceOnly, ferryDrop, ferryInteractions } from './ferry-repair.ts'
+import type { FerryAction } from './ferry-repair.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, jobBoard, orderContribution } from './jobs.ts'
 import type { Item, Player, Snapshot } from './protocol.ts'
 import { materialsActions, materialsInteractions, type MaterialsAction } from './materials-interactions.ts'
@@ -14,14 +16,15 @@ import { cottageDoor, crewHomes, distance, lookout } from './world.ts'
 import type { Point } from './world.ts'
 import { starterResidents } from './worlds/starter/residents.ts'
 
-export type InteractionAction = GateAction | ResidentAction | FarmAction | MaterialsAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
+export type InteractionAction = GateAction | ResidentAction | FarmAction | MaterialsAction | FerryAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
   'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note'
 export const interactionActions: readonly InteractionAction[] = [
-  ...gateActions, ...residentActions, ...farmActions, ...materialsActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
+  ...gateActions, ...residentActions, ...farmActions, ...materialsActions, ...ferryActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
   'harvest', 'pick-up', 'welcome-note',
 ]
 // These change shared progress or speak for the crew, so the host runs them only when the player chose them.
-export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions, ...farmActions, ...materialsActions]
+export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions, ...farmActions, ...materialsActions,
+  ...ferryChoiceOnly]
 
 // What E sends: an action and, for items, farm plots and residents, which one.
 export interface InteractionChoice { action: InteractionAction; subject?: number }
@@ -47,6 +50,7 @@ function putDown(state: Snapshot, player: Player, item: Item): Interaction {
     return state.mission === 'fire' && distance(player, lookout) < 5
       ? { ...option, key: 'Left click', label: 'Hold to spray' } : { ...option, label: 'Set extinguisher down' }
   }
+  if (ferryDrop(state, player, item)) return { ...option, label: 'Stack timber for the ferry repair' }
   const drop = deliveryDrop(state)
   if (drop && distance(player, drop) < deliveryRadius) return { ...option, label: 'Deliver crate' }
   const staging = stagingFavor(starterResidents, state, player)
@@ -129,7 +133,8 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
   const gate = gateOptions(state, player)
   const residents = residentInteractions(starterResidents, state, player)
   const options = [...gateInteractions(state, gate.primary), ...(held ? [putDown(state, player, held)] : []),
-    ...homeInteractions(state, player), ...farm, ...workInteractions(state, player), ...(held ? [] : pickups(state, player))]
+    ...homeInteractions(state, player), ...farm, ...workInteractions(state, player), ...(held ? [] : pickups(state, player)),
+    ...ferryInteractions(state, player)]
   if (atHomeDoor(player) && !isNight(state.weather.hour)) {
     options.push({ action: 'welcome-note', key: 'E', label: 'Read your welcome note', name: 'Your door',
       at: aimedAt(cottageDoor(crewHomes[player.id]), 1.2), radius: .7 })

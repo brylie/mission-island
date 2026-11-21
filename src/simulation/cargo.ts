@@ -1,6 +1,7 @@
 import { starterSolids } from '../worlds/starter/colliders.ts'
 import { Body, Box, Heightfield, SAPBroadphase, Sphere, Vec3, World } from 'cannon-es'
 import type { Input, Item, Snapshot } from '../protocol.ts'
+import { barrierSolids, deckSolids, deckTop, ferryServiceRestored } from '../ferry-repair.ts'
 import { gateBlockers } from '../gate-repair.ts'
 import { buildings, chestSize, crateSize, crateStarts, crewHomes, dockEndZ, harborDock, truckBed } from '../world.ts'
 import type { Point, Pose } from '../world.ts'
@@ -24,6 +25,32 @@ function gateLeafBody(world: World) {
     body.quaternion.setFromEuler(0, solid.heading, 0)
     body.aabbNeedsUpdate = true
   }
+}
+
+type Solid = typeof starterSolids[number]
+
+function solidBody(solid: Solid) {
+  const body = new Body({
+    position: new Vec3(solid.x, (solid.top + solid.floor) / 2, solid.z),
+    shape: new Box(new Vec3(solid.halfWidth, (solid.top - solid.floor) / 2, solid.halfDepth)),
+  })
+  body.quaternion.setFromEuler(0, solid.heading, 0)
+  return body
+}
+
+// The ferry barrier closes the lane until the repair is finished. Then the barrier comes out and the deck goes in.
+function ferryBodies(world: World) {
+  const barrier = barrierSolids.map(solidBody)
+  const deck = deckSolids.map(solidBody)
+  let open: boolean | undefined
+  const place = (state: Pick<Snapshot, 'ferryRepair'>) => {
+    const restored = ferryServiceRestored(state)
+    if (restored === open) return
+    open = restored
+    for (const body of restored ? barrier : deck) if (body.world) world.removeBody(body)
+    for (const body of restored ? deck : barrier) world.addBody(body)
+  }
+  return { isOpen: () => open === true, place }
 }
 
 function barrowBody(world: World) {
@@ -57,14 +84,7 @@ function addIslandColliders(world: World) {
   const ground = new Body({ position: new Vec3(west, 0, north), shape: new Heightfield(heights, { elementSize: 1 }) })
   ground.quaternion.setFromEuler(-Math.PI / 2, 0, 0)
   world.addBody(ground)
-  for (const solid of starterSolids) {
-    const body = new Body({
-      position: new Vec3(solid.x, (solid.top + solid.floor) / 2, solid.z),
-      shape: new Box(new Vec3(solid.halfWidth, (solid.top - solid.floor) / 2, solid.halfDepth)),
-    })
-    body.quaternion.setFromEuler(0, solid.heading, 0)
-    world.addBody(body)
-  }
+  for (const solid of starterSolids) world.addBody(solidBody(solid))
   for (const building of buildings) {
     world.addBody(new Body({
       position: new Vec3(building.x, building.h / 2, building.z),
@@ -113,7 +133,9 @@ export function createCargoPhysics() {
 
   addIslandColliders(world)
 
-  const truck = createTruckPhysics(world)
+  const ferry = ferryBodies(world)
+  // The flatbed's shore check reads the restored deck as solid ground, so it can drive out to the berth.
+  const truck = createTruckPhysics(world, (point) => ferry.isOpen() ? Math.max(groundHeight(point), deckTop(point)) : groundHeight(point))
 
   const half = crateSize / 2
   const crates = crateStarts.map(() => new Body({
@@ -164,6 +186,12 @@ export function createCargoPhysics() {
     truck.matchBedMotion(body)
   }
 
+  // Places a crate where the host stages it, such as an order's pickup point. Settling there is not an impact.
+  function relocate(item: Item, point: Point) {
+    release(item, point)
+    if (item.kind === 'crate') impacts.quiet(item.id)
+  }
+
   function restore(item: Item) {
     if (item.kind !== 'crate' || item.holder !== null || item.delivered) return
     const rotation = item.rotation
@@ -201,6 +229,6 @@ export function createCargoPhysics() {
     return after
   }
 
-  return { release, launch, load, remove, restore, step, drainImpacts: () => impacts.drain(world.time),
-    placeBarrow: barrowBody(world), placeGateLeaf: gateLeafBody(world), parkTruck: truck.park }
+  return { release, relocate, launch, load, remove, restore, step, drainImpacts: () => impacts.drain(world.time), placeBarrow: barrowBody(world),
+    placeGateLeaf: gateLeafBody(world), placeFerry: ferry.place, parkTruck: truck.park }
 }

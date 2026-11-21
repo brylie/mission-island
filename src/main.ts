@@ -16,6 +16,7 @@ import { bindLookOptions } from './look-options-ui'
 import { createReticleFocus } from './reticle-ui'
 import { gateStepText } from './gate-repair'
 import { favorFeedback } from './resident-notices'
+import { ferryFeedback } from './ferry-repair-ui'
 import { createJobBoard } from './job-board-ui'
 import { atJobBoard, jobs } from './jobs'
 import { starterTools, toolNames } from './inventory'
@@ -321,7 +322,8 @@ function connect() {
         openGuide()
         break
       case 'resident-chat':
-        openGuide(incoming.resident)
+      case 'ferry-tally':
+        openGuide('resident' in incoming ? incoming.resident : 'tally')
         break
       case 'favor-accepted':
       case 'favor-pay':
@@ -329,6 +331,8 @@ function connect() {
         break
       case 'gate-step':
         actionFeedback = { key: '', label: gateStepText[incoming.step], until: performance.now() + 3200 }
+        break
+      case 'ferry-progress': case 'ferry-order': case 'ferry-stage': actionFeedback = ferryFeedback(incoming, snapshot)
         break
       case 'materials-step':
         actionFeedback = { key: '', label: materialsFeedback(incoming), until: performance.now() + 4800 }

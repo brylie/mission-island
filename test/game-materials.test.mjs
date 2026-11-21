@@ -15,7 +15,7 @@ import { materialSources, repairChoices, repairSite, sampleTray } from '../src/w
 import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
-const bench = { x: -27.1, z: -24.1 }
+const bench = { x: -23, z: -18.3 }
 const timberTrail = [{ x: -26.5, z: -10 }, { x: -26.65, z: 12.45 }]
 const stoneTrail = [{ x: -22, z: -11 }, { x: -20, z: -11 }, { x: 10, z: 12 }, { x: 32, z: 12 },
   { x: 35, z: 11 }, { x: 32, z: 3 }, { x: 30, z: -24 }, { x: 41.5, z: -26 }]

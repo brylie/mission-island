@@ -62,6 +62,12 @@ test('a restored crate makes no sound as the host reloads it', () => {
   assert.deepEqual(impacts, [])
 })
 
+test('a crate the host stages somewhere new settles without a sound', () => {
+  const { impacts, item } = cargoTrial((physics, crate) => physics.relocate(crate, open), 30)
+  assert.deepEqual(impacts, [])
+  assert.ok(Math.abs(item.x - open.x) < 0.1)
+})
+
 test('impact strength is bounded and resting chatter is filtered', () => {
   assert.equal(impactStrength(minImpactSpeed * 0.9), 0)
   assert.equal(impactStrength(Number.NaN), 0)

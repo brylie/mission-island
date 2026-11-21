@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { deliveryWaypoints, loadedDeliveryRoute } from '../src/delivery-wayfinding.ts'
 import { deliveryRadius, jobs } from '../src/jobs.ts'
-import { distanceToRoute, road } from '../src/routes.ts'
+import { distanceToRoads } from '../src/routes.ts'
 import { ridgeFlightWaypoints } from '../src/ridge-wayfinding.ts'
 import { groundHeight } from '../src/terrain.ts'
 import { waypointsAlongPath } from '../src/wayfinding.ts'
@@ -23,7 +23,7 @@ test('loaded delivery orbs guide the crew toward the current drop', () => {
   assert.equal(loadedDeliveryRoute(route), undefined)
   route.items[0].onBed = true
   assert.equal(loadedDeliveryRoute(route), 'delivery')
-  assert.ok(deliveryWaypoints.delivery.every(point => distanceToRoute(point, road) < .05))
+  assert.ok(deliveryWaypoints.delivery.every(point => distanceToRoads(point) < .05))
   assert.ok(distance(deliveryWaypoints.delivery.at(-1), town) < deliveryRadius)
   route.mission = 'complete'
   for (const id of ['farm-supplies', 'beach-gear']) {
