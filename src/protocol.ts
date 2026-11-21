@@ -1,3 +1,4 @@
+import type { FreightTicket } from './ore-contracts'
 import type { DriftwoodFrame } from './simulation/driftwood-school'
 import type { BiomeFrame } from './biome-model'
 import type { Point, Pose, starterPay } from './world'
@@ -27,6 +28,9 @@ export interface Input {
 }
 
 export interface Player extends Pose {
+  deliveryXp?: number
+  drivenCrates?: number[]
+  freightTicket?: FreightTicket
   id: number
   name: string
   discoveries: string[]

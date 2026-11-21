@@ -1,3 +1,6 @@
+import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import type { Ore } from '../ore-contracts'
+import { vehicleSpecs } from './vehicles'
 import type { Material } from '@babylonjs/core/Materials/material'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import type { MeshFactory } from '../island-meshes'
@@ -28,11 +31,11 @@ function facetBatch() {
       }
       for (let i = 2; i < corners.length; i++) indices.push(first, first + i - 1, first + i)
     },
-    mesh(meshes: MeshFactory, name: string, material: Material) {
-      const mesh = meshes.surface(name, positions, indices, material, undefined, uvs)
+    mesh(meshes: MeshFactory, name: string, material: Material, parent?: TransformNode) {
+      const mesh = meshes.surface(name, positions, indices, material, parent, uvs)
       mesh.setVerticesData(VertexBuffer.ColorKind, colors)
       meshes.shadows.addShadowCaster(mesh, false)
-      return mesh.freezeWorldMatrix()
+      return parent ? mesh : mesh.freezeWorldMatrix()
     },
   }
 }
@@ -54,6 +57,34 @@ function brokenStone(batch: ReturnType<typeof facetBatch>, x: number, y: number,
     const j = (i + 1) % sides
     batch.face([foot[i], foot[j], crown[j], crown[i]], shade * (.83 + random() * .17), phase)
   }
+}
+
+export function createOreLoad(meshes: MeshFactory, parent: TransformNode, ore: Ore) {
+  const pile = stockpiles.find(p => p.id === ore)!
+  const random = seededRandom(pile.seed)
+  const bed = vehicleSpecs.hauler.cargo
+  const batch = facetBatch()
+  // Two bucketfuls settle into uneven ridges just above the rails.
+  const rows: Corner[][] = []
+  for (let row = 0; row <= 12; row++) {
+    const v = row / 12
+    const points: Corner[] = []
+    for (let col = 0; col <= 6; col++) {
+      const u = col / 6
+      const crest = Math.sin(u * Math.PI) * Math.sin(v * Math.PI) * (.37 + .17 * Math.cos(v * Math.PI * 4))
+      const y = bed.floor + bed.height - .13 + crest + random() * .09
+      const x = (u - .5) * (bed.width - .10), z = bed.z + (v - .5) * (bed.length - .32)
+      points.push([x, y, z])
+      if (col && row) {
+        const prev = rows[row - 1]
+        batch.face([prev[col - 1], prev[col], points[col]], .82 + random() * .15)
+        batch.face([prev[col - 1], points[col], points[col - 1]], .82 + random() * .15)
+        brokenStone(batch, x - .16, y + .015, z - .16, pile.grain * (.37 + random() * .43), random, .70)
+      }
+    }
+    rows.push(points)
+  }
+  return batch.mesh(meshes, pile.id + ' truck load', meshes.paintRecipe(ore), parent)
 }
 
 function buildHopper(meshes: MeshFactory) {

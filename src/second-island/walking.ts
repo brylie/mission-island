@@ -11,6 +11,7 @@ interface Block extends MapPoint {
 // Index the unmerged, metre-scale model parts. This keeps the spaces between
 // shelter posts, beneath rotors and through gates open after graphics batching.
 export class ScenerySolids {
+  parkedVehicle?: Block
   private cells = new Map<string, Block[]>()
 
   add(block: Block) {
@@ -47,7 +48,8 @@ export class ScenerySolids {
 
   at(x: number, z: number, radius: number) {
     const cell = this.cells.get(Math.floor(x / 8) + ',' + Math.floor(z / 8))
-    return cell?.filter((b) => {
+    const candidates = this.parkedVehicle ? [...(cell ?? []), this.parkedVehicle] : cell
+    return candidates?.filter((b) => {
       const dx = x - b.x, dz = z - b.z, c = Math.cos(b.heading), s = Math.sin(b.heading)
       const ex = Math.max(0, Math.abs(dx * c - dz * s) - b.width / 2)
       const ez = Math.max(0, Math.abs(dx * s + dz * c) - b.depth / 2)

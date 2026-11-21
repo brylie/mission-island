@@ -70,3 +70,8 @@ figcaption, .map-note { color: #d8ceb7; font-size: .76rem; margin-top: .6rem; li
 .honey-order { border-top: 1px solid var(--line); margin-top: .75rem; padding-top: .68rem; font-size: .82rem; }
 .honey-order strong { color: #ffdc9c; }
 #honey-status { color: var(--muted); margin: .32rem 0 .45rem; line-height: 1.45; }
+#freight-choice { width: 100%; margin-bottom: .45rem; }
+#freight-hint, #freight-receipt:not(:empty) { margin: .4rem 0; line-height: 1.4; }
+.journey.in-cab > :not(#freight) { display: none; }
+.journey.in-cab #freight { margin: 0; border: 0; padding: 0; }
+.journey.in-cab #freight strong { font: 600 1.45rem Georgia, serif; }

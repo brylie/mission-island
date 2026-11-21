@@ -1,3 +1,4 @@
+import { crateDriverXp, haulerUnlockXp } from './ore-contracts'
 import { fisherName } from './harbor-fisher'
 import { jobs } from './jobs'
 import type { Player, Snapshot } from './protocol'
@@ -42,8 +43,11 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
     const receipt = latest
       ? `Last starter payout · ${latest.label} · +${latest.coins} coins.`
       : `Starter pay goes straight into the shared crew bank. Earn ${jobPay.crate} coins per crate, ${jobPay.delivery} extra for finishing the delivery, and ${jobPay.fire} for clearing the lookout fire.`
+    const xp = player.deliveryXp ?? 0
+    const license = xp >= haulerUnlockXp ? 'Slatecliff ore truck unlocked.' :
+      `Earn ${crateDriverXp} XP for each crate you drive and the crew delivers. The Slatecliff ore truck unlocks at ${haulerUnlockXp} XP.`
     for (const [element, value] of [
-      [home, crewHomes[player.id].name], [workTitle, heading], [work, direction], [pay, `${balance}. ${receipt}`],
+      [home, crewHomes[player.id].name], [workTitle, heading], [work, direction], [pay, `${balance}. ${receipt} ${xp} driver XP. ${license}`],
     ] as const) {
       if (element.textContent !== value) element.textContent = value
     }

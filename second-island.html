@@ -34,6 +34,14 @@
           <input id="playtest-url" type="url" readonly hidden aria-label="Playtest link" />
         <button type="button" id="resume-preview" hidden>Resume playtest</button>
         <div class="stops" id="stops" aria-label="Tour stops"></div>
+        <section class="honey-order" id="freight" aria-label="Slatecliff freight dispatch" hidden>
+          <strong>Slatecliff freight</strong>
+          <p id="freight-hint"></p>
+          <select id="freight-choice" aria-label="Dispatch selection" hidden></select>
+          <button type="button" id="freight-action" hidden></button>
+          <button type="button" id="freight-seat" hidden></button>
+          <p id="freight-receipt" role="status"></p>
+        </section>
         <section class="honey-order" id="honey-order" aria-label="Honey delivery trial" hidden>
           <strong>Long Acre honey</strong>
           <p id="honey-status" role="status"></p>
@@ -46,7 +54,8 @@
       <aside class="readout" aria-label="Survey readout" hidden id="readout">
         <span id="coordinates"></span><span id="discoveries"></span><span id="performance" hidden></span>
       </aside>
-      <footer class="keys"><span><kbd>W A S D</kbd> Walk</span><span><kbd>Shift</kbd> Run</span><span><kbd>Space</kbd> Jump</span><span>Drag to look</span><span>Scroll to zoom</span></footer>
+      <footer class="keys" id="walk-keys"><span><kbd>W A S D</kbd> Walk</span><span><kbd>Shift</kbd> Run</span><span><kbd>Space</kbd> Jump</span><span>Drag to look</span><span>Scroll to zoom</span></footer>
+      <footer class="keys" id="haul-keys" hidden><span><kbd>W / S</kbd> Drive / reverse</span><span><kbd>A / D</kbd> Steer</span><span><kbd>Space</kbd> Brake</span><span><kbd>M</kbd> Map</span></footer>
     </main>
     <dialog id="atlas" aria-labelledby="atlas-title">
       <header><div><p class="eyebrow">Saltwind Island</p><h2 id="atlas-title">Site map</h2></div><button id="atlas-close" type="button">Close <kbd>Esc</kbd></button></header>
