@@ -24,7 +24,7 @@ import { createPhenomena } from './island-phenomena'
 import { createFerryTerminal } from './island-terminal'
 import { createStarterWildlife, createUnderstory, createWildflowers } from './island-wildlife'
 import { jobBoard } from './jobs'
-import { footpaths, road, walkways } from './routes'
+import { depotJunction, depotLane, footpaths, harborRoad, walkways } from './routes'
 import { createShellglassTide } from './shellglass-art'
 import { islandRocks, islandTrees } from './scenery'
 import type { SiteFeature } from './worlds/site-feature'
@@ -60,7 +60,8 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const paving = createSurfaceMaterial(meshes.scene, 'concrete')
   const wetPaving = createWetPaving(paving)
   for (const path of walkways) createSidewalk(meshes, path, paving)
-  createRoad(meshes, road)
+  createRoad(meshes, harborRoad)
+  createRoad(meshes, depotLane, 6, { lift: -.003, marked: [depotLane[0], { x: depotJunction.x - 4, z: depotJunction.z }] })
 
   buildings.forEach((building, index) => {
     if (index !== substitutions.replaceBuilding) meshes.batchModel(createHouse(meshes, building))
@@ -80,7 +81,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     meshes.box(jobBoard.x + dx, boardY + 1.38, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
   }
   createDock(meshes, saltBloomPile, study?.target === 'dock' ? study.material : undefined)
-  createFerryTerminal(meshes)
+  const ferry = createFerryTerminal(meshes)
   const features = (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site)
   placeSiteFeatures(meshes, features, walkingHeight)
   const shellglass = createShellglassTide(meshes, features.find(feature => feature.site === 'shellglass' && feature.model === 'tide-staff'))
@@ -163,5 +164,5 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     return tide
   }
 
-  return { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden, residents }
+  return { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden, residents, ferry }
 }

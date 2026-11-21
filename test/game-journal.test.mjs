@@ -162,6 +162,7 @@ test('an older save starts its journal from the places its crew found, and a mal
 test('both PR save formats load and rewrite as the same journal version', (t) => {
   const file = saveFile(t)
   const base = createGame().snapshotForSave()
+  const { ferryRepair, ...legacyWorld } = base.world
   const legacy = [
     {
       stored: {
@@ -191,8 +192,10 @@ test('both PR save formats load and rewrite as the same journal version', (t) =>
     },
   ]
   for (const { stored, expected } of legacy) {
-    file.write({ ...base, islandTime: 100, world: { ...base.world, journal: stored } })
+    file.write({ ...base, version: 4, islandTime: 100, world: { ...legacyWorld, journal: stored } })
     const migrated = file.load()
+    assert.equal(migrated.version, 5)
+    assert.deepEqual(migrated.world.ferryRepair, ferryRepair)
     assert.deepEqual(migrated.world.journal, expected)
     file.write(createGame({ save: migrated }).snapshotForSave())
     assert.deepEqual(file.load().world.journal, expected)

@@ -9,6 +9,7 @@ import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { weatherAt } from '../src/weather.ts'
 import { truckStart } from '../src/world.ts'
 import { initialGateRepair } from '../src/gate-repair.ts'
+import { initialFerryRepair } from '../src/ferry-repair.ts'
 import { initialResidents } from '../src/residents/trust.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { makeItems } from './items.ts'
@@ -20,17 +21,22 @@ function restoreAviation(saved: AviationProgress | undefined): Snapshot['aviatio
   return { qualified: saved?.qualified ?? false, surveyed: saved?.surveyed ?? false, aerial: [...saved?.aerial ?? []], flight: null, marked: false }
 }
 
+const savedFerry = (save?: IslandSave) => save?.world ?? initialFerryRepair()
+
 export function restoreIsland(
-  physics: Pick<ReturnType<typeof createCargoPhysics>, 'parkTruck' | 'restore' | 'release'>,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'parkTruck' | 'restore' | 'release' | 'placeFerry'>,
   juniper: ReturnType<typeof createJuniperHabitat>,
   driftwood: DriftwoodFrame,
   save?: IslandSave,
 ) {
   const islandTime = save?.islandTime ?? 0
+  // Place the barrier or the restored deck before parking, so a truck saved on the ramp parks on it.
+  physics.placeFerry(savedFerry(save))
   const state: Snapshot = {
     crewCoins: save?.crewCoins ?? 0, lastStarterPay: save?.lastStarterPay,
     type: 'state', players: [], items: makeItems(),
-    mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...initialGateRepair(), ...structuredClone(save?.world),
+    mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...initialGateRepair(), ...initialFerryRepair(),
+    ...structuredClone(save?.world),
     skiff: restoreSkiff(save?.world.skiff),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
     weather: weatherAt(islandTime), islandTime,
@@ -56,14 +62,14 @@ export function restoreIsland(
 }
 
 export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['crew']): IslandSave {
-  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residents, lastFavorPay, journal, materialsWork } = state
+  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residents, lastFavorPay, journal, materialsWork, ferryRepair } = state
   const { x, z, heading } = truck
   const { qualified, surveyed, aerial } = state.aviation
   return {
-    version: 4, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
+    version: 5, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
     world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial },
-      gate, gateRepair, residents, journal, materialsWork, produce: state.farmWork.progress,
+      gate, gateRepair, residents, journal, materialsWork, ferryRepair, produce: state.farmWork.progress,
       ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }

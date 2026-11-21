@@ -1,5 +1,6 @@
 import type { TrialRun } from '../../src/live-checkpoints.ts'
 import { fieldOutingScenario } from './field-outing.ts'
+import { ferryScenarios } from './ferry.ts'
 import { harborScenarios } from './harbor.ts'
 import { materialsScenario } from './materials.ts'
 import { residentScenarios } from './residents.ts'
@@ -7,7 +8,7 @@ import { ridgeScenarios } from './ridge.ts'
 import { wrenScenarios } from './wren.ts'
 
 // The first entry is the default for an unconfigured playtest host.
-const scenarios = [...wrenScenarios, ...harborScenarios, ...ridgeScenarios, ...residentScenarios, materialsScenario, fieldOutingScenario]
+const scenarios = [...wrenScenarios, ...harborScenarios, ...ridgeScenarios, ...residentScenarios, materialsScenario, ...ferryScenarios, fieldOutingScenario]
 const byId = new Map(scenarios.map(scenario => [scenario.id, scenario]))
 if (byId.size !== scenarios.length) throw new Error('Live scenario IDs must be unique')
 

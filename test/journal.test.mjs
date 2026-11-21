@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { actionHint, interactRequest } from '../src/actions.ts'
+import { fieldInteractions } from '../src/field-interactions.ts'
 import { juniperCenter } from '../src/juniper-habitat.ts'
 import { journalCatalog, journalEntry, journalSubjects } from '../src/journal/catalog.ts'
 import { fishAt, fishKinds } from '../src/journal/fish.ts'
@@ -85,9 +86,11 @@ test('the reticle offers each subject in range once, then only a behavior the cr
   const watcher = player(0, hare)
   const state = island()
   const options = journalInteractions(state, watcher)
-  assert.deepEqual(options.map(({ name, label, subject }) => [name, label, subject]), [
+  assert.deepEqual(options.slice(0, 2).map(({ name, label, subject }) => [name, label, subject]), [
     ['Brown hare · fleeing', 'Record in journal', 16], ['Juniper fox', 'Record in journal', 32],
   ])
+  assert.ok(options.slice(2).some(({ name, subject }) =>
+    name === 'White clover' && sightingEntries(state, watcher, subject).ids.includes('sight:clover')))
   assert.deepEqual(sightingEntries(state, watcher, 16).ids, ['sight:hare', 'sight:hare/fleeing'])
   // A fox that is chasing shows nothing the journal lists, so only the fox itself is new.
   assert.deepEqual(sightingEntries(state, watcher, 32).ids, ['sight:fox'])
@@ -104,6 +107,16 @@ test('the reticle offers each subject in range once, then only a behavior the cr
   assert.deepEqual(sightingEntries(island(), far, 16), { ids: [], at: undefined })
   assert.deepEqual(sightingEntries(island(), watcher, 17).ids, [])
   assert.deepEqual(sightingEntries(island(), watcher, 16 * 40).ids, [])
+})
+
+test('general hare records include grazing and sheltering in dry weather', () => {
+  const state = island()
+  const watcher = player(0, juniperCenter)
+  for (const behavior of ['grazing', 'sheltering']) {
+    state.juniper.hares[0].behavior = behavior
+    assert.deepEqual(sightingEntries(state, watcher, 16).ids, ['sight:hare', `sight:hare/${behavior}`])
+  }
+  assert.ok(!fieldInteractions(state, watcher).some(({ record }) => record === 'sight:hare/sheltering'))
 })
 
 test('a startled school is noted as regrouping, and an empty one offers nothing', () => {

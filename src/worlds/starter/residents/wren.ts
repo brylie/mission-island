@@ -10,7 +10,7 @@ export const repairSupplyFavor: FavorDefinition = {
   offer: '', reminder: '', detail: '', next: '', guide: materialsGuide, listed: materialsOpen,
 }
 
-// Wren mends things at the bench by the ferry approach and lives in the lilac-roofed cottage.
+// Wren mends things at the bench by the ferry freight yard and lives in the lilac-roofed cottage.
 // The garden gate is a custom favor: talking accepts it, and its steps live in the gate repair.
 export const wren: ResidentDefinition = {
   id: 'wren',

@@ -1,7 +1,8 @@
 import { seededRandom } from './seeded-random.ts'
 import { ridgeViewpoint } from './worlds/starter/sites.ts'
 import { starterPropTop } from './worlds/starter/colliders.ts'
-import { distanceToRoute, footpaths, road, shellglassPoint, splitstone } from './routes.ts'
+import { distanceToRoads, distanceToRoute, footpaths, shellglassPoint, splitstone } from './routes.ts'
+import { inFerryYard } from './worlds/starter/ferry-terminal.ts'
 import { coastRadius, falls, grove, groundHeight, headland, pool, waterDepth } from './terrain.ts'
 import { beach, distance, forest, harbor, island, lookout, town } from './world.ts'
 import type { Point } from './world.ts'
@@ -48,7 +49,7 @@ export const islandTrees = Array.from({ length: 92 }, (_, variant) => {
 }).filter((tree) => {
   const { x, z } = tree
   return coastRadius(tree) <= 0.89 && !(x < -34 && z < 0) && !(x > 18 && z > -1) &&
-    !(x > 2 && z < -10) && distance(tree, lookout) >= 7 && distanceToRoute(tree, road) >= 5.2 &&
+    !(x > 2 && z < -10) && distance(tree, lookout) >= 7 && distanceToRoads(tree) >= 5.2 && !inFerryYard(tree, 1.5) &&
     footpaths.every(({ points }) => distanceToRoute(tree, points) >= 2.2)
 })
 
@@ -62,7 +63,8 @@ export const islandRocks = Array.from({ length: 82 }, (_, index) => {
   return { x, z, size, angle, light: index % 3 === 0, ground }
 }).filter((rock) =>
   distance(rock, harbor) >= 8 && distance(rock, town) >= 13 && distance(rock, beach) >= 12 &&
-  distance(rock, lookout) >= 6 && distanceToRoute(rock, road) >= 4.2 + rock.size * 0.55 &&
+  distance(rock, lookout) >= 6 && distanceToRoads(rock) >= 4.2 + rock.size * 0.55 &&
+  !inFerryYard(rock, 1 + rock.size * .5) &&
   footpaths.every(({ points, width }) => distanceToRoute(rock, points) >= width / 2 + rock.size * 0.56 + 0.5),
 )
 

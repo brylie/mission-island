@@ -16,6 +16,7 @@ import type { FavorReceipt, ResidentRecords } from './residents/trust'
 import type { InteractionChoice } from './interaction-options'
 import type { FishId } from './journal/fish'
 import type { Journal } from './journal/journal'
+import type { FerryRepair } from './ferry-repair'
 import type { FarmOrderId, FarmWork } from './farm-orders'
 import type { MaterialPockets, MaterialsWork, RepairMaterial } from './materials-work'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
@@ -119,6 +120,7 @@ export interface Snapshot {
   gateRepair: GateRepair
   residents: ResidentRecords
   lastFavorPay?: FavorReceipt
+  ferryRepair: FerryRepair
   materialsWork: MaterialsWork
   aviation: AviationState
   journal: Journal
@@ -133,7 +135,7 @@ export type ServerMessage =
   | { type: 'barrow-returned' }
   | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
   | { type: 'order-pay'; coins: number; id: JobId }
-  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'open-wardrobe' | 'open-clothing-counter' }
+  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'ferry-tally' | 'open-wardrobe' | 'open-clothing-counter' }
   | { type: 'resident-chat'; resident: string }
   | { type: 'tide-staff'; time: number }
   | { type: 'field-unavailable' }
@@ -142,6 +144,9 @@ export type ServerMessage =
   | { type: 'gate-step'; step: GateStep }
   | { type: 'materials-step'; step: 'gathered' | 'inspected' | 'timber-checked' | 'qualified'; material: RepairMaterial }
   | { type: 'materials-step'; step: 'delivered'; material: RepairMaterial; remaining: number }
+  | { type: 'ferry-progress'; kind: 'coins' | 'timber'; player: number; amount: number }
+  | { type: 'ferry-order'; crates: number }
+  | { type: 'ferry-stage'; stage: number }
   | { type: 'angler-purchase'; result: ClothingPurchaseResult }
   | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }
   | { type: 'flight-result'; result: FlightResult; pilotId: number; aerial?: string[]; recorded?: number }

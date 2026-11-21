@@ -9,7 +9,7 @@ import { groundHeight } from './terrain.ts'
 import { distance, type Point } from './world.ts'
 import { driftwoodFoxgloves, driftwoodWrack, shellglassLimpets, shellglassStaff, starterFeatures } from './worlds/starter/sites.ts'
 
-type FieldInteraction = Interaction & { action: 'inspect-field'; subject: number; record: OutingId }
+type FieldInteraction = Interaction & { action: 'inspect-field'; subject: number; record: OutingId; at: Anchor }
 type Anchor = Point & { y: number }
 
 const navigation = habitatNavigation(juniperLayout.patches)

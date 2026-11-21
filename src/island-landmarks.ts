@@ -26,7 +26,7 @@ export const landmarks: Landmark[] = [
   { point: clothingCounter, title: 'Clothing counter', kind: 'clothing', height: 1.48, closeRange: 16 },
   { point: jobBoard, title: 'Harbor job board', kind: 'board', height: 2.35 },
   { point: { x: 21, z: 22 }, title: 'Fire Supplies', kind: 'equipment', height: 2.4 },
-  { point: ferryTerminal, title: 'Ferry terminal · Closed', kind: 'ferry', height: 2.1 },
+  { point: ferryTerminal, title: 'Ferry terminal', kind: 'ferry', height: 2.1 },
   { point: materialSources.timber, title: materialSources.timber.name, kind: 'materials-timber', height: 1.16, closeRange: 18 },
   { point: materialSources.stone, title: materialSources.stone.name, kind: 'materials-stone', height: 1.16, closeRange: 18 },
   { point: repairSite, title: repairSite.name, kind: 'materials-repair', height: 1.55, closeRange: 22 },

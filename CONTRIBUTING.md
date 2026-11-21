@@ -29,6 +29,9 @@ Press **O → Live playtest** or open **Live checkpoints** in the Workbench on t
 | Scenario ID | Starting condition |
 | --- | --- |
 | `dock-fishing` | Each angler stands at the end of the fishing dock, facing open water with a rod equipped. Cast immediately to test the current fishing mechanic. |
+| `ferry-approach` | The ferry repair is open and the crew stands by the flatbed on the return road from Seabrook. Drive to the ferry without the map to try the approach. |
+| `ferry-restored` | The ferry ramp is open. The flatbed waits on Harbor Depot road, facing the terminal. |
+| `ferry-yard` | The flatbed is parked in the ferry freight yard with two timber crates behind it. Stack them by the yard pallet. |
 | `harbor-delivery` | The crew starts beside the supply crates with the Harbor Depot delivery active. |
 | `wren-fit` (default) | One player has the toolbox and the other has the pin. In solo play the toolbox rests by the gate. Press **E** to fit the pin and **E** again to test the swing. |
 | `wren-discover` | The crew arrives outside the unrepaired garden. |

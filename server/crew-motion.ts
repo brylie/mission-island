@@ -6,6 +6,7 @@ import { distance, jumpSpeed, lookout, type Point } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
 import { looseCargoTop } from './items.ts'
 import { gateBlockers, solidTop } from '../src/gate-repair.ts'
+import { ferrySolids } from '../src/ferry-repair.ts'
 import { barrowWalk } from '../src/barrow-gait.ts'
 import { barrowTop } from '../src/barrow.ts'
 import { canPushBarrow } from './barrow-motion.ts'
@@ -41,12 +42,12 @@ export function walkCrew(
   const { player, input } = member
   const { truck } = state
   const item = heldItem(state, player)
-  const gate = gateBlockers(state)
+  const solids = [...gateBlockers(state), ...ferrySolids(state)]
   const { barrow, progress } = state.farmWork
   const pushing = barrow?.handler === player.id
   const walkingInput = pushing ? { ...input, sprint: false } : input
   const extraSurface = (point: Point, margin: number) =>
-    Math.max(looseCargoTop(state.items, point, margin), solidTop(gate, point, margin),
+    Math.max(looseCargoTop(state.items, point, margin), solidTop(solids, point, margin),
       barrow && !pushing ? barrowTop(barrow, point, margin) : -Infinity)
   stepPlayer(member, before, truck, connected ? walkingInput : stopped, Boolean(item), tickSeconds, extraSurface,
     pushing ? { pace: progress.load ? barrowWalk.loadedSpeed : barrowWalk.emptySpeed, allows: (pose) => canPushBarrow(state, player, pose) } : undefined)

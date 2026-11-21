@@ -2,8 +2,8 @@ import { jobs, secondIslandGoal } from './jobs'
 import type { JobBoardState, JobId } from './jobs'
 
 export function secondIslandProgress(completed: number) {
-  return completed >= secondIslandGoal ? 'Crew ready · second-island travel coming later'
-    : `Second island · ${completed} / ${secondIslandGoal} orders complete`
+  return completed >= secondIslandGoal ? 'Crew ready · the ferry repair is open at the tally board by the barrier'
+    : `Ferry repair · ${completed} / ${secondIslandGoal} orders complete`
 }
 
 export function jobDescription(job: typeof jobs[JobId]) {

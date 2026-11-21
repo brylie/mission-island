@@ -1,7 +1,7 @@
 import { gullAt } from '../gull-flight.ts'
 import { starterGullPerches } from '../gull-sites.ts'
 import type { Interaction } from '../interaction-options.ts'
-import { juniperCenter } from '../juniper-habitat.ts'
+import { juniperCenter, juniperLayout } from '../juniper-habitat.ts'
 import type { Player, Snapshot } from '../protocol.ts'
 import { walkingHeight, waterLevel } from '../terrain.ts'
 import { weatherAt } from '../weather.ts'
@@ -20,6 +20,7 @@ const instanceSlots = 16
 
 const raised = (point: Point, height: number) => ({ x: point.x, y: walkingHeight(point) + height, z: point.z })
 const inHollow = (point: Point) => ({ x: juniperCenter.x + point.x, z: juniperCenter.z + point.z })
+const cloverPatches = juniperLayout.patches.filter(({ kind }) => kind === 'clover').map(inHollow)
 const gullBehavior: Partial<Record<ReturnType<typeof gullAt>['phase'], string>> = { Resting: 'resting', Settling: 'resting', Glide: 'gliding' }
 
 function instances(state: World, subject: SubjectId): Instance[] {
@@ -42,7 +43,7 @@ function instances(state: World, subject: SubjectId): Instance[] {
         return { at: { x, y: y + .15, z }, radius: .7, behavior: gullBehavior[phase] }
       })
     case 'sight:willow': return [{ at: raised(mirrorPoolWillow, .5), radius: 1.6 }]
-    case 'sight:clover': return [] // The grazed patch has its own inspection on the outing.
+    case 'sight:clover': return cloverPatches.map(patch => ({ at: raised(patch, .1), radius: .55 }))
     case 'sight:lookout': return [{ at: raised(lookout, 2.4), radius: 2.6 }]
     case 'sight:ferry': return [{ at: raised(ferryTerminal, 1.2), radius: 3 }]
   }
@@ -51,7 +52,6 @@ function instances(state: World, subject: SubjectId): Instance[] {
 // The entries one instance would add: the subject on its first record, and whatever listed behavior it shows.
 function newEntries(state: World, kind: number, instance: Instance) {
   const subject = journalSubjects[kind]
-  if (subject.id === 'sight:hare' && (instance.behavior === 'grazing' || instance.behavior === 'sheltering')) return []
   const ids: string[] = state.journal.entries[subject.id] ? [] : [subject.id]
   const behaviors: Record<string, string> = subject.behaviors
   const behavior = instance.behavior && behaviors[instance.behavior] ? behaviorId(subject.id, instance.behavior) : undefined

@@ -24,9 +24,27 @@ function roundCorners(points: readonly Point[], trim: number): Point[] {
   return path
 }
 
-export const road = roundCorners([
-  { x: -55, z: -11 }, { x: -19, z: -11 }, { x: 10, z: 12 }, { x: 51, z: 12 },
-], 7)
+// Harbor Depot road runs from the ferry ramp, straight north past the freight yard, then curves away to Seabrook.
+// Its points run from the ramp end so the ramp lane stays one straight segment on the terminal's centreline.
+export const harborRoad = roundCorners([
+  { x: ferryTerminal.x, z: ferryTerminal.z }, { x: ferryTerminal.x, z: -10 }, { x: 10, z: 12 }, { x: 51, z: 12 },
+], 9.5)
+
+function crossingAt(path: readonly Point[], z: number): Point {
+  const i = path.findIndex((point) => point.z >= z)
+  const a = path[i - 1], b = path[i]
+  return lerp(a, b, (z - a.z) / (b.z - a.z))
+}
+
+// The depot lane leaves Harbor Depot road at the fork and runs west past the depot to the cottages.
+const depotLaneZ = -11
+export const depotJunction = crossingAt(harborRoad, depotLaneZ)
+export const depotLane: Point[] = [{ x: -55, z: depotLaneZ }, depotJunction]
+export const roads = [harborRoad, depotLane]
+
+export function distanceToRoads(point: Point) {
+  return Math.min(...roads.map((path) => distanceToRoute(point, path)))
+}
 
 export const shellglassPoint = { x: 43.2, z: -31.4 }
 
@@ -63,8 +81,6 @@ export const footpaths: Footpath[] = [
   { name: 'Lookout trail', surface: 'gravel', width: 3.2, points: roundCorners([{ x: 17, z: 12 }, { x: 20, z: 22 }, lookout], 4) },
   beachTrail,
   { name: 'Harbor trail', surface: 'gravel', width: 3.1, points: roundCorners([{ x: -46, z: -11 }, harbor, { x: -44, z: -30 }], 3) },
-  { name: 'Ferry approach', surface: 'gravel', width: 5,
-    points: [{ x: ferryTerminal.x, z: -14 }, ferryTerminal] },
   { name: 'Splitstone strand', surface: 'desire', width: .85, points: roundCorners([
     { x: 41.7, z: -30.2 }, { x: 44.1, z: -29.05 }, { x: 45.85, z: -28.25 },
   ], 1) },

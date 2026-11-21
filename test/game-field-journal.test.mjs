@@ -93,6 +93,10 @@ test('the Juniper lookout records distinct live hare behavior, with stale and lo
   const dry = setup(t, { players: [player(0, lookout), player(1)], arrange: save => { save.islandTime = 30 } })
   const a = dry.join(tokens[0]), b = dry.join(tokens[1])
   const grazing = 'sight:hare/grazing', sheltering = 'sight:hare/sheltering'
+  const clover = option(a, 'sight:clover')
+  assert.ok(clover)
+  assert.ok(!interactions(a.state, a.player).some(({ action, at }) =>
+    action === 'record' && at?.x === clover.at.x && at?.z === clover.at.z))
   dry.advanceUntil(() => Boolean(option(a, grazing)), 500)
   const grazed = option(a, grazing)
   choose(b, grazed)

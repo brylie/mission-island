@@ -29,7 +29,7 @@ export const harborDock = { x: -44, firstZ: -29, planks: 18, spacing: 0.49, widt
 export const harborDockPiles = [-45.6, -42.4].flatMap(x =>
   [-31, -34, -37].map(z => ({ x, z, bottom: -1.545, top: .705, diameter: .43 })))
 export const dockEndZ = harborDock.firstZ - (harborDock.planks - 1) * harborDock.spacing
-export const ferryTerminal = { x: -32, z: -31, width: 6 }
+export const ferryTerminal = { x: -30, z: -31, width: 6 }
 export const truckBed = { width: 2.28, length: 3.12, center: -1.39, top: 1.12 }
 export const truckRoof = { width: 2.36, length: 1.52, center: 1.03, top: 2.3 }
 export const truckHood = { width: 2.46, length: 1.07, center: 2.325, top: 1.43 }
@@ -58,8 +58,9 @@ export const crateStarts: Point[] = [
   { x: -49, z: -15 }, { x: -47, z: -17 }, { x: -45, z: -15 },
 ]
 export const extinguisherStarts: Point[] = [{ x: 20, z: 22 }, { x: 22, z: 22 }]
-// Wren works at a mending bench on the grass beside the ferry approach. The loaned toolbox lives on its top.
-export const mendingBench = { x: -27.4, z: -26.6, heading: Math.PI / 2, top: .86 }
+// Wren works at a mending bench on the grass beside Harbor Depot road, at the north edge of the ferry freight yard.
+// The loaned toolbox lives on its top.
+export const mendingBench = { x: -23.4, z: -15.8, heading: Math.PI / 2, top: .86 }
 export const toolboxHome: Point = { x: mendingBench.x, z: mendingBench.z + .42 }
 export const itemStarts = [
   ...crateStarts.map((start) => ({ kind: 'crate' as const, start })),
