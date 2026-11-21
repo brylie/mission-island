@@ -7,7 +7,7 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | Key | Action |
 | --- | --- |
 | **W A S D** or **arrow keys** | Walk relative to the camera. In the truck or skiff, W/S move forward or reverse and A/D steer. |
-| **E** | Use the action shown in the prompt. Pick up or deliver cargo, work a farm plot, contribute to a market order, or open the job board. |
+| **E** | Use the action shown in the prompt. Pick up or deliver cargo, work a farm plot, contribute to a market order, open the job board, or work on a neighbor's repair. |
 | **F** | Board or leave a stopped truck or skiff. The first player takes the truck wheel. Both skiff seats can paddle. |
 | **Shift** | Hold to sprint on foot or drive slowly and steer gently. |
 | **Space** | Jump on foot or hold to brake while driving. |
@@ -34,6 +34,10 @@ The truck has four-wheel suspension and follows the terrain under each wheel. **
 After the lookout fire, press **E** at the Harbor Depot job board to take the next crew order. You can read the board from the mission panel anywhere on the island. Deliver seed crates to Island Farm, take beach gear to Driftwood Beach, or fill fish and carrot orders at Seabrook Market. Either player can contribute to an order. You can keep fishing, farming, or exploring while the order is open.
 
 Each completed order deposits its posted reward once in the crew bank. Both islands show the same balance. Either player can use it to buy seeds or a uniform. Four completed orders mark the crew ready for the future second island. Coins are available to spend along the way. See the [crew orders specification](mechanics/crew-orders.md) for payouts and rules.
+
+## Helping Wren
+
+Wren lives in the lilac-roofed cottage just west of yours. The garden gate drags a groove in the path and sticks a short way open. Try it and you can't squeeze through. Talk to Wren at the cottage, or at the depot mending bench during the day, to borrow the red toolbox from the peg east of the gate. Inspect the hinge with **E**, pick up a hinge pin at the mending bench, and fit it at the gate with the toolbox close by. Then swing the gate to test it. One of you can do all of it, or split the work: one inspects and holds the toolbox while the other fetches the pin. The crew bank gets five coins once, and Wren remembers who helped. If your crewmate leaves with the toolbox, ask Wren to hang it back on its peg. Come back the next morning to see Wren use the gate. See [neighbor repairs](mechanics/neighbor-repairs.md) for the details.
 
 ## Starting tools and island life
 

@@ -1,3 +1,4 @@
+import { fenceHeight, fenceRuns, mendingBench, plank } from '../../gate-repair.ts'
 import { juniperSolids } from '../../juniper-habitat.ts'
 import { jobBoard } from '../../jobs.ts'
 import { beachUmbrellas, lampPosts, shellRocks, starterFeatures } from './sites.ts'
@@ -41,6 +42,8 @@ export const starterSolids = [
   ...lampPosts.flatMap((post) => solidsAt(post, [[.14, .14, 2.74]])),
   ...beachUmbrellas.flatMap((post) => solidsAt(post, [[.16, .16, 2.27]])),
   ...shellRocks.flatMap((rock) => solidsAt(rock, [[rock.size, rock.size * .65, .17]], rock.heading)),
+  ...fenceRuns.map(({ from, to }) => plank(from, to, .12, fenceHeight)),
+  ...solidsAt(mendingBench, [[1.6, .7, .86]], mendingBench.heading),
 ]
 
 export function starterPropTop(point: Point, padding: number) {

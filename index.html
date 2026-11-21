@@ -131,7 +131,7 @@
         </div>
       </aside>
 
-      <div class="prompt" id="prompt" hidden><kbd id="prompt-key"></kbd><span id="prompt-action"></span></div>
+      <div class="prompt" id="prompt" hidden aria-live="polite"><kbd id="prompt-key"></kbd><span id="prompt-action"></span></div>
       <div class="notice" id="notice" hidden role="status"></div>
       <footer class="controls" aria-label="Game controls">
         <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Walk / drive</span></div>
@@ -175,6 +175,11 @@
           <p id="guide-work"></p>
           <p id="guide-pay"></p>
         </section>
+        <section id="guide-favor" hidden>
+          <h3 id="guide-favor-title"></h3>
+          <p id="guide-favor-detail"></p>
+          <p id="guide-favor-next"></p>
+        </section>
         <section>
           <h3>Between shifts</h3>
           <p>The gravel turn east of Harbor Depot leads to the closed ferry terminal. The damaged ramp needs a crew to repair it someday.</p>
@@ -185,7 +190,7 @@
       </div>
       <div id="fisher-conversation" hidden>
         <p id="fisher-line"></p>
-        <p>“You’ll find me at the small dock most mornings. Pick up the rod from your cottage chest and cast from the dock if you’d like to try your luck.”</p>
+        <p id="fisher-advice"></p>
       </div>
       <form method="dialog"><button type="submit" autofocus>Close</button></form>
     </dialog>

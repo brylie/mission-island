@@ -10,6 +10,12 @@ A crew should be able to give directions using a person and a detail they rememb
 
 **Walk it.** Follow Mara from the porch to work and back. Talk while the partner boards the skiff. Skip a night together and find Mara again by the clock. Can a first-time visitor still identify this as a fishing place after Mara goes home?
 
+## Wren and the garden gate
+
+**Playable.** Wren lives in the lilac-roofed cottage west of the crew cottages and works at the mending bench beside the Harbor Depot freight yard from 07:00 to 17:00. A tall picket fence closes off the front garden. The gate's worn top hinge pin lets the leaf drop into a groove, so it sticks a short way open. Until it is fixed, Wren goes out the back door and walks the long way round, west of the boulder by the lane. Either player can borrow the toolbox from the peg east of the gate, fetch a pin from the bench and mend the gate. From the next dawn Wren takes the shortcut through the gate, the groove has grassed over, and Wren greets the crew as the people who fixed it. [Neighbor repairs](../mechanics/neighbor-repairs.md) · [Gate repair #92](https://github.com/brylie/mission-island/issues/92)
+
+**Walk it.** Follow Wren's detour and the shortcut at walking height in daylight, rain and at night. Try the sagging gate from both sides. Watch a crewmate follow Wren out through the open gate. Can either player tell from the cottage alone whether the repair has been done?
+
 ## The shopkeeper and Seabrook Market
 
 **Playable.** The striped awning is where players sell fish and carrots or buy a carrot seed. Both see the money change. The seed goes to the buyer. The nearby starter freight drop gives players a reason to learn the road to town.

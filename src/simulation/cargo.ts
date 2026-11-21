@@ -1,6 +1,7 @@
 import { starterSolids } from '../worlds/starter/colliders.ts'
 import { Body, Box, Heightfield, SAPBroadphase, Sphere, Vec3, World } from 'cannon-es'
-import type { Input, Item } from '../protocol.ts'
+import type { Input, Item, Snapshot } from '../protocol.ts'
+import { gateBlockers } from '../gate-repair.ts'
 import { buildings, chestSize, crateSize, crateStarts, crewHomes, dockEndZ, harborDock, truckBed } from '../world.ts'
 import type { Point } from '../world.ts'
 import { truckPoint, truckSurface } from '../truck-pose.ts'
@@ -8,6 +9,20 @@ import type { Truck, TruckPose } from '../truck-pose.ts'
 import { islandRocks, islandTrees, northernProps, treeTrunkRadius } from '../scenery.ts'
 import { coastPoint, groundHeight, maxWadeDepth, shoreProfile, waterDepth, waterLevel } from '../terrain.ts'
 import { createTruckPhysics } from './truck.ts'
+
+// The garden gate leaf moves with host state, so crates meet it where players see it.
+function gateLeafBody(world: World) {
+  const [leaf] = gateBlockers({ gate: { open: false, closePending: false }, gateRepair: { stage: 'sagging', pinHolder: null } })
+  const body = new Body({ position: new Vec3(leaf.x, (leaf.top + leaf.floor) / 2, leaf.z),
+    shape: new Box(new Vec3(leaf.halfWidth, (leaf.top - leaf.floor) / 2, leaf.halfDepth)) })
+  world.addBody(body)
+  return (state: Pick<Snapshot, 'gate' | 'gateRepair'>) => {
+    const [solid] = gateBlockers(state)
+    body.position.set(solid.x, (solid.top + solid.floor) / 2, solid.z)
+    body.quaternion.setFromEuler(0, solid.heading, 0)
+    body.aabbNeedsUpdate = true
+  }
+}
 
 export function createCargoPhysics() {
   const world = new World({ gravity: new Vec3(0, -9.82, 0) })
@@ -159,5 +174,5 @@ export function createCargoPhysics() {
     return after
   }
 
-  return { release, launch, load, remove, restore, step, parkTruck: truck.park }
+  return { release, launch, load, remove, restore, step, placeGateLeaf: gateLeafBody(world), parkTruck: truck.park }
 }

@@ -1,9 +1,10 @@
 import './style.css'
 import { boundaryBuoys, buoyBoundaryPoint, coastPoint } from './terrain'
-import { actionHint, atClothingCounter, heldItem, inSkiff } from './actions'
+import { actionHint, atClothingCounter, heldItem, inSkiff, interactRequest } from './actions'
 import { readStorage, writeStorage } from './browser-storage'
 import { cleanCrewName, defaultAppearance, shirtColor } from './crew-appearance'
 import { createCrewGuide } from './crew-guide-ui'
+import { favorProgress, gateMendedStage, gateRepairGuide, gateStepText, residentName } from './gate-repair'
 import { farm, market } from './farm'
 import { createJobBoard, jobDescription, secondIslandProgress } from './job-board-ui'
 import { activeJob, atJobBoard, deliveryDrop, jobBoard, jobs, secondIslandGoal } from './jobs'
@@ -278,6 +279,12 @@ function missionCard(state: Snapshot) {
       value, max: job.quantity, text: `${value} / ${job.quantity} ${job.goods}`, instruction: 'Press E at the market awning to contribute.',
     }
   }
+  const local = state.players.find((entry) => entry.id === id)
+  if (local && state.gateRepair.stage !== 'sagging' && gateMendedStage(state) !== 'settled') {
+    const favor = gateRepairGuide(state, local), value = favorProgress(state.gateRepair)
+    return { label: 'NEIGHBOR FAVOR', title: favor.title, detail: favor.detail, progress: 'Repair steps', value, max: 4,
+      text: `${value} / 4 steps`, instruction: favor.next }
+  }
   const completed = Math.min(state.jobs.completed, secondIslandGoal)
   return {
     label: 'ISLAND SERVICE', title: 'Choose your next job', detail: 'Visit the job board at Harbor Depot. You can fish, farm, or explore between orders.',
@@ -451,7 +458,15 @@ function connect() {
         openGuide()
         break
       case 'fisher-chat':
-        openGuide(true)
+      case 'wren-chat':
+        openGuide(incoming.type === 'wren-chat' ? 'wren' : 'fisher')
+        break
+      case 'favor-pay':
+        actionFeedback = { key: `+${incoming.coins} coins`, label: `${residentName}’s gate mended · Crew bank · ${residentName} trust +${incoming.trust}`,
+          until: performance.now() + 4200 }
+        break
+      case 'gate-step':
+        actionFeedback = { key: '', label: gateStepText[incoming.step], until: performance.now() + 3200 }
         break
       case 'open-wardrobe':
       case 'open-clothing-counter':
@@ -581,7 +596,7 @@ function openClothing(fromWardrobe: boolean) {
   else counter.open(snapshot, player, atClothingCounter(player) && !heldItem(snapshot, player))
 }
 
-function openGuide(talking = false) {
+function openGuide(talking: 'fisher' | 'wren' | false = false) {
   if (!snapshot || modalOpen()) return
   const player = snapshot.players.find((entry) => entry.id === id)
   if (!player) return
@@ -638,10 +653,10 @@ window.addEventListener('keydown', (event) => {
   else if (follow && live && event.key !== 'Shift') renderer?.captureMouse()
   if (live && event.code === 'KeyB') send({ type: 'buy-seed' })
   if (live && event.code === 'KeyE') {
-    const state = snapshot
-    const player = state?.players.find((entry) => entry.id === id)
-    if (state?.mission === 'complete' && !state.jobs.active && player && atJobBoard(player) && !heldItem(state, player)) openJobBoard()
-    else send({ type: 'interact' })
+    const player = snapshot?.players.find((entry) => entry.id === id)
+    const request = snapshot && player ? interactRequest(snapshot, player) : { type: 'interact' as const }
+    if (request === 'open-job-board') openJobBoard()
+    else send(request)
   }
   if (live && event.code === 'KeyF') send({ type: 'seat' })
   if (live && event.code === 'Space' && !snapshot?.players.find((player) => player.id === id)?.seat) send({ type: 'jump' })

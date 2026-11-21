@@ -48,9 +48,16 @@ export function createClothingCounter({ box, paintSurface }: MeshFactory, { x, z
   }
 }
 
-export function createSupply({ scene, box, cylinder }: MeshFactory, kind: 'crate' | 'extinguisher') {
+export function createSupply({ scene, box, cylinder }: MeshFactory, kind: 'crate' | 'extinguisher' | 'toolbox') {
   const node = new TransformNode('Supply', scene)
-  if (kind === 'crate') {
+  if (kind === 'toolbox') {
+    // Wren's loaner: a red steel box with a lid tray and a carry handle along the body.
+    box(0, 0.13, 0, 0.2, 0.22, 0.52, '#b8463a', node)
+    box(0, 0.255, 0, 0.21, 0.035, 0.54, '#8f3029', node)
+    for (const z of [-0.17, 0.17]) box(0, 0.32, z, 0.035, 0.11, 0.035, '#3c3d3f', node)
+    box(0, 0.375, 0, 0.04, 0.035, 0.38, '#3c3d3f', node)
+    box(0.105, 0.2, 0, 0.012, 0.03, 0.07, '#e7c46a', node)
+  } else if (kind === 'crate') {
     box(0, 0, 0, crateSize, crateSize, crateSize, '#cf8b4f', node)
     for (const side of [-1, 1]) {
       box(side * 0.3, 0, 0, 0.11, 0.91, 0.91, '#f9c174', node)

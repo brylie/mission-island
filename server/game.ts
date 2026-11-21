@@ -13,6 +13,7 @@ import { createInteractions } from './interactions.ts'
 import { restoreIsland, saveIsland } from './island-state.ts'
 import { updateHeldItems } from './items.ts'
 import { createFreight } from './freight.ts'
+import { createGateRepair } from './gate-repair.ts'
 import { createOrders } from './orders.ts'
 import { toggleSeat, updateRiders } from './riders.ts'
 import type { IslandSave } from './save.ts'
@@ -35,12 +36,15 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const freight = createFreight(crew, state, clock, checkpoint)
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
-  const interactions = createInteractions(state, growth, physics, orders, checkpoint)
+  const gate = createGateRepair(state, crew.notifyAll)
+  const interactions = createInteractions(state, growth, physics, orders, gate, checkpoint)
 
   function tick(): Readonly<Snapshot> {
     const now = clock()
     advanceIsland(state, growth, tickSeconds, checkpoint)
     crew.expireCrew(now)
+    gate.tick()
+    physics.placeGateLeaf(state)
     const members = crew.members()
     const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - 400
     const driver = members.find((member) => member.player.seat === 'driver')
@@ -115,7 +119,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         break
       }
       case 'interact':
-        interactions.interact(member)
+        interactions.interact(member, message.intent)
         // Save order progress, completion, and crew payouts together.
         checkpoint?.()
         break
@@ -144,7 +148,9 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         if (member.notify === notify) handleAction(member, message)
       },
       disconnect() {
-        if (member.notify === notify) disconnect(member, clock())
+        if (member.notify !== notify) return
+        disconnect(member, clock())
+        gate.releasePin(member.player.id)
       },
     }
   }

@@ -5,6 +5,8 @@ import { truckPoint } from './truck-pose.ts'
 import { isNight } from './weather.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, orderContribution } from './jobs.ts'
 import { atFisher, fisherName } from './harbor-fisher.ts'
+import { gateAction, gateHint, toolboxPickable } from './gate-repair.ts'
+import type { GateAction } from './gate-repair.ts'
 
 export function heldItem(state: Pick<Snapshot, 'items'>, player: Player) {
   return state.items.find((item) => item.holder === player.id)
@@ -15,7 +17,7 @@ export function nearbyItem(state: Snapshot, player: Player) {
   return state.items
     .filter((item) =>
       !item.delivered && item.holder === null &&
-      (item.kind === 'crate' ? delivering : state.mission === 'fire') &&
+      (item.kind === 'crate' ? delivering : item.kind === 'toolbox' ? toolboxPickable(state, item) : state.mission === 'fire') &&
       distance(item, player) < 2.7 && Math.abs(item.y - player.y) < 2.1,
     )
     .sort((a, b) => distance(a, player) - distance(b, player))[0]
@@ -108,6 +110,7 @@ function farmOrMarketHint(state: Snapshot, player: Player): [string, string] | u
 }
 
 function cargoHint(state: Snapshot, player: Player, item: Item): [string, string] {
+  if (item.kind === 'toolbox') return ['E', 'Set toolbox down']
   if (item.kind === 'extinguisher') {
     return state.mission === 'fire' && distance(player, lookout) < 5 ? ['Left click', 'Hold to spray'] : ['E', 'Set extinguisher down']
   }
@@ -134,6 +137,8 @@ export function actionHint(state: Snapshot, player: Player): [string, string] {
   if (fight) return ['Left click', fight.pulling ? 'Fish pulling · release to ease tension' : 'Fish hooked · hold to reel']
   if (player.casting) return ['', 'Watching the bobber']
   if (player.seat) return ridingHint(state, player)
+  const gate = gateAction(state, player)
+  if (gate) return gateHint(gate, state)
   const item = heldItem(state, player)
   if (item) return cargoHint(state, player, item)
   const clothing = clothingInteraction(player)
@@ -151,6 +156,7 @@ export function actionHint(state: Snapshot, player: Player): [string, string] {
   if (nearby?.onBed) return ['E', 'Unload crate']
   if (nearby?.kind === 'crate') return ['E', 'Pick up crate']
   if (nearby?.kind === 'extinguisher') return ['E', 'Pick up extinguisher']
+  if (nearby?.kind === 'toolbox') return ['E', 'Pick up the toolbox']
   if (ownDoor) return ['E', 'Read your welcome note']
   if (atFisher(player, state.weather.hour)) return ['E', `Talk to ${fisherName}`]
   if (player.grounded && !player.onBed && !player.truckSurface && distance(player, state.truck) < 4.5 &&
@@ -158,4 +164,12 @@ export function actionHint(state: Snapshot, player: Player): [string, string] {
   if (canBoardSkiff(state, player)) return ['F', 'Board skiff']
   if (canCast(state, player)) return ['Left click', 'Hold and release to cast']
   return ['', '']
+}
+
+// What E sends. A gate step carries the action the player saw, so the host can refuse a stale one.
+export function interactRequest(state: Snapshot, player: Player): { type: 'interact'; intent?: GateAction } | 'open-job-board' {
+  const intent = gateAction(state, player)
+  if (intent) return { type: 'interact', intent }
+  if (state.mission === 'complete' && !state.jobs.active && atJobBoard(player) && !heldItem(state, player)) return 'open-job-board'
+  return { type: 'interact' }
 }

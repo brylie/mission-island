@@ -1,5 +1,6 @@
 import { cleanCrewName, readAppearance } from '../src/crew-appearance.ts'
 import { isClothingId } from '../src/clothing-catalog.ts'
+import { gateActions } from '../src/gate-repair.ts'
 import { starterTools } from '../src/inventory.ts'
 import { isJobId, type JobId } from '../src/jobs.ts'
 import type { ClientMessage, Input } from '../src/protocol.ts'
@@ -55,9 +56,12 @@ export function readCrewCommand(message: Record<string, unknown>): CrewCommand |
     case 'buy-clothing':
       if (isClothingId(message.item)) return { type: message.type, item: message.item }
       return
+    case 'interact': {
+      const intent = gateActions.find((action) => action === message.intent)
+      return intent ? { type: 'interact', intent } : { type: 'interact' }
+    }
     case 'buy-angler':
     case 'buy-seed':
-    case 'interact':
     case 'seat':
     case 'jump':
     case 'respawn':

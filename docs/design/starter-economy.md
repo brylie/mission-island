@@ -14,6 +14,7 @@ Use one row per crew session to answer two questions. When does the crew first r
 | Buy the Harbor angler uniform | −3 | The buyer unlocks the uniform. |
 | Farm supplies / beach gear order | +6 / +10 | Deliver two seed crates / three beach crates. The whole order pays once. |
 | Fresh fish / carrot order | +6 / +8 | Contribute two fish / two carrots across the crew. Contributed goods have been used up. |
+| Mend Wren's gate | +5 | Once per save. The crew uses the loaned toolbox and one hinge pin from the depot mending bench. Wren's trust rises by one. [Neighbor repairs](../mechanics/neighbor-repairs.md) |
 
 One crew bank spans both islands. Count each payment once even when both people see it. Four completed board orders currently mark readiness for a future second island. Ferry repair stages, donation prices and travel are planned. Recheck amounts against the [order rules](../mechanics/crew-orders.md), [fishing](../mechanics/fishing.md) and [farm and market rules](../mechanics/farming-and-market.md) when tuning changes.
 

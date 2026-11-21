@@ -6,17 +6,20 @@ import { deliveryDrop, deliveryRadius } from '../src/jobs.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
 import { groundHeight, maxWadeDepth, waterDepth } from '../src/terrain.ts'
 import { isNight } from '../src/weather.ts'
-import { crateSize, crateStarts, distance, extinguisherStarts, spawns } from '../src/world.ts'
+import { crateSize, distance, itemStarts, spawns } from '../src/world.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { stopPrimary, stopped, stowTool, type CrewMember } from './crew.ts'
 import { updateHeldItems } from './items.ts'
 import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
+import type { createGateRepair } from './gate-repair.ts'
+import type { GateAction } from '../src/gate-repair.ts'
 
 export function createInteractions(
   state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'remove'>,
-  orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>, checkpoint?: () => void,
+  orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
+  gate: Pick<ReturnType<typeof createGateRepair>, 'act'>, checkpoint?: () => void,
 ) {
   function useHomeChest(member: CrewMember) {
     const { player } = member
@@ -56,9 +59,14 @@ export function createInteractions(
     }
   }
 
-  function interact(member: CrewMember) {
+  function interact(member: CrewMember, intent?: GateAction) {
     const { player } = member
     if (player.seat) return
+    if (intent) {
+      gate.act(member, intent)
+      updateHeldItems(state)
+      return
+    }
     if (player.sleeping) {
       player.sleeping = false
       return
@@ -116,9 +124,9 @@ export function createInteractions(
     if (item) {
       item.holder = null
       const safe = canOccupyGround(player, crateSize / 2, -maxWadeDepth) && waterDepth(player) <= maxWadeDepth
-      if (item.kind === 'crate') physics.release(item, safe ? player : crateStarts[item.id])
+      if (item.kind === 'crate') physics.release(item, safe ? player : itemStarts[item.id].start)
       else {
-        const point = safe ? player : extinguisherStarts[item.id - crateStarts.length]
+        const point = safe ? player : itemStarts[item.id].start
         Object.assign(item, { x: point.x, z: point.z, y: groundHeight(point) + 0.04, spraying: false })
       }
     }

@@ -9,6 +9,7 @@ import type { InventoryItem } from './inventory'
 import type { Goods, PlotStage } from './farm'
 import type { Truck } from './truck-pose'
 import type { JobBoardState, JobId } from './jobs'
+import type { FavorReceipt, GardenGate, GateAction, GateRepair, GateStep } from './gate-repair'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
 
 export interface Weather {
@@ -65,7 +66,7 @@ export interface Skiff extends Pose {
 
 export interface Item extends Pose {
   id: number
-  kind: 'crate' | 'extinguisher'
+  kind: 'crate' | 'extinguisher' | 'toolbox'
   holder: number | null
   onBed: boolean
   y: number
@@ -101,6 +102,10 @@ export interface Snapshot {
   weather: Weather
   islandTime: number
   jobs: JobBoardState
+  gate: GardenGate
+  gateRepair: GateRepair
+  residentTrust: { wren: number }
+  lastFavorPay?: FavorReceipt
 }
 
 export type ServerMessage =
@@ -110,7 +115,9 @@ export type ServerMessage =
   | { type: 'market-sale'; coins: number }
   | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
   | { type: 'order-pay'; coins: number; id: JobId }
-  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'fisher-chat' | 'open-wardrobe' | 'open-clothing-counter' }
+  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'fisher-chat' | 'wren-chat' | 'open-wardrobe' | 'open-clothing-counter' }
+  | { type: 'favor-pay'; resident: 'wren'; coins: number; trust: number }
+  | { type: 'gate-step'; step: GateStep }
   | { type: 'angler-purchase'; result: ClothingPurchaseResult }
   | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }
   | { type: 'full' | 'duplicate' }
@@ -127,4 +134,5 @@ export type ClientMessage =
   | { type: 'take-job'; id: JobId }
   | { type: 'buy-angler' | 'buy-seed' }
   | { type: 'buy-clothing'; item: ClothingId }
-  | { type: 'interact' | 'seat' | 'jump' | 'respawn' }
+  | { type: 'interact'; intent?: GateAction }
+  | { type: 'seat' | 'jump' | 'respawn' }

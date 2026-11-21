@@ -5,6 +5,7 @@ import type { Snapshot } from '../src/protocol.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { weatherAt } from '../src/weather.ts'
 import { skiffStart, truckStart } from '../src/world.ts'
+import { initialGateRepair } from '../src/gate-repair.ts'
 import { makeItems } from './items.ts'
 import type { IslandSave } from './save.ts'
 
@@ -18,13 +19,15 @@ export function restoreIsland(
   const state: Snapshot = {
     crewCoins: save?.crewCoins ?? 0, lastStarterPay: save?.lastStarterPay,
     type: 'state', players: [], skiff: { ...skiffStart, speed: 0 }, items: makeItems(),
-    mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...structuredClone(save?.world),
+    mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...initialGateRepair(), ...structuredClone(save?.world),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
     weather: weatherAt(islandTime), islandTime,
     driftwood, juniper: juniper(0, weatherAt(islandTime), []),
     jobs: structuredClone(save?.world.jobs ?? { active: null, completed: 0 }),
   }
   state.skiff.speed = 0
+  // A carried hinge pin goes back to the mending bench when the host stops.
+  state.gateRepair.pinHolder = null
   const growth = save?.growth.slice() ?? farmPlots.map(() => 0)
   for (const item of state.items) {
     item.spraying = false
@@ -36,13 +39,13 @@ export function restoreIsland(
 }
 
 export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['crew']): IslandSave {
-  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt } = state
+  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residentTrust, lastFavorPay } = state
   const { x, z, heading } = truck
   return {
-    version: 2, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
+    version: 3, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
-    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs,
-      ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }) }),
+    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, gate, gateRepair, residentTrust,
+      ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }
 }

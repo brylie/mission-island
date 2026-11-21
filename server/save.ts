@@ -5,16 +5,18 @@ import { farmPlots } from '../src/farm.ts'
 import { isJobId, jobs } from '../src/jobs.ts'
 import type { JobBoardState } from '../src/jobs.ts'
 import type { Player, Snapshot } from '../src/protocol'
-import { crateStarts, extinguisherStarts, spawns, starterPay } from '../src/world.ts'
+import { gateStages, initialGateRepair } from '../src/gate-repair.ts'
+import { crateStarts, itemStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
 
 export type IslandSave = {
-  version: 2
+  version: 3
   crewCoins: number
   lastStarterPay?: Snapshot['lastStarterPay']
   islandTime: number
   growth: number[]
-  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt'> & { truck: Pose; jobs?: JobBoardState }
+  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residentTrust' | 'lastFavorPay'> &
+    { truck: Pose; jobs?: JobBoardState }
   crew: { token: string; player: Player; reserved: boolean }[]
 }
 
@@ -50,6 +52,32 @@ function migrateWallets(value: unknown): unknown {
   }
   const lastStarterPay = ['fire', 'delivery', 'crate'].find(job => receipts.has(job))
   return { version: 2, islandTime: value.islandTime, growth: value.growth, world: value.world, crewCoins, lastStarterPay, crew }
+}
+
+// Version 3 added Wren's gate favor: the loaned toolbox, the gate, the repair stage and resident trust.
+function migrateGate(value: unknown): unknown {
+  if (!isRecord(value) || value.version !== 2 || !isRecord(value.world) || !Array.isArray(value.world.items)) return value
+  const toolbox = itemStarts.findIndex(({ kind }) => kind === 'toolbox')
+  const { start } = itemStarts[toolbox]
+  const saved = value.world.items as unknown[]
+  const items = saved.length === toolbox ? [...saved, { ...start, id: toolbox, heading: 0, kind: 'toolbox', holder: null, onBed: false,
+    delivered: false, spraying: false, y: 0.04, rotation: null }] : saved
+  return { ...value, version: 3, world: { ...initialGateRepair(), ...value.world, items } }
+}
+
+function migrateSave(value: unknown) {
+  return migrateGate(migrateWallets(value))
+}
+
+function isGateRepair(world: Record<string, unknown>, islandTime: number) {
+  const { gate, gateRepair, residentTrust, lastFavorPay } = world
+  const time = (value: unknown) => value === undefined || (isNumber(value) && value >= 0 && value <= islandTime)
+  if (!isRecord(gate) || typeof gate.open !== 'boolean' || typeof gate.closePending !== 'boolean') return false
+  if (!isRecord(residentTrust) || !isCoinBalance(residentTrust.wren)) return false
+  if (lastFavorPay !== undefined && (!isRecord(lastFavorPay) || lastFavorPay.resident !== 'wren' || !isCoinBalance(lastFavorPay.coins))) return false
+  return isRecord(gateRepair) && gateStages.some((stage) => stage === gateRepair.stage) &&
+    (gateRepair.pinHolder === null || (isNumber(gateRepair.pinHolder) && Number.isInteger(gateRepair.pinHolder))) &&
+    time(gateRepair.acceptedAt) && time(gateRepair.mendedAt) && (gateRepair.stage !== 'mended' || gateRepair.mendedAt !== undefined)
 }
 
 function isPose(value: unknown): value is Record<string, unknown> {
@@ -94,20 +122,20 @@ function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] 
 }
 
 function isSave(value: unknown): value is IslandSave {
-  if (!isRecord(value) || value.version !== 2 || !isCoinBalance(value.crewCoins) ||
+  if (!isRecord(value) || value.version !== 3 || !isCoinBalance(value.crewCoins) ||
     !validReceipt(value.lastStarterPay) || !isNumber(value.islandTime) || value.islandTime < 0 ||
     !Array.isArray(value.growth) || value.growth.length !== farmPlots.length || !value.growth.every(isNumber) ||
     !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
   const { world } = value
   const reservedIds = new Set(value.crew.filter(({ reserved }) => reserved).map(({ player }) => player.id))
   if (world.jobs !== undefined && !isJobBoard(world.jobs, world.mission)) return false
-  return isPose(world.truck) && isPose(world.skiff) && isSavedIncident(world, value.islandTime) &&
+  return isPose(world.truck) && isPose(world.skiff) && isSavedIncident(world, value.islandTime) && isGateRepair(world, value.islandTime) &&
     Array.isArray(world.farm) && world.farm.length === farmPlots.length &&
     world.farm.every((stage: unknown) => ['grass', 'tilled', 'planted', 'watered', 'ripe'].some((name) => name === stage)) &&
-    Array.isArray(world.items) && world.items.length === crateStarts.length + extinguisherStarts.length &&
+    Array.isArray(world.items) && world.items.length === itemStarts.length &&
     world.items.every((item: unknown, id) => isPose(item) && item.id === id && isNumber(item.y) &&
       (item.holder === null || (isNumber(item.holder) && reservedIds.has(item.holder))) &&
-      item.kind === (id < crateStarts.length ? 'crate' : 'extinguisher'))
+      item.kind === itemStarts[id].kind)
 }
 
 export function islandSaveFile(root: string, port: number, slot = `island-${port}`) {
@@ -120,7 +148,7 @@ export function islandSaveFile(root: string, port: number, slot = `island-${port
   return {
     load(): IslandSave | undefined {
       try {
-        const parsed = migrateWallets(JSON.parse(readFileSync(path, 'utf8')))
+        const parsed = migrateSave(JSON.parse(readFileSync(path, 'utf8')))
         if (!isSave(parsed)) throw new Error('Unsupported or malformed save')
         return parsed
       } catch (error) {
