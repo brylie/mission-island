@@ -429,3 +429,10 @@ input[type="color"] { width: 34px; height: 25px; padding: 2px; background: #2636
 #reference-editor[open] summary, #photo-controls[open] summary { margin-bottom: 8px; }
 #turnaround-angles a { padding: 4px 8px; }
 #asset-reference:not(.crew-comparison) :is(#reference-editor, #photo-controls) > summary { display: none; }
+
+#gait-trace { padding: 10px 14px; border-bottom: 1px solid var(--line); }
+#gait-trace summary { cursor: pointer; font-weight: 600; }
+#gait-trace label { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+#gait-trace canvas { display: block; width: 100%; margin: 6px 0; }
+#gait-trace output { font: 11px ui-monospace, monospace; }
+#gait-trace p { margin: 6px 0 0; color: var(--muted); font-size: 11px; }

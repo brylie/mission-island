@@ -36,7 +36,7 @@ export interface Entry {
   swatch?: string
   source: string
   readout?: string
-  duration?: number
+  duration?: number | ((values: Values) => number)
   angle?: number
   cameraBeta?: number
   cameraRadius?: number

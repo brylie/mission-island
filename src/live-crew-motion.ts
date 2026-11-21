@@ -1,4 +1,5 @@
 import { poseCrew, poseSwimming, swimmingHeight, type createCrew } from './assets/crew'
+import { createCrewPositionBuffer } from './crew-position-buffer'
 import { createCrewGait } from './crew-gait'
 import { moveTo, sampleWalkingGait } from './island-render-pose'
 import { walkingHeight } from './terrain'
@@ -10,6 +11,7 @@ function canPlant(player: Player) {
 }
 
 export function createLiveCrewMotion(character: ReturnType<typeof createCrew>) {
+  const track = createCrewPositionBuffer()
   const gait = createCrewGait()
   const node = character.root
   node.setEnabled(false)
@@ -21,6 +23,11 @@ export function createLiveCrewMotion(character: ReturnType<typeof createCrew>) {
     node.rotation.z = 0
     const { x, z } = node.position
     moveTo(node, player, player.swimming ? swimmingHeight(time) : player.y + .05, factor)
+    const groundPoint = canPlant(player) && track.sample(delta)
+    if (groundPoint) {
+      node.position.x = groundPoint.x
+      node.position.z = groundPoint.z
+    }
     if (player.grounded && !player.onBed && !player.swimming) {
       node.position.y = Math.max(node.position.y, walkingHeight(node.position) + .05)
     }
@@ -40,9 +47,14 @@ export function createLiveCrewMotion(character: ReturnType<typeof createCrew>) {
     poseCrew(character, frame ?? cycle, stride, !player.grounded, held?.kind ?? (player.equipped ? 'tool' : undefined),
       Number(Boolean(player.reaching || held?.spraying || player.casting)), blend, winding, player.throwing, player.rightHandRaised)
   }
+  function receive(player: Player, time: number) {
+    if (player.connected && !player.seat && canPlant(player)) track.push(player, time)
+    else track.reset()
+  }
+  function reset() { track.reset(); gait.reset() }
   function hide() {
     node.setEnabled(false)
-    gait.reset()
+    reset()
   }
-  return { walk, hide, reset: gait.reset }
+  return { walk, receive, hide, reset }
 }

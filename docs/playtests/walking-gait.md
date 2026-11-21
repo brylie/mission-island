@@ -25,4 +25,10 @@ The follow and side cameras showed the same contact behaviour. The Crew Workbenc
 
 The gait regressions check distance-to-phase, foot clearance, a planted foot through a bend and on a gentle slope, and settling to idle when horizontal movement stops. The launcher tests cover solo and two-seat starts, normal crate pickup, and the original travel speeds.
 
+## Swing smoothness
+
+A two-client side recording exposed a pulse in the whole walker as each network position arrived. Grounded crew now interpolate along the recent host track, and the shoe accelerates away from toe-off and decelerates into heel strike. In the middle eight metres of two Seabrook recordings, the median frame-to-frame change in forward swing-foot speed dropped from 2.55 to 0.62 m/s. This compares consecutive rendered frames in swing, including their intended acceleration. It is a playback comparison, not a target for human gait.
+
+In Crew Workbench, open **Gait trace** during walk, carry, or sprint. Pick a leg and scrub across the shaded stance interval to see the forward ankle velocity and knee angle on the posed rig. The velocity includes travel over the ground. Playback loops on a whole number of strides.
+
 The human playtest still needs both players to swap roles and record how starts, stops, wall blocks, turns, and slopes feel. [Starter Island playtest record #52](https://github.com/brylie/mission-island/issues/52)

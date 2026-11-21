@@ -38,7 +38,6 @@ const canvas = element<HTMLCanvasElement>('stage')
 const library = createLibraryPanel()
 const reference = createReferencePane()
 const inspector = element('asset-controls')
-const playback = element('playback')
 const play = element<HTMLButtonElement>('play')
 const slider = element<HTMLInputElement>('time')
 const timecode = element<HTMLOutputElement>('timecode')
@@ -101,6 +100,7 @@ const fieldRequested = () => new URLSearchParams(location.hash.split('?')[1]).ge
 let onIsland = Boolean(asset.fieldSite && (location.hash ? fieldRequested() : saved.field))
 const optionsByAsset = saved.options ?? {}
 let values: Values = {}
+let duration = 0
 let time = Number.isFinite(saved.time) ? Math.max(0, Number(saved.time)) : 0
 let playing = saved.playing ?? true
 let seek = true
@@ -277,6 +277,7 @@ function cameraAtSameSite(previous?: FieldSite) {
 function setOption(control: Control, value: Values[string], save = true) {
   const oldSite = fieldSite()
   values[control.key] = value
+  if (!control.rebuild) updateDuration()
   if (asset.relatedOptions) applyRelatedOptions(inspector, asset, values, control.key)
   if (asset.actions) refreshActions()
   zFightingResult.replaceChildren()
@@ -286,6 +287,14 @@ function setOption(control: Control, value: Values[string], save = true) {
     showFieldSwitch()
   }
   if (save) remember()
+}
+
+function updateDuration() {
+  duration = (typeof asset.duration === 'function' ? asset.duration(values) : asset.duration) ?? 0
+  element('playback').hidden = !duration
+  slider.max = String(duration)
+  time = Math.min(time, duration)
+  renderPlayback()
 }
 
 function renderPlayback() {
@@ -303,6 +312,8 @@ function applyDisplay() {
 }
 
 function rebuild(camera?: CameraState) {
+  updateDuration()
+  element('gait-trace').hidden = asset.id !== 'crew' || !['walk', 'carry', 'sprint'].includes(String(values.state))
   if (!engine) {
     studies.setScene(Boolean(asset.landscape), false)
     landscapeMap.setScene(Boolean(asset.landscape), false)
@@ -360,17 +371,13 @@ function loadAsset(camera?: CameraState) {
   lightSelect.disabled = Boolean(asset.landscape) || biome
   element('lighting-row').hidden = Boolean(asset.landscape) || biome
   element('landscape-view-row').hidden = !asset.landscape
-  playback.hidden = !asset.duration
-  slider.max = String(asset.duration ?? 0)
-  time = Math.min(time, asset.duration ?? 0)
   library.show(entries, asset)
-  renderPlayback()
   rebuild(camera)
   renderAssetControls()
 }
 
 function seekTo(value: number) {
-  time = Math.max(0, Math.min(asset.duration ?? 0, value))
+  time = Math.max(0, Math.min(duration, value))
   zFightingResult.replaceChildren()
   seek = true
   renderPlayback()
@@ -539,12 +546,12 @@ window.addEventListener('hashchange', () => {
 window.addEventListener('pagehide', remember)
 canvas.addEventListener('contextmenu', (event) => event.preventDefault())
 canvas.addEventListener('keydown', (event) => {
-  if (event.code !== 'Space' || !asset.duration) return
+  if (event.code !== 'Space' || !duration) return
   event.preventDefault()
   if (!event.repeat) play.click()
 })
 play.addEventListener('click', () => {
-  if (!playing && time >= (asset.duration ?? 0)) seekTo(0)
+  if (!playing && time >= duration) seekTo(0)
   playing = !playing
   if (playing) zFightingResult.replaceChildren()
   renderPlayback()
@@ -561,7 +568,7 @@ slider.addEventListener('input', () => {
 })
 checkZFighting.addEventListener('click', () => {
   if (!stage) return
-  if (asset.duration) {
+  if (duration) {
     playing = false
     renderPlayback()
   }
@@ -658,10 +665,10 @@ engine?.runRenderLoop(() => {
   }
   const delta = Math.min(0.08, engine.getDeltaTime() / 1000)
   const rate = playing ? Number(rateSelect.value) : 0
-  if (rate > 0 && asset.duration && !seek) {
+  if (rate > 0 && duration && !seek) {
     time += delta * rate
-    if (time >= asset.duration) {
-      time %= asset.duration
+    if (time >= duration) {
+      time %= duration
       seek = true
     }
     renderPlayback()

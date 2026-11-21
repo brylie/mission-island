@@ -354,6 +354,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         fisher.root.setEnabled(false)
         fisherGait.reset()
       }
+      for (const player of snapshot.players) crewMotion[player.id]?.receive(player, snapshot.islandTime)
       walkingReview.sync(snapshot.playtest, id)
       actionFx.snapshot(last, snapshot)
       last = snapshot

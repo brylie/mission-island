@@ -100,3 +100,15 @@ test('the leg solution reaches a planted sole forward and across a gentle slope'
   assert.equal(solveCrewLeg(0, -(crewThigh + crewShin), 0).bend, 0)
   assert.equal(solveCrewLeg(0, -.7, 0).bend, 0)
 })
+
+test('forward swing velocity joins a stationary footprint smoothly at both boundaries', () => {
+  for (const speed of [commuteSpeed, crewCarrySpeed, crewWalkSpeed, crewWalkSpeed * crewSprintMultiplier]) {
+    const { distance, contact } = crewGaitFrame(0, speed)
+    const z = phase => phase * distance + crewGaitFrame(phase, speed).feet[0].forward
+    const h = .0001
+    for (const phase of [contact / distance, 1]) {
+      assert.ok(Math.abs(z(phase + h) - z(phase - h)) / (2 * h) * speed / distance < .005)
+    }
+    for (let i = 0; i < 500; i++) assert.ok(z((i + 1) / 500) >= z(i / 500) - 1e-8)
+  }
+})

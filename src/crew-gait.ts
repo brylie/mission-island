@@ -26,10 +26,13 @@ export function crewLegSwing(phase: number, stride: number, side: number) {
   return { hip: side * Math.sin(phase) * stride - bend * .36, bend }
 }
 
-function swingForward(phase: number, stride: number) {
-  const { hip, bend } = crewLegSwing(phase, stride, -1)
-  const pitch = hip + bend
-  return -crewThigh * Math.sin(hip) - crewShin * Math.sin(pitch)
+// Integral of a smoothstep velocity ramp. The foot has zero ground speed
+// and zero acceleration at both ends, with an even sweep between the ramps.
+function swingTravel(t: number, ramp: number): number {
+  if (t > 1 - ramp) return 1 - swingTravel(1 - t, ramp)
+  if (t >= ramp) return (t - ramp / 2) / (1 - ramp)
+  const u = t / ramp
+  return ramp * u ** 3 * (1 - u / 2) / (1 - ramp)
 }
 
 function profile(speed: number, scale: number) {
@@ -68,14 +71,12 @@ function footfall(phase: number, { cycle: distance, contact, stride }: ReturnTyp
     return { phase, forward: contact / 2 - phase * distance, lift: 0, pitch, support: 1, bend: .12, planted: true }
   }
   const swing = (phase - duty) / (1 - duty)
-  const ankle = swingForward(Math.PI * (swing - .5), stride)
-  const start = swingForward(-Math.PI / 2, stride)
-  const end = swingForward(Math.PI / 2, stride)
-  const forward = contact * ((ankle - start) / (end - start) - .5)
+  const ramp = Math.min(.35, .29 / (distance - contact))
+  const forward = -contact / 2 + distance * swingTravel(swing, ramp) - (distance - contact) * swing
   const pitch = mix(toeOff, heelStrike, smoothRange(.08, .83, swing))
   // Clearance is a floor for the authored recovery pose.
   const envelope = Math.sin(Math.PI * swing)
-  const lift = .012 * envelope
+  const lift = .012 * envelope ** 2
   const support = 1 - smoothRange(0, .22, Math.min(swing, 1 - swing))
   const bend = mix(crewLegSwing(Math.PI * (swing - .5), stride, -1).bend, .12, support)
   return { phase, forward, lift, pitch, support, bend, planted: false }
@@ -135,13 +136,20 @@ export function createCrewGait() {
         const point = offset(contact, lateral, crewHip.z + frame.contact / 2)
         plant = plants[i] = { ...point, y: ground(point), heading: contact.heading, pitch: 0 }
       } else if (!foot.planted && plant) {
-        releases[i] = plant
+        // Carry only the offset introduced by a turn during stance. Blending
+        // the whole plant into the swing would ease forward travel twice.
+        const duty = frame.contact / frame.distance
+        const t = advance > 0 ? Math.max(0, 1 - (foot.phase - duty) / advance) : 1
+        const heading = last.heading + angleBetween(last.heading, pose.heading) * t
+        const boundary = offset({ x: mix(last.x, pose.x, t), z: mix(last.z, pose.z, t), heading },
+          lateral, crewHip.z - frame.contact / 2)
+        releases[i] = { ...plant, x: plant.x - boundary.x, z: plant.z - boundary.z }
         plant = plants[i] = undefined
       }
       const release = releases[i]
-      const settle = smoothRange(0, .12, (foot.phase - frame.contact / frame.distance) / (1 - frame.contact / frame.distance))
-      const move = foot.forward > 0 ? 1 : settle
-      const recovery = { x: mix(release?.x ?? ideal.x, ideal.x, move), z: mix(release?.z ?? ideal.z, ideal.z, move) }
+      const duty = frame.contact / frame.distance
+      const move = smoothRange(0, .5, (foot.phase - duty) / (1 - duty))
+      const recovery = { x: ideal.x + (release?.x ?? 0) * (1 - move), z: ideal.z + (release?.z ?? 0) * (1 - move) }
       const recoveryTurn = angleBetween(pose.heading, release?.heading ?? pose.heading)
       const target = plant ?? {
         ...recovery, y: ground(recovery), heading: pose.heading + recoveryTurn * (1 - move), pitch: foot.pitch,
