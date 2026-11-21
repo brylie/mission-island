@@ -1,4 +1,5 @@
 import { createDriftwoodSchool } from '../src/simulation/driftwood-school.ts'
+import { createAviation } from './aviation.ts'
 import { inSkiff } from '../src/actions.ts'
 import { chargePower } from '../src/charged-actions.ts'
 import { createJuniperHabitat } from '../src/juniper-habitat.ts'
@@ -20,12 +21,14 @@ import { stepSkiff } from './skiff.ts'
 
 export const tickSeconds = 1 / 30
 
-export function createGame({ clock = Date.now, random = Math.random, save, checkpoint }: {
+type GameOptions = {
   clock?: () => number
   random?: () => number
   save?: IslandSave
   checkpoint?: () => void
-} = {}) {
+}
+
+export function createGame({ clock = Date.now, random = Math.random, save, checkpoint }: GameOptions = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat()
   const driftwood = createDriftwoodSchool(clock() >>> 0)
@@ -36,6 +39,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
   const interactions = createInteractions(state, growth, physics, orders, checkpoint)
+  const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
     const now = clock()
@@ -58,6 +62,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     for (const member of members) {
       const { player } = member
       const connected = active(member)
+      if (aviation.tick(member, connected)) continue
       player.reaching = false
       player.rightHandRaised = false
       player.throwing = now < member.throwUntil
@@ -134,6 +139,14 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     }
   }
 
+  function dispatch(member: CrewMember, message: CrewCommand) {
+    if (aviation.hasFlight(member)) {
+      if (message.type === 'respawn') aviation.interrupt(member)
+      if (message.type !== 'input' && message.type !== 'appearance' && message.type !== 'crew-name') return
+    } else if (message.type === 'interact' && aviation.interact(member)) return
+    handleAction(member, message)
+  }
+
   function join(token: string, notify: (message: CrewNotice) => void) {
     const member = crew.join(token, notify)
     if (typeof member === 'string') return { type: member } as const
@@ -141,10 +154,12 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       type: 'joined' as const,
       id: member.player.id,
       dispatch(message: CrewCommand) {
-        if (member.notify === notify) handleAction(member, message)
+        if (member.notify === notify) dispatch(member, message)
       },
       disconnect() {
-        if (member.notify === notify) disconnect(member, clock())
+        if (member.notify !== notify) return
+        disconnect(member, clock())
+        aviation.interrupt(member)
       },
     }
   }
@@ -153,7 +168,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     tick,
     join,
     freight,
-    snapshotForSave: () => saveIsland(state, growth, crew.savedProfiles()),
+    snapshotForSave: () => saveIsland(state, growth, aviation.groundSavedPilot(crew.savedProfiles())),
     get crewCoins() { return state.crewCoins },
   }
 }

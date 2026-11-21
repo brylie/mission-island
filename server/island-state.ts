@@ -23,6 +23,10 @@ export function restoreIsland(
     weather: weatherAt(islandTime), islandTime,
     driftwood, juniper: juniper(0, weatherAt(islandTime), []),
     jobs: structuredClone(save?.world.jobs ?? { active: null, completed: 0 }),
+    aviation: {
+      qualified: save?.world.aviation?.qualified ?? false, surveyed: save?.world.aviation?.surveyed ?? false,
+      flight: null, marked: false,
+    },
   }
   state.skiff.speed = 0
   const growth = save?.growth.slice() ?? farmPlots.map(() => 0)
@@ -38,10 +42,11 @@ export function restoreIsland(
 export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['crew']): IslandSave {
   const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt } = state
   const { x, z, heading } = truck
+  const { qualified, surveyed } = state.aviation
   return {
     version: 2, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
-    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs,
+    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed },
       ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }) }),
     crew,
   }

@@ -3,6 +3,7 @@ import type { MeshFactory } from '../island-meshes'
 import { seededRandom } from '../seeded-random'
 import { groundHeight } from '../terrain'
 import type { Pose } from '../world'
+import { ridgeLichenRocks } from '../worlds/starter/sites'
 import { boundaryFade, createEffect, grid, type Builder, type EffectFrame, type Place } from './render'
 
 const dapple: Builder = (meshes, origin, studio) => {
@@ -76,7 +77,7 @@ const lichen: Builder = (meshes, origin) => {
     float gloss = pow(max(0., dot(reflect(-sunDirection,n), toEye)), 21.) * response * moss * .22;
     ink = vec4(diffuseLight(color,n)+gloss,1.);
   ` })
-  for (const [x, z, size] of [[0, 0, 2.85], [-1.3, .78, 1.25], [.95, .71, .83]]) {
+  for (const [x, z, size] of ridgeLichenRocks) {
     const rock = meshes.sphere(x, size * .23, z, size, size * .74, size * .91, effect.material, effect.root, true, 8)
     rock.rotation.y = x * .62
   }

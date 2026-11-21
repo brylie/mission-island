@@ -2,6 +2,7 @@ import { clothingCounter, farm, market } from './farm'
 import { jobBoard } from './jobs'
 import { beach, cottageDoor, crewHomes, ferryTerminal, forest, harbor, lookout, town } from './world'
 import type { Point } from './world'
+import { ridgeRack } from './worlds/starter/ridge-scout'
 
 interface Landmark {
   point: Point
@@ -18,6 +19,7 @@ export const landmarks: Landmark[] = [
   { point: forest, title: 'Pinewoods', kind: 'forest', height: 7 },
   { point: beach, title: 'Driftwood Beach', kind: 'beach', height: 2.2 },
   { point: lookout, title: 'Forest Lookout', kind: 'lookout', height: 4.3 },
+  { point: ridgeRack, title: 'Windstone loan rack', kind: 'aviation', height: 2.8, closeRange: 26 },
   { point: farm, title: 'Island Farm', kind: 'farm', height: 1.32 },
   { point: market, title: 'Seabrook Market', kind: 'market', height: 3.32 },
   { point: clothingCounter, title: 'Clothing counter', kind: 'clothing', height: 1.48, closeRange: 16 },

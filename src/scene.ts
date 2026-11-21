@@ -4,7 +4,7 @@ import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { CreateLines } from '@babylonjs/core/Meshes/Builders/linesBuilder'
 import type { Viewport } from '@babylonjs/core/Maths/math.viewport'
 import { Scene } from '@babylonjs/core/scene'
-import { createAtmosphere } from './island-atmosphere'
+import { createAtmosphere, sceneWeather } from './island-atmosphere'
 import { landscapeLink } from './playtest-link'
 import { inSkiff } from './actions'
 import { castTravelSeconds } from './charged-actions'
@@ -15,6 +15,8 @@ import { fisherAt, fisherName } from './harbor-fisher'
 import { moveTo } from './island-render-pose'
 import { fishingFloatDip } from './starter-effect-cues'
 import { createIslandCamera } from './island-camera'
+import { createRidgeAviationView, ridgeCameraMode } from './ridge-aviation-view'
+import { createDeliveryWayfindingView } from './delivery-wayfinding-view'
 import { hideLandmark, landmarks } from './island-landmarks'
 import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight } from './assets/crew'
 import { createFlatbed, poseFlatbed } from './assets/flatbed'
@@ -25,12 +27,12 @@ import { createIslandWorld } from './island-world'
 import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'
 import { createObjectiveMarker } from './objective-marker'
 import { northernRegions, starterDiscoveries } from './scenery'
-import type { Player, Snapshot, Weather } from './protocol'
+import type { Player, Snapshot } from './protocol'
 import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
 import { flatbedGroundDrive } from './vehicles/flatbed'
 import { createStarterActionEffects } from './starter-action-effects'
 import { createStarterPlaces } from './starter-place-effects'
-import { nightLighting, weatherAt } from './weather'
+import { nightLighting } from './weather'
 import { createShaderReview } from './shader-review'
 import { dryMarketRainAge, marketRunoffAt, marketRunoffPreview } from './market-runoff'
 import { crateStarts, distance, extinguisherStarts, harbor, lookout, town } from './world'
@@ -40,10 +42,6 @@ const sun = '#ffd56b'
 function swimmers(snapshot?: Snapshot) {
   return snapshot?.players.filter((player) => player.connected && !player.seat &&
     (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04))) ?? []
-}
-
-function sceneWeather(fixed?: Weather, live?: Weather) {
-  return fixed ? { weather: fixed } : { weather: live ?? { hour: 6, rain: 0 }, weatherAt: live && weatherAt }
 }
 
 export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) {
@@ -76,6 +74,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     return character
   })
   const cycles = crew.map(() => 0)
+  const aviation = createRidgeAviationView(meshes, crew)
+  const showDeliveryRoute = createDeliveryWayfindingView(meshes)
   const fisher = createCrew(meshes, playerColors.length)
   fisher.setAppearance({ uniform: 'angler', skin: 'warm' }, { dye: '#b9664a' })
   fisher.root.setEnabled(false)
@@ -184,6 +184,16 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     }
   }
 
+  function aimFishingRod(player: Player, kit: typeof skiffGear[number], gripIndex: number) {
+    const tool = kit.gear[gripIndex]
+    if (!tool) return
+    const { grip, rod } = tool
+    grip.computeWorldMatrix(true)
+    const lean = player.casting?.fight?.pulling ? 0.21 : 0.07
+    rod.rotationQuaternion = Quaternion.Inverse(grip.absoluteRotationQuaternion)
+      .multiply(Quaternion.RotationYawPitchRoll(player.heading, lean, Math.PI))
+  }
+
   function updateCharacters(state: Snapshot, factor: number, delta: number) {
     for (const [id, character] of crew.entries()) {
       const node = character.root
@@ -209,6 +219,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       const wasVisible = node.isEnabled()
       character.setAppearance(player.appearance, { base: player.appearanceBase })
       character.blink(time)
+      if (aviation.pose(state, player, character, factor)) continue
       if (boating) {
         const side = seatIndex === 0 ? -1 : 1
         Vector3.TransformCoordinatesToRef(skiffCrewSeats[seatIndex], boat.computeWorldMatrix(true), node.position)
@@ -236,13 +247,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
           Number(Boolean(player.reaching || held?.spraying || player.casting)),
           wasVisible ? 1 - Math.exp(-delta * 16) : 1, winding, player.throwing, player.rightHandRaised)
       }
-      if (rod && gripIndex >= 0) {
-        const { grip, rod } = gear[gripIndex]
-        grip.computeWorldMatrix(true)
-        const lean = player.casting?.fight?.pulling ? 0.21 : 0.07
-        rod.rotationQuaternion = Quaternion.Inverse(grip.absoluteRotationQuaternion)
-          .multiply(Quaternion.RotationYawPitchRoll(player.heading, lean, Math.PI))
-      }
+      if (rod) aimFishingRod(player, skiffGear[id], gripIndex)
       updateFishingLine(player, skiffGear[id], gripIndex)
 
     }
@@ -325,6 +330,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     if (last?.skiff) moveTo(boat, last.skiff, waterLevel, factor)
     poseFloating(boat, time, 0.5, 0.048)
     buoys.forEach((buoy, index) => poseFloating(buoy, time, index * 1.67))
+    showDeliveryRoute(last)
     if (last) {
       updateScenery(last, factor, delta)
       updateCharacters(last, factor, delta)
@@ -344,10 +350,11 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       firePad.setEnabled(false)
       equipmentPad.setEnabled(false)
     }
+    aviation.update(last, time)
     const local = last?.players.find((player) => player.id === viewer && player.connected)
     const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? truck : crew[local.id].root) : undefined
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
-    const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta)
+    const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta, ridgeCameraMode(last, local))
     const field = review?.view(time)
     const camera = field?.camera ?? normalCamera
     const close = Boolean(field || subject)
