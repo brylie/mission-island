@@ -14,7 +14,7 @@ test('swapping leg garments while seated preserves the knee and rigid shoe fitti
   const garments = ['Trouser leg', 'Bare calf'].map(name => {
     const mesh = new Mesh(name, scene)
     mesh.parent = hip
-    mesh.setVerticesData(VertexBuffer.PositionKind, [0, -.10, 0, 0, -.305, 0, 0, -.53, 0])
+    mesh.setVerticesData(VertexBuffer.PositionKind, [0, -.10, 0, 0, -.305, 0, 0, -.45, 0])
     return mesh
   })
   const [trousers, calf] = garments
@@ -36,10 +36,10 @@ test('swapping leg garments while seated preserves the knee and rigid shoe fitti
   const attachment = new TransformNode('Footwear fitting', scene)
   attachment.parent = hip
   boot.parent = attachment
-  boot.setVerticesData(VertexBuffer.PositionKind, [0, -.53, 0])
+  boot.setVerticesData(VertexBuffer.PositionKind, [0, -.66, 0])
   bindLegMesh(boot, skeleton)
   assert.equal(boot.skeleton, calf.skeleton)
-  assert.deepEqual([...boot.getVerticesData(VertexBuffer.MatricesWeightsKind)], [0, 1, 0, 0])
+  assert.deepEqual([...boot.getVerticesData(VertexBuffer.MatricesWeightsKind)], [0, 0, 1, 0])
   attachment.dispose()
   assert.ok(scene.skeletons.includes(skeleton))
   pose(0, .5)

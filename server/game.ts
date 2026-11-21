@@ -57,6 +57,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const driftwood = createDriftwoodSchool(clock() >>> 0)
   const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
   const trial = playtest && prepareTrial(state, playtest)
+  if (trial) state.items.forEach(physics.restore)
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
   const freight = createFreight(crew, state, clock, checkpoint)

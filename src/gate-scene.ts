@@ -3,7 +3,8 @@ import { createCrew, poseCrew } from './assets/crew'
 import { createWrenGarden } from './assets/wren-garden'
 import type { MeshFactory } from './island-meshes'
 import { fenceHeight, fenceRuns, gateLeaf, gateMendedStage, hingePost, leafAngle, sagAngle, wrenAt } from './gate-repair'
-import { moveTo } from './island-render-pose'
+import { moveTo, sampleWalkingGait } from './island-render-pose'
+import { createCrewGait } from './crew-gait'
 import type { Snapshot } from './protocol'
 import { groundHeight, walkingHeight } from './terrain'
 import { distance, mendingBench, offset, wrenCottage } from './world'
@@ -86,7 +87,7 @@ export function createGardenGate(meshes: MeshFactory, residentId: number) {
   const wren = createCrew(meshes, residentId)
   wren.setAppearance({ uniform: 'default', skin: 'deep', shirt: 'coral', hair: 'bun', hairColor: 'black', hat: 'none', trousers: 'sand' })
   wren.root.setEnabled(false)
-  let cycle = 0
+  const wrenGait = createCrewGait()
 
   return {
     resident: wren.root,
@@ -109,8 +110,9 @@ export function createGardenGate(meshes: MeshFactory, residentId: number) {
       const spot = wrenAt(state)
       moveTo(wren.root, spot, walkingHeight(spot), factor)
       wren.root.setEnabled(!spot.indoors)
-      if (spot.walking) cycle += delta * 1.8
-      poseCrew(wren, cycle, spot.walking ? .65 : 0, false, undefined, 0, factor)
+      if (spot.indoors) wrenGait.reset()
+      const gait = sampleWalkingGait(wrenGait, wren.root, delta)
+      poseCrew(wren, gait, gait.amount * .48, false, undefined, 0, factor)
       wren.blink(time)
     },
   }

@@ -3,7 +3,7 @@ import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import type { MeshFactory } from '../island-meshes'
 import { coastRadius, shoreProfile } from '../terrain'
 import type { PathSurface } from '../routes'
-import { laneMarkings, ribbonGeometry } from '../routes'
+import { laneMarkings, ribbonGeometry, roadHeight, sidewalkHeight } from '../routes'
 import type { Point } from '../world'
 
 function ribbon({ surface }: MeshFactory, name: string, strips: ReadonlyArray<readonly Point[]>,
@@ -21,7 +21,7 @@ function ribbon({ surface }: MeshFactory, name: string, strips: ReadonlyArray<re
 export function createRoad(meshes: MeshFactory, points: readonly Point[], width = 6) {
   return {
     shoulder: ribbon(meshes, 'Road shoulder', [points], width + 1.4, 0.056, meshes.paintSurface('gravel'), 2.05),
-    asphalt: ribbon(meshes, 'Asphalt', [points], width, 0.084, meshes.paintSurface('stone', '#636d65'), 3.0),
+    asphalt: ribbon(meshes, 'Asphalt', [points], width, roadHeight, meshes.paintSurface('stone', '#636d65'), 3.0),
     markings: ribbon(meshes, 'Centerline', laneMarkings(points), 0.17, 0.099, '#e0cd9f'),
   }
 }
@@ -111,5 +111,5 @@ export function createTrail(meshes: MeshFactory, name: string, points: readonly 
 
 export function createSidewalk(meshes: MeshFactory, path: { name: string; points: readonly Point[]; width: number }, material = meshes.paintSurface('concrete')) {
   // The sidewalk continues across the beach approach at the Seabrook junction.
-  return ribbon(meshes, path.name, [path.points], path.width, .065, material, 2)
+  return ribbon(meshes, path.name, [path.points], path.width, sidewalkHeight, material, 2)
 }

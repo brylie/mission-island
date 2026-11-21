@@ -30,6 +30,8 @@ Press **O → Live playtest** or open **Live checkpoints** in the Workbench on t
 | --- | --- |
 | `dock-fishing` | Each angler stands at the end of the fishing dock, facing open water with a rod equipped. Cast immediately to test the current fishing mechanic. |
 | `harbor-delivery` | The crew starts beside the supply crates with the Harbor Depot delivery active. |
+| `seabrook-walking` | Crew 1 starts beside a crate at the west end of a 12 m pavement lane. Crew 2 starts in the fixed side view. Either player can toggle **Side view**. |
+| `mara-commute` | The crew starts in a side view of Mara’s route to the fishing dock, 12 seconds before she leaves at dawn. |
 | `wren-fit` (default) | One player has the toolbox and the other has the pin. In solo play the toolbox rests by the gate. Press **E** to fit the pin and **E** again to test the swing. |
 | `wren-discover` | The crew arrives outside the unrepaired garden. |
 | `wren-morning` | The repair is paid and Wren is about to leave home. |
@@ -39,6 +41,10 @@ Agents can use the same scenario IDs from the shell. For example, to try fishing
 ```sh
 MISSION_ISLAND_CHECKPOINT=dock-fishing MISSION_ISLAND_CREW_SIZE=1 npm run playtest
 ```
+
+For the [foot-contact playtest #126](https://github.com/brylie/mission-island/issues/126), start **Seabrook · Walk, sprint and carry**. Crew 1 holds **W** from the reset follow camera or **D** in Side view to cross the lane eastward. Restart between passes. Hold **Shift** for sprint and press **E** at the start to pick up the crate for the carry pass. Crew 2 can keep the same camera and compare the sole against the metre marks. Toggle Side view to swap camera roles. Try a stop, turn, blocked step against a wall, and a gentle slope. For the resident pass, choose **Mara · Morning commute** and watch from 06:00.
+
+In the [Crew Workbench](http://localhost:5194/workbench.html#crew), choose **Walk**, **Sprint**, or **Carry crate**, then select **Side**. Keep **Stride length** at 1 for gameplay and use 0.25× playback to inspect contact and lift-off. See the [measured foot-contact results](docs/playtests/walking-gait.md) and record human observations in [#52](https://github.com/brylie/mission-island/issues/52).
 
 ### Add a scenario for a job, mechanic or field test
 

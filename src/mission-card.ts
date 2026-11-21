@@ -3,6 +3,20 @@ import { jobDescription, secondIslandProgress } from './job-board-ui'
 import { activeJob, deliveryDrop, secondIslandGoal } from './jobs'
 import type { Snapshot } from './protocol'
 import { distance } from './world'
+import { commuteCheckpoint, walkingCheckpoint } from './walking-scenario'
+
+function walkingTrialCard(checkpoint?: string) {
+  if (checkpoint !== walkingCheckpoint && checkpoint !== commuteCheckpoint) return
+  const lane = checkpoint === walkingCheckpoint
+  return {
+    label: 'LIVE PLAYTEST', title: lane ? 'Seabrook pavement' : 'Mara’s morning commute',
+    detail: lane ? 'Compare foot contact along the 12 m lane. Each mark is 1 m apart.'
+      : 'Watch Mara leave for the fishing dock when the clock reaches 06:00.',
+    progress: '', value: 0, max: 0, text: '',
+    instruction: lane ? 'Walk, sprint with Shift, then pick up the crate with E. Use Side view to watch a pass.'
+      : 'Restart the checkpoint to replay the commute.',
+  }
+}
 
 function deliveryInstruction(state: Snapshot, drop: { x: number; z: number }, quantity: number) {
   const loaded = state.items.filter((item) => item.onBed).length
@@ -14,6 +28,8 @@ function deliveryInstruction(state: Snapshot, drop: { x: number; z: number }, qu
 
 // The mission panel: the current shift, order or neighbor favor, with its progress and next step.
 export function missionCard(state: Snapshot, id: number) {
+  const trial = walkingTrialCard(state.playtest?.checkpoint)
+  if (trial) return trial
   const job = activeJob(state)
   const drop = deliveryDrop(state)
   if (drop) {
@@ -52,5 +68,25 @@ export function missionCard(state: Snapshot, id: number) {
     progress: 'Second island progress', value: completed, max: secondIslandGoal,
     text: `${completed} / ${secondIslandGoal}`,
     instruction: completed === secondIslandGoal ? secondIslandProgress(completed) : 'Complete orders to prepare for the second island.',
+  }
+}
+
+export function bindMissionProgress(panel: HTMLElement) {
+  const track = panel.querySelector('#progress-track')!
+  const label = panel.querySelector('#progress-label')!
+  const segments = Array.from(track.children)
+
+  return (card: ReturnType<typeof missionCard>) => {
+    panel.hidden = card.max === 0
+    if (panel.hidden) return
+    track.setAttribute('aria-label', card.progress)
+    track.setAttribute('aria-valuemax', String(card.max))
+    track.setAttribute('aria-valuenow', String(card.value))
+    label.textContent = card.text
+    const count = card.max === 100 ? 3 : card.max
+    segments.forEach((segment, index) => {
+      segment.toggleAttribute('hidden', index >= count)
+      segment.classList.toggle('active', card.value >= (index + 1) * card.max / count)
+    })
   }
 }

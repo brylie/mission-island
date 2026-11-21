@@ -13,14 +13,15 @@ import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutIncident } from './lookout-recovery-art'
 import { fisherAt, fisherName } from './harbor-fisher'
 import { residentName } from './gate-repair'
-import { moveTo } from './island-render-pose'
+import { moveTo, sampleWalkingGait } from './island-render-pose'
+import { createCrewGait } from './crew-gait'
 import { fishingFloatDip } from './starter-effect-cues'
 import { createIslandCamera } from './island-camera'
 import { createPlaceLabels } from './place-labels'
 import type { LookSettings } from './look-options-ui'
 import { createRidgeAviationView, ridgeCameraMode } from './ridge-aviation-view'
 import { createDeliveryWayfindingView } from './delivery-wayfinding-view'
-import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight } from './assets/crew'
+import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, skiffCrewSeats } from './assets/crew'
 import { createFlatbed, poseFlatbed } from './assets/flatbed'
 import { createSupply } from './assets/props'
 import { poseFloating } from './assets/waterfront'
@@ -35,6 +36,8 @@ import { createStarterActionEffects } from './starter-action-effects'
 import { createStarterPlaces } from './starter-place-effects'
 import { nightLighting } from './weather'
 import { createShaderReview } from './shader-review'
+import { createWalkingReview } from './walking-review'
+import { createLiveCrewMotion } from './live-crew-motion'
 import { dryMarketRainAge, marketRunoffAt, marketRunoffPreview } from './market-runoff'
 import { harbor, itemStarts, lookout, town } from './world'
 
@@ -55,6 +58,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
+  const walkingReview = createWalkingReview(meshes, islandCamera.releaseMouse, direction => islandCamera.faceWalkingLane(direction))
   const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden } = createIslandWorld(meshes, { liveParticles: true })
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
@@ -69,18 +73,14 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   truck.setEnabled(false)
   let wheelRotation = 0
 
-  const crew = playerColors.map((_, id) => {
-    const character = createCrew(meshes, id)
-    character.root.setEnabled(false)
-    return character
-  })
-  const cycles = crew.map(() => 0)
+  const crew = playerColors.map((_, id) => createCrew(meshes, id))
+  const crewMotion = crew.map(createLiveCrewMotion)
   const aviation = createRidgeAviationView(meshes, crew)
   const showDeliveryRoute = createDeliveryWayfindingView(meshes)
   const fisher = createCrew(meshes, playerColors.length)
   fisher.setAppearance({ uniform: 'angler', skin: 'warm' }, { dye: '#b9664a' })
   fisher.root.setEnabled(false)
-  let fisherCycle = 0
+  const fisherGait = createCrewGait()
   const farmTools = crew.map((character) => createFarmTools(meshes, character))
   const skiffGear = crew.map((character) => {
     const gear = createSkiffGear(meshes, character)
@@ -134,8 +134,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     showFarm(state.farm)
     const resident = fisherAt(state.weather.hour)
     moveTo(fisher.root, resident, walkingHeight(resident), factor)
-    if (resident.walking) fisherCycle += delta * 1.8
-    poseCrew(fisher, fisherCycle, resident.walking ? 0.65 : 0, false, undefined, 0, factor)
+    const gait = sampleWalkingGait(fisherGait, fisher.root, delta)
+    poseCrew(fisher, gait, gait.amount * .48, false, undefined, 0, factor)
     fisher.blink(time)
     garden.update(state, factor, delta, time)
     for (const [i, { hinge }] of homeChests.entries()) {
@@ -190,7 +190,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       const boating = player?.connected && inSkiff(player.seat)
       bobber.isVisible = line.isVisible = Boolean(player?.connected && player.casting)
       if (!player?.connected || (player.seat && !boating)) {
-        node.setEnabled(false)
+        crewMotion[id].hide()
         continue
       }
       const seatIndex = player.seat === 'port' ? 0 : 1
@@ -207,8 +207,12 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       const wasVisible = node.isEnabled()
       character.setAppearance(player.appearance, { base: player.appearanceBase })
       character.blink(time)
-      if (aviation.pose(state, player, character, factor)) continue
+      if (aviation.pose(state, player, character, factor)) {
+        crewMotion[id].reset()
+        continue
+      }
       if (boating) {
+        crewMotion[id].reset()
         const side = seatIndex === 0 ? -1 : 1
         Vector3.TransformCoordinatesToRef(skiffCrewSeats[seatIndex], boat.computeWorldMatrix(true), node.position)
         node.rotation.copyFrom(boat.rotation)
@@ -216,25 +220,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         const stroke = player.rowing ? Math.sin(time * 5.2 + id * 2.2) : 0
         poseSkiffCrew(character, stroke, side, rod, wasVisible ? factor : 1)
         if (!rod) gear[seatIndex].alignPaddle()
-      } else {
-        node.rotation.x = 0
-        node.rotation.z = 0
-        const { x, z } = node.position
-        moveTo(node, player, player.swimming ? swimmingHeight(time + id) : player.y + 0.05, factor)
-        if (player.grounded && !player.onBed && !player.swimming) {
-          node.position.y = Math.max(node.position.y, walkingHeight(node.position) + 0.05)
-        }
-        const traveled = Math.hypot(node.position.x - x, node.position.z - z)
-        const step = wasVisible && traveled < 2 ? traveled : 0
-        const held = state.items.find((item) => item.holder === id)
-        cycles[id] += step / 4.8
-        const stride = delta > 0 ? Math.min(0.92, step / delta * 0.072) : 0
-        const winding = player.charge?.kind === 'throw' ? player.charge.power : 0
-        if (player.swimming) poseSwimming(character, time + id, Math.min(1, step / Math.max(.001, delta * 3.8)), factor)
-        else poseCrew(character, cycles[id], stride, !player.grounded, held?.kind ?? (player.equipped ? 'tool' : undefined),
-          Number(Boolean(player.reaching || held?.spraying || player.casting)),
-          wasVisible ? 1 - Math.exp(-delta * 16) : 1, winding, player.throwing, player.rightHandRaised)
-      }
+      } else crewMotion[id].walk(player, state.items.find((item) => item.holder === id), time + id, factor, delta)
       if (rod) aimFishingRod(player, skiffGear[id], gripIndex)
       updateFishingLine(player, skiffGear[id], gripIndex)
 
@@ -288,6 +274,15 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     }
   }
 
+  function frameCamera(subject: typeof truck | undefined, local: Player | undefined, aspect: number, delta: number) {
+    const fieldActive = review?.active()
+    const side = fieldActive ? undefined : walkingReview.view(aspect)
+    const normal = islandCamera.update(fieldActive || side ? undefined : subject, Boolean(local?.seat), aspect, delta, ridgeCameraMode(last, local))
+    const field = review?.view(time)
+    if (side) scene.activeCamera = side
+    return { field, camera: field?.camera ?? side ?? normal, close: Boolean(field || side || subject) }
+  }
+
   engine.runRenderLoop(() => {
     const delta = Math.min(engine.getDeltaTime() / 1000, 0.06)
     const factor = 1 - Math.exp(-delta * 22)
@@ -300,7 +295,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       updateScenery(last, factor, delta)
       updateCharacters(last, factor, delta)
       updateEquipment(last, factor)
-      const drop = deliveryDrop(last)
+      const drop = walkingReview.running() ? undefined : deliveryDrop(last)
       pickupPad.setEnabled(Boolean(drop))
       dropPad.setEnabled(Boolean(drop))
       if (drop) dropPad.position.set(drop.x, groundHeight(drop) + 0.095, drop.z)
@@ -319,10 +314,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const local = last?.players.find((player) => player.id === viewer && player.connected)
     const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? truck : crew[local.id].root) : undefined
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
-    const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta, ridgeCameraMode(last, local))
-    const field = review?.view(time)
-    const camera = field?.camera ?? normalCamera
-    const close = Boolean(field || subject)
+    const { field, camera, close } = frameCamera(subject, local, aspect, delta)
     const climate = sceneWeather(field?.weather, last?.weather)
     const { weather } = climate
     const clock = last?.islandTime ?? time
@@ -356,6 +348,13 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
 
   return {
     update(snapshot: Snapshot, id: number, trackPlayer: boolean) {
+      if (last?.playtest && snapshot.playtest?.revision !== last.playtest.revision) {
+        crewMotion.forEach(motion => motion.hide())
+        items.forEach(({ node }) => node.setEnabled(false))
+        fisher.root.setEnabled(false)
+        fisherGait.reset()
+      }
+      walkingReview.sync(snapshot.playtest, id)
       actionFx.snapshot(last, snapshot)
       last = snapshot
       viewer = id
@@ -372,10 +371,11 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     aimHeading: islandCamera.aimHeading,
     aimRay: () => islandCamera.aimRay(),
     pinTip(element: HTMLElement, at?: { x: number; y: number; z: number }) { tip = at && { element, at } },
-    captureMouse: () => { if (!review?.active()) islandCamera.captureMouse() },
+    captureMouse: () => { if (!review?.active() && !walkingReview.active()) islandCamera.captureMouse() },
     releaseMouse: islandCamera.releaseMouse,
     setLook: (settings: LookSettings) => islandCamera.setLook(settings),
     dispose() {
+      walkingReview.dispose()
       review?.dispose()
       islandCamera.dispose()
       resize.disconnect()

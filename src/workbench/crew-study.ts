@@ -2,10 +2,12 @@ import { createCrew, createSkiffGear, poseCrew, poseSkiffCrew, poseSwimming, ski
 import { createSupply } from '../assets/props'
 import { createHarborBoat } from '../assets/waterfront'
 import { chargePower } from '../charged-actions'
+import { crewGaitPreview } from '../crew-gait'
 import { clothingCatalog, shopItemFor } from '../clothing-catalog'
 import { appearancePartKeys, appearanceParts, isEveryday, readAppearance, skinTones, uniforms, type CrewAppearance } from '../crew-appearance'
-import { walkingHeight, waterLevel } from '../terrain'
-import { jumpGravity, jumpSpeed, skiffStart } from '../world'
+import { sidewalkHeight } from '../routes'
+import { waterLevel } from '../terrain'
+import { crewCarrySpeed, crewSprintMultiplier, crewWalkSpeed, jumpGravity, jumpSpeed, skiffStart } from '../world'
 import { control, range, type Entry } from './subject'
 import { crewClothingSlots, relatedCrewOptions, shownCrewChoice } from './crew-outfit'
 
@@ -32,7 +34,7 @@ export const crewStudy: Entry = {
   id: 'crew', name: 'Crew character', group: 'Wardrobe', source: 'src/assets/crew.ts', duration, headroom: 1.45,
   fieldSite: ({ state }) => state === 'paddle'
     ? { name: 'Harbor', offset: { x: skiffStart.x - 6, z: skiffStart.z, y: waterLevel - skiffPreviewHeight } }
-    : { name: 'Seabrook', offset: { x: 39, z: 16, y: walkingHeight({ x: 39, z: 16 }) } },
+    : { name: 'Seabrook', offset: { x: 39, z: 16, y: sidewalkHeight } },
   readout: 'Wardrobe',
   description: 'Preview a full work uniform or select individual items to switch to everyday clothes.',
   relatedOptions: relatedCrewOptions,
@@ -86,7 +88,8 @@ export const crewStudy: Entry = {
       const elevation = jumping ? Math.max(0, jumpSpeed * jumpTime - jumpGravity / 2 * jumpTime * jumpTime) : 0
       const paddling = values.state === 'paddle'
       if (!paddling) crew.root.position.y = elevation
-      const stride = Number(values.stride) * (sprinting ? 0.89 : walking ? 0.57 : 0)
+      const speed = sprinting ? crewWalkSpeed * crewSprintMultiplier : values.state === 'carry' ? crewCarrySpeed : walking ? crewWalkSpeed : 0
+      const stride = Math.min(.92, speed * .072)
       const appearance = readAppearance(values)
       crew.setAppearance(appearance, { dye: values.dyed ? String(values.dye) : undefined })
       crew.setCap(Boolean(values.cap))
@@ -96,7 +99,7 @@ export const crewStudy: Entry = {
       crew.root.rotation.x = 0
       if (paddling) poseSkiffCrew(crew, Math.sin(time * 4 * Math.PI / duration), -1, false, 1)
       else if (values.state === 'swim' || values.state === 'tread') poseSwimming(crew, time, Number(values.state === 'swim'))
-      else poseCrew(crew, time * (sprinting ? 2.5 : 5 / 3), stride, elevation > 0.08,
+      else poseCrew(crew, speed ? crewGaitPreview(time, speed, Number(values.stride)) : 0, stride, elevation > 0.08,
         carrying ? 'crate' : spraying ? 'extinguisher' : undefined, reach, 1, power, throwing, values.state === 'raise')
       alignPaddle?.()
       crate.setEnabled(carrying)
