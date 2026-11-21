@@ -1,28 +1,44 @@
 import { walkingHeight } from './terrain.ts'
 import { localPoint, offset, type Point, type Pose } from './world.ts'
 
+const pushOffset = 0.94
+const trayHalfWidth = 0.39
+const trayHalfDepth = 0.5
+const rimHeight = 0.82
+const wheelRadius = 0.26
+const wheelZ = 0.55
+const wheelHalfWidth = 0.095
+const gripX = 0.46
+const gripHeight = 0.9
+const gripZ = -0.48
+const lift = 0.13
 export const barrowRig = {
-  pushOffset: 0.94,
-  trayHalfWidth: 0.39,
-  trayHalfDepth: 0.50,
-  rimHeight: 0.82,
-  wheelRadius: 0.26,
-  wheelZ: 0.55,
-  wheelHalfWidth: 0.095,
-  grip: { x: 0.46, y: 0.90, z: -0.48 },
-  lift: 0.13,
+  pushOffset,
+  trayHalfWidth,
+  trayHalfDepth,
+  rimHeight,
+  wheelRadius,
+  wheelZ,
+  wheelHalfWidth,
+  grip: { x: gripX, y: gripHeight, z: gripZ },
+  lift,
 }
 
-const { trayHalfWidth, trayHalfDepth, rimHeight, wheelRadius, wheelZ, wheelHalfWidth } = barrowRig
+const wheelDiameter = wheelRadius + wheelRadius
 export const barrowSolids = [
   { halfWidth: trayHalfWidth, halfDepth: trayHalfDepth, z: 0, height: rimHeight },
-  { halfWidth: wheelHalfWidth, halfDepth: wheelRadius, z: wheelZ, height: wheelRadius * 2 },
+  { halfWidth: wheelHalfWidth, halfDepth: wheelRadius, z: wheelZ, height: wheelDiameter },
 ]
 
 // Overlapping circles cover the tray’s corners and the wheel during a push.
+const trayClearanceX = 0.22
+const trayClearanceZ = 0.31
+const trayClearanceRadius = 0.23
+const wheelClearanceRadius = 0.15
+const half = 0.5
 export const barrowClearance = [
-  ...[-0.22, 0.22].flatMap((x) => [-0.31, 0, 0.31].map((z) => ({ x, z, radius: 0.23 }))),
-  { x: 0, z: wheelZ + wheelRadius / 2, radius: 0.15 },
+  ...[-trayClearanceX, trayClearanceX].flatMap((x) => [-trayClearanceZ, 0, trayClearanceZ].map((z) => ({ x, z, radius: trayClearanceRadius }))),
+  { x: 0, z: wheelZ + wheelRadius * half, radius: wheelClearanceRadius },
 ]
 
 export function pushedBarrowPose(player: Pose): Pose {

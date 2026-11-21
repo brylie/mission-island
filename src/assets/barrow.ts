@@ -3,6 +3,7 @@ import { barrowRig } from '../barrow'
 import type { MeshFactory } from '../island-meshes'
 
 type Vertex = [number, number, number]
+export const barrowFeet = { halfWidth: 0.326, z: -0.355 }
 
 function buildTray(meshes: MeshFactory, root: TransformNode) {
   const { rimHeight, trayHalfDepth: depth, trayHalfWidth: width } = barrowRig
@@ -56,9 +57,9 @@ export function createBarrow(meshes: MeshFactory) {
     rail.rotation.set(0.43, -side * 0.29, 0)
     box(side * grip.x, grip.y, grip.z, 0.07, 0.074, 0.18, '#5d4934', frame).rotation.copyFrom(rail.rotation)
     box(side * 0.205, 0.39, 0.44, 0.039, 0.32, 0.049, '#485954', frame).rotation.z = -side * 0.51
-    box(side * 0.28, 0.249, -0.355, 0.05, 0.494, 0.052, '#50605a', frame).rotation.z = side * 0.19
+    box(side * 0.28, 0.249, barrowFeet.z, 0.05, 0.494, 0.052, '#50605a', frame).rotation.z = side * 0.19
     box(side * 0.25, 0.246, -0.239, 0.039, 0.54, 0.042, '#50605a', frame).rotation.x = -0.46
-    box(side * 0.326, 0.031, -0.355, 0.097, 0.052, 0.066, '#39413e', frame)
+    box(side * barrowFeet.halfWidth, 0.031, barrowFeet.z, 0.097, 0.052, 0.066, '#39413e', frame)
   }
   box(0, 0.32, -0.31, 0.65, 0.036, 0.043, '#51605a', frame)
 

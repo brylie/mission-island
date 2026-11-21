@@ -7,6 +7,9 @@ import { barrowPickup } from '../src/worlds/starter/farm-order-sites.ts'
 import { stopPrimary, stowTool, type CrewNotice } from './crew.ts'
 import type { InteractionHandlers } from './interactions.ts'
 
+const barrowPackingGestureMs = 420
+const barrowFacingMinDistance = 0.1
+
 export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotice) => void, clock: () => number, checkpoint?: () => void) {
   const work = state.farmWork
   const { progress } = work
@@ -66,7 +69,7 @@ export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotic
       const quantity = Math.min(player.goods.carrots, farmOrders.harvest.quantity - progress.delivered - progress.load)
       player.goods.carrots -= quantity
       progress.load += quantity
-      if (work.barrow?.handler !== player.id) member.reachUntil = clock() + 420
+      if (work.barrow?.handler !== player.id) member.reachUntil = clock() + barrowPackingGestureMs
     },
     'unload-barrow'() {
       const quantity = progress.load
@@ -81,7 +84,7 @@ export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotic
       stopPrimary(member)
       stowTool(member)
       member.reachUntil = 0
-      if (distance(barrow, player) > 0.1) player.heading = Math.atan2(barrow.x - player.x, barrow.z - player.z)
+      if (distance(barrow, player) > barrowFacingMinDistance) player.heading = Math.atan2(barrow.x - player.x, barrow.z - player.z)
       barrow.handler = player.id
     },
     'park-barrow': () => parkBarrow(false),

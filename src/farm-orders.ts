@@ -5,10 +5,23 @@ import { walkingHeight } from './terrain.ts'
 import { distance, type Point, type Pose } from './world.ts'
 import { barrowPickup, barrowPickupName, produceCounter } from './worlds/starter/farm-order-sites.ts'
 
+const starterCarrotQuota = 2
+const starterOrderCoins = 8
+const barrowCarrotQuota = 6
+const barrowOrderCoins = 22
 export const farmOrders = {
-  starter: { title: 'Carrots for Ines', quantity: 2, coins: 8 },
-  harvest: { title: 'Seabrook barrow order', quantity: 6, coins: 22 },
+  starter: { title: 'Carrots for Ines', quantity: starterCarrotQuota, coins: starterOrderCoins },
+  harvest: { title: 'Seabrook barrow order', quantity: barrowCarrotQuota, coins: barrowOrderCoins },
 } as const
+
+const barrowStandReach = 1.8
+const produceCounterReach = 1.15
+const barrowReach = 2
+const barrowUnloadReach = 2
+const farmPackingReach = 8
+const targetAimRadius = 0.7
+const barrowAimHeight = 0.62
+const barrowStandAimHeight = 0.8
 export type FarmOrderId = keyof typeof farmOrders
 type Stage = 'offer' | 'starter' | 'qualified' | 'harvest' | 'complete'
 export type FarmProgress = { stage: Stage, delivered: number, load: number }
@@ -51,19 +64,19 @@ export function farmOrderStatus({ progress, barrow }: FarmWork): string {
   const remaining = carrotCount(farmOrders[stage].quantity - delivered)
   const delivery = `Ines still needs ${remaining} at Seabrook Market.`
   if (stage === 'starter') return delivery
-  const location = barrow && distance(barrow, barrowPickup) < 1.8 ? `at the ${barrowPickupName}` : 'marked on the map'
+  const location = barrow && distance(barrow, barrowPickup) < barrowStandReach ? `at the ${barrowPickupName}` : 'marked on the map'
   return `${delivery} Barrow ${location} · ${load} packed.`
 }
 
 function targeted(action: FarmAction, label: string, name: string, point: Point, height: number): InteractionOption<FarmAction> {
-  return { action, key: 'E', label, name, at: { ...point, y: walkingHeight(point) + height }, radius: 0.7 }
+  return { action, key: 'E', label, name, at: { ...point, y: walkingHeight(point) + height }, radius: targetAimRadius }
 }
 
 function produceInteractions(progress: FarmProgress, player: Player): InteractionOption<FarmAction>[] {
   const options: InteractionOption<FarmAction>[] = []
   const { stage, delivered } = progress
   const counter = (action: FarmAction, label: string) => targeted(action, label, 'Ines’s produce counter', produceCounter, 1)
-  if (distance(player, produceCounter) < 1.15) {
+  if (distance(player, produceCounter) < produceCounterReach) {
     if (stage === 'offer') options.push(counter('accept-produce', `Take Ines’s order · ${farmOffer('starter')}`))
     if (stage === 'qualified') options.push(counter('accept-barrow-order', `Take Ines’s barrow order · ${farmOffer('harvest')}`))
     if (stage === 'starter' && player.goods.carrots > 0) {
@@ -84,21 +97,21 @@ export function farmInteractions({ progress, barrow }: FarmWork, player: Player,
   if (!handling) options.push(...produceInteractions(progress, player))
   const { stage, delivered, load } = progress
   if (!barrow) return options
-  const atBarrow = distance(player, barrow) < 2
-  const cart = (action: FarmAction, label: string) => targeted(action, label, 'Farm barrow', barrow, 0.62)
+  const atBarrow = distance(player, barrow) < barrowReach
+  const cart = (action: FarmAction, label: string) => targeted(action, label, 'Farm barrow', barrow, barrowAimHeight)
   if (atBarrow && stage === 'harvest') {
     const pack = Math.min(player.goods.carrots, farmOrders.harvest.quantity - delivered - load)
-    if (distance(barrow, produceCounter) < 2 && load && (barrow.handler === null || handling)) {
+    if (distance(barrow, produceCounter) < barrowUnloadReach && load && (barrow.handler === null || handling)) {
       options.push(cart('unload-barrow', `Deliver ${carrotCount(load)} to Ines`))
     }
-    else if (pack > 0 && distance(barrow, farm) < 8) {
+    else if (pack > 0 && distance(barrow, farm) < farmPackingReach) {
       options.push(cart('pack-barrow', `Pack ${carrotCount(pack)} into the barrow`))
     }
   }
   if (handling) options.push(parkBarrow)
   else if (atBarrow && barrow.handler === null) options.push(cart('grip-barrow', 'Grip the barrow · Walk to push'))
-  if (barrow.handler === null && distance(barrow, barrowPickup) >= 1.8 && distance(player, barrowPickup) < 1.8) {
-    options.push(targeted('recall-barrow', 'Recover the shared barrow here', barrowPickupName, barrowPickup, 0.8))
+  if (barrow.handler === null && distance(barrow, barrowPickup) >= barrowStandReach && distance(player, barrowPickup) < barrowStandReach) {
+    options.push(targeted('recall-barrow', 'Recover the shared barrow here', barrowPickupName, barrowPickup, barrowStandAimHeight))
   }
   return options
 }

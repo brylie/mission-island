@@ -7,7 +7,7 @@ export const farmStudy: Entry = {
   id: 'farm',
   name: 'Carrot plots',
   group: 'Farming',
-  source: 'src/island-farm.ts',
+  source: 'src/assets/farm.ts',
   fieldSite: () => ({ name: 'Carrot farm', offset: { x: 0, y: 0, z: 0 }, replaceFarm: true }),
   description: 'Compare soil and carrot growth through each stage of the crop.',
   controls: [control('plot', 'Growth stage', 'ripe', { grass: 'Grass', tilled: 'Tilled', planted: 'Planted', watered: 'Watered', ripe: 'Ripe' })],

@@ -14,11 +14,6 @@
       "count": 6
     }
   },
-  "server/barrow-motion.ts": {
-    "no-magic-numbers": {
-      "count": 4
-    }
-  },
   "server/cargo-interactions.ts": {
     "no-magic-numbers": {
       "count": 1
@@ -42,11 +37,6 @@
   "server/equipment.ts": {
     "no-magic-numbers": {
       "count": 8
-    }
-  },
-  "server/farm-orders.ts": {
-    "no-magic-numbers": {
-      "count": 2
     }
   },
   "server/freight.ts": {
@@ -204,19 +194,9 @@
       "count": 6
     }
   },
-  "src/barrow-contact.ts": {
-    "no-magic-numbers": {
-      "count": 10
-    }
-  },
   "src/barrow-gait.ts": {
     "no-magic-numbers": {
       "count": 12
-    }
-  },
-  "src/barrow.ts": {
-    "no-magic-numbers": {
-      "count": 19
     }
   },
   "src/biome-model.ts": {
@@ -267,26 +247,6 @@
   "src/extinguisher-spray.ts": {
     "no-magic-numbers": {
       "count": 1
-    }
-  },
-  "src/farm-order-ui.ts": {
-    "no-magic-numbers": {
-      "count": 3
-    }
-  },
-  "src/farm-order-view.ts": {
-    "no-magic-numbers": {
-      "count": 32
-    }
-  },
-  "src/farm-orders.ts": {
-    "no-magic-numbers": {
-      "count": 14
-    }
-  },
-  "src/farm.ts": {
-    "no-magic-numbers": {
-      "count": 13
     }
   },
   "src/field-interactions.ts": {
@@ -387,11 +347,6 @@
   "src/island-camera.ts": {
     "no-magic-numbers": {
       "count": 51
-    }
-  },
-  "src/island-farm.ts": {
-    "no-magic-numbers": {
-      "count": 37
     }
   },
   "src/island-landmarks.ts": {
@@ -1262,11 +1217,6 @@
   "src/worlds/starter/colliders.ts": {
     "no-magic-numbers": {
       "count": 126
-    }
-  },
-  "src/worlds/starter/farm-order-sites.ts": {
-    "no-magic-numbers": {
-      "count": 5
     }
   },
   "src/worlds/starter/island-remarks.ts": {
