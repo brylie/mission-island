@@ -2,12 +2,16 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { Mesh } from '@babylonjs/core/Meshes/mesh'
 import type { MeshFactory } from '../island-meshes'
 import { garment, sweptDetail } from './crew-shapes'
+import { createSwimArm } from './crew-swim-arm'
+import { createSwimsuit } from './crew-swimsuit'
 
 export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
   const blank = '#f1d6a2'
   const skin: Mesh[] = [], cloth: Mesh[] = [], trim: Mesh[] = [], trousers: Mesh[] = [], shoes: Mesh[] = []
-  const bareFeet: Mesh[] = [], bareLimbs: Mesh[] = [], swimCloth: Mesh[] = []
-  const arms: TransformNode[] = [], legs: TransformNode[] = []
+  const bareFeet: Mesh[] = [], bareLimbs: Mesh[] = [], shirtedSkin: Mesh[] = []
+  const swimCalves: Mesh[] = [], swimBareFeet: Mesh[] = []
+  const arms: TransformNode[] = [], legs: TransformNode[] = [], shoulders: Mesh[] = []
+  const swimArms: ReturnType<typeof createSwimArm>[] = []
   const form = (parent: TransformNode, name: string, rows: Parameters<typeof garment>[4], soft = .88) =>
     garment(meshes, parent, name, blank, rows, soft)
   for (const s of [-1, 1]) {
@@ -17,7 +21,7 @@ export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
     legs.push(leg)
     const inward = -s * .032
     trousers.push(form(leg, 'Twill trouser leg', [
-      [-.465, inward, 0, .108, .111], [-.415, inward, -.002, .114, .116], [-.315, inward, -.005, .117, .123],
+      [-.465, inward, 0, .108, .111], [-.415, inward, -.002, .114, .116], [-.348, inward, -.007, .116, .121], [-.308, inward, .001, .119, .126], [-.271, inward, .009, .120, .129],
       [-.213, inward, .013, .124, .137], [-.09, -s * .029, .002, .136, .154], [.034, -s * .038, -.010, .13, .146], [.083, -s * .044, -.010, .136, .143], [.149 + s * .002, -s * .052, -.014, .134, .122],
     ]))
     trousers.push(form(leg, 'Folded trouser hem', [[-.466, inward, .001, .111, .116], [-.46, inward, 0, .115, .119], [-.408, inward, -.001, .117, .122]]))
@@ -26,25 +30,39 @@ export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
       [-.554, inward, .038, .118, .159], [-.521, inward, .007, .107, .124], [-.445, inward, -.005, .102, .103],
     ]))
     shoes.push(form(leg, 'Boot outsole', [[-.678, inward, .044, .116, .171], [-.67, inward, .044, .121, .178], [-.645, inward, .044, .123, .177]], .71))
-    bareFeet.push(form(leg, 'Bare foot', [[-.677, inward, .045, .085, .13], [-.654, inward, .053, .10, .143], [-.615, inward, .047, .097, .131], [-.56, inward, 0, .082, .074], [-.427, inward, -.004, .083, .082]]))
-    swimCloth.push(form(leg, 'Swim shorts', [[-.214, inward, .005, .125, .136], [-.135, inward, .006, .133, .147], [.085, -s * .032, -.012, .148, .158]]))
-    bareLimbs.push(form(leg, 'Calf', [[-.603, inward, 0, .077, .079], [-.433, inward, -.008, .082, .092], [-.319, inward, -.009, .103, .103], [-.174, inward, .009, .104, .111]]))
+    const foot: Parameters<typeof garment>[4] = [
+      [-.677, inward, .045, .085, .13], [-.654, inward, .053, .10, .143],
+      [-.615, inward, .047, .097, .131], [-.56, inward, 0, .082, .074],
+    ]
+    bareFeet.push(form(leg, 'Bare foot', [...foot, [-.427, inward, -.004, .083, .082]]))
+    const calf: Parameters<typeof garment>[4] = [
+      [-.507, inward, -.004, .077, .081], [-.433, inward, -.008, .086, .095],
+      [-.319, inward, -.009, .103, .103], [-.174, inward, .009, .104, .111],
+    ]
+    swimCalves.push(form(leg, 'Calf above swimming shoes', [[-.571, inward, 0, .071, .072], ...calf]))
+    swimBareFeet.push(form(leg, 'Bare calf and foot', [...foot, ...calf]))
 
     const arm = new TransformNode('Shoulder', meshes.scene)
     arm.parent = root
     arm.position.set(s * .36, 1.19, .03)
     arms.push(arm)
+    // Keep a rounded shoulder across the rotating sleeve and the stationary torso.
+    shoulders.push(meshes.sphere(s * .311, 1.156, -.006, .203, .157, .196, blank, root, false, 16))
     cloth.push(form(arm, 'Sloping shirt sleeve', [
       [-.279, s * .053, -.013, .084, .095], [-.223, s * .042, -.025, .09, .101], [-.129, s * .019, -.038, .095, .109],
       [-.078, -s * .007, -.037, .102, .119], [-.012, -s * .042, -.035, .103, .119],
       [.038, -s * .081, -.034, .094, .104], [.068, -s * .148, -.030, .047, .056],
     ]))
     trim.push(form(arm, 'Rolled cuff', [[-.306, s * .060, -.009, .086, .096], [-.298, s * .059, -.010, .09, .101], [-.248, s * .049, -.018, .094, .104], [-.242, s * .048, -.019, .09, .101]]))
-    bareLimbs.push(form(arm, 'Upper arm', [[-.378, s * .061, -.010, .074, .076], [-.22, s * .043, -.026, .079, .091], [-.095, -s * .008, -.023, .093, .105], [-.015, -s * .055, -.018, .085, .104]]))
-    skin.push(form(arm, 'Forearm and palm', [
+    const forearm: Parameters<typeof garment>[4] = [
       [-.608, s * .090, .037, .025, .035], [-.590, s * .103, .041, .053, .055], [-.552, s * .112, .029, .067, .061],
-      [-.502, s * .105, .014, .066, .070], [-.468, s * .094, .006, .054, .063], [-.426, s * .083, -.003, .064, .074], [-.334, s * .069, -.010, .076, .081], [-.265, s * .052, -.014, .075, .081],
-    ]))
+      [-.502, s * .105, .014, .066, .070], [-.468, s * .094, .006, .054, .063], [-.426, s * .083, -.003, .064, .074],
+      [-.334, s * .069, -.011, .074, .080], [-.265, s * .052, -.014, .079, .087],
+    ]
+    shirtedSkin.push(form(arm, 'Shirted forearm and palm', forearm))
+    const swimArm = createSwimArm(meshes, root, arm, s, blank, forearm)
+    swimArms.push(swimArm)
+    bareLimbs.push(swimArm.mesh)
     skin.push(sweptDetail(meshes, arm, 'Opposing thumb', blank, [
       [s * .097, -.479, .052, .017, .018], [s * .071, -.494, .069, .031, .027],
       [s * .055, -.520, .081, .028, .024], [s * .050, -.548, .073, .022, .020], [s * .053, -.558, .065, .013, .012],
@@ -60,10 +78,15 @@ export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
     [-.224, 1.097, -.140, .001, .001], [-.145, 1.085, -.179, .003, .002],
     [0, 1.080, -.204, .003, .002], [.145, 1.085, -.179, .003, .002], [.224, 1.097, -.140, .001, .001],
   ], [0, 0, -1], 6)
-  swimCloth.push(form(root, 'Swimsuit body', [
-    [.64, 0, 0, .268, .173], [.736, 0, .004, .277, .189], [.88, 0, -.006, .238, .167],
-    [1.044, 0, -.009, .258, .18], [1.138, 0, -.005, .242, .16], [1.21, 0, 0, .163, .115], [1.23, 0, .004, .119, .105],
-  ]))
+  const swimsuit = createSwimsuit(meshes, root, legs, blank)
+  // The exposed skin across the collarbone fills the neckline and joins the deltoids.
+  bareLimbs.push(form(root, 'Swim shoulder and collarbone line', [
+    [1.154, 0, -.013, .247, .138], [1.199, 0, -.017, .286, .141],
+    [1.230, 0, -.017, .283, .126], [1.252, 0, -.013, .261, .116],
+    [1.269, 0, -.008, .226, .104], [1.280, 0, .002, .174, .095],
+    [1.286, 0, .008, .111, .092],
+  ], .95))
+  for (const part of bareLimbs) part.receiveShadows = false
   skin.push(form(root, 'Neck', [[1.188, 0, .012, .12, .10], [1.24, 0, .01, .123, .103], [1.369, 0, .012, .116, .111]]))
   cloth.push(form(root, 'Neckband', [[1.211, 0, .002, .146, .121], [1.258, 0, -.005, .147, .115], [1.295, 0, -.004, .126, .104]]))
   // The two broad collar points follow the shoulder slope. Visible faces have their own folded edge.
@@ -84,6 +107,10 @@ export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
   for (const [y, z] of [[.824, .211], [.932, .179], [1.044, .181], [1.157, .170]]) {
     trim.push(meshes.sphere(.004, y, z, .029, .029, .012, blank, root, false, 7))
   }
-  const swimSeam = meshes.sphere(0, 1.124, .17, .247, .022, .021, blank, root, false, 9)
-  return { arms, legs, skin, cloth, trim, torso, inset, yoke, trousers, shoes, bareFeet, bareLimbs, swimCloth, swimSeam }
+  const swimSeam = sweptDetail(meshes, root, 'Swimsuit chest seam', blank, [
+    [-.146, 1.122, .132, .003, .003], [-.079, 1.117, .155, .005, .004], [0, 1.115, .165, .006, .004],
+    [.079, 1.117, .155, .005, .004], [.146, 1.122, .132, .003, .003],
+  ], [0, 0, 1])
+  meshes.shadows.removeShadowCaster(swimSeam, false)
+  return { arms, legs, skin, cloth, trim, torso, inset, yoke, trousers, shoes, bareFeet, bareLimbs, swimsuit, swimSeam, shoulders, shirtedSkin, swimArms, swimCalves, swimBareFeet }
 }

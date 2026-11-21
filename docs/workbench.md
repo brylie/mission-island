@@ -29,6 +29,8 @@ The Workbench remembers the reference and its framing per asset in this browser.
 
 For the player model, open **Wardrobe → Crew character → Compare turnaround**, or use the [crew fitting shortcut](http://localhost:5173/workbench.html#crew?fitting=turnaround) on the default development port. **Front**, **Side** and **Back** frame the corresponding figure in the concept sheet and turn the model to match. Each starts with the same bareheaded courier in daylight. You can then orbit, try another outfit or scrub a pose beside the drawing. Under **Zoom and pan**, choose **Fit** to see the full sheet. Use **Copy setup link** after making adjustments to share that exact view.
 
+In the crew inspector, **Outfit preset** previews a complete uniform. Picking a shirt, swimsuit, hat, trousers, or shoes switches a work uniform to everyday clothes so the piece is visible. The inspector shows **Default** for slots supplied by a uniform and restores your everyday selections when you return to everyday clothes. Picking trousers replaces a swimsuit with the default shirt. **Show cap** controls visibility, and selecting a specific cap turns it back on. Turn off **Use custom shirt and cap dye** to compare the stock colors.
+
 ### Prepare a comparison link from the command line
 
 Choose the asset in the Library and use its address or **Copy setup link** to include the model camera and settings. The asset ID follows the first `#` (for example, `clover`). Find a Commons file page showing the feature you want to study and check the credit and license on that page. From the checkout, run the following with the host and port your reviewer can reach.

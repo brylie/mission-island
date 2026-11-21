@@ -5,23 +5,33 @@ import { sweptDetail } from './crew-shapes'
 
 const chestnut = '#50382f'
 
-function createHairline(meshes: MeshFactory, root: TransformNode) {
-  const vertices: number[] = [], faces: number[] = [], sides = 36
-  for (const [row, [width, depth, y, dip]] of [
+function createHairline(meshes: MeshFactory, root: TransformNode, cap = false) {
+  const vertices: number[] = [], faces: number[] = [], sides = cap ? 48 : 36
+  // The last cap ring turns inward above the brim and ends inside the canvas.
+  const rings = cap ? [
+    [.271, .197, .357, .185], [.283, .227, .367, .178], [.284, .235, .371, .099],
+    [.280, .232, .376, 0], [.252, .207, .397, 0],
+  ] : [
     [.285, .243, .375, .226], [.292, .256, .434, .162], [.29, .253, .49, .092],
     [.251, .218, .538, .033], [.177, .165, .563, .009], [.073, .072, .571, 0], [.002, .002, .572, 0],
-  ].entries()) {
+  ]
+  const curve = (n: number) => cap ? Math.sign(n) * Math.abs(n) ** .91 : n
+  for (const [row, [width, depth, y, dip]] of rings.entries()) {
     for (let i = 0; i < sides; i++) {
       const a = i * 2 * Math.PI / sides, u = Math.cos(a), v = Math.sin(a)
-      const line = (1 - v) / 2 + .16 * Math.abs(u) ** 8 + .052 * Math.sin(5 * a + .5)
-      const part = .043 * Math.max(0, v) ** 4 * (1.0 + .64 * u) * (dip / .226)
-      vertices.push(width * u, y - dip * line + part, depth * v - .003)
+      const side = Math.abs(u) ** 8, back = (1 - v) / 2
+      // Taper behind the ears and let three broad waves break the lower nape.
+      const nape = Math.max(0, -v)
+      const clipped = back + .09 * side + nape * (.07 * Math.cos(7 * a + .6) + .04 * u)
+      const line = cap ? clipped : back + .16 * side + .052 * Math.sin(5 * a + .5)
+      const part = (cap ? 0 : .043) * Math.max(0, v) ** 4 * (1.0 + .64 * u) * (dip / .226)
+      vertices.push(width * curve(u), y - dip * line + part, depth * curve(v) - .003)
       if (row === 0) continue
       const b = (row - 1) * sides + i, c = (row - 1) * sides + (i + 1) % sides
       faces.push(b, c, b + sides, c, c + sides, b + sides)
     }
   }
-  const scalp = meshes.surface('Tapered hairline', vertices, faces, chestnut, root)
+  const scalp = meshes.surface(cap ? 'Cropped hair under cap' : 'Tapered hairline', vertices, faces, chestnut, root)
   meshes.shadows.addShadowCaster(scalp, false)
   return scalp
 }
@@ -33,7 +43,7 @@ type Lock = {
   path: Parameters<typeof sweptDetail>[4]
 }
 
-// The tucked layers make up the nape and temples. Keep these visible with a cap.
+// Curled ends at the nape and temples complete the bareheaded style.
 const tuckedLocks: Lock[] = [
   {
     name: 'Left temple curl', crest: [1, .17, .36], shade: 1.00, path: [
@@ -139,21 +149,20 @@ const liftedLocks: Lock[] = [
 export function createCrewHair(meshes: MeshFactory, head: TransformNode) {
   const root = new TransformNode('Hair fitting', meshes.scene)
   root.parent = head
-  const scalp = createHairline(meshes, root)
-  const locks = [...tuckedLocks, ...liftedLocks].map(({ name, crest, shade, path }, i) => ({
-    mesh: sweptDetail(meshes, root, name, chestnut, path, crest, 12),
+  const curls = new TransformNode('Swept curls', meshes.scene)
+  curls.parent = root
+  const scalp = createHairline(meshes, curls)
+  const cropped = createHairline(meshes, root, true)
+  const locks = [...tuckedLocks, ...liftedLocks].map(({ name, crest, shade, path }) => ({
+    mesh: sweptDetail(meshes, curls, name, chestnut, path, crest, 12),
     shade,
-    underCap: i < tuckedLocks.length,
   }))
   return (hex: string, shaved: boolean, cap: boolean) => {
     root.setEnabled(!shaved)
-    root.scaling.set(cap ? .94 : 1, cap ? .79 : 1, cap ? .92 : 1)
-    root.position.y = cap ? .037 : 0
+    curls.setEnabled(!cap)
+    cropped.setEnabled(cap)
     const pigment = Color3.FromHexString(hex)
-    scalp.material = meshes.paint(pigment.scale(.88).toHexString())
-    for (const { mesh, shade, underCap } of locks) {
-      mesh.material = meshes.paint(pigment.scale(shade).toHexString())
-      mesh.setEnabled(underCap || !cap)
-    }
+    scalp.material = cropped.material = meshes.paint(pigment.scale(.88).toHexString())
+    for (const { mesh, shade } of locks) mesh.material = meshes.paint(pigment.scale(shade).toHexString())
   }
 }

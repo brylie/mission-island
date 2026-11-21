@@ -14,7 +14,7 @@ import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { readStorage, writeStorage } from '../browser-storage'
 import { entries as initialEntries } from './catalog'
-import { restoreOptions, type Control, type Values } from './subject'
+import { applyRelatedOptions, restoreOptions, type Control, type Values } from './subject'
 import type { FieldSite } from './field-site'
 import { createStage } from './stage'
 import type { Angle, CameraState } from './stage'
@@ -172,7 +172,7 @@ function renderAssetControls() {
         option.textContent = title
         select.append(option)
       }
-      select.value = String(values[control.key])
+      select.value = control.displayValue?.(values) ?? String(values[control.key])
       select.addEventListener('change', () => setOption(control, select.value))
       row.append(name, select)
     } else {
@@ -283,6 +283,7 @@ function cameraAtSameSite(previous?: FieldSite) {
 function setOption(control: Control, value: Values[string], save = true) {
   const oldSite = fieldSite()
   values[control.key] = value
+  if (asset.relatedOptions) applyRelatedOptions(inspector, asset, values, control.key)
   if (asset.actions) refreshActions()
   zFightingResult.replaceChildren()
   seek = true
