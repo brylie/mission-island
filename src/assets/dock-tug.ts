@@ -1,71 +1,85 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import { coastalProfile } from './coastal-profiles'
+import {
+  dockTugBodywork,
+  dockTugCab,
+  dockTugChassis,
+  dockTugDriver,
+  dockTugFinishes as finish,
+  dockTugRunningGear,
+  type DockTugBox,
+} from './geometry/dock-tug'
+
+const half = 0.5
+const quarterTurn = Math.PI * half
 
 export function createDockTug(meshes: MeshFactory) {
   const { scene, box, cylinder } = meshes
   const root = new TransformNode('Three-wheel dock tug', scene)
-  const green = '#498477', cream = '#e5cd97', rubber = '#333d3e', iron = '#526260'
-  box(0, 0.42, -0.09, 1.04, 0.16, 1.91, iron, root)
-  box(0, 0.60, -0.67, 1.26, 0.27, 1.03, green, root)
-  box(0, 0.766, -0.67, 1.29, 0.068, 1.06, '#b8966a', root)
-  for (const x of [-0.62, 0.62]) box(x, 0.87, -0.655, 0.064, 0.16, 1.05, green, root)
-  box(0, 0.87, -1.177, 1.282, 0.162, 0.082, green, root)
-  box(0, 0.89, -0.16, 1.19, 0.22, 0.065, green, root)
+  const addBox = (part: DockTugBox) => box(...part.center, ...part.size, finish[part.finish], root)
+
+  const { frame, cargoBed, deck, rails, tailgate, bulkhead } = dockTugChassis
+  addBox(frame)
+  addBox(cargoBed)
+  addBox(deck)
+  for (const x of rails.x) box(x, rails.y, rails.z, ...rails.size, finish.enamel, root)
+  addBox(tailgate)
+  addBox(bulkhead)
+
   // An open driver's step separates the low load deck and the rounded nose.
-  box(0, 0.50, 0.30, 0.99, 0.08, 0.81, '#85765e', root)
-  box(0, 0.67, 0.01, 0.53, 0.27, 0.35, green, root)
-  box(0, 0.83, 0.02, 0.59, 0.105, 0.43, '#594f43', root)
-  box(0, 0.99, -0.155, 0.57, 0.29, 0.085, '#685647', root).rotation.x = -0.11
-  coastalProfile(meshes, root, 'Enamel motor bonnet', green, [
-    [0.59, 0.76, 0.43, 0.26],
-    [0.76, 0.76, 0.50, 0.27],
-    [0.98, 0.74, 0.49, 0.22],
-    [1.11, 0.71, 0.45, 0.17],
-    [1.14, 0.71, 0.39, 0.14],
-  ], 16, 0.46)
-  box(0, 0.54, 1.15, 0.91, 0.084, 0.12, cream, root)
-  for (const y of [0.65, 0.69, 0.73]) box(0, y, 1.146, 0.29, 0.014, 0.017, iron, root)
-  for (const x of [-0.52, 0.52]) {
-    box(x, 0.67, -1.196, 0.17, 0.075, 0.028, '#c4684e', root)
-    box(x, 0.546, -0.71, 0.23, 0.07, 0.69, green, root)
+  const { step, pedestal, seat, backrest } = dockTugDriver
+  addBox(step)
+  addBox(pedestal)
+  addBox(seat)
+  addBox(backrest).rotation.x = backrest.rake
+
+  const { bonnet, bumper, grille, rear, headlights } = dockTugBodywork
+  coastalProfile(meshes, root, 'Enamel motor bonnet', finish.enamel, bonnet.sections, bonnet.sides, bonnet.roundness)
+  addBox(bumper)
+  for (const y of grille.levels) box(0, y, grille.z, ...grille.size, finish.iron, root)
+  for (const x of rear.x) {
+    box(x, rear.taillight.y, rear.taillight.z, ...rear.taillight.size, finish.taillight, root)
+    box(x, rear.fender.y, rear.fender.z, ...rear.fender.size, finish.enamel, root)
   }
-  for (const x of [-0.281, 0.281]) {
-    const lamp = cylinder(x, 0.786, 1.141, 0.138, 0.15, 0.078, 12, iron, root)
-    lamp.rotation.x = Math.PI / 2
-    cylinder(x, 0.786, 1.188, 0.112, 0.112, 0.024, 12, '#f3d99d', root).rotation.x = Math.PI / 2
+  for (const x of headlights.x) {
+    cylinder(x, headlights.y, headlights.casing.z, ...headlights.casing.size, finish.iron, root).rotation.x = quarterTurn
+    cylinder(x, headlights.y, headlights.lens.z, ...headlights.lens.size, finish.headlight, root).rotation.x = quarterTurn
   }
-  for (const x of [-0.446, 0.446]) {
-    box(x, 1.34, 0.73, 0.048, 0.99, 0.054, cream, root).rotation.x = 0.12
-    box(x, 1.34, -0.12, 0.045, 0.99, 0.050, iron, root)
+
+  const { posts, windshieldRake, windshield, sill, roof, roofLining, steering } = dockTugCab
+  for (const x of posts.x) {
+    box(x, posts.y, posts.front.z, ...posts.front.size, finish.cream, root).rotation.x = windshieldRake
+    box(x, posts.y, posts.rear.z, ...posts.rear.size, finish.iron, root)
   }
-  const glass = meshes.paint('#a7d2cf').clone('Dock tug windshield')!
-  glass.alpha = 0.34
-  box(0, 1.55, 0.768, 0.855, 0.41, 0.037, glass, root, false).rotation.x = 0.12
-  box(0, 1.347, 0.742, 0.91, 0.051, 0.066, cream, root)
-  box(0, 1.842, 0.28, 1.03, 0.087, 1.11, cream, root)
-  box(0, 1.805, 0.28, 0.97, 0.043, 1.04, green, root)
-  cylinder(0, 1.02, 0.58, 0.042, 0.046, 0.43, 8, iron, root).rotation.x = -0.37
-  cylinder(0, 1.214, 0.50, 0.30, 0.27, 0.039, 14, rubber, root).rotation.x = -0.37
+  const glass = meshes.paint(finish.windshield).clone('Dock tug windshield')!
+  glass.alpha = windshield.opacity
+  box(...windshield.center, ...windshield.size, glass, root, false).rotation.x = windshieldRake
+  addBox(sill)
+  addBox(roof)
+  addBox(roofLining)
+  cylinder(...steering.column.center, ...steering.column.size, finish.iron, root).rotation.x = steering.rake
+  cylinder(...steering.wheel.center, ...steering.wheel.size, finish.rubber, root).rotation.x = steering.rake
+
+  const { axleHeight, rearWheels, frontWheelZ, fork, tire, rim, cap } = dockTugRunningGear
   const rollers: TransformNode[] = []
   const steer = new TransformNode('Front fork', scene)
   steer.parent = root
-  steer.position.set(0, 0.26, 0.86)
-  function wheel(x: number, z: number, front = false) {
+  steer.position.set(0, axleHeight, frontWheelZ)
+  function wheel(parent: TransformNode, rear?: { x: number, z: number }) {
     const hub = new TransformNode('Axle', scene)
-    hub.parent = front ? steer : root
-    if (!front) hub.position.set(x, 0.26, z)
+    hub.parent = parent
+    if (rear) hub.position.set(rear.x, axleHeight, rear.z)
     rollers.push(hub)
-    cylinder(0, 0, 0, 0.52, 0.52, 0.161, 18, rubber, hub).rotation.z = Math.PI / 2
+    cylinder(0, 0, 0, ...tire, finish.rubber, hub).rotation.z = quarterTurn
     for (const side of [-1, 1]) {
-      cylinder(side * 0.089, 0, 0, 0.26, 0.26, 0.043, 14, cream, hub).rotation.z = Math.PI / 2
-      cylinder(side * 0.115, 0, 0, 0.11, 0.11, 0.014, 10, iron, hub).rotation.z = Math.PI / 2
+      cylinder(side * rim.offsetX, 0, 0, ...rim.size, finish.cream, hub).rotation.z = quarterTurn
+      cylinder(side * cap.offsetX, 0, 0, ...cap.size, finish.iron, hub).rotation.z = quarterTurn
     }
   }
-  for (const x of [-0.13, 0.13]) box(x, 0.12, 0, 0.038, 0.26, 0.054, iron, steer)
-  wheel(-0.55, -0.72)
-  wheel(0.55, -0.72)
-  wheel(0, 0.86, true)
+  for (const x of fork.x) box(x, fork.y, 0, ...fork.size, finish.iron, steer)
+  for (const x of rearWheels.x) wheel(root, { x, z: rearWheels.z })
+  wheel(steer)
   return (angle: number, roll: number) => {
     steer.rotation.y = angle
     for (const wheel of rollers) wheel.rotation.x = roll

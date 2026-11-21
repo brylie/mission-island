@@ -1,7 +1,7 @@
 {
   "eslint.config.mjs": {
     "no-magic-numbers": {
-      "count": 33
+      "count": 31
     }
   },
   "scripts/workbench-reference.mjs": {
@@ -159,11 +159,6 @@
       "count": 67
     }
   },
-  "src/assets/dock-tug.ts": {
-    "no-magic-numbers": {
-      "count": 195
-    }
-  },
   "src/assets/effect-props.ts": {
     "no-magic-numbers": {
       "count": 87
@@ -172,11 +167,6 @@
   "src/assets/farm.ts": {
     "no-magic-numbers": {
       "count": 54
-    }
-  },
-  "src/assets/ferry-terminal.ts": {
-    "no-magic-numbers": {
-      "count": 253
     }
   },
   "src/assets/field-outing.ts": {
@@ -202,11 +192,6 @@
   "src/assets/gull.ts": {
     "no-magic-numbers": {
       "count": 110
-    }
-  },
-  "src/assets/honey-props.ts": {
-    "no-magic-numbers": {
-      "count": 229
     }
   },
   "src/assets/market-awning.ts": {
@@ -274,24 +259,9 @@
       "count": 26
     }
   },
-  "src/assets/shop-market-tops.ts": {
-    "no-magic-numbers": {
-      "count": 91
-    }
-  },
   "src/assets/shop-tailoring.ts": {
     "no-magic-numbers": {
       "count": 28
-    }
-  },
-  "src/assets/shop-textiles.ts": {
-    "no-magic-numbers": {
-      "count": 33
-    }
-  },
-  "src/assets/shop-tops.ts": {
-    "no-magic-numbers": {
-      "count": 281
     }
   },
   "src/assets/stockpile-profile.ts": {
@@ -779,11 +749,6 @@
       "count": 2
     }
   },
-  "src/second-island/exteriors.ts": {
-    "no-magic-numbers": {
-      "count": 243
-    }
-  },
   "src/second-island/footways.ts": {
     "no-magic-numbers": {
       "count": 21
@@ -872,11 +837,6 @@
   "src/second-island/terrain.ts": {
     "no-magic-numbers": {
       "count": 227
-    }
-  },
-  "src/second-island/vehicles.ts": {
-    "no-magic-numbers": {
-      "count": 289
     }
   },
   "src/second-island/walking.ts": {
