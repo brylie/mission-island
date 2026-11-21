@@ -1,3 +1,4 @@
+import { relaxCrewGait } from './crew-gait-pose'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData'
@@ -93,13 +94,14 @@ export function createRidgeCourse(meshes: MeshFactory) {
 }
 
 export function poseHangGliderPilot(pilot: ReturnType<typeof createCrew>, blend: number) {
+  relaxCrewGait(pilot, blend)
   pilot.look(.17, 0, 0, blend)
   for (const [i, arm] of pilot.arms.entries()) {
     arm.rotation.x += (-1.42 - arm.rotation.x) * blend
     arm.rotation.z += ((i ? .17 : -.17) - arm.rotation.z) * blend
     const leg = pilot.legs[i]
     leg.rotation.x += (.2 - leg.rotation.x) * blend
-    pilot.knees[i](.42, blend)
+    pilot.knees[i].bend(.42, blend)
   }
   pilot.fitSwimwear()
 }

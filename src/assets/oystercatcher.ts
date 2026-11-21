@@ -1,6 +1,7 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import { coastalProfile } from './coastal-profiles'
+import { gaitPhase } from '../simulation/gait'
 
 export function createOystercatcher(meshes: MeshFactory) {
   const root = new TransformNode('Oystercatcher', meshes.scene)
@@ -45,9 +46,9 @@ export function createOystercatcher(meshes: MeshFactory) {
     meshes.sphere(side * .054, .084, .038, .013, .025, .025, '#db9350', head, false, 5)
     meshes.sphere(side * .061, .084, .039, .007, .013, .013, '#202a2a', head, false, 5)
   }
-  function pose(time: number, feeding: boolean, stride = 0) {
-    for (const [i, leg] of legs.entries()) leg.rotation.x = Math.sin(time * 13 + i * Math.PI) * .44 * stride
-    const dip = feeding ? Math.max(0, Math.sin(time * 2.2)) ** 3 : 0
+  function pose(time: number, feeding: boolean, cycle = 0, stride = 0) {
+    for (const [i, leg] of legs.entries()) leg.rotation.x = Math.sin(gaitPhase(cycle, i / 2) * 2 * Math.PI) * .44 * stride
+    const dip = feeding ? Math.max(0, Math.sin(time * 2.2)) ** 3 * (1 - stride) : 0
     body.rotation.x = .08 + .84 * dip
     head.rotation.x = .78 * dip
     head.rotation.y = (1 - dip) * .19 * Math.sin(time * 1.4)

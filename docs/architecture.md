@@ -54,6 +54,14 @@ Every **E** interaction shares one trait, defined in [interaction options](../sr
 - **Animals.** In [Juniper Hollow](../src/juniper-habitat.ts), hares and foxes can share locomotion and [obstacle navigation](../src/biome-navigation.ts) with different speeds and clearances. A hare's threat response can send it toward cover, while a fox can give a nearby player space and then resume its patrol. Position and current behavior belong to each animal.
 - **Plants.** A habitat trait can guide where an island places reeds or clover. A regrowth trait can let clover replenish forage after grazing, with the patch's remaining forage tracked by the [biome simulation](../src/biome-model.ts). Wind sway can stay in presentation when it only affects appearance.
 
+### Ground movement
+
+A [gait timing trait](../src/simulation/gait.ts) supplies metres per cycle at the current speed, how quickly the gait responds to a speed change, and the speed at which its limb motion reaches full amplitude. Feed it horizontal distance achieved after navigation or collision. Distance advances the cycle, while [easing](../src/simulation/motion-easing.ts) lets an actor start or settle smoothly. Each limb can sample its own offset within the cycle. A stop or block adds no steps.
+
+The live crew, the Biome Composer walker, and the Coastal Meadow oystercatchers use these timing functions. The crew rig chooses when to plant each foot, computes a world-space contact target, and applies the resulting pose to its own thigh, shin, and foot. The shorebird rig uses alternating leg swings and eases back into pecking as its legs settle. An additional species can set its own cycle length, limb offsets, and recovery motion. [Coastal Meadow walkthrough](workbench.md#walk-the-coastal-meadow)
+
+Keep Babylon-specific transforms in the rig. The crew skin uses local bone rotations and authored bind offsets for clothing. With a rig whose bones are linked to transform nodes, animate those nodes. For a world-space contact check, update the skeleton's absolute matrices and use the skinned mesh's transform to place the sampled point in the scene. [Babylon.js bones and skeletons](https://doc.babylonjs.com/features/featuresDeepDive/mesh/bonesSkeletons) · [Bone class internals](https://doc.babylonjs.com/features/featuresDeepDive/mesh/bonesSkeletons/boneInternals/)
+
 ## Static checks
 
 `npm run quality` runs the architecture rules through ESLint, followed by unused-code checks, coverage, type checking and the build. First-party TypeScript modules have a 350-line file limit, a 140-line function limit, and a cyclomatic complexity ceiling of 24. Line limits exclude comments and blank lines. Test files have the same file limit. The [ESLint config](../eslint.config.mjs) records per-file ceilings for existing hotspots. Lower an exception or remove it when the relevant code is split.

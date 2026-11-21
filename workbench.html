@@ -155,6 +155,13 @@
       </section>
 
       <aside class="inspector" aria-label="Preview controls">
+        <details id="gait-trace" hidden>
+          <summary>Gait trace</summary>
+          <label>Leg <select id="trace-leg"><option value="0">Left</option><option value="1">Right</option></select></label>
+          <canvas width="520" height="240" aria-label="Forward ankle velocity and knee bend over one stride"></canvas>
+          <output></output>
+          <p>Shading marks ground contact. Velocity is relative to the ground.</p>
+        </details>
         <section id="biome-presets" hidden>
           <h2>Starting habitat</h2>
           <a class="asset-link" href="#fish-school">Open fish schooling trial →</a>

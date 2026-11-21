@@ -76,6 +76,13 @@ function shoulderRig(vehicleBlend: number, pitch: number) {
     shoulder: 0.38 * (1 - vehicleBlend), pivotHeight: 1.55 + 0.5 * (1 - vehicleBlend) }
 }
 
+function inspectionCamera(camera: FreeCamera, target: Vector3) {
+  const offset = camera.position.subtract(target)
+  const radius = offset.length()
+  return { target: target.asArray(), alpha: Math.atan2(offset.z, offset.x), beta: Math.acos(offset.y / radius),
+    radius, fov: camera.fov }
+}
+
 export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   const overview = new FreeCamera('Island overview', new Vector3(0, 174, -120), scene)
   overview.mode = Camera.ORTHOGRAPHIC_CAMERA
@@ -96,8 +103,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   const desired = Vector3.Zero()
   const target = Vector3.Zero()
   let tracking = false
-  let heading = 0
-  let orbitYaw = 0
+  let heading = 0, orbitYaw = 0
   let orbitPitch = 0
   let pitch = 0
   let wasSeated = false
@@ -232,11 +238,12 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       return follow
     },
     inspectionCamera() {
-      if (!tracking) return
-      const offset = follow.position.subtract(target)
-      const radius = offset.length()
-      return { target: target.asArray(), alpha: Math.atan2(offset.z, offset.x), beta: Math.acos(offset.y / radius),
-        radius, fov: follow.fov }
+      if (tracking) return inspectionCamera(follow, target)
+    },
+    faceWalkingLane(direction: number) {
+      heading = orbitYaw = direction
+      pitch = orbitPitch = 0
+      tracking = false
     },
     walkInput(x: number, z: number) {
       if (!tracking || wasSeated || (!x && !z)) return { x, z }

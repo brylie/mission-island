@@ -22,6 +22,9 @@ export const starterPay = {
 }
 export const jumpSpeed = 6.85
 export const jumpGravity = 17
+export const crewWalkSpeed = 8
+export const crewCarrySpeed = 6.5
+export const crewSprintMultiplier = 1.55
 export const truckStart: Pose = { x: -41, z: -11, heading: Math.PI / 2 }
 export const truckSeatSpeed = 2
 export const skiffStart: Pose = { x: -48.5, z: -35.8, heading: -2.5 }

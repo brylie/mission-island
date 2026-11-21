@@ -4,7 +4,10 @@ import { createGame } from '../server/game.ts'
 import { gateMendedStage, onBench, toolboxItem } from '../src/gate-repair.ts'
 import { interactions } from '../src/interaction-options.ts'
 import { scenarioCatalog, checkpointSettings } from '../server/scenarios/catalog.ts'
-import { actionHint } from '../src/actions.ts'
+import { actionHint, interactRequest } from '../src/actions.ts'
+import { fisherAt } from '../src/harbor-fisher.ts'
+import { commuteCheckpoint, walkingCheckpoint, walkingLane } from '../src/walking-scenario.ts'
+import { crewCarrySpeed, crewSprintMultiplier, crewWalkSpeed } from '../src/world.ts'
 import { tokens } from './support/game-harness.mjs'
 
 test('the launcher accepts only known checkpoints and one or two crew members', () => {
@@ -83,6 +86,43 @@ for (const { id: checkpoint } of scenarioCatalog) {
       } else if (checkpoint === 'harbor-delivery') {
         assert.equal(state.mission, 'delivery')
         assert.match(actionHint(state, state.players[0])[1], /crate/i)
+      } else if (checkpoint === walkingCheckpoint) {
+        const walker = state.players[0]
+        assert.equal(walker.x, walkingLane.start.x)
+        assert.equal(walker.z, walkingLane.start.z)
+        if (b) assert.equal(state.players[1].x, walkingLane.observer.x)
+        const crate = state.items[0]
+        assert.ok(Math.abs(crate.x - walkingLane.crate.x) < .01)
+        assert.match(actionHint(state, walker)[1], /crate/i)
+        const walk = (x, sprint = false) => {
+          const start = walker.x
+          for (let tick = 0; tick < 24; tick++) {
+            a.dispatch({ type: 'input', input: { x, z: 0, sprint } })
+            game.tick()
+          }
+          assert.equal(walker.z, walkingLane.start.z)
+          return Math.abs(walker.x - start) / .8
+        }
+        assert.ok(Math.abs(walk(1) - crewWalkSpeed) < 1e-6)
+        assert.ok(Math.abs(walk(-1, true) - crewWalkSpeed * crewSprintMultiplier) < 1e-6)
+        walk(1)
+        a.dispatch({ type: 'input', input: { x: -1, z: 0, sprint: false } })
+        for (let tick = 0; tick < 11; tick++) game.tick()
+        const pickUp = interactRequest(state, walker)
+        assert.deepEqual(pickUp, { type: 'interact', choice: { action: 'pick-up', subject: crate.id } })
+        a.dispatch(pickUp)
+        assert.equal(crate.holder, a.id)
+        assert.ok(Math.abs(walk(1) - crewCarrySpeed) < 1e-6)
+        if (b) assert.equal(state.players[1].x, walkingLane.observer.x)
+      } else if (checkpoint === commuteCheckpoint) {
+        assert.ok(state.weather.hour < 6)
+        let ticks = 0
+        while (state.weather.hour < 6 && ticks++ < 400) game.tick()
+        const before = fisherAt(state.weather.hour)
+        for (let tick = 0; tick < 90; tick++) game.tick()
+        const after = fisherAt(state.weather.hour)
+        assert.equal(after.walking, true)
+        assert.ok(Math.hypot(after.x - before.x, after.z - before.z) > 3)
       }
     })
   }

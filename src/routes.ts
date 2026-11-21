@@ -116,7 +116,9 @@ export function ribbonGeometry(strips: ReadonlyArray<readonly Point[]>, width: n
 }
 
 const sidewalkWidth = 1.55
-const southSidewalkZ = 8.24
+export const southSidewalkZ = 8.24
+export const sidewalkHeight = .065
+export const roadHeight = .084
 const southSidewalkEdge = southSidewalkZ - sidewalkWidth / 2
 
 export const walkways = [

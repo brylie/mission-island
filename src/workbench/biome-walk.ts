@@ -1,6 +1,7 @@
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera'
 import type { MeshFactory } from '../island-meshes'
 import { createCrew, poseCrew } from '../assets/crew'
+import { createCrewGait } from '../crew-gait'
 import type { habitatNavigation } from '../biome-navigation'
 import type { Values } from './subject'
 import type { Point } from '../world'
@@ -33,7 +34,7 @@ export function createBiomeWalk(meshes: MeshFactory, settings: Values, navigatio
   canvas?.addEventListener('blur', clear, events)
   window.addEventListener('blur', clear, events)
   meshes.scene.onDisposeObservable.addOnce(() => events.abort())
-  let phase = 0
+  const gait = createCrewGait()
   return (delta: number): Point | undefined => {
     const cam = meshes.scene.activeCamera
     if (!(cam instanceof ArcRotateCamera)) return
@@ -45,6 +46,7 @@ export function createBiomeWalk(meshes: MeshFactory, settings: Values, navigatio
         Object.assign(cam, { alpha: saved.alpha, beta: saved.beta, radius: saved.radius })
         delete state.overview
         clear()
+        gait.reset()
       }
       return
     }
@@ -65,13 +67,13 @@ export function createBiomeWalk(meshes: MeshFactory, settings: Values, navigatio
       state.x = next.x
       state.z = next.z
       state.heading = Math.atan2(dx, dz)
-      phase += delta * 1.65
     }
     const height = navigation.lift(state)
     crew.root.position.set(state.x, height, state.z)
     crew.root.rotation.y = state.heading
-    poseCrew(crew, phase, moving ? .55 : 0, false)
-    crew.blink(phase + performance.now() / 1000)
+    const frame = gait.sample({ x: state.x, y: height, z: state.z, heading: state.heading }, delta, navigation.lift)
+    poseCrew(crew, frame, frame.amount * .55, false)
+    crew.blink(frame.cycle + performance.now() / 1000)
     cam.target.set(state.x, height + 1.03, state.z)
     cam.beta = Math.min(cam.beta, 1.55)
     return state

@@ -4,6 +4,7 @@ import type { MeshFactory } from '../island-meshes'
 import { garment, sweptDetail } from './crew-shapes'
 import { createSwimArm } from './crew-swim-arm'
 import { createSwimsuit } from './crew-swimsuit'
+import { crewHip } from '../crew-gait'
 
 export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
   const blank = '#f1d6a2'
@@ -18,7 +19,7 @@ export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
   for (const s of [-1, 1]) {
     const leg = new TransformNode('Hip', meshes.scene)
     leg.parent = root
-    leg.position.set(s * .18, .68, .02)
+    leg.position.set(s * crewHip.x, crewHip.y, crewHip.z)
     legs.push(leg)
     const inward = -s * .032
     trousers.push(form(leg, 'Twill trouser leg', [

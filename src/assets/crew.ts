@@ -3,6 +3,8 @@ import { isStockPiece, shopBottoms, shopShoes, shopTops } from '../wardrobe-stoc
 import { createShopAttachments, wornStock } from './shop-garments'
 import { rigCrewKnee } from './crew-knee'
 import { createCrewClothes } from './crew-clothes'
+import { fitCrewGait, relaxCrewGait } from './crew-gait-pose'
+import { crewLegSwing, type CrewGaitPose } from '../crew-gait'
 import { createCrewHead } from './crew-head'
 import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
@@ -32,10 +34,12 @@ function legPalette(appearance: CrewAppearance) {
 
 export function createCrew(meshes: MeshFactory, id: number) {
   const root = new TransformNode(`Crew ${id + 1}`, meshes.scene)
-  const kit = createCrewClothes(meshes, root)
+  const body = new TransformNode('Crew body', meshes.scene)
+  body.parent = root
+  const kit = createCrewClothes(meshes, body)
   const knees = kit.legs.map(rigCrewKnee)
-  const head = createCrewHead(meshes, root, kit.skin)
-  const shop = createShopAttachments(meshes, { root, head: head.pivot, arms: kit.arms, legs: kit.legs, knees: knees.map(knee => knee.skeleton) })
+  const head = createCrewHead(meshes, body, kit.skin)
+  const shop = createShopAttachments(meshes, { root: body, head: head.pivot, arms: kit.arms, legs: kit.legs, knees: knees.map(knee => knee.skeleton) })
   const { paint } = meshes
   let showCap = true, hatEquipped = true
   let worn: CrewAppearance | undefined
@@ -164,22 +168,25 @@ export function createCrew(meshes: MeshFactory, id: number) {
     for (const arm of kit.swimArms) arm.fitPose()
   }
   setAppearance()
-  return { root, arms: kit.arms, legs: kit.legs, setAppearance, blink, setCap, fitSwimwear, knees: knees.map(knee => knee.bend), look }
+  return { root, body, arms: kit.arms, legs: kit.legs, setAppearance, blink, setCap, fitSwimwear, knees, look }
 }
 
-export function poseCrew(crew: ReturnType<typeof createCrew>, cycle: number, stride: number, airborne: boolean,
+export function poseCrew(crew: ReturnType<typeof createCrew>, gait: number | CrewGaitPose, stride: number, airborne: boolean,
   carrying?: 'crate' | 'extinguisher' | 'toolbox' | 'tool', reach = 0, blend = 1, winding = 0, throwing = false, rightHandRaised = false) {
-  const phase = cycle * Math.PI * 2
+  const phase = (typeof gait === 'number' ? gait : gait.cycle + .25) * Math.PI * 2
   const swing = Math.sin(phase) * stride
   const effort = Math.max(reach, Number(rightHandRaised), winding)
   crew.look(airborne ? -.06 : (carrying === 'crate' ? .13 : effort * .07),
     (Number(rightHandRaised) - reach) * .09, -.042 * swing, blend)
+  if (typeof gait === 'number') relaxCrewGait(crew, blend)
+  else fitCrewGait(crew, gait)
   for (const [i, leg] of crew.legs.entries()) {
     const side = i === 0 ? -1 : 1
-    const recovery = Math.max(0, -side * Math.cos(phase))
-    const bend = airborne ? .46 - side * .19 : stride * (.08 + .88 * recovery * recovery)
-    leg.rotation.x += ((airborne ? side * .35 : swing * side - bend * .36) - leg.rotation.x) * blend
-    crew.knees[i](bend, blend)
+    if (typeof gait === 'number') {
+      const step = crewLegSwing(phase, stride, side)
+      leg.rotation.x += ((airborne ? side * .35 : step.hip) - leg.rotation.x) * blend
+      crew.knees[i].bend(airborne ? .46 - side * .19 : step.bend, blend)
+    }
     const arm = crew.arms[i]
     arm.rotation.z *= 1 - blend
     const swinging = airborne ? -0.8 : -swing * side * 0.77
@@ -193,6 +200,7 @@ export function poseCrew(crew: ReturnType<typeof createCrew>, cycle: number, str
 }
 
 export function poseSwimming(crew: ReturnType<typeof createCrew>, time: number, speed: number, blend = 1) {
+  relaxCrewGait(crew, blend)
   const stroke = time * Math.PI * 2 / 1.6
   crew.root.rotation.x = .06 + .22 * speed
   crew.look(-crew.root.rotation.x * .64, .025 * Math.sin(stroke), 0, blend)
@@ -204,7 +212,7 @@ export function poseSwimming(crew: ReturnType<typeof createCrew>, time: number, 
     arm.rotation.z += (sweep - arm.rotation.z) * blend
     const kick = .5 + .5 * Math.cos(stroke)
     crew.legs[i].rotation.x = .21 - kick * (.18 + .21 * speed) + side * .05 * Math.sin(stroke)
-    crew.knees[i](.13 + kick * (.33 + .42 * speed), blend)
+    crew.knees[i].bend(.13 + kick * (.33 + .42 * speed), blend)
   }
   crew.fitSwimwear()
 }
@@ -231,9 +239,10 @@ export function createFarmTools({ scene, box, cylinder, sphere }: MeshFactory, c
 }
 
 export function poseSkiffCrew(crew: ReturnType<typeof createCrew>, stroke: number, side: number, fishing: boolean, blend: number) {
+  relaxCrewGait(crew, blend)
   crew.look(fishing ? .10 : .055 + stroke * .035, side * (fishing ? .15 : .07 * stroke), 0, blend)
   for (const [i, leg] of crew.legs.entries()) {
-    crew.knees[i](1.05, blend)
+    crew.knees[i].bend(1.05, blend)
     leg.rotation.x += (-1.27 - leg.rotation.x) * blend
     const arm = crew.arms[i]
     const outerArm = i === (side < 0 ? 0 : 1)

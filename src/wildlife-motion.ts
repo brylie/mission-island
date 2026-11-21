@@ -1,10 +1,8 @@
 import type { Point } from './world.ts'
 import type { Weather } from './protocol.ts'
+import { smoothRange } from './simulation/motion-easing.ts'
 
-export function smoothRange(start: number, end: number, value: number) {
-  const t = Math.max(0, Math.min(1, (value - start) / (end - start)))
-  return t * t * (3 - 2 * t)
-}
+export { smoothRange }
 
 export function schoolAvoidance(origin: Point, threats: readonly Point[], escape: Point): Point {
   let pushX = 0, pushZ = 0
