@@ -11,6 +11,7 @@ import type { Truck, TruckPose } from '../truck-pose.ts'
 import { islandRocks, islandTrees, northernProps, treeTrunkRadius } from '../scenery.ts'
 import { coastBounds, groundHeight, maxWadeDepth, shoreProfile, walkingHeight, waterDepth, waterLevel } from '../terrain.ts'
 import { createTruckPhysics } from './truck.ts'
+import { watchCrateImpacts } from './cargo-impacts.ts'
 
 // The garden gate leaf moves with host state, so crates meet it where players see it.
 function gateLeafBody(world: World) {
@@ -69,12 +70,8 @@ function barrowBody(world: World) {
   }
 }
 
-export function createCargoPhysics() {
-  const world = new World({ gravity: new Vec3(0, -9.82, 0) })
-  world.broadphase = new SAPBroadphase(world)
-  world.defaultContactMaterial.friction = 0.4
-  world.defaultContactMaterial.restitution = 0.14
-
+// Terrain and every fixed collider cargo can strike or rest on.
+function addIslandColliders(world: World) {
   // Cover the whole island, including the wading shelf and a margin for falling cargo.
   const outerRadius = shoreProfile[shoreProfile.length - 1].radius
   const coast = coastBounds(outerRadius)
@@ -126,6 +123,15 @@ export function createCargoPhysics() {
     if (!tree) body.quaternion.setFromEuler(0, angle, 0)
     world.addBody(body)
   }
+}
+
+export function createCargoPhysics() {
+  const world = new World({ gravity: new Vec3(0, -9.82, 0) })
+  world.broadphase = new SAPBroadphase(world)
+  world.defaultContactMaterial.friction = 0.4
+  world.defaultContactMaterial.restitution = 0.14
+
+  addIslandColliders(world)
 
   const ferry = ferryBodies(world)
   // The flatbed's shore check reads the restored deck as solid ground, so it can drive out to the berth.
@@ -138,6 +144,7 @@ export function createCargoPhysics() {
     linearDamping: 0.14,
     angularDamping: 0.24,
   }))
+  const impacts = watchCrateImpacts(world, crates, truck.body, truck.bedShape)
 
   function remove(item: Item) {
     if (item.kind !== 'crate') return
@@ -179,6 +186,12 @@ export function createCargoPhysics() {
     truck.matchBedMotion(body)
   }
 
+  // Places a crate where the host stages it, such as an order's pickup point. Settling there is not an impact.
+  function relocate(item: Item, point: Point) {
+    release(item, point)
+    if (item.kind === 'crate') impacts.quiet(item.id)
+  }
+
   function restore(item: Item) {
     if (item.kind !== 'crate' || item.holder !== null || item.delivered) return
     const rotation = item.rotation
@@ -187,6 +200,7 @@ export function createCargoPhysics() {
       crates[item.id].quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w)
       item.rotation = rotation
     }
+    impacts.quiet(item.id)
   }
 
   function step(items: Item[], before: Truck, input: Input, dt: number) {
@@ -200,6 +214,7 @@ export function createCargoPhysics() {
       const { position, quaternion, velocity } = crates[item.id]
       if ((waterDepth(position) > maxWadeDepth && position.y < waterLevel) || position.y < -4) {
         release(item, crateStarts[item.id])
+        impacts.quiet(item.id)
         continue
       }
       const relative = truckSurface(after, position, truckBed.top)
@@ -214,6 +229,6 @@ export function createCargoPhysics() {
     return after
   }
 
-  return { release, launch, load, remove, restore, step, placeBarrow: barrowBody(world), placeGateLeaf: gateLeafBody(world),
-    placeFerry: ferry.place, parkTruck: truck.park }
+  return { release, relocate, launch, load, remove, restore, step, drainImpacts: () => impacts.drain(world.time), placeBarrow: barrowBody(world),
+    placeGateLeaf: gateLeafBody(world), placeFerry: ferry.place, parkTruck: truck.park }
 }

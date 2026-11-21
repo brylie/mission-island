@@ -5,6 +5,8 @@ import { actionHint, atClothingCounter, heldItem, inSkiff, interactRequest } fro
 import { createRidgeHud, flightInput, ridgeActionHint } from './ridge-ui'
 import { readStorage, writeStorage } from './browser-storage'
 import { cleanCrewName } from './crew-appearance'
+import { bindJoinName, openJoinName } from './join-name-ui'
+import { bindSoundOptions } from './sound-options-ui'
 import { createCrewGuide } from './crew-guide-ui'
 import { farmFeedback } from './farm-order-ui'
 import { createMissionHud } from './mission-ui'
@@ -68,6 +70,7 @@ const joinNameDialog = element<HTMLDialogElement>('join-name-dialog')
 const joinName = element<HTMLInputElement>('join-name')
 const editCrewName = element<HTMLButtonElement>('edit-crew-name')
 const lookSettings = bindLookOptions((settings) => renderer?.setLook(settings))
+const soundSettings = bindSoundOptions((settings) => renderer?.setSound(settings))
 const reticle = createReticleFocus(playfield, document.querySelector('.reticle'))
 const openWardrobe = element<HTMLButtonElement>('open-wardrobe')
 const wardrobeDialog = element<HTMLDialogElement>('wardrobe-dialog')
@@ -147,6 +150,7 @@ try {
   bootMessage.textContent = 'Building the island scenery…'
   renderer = createRenderer(canvas, markers)
   renderer.setLook(lookSettings())
+  renderer.setSound(soundSettings())
   bootMessage.textContent = 'Connecting to the host…'
 } catch (error) {
   renderer?.dispose()
@@ -233,10 +237,7 @@ function update(state: Snapshot) {
       offerJoinName = false
       if (!player.name) {
         pauseControls()
-        joinName.value = ''
-        joinName.setCustomValidity('')
-        joinName.placeholder = `Crew ${player.id + 1}`
-        joinNameDialog.showModal()
+        openJoinName(joinNameDialog, joinName, `Crew ${player.id + 1}`)
       }
     }
   }
@@ -259,12 +260,19 @@ function update(state: Snapshot) {
   promptAction.textContent = waiting ?? action
 }
 
+// A new connection starts a fresh listening run; shared crate impacts play from each viewer's position.
+function hearNotice(message: ServerMessage) {
+  if (message.type === 'welcome') renderer?.resetSound()
+  else if (message.type === 'crate-impact') renderer?.hearImpact(message)
+}
+
 function connect() {
   const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:'
   socket = new WebSocket(`${scheme}//${location.host}/play`)
   socket.addEventListener('open', () => send({ type: 'join', token }))
   socket.addEventListener('message', (event: MessageEvent<string>) => {
     const incoming = JSON.parse(event.data) as ServerMessage
+    hearNotice(incoming)
     const neighborly = neighborFeedback(incoming, id, performance.now())
     if (neighborly) actionFeedback = neighborly
     switch (incoming.type) {
@@ -605,25 +613,7 @@ editCrewName.addEventListener('click', () => {
   crewName.focus()
   crewName.select()
 })
-joinName.addEventListener('input', () => joinName.setCustomValidity(''))
-element('join-name-form').addEventListener('submit', (event) => {
-  const name = cleanCrewName(joinName.value)
-  if (!name) {
-    event.preventDefault()
-    joinName.setCustomValidity('Enter a game name or choose Skip for now.')
-    joinName.reportValidity()
-    return
-  }
-  if (live) send({ type: 'crew-name', name })
-})
-function skipJoinName() {
-  writeStorage('localStorage', skipNameKey(), 'yes')
-}
-joinNameDialog.addEventListener('cancel', skipJoinName)
-element('skip-join-name').addEventListener('click', () => {
-  skipJoinName()
-  joinNameDialog.close()
-})
+bindJoinName(joinNameDialog, joinName, (name) => live && send({ type: 'crew-name', name }), () => writeStorage('localStorage', skipNameKey(), 'yes'))
 function saveCrewName() {
   const original = editingName
   editingName = undefined
@@ -660,6 +650,7 @@ if (import.meta.hot) {
     try {
       renderer = module.createRenderer(canvas, markers)
       renderer.setLook(lookSettings())
+      renderer.setSound(soundSettings())
       if (modalOpen()) renderer.releaseMouse()
       if (snapshot) renderer.update(snapshot, id, follow)
       if (!socket) {
