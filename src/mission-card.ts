@@ -1,5 +1,5 @@
 import { ferryCard } from './ferry-repair-ui'
-import { favorProgress, gateRepairGuide } from './gate-repair'
+import { favorProgress, gateRepairGuide, gateRepairStepCount } from './gate-repair'
 import { jobDescription, secondIslandProgress } from './job-board-ui'
 import { activeJob, deliveryDrop, secondIslandGoal } from './jobs'
 import { materialsGuide, materialsOpen, repairQuantity } from './materials-work'
@@ -84,7 +84,7 @@ export function missionCard(state: Snapshot, id: number) {
   const local = state.players.find((entry) => entry.id === id)
   if (local && state.gateRepair.stage !== 'sagging' && !materialsOpen(state)) {
     const favor = gateRepairGuide(state, local), value = favorProgress(state.gateRepair)
-    return { label: 'NEIGHBOR FAVOR', title: favor.title, detail: favor.detail, progress: 'Repair steps', value, max: 4, text: `${value} / 4 steps`, instruction: favor.next }
+    return { label: 'NEIGHBOR FAVOR', title: favor.title, detail: favor.detail, progress: 'Repair steps', value, max: gateRepairStepCount, text: `${value} / ${gateRepairStepCount} steps`, instruction: favor.next }
   }
   const asked = local && residentFavorCard(state, local)
   if (asked) return asked

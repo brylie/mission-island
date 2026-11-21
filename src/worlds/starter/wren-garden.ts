@@ -1,45 +1,30 @@
-import { backPath, fenceZ, gateway } from '../../gate-repair.ts'
-import { seededRandom } from '../../seeded-random.ts'
-import { distance, wrenCottage } from '../../world.ts'
-import type { Point } from '../../world.ts'
+import { fenceZ } from '../../gate-layout.ts'
+import { wrenCottage } from '../../world.ts'
 
-// Wren is a carpenter who keeps a tidy cottage garden. These placements dress the cottage
-// and yard; models live in src/assets/wren-garden.ts and the solid ones join the colliders.
-const { x, z, w, d } = wrenCottage
-const front = z - d / 2
-const back = z + d / 2
+// These placements feed both the garden model and the Starter Island colliders.
+const { x, z, d } = wrenCottage
+const half = 0.5
+const back = z + d * half
+const westBedOffsetX = -2.05
+const westBedOffsetZ = 1.15
+const westBedWidth = 0.75
+const westBedDepth = 1.75
+const eastBedOffsetX = 1.6
+const eastBedOffsetZ = 0.62
+const eastBedWidth = 1.5
+const eastBedDepth = 0.7
+const woodpileOffsetX = 1.72
+const behindCottage = 0.34
+const sawhorseOffset = 1.55
+const sawhorseHeading = 0.35
+const barrelOffsetX = 1.02
 
 // Low flower beds inside the fence, clear of the gate leaf's swing and the front path.
 export const flowerBeds = [
-  { x: x - 2.05, z: fenceZ + 1.15, width: 0.75, depth: 1.75, flowers: ['#b99bd8', '#f4ead0', '#e9c35a'] },
-  { x: x + 1.6, z: fenceZ + 0.62, width: 1.5, depth: 0.7, flowers: ['#f4ead0', '#b99bd8', '#e98a6b'] },
+  { x: x + westBedOffsetX, z: fenceZ + westBedOffsetZ, width: westBedWidth, depth: westBedDepth, flowers: ['#b99bd8', '#f4ead0', '#e9c35a'] },
+  { x: x + eastBedOffsetX, z: fenceZ + eastBedOffsetZ, width: eastBedWidth, depth: eastBedDepth, flowers: ['#f4ead0', '#b99bd8', '#e98a6b'] },
 ]
 
-// Flagstones from the gate to the front door: the shortcut Wren takes once the gate is mended.
-export const frontPath = Array.from({ length: 4 }, (_, i) => ({
-  x: gateway.x + [-0.05, 0.07, -0.03, 0.05][i],
-  z: fenceZ + 0.38 + i * (front - fenceZ - 0.85) / 3,
-  width: [0.7, 0.62, 0.74, 0.66][i],
-  depth: 0.42,
-}))
-
-export const woodpile = { x: x + 1.72, z: back + 0.34, heading: 0 }
-export const sawhorse = { x: x + 1.55, z: back + 1.55, heading: 0.35 }
-export const rainBarrel = { x: x + 1.02, z: back + 0.34 }
-export const chimney = { x: x + 1.15, z: z + 0.55, w: 0.5, d: 0.5 }
-export const windowBoxes = [-1, 1].map((side) => ({ x: x + side * w * 0.31, z: front - 0.17 }))
-
-// The worn back path: muted stones of uneven size and spacing, slightly sunk into the grass.
-export const steppingStones = (() => {
-  const random = seededRandom(7721)
-  const stones: (Point & { rx: number, rz: number, heading: number, tone: number })[] = []
-  for (let i = 1; i < backPath.length; i++) {
-    const [from, to] = [backPath[i - 1], backPath[i]]
-    const length = distance(from, to)
-    for (let along = 0.55; along < length - 0.2; along += 0.78 + random() * 0.3) {
-      const f = along / length, sway = (random() - 0.5) * 0.26
-      stones.push({ x: from.x + (to.x - from.x) * f + sway * (to.z - from.z) / length, z: from.z + (to.z - from.z) * f - sway * (to.x - from.x) / length, rx: 0.19 + random() * 0.08, rz: 0.15 + random() * 0.07, heading: random() * Math.PI, tone: random() })
-    }
-  }
-  return stones
-})()
+export const woodpile = { x: x + woodpileOffsetX, z: back + behindCottage, heading: 0 }
+export const sawhorse = { x: x + sawhorseOffset, z: back + sawhorseOffset, heading: sawhorseHeading }
+export const rainBarrel = { x: x + barrelOffsetX, z: back + behindCottage }

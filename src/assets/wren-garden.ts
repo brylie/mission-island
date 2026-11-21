@@ -1,11 +1,43 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { fenceZ, front, gateway } from '../gate-layout'
 import type { MeshFactory } from '../island-meshes'
+import { seededRandom } from '../seeded-random'
 import { groundHeight } from '../terrain'
-import { houseRoofRise, wrenCottage } from '../world'
-import { chimney, flowerBeds, frontPath, rainBarrel, sawhorse, steppingStones, windowBoxes, woodpile } from '../worlds/starter/wren-garden'
+import { distance, houseRoofRise, wrenCottage } from '../world'
+import type { Point } from '../world'
+import { backPath } from '../worlds/starter/residents/wren-route'
+import { flowerBeds, rainBarrel, sawhorse, woodpile } from '../worlds/starter/wren-garden'
 
 const stoneTones = ['#8d877a', '#9a9384', '#7f7b70', '#a39b89']
 const soil = '#6a513a', plank = '#a17a55', log = '#8a6646', logEnd = '#c9a678', brick = '#9c5a45', leaf = '#5f8a4e'
+
+const { x, z, w } = wrenCottage
+
+// Flagstones from the gate to the front door: the shortcut Wren takes once the gate is mended.
+const frontPath = Array.from({ length: 4 }, (_, i) => ({
+  x: gateway.x + [-0.05, 0.07, -0.03, 0.05][i],
+  z: fenceZ + 0.38 + i * (front - fenceZ - 0.85) / 3,
+  width: [0.7, 0.62, 0.74, 0.66][i],
+  depth: 0.42,
+}))
+
+const chimney = { x: x + 1.15, z: z + 0.55, w: 0.5, d: 0.5 }
+const windowBoxes = [-1, 1].map((side) => ({ x: x + side * w * 0.31, z: front - 0.17 }))
+
+// The worn back path: muted stones of uneven size and spacing, slightly sunk into the grass.
+const steppingStones = (() => {
+  const random = seededRandom(7721)
+  const stones: (Point & { rx: number, rz: number, heading: number, tone: number })[] = []
+  for (let i = 1; i < backPath.length; i++) {
+    const [from, to] = [backPath[i - 1], backPath[i]]
+    const length = distance(from, to)
+    for (let along = 0.55; along < length - 0.2; along += 0.78 + random() * 0.3) {
+      const f = along / length, sway = (random() - 0.5) * 0.26
+      stones.push({ x: from.x + (to.x - from.x) * f + sway * (to.z - from.z) / length, z: from.z + (to.z - from.z) * f - sway * (to.x - from.x) / length, rx: 0.19 + random() * 0.08, rz: 0.15 + random() * 0.07, heading: random() * Math.PI, tone: random() })
+    }
+  }
+  return stones
+})()
 
 function flowerBed({ box, sphere }: MeshFactory, bed: typeof flowerBeds[number]) {
   const y = groundHeight(bed)

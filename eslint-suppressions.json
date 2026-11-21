@@ -54,11 +54,6 @@
       "count": 9
     }
   },
-  "server/gate-repair.ts": {
-    "no-magic-numbers": {
-      "count": 1
-    }
-  },
   "server/interactions.ts": {
     "no-magic-numbers": {
       "count": 1
@@ -324,21 +319,6 @@
       "count": 705
     }
   },
-  "src/gate-layout.ts": {
-    "no-magic-numbers": {
-      "count": 3
-    }
-  },
-  "src/gate-repair.ts": {
-    "no-magic-numbers": {
-      "count": 36
-    }
-  },
-  "src/gate-scene.ts": {
-    "no-magic-numbers": {
-      "count": 147
-    }
-  },
   "src/gull-flight.ts": {
     "no-magic-numbers": {
       "count": 125
@@ -561,7 +541,7 @@
   },
   "src/mission-card.ts": {
     "no-magic-numbers": {
-      "count": 7
+      "count": 6
     }
   },
   "src/mission-ui.ts": {
@@ -640,11 +620,6 @@
     }
   },
   "src/residents/schedule.ts": {
-    "no-magic-numbers": {
-      "count": 1
-    }
-  },
-  "src/residents/trust.ts": {
     "no-magic-numbers": {
       "count": 1
     }
@@ -1379,11 +1354,6 @@
       "count": 10
     }
   },
-  "src/worlds/starter/residents/wren-route.ts": {
-    "no-magic-numbers": {
-      "count": 16
-    }
-  },
   "src/worlds/starter/residents/wren.ts": {
     "no-magic-numbers": {
       "count": 7
@@ -1397,11 +1367,6 @@
   "src/worlds/starter/sites.ts": {
     "no-magic-numbers": {
       "count": 90
-    }
-  },
-  "src/worlds/starter/wren-garden.ts": {
-    "no-magic-numbers": {
-      "count": 47
     }
   },
   "vite.config.ts": {

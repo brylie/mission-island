@@ -1,4 +1,5 @@
-import { fenceHeight, fenceRuns, plank } from '../../gate-repair.ts'
+import { fenceHeight, fenceRuns } from '../../gate-layout.ts'
+import { plank } from '../../gate-repair.ts'
 import { juniperSolids } from '../../juniper-habitat.ts'
 import { jobBoard } from '../../jobs.ts'
 import { beachUmbrellas, lampPosts, ridgeLichenRocks, ridgeLichenSite, shellRocks, starterFeatures } from './sites.ts'
