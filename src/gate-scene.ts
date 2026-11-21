@@ -1,11 +1,9 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import { createCrew, poseCrew } from './assets/crew'
 import { createWrenGarden } from './assets/wren-garden'
 import type { MeshFactory } from './island-meshes'
-import { fenceHeight, fenceRuns, gateLeaf, gateMendedStage, hingePost, leafAngle, sagAngle, wrenAt } from './gate-repair'
-import { moveTo } from './island-render-pose'
+import { fenceHeight, fenceRuns, gateLeaf, gateMendedStage, hingePost, leafAngle, sagAngle } from './gate-repair'
 import type { Snapshot } from './protocol'
-import { groundHeight, walkingHeight } from './terrain'
+import { groundHeight } from './terrain'
 import { distance, mendingBench, offset, wrenCottage } from './world'
 import type { Point } from './world'
 
@@ -46,7 +44,7 @@ function cottageBackAndSides({ box }: MeshFactory) {
 
 // Wren's gate: a leaf on a hinge pivot that the host swings, a hinge whose worn top pin
 // lets the free end drop into a groove, and the mending bench where new pins wait.
-export function createGardenGate(meshes: MeshFactory, residentId: number) {
+export function createGardenGate(meshes: MeshFactory) {
   const { box, cylinder, scene } = meshes
   for (const { from, to } of fenceRuns) fenceRun(meshes, from, to)
   cottageBackAndSides(meshes)
@@ -83,14 +81,8 @@ export function createGardenGate(meshes: MeshFactory, residentId: number) {
   const benchPin = cylinder(.35, .95, .1, .045, .045, .16, 8, brass, bench)
   const carried = cylinder(0, 0, 0, .045, .045, .16, 8, brass)
 
-  const wren = createCrew(meshes, residentId)
-  wren.setAppearance({ uniform: 'default', skin: 'deep', shirt: 'coral', hair: 'bun', hairColor: 'black', hat: 'none', trousers: 'sand' })
-  wren.root.setEnabled(false)
-  let cycle = 0
-
   return {
-    resident: wren.root,
-    update(state: Snapshot, factor: number, delta: number, time: number) {
+    update(state: Snapshot, factor: number) {
       const stage = state.gateRepair.stage
       const fixed = stage === 'fitted' || stage === 'mended'
       hinge.rotation.y += (-leafAngle(state) - hinge.rotation.y) * factor
@@ -106,12 +98,6 @@ export function createGardenGate(meshes: MeshFactory, residentId: number) {
         const hand = offset(holder, .42, .18)
         carried.position.set(hand.x, holder.y + .82, hand.z)
       }
-      const spot = wrenAt(state)
-      moveTo(wren.root, spot, walkingHeight(spot), factor)
-      wren.root.setEnabled(!spot.indoors)
-      if (spot.walking) cycle += delta * 1.8
-      poseCrew(wren, cycle, spot.walking ? .65 : 0, false, undefined, 0, factor)
-      wren.blink(time)
     },
   }
 }

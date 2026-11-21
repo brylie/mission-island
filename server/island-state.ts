@@ -7,6 +7,8 @@ import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { weatherAt } from '../src/weather.ts'
 import { skiffStart, truckStart } from '../src/world.ts'
 import { initialGateRepair } from '../src/gate-repair.ts'
+import { initialResidents } from '../src/residents/trust.ts'
+import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { makeItems } from './items.ts'
 import type { IslandSave } from './save.ts'
 
@@ -29,6 +31,8 @@ export function restoreIsland(
     weather: weatherAt(islandTime), islandTime,
     driftwood, juniper: juniper(0, weatherAt(islandTime), []),
     jobs: structuredClone(save?.world.jobs ?? { active: null, completed: 0 }),
+    // A resident added since the save starts as a stranger.
+    residents: { ...initialResidents(starterResidents), ...structuredClone(save?.world.residents) },
     aviation: restoreAviation(save?.world.aviation),
   }
   state.skiff.speed = 0
@@ -45,14 +49,14 @@ export function restoreIsland(
 }
 
 export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['crew']): IslandSave {
-  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residentTrust, lastFavorPay } = state
+  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residents, lastFavorPay } = state
   const { x, z, heading } = truck
   const { qualified, surveyed, aerial } = state.aviation
   return {
-    version: 3, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
+    version: 4, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
     world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial },
-      gate, gateRepair, residentTrust,
+      gate, gateRepair, residents,
       ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }

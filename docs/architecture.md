@@ -49,6 +49,19 @@ Keep the two models in the asset layer. Let island data choose where each vehicl
 
 Every **E** interaction shares one trait, defined in [interaction options](../src/interaction-options.ts): an action, an optional subject such as an item or farm plot, a key and label for the prompt, a name for the tooltip, and a point the reticle can aim at. The list is ordered with the best default first. The prompt, the [reticle](../src/reticle-target.ts) and the host all read the same list. The client sends the interaction the player aimed at, or the default when the reticle is on nothing. The host carries it out only if that interaction is still open to that player, so a stale or simultaneous press changes nothing. To add an interaction, add it to the list with its point and add its handler to the host's dispatch in [interactions](../server/interactions.ts).
 
+### Residents
+
+A [resident definition](../src/residents/definition.ts) combines traits the same way a vehicle does. Identity and appearance dress a crew rig. A schedule gives a home, a workplace, hours, a walking pace and a route. A conversation turns the shared snapshot and the crew's trust tier into a greeting and a piece of advice. A list of favors names what the resident asks of the crew, as goods, cargo, or a custom job like Wren's gate.
+
+| Responsibility | Where it lives |
+| --- | --- |
+| Definition | One file per resident in [`src/worlds/starter/residents/`](../src/worlds/starter/residents), listed in the island's [registry](../src/worlds/starter/residents.ts). The registry index is each resident's interaction subject. |
+| Behavior | [Schedules](../src/residents/schedule.ts) place a resident from the island clock, so every client and the host agree. [Favors](../src/residents/favors.ts) decide what a resident is asking, and [resident interactions](../src/residents/interactions.ts) add **Talk**, **Agree to help** and the hand-in to the shared interaction list. |
+| Instance state | The host keeps one [record](../src/residents/trust.ts) per resident in the snapshot and the save: trust, kept favors and the favor under way. [Host residents](../server/residents.ts) accept, credit each favor once through `keepFavor`, and keep a crate in the yard for a cargo favor. |
+| Appearance and placement | The [resident scene](../src/resident-scene.ts) builds and poses one rig per definition, marks cargo bays, and gives the place labels their names. The world layer chooses homes, stops and bays. |
+
+To add a villager, write a definition file and append it to the registry. A visitor arriving by ferry can use the same traits once the ferry runs. A save made before the resident existed loads them as a stranger. Walk the route with the Workbench's **Resident routines** study and the walkability test in [the resident tests](../test/game-residents.test.mjs). See [Residents and favors](mechanics/resident-favors.md) for the playable rules.
+
 ### Animals and plants
 
 - **Animals.** In [Juniper Hollow](../src/juniper-habitat.ts), hares and foxes can share locomotion and [obstacle navigation](../src/biome-navigation.ts) with different speeds and clearances. A hare's threat response can send it toward cover, while a fox can give a nearby player space and then resume its patrol. Position and current behavior belong to each animal.

@@ -10,7 +10,8 @@ import { missionCard } from './mission-card'
 import { bindControlsToggle } from './controls-toggle-ui'
 import { bindLookOptions } from './look-options-ui'
 import { createReticleFocus } from './reticle-ui'
-import { gateStepText, residentName } from './gate-repair'
+import { gateStepText } from './gate-repair'
+import { favorFeedback } from './resident-notices'
 import { farm, market } from './farm'
 import { createJobBoard } from './job-board-ui'
 import { activeJob, atJobBoard, deliveryDrop, jobBoard, jobs } from './jobs'
@@ -58,7 +59,7 @@ const guideDialog = element<HTMLDialogElement>('crew-guide-dialog')
 const guide = createCrewGuide(guideDialog, (dismissed) => {
   leadDismissed = dismissed
   writeStorage('localStorage', leadKey(), dismissed ? 'yes' : null)
-})
+}, (subject) => send({ type: 'interact', choice: { action: 'accept-favor', subject } }))
 const respawn = element<HTMLButtonElement>('respawn')
 bindControlsToggle(element<HTMLButtonElement>('controls-toggle'), element('game-controls'))
 const spray = element('spray-control')
@@ -424,13 +425,12 @@ function connect() {
       case 'crew-note':
         openGuide()
         break
-      case 'fisher-chat':
-      case 'wren-chat':
-        openGuide(incoming.type === 'wren-chat' ? 'wren' : 'fisher')
+      case 'resident-chat':
+        openGuide(incoming.resident)
         break
+      case 'favor-accepted':
       case 'favor-pay':
-        actionFeedback = { key: `+${incoming.coins} coins`, label: `${residentName}’s gate mended · Crew bank · ${residentName} trust +${incoming.trust}`,
-          until: performance.now() + 4200 }
+        actionFeedback = { ...favorFeedback(incoming, id), until: performance.now() + 4200 }
         break
       case 'gate-step':
         actionFeedback = { key: '', label: gateStepText[incoming.step], until: performance.now() + 3200 }
@@ -570,7 +570,7 @@ function openClothing(fromWardrobe: boolean) {
   else counter.open(snapshot, player, atClothingCounter(player) && !heldItem(snapshot, player))
 }
 
-function openGuide(talking: 'fisher' | 'wren' | false = false) {
+function openGuide(talking: string | false = false) {
   if (!snapshot || modalOpen()) return
   const player = snapshot.players.find((entry) => entry.id === id)
   if (!player) return

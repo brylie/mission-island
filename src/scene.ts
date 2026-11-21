@@ -11,8 +11,6 @@ import { castTravelSeconds } from './charged-actions'
 import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutIncident } from './lookout-recovery-art'
-import { fisherAt, fisherName } from './harbor-fisher'
-import { residentName } from './gate-repair'
 import { moveTo } from './island-render-pose'
 import { fishingFloatDip } from './starter-effect-cues'
 import { createIslandCamera } from './island-camera'
@@ -55,7 +53,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
-  const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden } = createIslandWorld(meshes, { liveParticles: true })
+  const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden, residents } = createIslandWorld(meshes, { liveParticles: true })
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
   const dropPad = createObjectiveMarker(meshes, town, deliveryRadius * 2, '#67ecdc')
@@ -77,10 +75,6 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const cycles = crew.map(() => 0)
   const aviation = createRidgeAviationView(meshes, crew)
   const showDeliveryRoute = createDeliveryWayfindingView(meshes)
-  const fisher = createCrew(meshes, playerColors.length)
-  fisher.setAppearance({ uniform: 'angler', skin: 'warm' }, { dye: '#b9664a' })
-  fisher.root.setEnabled(false)
-  let fisherCycle = 0
   const farmTools = crew.map((character) => createFarmTools(meshes, character))
   const skiffGear = crew.map((character) => {
     const gear = createSkiffGear(meshes, character)
@@ -114,8 +108,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     markers.append(tag)
     return tag
   })
-  const labels = createPlaceLabels(markers, [{ root: fisher.root, title: `${fisherName} · Fisher` },
-    { root: garden.resident, title: `${residentName} · Neighbor` }])
+  const labels = createPlaceLabels(markers, residents.labels)
   function locate(element: HTMLElement, viewport: Viewport, x: number, y: number, z: number) {
     const point = Vector3.Project(new Vector3(x, y, z), Matrix.IdentityReadOnly,
       scene.getTransformMatrix(), viewport)
@@ -132,12 +125,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   let time = 0, ambientTime = 0
   function updateScenery(state: Snapshot, factor: number, delta: number) {
     showFarm(state.farm)
-    const resident = fisherAt(state.weather.hour)
-    moveTo(fisher.root, resident, walkingHeight(resident), factor)
-    if (resident.walking) fisherCycle += delta * 1.8
-    poseCrew(fisher, fisherCycle, resident.walking ? 0.65 : 0, false, undefined, 0, factor)
-    fisher.blink(time)
-    garden.update(state, factor, delta, time)
+    residents.update(state, factor, delta, time)
+    garden.update(state, factor)
     for (const [i, { hinge }] of homeChests.entries()) {
       const withdrawn = state.players.find((player) => player.id === i)?.inventory.length
       hinge.rotation.x += ((withdrawn ? 0.9 : 0) - hinge.rotation.x) * factor

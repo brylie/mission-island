@@ -2,22 +2,26 @@ import { atHomeChest, atHomeDoor, byTruckBed, clothingInteraction, freeBed, held
 import { clothingCounter, farmPlots, market, nearbyPlot, saleValue, seedPrice } from './farm.ts'
 import { canPickUp, gateActions, gateHint, gateOptions, gateTarget } from './gate-repair.ts'
 import type { GateAction } from './gate-repair.ts'
-import { atFisher, fisherAt, fisherName } from './harbor-fisher.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, jobBoard, orderContribution } from './jobs.ts'
 import type { Item, Player, Snapshot } from './protocol.ts'
+import { stagingFavor, wantsCargo } from './residents/favors.ts'
+import { residentActions, residentInteractions, type ResidentAction } from './residents/interactions.ts'
 import { walkingHeight } from './terrain.ts'
 import { isNight } from './weather.ts'
 import { cottageDoor, crewHomes, distance, lookout } from './world.ts'
 import type { Point } from './world.ts'
+import { starterResidents } from './worlds/starter/residents.ts'
 
-export type InteractionAction = GateAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
-  'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note' | 'talk-fisher'
+export type InteractionAction = GateAction | ResidentAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
+  'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note'
 export const interactionActions: readonly InteractionAction[] = [
-  ...gateActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
-  'harvest', 'pick-up', 'welcome-note', 'talk-fisher',
+  ...gateActions, ...residentActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
+  'harvest', 'pick-up', 'welcome-note',
 ]
+// These change shared progress or speak for the crew, so the host runs them only when the player chose them.
+export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions]
 
-// What E sends: an action and, for items and farm plots, which one.
+// What E sends: an action and, for items, farm plots and residents, which one.
 export interface InteractionChoice { action: InteractionAction; subject?: number }
 
 // The shared trait every E interaction has: what it does, how the prompt names it, and,
@@ -43,6 +47,8 @@ function putDown(state: Snapshot, player: Player, item: Item): Interaction {
   }
   const drop = deliveryDrop(state)
   if (drop && distance(player, drop) < deliveryRadius) return { ...option, label: 'Deliver crate' }
+  const staging = stagingFavor(starterResidents, state, player)
+  if (staging) return { ...option, label: `Stage crate for ${staging.resident.identity.name}` }
   if (byTruckBed(state, player) && freeBed(state) !== undefined) return { ...option, label: 'Load crate' }
   return { ...option, key: 'Left click', label: 'Hold to throw · E to set down' }
 }
@@ -101,7 +107,8 @@ function workInteractions(state: Snapshot, player: Player): Interaction[] {
 }
 
 function pickups(state: Snapshot, player: Player): Interaction[] {
-  return state.items.filter((item) => canPickUp(state, item, player))
+  const cargoWanted = wantsCargo(starterResidents, state)
+  return state.items.filter((item) => canPickUp(state, item, player, cargoWanted))
     .sort((a, b) => distance(a, player) - distance(b, player))
     .map((item) => {
       const name = item.kind === 'toolbox' ? 'Toolbox' : item.kind === 'crate' ? 'Crate' : 'Extinguisher'
@@ -115,6 +122,7 @@ function pickups(state: Snapshot, player: Player): Interaction[] {
 export function interactions(state: Snapshot, player: Player): Interaction[] {
   if (player.sleeping || player.seat || player.swimming) return []
   const gate = gateOptions(state, player)
+  const residents = residentInteractions(starterResidents, state, player)
   const held = heldItem(state, player)
   const options = [...gateInteractions(state, gate.primary), ...(held ? [putDown(state, player, held)] : []),
     ...homeInteractions(state, player), ...workInteractions(state, player), ...(held ? [] : pickups(state, player))]
@@ -122,11 +130,7 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
     options.push({ action: 'welcome-note', key: 'E', label: 'Read your welcome note', name: 'Your door',
       at: aimedAt(cottageDoor(crewHomes[player.id]), 1.2), radius: .7 })
   }
-  if (atFisher(player, state.weather.hour)) {
-    const fisher = fisherAt(state.weather.hour)
-    options.push({ action: 'talk-fisher', key: 'E', label: `Talk to ${fisherName}`, name: fisherName, at: aimedAt(fisher, 1.1), radius: .55 })
-  }
-  return [...options, ...gateInteractions(state, gate.secondary)]
+  return [...options, ...gateInteractions(state, gate.secondary), ...residents.talk, ...residents.accept]
 }
 
 export function sameChoice(a: InteractionChoice, b: InteractionChoice) {

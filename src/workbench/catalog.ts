@@ -4,7 +4,7 @@ import { shaderStudies } from './shader-studies'
 import { schoolStudy } from './school-study'
 import { biomeEntry } from './biome-preview'
 import { brinewickMarketStudy } from './brinewick-market-study'
-import { conversationStudy } from './conversation-study'
+import { residentRoutinesStudy } from './resident-routines-study'
 import { crewStudy } from './crew-study'
 import { effectStudies } from './effect-studies'
 import { farmStudy } from './farm-study'
@@ -34,7 +34,7 @@ export const entries: Entry[] = [
   gullStudy,
   brinewickMarketStudy,
   ...mechanicStudies,
-  conversationStudy,
+  residentRoutinesStudy,
   ...furnishingStudies,
   landscapeStudy,
   ridgeScoutStudy,
