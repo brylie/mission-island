@@ -17,6 +17,7 @@ import { restoreIsland, saveIsland } from './island-state.ts'
 import { updateHeldItems } from './items.ts'
 import { createFreight } from './freight.ts'
 import { createGateRepair } from './gate-repair.ts'
+import { createJournal } from './journal.ts'
 import { createResidents } from './residents.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { wren } from '../src/worlds/starter/residents/wren.ts'
@@ -64,10 +65,11 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
   const freight = createFreight(crew, state, clock, checkpoint)
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
-  const equipment = createEquipment(state, physics, tickSeconds, random, checkpoint)
+  const journal = createJournal(state, checkpoint)
+  const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint)
   const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0]))
   const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk }, checkpoint)
-  const interactions = createInteractions(state, growth, physics, orders, gate, residents, checkpoint)
+  const interactions = createInteractions(state, growth, physics, orders, gate, residents, journal, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
@@ -102,7 +104,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         member.reachUntil = 0
         continue
       }
-      walkCrew(state, member, before, connected, now, tickSeconds, orders.completeFire, checkpoint)
+      walkCrew(state, member, before, connected, now, tickSeconds, orders.completeFire, journal.explore)
     }
     updateHeldItems(state)
     state.driftwood = driftwood.step(state.players, state.skiff)

@@ -19,6 +19,7 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | **C** | Switch between the island overview and the close third-person view. |
 | **Mouse** | Look around your character or vehicle. The first gameplay keypress captures the mouse. Aim the reticle at something you can use to choose it: it turns gold and a tooltip names the thing and the key. With nothing under the reticle, **E** uses whatever is nearest. |
 | **Esc** | Release the mouse. Press a gameplay key to capture it again. |
+| **J** | Open the crew's field journal. Press **J** again or **Esc** to close it. |
 | **O** | Open Options for your name, appearance, mouse look (invert either axis, look speed), and **Respawn at home**. |
 
 Bring crates to the tail of the truck to set them on the bed. Amber orbs appear along the recommended route once a crate is loaded. Jump over the low rear lip and ride along on the bed as the truck moves. The side rails and rear lip help keep crates aboard through turns. At Seabrook, step out, collect each crate from the bed, and press **E** with the crate inside the glowing teal delivery circle. The beach has a shallow wading shelf. You slow down as the water gets deeper.
@@ -73,11 +74,13 @@ The delivery and lookout fire missions unlock work outfits for both crewmates. E
 
 The island clock runs one day every eight real minutes. At night, press **E** at your cottage door. Dawn begins when every connected player turns in. Press **E** again or walk away to cancel while waiting.
 
+Both of you share one field journal, opened with **J**. It ticks off a fish when you land it and a place when you walk there. Aim at an animal, a plant or a landmark and press **E** to record it. Which fish you land depends on the hour, the weather and the water. See [field journal](mechanics/field-journal.md).
+
 Follow the northern hills to discover landmarks. Their names fade with distance in the follow view and stay on your island overview after discovery. The minimap keeps the coastline, biomes, route lines, and a simpler set of symbols. One world unit is one metre. The buoy line sits 75 metres offshore.
 
 ## Saves and reconnecting
 
-The host automatically saves in `.mission-island/saves/island-5173.json` for the usual port. The island clock, missions, farm, item positions, crew names, discoveries, and personal progress survive a restart. The same browser profile reclaims its crew identity. For a separate named save, start the host with a lowercase slot name.
+The host automatically saves in `.mission-island/saves/island-5173.json` for the usual port. The island clock, missions, farm, item positions, crew names, discoveries, the field journal, and personal progress survive a restart. The same browser profile reclaims its crew identity. For a separate named save, start the host with a lowercase slot name.
 
 ```sh
 MISSION_ISLAND_SAVE=weekend npm run dev

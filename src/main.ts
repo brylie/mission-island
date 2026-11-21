@@ -14,6 +14,7 @@ import { gateStepText } from './gate-repair'
 import { favorFeedback } from './resident-notices'
 import { farm, market } from './farm'
 import { createJobBoard } from './job-board-ui'
+import { catchLabel, createJournalPage } from './journal-ui'
 import { activeJob, atJobBoard, deliveryDrop, jobBoard, jobs } from './jobs'
 import { starterTools, toolNames } from './inventory'
 import type { InventoryItem } from './inventory'
@@ -54,6 +55,7 @@ const missionStep = element('mission-step')
 const boardButton = element<HTMLButtonElement>('open-job-board')
 const boardDialog = element<HTMLDialogElement>('job-board-dialog')
 const board = createJobBoard(boardDialog, (id) => send({ type: 'take-job', id }))
+const journal = createJournalPage(element('journal-dialog'), element('open-journal'), () => live && !modalOpen(), () => pauseControls())
 const guideButton = element<HTMLButtonElement>('open-crew-guide')
 const guideDialog = element<HTMLDialogElement>('crew-guide-dialog')
 const guide = createCrewGuide(guideDialog, (dismissed) => {
@@ -273,10 +275,8 @@ function updateMission(state: Snapshot) {
 }
 
 function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player | undefined) {
-  if (earlier) {
-    const found = starterDiscoveries.find(({ id }) => player.discoveries.includes(id) && !earlier.discoveries?.includes(id))
-    if (found) actionFeedback = { key: '', label: `Discovered ${found.name}`, until: performance.now() + 4200 }
-  }
+  const news = journal.update(state, player, earlier)
+  if (news) actionFeedback = { key: '', label: news, until: performance.now() + 4200 }
   wardrobe.update(state, player)
   if (counterDialog.open) counter.update(state, player, atClothingCounter(player) && !heldItem(state, player))
   const coins = state.crewCoins
@@ -411,7 +411,7 @@ function connect() {
         break
       case 'fishing-result': {
         const [key, label] = feedbackText[incoming.result]
-        actionFeedback = { key, label, until: performance.now() + 1900 }
+        actionFeedback = { key, label: catchLabel(incoming.fish) ?? label, until: performance.now() + 1900 }
         break
       }
       case 'market-sale':
@@ -558,7 +558,7 @@ function openJobBoard() {
 
 function modalOpen() {
   return optionsDialog.open || boardDialog.open || guideDialog.open || joinNameDialog.open ||
-    wardrobeDialog.open || counterDialog.open
+    wardrobeDialog.open || counterDialog.open || journal.dialog.open
 }
 
 function openClothing(fromWardrobe: boolean) {

@@ -1,6 +1,5 @@
 import { canSpray, heldItem } from '../src/actions.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
-import { starterDiscoveries } from '../src/scenery.ts'
 import type { TruckPose } from '../src/truck-pose.ts'
 import { distance, jumpSpeed, lookout } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
@@ -22,7 +21,7 @@ export function jump(member: CrewMember) {
 
 export function walkCrew(
   state: Snapshot, member: CrewMember, before: TruckPose, connected: boolean, now: number,
-  tickSeconds: number, completeFire: () => void, checkpoint?: () => void,
+  tickSeconds: number, completeFire: () => void, explore: (player: Snapshot['players'][number]) => void,
 ) {
   const { player, input } = member
   const { truck } = state
@@ -31,12 +30,7 @@ export function walkCrew(
   stepPlayer(member, before, truck, connected ? input : stopped, Boolean(item), tickSeconds,
     (point, margin) => Math.max(looseCargoTop(state.items, point, margin), solidTop(gate, point, margin)))
   if (!connected) return
-  for (const region of starterDiscoveries) {
-    if (!player.discoveries.includes(region.id) && distance(player, region.site) < 8) {
-      player.discoveries.push(region.id)
-      checkpoint?.()
-    }
-  }
+  explore(player)
   if (player.charge && input.aim !== undefined && !input.x && !input.z) player.heading = input.aim
   player.reaching = !item && (member.primary?.kind === 'reach' || now < member.reachUntil)
   player.rightHandRaised = input.raiseRightHand === true && !player.swimming && !player.sleeping &&

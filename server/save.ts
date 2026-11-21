@@ -4,6 +4,8 @@ import { isFreightTicket } from '../src/ore-contracts.ts'
 import { aerialSurveys, type AviationProgress } from '../src/aviation.ts'
 import { farmPlots } from '../src/farm.ts'
 import { isJobId, jobs } from '../src/jobs.ts'
+import { journalEntry } from '../src/journal/catalog.ts'
+import { placeName, type Journal } from '../src/journal/journal.ts'
 import type { JobBoardState } from '../src/jobs.ts'
 import type { Player, Snapshot } from '../src/protocol'
 import { gateFavor, gateStages, initialGateRepair } from '../src/gate-repair.ts'
@@ -20,7 +22,7 @@ export type IslandSave = {
   islandTime: number
   growth: number[]
   world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay'> &
-    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress }
+    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress; journal?: Journal }
   crew: { token: string; player: Player; reserved: boolean }[]
 }
 
@@ -152,9 +154,18 @@ function isSavedAviation(value: unknown) {
       (aerial.length === 0 || value.qualified)))
 }
 
-function hasValidProgress(world: Record<string, unknown>) {
+// Older saves have no journal. A saved one lists only known entries, each noted by a crew seat at a time the island has reached.
+function isSavedJournal(value: unknown, islandTime: number) {
+  return isRecord(value) && Object.entries(value).every(([id, note]) => Boolean(journalEntry(id)) && isRecord(note) &&
+    isNumber(note.t) && Number.isInteger(note.t) && note.t >= 0 && note.t <= islandTime &&
+    isNumber(note.by) && Number.isInteger(note.by) && note.by >= 0 && note.by < spawns.length &&
+    (note.at === undefined || (typeof note.at === 'string' && Boolean(placeName(note.at)))))
+}
+
+function hasValidProgress(world: Record<string, unknown>, islandTime: number) {
   return (world.jobs === undefined || isJobBoard(world.jobs, world.mission)) &&
-    (world.aviation === undefined || isSavedAviation(world.aviation))
+    (world.aviation === undefined || isSavedAviation(world.aviation)) &&
+    (world.journal === undefined || isSavedJournal(world.journal, islandTime))
 }
 
 function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] {
@@ -176,7 +187,7 @@ function isSave(value: unknown): value is IslandSave {
     !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
   const { world } = value
   const reservedIds = new Set(value.crew.filter(({ reserved }) => reserved).map(({ player }) => player.id))
-  if (!hasValidProgress(world)) return false
+  if (!hasValidProgress(world, value.islandTime)) return false
   return isPose(world.truck) && isPose(world.skiff) && isSavedIncident(world, value.islandTime) && isGateRepair(world, value.islandTime) &&
     Array.isArray(world.farm) && world.farm.length === farmPlots.length &&
     world.farm.every((stage: unknown) => ['grass', 'tilled', 'planted', 'watered', 'ripe'].some((name) => name === stage)) &&

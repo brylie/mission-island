@@ -14,6 +14,8 @@ import type { JobBoardState, JobId } from './jobs'
 import type { GardenGate, GateRepair, GateStep } from './gate-repair'
 import type { FavorReceipt, ResidentRecords } from './residents/trust'
 import type { InteractionChoice } from './interaction-options'
+import type { FishId } from './journal/fish'
+import type { Journal } from './journal/journal'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
 
 export interface Weather {
@@ -114,12 +116,13 @@ export interface Snapshot {
   residents: ResidentRecords
   lastFavorPay?: FavorReceipt
   aviation: AviationState
+  journal: Journal
 }
 
 export type ServerMessage =
   | Snapshot
   | { type: 'welcome'; id: number; scenarios?: readonly ScenarioSummary[] }
-  | { type: 'fishing-result'; result: FishingResult }
+  | { type: 'fishing-result'; result: FishingResult; fish?: FishId }
   | { type: 'market-sale'; coins: number }
   | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
   | { type: 'order-pay'; coins: number; id: JobId }

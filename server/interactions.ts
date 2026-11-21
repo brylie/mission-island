@@ -14,12 +14,14 @@ import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
 import type { createResidents } from './residents.ts'
+import type { createJournal } from './journal.ts'
 
 export function createInteractions(
   state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'remove'>,
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
-  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>, checkpoint?: () => void,
+  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>,
+  journal: Pick<ReturnType<typeof createJournal>, 'record'>, checkpoint?: () => void,
 ) {
   function useHomeChest(member: CrewMember) {
     const { player } = member
@@ -106,6 +108,7 @@ export function createInteractions(
       case 'accept-favor': return residents.accept(member, subject)
       case 'hand-over': return residents.handOver(member, subject)
       case 'job-board': return
+      case 'record': return journal.record(member.player, subject)
       default: return gate.act(member, action)
     }
   }

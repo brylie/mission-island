@@ -5,7 +5,7 @@ Taking the starter toolkit from your home chest equips the rod. While carrying t
 1. Hold **left click** to start the cast meter. It rises for 0.88 seconds, falls for 0.88 seconds, and repeats.
 2. Release near the top for the longest cast and the best odds of a fish. The cast travels 3.1 to 12.3 meters. It needs at least 0.14 meters of water at the landing point.
 3. Watch the bobber. After the 0.42-second cast and a 3.1-second wait, a successful bite starts the reeling challenge.
-4. Hold **left click** while the fish is calm to reel it in. Release when it pulls to let the line go slack. Full progress lands one fish. Full tension snaps the line, and the fish escapes if the fight lasts 23 seconds. Sell landed fish at Seabrook Market for 2 coins each.
+4. Hold **left click** while the fish is calm to reel it in. Release when it pulls to let the line go slack. Full progress lands one fish. Full tension snaps the line, and the fish escapes if the fight lasts 23 seconds. Sell landed fish at Seabrook Market for 2 coins each. The catch notice names the fish, and the crew's [field journal](field-journal.md) ticks it off the first time. The hour, the weather and the water decide which of five fish bites.
 
 The host computes power and resolves each player's bite and fight independently. Bite probability is 22% at minimum power and 98% at full power, with a quadratic increase. Moving or swapping tools retrieves the line. Paddling or steering the skiff interrupts both lines. On the dock, aim beside or beyond the deck into open water.
 
