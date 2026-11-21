@@ -14,7 +14,7 @@ import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { readStorage, writeStorage } from '../browser-storage'
 import { entries as initialEntries } from './catalog'
-import { applyRelatedOptions, restoreOptions, type Control, type Values } from './subject'
+import { applyRelatedOptions, createInspectorSelect, restoreOptions, type Control, type Values } from './subject'
 import type { FieldSite } from './field-site'
 import { createStage } from './stage'
 import type { Angle, CameraState } from './stage'
@@ -148,6 +148,7 @@ function renderAssetControls() {
   inspector.replaceChildren()
   let group = ''
   for (const control of asset.controls ?? []) {
+    if (onIsland && control.key === 'shape') continue
     const organism = asset.id === 'biome' ? habitatCodex.find(item => item.key === control.key) : undefined
     const heading = organism?.group ?? 'Conditions'
     if (asset.id === 'biome' && heading !== group) {
@@ -164,15 +165,7 @@ function renderAssetControls() {
 
     if (control.type === 'select') {
       row.className = 'row'
-      const select = document.createElement('select')
-      select.setAttribute('aria-labelledby', name.id)
-      for (const [value, title] of Object.entries(control.choices)) {
-        const option = document.createElement('option')
-        option.value = value
-        option.textContent = title
-        select.append(option)
-      }
-      select.value = control.displayValue?.(values) ?? String(values[control.key])
+      const select = createInspectorSelect(control, values, name.id)
       select.addEventListener('change', () => setOption(control, select.value))
       row.append(name, select)
     } else {
@@ -288,7 +281,7 @@ function setOption(control: Control, value: Values[string], save = true) {
   zFightingResult.replaceChildren()
   seek = true
   if (control.rebuild) {
-    rebuild(cameraAtSameSite(oldSite))
+    rebuild(!onIsland && control.key === 'shape' ? undefined : cameraAtSameSite(oldSite))
     showFieldSwitch()
   }
   if (save) remember()

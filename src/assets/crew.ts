@@ -14,7 +14,7 @@ const workwear = {
   angler: { trousers: '#303f50', shoes: '#4d3a30' },
 }
 
-const everydayTrousers = { default: '#405464', slate: '#617c90', sand: '#bd9b6e' }
+const everydayTrousers = { default: '#405464', slate: '#617c90', sand: '#bd9b6e', 'slate-shorts': '#617c90', 'sand-shorts': '#bd9b6e' }
 
 export const playerColors = [uniforms.amber.color, uniforms.blue.color]
 export const skiffCrewSeats = [new Vector3(-0.44, -0.39, 0.25), new Vector3(0.44, -0.39, 0.25)]
@@ -23,7 +23,8 @@ function legPalette(appearance: CrewAppearance) {
   const job = appearance.uniform === 'courier' || appearance.uniform === 'rescue' || appearance.uniform === 'angler' ? workwear[appearance.uniform] : undefined
   const trouserColor = job?.trousers ?? everydayTrousers[appearance.trousers ?? 'default']
   const shoeColor = job?.shoes ?? (appearance.shoes === 'brown' ? '#76523a' : '#394847')
-  return { trouserColor, shoeColor }
+  const cuff = job ? undefined : appearance.trousers === 'slate-shorts' ? '#8197a7' : appearance.trousers === 'sand-shorts' ? '#d8bb8f' : undefined
+  return { trouserColor, shoeColor, cuff }
 }
 
 export function createCrew(meshes: MeshFactory, id: number) {
@@ -47,15 +48,25 @@ export function createCrew(meshes: MeshFactory, id: number) {
     showCap = visible
     fitHat()
   }
-  function dressFeet(shoeColor: string, skin: ReturnType<typeof paint>, swim: boolean, bare: boolean) {
+  function dressFeet(shoeColor: string, skin: ReturnType<typeof paint>, calvesVisible: boolean, bare: boolean) {
     const sole = paint(Color3.FromHexString(shoeColor).scale(.67).toHexString())
     for (const mesh of kit.shoes) {
       mesh.material = mesh.name === 'Boot outsole' ? sole : paint(shoeColor)
       mesh.setEnabled(!bare)
     }
-    for (const mesh of kit.bareFeet) { mesh.material = skin; mesh.setEnabled(bare && !swim) }
-    for (const mesh of kit.swimCalves) { mesh.material = skin; mesh.setEnabled(swim && !bare) }
-    for (const mesh of kit.swimBareFeet) { mesh.material = skin; mesh.setEnabled(swim && bare) }
+    for (const mesh of kit.bareFeet) { mesh.material = skin; mesh.setEnabled(bare && !calvesVisible) }
+    for (const mesh of kit.swimCalves) { mesh.material = skin; mesh.setEnabled(calvesVisible && !bare) }
+    for (const mesh of kit.swimBareFeet) { mesh.material = skin; mesh.setEnabled(calvesVisible && bare) }
+  }
+  function dressBottoms(appearance: CrewAppearance, skin: ReturnType<typeof paint>, swim: boolean, bare: boolean) {
+    const { trouserColor, shoeColor, cuff } = legPalette(appearance)
+    const short = Boolean(cuff) && !swim
+    for (const mesh of kit.trousers) { mesh.material = paint(trouserColor); mesh.setEnabled(!swim && !short) }
+    kit.seat.material = paint(trouserColor)
+    kit.seat.setEnabled(!swim)
+    for (const mesh of kit.shorts) { mesh.material = paint(trouserColor); mesh.setEnabled(short) }
+    for (const mesh of kit.shortCuffs) { if (cuff) mesh.material = paint(cuff); mesh.setEnabled(short) }
+    dressFeet(shoeColor, skin, swim || short, bare)
   }
   function dress(appearance: CrewAppearance, base: number, dye?: string) {
     const everyday = isEveryday(appearance.uniform)
@@ -72,7 +83,6 @@ export function createCrew(meshes: MeshFactory, id: number) {
     head.grin.material = lips
     for (const mesh of kit.skin) mesh.material = skin
     head.nose.material = warm
-    const { trouserColor, shoeColor } = legPalette(appearance)
     const canvas = Color3.FromHexString(dye ?? shirt.color)
     kit.yoke.material = paint(canvas.scale(.81).toHexString())
     kit.yoke.setEnabled(!swim)
@@ -85,8 +95,7 @@ export function createCrew(meshes: MeshFactory, id: number) {
     for (const mesh of kit.shoulders) { mesh.material = cloth; mesh.setEnabled(!swim) }
     for (const mesh of kit.shirtedSkin) { mesh.material = skin; mesh.setEnabled(!swim) }
     for (const mesh of kit.trim) { mesh.material = trim; mesh.setEnabled(!swim) }
-    for (const mesh of kit.trousers) { mesh.material = paint(trouserColor); mesh.setEnabled(!swim) }
-    dressFeet(shoeColor, skin, swim, bare)
+    dressBottoms(appearance, skin, swim, bare)
     kit.swimsuit.mesh.material = cloth
     kit.swimsuit.mesh.setEnabled(swim)
     for (const mesh of kit.bareLimbs) { mesh.material = skin; mesh.setEnabled(swim) }

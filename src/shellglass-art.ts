@@ -2,6 +2,8 @@ import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { poseSiteFeature } from './assets/site-props'
 import type { MeshFactory } from './island-meshes'
+import { createOceanMaterial } from './ocean'
+import { shoreDefaults, type ShoreSettings } from './shader-studies'
 import { createPhenomena } from './island-phenomena'
 import { groundHeight, tidePool, walkingHeight } from './terrain'
 import { shellglassHigh, shellglassLow, shellglassPockets, shellglassTideAt, shellglassWash } from './shellglass-tide'
@@ -136,6 +138,7 @@ export function createShellglassTide(meshes: MeshFactory, staff?: SiteFeature) {
       gl_FragColor = vec4(color * light, edge * .66);
     }
   `, ['time', 'light'])
+  const shoreWash = createOceanMaterial(meshes.scene, 'wash')
   const wash = makeWater(meshes, 'Shellglass wash', water, (x, z) => basinPoint(x * shellglassWash.rx, z * shellglassWash.rz))
   const rim = buildWetRim(meshes)
   const pockets = shellglassPockets.map((pocket, i) => {
@@ -156,13 +159,15 @@ export function createShellglassTide(meshes: MeshFactory, staff?: SiteFeature) {
   const wetMark = mark ? meshes.box(0, .19, -.14, .10, 1, .012, '#3b7e7c', mark, false) : undefined
   const cap = mark ? meshes.box(0, .35, -.148, .134, .038, .012, '#c7e7ca', mark, false) : undefined
 
-  return (frame: WildlifeFrame, light: number, islandTime = frame.time) => {
+  return (frame: WildlifeFrame, light: number, islandTime: number, shore: ShoreSettings = shoreDefaults) => {
     const tide = shellglassTideAt(islandTime)
     const near = Math.hypot(frame.camera.x - tidePool.x, frame.camera.z - tidePool.z) < 42 && frame.camera.y < 36
     wash.setEnabled(near)
     rim.mesh.setEnabled(near)
     // Add the small height offset above the ocean plane only inside the basin.
     wash.position.y = tide.level
+    wash.material = shore.quality === 'off' ? water : shoreWash.material
+    if (near && shore.quality !== 'off') shoreWash.pose(frame.time, light, frame.weather.rain, shore, tide.level)
     water.setFloat('time', frame.time)
     water.setFloat('light', light * (1 - frame.weather.rain * .18))
     rim.material.setFloat('light', light)
@@ -183,6 +188,6 @@ export function createShellglassTide(meshes: MeshFactory, staff?: SiteFeature) {
       cap.position.y = .16 + fill
     }
     plankton(frame)
-    return tide
+    return { tide, near }
   }
 }

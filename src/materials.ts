@@ -4,7 +4,8 @@ import { PBRMaterial } from '@babylonjs/core/Materials/PBR/pbrMaterial'
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 import { Color3 } from '@babylonjs/core/Maths/math.color'
 import type { Scene } from '@babylonjs/core/scene'
-import { createTextureSample } from './surface-textures'
+import { createRecipeTextures, createTextureSample } from './surface-textures'
+import type { SurfaceRecipe, SurfaceSettings } from './surface-recipes'
 import type { MetalType } from './surface-textures'
 
 export const surfaces = {
@@ -94,5 +95,25 @@ export function createSurfaceMaterial(scene: Scene, surface: SurfaceName, color?
   const material = createIslandMaterial(scene, surface, tint)
   material.diffuseTexture = diffuse
   material.bumpTexture = normal
+  return material
+}
+
+// Recipe textures take UV coordinates in metres on the surface of the mesh.
+export function createRecipeMaterial(scene: Scene, recipe: SurfaceRecipe, settings: SurfaceSettings = {}, resolution: 128 | 256 = 256) {
+  const { diffuse, normal, finishMap, emissive } = createRecipeTextures(scene, recipe, settings, resolution)
+  const material = new PBRMaterial(recipe.name, scene)
+  material.albedoTexture = diffuse
+  material.bumpTexture = normal
+  material.metallic = Number(recipe.family === 'Metal')
+  material.roughness = 1
+  material.metallicTexture = finishMap
+  material.useRoughnessFromMetallicTextureAlpha = false
+  material.useRoughnessFromMetallicTextureGreen = true
+  material.useMetallnessFromMetallicTextureBlue = true
+  if (emissive) {
+    material.emissiveTexture = emissive
+    material.emissiveColor = Color3.White()
+  }
+  if (recipe.family === 'Metal') material.reflectionTexture = studioReflection(scene)
   return material
 }

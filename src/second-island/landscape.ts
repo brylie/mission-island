@@ -1,5 +1,6 @@
 import { MultiMaterial } from '@babylonjs/core/Materials/multiMaterial'
 import { SubMesh } from '@babylonjs/core/Meshes/subMesh'
+import { createTrail } from '../assets/routes'
 import { dressStrand } from '../assets/strand'
 import type { ScenerySolids } from './walking'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
@@ -243,19 +244,8 @@ export function createLandscape(meshes: MeshFactory, solids: ScenerySolids) {
   const water = createWater(meshes)
   for (const route of [...routes, ferryTrack, fishingPier]) createRoad(meshes, route, solids)
   for (const walk of discoveryWalks) {
-    const points = walk.path.flatMap((point, i, path) => {
-      const next = path[i + 1]
-      if (!next) return [point]
-      const steps = Math.ceil(Math.hypot(point.x - next.x, point.z - next.z) * 2)
-      return Array.from({ length: steps }, (_, s) => ({
-        x: point.x + (next.x - point.x) * s / steps, z: point.z + (next.z - point.z) * s / steps,
-      }))
-    })
-    const trail = ribbonGeometry([points], 1.25, 0)
-    for (let i = 0; i < trail.positions.length; i += 3) {
-      trail.positions[i + 1] = surfaceHeight(trail.positions[i], trail.positions[i + 2]) + .07
-    }
-    meshes.surface(walk.name + ' footpath', trail.positions, trail.indices, '#cbb58a').freezeWorldMatrix()
+    createTrail(meshes, walk.name + ' footpath', walk.path, 1.25, 'gravel',
+      ({ x, z }) => surfaceHeight(x, z), meshes.paintRecipe('path-gravel'))
   }
   for (const walk of villageWalks) {
     if (!walk.points.length) continue

@@ -6,6 +6,10 @@ const lastTick = Math.round(trialSeconds / schoolStep)
 const routeLimit = 96
 type Waypoint = [tick: number, eastDm: number, northDm: number]
 type Disturbance = 'player' | 'skiff'
+interface Crossing {
+  side?: 'east' | 'west'
+  returnPass?: boolean
+}
 
 export function readSchoolRoute(raw: unknown): Waypoint[] {
   if (typeof raw !== 'string' || raw.length > 1800) return []
@@ -23,16 +27,18 @@ export function readSchoolRoute(raw: unknown): Waypoint[] {
   } catch { return [] }
 }
 
-export function createSchoolTrial(seed: number, kind: Disturbance, raw: unknown, nudge = false) {
+export function createSchoolTrial(seed: number, kind: Disturbance, raw: unknown, nudge = false, crossing: Crossing = {}) {
   const route = readSchoolRoute(raw)
   const school = createSchool(seed, nudge)
-  const actor = { x: -6, z: 0, heading: Math.PI / 2, speed: 0 }
+  const start = crossing.side === 'east' ? 6 : -6
+  const entry = { x: start, z: 0, heading: -Math.sign(start) * Math.PI / 2, speed: 0 }
+  const actor = { ...entry }
   const tracks: Point[][] = school.fish.map(() => [])
   let tick = 0, nextCommand = 0
   let target: Point = actor
   function restart() {
     Object.assign(school, createSchool(seed, nudge))
-    Object.assign(actor, { x: -6, z: 0, heading: Math.PI / 2, speed: 0 })
+    Object.assign(actor, entry)
     target = actor
     for (const track of tracks) track.length = 0
     tick = nextCommand = 0
@@ -42,7 +48,8 @@ export function createSchoolTrial(seed: number, kind: Disturbance, raw: unknown,
     if (end < tick) restart()
     while (tick < end) {
       // Default crossing is replaced from the first recorded input onward.
-      if (!nextCommand && tick === 45) target = { x: 6, z: 0 }
+      if (!nextCommand && tick === 45) target = { x: -start, z: 0 }
+      if (!nextCommand && crossing.returnPass && tick === 360) target = entry
       const command = route[nextCommand]
       if (command?.[0] === tick) {
         target = { x: command[1] / 10, z: command[2] / 10 }

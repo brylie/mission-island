@@ -8,6 +8,7 @@ import { createSwimsuit } from './crew-swimsuit'
 export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
   const blank = '#f1d6a2'
   const skin: Mesh[] = [], cloth: Mesh[] = [], trim: Mesh[] = [], trousers: Mesh[] = [], shoes: Mesh[] = []
+  const shorts: Mesh[] = [], shortCuffs: Mesh[] = []
   const bareFeet: Mesh[] = [], bareLimbs: Mesh[] = [], shirtedSkin: Mesh[] = []
   const swimCalves: Mesh[] = [], swimBareFeet: Mesh[] = []
   const arms: TransformNode[] = [], legs: TransformNode[] = [], shoulders: Mesh[] = []
@@ -25,6 +26,13 @@ export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
       [-.213, inward, .013, .124, .137], [-.09, -s * .029, .002, .136, .154], [.034, -s * .038, -.010, .13, .146], [.083, -s * .044, -.010, .136, .143], [.149 + s * .002, -s * .052, -.014, .134, .122],
     ]))
     trousers.push(form(leg, 'Folded trouser hem', [[-.466, inward, .001, .111, .116], [-.46, inward, 0, .115, .119], [-.408, inward, -.001, .117, .122]]))
+    shorts.push(form(leg, 'Deck shorts', [
+      [-.222, inward, .009, .119, .131], [-.170, inward, .012, .125, .142],
+      [-.090, -s * .029, .002, .136, .154], [.034, -s * .038, -.010, .130, .146], [.149, -s * .052, -.014, .134, .122],
+    ]))
+    shortCuffs.push(form(leg, 'Rolled shorts cuff', [
+      [-.237, inward, .008, .118, .132], [-.230, inward, .009, .124, .138], [-.193, inward, .011, .127, .143],
+    ]))
     shoes.push(form(leg, 'Oiled leather boot', [
       [-.646, inward, .044, .119, .174], [-.624, inward, .05, .126, .181], [-.585, inward, .058, .123, .177],
       [-.554, inward, .038, .118, .159], [-.521, inward, .007, .107, .124], [-.445, inward, -.005, .102, .103],
@@ -68,7 +76,7 @@ export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
       [s * .055, -.520, .081, .028, .024], [s * .050, -.548, .073, .022, .020], [s * .053, -.558, .065, .013, .012],
     ], [0, 0, 1]))
   }
-  trousers.push(form(root, 'Trouser seat', [[.771, 0, -.008, .226, .126], [.794, 0, -.010, .256, .154], [.832, 0, -.014, .253, .151]]))
+  const seat = form(root, 'Trouser seat', [[.771, 0, -.008, .226, .126], [.794, 0, -.010, .256, .154], [.832, 0, -.014, .253, .151]])
   const torso = form(root, 'Canvas shirt body', [
     [.774, 0, .005, .290, .204], [.783, 0, .006, .302, .211], [.813, 0, .005, .301, .21], [.889, 0, -.001, .281, .195],
     [.929, 0, -.011, .261, .183], [1.061, 0, -.012, .275, .19], [1.17, 0, -.015, .281, .182],
@@ -112,5 +120,5 @@ export function createCrewClothes(meshes: MeshFactory, root: TransformNode) {
     [.079, 1.117, .155, .005, .004], [.146, 1.122, .132, .003, .003],
   ], [0, 0, 1])
   meshes.shadows.removeShadowCaster(swimSeam, false)
-  return { arms, legs, skin, cloth, trim, torso, inset, yoke, trousers, shoes, bareFeet, bareLimbs, swimsuit, swimSeam, shoulders, shirtedSkin, swimArms, swimCalves, swimBareFeet }
+  return { seat, shorts, shortCuffs, arms, legs, skin, cloth, trim, torso, inset, yoke, trousers, shoes, bareFeet, bareLimbs, swimsuit, swimSeam, shoulders, shirtedSkin, swimArms, swimCalves, swimBareFeet }
 }

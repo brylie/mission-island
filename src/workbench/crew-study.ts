@@ -13,15 +13,19 @@ const duration = 2.4
 const skiffPreviewHeight = 0.44
 
 function describeOutfit(appearance: CrewAppearance) {
-  const item = (isEveryday(appearance.uniform) && shopItemFor('shirt', appearance.shirt)) ||
+  const everyday = isEveryday(appearance.uniform)
+  const item = (everyday && shopItemFor('shirt', appearance.shirt)) ||
     shopItemFor('uniform', appearance.uniform)
   if (item) {
     const { name, price } = clothingCatalog[item]
-    return `${name} · ${price} ${price === 1 ? 'coin' : 'coins'}`
+    const bottoms = everyday && appearance.shirt !== 'lagoon' && appearance.trousers
+      ? ' · ' + appearanceParts.trousers.choices[appearance.trousers] : ''
+    return `${name} · ${price} ${price === 1 ? 'coin' : 'coins'}${bottoms}`
   }
-  if (isEveryday(appearance.uniform) && appearance.shirt) return appearanceParts.shirt.choices[appearance.shirt]
   const uniform = uniforms[appearance.uniform === 'default' ? 'amber' : appearance.uniform]
-  return uniform.name + ' · ' + (uniform.unlock || 'Starting uniform')
+  if (!everyday) return uniform.name + ' · ' + uniform.unlock
+  const shirt = appearance.shirt ? appearanceParts.shirt.choices[appearance.shirt] : uniform.name
+  return shirt + ' · ' + appearanceParts.trousers.choices[appearance.trousers ?? 'slate']
 }
 
 export const crewStudy: Entry = {
@@ -84,9 +88,7 @@ export const crewStudy: Entry = {
       const appearance = readAppearance(values)
       crew.setAppearance(appearance, { dye: values.dyed ? String(values.dye) : undefined })
       crew.setCap(Boolean(values.cap))
-      const trousers = isEveryday(appearance.uniform) && appearance.trousers && appearance.shirt !== 'lagoon'
-        ? ` · ${appearanceParts.trousers.choices[appearance.trousers]} trousers` : ''
-      observe(describeOutfit(appearance) + trousers)
+      observe(describeOutfit(appearance))
       crew.blink(time)
       const power = windup ? chargePower('throw', time) : 0
       crew.root.rotation.x = 0

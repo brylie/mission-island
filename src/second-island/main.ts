@@ -11,7 +11,7 @@ import { villageWalks } from './footways'
 import { displayCrewBank } from './crew-bank'
 import { brinewickRainRoof } from './brinewick-market-art'
 import { createHoneyDelivery } from './honey-delivery'
-import { saltwindRainAt, saltwindWeather } from './weather'
+import { saltwindLiveWeather, saltwindRainAt, saltwindWeather } from './weather'
 import { createLandscape } from './landscape'
 import { createChart } from './map'
 import { routes, sampleRoute } from './routes'
@@ -19,6 +19,7 @@ import { createScenery } from './scenery'
 import { arrival, discoveryWalks, islandName, landmarks, sites, villages, waterfront, waterBounds } from './sites'
 import type { MapPoint } from './sites'
 import { dryLandKm2, groundHeight, waterHeight } from './terrain'
+import { createSaltwindEffects } from './place-effects'
 import { tour } from './tour'
 import { bindPlaytestCopy, readSaltwindView, saltwindLink } from '../playtest-link'
 import './style.css'
@@ -42,6 +43,7 @@ function start() {
   const solids = new ScenerySolids()
   const updateWater = createLandscape(meshes, solids)
   const updateScenery = createScenery(meshes, solids)
+  const updateEffects = createSaltwindEffects(meshes, solids)
   const follow = new FreeCamera('Saltwind follow', new Vector3(arrival.x, 12, arrival.z - 19), scene)
   const overview = new FreeCamera('Saltwind overview', new Vector3(0, 910, -389), scene)
   overview.mode = Camera.ORTHOGRAPHIC_CAMERA
@@ -399,7 +401,10 @@ function start() {
     const weather = saltwindWeather(climate.value, sceneTime)
     const light = atmosphere.update(sceneTime, weather, camera.position, !broad, { fogScale: 7 })
     const threats = point.y < waterHeight(point.x, point.z) - .04 ? [point] : []
-    updateScenery({ time: sceneTime, delta: simulationDelta, weather, camera: camera.position, threats }, broad, climate.value === 'live' ? saltwindRainAt : undefined)
+    const frame = { time: sceneTime, delta: simulationDelta, weather, camera: camera.position, threats,
+      weatherAt: climate.value === 'live' ? saltwindLiveWeather : undefined }
+    updateScenery(frame, broad, climate.value === 'live' ? saltwindRainAt : undefined)
+    updateEffects(frame, point, broad, frozen)
     updateWater(sceneTime, light)
     scene.render()
     updateLabels()

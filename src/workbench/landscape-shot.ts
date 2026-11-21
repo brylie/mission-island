@@ -23,14 +23,14 @@ export function readLandscapeShot(value: unknown) {
   return readShot(value, 450)
 }
 
-function readShot(value: unknown, maxRadius: number): LandscapeShot | undefined {
+function readShot(value: unknown, maxRadius: number, minRadius = .55): LandscapeShot | undefined {
   if (!record(value) || value.version !== 1 || typeof value.name !== 'string' || !record(value.camera) ||
       !record(value.options) || !between(value.time, 0, Number.MAX_SAFE_INTEGER) ||
       typeof value.grid !== 'boolean' || typeof value.wireframe !== 'boolean') return
   const name = value.name.trim()
   const { alpha, beta, radius, target, fov } = value.camera
   if (!name || name.length > 60 || !between(alpha, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER) ||
-      !between(beta, 0.035, Math.PI - 0.06) || !between(radius, 0.55, maxRadius) ||
+      !between(beta, 0.035, Math.PI - 0.06) || !between(radius, minRadius, maxRadius) ||
       (fov !== undefined && !between(fov, .1, 2)) ||
       !Array.isArray(target) || target.length !== 3 ||
       !target.every((coordinate: unknown): coordinate is number => between(coordinate, -10_000, 10_000))) return
@@ -46,10 +46,10 @@ function readShot(value: unknown, maxRadius: number): LandscapeShot | undefined 
   }
 }
 
-export function parseLandscapeShot(serialized: string, maxRadius = 450): LandscapeShot | undefined {
+export function parseLandscapeShot(serialized: string, maxRadius = 450, minRadius = .55): LandscapeShot | undefined {
   if (serialized.length > 4096) return
   try {
-    return readShot(JSON.parse(serialized), maxRadius)
+    return readShot(JSON.parse(serialized), maxRadius, minRadius)
   } catch {
     return undefined
   }

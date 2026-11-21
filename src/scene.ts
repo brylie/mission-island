@@ -3,7 +3,6 @@ import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { CreateLines } from '@babylonjs/core/Meshes/Builders/linesBuilder'
 import type { Viewport } from '@babylonjs/core/Maths/math.viewport'
-import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { Scene } from '@babylonjs/core/scene'
 import { createAtmosphere } from './island-atmosphere'
 import { landscapeLink } from './playtest-link'
@@ -13,6 +12,8 @@ import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutFire } from './fire-effect'
 import { fisherAt, fisherName } from './harbor-fisher'
+import { moveTo } from './island-render-pose'
+import { fishingFloatDip } from './starter-effect-cues'
 import { createIslandCamera } from './island-camera'
 import { hideLandmark, landmarks } from './island-landmarks'
 import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight } from './assets/crew'
@@ -24,26 +25,38 @@ import { createIslandWorld } from './island-world'
 import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'
 import { createObjectiveMarker } from './objective-marker'
 import { northernRegions, starterDiscoveries } from './scenery'
-import type { Player, Snapshot } from './protocol'
+import type { Player, Snapshot, Weather } from './protocol'
 import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
 import { flatbedGroundDrive } from './vehicles/flatbed'
-import { nightLighting } from './weather'
-import { marketRunoffAt } from './market-runoff'
+import { createStarterActionEffects } from './starter-action-effects'
+import { createStarterPlaces } from './starter-place-effects'
+import { nightLighting, weatherAt } from './weather'
+import { createShaderReview } from './shader-review'
+import { dryMarketRainAge, marketRunoffAt, marketRunoffPreview } from './market-runoff'
 import { crateStarts, distance, extinguisherStarts, harbor, lookout, town } from './world'
-import type { Pose } from './world'
 
 const sun = '#ffd56b'
+
+function swimmers(snapshot?: Snapshot) {
+  return snapshot?.players.filter((player) => player.connected && !player.seat &&
+    (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04))) ?? []
+}
+
+function sceneWeather(fixed?: Weather, live?: Weather) {
+  return fixed ? { weather: fixed } : { weather: live ?? { hour: 6, rain: 0 }, weatherAt: live && weatherAt }
+}
 
 export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) {
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
   const scene = new Scene(engine)
   const islandCamera = createIslandCamera(scene, canvas)
+  const review = createShaderReview(scene, canvas, engine, islandCamera.releaseMouse)
 
   const lighting = createIslandLighting(scene)
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
-  const { juniper, water, homeChests, showFarm, boat, buoys, northernScenery, wildlife, phenomena, lights, marketShower, shellglass } = createIslandWorld(meshes)
+  const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns } = createIslandWorld(meshes, { liveParticles: true })
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
   const dropPad = createObjectiveMarker(meshes, town, deliveryRadius * 2, '#67ecdc')
@@ -88,8 +101,10 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     return { node, cargoTag }
   })
 
-  const sprays = extinguisherStarts.map(() => createExtinguisherSpray(scene))
+  const sprays = extinguisherStarts.map((_, index) => createExtinguisherSpray(scene, 9011 + index))
   const fire = createLookoutFire(scene, lookout.x, lookout.z)
+  const placesFx = createStarterPlaces(meshes)
+  const actionFx = createStarterActionEffects(scene, { boat, crew, farmTools, paddles: skiffGear.map(({ gear }) => gear), ferns })
 
   const places = [
     ...landmarks.map((place) => ({ ...place, discovery: '', mapOnly: false })),
@@ -123,19 +138,6 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     element.style.visibility = point.z >= 0 && point.z <= 1 ? 'visible' : 'hidden'
   }
 
-  const moveTo = (node: TransformNode, pose: Pose, y: number, factor: number) => {
-    if (!node.isEnabled() || Math.hypot(node.position.x - pose.x, node.position.z - pose.z) > 14) {
-      node.position.set(pose.x, y, pose.z)
-      node.rotation.y = pose.heading
-    } else {
-      node.position.x += (pose.x - node.position.x) * factor
-      node.position.y += (y - node.position.y) * factor
-      node.position.z += (pose.z - node.position.z) * factor
-      const turn = pose.heading - node.rotation.y
-      node.rotation.y += Math.atan2(Math.sin(turn), Math.cos(turn)) * factor
-    }
-    node.setEnabled(true)
-  }
 
   let last: Snapshot | undefined
   let viewer = -1
@@ -171,7 +173,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       const progress = player.casting.fight?.progress ?? 0
       const pulling = player.casting.fight?.pulling
       linePoints[2].set(target.x + (player.x - target.x) * progress * 0.88,
-        waterLevel + 0.025 + Math.sin(time * (pulling ? 13 : 5)) * (pulling ? 0.09 : 0.025),
+        waterLevel + 0.025 - fishingFloatDip(player.casting) + Math.sin(time * (pulling ? 13 : 5)) * (pulling ? 0.09 : 0.025),
         target.z + (player.z - target.z) * progress * 0.88)
       Vector3.LerpToRef(linePoints[0], linePoints[2], flight, bobber.position)
       bobber.position.y += Math.sin(flight * Math.PI) * 1.25
@@ -259,7 +261,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       const locked = item.kind === 'extinguisher' && state.mission !== 'fire'
       if (item.delivered || holder?.seat || locked) {
         node.setEnabled(false)
-        spray?.update(node, false)
+        spray?.(time, node, false)
         continue
       }
       const smooth = node.isEnabled()
@@ -274,7 +276,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         node.rotationQuaternion = null
         node.rotation.y = item.heading
       }
-      spray?.update(node, item.spraying === true)
+      spray?.(time, node, item.spraying === true)
     }
   }
 
@@ -345,36 +347,43 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const local = last?.players.find((player) => player.id === viewer && player.connected)
     const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? truck : crew[local.id].root) : undefined
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
-    const camera = islandCamera.update(subject, Boolean(local?.seat), aspect, delta)
-    northernScenery.update(camera.position, Boolean(subject))
-    const weather = last?.weather ?? { hour: 6, rain: 0 }
+    const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta)
+    const field = review?.view(time)
+    const camera = field?.camera ?? normalCamera
+    const close = Boolean(field || subject)
+    const climate = sceneWeather(field?.weather, last?.weather)
+    const { weather } = climate
     const clock = last?.islandTime ?? time
     const timeError = clock - ambientTime
     ambientTime = Math.abs(timeError) > .25 ? clock : ambientTime + delta * (1 + timeError * 4)
-    const crewInWater = last?.players.filter((player) => player.connected && !player.seat &&
-      (player.swimming || (!player.truckSurface && player.y <= waterLevel + .08 && waterDepth(player) > .04))) ?? []
+    const crewInWater = swimmers(last)
     const threats = last ? [...crewInWater, last.skiff] : crewInWater
-    const frame = { time: ambientTime, delta, weather, camera: camera.position, threats }
+    const frame = { time: field?.time ?? ambientTime, delta, ...climate, camera: camera.position, threats, seek: Boolean(field) }
     if (last?.juniper) juniper(last.juniper, time, factor)
-    wildlife(frame, last?.driftwood)
-    phenomena(frame)
-    marketShower(ambientTime, camera.position, marketRunoffAt(clock))
+    const runoff = field ? marketRunoffPreview(weather.rain, dryMarketRainAge) : marketRunoffAt(clock)
+    const livePlayer = !field && subject ? local : undefined
+    placesFx(frame, !livePlayer, runoff)
+    actionFx.draw(time, camera.position, livePlayer, last)
     const strength = nightLighting(weather.hour)
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
-    lights(camera.position, strength)
-    const light = atmosphere.update(time, weather, camera.position, Boolean(subject))
-    water.pose(time, light, weather.rain)
-    shellglass(frame, light, clock)
-    scene.render()
+    const light = atmosphere.update(field?.time ?? time, weather, camera.position, close)
+    updateEnvironment(frame, light, close, runoff, {
+      driftwood: last?.driftwood, quality: review?.quality(), tideTime: field ? field.tideTime : clock,
+      actors: { snapshot: last, waterCrew: crewInWater, inspection: field?.inspection,
+        skiffPose: { x: boat.position.x, z: boat.position.z, heading: boat.rotation.y } },
+    })
+    if (review) review.render()
+    else scene.render()
     const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
-    updatePlaceLabels(local, Boolean(subject), viewport)
-    updateCrewTags(Boolean(subject), viewport)
+    updatePlaceLabels(local, close, viewport)
+    updateCrewTags(close, viewport)
   })
   const resize = new ResizeObserver(() => engine.resize())
   resize.observe(canvas)
 
   return {
     update(snapshot: Snapshot, id: number, trackPlayer: boolean) {
+      actionFx.snapshot(last, snapshot)
       last = snapshot
       viewer = id
       follow = trackPlayer
@@ -385,12 +394,14 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       return landscapeLink(location.href, { focus: [camera.target[0], camera.target[2]], camera, ...last.weather,
         time: ambientTime, grid: false, wireframe: false })
     },
+    isReviewing: () => review?.active() ?? false,
     walkInput: (x: number, z: number) => islandCamera.walkInput(x, z),
     aimHeading: islandCamera.aimHeading,
-    captureMouse: islandCamera.captureMouse,
+    captureMouse: () => { if (!review?.active()) islandCamera.captureMouse() },
     releaseMouse: islandCamera.releaseMouse,
     setMouseInversion: (horizontal: boolean, vertical: boolean) => islandCamera.setMouseInversion(horizontal, vertical),
     dispose() {
+      review?.dispose()
       islandCamera.dispose()
       resize.disconnect()
       engine.dispose()

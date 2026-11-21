@@ -373,7 +373,7 @@ function update(state: Snapshot) {
   if (player) {
     updatePersonalDisplay(state, player, earlier)
     guide.update(state, player)
-    if (offerJoinName && !document.body.hasAttribute('data-booting') && !modalOpen()) {
+    if (offerJoinName && !renderer?.isReviewing() && !document.body.hasAttribute('data-booting') && !modalOpen()) {
       offerJoinName = false
       if (!player.name) {
         pauseControls()
@@ -610,6 +610,10 @@ function saveMouseOptions() {
   renderer?.setMouseInversion(invertHorizontal.checked, invertVertical.checked)
 }
 
+function blocksGameKeys() {
+  return optionsDialog.open || renderer?.isReviewing()
+}
+
 applyCamera()
 window.addEventListener('keydown', (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey) return
@@ -619,7 +623,7 @@ window.addEventListener('keydown', (event) => {
     toggleOptions()
     return
   }
-  if (optionsDialog.open) return
+  if (blocksGameKeys()) return
   if (event.code === 'Escape') {
     renderer?.releaseMouse()
     cancelMouseActions()
@@ -672,7 +676,7 @@ function overGameplay(target: EventTarget | null) {
 }
 
 function beginMouseAction(event: MouseEvent) {
-  if (event.ctrlKey || event.metaKey || !live || modalOpen() || !overGameplay(event.target)) return
+  if (event.ctrlKey || event.metaKey || !live || renderer?.isReviewing() || modalOpen() || !overGameplay(event.target)) return
   if (event.button === 2) {
     setRightButton(true)
     return

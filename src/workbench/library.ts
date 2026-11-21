@@ -1,10 +1,12 @@
+import { surfaceFamilies } from '../surface-recipes.ts'
+
 // Groups describe the subject. Workspaces describe the work being done.
 export const workspaces = {
   World: ['Island', 'Routes'],
   Ecology: ['Habitats', 'Animals', 'Plants'],
   Construction: ['Starter buildings', 'Saltwind buildings', 'Props', 'Site furnishings'],
-  Surfaces: ['Materials'],
-  Effects: ['Effects'],
+  Surfaces: ['Materials', 'Water and shore', 'Vegetation and terrain', 'Built surfaces', 'Weather and light', ...surfaceFamilies],
+  Effects: ['Water', 'Weather and air', 'Vegetation and loose ground', 'Jobs'],
   Characters: ['Wardrobe', 'NPC interactions'],
   Vehicles: ['Starter vehicles', 'Saltwind vehicles'],
   Mechanics: ['Farming', 'Fishing', 'Physics'],

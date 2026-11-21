@@ -7,17 +7,23 @@ Choose a workspace to narrow the library to one job. Search matches words in sub
 | World | Orbit Starter Island, jump to a landmark, place or move draft objects, walk the terrain, compare saved shots, or launch the Saltwind tour. |
 | Ecology | Scrub hare and fox poses. Compare clover and tussock seeds and growth. Use the Biome Composer for feeding, pursuit, concealment and rain responses. |
 | Construction | Edit named Starter Island furnishings in place. Review Starter houses and combine Saltwind roof, tower, canopy, width and paint options at their actual addresses. |
-| Surfaces | Compare the procedural texture gallery, edit substance-specific finishes and share a material and camera setup. |
-| Effects | Set fire intensity or extinguisher emission, then step through particle lifetimes. |
+| Surfaces | Compare the procedural texture gallery, edit substance-specific finishes, and run [interactive shader studies](shader-studies.md) and [twenty additional studies](more-shader-studies.md) in the studio and on Starter Island. |
+| Effects | Audition 52 seeded effects at crew or truck scale. Scrub the burst, adjust the source footprint, or open the Tarnstep and Forest Lookout field setups. |
 | Characters | Try a uniform, fabric dye or cap while posing the crew. Rehearse offering, accepting and fulfilling a fish order with a stand-in shopkeeper at Seabrook Market. |
 | Vehicles | Inspect exteriors and lights. Compare vehicles on a neutral stage and at their parking or landing sites. |
 | Mechanics | Replay a cargo throw, compare fishing strategies, or set the crop stage in the actual field. |
+
+See the [Effects shelf and field checks](effects-workbench.md) for the preview sheet, shared setups, and on/off timing results.
 
 ## An editing session
 
 Open **Construction → Site furnishings → Seabrook village bench**. Select **On island** and move the bench using east and north offsets in metres. Its inspector, camera controls and geometry check stay available. **Save to landscape draft** applies the edit to Starter Island in this browser’s Workbench. **Inspect this location** returns to the landscape camera at the bench. To undo a published draft placement, reset the subject’s settings and save again. **Export placement JSON** produces coordinates, heading, size and finish suitable for review against the matching entry in `src/worlds/starter/sites.ts`. Collision geometry and the multiplayer map are authored separately.
 
 Use **Saved variations** to build a named, browser-local collection for a subject. Each variation restores its controls, viewport and clock. Use **Copy setup link** to share a specific model, context, parameter set, camera, lighting and paused time. Use a LAN address when sharing between computers. Landscape studies and biome recipes retain their specialized formats. The map’s **Save layout** and **Export JSON** manage additional placed objects. Scene drafts and setups run separately from multiplayer saves.
+
+## Procedural surfaces
+
+Open **Surfaces → Texture gallery** to compare 54 named materials across **Surface catalog** and **Gameplay surfaces**, or select a family in the Library. Use **Grazing light** to reveal relief, **Overcast** for diffuse light, and **Dusk** to see glow algae emit light. Meadow turf, Path gravel, and Weathered board also have an **On island** view. Both collections include contact sheets and reopenable setups. [Surface catalog](surface-catalog.md) · [Gameplay surfaces](gameplay-surfaces.md)
 
 ## Compare an asset with a reference photo
 

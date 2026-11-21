@@ -38,6 +38,9 @@ export interface Entry {
   readout?: string
   duration?: number
   angle?: number
+  cameraBeta?: number
+  cameraRadius?: number
+  cameraFocus?: readonly [number, number, number]
   headroom?: number
   topView?: boolean
   landscape?: boolean
@@ -45,7 +48,7 @@ export interface Entry {
   actions?: { label: string; restart?: boolean; enabled(values: Values): boolean; run(values: Values): void }[]
   controls?: Control[]
   relatedOptions?: (key: string, values: Values) => Values | undefined
-  create(meshes: MeshFactory, values: Values, reportError: (error: string) => void, observe: (text: string) => void):
+  create(meshes: MeshFactory, values: Values, reportError: (error: string) => void, observe: (text: string) => void, field?: FieldSite):
     ((frame: Playback, values: Values) => void) | void
 }
 
@@ -69,6 +72,14 @@ export function restoreOptions(controls: readonly Control[] = [], previous: Valu
     if (control.type === 'checkbox' && typeof value === 'boolean') return [control.key, value]
     return [control.key, control.value]
   }))
+}
+
+export function createInspectorSelect(control: Extract<Control, { type: 'select' }>, values: Values, labelId: string) {
+  const select = document.createElement('select')
+  select.setAttribute('aria-labelledby', labelId)
+  for (const [value, title] of Object.entries(control.choices)) select.add(new Option(title, value))
+  select.value = control.displayValue?.(values) ?? String(values[control.key])
+  return select
 }
 
 export function applyRelatedOptions(inspector: HTMLElement, entry: Entry, values: Values, changed: string) {

@@ -3,21 +3,24 @@ import type { SurfaceName } from '../materials'
 import { createOceanMaterial } from '../ocean'
 import { createTextureSample, noiseTypes } from '../surface-textures'
 import type { MetalType } from '../surface-textures'
+import { createSurfaceGallery, surfaceStudies } from './surface-studies'
 import { createSurfaceShader } from './surface-preview'
 import { control, range, type Control, type Entry } from './subject'
 
 export const materialStudies: Entry[] = [
   {
-    id: 'texture-gallery', name: 'Texture gallery', group: 'Materials', source: 'src/surface-textures.ts',
-    description: 'From top left, grass, gravel, sand, concrete, wood, stone, leaves, metal, and water.',
+    id: 'texture-gallery', name: 'Texture gallery', group: 'Materials', source: 'src/surface-recipes.ts',
+    description: 'Compare 54 named finishes across the Surface catalog and Gameplay surfaces galleries. Open a swatch from the Library to inspect its scale, wear, and relief.',
+    cameraRadius: 10.9,
     topView: true,
     controls: [
-      control('pattern', 'Texture family', 'surface', noiseTypes, true),
+      control('pattern', 'Gallery', 'catalog', { catalog: 'Surface catalog', gameplay: 'Gameplay surfaces', ...noiseTypes, surface: 'Original samples' }, true),
       range('spacing', 'Feature spacing', 1, 0.45, 2.4, 0.05, true),
     ],
     create(meshes, values) {
-      const palette = ['grass', 'gravel', 'sand', 'concrete', 'wood', 'stone', 'leaves', 'metal', 'water'] as const
       const spacing = Number(values.spacing)
+      if (values.pattern === 'catalog' || values.pattern === 'gameplay') return createSurfaceGallery(meshes, spacing, values.pattern)
+      const palette = ['grass', 'gravel', 'sand', 'concrete', 'wood', 'stone', 'leaves', 'metal', 'water'] as const
       const family = String(values.pattern)
       const repeated = family === 'surface' ? undefined : createTextureSample(meshes.scene, family, 1 / spacing, 0.57).diffuse
       for (const [i, surface] of palette.entries()) {
@@ -32,6 +35,7 @@ export const materialStudies: Entry[] = [
       }
     },
   },
+  ...surfaceStudies,
   {
     id: 'shader-drafts', name: 'Shader drafts', group: 'Materials', source: 'src/workbench/surface.frag.glsl', duration: 12,
     description: 'A stage for iterating on the editable shader source.',
@@ -57,7 +61,7 @@ export const materialStudies: Entry[] = [
       const color = typeof values.color === 'string' ? values.color : undefined
       const grainSize = Number(values.size ?? 1)
       const strength = Number(values.detail ?? 1)
-      const water = id === 'water' ? createOceanMaterial(meshes.scene, true) : undefined
+      const water = id === 'water' ? createOceanMaterial(meshes.scene, 'preview') : undefined
       water?.setAppearance(color ?? surface.color, grainSize, strength)
       const finish = water?.material ?? createSurfaceMaterial(meshes.scene, name, color, {
         grainSize, contrast: strength, relief: Number(values.relief ?? 1),

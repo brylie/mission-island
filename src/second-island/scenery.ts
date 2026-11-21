@@ -1,4 +1,7 @@
+import { createGullFlock } from '../gull-flock'
+import { saltwindGullStops } from '../gull-sites'
 import { createHare } from '../hare'
+import { createCoastalFish } from '../school-fish'
 import { villageWalks } from './footways'
 import type { ScenerySolids } from './walking'
 import { Matrix } from '@babylonjs/core/Maths/math.vector'
@@ -8,11 +11,13 @@ import '@babylonjs/core/Meshes/thinInstanceMesh'
 import { createHarborBoat } from '../assets/waterfront'
 import { createTree } from '../assets/props'
 import { createPhenomena } from '../island-phenomena'
+import { createTarnstepSpray } from './tarnstep-spray'
 import type { MeshFactory } from '../island-meshes'
 import { placeSiteFeatures } from '../assets/site-props'
 import { distanceToRoute } from '../routes'
 import { createFlocks, createSchools } from '../wildlife'
 import type { WildlifeFrame } from '../wildlife'
+import { buildStockpiles, buildTarnstepLedges } from './quarry-art'
 import { habitatAt } from './habitats'
 import { brinewickMarketSubject } from './brinewick-market'
 import { createBrinewickMarket } from './brinewick-market-art'
@@ -21,10 +26,11 @@ import { islandBuildings } from './lots'
 import { clearAirfield } from './landscape'
 import { createHoneyMarketStand, createLongAcreGarden } from './long-acre-art'
 import { longAcreSubject } from './long-acre'
-import { arrival, helipad, lowerLake, pavedYards, roundYards, sites, discoveryWalks, waterfront } from './sites'
+import { arrival, helipad, lowerLake, pavedYards, roundYards, seaLevel, sites, discoveryWalks, waterfront } from './sites'
 import type { MapPoint } from './sites'
-import { fallsWidth, fallsX, fallsY, groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
+import { groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
 import { createSaltwindVehicle } from './vehicles'
+import { previewSandspit, sandspitShallows } from './sandspit-school'
 import type { VehicleId } from './vehicles'
 import { buildSigns } from './site-signs'
 import { saltwindFeatures } from './site-features'
@@ -117,16 +123,7 @@ function buildYards(meshes: MeshFactory, omit?: string) {
     meshes.box(helipad.x + 8.1 * Math.cos(angle), padY + .2, helipad.z + 8.1 * Math.sin(angle), .22, .06, .22, '#f1c679')
   }
 
-  // Slate outcrops break the current at the two lips and on the downstream banks.
-  for (const [z, lane, width, depth, height, turn] of [
-    [193.2, -.91, 3.8, 2.4, 1.3, .6], [190.8, .77, 2.7, 2.1, 1.5, -.3],
-    [184, -1.02, 4.9, 3.1, 1.6, .2], [180, .62, 2.4, 2.9, 1.3, 1.1],
-    [174.8, -.94, 3.6, 2.4, 1.2, .4], [170.7, .97, 3.2, 3.7, 1.5, -.6],
-  ]) {
-    const x = fallsX(z) + lane * fallsWidth(z)
-    const rock = meshes.cylinder(x, groundHeight(x, z), z, .72, 1.1, height, 6, '#75817b')
-    rock.scaling.set(width, 1, depth); rock.rotation.y = turn
-  }
+  buildTarnstepLedges(meshes)
 
   // A clear service corridor runs between the log stacks and the mill.
   for (const [x, z] of [[-204, 164], [-209, 177], [-225, 177]]) for (let layer = 0; layer < 3; layer++) {
@@ -136,11 +133,6 @@ function buildYards(meshes: MeshFactory, omit?: string) {
       for (const side of [-1, 1]) meshes.cylinder(log.position.x, log.position.y, z + side * 3.76, .61, .61, .035, 10, '#d4ad73').rotation.x = Math.PI / 2
     }
   }
-  meshes.box(282, 32.61, 178, 7.4, 3, 5.8, '#9f7653')
-  meshes.box(282, 31.1, 175.6, 4.2, .78, 1.9, '#625d54').rotation.x = .23
-  for (const dx of [-2.82, 2.82]) for (const dz of [-2.2, 2.2]) meshes.box(282 + dx, 30.52, 178 + dz, .39, 3.3, .39, '#685e52')
-  for (const x of [292, 296, 300]) meshes.sphere(x, 30.3, 177, 5.7, 2.5, 5.9, '#8d8174')
-
   for (const z of [182, 187, 192, 197]) for (const x of [9, 16, 24, 31]) {
     const y = groundHeight(x, z)
     const height = .76 + ((x + z) % 3) * .09
@@ -333,9 +325,8 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
   solids.add({ x: roostX, z: roostZ, bottom: roostGround, top: roostGround + roostHeight / 2, width: .53, depth: .53, heading: 0 })
   const roost = { x: roostX, y: roostGround + roostHeight * 1.015, z: roostZ }
   const perch = (x: number, z: number) => ({ x, z, y: surfaceHeight(x, z) + .15 })
+  const gulls = createGullFlock(meshes, saltwindGullStops.map(stop => ({ ...stop, y: surfaceHeight(stop.x, stop.z) })))
   const flocks = createFlocks(meshes, [
-    { center: { x: -274, z: -273, y: 12 }, range: 27, count: 4, color: '#f3e7cf',
-      landing: perch(-265, -229), roost: perch(-267.9, -241) },
     { center: { x: -171, z: 224, y: 59 }, range: 22, count: 5, color: '#ae8075',
       landing: perch(-178, 229), roost },
     { center: { x: -114, z: 79, y: 13 }, range: 14, count: 3, color: '#61576c', bat: true,
@@ -345,9 +336,9 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
     { swim: (time) => ({ x: lowerLake.x - 5 + 4 * Math.sin(time * .23), z: lowerLake.z + 23 + 2 * Math.cos(time * .23) }),
       deep: { x: .15, z: -.99 }, level: lowerLake.y,
       isWater: ({ x, z }) => waterHeight(x, z) === lowerLake.y && groundHeight(x, z) < lowerLake.y - .4 },
-    { swim: (time) => ({ x: -253 + 3 * Math.sin(time * .37), z: -268.5 + 1.5 * Math.cos(time * .37) }),
-      deep: { x: -.15, z: -.99 }, level: 0, isWater: ({ x, z }) => groundHeight(x, z) < -.4 },
   ])
+  const sandspit = previewSandspit()
+  const sandspitFish = createCoastalFish(meshes, sandspitShallows, seaLevel)
   const animals = [
     { name: 'Mallards', x: lowerLake.x, z: lowerLake.z, y: lowerLake.y + .24, span: 12, speed: .25, color: '#598978', kind: 'duck', count: 3 },
     { name: 'Hares', x: 48, z: 53, y: 0, span: 6, speed: .83, color: '#ae8e73', kind: 'hare', count: 2 },
@@ -362,7 +353,10 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
   }))
   return (frame: WildlifeFrame, overview: boolean) => {
     flocks(frame)
+    gulls(frame)
     schools(frame)
+    const school = sandspit(frame.time, frame.threats.map(({ x, z }) => ({ x, z, range: 1.9 })), frame.seek)
+    sandspitFish(frame, overview ? undefined : school)
     const { time, camera } = frame
     for (const animal of animals) {
       const { root, index, x, z, span, kind, speed, y } = animal
@@ -379,6 +373,7 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
 }
 
 export function createScenery(meshes: MeshFactory, solids: ScenerySolids, omit?: string) {
+  buildStockpiles(meshes, solids)
   const firstFixture = meshes.scene.meshes.length
   buildYards(meshes, omit)
   buildSigns(meshes)
@@ -391,9 +386,9 @@ export function createScenery(meshes: MeshFactory, solids: ScenerySolids, omit?:
   const pollinators = omit === longAcreSubject ? undefined : createLongAcreGarden(meshes, solids)
   const plants = createPlants(meshes, solids)
   const wildlife = createWildlife(meshes, solids)
+  const tarnstepSpray = omit === 'waterfall-spray' ? undefined : createTarnstepSpray(meshes.scene)
   const phenomena = createPhenomena(meshes.scene, [
     { ...lowerLake, name: 'Mirror Lake dawn mist', kind: 'mist', extent: 62, seed: 5183 },
-    { name: 'Tarnstep spray', kind: 'spray', x: fallsX(169), y: fallsY(169), z: 169, extent: 7.5, seed: 2962 },
     { name: 'Sandspit plankton', kind: 'glow', x: -248, y: 0, z: -272, extent: 9.8, seed: 6788 },
   ])
   meshes.finishScenery()
@@ -404,5 +399,6 @@ export function createScenery(meshes: MeshFactory, solids: ScenerySolids, omit?:
     plants(frame.camera, overview)
     wildlife(frame, overview)
     phenomena(frame)
+    tarnstepSpray?.(frame)
   }
 }

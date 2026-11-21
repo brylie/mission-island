@@ -13,7 +13,8 @@ import { CreateSphere } from '@babylonjs/core/Meshes/Builders/sphereBuilder'
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData'
 import type { Scene } from '@babylonjs/core/scene'
-import { createIslandMaterial, createSurfaceMaterial } from './materials'
+import { createIslandMaterial, createRecipeMaterial, createSurfaceMaterial } from './materials'
+import { surfaceRecipe, type SurfaceRecipe } from './surface-recipes'
 import type { SurfaceName } from './materials'
 
 export function createIslandLighting(scene: Scene) {
@@ -40,6 +41,7 @@ export function createIslandLighting(scene: Scene) {
 
 export function createMeshFactory(scene: Scene, shadows: ShadowGenerator) {
   const materials = new Map<string, Material>()
+  const recipes = new Map<SurfaceRecipe['id'], ReturnType<typeof createRecipeMaterial>>()
   const batches = new Map<Material, Mesh[]>()
   const noShadow: Mesh[] = []
   function paint(color: string, glow = false) {
@@ -57,6 +59,14 @@ export function createMeshFactory(scene: Scene, shadows: ShadowGenerator) {
     if (existing) return existing
     const material = createSurfaceMaterial(scene, surface, color)
     materials.set(key, material)
+    return material
+  }
+
+  function paintRecipe(id: SurfaceRecipe['id']) {
+    const existing = recipes.get(id)
+    if (existing) return existing
+    const material = createRecipeMaterial(scene, surfaceRecipe(id))
+    recipes.set(id, material)
     return material
   }
 
@@ -158,7 +168,7 @@ export function createMeshFactory(scene: Scene, shadows: ShadowGenerator) {
     noShadow.length = 0
   }
 
-  return { scene, shadows, paint, paintSurface, box, sphere, cylinder, surface, batchModel, finishScenery }
+  return { scene, shadows, paint, paintSurface, paintRecipe, box, sphere, cylinder, surface, batchModel, finishScenery }
 }
 
 export type MeshFactory = ReturnType<typeof createMeshFactory>

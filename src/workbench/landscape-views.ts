@@ -1,6 +1,7 @@
 import { brinewickMarketSubject } from '../second-island/brinewick-market'
 import { longAcreSubject } from '../second-island/long-acre'
 import { shellglassCycle } from '../shellglass-tide'
+import { driftwoodShallows } from '../simulation/driftwood-school'
 import { falls } from '../terrain'
 import type { Point } from '../world'
 
@@ -25,10 +26,20 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
     focus: { x: -39.7, z: 19.2, height: 4.05 },
     alpha: 0.43, beta: Math.PI / 2 + 0.025, radius: 14, hour: 6.4, time: 11,
   },
+  'harbor-gulls': {
+    label: 'Harbor gulls at the pilings',
+    focus: { x: -44.5, z: -34, height: .9 },
+    alpha: -2.41, beta: 1.31, radius: 12.5, hour: 12, time: 33.5,
+  },
   'harbor-sunset': {
     label: 'Harbor sunset',
     focus: { x: -45, z: -12, height: 0.25 },
     alpha: 2.87, beta: 1.55, radius: 15, hour: 17.4, time: 4,
+  },
+  'driftwood-fish': {
+    label: 'Driftwood fish shallows',
+    focus: { ...driftwoodShallows, height: 1.6 },
+    alpha: 1.9, beta: .77, radius: 9.5, hour: 12, time: 0,
   },
   'seabrook-market-runoff': {
     label: 'Seabrook Market runoff',

@@ -33,7 +33,7 @@ export const appearanceParts = {
   mouth: { label: 'Mouth', choices: { soft: 'Soft smile', wide: 'Wide smile' } },
   shirt: { label: 'Shirt or swimsuit', choices: { amber: 'Harbor amber', blue: 'Coastal blue', coral: 'Coral shirt', lagoon: 'Lagoon swimsuit' } },
   hat: { label: 'Hat', choices: { none: 'Bareheaded', amber: 'Amber cap', blue: 'Blue cap' } },
-  trousers: { label: 'Trousers', choices: { slate: 'Slate blue', sand: 'Sand' } },
+  trousers: { label: 'Bottoms', choices: { slate: 'Slate blue trousers', sand: 'Sand trousers', 'slate-shorts': 'Slate shorts', 'sand-shorts': 'Sand shorts' } },
   shoes: { label: 'Shoes', choices: { dark: 'Dark deck shoes', brown: 'Brown deck shoes', bare: 'Bare feet' } },
 } as const
 

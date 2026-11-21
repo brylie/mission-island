@@ -390,3 +390,38 @@ kbd {
 @media (max-width: 560px) {
   #island-clock { font-size: 9px; }
 }
+
+#shader-review {
+  position: absolute;
+  inset: auto auto 12px 12px;
+  z-index: 2;
+  display: grid;
+  gap: 7px;
+  max-width: min(370px, calc(100% - 24px));
+  padding: 10px 12px;
+  border: 1px solid #a5c0a66b;
+  border-radius: 7px;
+  background: #172f31f5;
+  color: #fff4d7;
+  font-size: 12px;
+}
+#shader-review[hidden], #shader-review label[hidden] { display: none; }
+#shader-review label { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+#shader-review select, #shader-review button {
+  border: 1px solid #a5c0a66b;
+  border-radius: 4px;
+  padding: 3px 6px;
+  background: #254648;
+  color: inherit;
+  font: inherit;
+}
+#shader-review output { white-space: pre-line; font-variant-numeric: tabular-nums; }
+#shader-review output:empty { display: none; }
+
+.playfield:has(#island[data-shader-review]) > :is(#markers, .mission, .crew, .prompt, .controls, .charge-meter) {
+  display: none;
+}
+
+.shader-study-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 5px; }
+#shader-workbench { color: #bce8d5; }
+#shader-site { max-width: 240px; }

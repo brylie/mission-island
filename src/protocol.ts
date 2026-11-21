@@ -72,6 +72,13 @@ export interface Item extends Pose {
 
 export type Mission = 'delivery' | 'fire' | 'complete'
 
+export interface CultivationCue {
+  sequence: number
+  kind: 'hoe' | 'water' | 'harvest'
+  plot: number
+  actor: number
+}
+
 export interface Snapshot {
   driftwood: DriftwoodFrame
   juniper: BiomeFrame
@@ -85,6 +92,7 @@ export interface Snapshot {
   mission: Mission
   fire: number
   farm: PlotStage[]
+  cultivation?: CultivationCue[]
   weather: Weather
   islandTime: number
   jobs: JobBoardState
