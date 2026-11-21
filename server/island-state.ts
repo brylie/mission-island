@@ -1,5 +1,6 @@
 import type { DriftwoodFrame } from '../src/simulation/driftwood-school.ts'
 import { farmPlots } from '../src/farm.ts'
+import { initialMaterialsWork } from '../src/materials-work.ts'
 import type { createJuniperHabitat } from '../src/juniper-habitat.ts'
 import type { AviationProgress } from '../src/aviation.ts'
 import type { Snapshot } from '../src/protocol.ts'
@@ -36,6 +37,7 @@ export function restoreIsland(
     residents: { ...initialResidents(starterResidents), ...structuredClone(save?.world.residents) },
     aviation: restoreAviation(save?.world.aviation),
     journal: restoreJournal(save),
+    materialsWork: structuredClone(save?.world.materialsWork ?? initialMaterialsWork()),
   }
   state.skiff.speed = 0
   // A carried hinge pin goes back to the mending bench when the host stops.
@@ -51,14 +53,14 @@ export function restoreIsland(
 }
 
 export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['crew']): IslandSave {
-  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residents, lastFavorPay, journal } = state
+  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residents, lastFavorPay, journal, materialsWork } = state
   const { x, z, heading } = truck
   const { qualified, surveyed, aerial } = state.aviation
   return {
     version: 4, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
     world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial },
-      gate, gateRepair, residents, journal,
+      gate, gateRepair, residents, journal, materialsWork,
       ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }

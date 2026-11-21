@@ -15,12 +15,14 @@ import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
 import type { createResidents } from './residents.ts'
 import type { createJournal } from './journal.ts'
+import type { createMaterialsWork } from './materials-work.ts'
 
 export function createInteractions(
   state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'remove'>,
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
   residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>,
+  materials: ReturnType<typeof createMaterialsWork>,
   journal: Pick<ReturnType<typeof createJournal>, 'record'>, checkpoint?: () => void,
 ) {
   function useHomeChest(member: CrewMember) {
@@ -107,6 +109,11 @@ export function createInteractions(
       case 'talk': return residents.talk(member, subject)
       case 'accept-favor': return residents.accept(member, subject)
       case 'hand-over': return residents.handOver(member, subject)
+      case 'gather-material':
+      case 'check-material':
+      case 'return-material-sample':
+      case 'choose-repair-material':
+      case 'deliver-repair-material': return materials.act(member, action, subject)
       case 'job-board': return
       case 'record': return journal.record(member.player, subject)
       default: return gate.act(member, action)

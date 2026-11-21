@@ -3,6 +3,7 @@ import { jobBoard } from './jobs'
 import { beach, cottageDoor, crewHomes, ferryTerminal, forest, harbor, lookout, town } from './world'
 import type { Point } from './world'
 import { ridgeRack } from './worlds/starter/ridge-scout'
+import { materialSources, repairSite } from './worlds/starter/materials'
 
 interface Landmark {
   point: Point
@@ -26,6 +27,9 @@ export const landmarks: Landmark[] = [
   { point: jobBoard, title: 'Harbor job board', kind: 'board', height: 2.35 },
   { point: { x: 21, z: 22 }, title: 'Fire Supplies', kind: 'equipment', height: 2.4 },
   { point: ferryTerminal, title: 'Ferry terminal · Closed', kind: 'ferry', height: 2.1 },
+  { point: materialSources.timber, title: materialSources.timber.name, kind: 'materials-timber', height: 1.16, closeRange: 18 },
+  { point: materialSources.stone, title: materialSources.stone.name, kind: 'materials-stone', height: 1.16, closeRange: 18 },
+  { point: repairSite, title: repairSite.name, kind: 'materials-repair', height: 1.55, closeRange: 22 },
   ...crewHomes.flatMap((home, owner) => [
     { point: cottageDoor(home), title: `Your home · ${home.name}`, kind: 'home', height: 2.5, owner },
     { point: home.chest, title: 'Your tool chest', kind: 'chest', height: 0.95, owner, closeRange: 12 },
