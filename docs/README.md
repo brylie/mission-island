@@ -8,6 +8,7 @@ Mission Island is a third-person co-op game about two people making a home on a 
 | --- | --- |
 | What are we making, and what should a session feel like? | [Game design](game-design.md) and [creative direction and inspirations](design/creative-direction.md) |
 | How do jobs teach practical skills and lead to later careers? | [Learning through island work](design/learning-and-careers.md) and the [Co-op Gameplay Designer skill](../.agents/skills/mission-island-coop-gameplay/SKILL.md) |
+| How do jobs, favors and incidents share the crew’s attention? | [Island activity scheduler](design/island-activity-scheduler.md) |
 | What can we play today, and where is the crew going next? | [Playable features and roadmap](roadmap.md) and [the crew’s progression](design/progression.md) |
 | Where should a feature, asset, or world edit go? | [Architecture and contribution guide](architecture.md) |
 | How do I plan or review a feature across systems? | [Game Architect skill](../.agents/skills/mission-island-game-architect/SKILL.md) |
