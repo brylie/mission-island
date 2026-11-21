@@ -249,11 +249,6 @@
       "count": 19
     }
   },
-  "src/fire-effect.ts": {
-    "no-magic-numbers": {
-      "count": 42
-    }
-  },
   "src/fishing-line-view.ts": {
     "no-magic-numbers": {
       "count": 16
