@@ -66,7 +66,7 @@ export const itemStarts = [
   ...extinguisherStarts.map((start) => ({ kind: 'extinguisher' as const, start })),
   { kind: 'toolbox' as const, start: toolboxHome, lift: mendingBench.top },
 ]
-export const wrenCottage = { x: -35.8, z: -3.2, w: 4.5, d: 3.9, h: 3.3, wall: '#e9d6c3', roof: '#6c5c86' }
+export const wrenCottage = { x: -35.8, z: -2.4, w: 4.5, d: 3.9, h: 3.3, wall: '#e9d6c3', roof: '#6c5c86' }
 
 export const buildings = [
   { x: -50, z: -22, w: 8, d: 5, h: 4.65, wall: '#f3c78e', roof: '#a84632' },

@@ -71,6 +71,8 @@ const detour: Leg[] = [
   { point: { x: westPath, z: backDoor.z } }, { point: { x: westPath, z: lane.z - .7 } },
   ...toFerry.slice(1).map((point) => ({ point })),
 ]
+// The worn route from the back door to the road, shown as stepping stones until the gate is mended.
+export const backPath = detour.slice(2, 5).map(({ point }) => point)
 const shortcut: Leg[] = [{ point: home }, { point: gateway }, ...toFerry.map((point) => ({ point }))]
 const wrenPace = 30 // metres per island hour
 const departs = { work: 7, home: 17 }

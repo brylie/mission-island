@@ -1,11 +1,11 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { createCrew, poseCrew } from './assets/crew'
 import type { MeshFactory } from './island-meshes'
-import { fenceHeight, fenceRuns, gateLeaf, gateMendedStage, hingePost, leafAngle, sagAngle, wrenAt } from './gate-repair'
+import { backPath, fenceHeight, fenceRuns, gateLeaf, gateMendedStage, hingePost, leafAngle, sagAngle, wrenAt } from './gate-repair'
 import { moveTo } from './island-render-pose'
 import type { Snapshot } from './protocol'
 import { groundHeight, walkingHeight } from './terrain'
-import { distance, mendingBench, offset } from './world'
+import { distance, mendingBench, offset, wrenCottage } from './world'
 import type { Point } from './world'
 
 const timber = '#9a8263', cap = '#c9b48d', iron = '#4a4644', rust = '#8c5a3c', brass = '#e2b55a', soil = '#5b4532'
@@ -23,11 +23,35 @@ function fenceRun(meshes: MeshFactory, from: Point, to: Point) {
   for (let x = .08; x < length; x += .16) meshes.box(x, .78, .1, .1, 1.46, .025, cap, root)
 }
 
+// The plain house model only dresses the front. Wren's cottage also needs a back door, side windows
+// and the stepping stones of the long way round, so the detour reads from the street.
+function cottageBackAndSides({ box, cylinder }: MeshFactory) {
+  const { x, z, w, d } = wrenCottage
+  const y = groundHeight(wrenCottage)
+  box(x, y + 1.2, z + d / 2 + .04, 1.1, 2.3, .13, '#4f6f62')
+  box(x + .38, y + 1.15, z + d / 2 + .12, .07, .07, .05, brass)
+  box(x, y + .09, z + d / 2 + .42, 1.4, .18, .55, '#a9a294')
+  for (const side of [-1, 1]) {
+    box(x + side * (w / 2 + .04), y + 2, z, .15, 1.03, 1.24, '#fff3d0')
+    box(x + side * (w / 2 + .12), y + 2, z, .06, .77, .96, '#4c7a83')
+  }
+  for (let i = 1; i < backPath.length; i++) {
+    const [from, to] = [backPath[i - 1], backPath[i]]
+    const steps = Math.floor(distance(from, to) / .85)
+    for (let s = 1; s <= steps; s++) {
+      const f = s / (steps + 1), wobble = Math.sin(s * 2.3 + i) * .12
+      const p = { x: from.x + (to.x - from.x) * f + wobble, z: from.z + (to.z - from.z) * f - wobble * .5 }
+      cylinder(p.x, groundHeight(p) + .02, p.z, .5, .55, .05, 9, '#b7ae9c')
+    }
+  }
+}
+
 // Wren's gate: a leaf on a hinge pivot that the host swings, a hinge whose worn top pin
 // lets the free end drop into a groove, and the mending bench where new pins wait.
 export function createGardenGate(meshes: MeshFactory, residentId: number) {
   const { box, cylinder, scene } = meshes
   for (const { from, to } of fenceRuns) fenceRun(meshes, from, to)
+  cottageBackAndSides(meshes)
   const base = groundHeight(hingePost)
   box(hingePost.x, base + .8, hingePost.z, .14, 1.6, .14, timber)
   box(hingePost.x + 1.12, base + .8, hingePost.z, .14, 1.6, .14, timber)
