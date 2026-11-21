@@ -349,11 +349,6 @@
       "count": 34
     }
   },
-  "src/island-meshes.ts": {
-    "no-magic-numbers": {
-      "count": 15
-    }
-  },
   "src/island-north.ts": {
     "no-magic-numbers": {
       "count": 21

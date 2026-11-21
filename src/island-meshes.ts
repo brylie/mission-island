@@ -13,28 +13,33 @@ import { CreateSphere } from '@babylonjs/core/Meshes/Builders/sphereBuilder'
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData'
 import type { Scene } from '@babylonjs/core/scene'
+import { islandLightingPreset } from './assets/island-lighting'
 import { createIslandMaterial, createRecipeMaterial, createSurfaceMaterial } from './materials'
 import { surfaceRecipe, type SurfaceRecipe } from './assets/surface-recipes'
 import type { SurfaceName } from './materials'
 
-export function createIslandLighting(scene: Scene) {
-  const sunlight = new DirectionalLight('Afternoon sun', new Vector3(0.55, -1, 0.6), scene)
-  // The Atmosphere material plugin uses the sun as the first light.
-  sunlight.renderPriority = 1
-  sunlight.position.set(-48, 86, -55)
-  sunlight.intensity = 0.86
-  sunlight.diffuse = Color3.FromHexString('#fff3d7')
-  sunlight.shadowMinZ = 1
-  sunlight.shadowMaxZ = 220
-  const shadows = new ShadowGenerator(1536, sunlight)
-  shadows.usePercentageCloserFiltering = true
-  shadows.bias = 0.0008
-  shadows.normalBias = 0.045
-  shadows.setDarkness(0.22)
+// The Atmosphere material plugin uses the sun as the first light.
+const atmosphereSunlightPriority = 1
+const defaultSphereSegments = 6
 
-  const sky = new HemisphericLight('Sky fill', new Vector3(0.1, 1, -0.35), scene)
-  sky.intensity = 0.58
-  sky.groundColor = Color3.FromHexString('#8aaba1')
+export function createIslandLighting(scene: Scene) {
+  const { sun, skyFill, shadow } = islandLightingPreset
+  const sunlight = new DirectionalLight(sun.name, new Vector3(...sun.direction), scene)
+  sunlight.renderPriority = atmosphereSunlightPriority
+  sunlight.position.set(...sun.position)
+  sunlight.intensity = sun.intensity
+  sunlight.diffuse = Color3.FromHexString(sun.diffuseColor)
+  sunlight.shadowMinZ = shadow.minZ
+  sunlight.shadowMaxZ = shadow.maxZ
+  const shadows = new ShadowGenerator(shadow.mapSize, sunlight)
+  shadows.usePercentageCloserFiltering = true
+  shadows.bias = shadow.bias
+  shadows.normalBias = shadow.normalBias
+  shadows.setDarkness(shadow.darkness)
+
+  const sky = new HemisphericLight(skyFill.name, new Vector3(...skyFill.direction), scene)
+  sky.intensity = skyFill.intensity
+  sky.groundColor = Color3.FromHexString(skyFill.groundColor)
 
   return { sky, sunlight, shadows }
 }
@@ -94,7 +99,7 @@ export function createMeshFactory(scene: Scene, shadows: ShadowGenerator) {
     return place(CreateBox('Box', { width, height, depth }, scene), x, y, z, color, root, casts)
   }
 
-  function sphere(x: number, y: number, z: number, width: number, height: number, depth: number, color: string | Material, root?: TransformNode, casts = true, segments = 6) {
+  function sphere(x: number, y: number, z: number, width: number, height: number, depth: number, color: string | Material, root?: TransformNode, casts = true, segments = defaultSphereSegments) {
     const mesh = CreateSphere('Sphere', { diameter: 1, segments }, scene)
     mesh.scaling.set(width, height, depth)
     return place(mesh, x, y, z, color, root, casts)
