@@ -1,4 +1,4 @@
-import { atLandingSign, atRidgeRack, aviationInteraction, nearRidgeCourse, type FlightResult } from './aviation'
+import { atLandingSign, atRidgeRack, aviationInteraction, nearRidgeCourse, rackBrief, type FlightResult } from './aviation'
 import type { Input, Player, Snapshot } from './protocol'
 import { distance, type Point } from './world'
 import { ridgeMeadow, ridgeRack, ridgeUpdraft } from './worlds/starter/ridge-scout'
@@ -14,6 +14,7 @@ const resultText: Record<FlightResult, string> = {
   approach: 'Follow the blue approach orbs before landing in the meadow.',
   observation: 'Pass the fallen willow while airborne, then land in the meadow.',
   blocked: 'Clear the launch strip before borrowing the wing.',
+  practiced: 'Practice flight landed.',
 }
 
 export function flightInput(turn: number, pitch: number): Input {
@@ -42,18 +43,18 @@ function pilotDetail(player: Player, state: Snapshot) {
     return lift + 'Mirror Pool willow ' + directionTo(player, mirrorPoolWillow) + ' · ' + Math.round(distance(player, mirrorPoolWillow)) +
       ' m. Fly past the orange marker on the east bank, then land in the meadow.'
   }
-  const lead = flight?.observed ? 'Willow recorded. ' : flight?.approach ? 'Approach complete. ' : 'Follow the blue approach orbs. '
+  const lead = flight?.outing === 'practice' ? 'Practice flight. ' : flight?.observed ? 'Willow recorded. ' : flight?.approach ? 'Approach complete. ' : 'Follow the blue approach orbs. '
   return lift + lead + 'Meadow ' + directionTo(player, ridgeMeadow) + ' · ' + Math.round(distance(player, ridgeMeadow)) + ' m.'
 }
 
 export function ridgeActionHint(state: Snapshot, player: Player): [string, string] | undefined {
-  const { flight, qualified, marked } = state.aviation
+  const { flight, marked } = state.aviation
   if (flight?.pilotId === player.id) return ['A / D', 'Bank and turn · W nose down · S pull up']
   const action = aviationInteraction(state, player)
   if (action === 'mark') return marked ? ['', 'Meadow marked for the crew'] : ['E', 'Mark the meadow']
   if (action === 'launch') {
     if (flight) return ['', 'Your crewmate has the wing']
-    return ['E', qualified ? 'Borrow the free wing for the Mirror Pool survey' : 'Borrow the free wing and launch the checkout']
+    return ['E', rackBrief(state.aviation)[0]]
   }
 }
 
@@ -76,13 +77,11 @@ export function createRidgeHud(panel: HTMLElement) {
       panel.hidden = !player || (!flight && !marked && receipt.hidden && !nearRidgeCourse(player))
       if (panel.hidden || !player) return
       marker.hidden = !marked
-      set(title, flying && flight?.outing === 'survey' ? 'Mirror Pool survey'
+      set(title, flying && flight?.outing === 'survey' ? 'Mirror Pool survey' : flying && flight?.outing === 'practice' ? 'Practice flight'
         : qualified ? 'Crew aviation qualified' : 'Windstone Ridge checkout')
       if (flying) set(detail, pilotDetail(player, state))
       else if (atRidgeRack(player) && !flight) {
-        set(detail, qualified
-          ? (surveyed ? 'Survey recorded. ' : '') + 'Blue orbs point to the willow, then to the landing circle after the pass.'
-          : 'Follow the blue orbs into the landing circle. Walk back uphill to the windsock if you land short.')
+        set(detail, rackBrief({ qualified, surveyed })[1])
       } else if (atLandingSign(player)) set(detail, 'Use the landing sign to mark the meadow for both players.')
       else if (flight) set(detail, 'One crew member is flying. You can mark the landing meadow from its sign.')
       else set(detail, 'Head uphill toward the windsock and loan rack.')

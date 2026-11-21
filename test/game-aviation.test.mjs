@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { islandSaveFile } from '../server/save.ts'
+import { rackBrief, surveyClue } from '../src/aviation.ts'
 import { startRidgeFlight, stepRidgeFlight } from '../src/simulation/ridge-flight.ts'
 import { groundHeight } from '../src/terrain.ts'
 import { distance, offset } from '../src/world.ts'
@@ -84,6 +85,26 @@ test('both players see the meadow mark and the second pilot can survey without a
   assert.equal(notice(b, 'surveyed').length, 1)
   assert.equal(notice(b, 'qualified').length, 1)
   assert.equal(h.game.crewCoins, 0)
+
+  // Once the survey is recorded, the rack lends the wing for practice that earns nothing more.
+  walkTo(h, b, ridgeReturn)
+  walkTo(h, b, ridgeLaunch)
+  b.request('interact')
+  h.advance()
+  assert.equal(a.state.aviation.flight.outing, 'practice')
+  h.advanceUntil(() => a.state.aviation.flight === null)
+  assert.equal(notice(a, 'practiced').length, 1)
+  assert.equal(notice(b, 'surveyed').length, 1)
+  assert.deepEqual([b.state.aviation.qualified, b.state.aviation.surveyed, h.game.crewCoins], [true, true, 0])
+})
+
+test('the rack gives the survey clue before launch and names a practice flight afterwards', () => {
+  assert.match(rackBrief({ qualified: false, surveyed: false })[0], /checkout/)
+  const [survey, clue] = rackBrief({ qualified: true, surveyed: false })
+  assert.match(survey, /Mirror Pool survey/)
+  assert.ok(clue.startsWith(surveyClue))
+  assert.match(clue, /willow/)
+  assert.match(rackBrief({ qualified: true, surveyed: true })[0], /practice flight/)
 })
 
 test('one loan wins simultaneous requests, with no charge and neutral controls after input expires', (t) => {

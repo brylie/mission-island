@@ -1,4 +1,4 @@
-import { aviationInteraction, type FlightResult } from '../src/aviation.ts'
+import { aviationInteraction, nextOuting, type FlightResult } from '../src/aviation.ts'
 import type { Player, Snapshot } from '../src/protocol.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import { startRidgeFlight, stepRidgeFlight } from '../src/simulation/ridge-flight.ts'
@@ -61,7 +61,7 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
     }
     resetPilot(member)
     flight = startRidgeFlight()
-    aviation.flight = { pilotId: player.id, outing: aviation.qualified ? 'survey' : 'checkout',
+    aviation.flight = { pilotId: player.id, outing: nextOuting(aviation),
       bank: 0, pitch: 0, climbing: false, approach: false, observed: false }
     Object.assign(player, flight.pilot, { grounded: false, reaching: false, throwing: false, rightHandRaised: false })
     // The checkpoint uses the pilot's recovery pose while the loan is active.
@@ -99,7 +99,7 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
       if (outcome === 'obstruction' || !safeGround(pilot)) finish(member, 'obstruction', true)
       else if (outcome === 'field') {
         const result = record.outing === 'checkout' ? (record.approach ? 'qualified' : 'approach')
-          : (record.observed ? 'surveyed' : 'observation')
+          : record.outing === 'survey' ? (record.observed ? 'surveyed' : 'observation') : 'practiced'
         finish(member, result, false)
       } else finish(member, outcome === 'early' ? 'short' : 'missed', false)
     } else {
