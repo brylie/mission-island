@@ -17,9 +17,9 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | **1 / 2 / 3** | Equip or stow your fishing rod, hoe, or watering can. |
 | **R** | Keyboard shortcut for spraying the extinguisher. |
 | **C** | Switch between the island overview and the close third-person view. |
-| **Mouse** | Look around your character or vehicle. The first gameplay keypress captures the mouse. |
+| **Mouse** | Look around your character or vehicle. The first gameplay keypress captures the mouse. Aim the reticle at something you can use to choose it: it turns gold and a tooltip names the thing and the key. With nothing under the reticle, **E** uses whatever is nearest. |
 | **Esc** | Release the mouse. Press a gameplay key to capture it again. |
-| **O** | Open Options for your name, appearance, mouse look, and **Respawn at home**. |
+| **O** | Open Options for your name, appearance, mouse look (invert either axis, look speed), and **Respawn at home**. |
 
 Bring crates to the tail of the truck to set them on the bed. Jump over the low rear lip and ride along on the bed as the truck moves. The side rails and rear lip help keep crates aboard through turns. At Seabrook, step out, collect each crate from the bed, and press **E** with the crate inside the glowing teal delivery circle. The beach has a shallow wading shelf. You slow down as the water gets deeper.
 

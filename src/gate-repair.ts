@@ -176,30 +176,41 @@ export function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs
   return eligible && !item.delivered && item.holder === null && distance(item, player) < 2.7 && Math.abs(item.y - player.y) < 2.1
 }
 
-function pickableNear(state: GateWorld, player: Player) {
-  return state.items.some((item) => canPickUp(state, item, player))
-}
-
 function repairStep(state: GateWorld, player: Player): GateAction | null {
   if (state.gateRepair.stage === 'accepted') return 'inspect'
   if (canFit(state, player)) return 'fit'
   return state.gateRepair.stage === 'fitted' ? 'test' : null
 }
 
-export function gateAction(state: GateWorld, player: Player): GateAction | null {
-  if (!standing(player)) return null
+interface GateOptions { primary: GateAction[]; secondary: GateAction[] }
+
+// Every gate action open to this player. Primary steps outrank setting down a held item; the secondary
+// swing and a general chat with Wren come after picking up anything nearby.
+export function gateOptions(state: GateWorld, player: Player): GateOptions {
+  const options: GateOptions = { primary: [], secondary: [] }
+  if (!standing(player)) return options
   const { stage } = state.gateRepair
   const held = handsFor(state, player)
   const handsFree = !held || held.kind === 'toolbox'
   const nearWren = handsFree && atWren(state, player)
-  if (nearWren && stage === 'sagging') return 'talk'
-  if (nearWren && stage === 'mended' && held?.kind === 'toolbox') return 'return-toolbox'
+  if (nearWren && stage === 'sagging') options.primary.push('talk')
+  if (nearWren && stage === 'mended' && held?.kind === 'toolbox') options.primary.push('return-toolbox')
   const repair = handsFree && atGate(player) ? repairStep(state, player) : null
-  if (repair) return repair
-  if (handsFree && stage === 'inspected' && state.gateRepair.pinHolder === null && atMendingBench(player)) return 'take-pin'
-  // Swinging the gate gives way to setting down or picking up an item nearby.
-  if (!held && atGate(player) && !pickableNear(state, player)) return state.gate.open && !state.gate.closePending ? 'close' : 'open'
-  return nearWren && !pickableNear(state, player) ? 'talk' : null
+  if (repair) options.primary.push(repair)
+  if (handsFree && stage === 'inspected' && state.gateRepair.pinHolder === null && atMendingBench(player)) options.primary.push('take-pin')
+  if (!held && atGate(player)) options.secondary.push(state.gate.open && !state.gate.closePending ? 'close' : 'open')
+  if (nearWren && stage !== 'sagging') options.secondary.push('talk')
+  return options
+}
+
+// Where the reticle finds each gate action: Wren, the bench tray, or the gate itself.
+export function gateTarget(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>, action: GateAction) {
+  if (action === 'talk' || action === 'return-toolbox') {
+    const wren = wrenAt(state)
+    return { name: residentName, at: { x: wren.x, y: walkingHeight(wren) + 1.1, z: wren.z }, radius: .55 }
+  }
+  if (action === 'take-pin') return { name: 'Hinge pins', at: { x: mendingBench.x, y: walkingHeight(mendingBench) + .95, z: mendingBench.z }, radius: .6 }
+  return { name: `${residentName}’s gate`, at: { x: gateway.x, y: walkingHeight(gateway) + .85, z: gateway.z }, radius: .8 }
 }
 
 export function gateHint(action: GateAction, state: Pick<Snapshot, 'gateRepair'>): [string, string] {

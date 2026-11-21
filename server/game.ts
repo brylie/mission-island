@@ -119,7 +119,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         break
       }
       case 'interact':
-        interactions.interact(member, message.intent)
+        interactions.interact(member, message.choice)
         // Save order progress, completion, and crew payouts together.
         checkpoint?.()
         break

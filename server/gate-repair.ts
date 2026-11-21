@@ -1,12 +1,12 @@
-import { favorCoins, gateAction, gateMendedStage, gateway, gatewayClear, onBench, toolboxItem, wrenAt } from '../src/gate-repair.ts'
+import { favorCoins, gateMendedStage, gateway, gatewayClear, onBench, toolboxItem, wrenAt } from '../src/gate-repair.ts'
 import type { GateAction, GateStep } from '../src/gate-repair.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { distance, toolboxHome } from '../src/world.ts'
 import type { CrewMember, CrewNotice } from './crew.ts'
 import { restingY } from './items.ts'
 
-// Host transitions for Wren's gate. Every step re-checks the action the player saw,
-// so a stale or simultaneous request changes nothing.
+// Host transitions for Wren's gate. The interaction layer has already checked the step is still
+// open to this player, so a stale or simultaneous request never reaches here.
 export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNotice) => void) {
   const repair = () => state.gateRepair
 
@@ -32,7 +32,6 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
 
   function act(member: CrewMember, intent: GateAction) {
     const { player } = member
-    if (gateAction(state, player) !== intent) return
     const current = repair()
     switch (intent) {
       case 'talk':

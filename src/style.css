@@ -70,8 +70,29 @@ button:focus-visible { outline: 2px solid #ffc560; outline-offset: 4px; }
   background: #fff5df;
   border-radius: 1px;
 }
+.reticle[data-on-target]::before, .reticle[data-on-target]::after { background: #ffd56b; }
 .reticle::before { width: 15px; height: 2px; }
 .reticle::after { width: 2px; height: 15px; }
+.target-tip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  transform: translate(-50%, -100%);
+  color: #1b3735;
+  background: #fff4d7;
+  border-radius: 6px;
+  box-shadow: 0 3px 10px #183e4c4d;
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.target-tip[hidden] { display: none; }
+.target-tip strong { font-weight: 850; }
+.target-tip kbd[hidden] { display: none; }
+.look-speed input { width: 100%; }
 .charge-meter {
   position: absolute;
   top: calc(50% + 23px);

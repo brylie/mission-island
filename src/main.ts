@@ -5,6 +5,8 @@ import { readStorage, writeStorage } from './browser-storage'
 import { cleanCrewName, defaultAppearance, shirtColor } from './crew-appearance'
 import { createCrewGuide } from './crew-guide-ui'
 import { bindControlsToggle } from './controls-toggle-ui'
+import { bindLookOptions } from './look-options-ui'
+import { createReticleFocus } from './reticle-ui'
 import { favorProgress, gateMendedStage, gateRepairGuide, gateStepText, residentName } from './gate-repair'
 import { farm, market } from './farm'
 import { createJobBoard, jobDescription, secondIslandProgress } from './job-board-ui'
@@ -65,8 +67,8 @@ const crewName = element<HTMLInputElement>('crew-name')
 const joinNameDialog = element<HTMLDialogElement>('join-name-dialog')
 const joinName = element<HTMLInputElement>('join-name')
 const editCrewName = element<HTMLButtonElement>('edit-crew-name')
-const invertHorizontal = element<HTMLInputElement>('invert-horizontal')
-const invertVertical = element<HTMLInputElement>('invert-vertical')
+const lookSettings = bindLookOptions((settings) => renderer?.setLook(settings))
+const reticle = createReticleFocus(playfield, document.querySelector('.reticle'))
 const openWardrobe = element<HTMLButtonElement>('open-wardrobe')
 const wardrobeDialog = element<HTMLDialogElement>('wardrobe-dialog')
 const counterDialog = element<HTMLDialogElement>('clothing-counter-dialog')
@@ -77,8 +79,6 @@ const toolSlots = element('tool-slots')
 const chargeMeter = element('charge-meter')
 const chargeLabel = element('charge-label')
 const chargePower = element<HTMLProgressElement>('charge-power')
-invertHorizontal.checked = readStorage('localStorage', 'mission-island-invert-horizontal') !== 'false'
-invertVertical.checked = readStorage('localStorage', 'mission-island-invert-vertical') !== 'false'
 const prompt = element('prompt')
 const promptKey = element('prompt-key')
 const promptAction = element('prompt-action')
@@ -235,7 +235,7 @@ function showNotice() {
 try {
   bootMessage.textContent = 'Building the island scenery…'
   renderer = createRenderer(canvas, markers)
-  renderer.setMouseInversion(invertHorizontal.checked, invertVertical.checked)
+  renderer.setLook(lookSettings())
   bootMessage.textContent = 'Connecting to the host…'
 } catch (error) {
   renderer?.dispose()
@@ -400,7 +400,8 @@ function update(state: Snapshot) {
   if (player) editCrewName.textContent = player.name ? 'Edit name' : 'Set name'
   const [key, action] = player?.charge ? ['', 'Release left click']
     : actionFeedback && performance.now() < actionFeedback.until ? [actionFeedback.key, actionFeedback.label]
-    : player ? actionHint(state, player) : ['', '']
+    : player ? actionHint(state, player, reticle.update(state, player, renderer?.aimRay())) : ['', '']
+  renderer?.pinTip(reticle.tip, reticle.focus()?.at)
   prompt.hidden = !action
   promptKey.hidden = !key
   promptKey.textContent = key
@@ -621,12 +622,6 @@ function toggleOptions() {
   void refreshLanInvite()
 }
 
-function saveMouseOptions() {
-  writeStorage('localStorage', 'mission-island-invert-horizontal', String(invertHorizontal.checked))
-  writeStorage('localStorage', 'mission-island-invert-vertical', String(invertVertical.checked))
-  renderer?.setMouseInversion(invertHorizontal.checked, invertVertical.checked)
-}
-
 function blocksGameKeys() {
   return optionsDialog.open || renderer?.isReviewing()
 }
@@ -656,7 +651,7 @@ window.addEventListener('keydown', (event) => {
   if (live && event.code === 'KeyB') send({ type: 'buy-seed' })
   if (live && event.code === 'KeyE') {
     const player = snapshot?.players.find((entry) => entry.id === id)
-    const request = snapshot && player ? interactRequest(snapshot, player) : { type: 'interact' as const }
+    const request = snapshot && player ? interactRequest(snapshot, player, reticle.focus()) : { type: 'interact' as const }
     if (request === 'open-job-board') openJobBoard()
     else send(request)
   }
@@ -769,8 +764,6 @@ function saveCrewName() {
 }
 optionsDialog.addEventListener('submit', saveCrewName)
 optionsDialog.addEventListener('close', saveCrewName)
-invertHorizontal.addEventListener('change', saveMouseOptions)
-invertVertical.addEventListener('change', saveMouseOptions)
 openWardrobe.addEventListener('click', () => {
   optionsDialog.close()
   openClothing(true)
@@ -798,7 +791,7 @@ if (import.meta.hot) {
     renderer = undefined
     try {
       renderer = module.createRenderer(canvas, markers)
-      renderer.setMouseInversion(invertHorizontal.checked, invertVertical.checked)
+      renderer.setLook(lookSettings())
       if (modalOpen()) renderer.releaseMouse()
       if (snapshot) renderer.update(snapshot, id, follow)
       if (!socket) {

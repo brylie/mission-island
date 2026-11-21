@@ -17,7 +17,8 @@ import { residentName } from './gate-repair'
 import { moveTo } from './island-render-pose'
 import { fishingFloatDip } from './starter-effect-cues'
 import { createIslandCamera } from './island-camera'
-import { hideLandmark, landmarks } from './island-landmarks'
+import { createPlaceLabels } from './place-labels'
+import type { LookSettings } from './look-options-ui'
 import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight } from './assets/crew'
 import { createFlatbed, poseFlatbed } from './assets/flatbed'
 import { createSupply } from './assets/props'
@@ -26,7 +27,6 @@ import { createIslandLighting, createMeshFactory } from './island-meshes'
 import { createIslandWorld } from './island-world'
 import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'
 import { createObjectiveMarker } from './objective-marker'
-import { northernRegions, starterDiscoveries } from './scenery'
 import type { Player, Snapshot, Weather } from './protocol'
 import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
 import { flatbedGroundDrive } from './vehicles/flatbed'
@@ -35,7 +35,7 @@ import { createStarterPlaces } from './starter-place-effects'
 import { nightLighting, weatherAt } from './weather'
 import { createShaderReview } from './shader-review'
 import { dryMarketRainAge, marketRunoffAt, marketRunoffPreview } from './market-runoff'
-import { distance, harbor, itemStarts, lookout, town } from './world'
+import { harbor, itemStarts, lookout, town } from './world'
 
 const sun = '#ffd56b'
 
@@ -109,19 +109,6 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const placesFx = createStarterPlaces(meshes)
   const actionFx = createStarterActionEffects(scene, { boat, crew, farmTools, paddles: skiffGear.map(({ gear }) => gear), ferns })
 
-  const places = [
-    ...landmarks.map((place) => ({ ...place, discovery: '', mapOnly: false })),
-    ...starterDiscoveries.map((region) => ({ point: region.site, title: region.name, kind: 'discovery',
-      height: 2.8, discovery: region.id, mapOnly: false })),
-    ...northernRegions.map((region) => ({ point: region.at, title: region.biome, kind: 'biome',
-      height: 5, discovery: '', mapOnly: true })),
-  ].map((place) => {
-    const label = document.createElement('span')
-    label.className = `place place--${place.kind}`
-    label.textContent = place.title
-    markers.append(label)
-    return { ...place, label }
-  })
   const tags = playerColors.map((_, id) => {
     const tag = document.createElement('span')
     tag.className = `crew-tag crew-tag--${id}`
@@ -129,13 +116,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     return tag
   })
   const garden = createGardenGate(meshes, playerColors.length + 1)
-  const residents = [{ root: fisher.root, title: `${fisherName} · Fisher` }, { root: garden.resident, title: `${residentName} · Neighbor` }].map(({ root, title }) => {
-    const tag = document.createElement('span')
-    Object.assign(tag, { className: 'place place--resident', textContent: title })
-    markers.append(tag)
-    return { root, tag }
-  })
-
+  const labels = createPlaceLabels(markers, [{ root: fisher.root, title: `${fisherName} · Fisher` },
+    { root: garden.resident, title: `${residentName} · Neighbor` }])
   function locate(element: HTMLElement, viewport: Viewport, x: number, y: number, z: number) {
     const point = Vector3.Project(new Vector3(x, y, z), Matrix.IdentityReadOnly,
       scene.getTransformMatrix(), viewport)
@@ -146,6 +128,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
 
 
   let last: Snapshot | undefined
+  let tip: { element: HTMLElement; at: { x: number; y: number; z: number } } | undefined
   let viewer = -1
   let follow = false
   let time = 0, ambientTime = 0
@@ -287,30 +270,6 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     }
   }
 
-  function updatePlaceLabels(local: Player | undefined, close: boolean, viewport: Viewport) {
-    const job = last && activeJob(last)
-    const drop = last && deliveryDrop(last)
-    for (const place of places) {
-      const range = close && local ? distance(place.point, local) : 0
-      const opacity = Math.min(1, Math.max(0, (80 - range) / 38))
-      place.label.hidden = opacity === 0 || (place.mapOnly && close) ||
-        hideLandmark(place, local?.id, close, range) ||
-        Boolean(place.discovery && !local?.discoveries?.includes(place.discovery)) ||
-        (place.kind === 'equipment' && last?.mission !== 'fire') || (place.kind === 'board' && last?.mission !== 'complete')
-      place.label.style.opacity = String(opacity)
-      place.label.classList.toggle('place--active',
-        Boolean(drop && (place.kind === 'harbor' || distance(place.point, drop) < 6)) ||
-        (job?.kind === 'market' && place.kind === 'market') ||
-        (last?.mission === 'complete' && !job && place.kind === 'board') ||
-        (last?.mission === 'fire' && (place.kind === 'lookout' || place.kind === 'equipment')))
-      locate(place.label, viewport, place.point.x, groundHeight(place.point) + place.height, place.point.z)
-    }
-    for (const { root, root: { position }, tag } of residents) {
-      tag.hidden = !local || !root.isEnabled() || (close && distance(position, local) > 18)
-      if (!tag.hidden) locate(tag, viewport, position.x, position.y + 2.1, position.z)
-    }
-  }
-
   function updateCrewTags(close: boolean, viewport: Viewport) {
     for (const [id, tag] of tags.entries()) {
       const actor = last?.players.find((player) => player.id === id)
@@ -383,8 +342,9 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     if (review) review.render()
     else scene.render()
     const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
-    updatePlaceLabels(local, close, viewport)
+    labels.update(last, local, close, (element, x, y, z) => locate(element, viewport, x, y, z))
     updateCrewTags(close, viewport)
+    if (tip) locate(tip.element, viewport, tip.at.x, tip.at.y + .45, tip.at.z)
   })
   const resize = new ResizeObserver(() => engine.resize())
   resize.observe(canvas)
@@ -405,9 +365,11 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     isReviewing: () => review?.active() ?? false,
     walkInput: (x: number, z: number) => islandCamera.walkInput(x, z),
     aimHeading: islandCamera.aimHeading,
+    aimRay: () => islandCamera.aimRay(),
+    pinTip(element: HTMLElement, at?: { x: number; y: number; z: number }) { tip = at && { element, at } },
     captureMouse: () => { if (!review?.active()) islandCamera.captureMouse() },
     releaseMouse: islandCamera.releaseMouse,
-    setMouseInversion: (horizontal: boolean, vertical: boolean) => islandCamera.setMouseInversion(horizontal, vertical),
+    setLook: (settings: LookSettings) => islandCamera.setLook(settings),
     dispose() {
       review?.dispose()
       islandCamera.dispose()

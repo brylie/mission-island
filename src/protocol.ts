@@ -9,7 +9,8 @@ import type { InventoryItem } from './inventory'
 import type { Goods, PlotStage } from './farm'
 import type { Truck } from './truck-pose'
 import type { JobBoardState, JobId } from './jobs'
-import type { FavorReceipt, GardenGate, GateAction, GateRepair, GateStep } from './gate-repair'
+import type { FavorReceipt, GardenGate, GateRepair, GateStep } from './gate-repair'
+import type { InteractionChoice } from './interaction-options'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
 
 export interface Weather {
@@ -134,5 +135,5 @@ export type ClientMessage =
   | { type: 'take-job'; id: JobId }
   | { type: 'buy-angler' | 'buy-seed' }
   | { type: 'buy-clothing'; item: ClothingId }
-  | { type: 'interact'; intent?: GateAction }
+  | { type: 'interact'; choice?: InteractionChoice }
   | { type: 'seat' | 'jump' | 'respawn' }

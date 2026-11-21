@@ -5,6 +5,7 @@ import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { Scene } from '@babylonjs/core/scene'
 import { groundHeight, waterLevel } from './terrain'
 import { buildings, houseRoofRise } from './world'
+import type { LookSettings } from './look-options-ui'
 
 // Include each roof overhang so the camera retracts before it reaches a wall or roof.
 const cameraObstacles = buildings.map(({ x, z, w, h, d }) => ({
@@ -51,6 +52,11 @@ function terrainClearance(origin: Vector3, destination: Vector3, maximum: number
   return clear
 }
 
+function reticleRay(origin: Vector3, target: Vector3) {
+  const direction = target.subtract(origin).normalize()
+  return { origin: origin.clone(), direction, reach: 18 * visibleArm(origin, origin.add(direction.scale(18))) }
+}
+
 export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   const overview = new FreeCamera('Island overview', new Vector3(0, 174, -120), scene)
   overview.mode = Camera.ORTHOGRAPHIC_CAMERA
@@ -86,8 +92,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   let attemptedLock = false
   let hadLock = false
   let previousMouse: { x: number; y: number } | undefined
-  let invertHorizontal = true
-  let invertVertical = true
+  let look: LookSettings = { invertHorizontal: false, invertVertical: false, speed: 1 }
 
   function syncMouseLook() {
     const locked = doc.pointerLockElement === canvas
@@ -140,9 +145,10 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
     const dx = locked ? event.movementX : event.clientX - (previousMouse?.x ?? event.clientX)
     const dy = locked ? event.movementY : event.clientY - (previousMouse?.y ?? event.clientY)
     previousMouse = { x: event.clientX, y: event.clientY }
-    orbitYaw += dx * (invertHorizontal ? 0.006 : -0.006)
-    const pitchChange = dy * (invertVertical ? 0.005 : -0.005)
-    orbitPitch = Math.max(-0.79, Math.min(0.71, orbitPitch + pitchChange))
+    // Standard look turns right with the mouse and looks down as it moves down. The invert options flip
+    // each axis. A gentler base rate than before; the Options slider scales it.
+    orbitYaw += dx * 0.0034 * look.speed * (look.invertHorizontal ? -1 : 1)
+    orbitPitch = Math.max(-0.79, Math.min(0.92, orbitPitch + dy * 0.0028 * look.speed * (look.invertVertical ? -1 : 1)))
   }, options)
 
   function aimHeading() {
@@ -186,7 +192,8 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       const elevation = 0.38 - vehicleBlend * 0.025 + pitch
       const distance = radius * Math.cos(elevation)
       const height = 1.55 + radius * Math.sin(elevation)
-      const shoulder = 0.68 * (1 - vehicleBlend)
+      // A slight shoulder offset keeps the character in view without pulling the reticle off what is ahead.
+      const shoulder = 0.24 * (1 - vehicleBlend)
       const lookAhead = 1.55 + vehicleBlend * 1.35
 
       pivot.set(anchor.x, anchor.y + 1.55, anchor.z)
@@ -199,7 +206,9 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       follow.position.y = Math.max(Math.max(groundHeight(follow.position), waterLevel) + 0.35,
         pivot.y + (desired.y - pivot.y) * (0.65 + 0.35 * arm))
       const lookUp = Math.max(0, -pitch - 0.28) * 2.4
-      target.set(anchor.x + forwardX * lookAhead, anchor.y + 1.35 + lookUp, anchor.z + forwardZ * lookAhead)
+      // Looking down lowers the aim point so the reticle reaches benches, crates and the ground ahead.
+      const lookDown = Math.max(0, pitch) * 1.45
+      target.set(anchor.x + forwardX * lookAhead, anchor.y + 1.35 + lookUp - lookDown, anchor.z + forwardZ * lookAhead)
       follow.setTarget(target)
       if (!tracking) {
         tracking = true
@@ -226,12 +235,11 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       return { x: (x * cosine + z * sine) / length, z: (z * cosine - x * sine) / length }
     },
     aimHeading: () => tracking ? aimHeading() : undefined,
+    // The reticle's ray from the follow camera, cut short where it meets a building.
+    aimRay: () => tracking && mouseLook ? reticleRay(follow.position, target) : undefined,
     captureMouse,
     releaseMouse,
-    setMouseInversion(horizontal: boolean, vertical: boolean) {
-      invertHorizontal = horizontal
-      invertVertical = vertical
-    },
+    setLook(settings: LookSettings) { look = settings },
     dispose() {
       releaseMouse()
       pointerEvents.abort()

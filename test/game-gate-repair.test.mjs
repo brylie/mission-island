@@ -6,7 +6,8 @@ import test from 'node:test'
 import { createGame } from '../server/game.ts'
 import { islandSaveFile } from '../server/save.ts'
 import { actionHint, interactRequest } from '../src/actions.ts'
-import { canFit, fenceZ, gateAction, gateMendedStage, gateRepairGuide, gateway, initialGateRepair, onBench, wrenAt, wrenLines,
+import { interactions } from '../src/interaction-options.ts'
+import { canFit, fenceZ, gateMendedStage, gateRepairGuide, gateway, initialGateRepair, onBench, wrenAt, wrenLines,
   wrenRoute } from '../src/gate-repair.ts'
 import { jobBoard } from '../src/jobs.ts'
 import { canWalkAt } from '../src/simulation/movement.ts'
@@ -38,9 +39,12 @@ function walkTo(h, client, ...targets) {
   }
 }
 
-function act(h, client, intent) {
-  assert.deepEqual(interactRequest(client.state, client.player), { type: 'interact', intent })
-  client.request('interact', { intent })
+const top = (client) => interactions(client.state, client.player)[0]?.action
+const choose = (client, action) => client.request('interact', { choice: { action } })
+
+function act(h, client, action) {
+  assert.deepEqual(interactRequest(client.state, client.player), { type: 'interact', choice: { action } })
+  choose(client, action)
   h.advance()
 }
 
@@ -139,24 +143,24 @@ test('either crewmate can fit once the pin and toolbox meet at the gate, and rac
   const a = h.join(tokens[0])
   const b = h.join(tokens[1])
   assert.equal(canFit(a.state, a.player), false, 'no pin at the gate yet')
-  a.request('interact', { intent: 'fit' })
+  choose(a, 'fit')
   h.advance()
   assert.equal(a.state.gateRepair.stage, 'inspected')
   act(h, b, 'take-pin')
   assert.equal(canFit(a.state, a.player), false, 'the pin is still at the depot')
   walkTo(h, b, ...benchRoad, { x: gateway.x + .6, z: lane.z })
-  assert.equal(gateAction(a.state, a.player), 'fit')
-  assert.equal(gateAction(b.state, b.player), 'fit')
+  assert.equal(top(a), 'fit')
+  assert.equal(top(b), 'fit')
   const coins = a.state.crewCoins
-  a.request('interact', { intent: 'fit' })
-  b.request('interact', { intent: 'fit' })
+  choose(a, 'fit')
+  choose(b, 'fit')
   h.advance()
   assert.equal(a.state.gateRepair.stage, 'fitted')
   assert.equal(a.state.crewCoins, coins)
   assert.equal(a.state.gate.open, false, 'a stale fit does not swing the gate')
   assert.equal(count(a, 'gate-step'), 1)
-  a.request('interact', { intent: 'test' })
-  b.request('interact', { intent: 'test' })
+  choose(a, 'test')
+  choose(b, 'test')
   h.advance()
   assert.equal(a.state.crewCoins, coins + 5)
   assert.equal(a.state.residentTrust.wren, 1)
@@ -165,8 +169,8 @@ test('either crewmate can fit once the pin and toolbox meet at the gate, and rac
   assert.equal(a.state.gate.open, true)
   walkTo(h, b, gateway, garden)
   walkTo(h, a, gateway)
-  assert.equal(gateAction(a.state, a.player), null, 'hands full of toolbox')
-  assert.equal(gateAction(b.state, b.player), 'close')
+  assert.ok(!interactions(a.state, a.player).some(({ action }) => action === 'close'), 'hands full of toolbox')
+  assert.equal(top(b), 'close')
   act(h, b, 'close')
   h.advance(10)
   assert.equal(a.state.gate.open, true, 'the gate waits while a crewmate stands in the opening')
@@ -194,24 +198,25 @@ test('fit refuses a pin or toolbox that is not at the gate', () => {
   assert.equal(canFit(state(depot, 1, { holder: 1 }), depot[0]), false, 'toolbox carried at the depot')
 })
 
-test('stale or bare presses change nothing, and E at the board still opens the board', (t) => {
+test('stale, out-of-range or malformed choices change nothing, and E at the board still opens the board', (t) => {
   const h = setup(t, {
     players: [player(0, lane), player(1, byBench)],
     arrange: repairStage('accepted', { arrange: (save) => { save.world.mission = 'complete' } }),
   })
   const a = h.join(tokens[0])
   const b = h.join(tokens[1])
-  a.request('interact')
+  b.request('interact', { choice: { action: 'pick-up', subject: 'all' } })
   h.advance()
-  assert.equal(a.state.gateRepair.stage, 'accepted', 'a bare interact never makes a gate transition')
-  b.request('interact', { intent: 'inspect' })
+  assert.equal(b.state.items.some(({ holder }) => holder === 1), false, 'a malformed subject is dropped, not read as a bare press')
+  choose(b, 'inspect')
   h.advance()
   assert.equal(b.state.gateRepair.stage, 'accepted', 'out of range')
-  b.request('interact', { intent: 'not-an-action' })
+  choose(b, 'not-an-action')
   h.advance()
+  assert.equal(b.state.gateRepair.stage, 'accepted', 'an unknown action is dropped')
   assert.equal(interactRequest(a.state, player(0, { x: jobBoard.x, z: jobBoard.z - 1.2 })), 'open-job-board')
   act(h, a, 'inspect')
-  a.request('interact', { intent: 'inspect' })
+  choose(a, 'inspect')
   h.advance()
   assert.equal(count(a, 'gate-step'), 1)
 })
@@ -237,9 +242,10 @@ test('a carrier who drops out loses the pin at once, Wren recalls the toolbox, a
   a = h.join(tokens[0])
   assert.equal(a.state.items.filter((item) => item.kind === 'toolbox' && item.holder !== null).length, 0)
   walkTo(h, b, benchRoad[0], byBench)
-  b.request('interact')
+  assert.deepEqual(interactions(b.state, b.player).map(({ action }) => action).slice(0, 2), ['take-pin', 'pick-up'])
+  b.request('interact', { choice: { action: 'pick-up', subject: toolboxId } })
   h.advance()
-  assert.equal(b.state.items[toolboxId].holder, 1)
+  assert.equal(b.state.items[toolboxId].holder, 1, 'aiming at the toolbox picks it up instead of the default pin')
   b.close()
   h.elapse(12_100)
   const c = h.join(tokens[2])
@@ -300,8 +306,8 @@ test('partial and finished repairs survive a host restart; the next dawn changes
   assert.ok(distance(wrenAt(c.state), gateway) < 1.5, 'Wren opens the mended gate on the way out')
   next.advanceUntil(() => !c.state.gate.open, 400)
   assert.ok(distance(wrenAt(c.state), gateway) >= 1.5)
-  c.request('interact', { intent: 'test' })
-  c.request('interact', { intent: 'talk' })
+  choose(c, 'test')
+  choose(c, 'talk')
   next.advance()
   assert.equal(c.state.crewCoins, 5)
   assert.equal(c.state.residentTrust.wren, 1)
