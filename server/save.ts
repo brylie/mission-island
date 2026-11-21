@@ -7,8 +7,10 @@ import { isJobId, jobs } from '../src/jobs.ts'
 import type { JobBoardState } from '../src/jobs.ts'
 import type { Player, Snapshot } from '../src/protocol'
 import { gateFavor, gateStages, initialGateRepair } from '../src/gate-repair.ts'
+import { materialRefillSeconds, repairMaterials, repairQuantity } from '../src/materials-work.ts'
 import { initialResidents } from '../src/residents/trust.ts'
 import { starterResident, starterResidents } from '../src/worlds/starter/residents.ts'
+import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
 import { makeItems } from './items.ts'
 import { crateStarts, itemStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
@@ -20,7 +22,7 @@ export type IslandSave = {
   islandTime: number
   growth: number[]
   world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay'> &
-    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress }
+    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress; materialsWork?: Snapshot['materialsWork'] }
   crew: { token: string; player: Player; reserved: boolean }[]
 }
 
@@ -157,12 +159,40 @@ function hasValidProgress(world: Record<string, unknown>) {
     (world.aviation === undefined || isSavedAviation(world.aviation))
 }
 
+function isSavedMaterials(world: Record<string, unknown>, islandTime: number) {
+  const work = world.materialsWork
+  const residents = world.residents as Snapshot['residents']
+  const gate = world.gateRepair as Snapshot['gateRepair']
+  const kept = residents.wren?.kept.includes(repairSupplyFavor.id) ?? false
+  const active = residents.wren?.active === repairSupplyFavor.id
+  if (work === undefined) return !active && !kept
+  if (!isRecord(work) || (work.checkout !== 'qualified' && !repairMaterials.some(material => material === work.checkout))) return false
+  const { readyAt, request } = work
+  if (!isRecord(readyAt) || !repairMaterials.every((material) => {
+    const time = readyAt[material]
+    return isNumber(time) && time >= 0 && time <= islandTime + materialRefillSeconds
+  })) return false
+  if (gate.stage !== 'mended' && work.checkout !== 'timber') return false
+  if (request === null) return !active && !kept
+  if (!isRecord(request) || work.checkout !== 'qualified' || !repairMaterials.some(material => material === request.material) ||
+    !isCoinBalance(request.delivered) || request.delivered > repairQuantity) return false
+  return request.delivered === repairQuantity ? kept && !active : active && !kept
+}
+
+function isSavedMaterialPocket(value: unknown) {
+  return value === undefined || (isRecord(value) && repairMaterials.every((material) => {
+    const count = value[material]
+    return isCoinBalance(count) && count <= repairQuantity
+  }))
+}
+
 function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] {
   if (!isRecord(entry) || !isCrewToken(entry.token) ||
     typeof entry.reserved !== 'boolean' || !isPose(entry.player)) return false
   const player = entry.player
   return isNumber(player.id) && Number.isInteger(player.id) && player.id >= 0 && player.id < spawns.length &&
     validDrivingRecord(player) &&
+    isSavedMaterialPocket(player.materials) &&
     [player.y, player.seeds].every(isNumber) && Array.isArray(player.inventory) &&
     (player.starterSeedClaimed === undefined || typeof player.starterSeedClaimed === 'boolean') &&
     (player.ownedClothes === undefined || (Array.isArray(player.ownedClothes) && player.ownedClothes.every(item => typeof item === 'string'))) &&
@@ -178,6 +208,7 @@ function isSave(value: unknown): value is IslandSave {
   const reservedIds = new Set(value.crew.filter(({ reserved }) => reserved).map(({ player }) => player.id))
   if (!hasValidProgress(world)) return false
   return isPose(world.truck) && isPose(world.skiff) && isSavedIncident(world, value.islandTime) && isGateRepair(world, value.islandTime) &&
+    isSavedMaterials(world, value.islandTime) &&
     Array.isArray(world.farm) && world.farm.length === farmPlots.length &&
     world.farm.every((stage: unknown) => ['grass', 'tilled', 'planted', 'watered', 'ripe'].some((name) => name === stage)) &&
     Array.isArray(world.items) && world.items.length === itemStarts.length &&

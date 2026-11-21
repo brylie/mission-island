@@ -14,6 +14,7 @@ import type { JobBoardState, JobId } from './jobs'
 import type { GardenGate, GateRepair, GateStep } from './gate-repair'
 import type { FavorReceipt, ResidentRecords } from './residents/trust'
 import type { InteractionChoice } from './interaction-options'
+import type { MaterialPockets, MaterialsWork, RepairMaterial } from './materials-work'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
 
 export interface Weather {
@@ -56,6 +57,7 @@ export interface Player extends Pose {
   inventory: InventoryItem[]
   equipped: InventoryItem | null
   goods: Goods
+  materials?: MaterialPockets
   seeds: number
   starterSeedClaimed?: boolean
   charge: { kind: ChargeKind; power: number } | null
@@ -113,6 +115,7 @@ export interface Snapshot {
   gateRepair: GateRepair
   residents: ResidentRecords
   lastFavorPay?: FavorReceipt
+  materialsWork: MaterialsWork
   aviation: AviationState
 }
 
@@ -128,6 +131,8 @@ export type ServerMessage =
   | { type: 'favor-accepted'; resident: string; favor: string; playerId: number }
   | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number }
   | { type: 'gate-step'; step: GateStep }
+  | { type: 'materials-step'; step: 'gathered' | 'inspected' | 'timber-checked' | 'qualified'; material: RepairMaterial }
+  | { type: 'materials-step'; step: 'delivered'; material: RepairMaterial; remaining: number }
   | { type: 'angler-purchase'; result: ClothingPurchaseResult }
   | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }
   | { type: 'flight-result'; result: FlightResult; pilotId: number; aerial?: string[]; recorded?: number }

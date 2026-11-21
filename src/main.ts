@@ -1,31 +1,30 @@
 import { bindCheckpointControls } from './live-checkpoint-ui'
 import './style.css'
-import { boundaryBuoys, buoyBoundaryPoint, coastPoint } from './terrain'
+import { drawIslandMap } from './island-map'
 import { actionHint, atClothingCounter, heldItem, inSkiff, interactRequest } from './actions'
-import { createRidgeHud, drawRidgeMap, flightInput, ridgeActionHint } from './ridge-ui'
+import { createRidgeHud, flightInput, ridgeActionHint } from './ridge-ui'
 import { readStorage, writeStorage } from './browser-storage'
-import { cleanCrewName, defaultAppearance, shirtColor } from './crew-appearance'
+import { cleanCrewName } from './crew-appearance'
 import { createCrewGuide } from './crew-guide-ui'
 import { missionCard } from './mission-card'
+import { materialsFeedback, repairMaterials } from './materials-work'
 import { bindControlsToggle } from './controls-toggle-ui'
 import { bindLookOptions } from './look-options-ui'
 import { createReticleFocus } from './reticle-ui'
 import { gateStepText } from './gate-repair'
 import { favorFeedback } from './resident-notices'
-import { farm, market } from './farm'
 import { createJobBoard } from './job-board-ui'
-import { activeJob, atJobBoard, deliveryDrop, jobBoard, jobs } from './jobs'
+import { atJobBoard, jobs } from './jobs'
 import { starterTools, toolNames } from './inventory'
 import type { InventoryItem } from './inventory'
 import type { ClientMessage, FishingResult, Input, Player, ServerMessage, Snapshot } from './protocol'
-import { footpaths, road, walkways } from './routes'
-import { northernRegions, starterDiscoveries } from './scenery'
+import { starterDiscoveries } from './scenery'
 import { createRenderer } from './scene'
 import { bindLanInvite } from './lan-invite'
 import { bindPlaytestCopy } from './playtest-link'
 import { isNight } from './weather'
 import { createClothingCounter, createWardrobe } from './wardrobe-ui'
-import { crewHomes, ferryTerminal, harbor, lookout, starterPay } from './world'
+import { starterPay } from './world'
 
 function element<T extends HTMLElement>(id: string) {
   const node = document.getElementById(id)
@@ -88,7 +87,6 @@ const promptKey = element('prompt-key')
 const promptAction = element('prompt-action')
 const ridgeHud = createRidgeHud(element('ridge-hud'))
 const map = element<HTMLCanvasElement>('map')
-const ink = map.getContext('2d')
 
 let renderer: ReturnType<typeof createRenderer> | undefined
 let socket: WebSocket | undefined
@@ -142,97 +140,6 @@ function newToken() {
     (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-function drawMap(state?: Snapshot) {
-  if (!ink) return
-  const { width, height } = map
-  const afloat = state?.players.some((player) => player.id === id && inSkiff(player.seat))
-  const scale = Math.min(width / (afloat ? 390 : 224), height / (afloat ? 400 : 245))
-  const mx = (x: number) => width / 2 + x * scale
-  const mz = (z: number) => height / 2 - (z - 66) * scale
-  const dot = (x: number, z: number, color: string, radius: number) => {
-    ink.fillStyle = color
-    ink.beginPath()
-    ink.arc(mx(x), mz(z), radius, 0, Math.PI * 2)
-    ink.fill()
-  }
-  ink.fillStyle = '#245e68'
-  ink.fillRect(0, 0, width, height)
-  if (afloat) {
-    ink.beginPath()
-    for (let i = 0; i < 128; i++) {
-      const { x, z } = buoyBoundaryPoint(i / 128 * Math.PI * 2)
-      if (i === 0) ink.moveTo(mx(x), mz(z))
-      else ink.lineTo(mx(x), mz(z))
-    }
-    ink.closePath()
-    ink.strokeStyle = '#9abfc1'
-    ink.lineWidth = 1
-    ink.stroke()
-    for (const { x, z } of boundaryBuoys) dot(x, z, '#ffd37b', 2)
-  }
-  for (const [radius, color] of [[1, '#acc293'], [0.916, '#6f9667']] as const) {
-    ink.fillStyle = color
-    ink.beginPath()
-    for (let i = 0; i < 128; i++) {
-      const { x, z } = coastPoint(i / 128 * Math.PI * 2, radius)
-      if (i === 0) ink.moveTo(mx(x), mz(z))
-      else ink.lineTo(mx(x), mz(z))
-    }
-    ink.closePath()
-    ink.fill()
-  }
-  const local = state?.players.find((player) => player.id === id)
-  for (const region of northernRegions) {
-    dot(region.at.x, region.at.z, region.color, region.spread * scale * 0.55)
-  }
-  for (const region of starterDiscoveries) if (local?.discoveries?.includes(region.id)) {
-    dot(region.site.x, region.site.z, '#e4ffe0', 2.25)
-  }
-  ink.lineJoin = 'round'
-  ink.lineCap = 'round'
-  function drawRoute(points: typeof road, width: number, color: string) {
-    if (!ink) return
-    ink.lineWidth = width
-    ink.strokeStyle = color
-    ink.beginPath()
-    for (const [i, { x, z }] of points.entries()) {
-      if (i === 0) ink.moveTo(mx(x), mz(z))
-      else ink.lineTo(mx(x), mz(z))
-    }
-    ink.stroke()
-  }
-
-  for (const { points, surface } of footpaths) {
-    if (surface === 'desire') drawRoute(points, .85, '#b5a77e')
-    else drawRoute(points, 2, surface === 'pavement' ? '#c4c9c1' : '#a5a77e')
-  }
-  for (const { points } of walkways) drawRoute(points, 2, '#c4c9c1')
-  drawRoute(road, 4, '#c7bb9a')
-  const drop = state && deliveryDrop(state)
-  if (state?.mission === 'fire') dot(lookout.x, lookout.z, '#f7a17d', 6)
-  else if (drop) {
-    dot(harbor.x, harbor.z, '#fff0ae', 5)
-    dot(drop.x, drop.z, '#acf3da', 5)
-  }
-  if (!state) return
-  ink.fillStyle = '#38433a'
-  ink.fillRect(mx(state.truck.x) - 5, mz(state.truck.z) - 4, 10, 8)
-  if (state.skiff) dot(state.skiff.x, state.skiff.z, '#fff0ca', 3.5)
-  dot(farm.x, farm.z, '#e3ba77', 3.5)
-  dot(ferryTerminal.x, ferryTerminal.z, '#d7a07d', 3.5)
-  const marketOrder = activeJob(state)?.kind === 'market'
-  dot(market.x, market.z, marketOrder ? '#acf3da' : '#f2d3bc', marketOrder ? 6 : 3.5)
-  if (state.mission === 'complete' && !state.jobs.active) dot(jobBoard.x, jobBoard.z, '#ffd379', 5.5)
-  drawRidgeMap(state, dot)
-  const home = crewHomes[id]
-  if (home) dot(home.chest.x, home.chest.z, '#fed487', 3)
-  for (const player of state.players) {
-    if (!player.connected) continue
-    dot(player.x, player.z, '#234244', 6.5)
-    dot(player.x, player.z, shirtColor(player.appearance ?? defaultAppearance, player.appearanceBase ?? player.id).color, 4.5)
-  }
-}
-
 const renderFailed = 'This browser could not start WebGL. Try a browser with hardware acceleration enabled.'
 function showNotice() {
   const detail = renderer ? message : renderFailed
@@ -251,7 +158,7 @@ try {
   bootMessage.textContent = renderFailed
 }
 showNotice()
-drawMap()
+drawIslandMap(map, id)
 
 function updateMission(state: Snapshot) {
   const card = missionCard(state, id)
@@ -282,8 +189,12 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
   const coins = state.crewCoins
   const balance = `Crew bank · ${coins} ${coins === 1 ? 'coin' : 'coins'}`
   const { fish, carrots } = player.goods
+  const materials = repairMaterials.flatMap((material) => {
+    const quantity = player.materials?.[material]
+    return quantity ? [`${quantity} ${material}`] : []
+  })
   const contents = [balance, player.deliveryXp ? player.deliveryXp + ' driver XP' : '', `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`,
-    fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '']
+    fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '', ...materials]
     .filter(Boolean).join(' · ')
   if (fishingWallet.textContent !== contents) fishingWallet.textContent = contents
   fishingWallet.hidden = false
@@ -321,7 +232,7 @@ function update(state: Snapshot) {
     actionFeedback = { key: '', label: 'Morning on the island', until: performance.now() + 2400 }
   }
   renderer?.update(state, id, follow)
-  drawMap(state)
+  drawIslandMap(map, id, state)
   const connected = state.players.filter((player) => player.connected)
   crewCount.textContent = `${connected.length} / 2`
   crewRows.forEach((row, index) => {
@@ -434,6 +345,9 @@ function connect() {
         break
       case 'gate-step':
         actionFeedback = { key: '', label: gateStepText[incoming.step], until: performance.now() + 3200 }
+        break
+      case 'materials-step':
+        actionFeedback = { key: '', label: materialsFeedback(incoming), until: performance.now() + 4800 }
         break
       case 'open-wardrobe':
       case 'open-clothing-counter':

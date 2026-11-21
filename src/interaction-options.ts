@@ -4,6 +4,7 @@ import { canPickUp, gateActions, gateHint, gateOptions, gateTarget } from './gat
 import type { GateAction } from './gate-repair.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, jobBoard, orderContribution } from './jobs.ts'
 import type { Item, Player, Snapshot } from './protocol.ts'
+import { materialsActions, materialsInteractions, type MaterialsAction } from './materials-interactions.ts'
 import { stagingFavor, wantsCargo } from './residents/favors.ts'
 import { residentActions, residentInteractions, type ResidentAction } from './residents/interactions.ts'
 import { walkingHeight } from './terrain.ts'
@@ -12,14 +13,14 @@ import { cottageDoor, crewHomes, distance, lookout } from './world.ts'
 import type { Point } from './world.ts'
 import { starterResidents } from './worlds/starter/residents.ts'
 
-export type InteractionAction = GateAction | ResidentAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
+export type InteractionAction = GateAction | ResidentAction | MaterialsAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
   'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note'
 export const interactionActions: readonly InteractionAction[] = [
-  ...gateActions, ...residentActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
+  ...gateActions, ...residentActions, ...materialsActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
   'harvest', 'pick-up', 'welcome-note',
 ]
 // These change shared progress or speak for the crew, so the host runs them only when the player chose them.
-export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions]
+export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions, ...materialsActions]
 
 // What E sends: an action and, for items, farm plots and residents, which one.
 export interface InteractionChoice { action: InteractionAction; subject?: number }
@@ -130,7 +131,7 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
     options.push({ action: 'welcome-note', key: 'E', label: 'Read your welcome note', name: 'Your door',
       at: aimedAt(cottageDoor(crewHomes[player.id]), 1.2), radius: .7 })
   }
-  return [...options, ...gateInteractions(state, gate.secondary), ...residents.talk, ...residents.accept]
+  return [...options, ...materialsInteractions(state, player), ...gateInteractions(state, gate.secondary), ...residents.talk, ...residents.accept]
 }
 
 export function sameChoice(a: InteractionChoice, b: InteractionChoice) {
