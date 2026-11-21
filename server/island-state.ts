@@ -36,12 +36,13 @@ export function restoreIsland(
 }
 
 export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['crew']): IslandSave {
-  const { truck, skiff, items, mission, fire, farm, jobs } = state
+  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt } = state
   const { x, z, heading } = truck
   return {
     version: 2, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
-    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs }),
+    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs,
+      ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }) }),
     crew,
   }
 }

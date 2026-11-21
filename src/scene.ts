@@ -10,7 +10,7 @@ import { inSkiff } from './actions'
 import { castTravelSeconds } from './charged-actions'
 import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
-import { createLookoutFire } from './fire-effect'
+import { createLookoutIncident } from './lookout-recovery-art'
 import { fisherAt, fisherName } from './harbor-fisher'
 import { moveTo } from './island-render-pose'
 import { fishingFloatDip } from './starter-effect-cues'
@@ -102,7 +102,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   })
 
   const sprays = extinguisherStarts.map((_, index) => createExtinguisherSpray(scene, 9011 + index))
-  const fire = createLookoutFire(scene, lookout.x, lookout.z)
+  const showLookout = createLookoutIncident(meshes)
   const placesFx = createStarterPlaces(meshes)
   const actionFx = createStarterActionEffects(scene, { boat, crew, farmTools, paddles: skiffGear.map(({ gear }) => gear), ferns })
 
@@ -336,7 +336,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       boardPad.setEnabled(last.mission === 'complete' && !last.jobs.active)
       firePad.setEnabled(last.mission === 'fire')
       equipmentPad.setEnabled(last.mission === 'fire')
-      fire.pose(time, last.mission === 'fire' ? last.fire : 0)
+      showLookout(last, time)
     } else {
       marketPad.setEnabled(false)
       boardPad.setEnabled(false)
