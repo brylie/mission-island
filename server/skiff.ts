@@ -1,13 +1,22 @@
 import type { Input, Player, Skiff } from '../src/protocol'
 import { waterDepth, waterLevel, withinSkiffBoundary } from '../src/terrain.ts'
-import { dockEndZ, harborDock, offset } from '../src/world.ts'
-import type { Point } from '../src/world'
+import { dockEndZ, harborDock, offset, skiffStart } from '../src/world.ts'
+import type { Point, Pose } from '../src/world'
 import { canWalkAt } from '../src/simulation/movement.ts'
 
 function navigable(point: Point) {
   const byDock = Math.abs(point.x - harborDock.x) < harborDock.width / 2 + 0.275 &&
     point.z > dockEndZ - 0.67 && point.z < harborDock.firstZ + 0.5
   return !byDock && withinSkiffBoundary(point) && waterDepth(point) >= 0.24
+}
+
+function hullIsNavigable(pose: Pose) {
+  return [offset(pose, 0, 1.85), offset(pose, 0, -1.62), offset(pose, -0.62, 0),
+    offset(pose, 0.62, 0)].every(navigable)
+}
+
+export function restoreSkiff(saved: Pose = skiffStart): Skiff {
+  return { ...(hullIsNavigable(saved) ? saved : skiffStart), speed: 0 }
 }
 
 export function stepSkiff(skiff: Skiff, paddles: readonly Input[], dt: number) {
@@ -18,8 +27,7 @@ export function stepSkiff(skiff: Skiff, paddles: readonly Input[], dt: number) {
   skiff.speed += Math.max(-acceleration, Math.min(acceleration, target - skiff.speed))
   const heading = skiff.heading + Math.max(-1, Math.min(1, steering)) * dt * 0.95
   const candidate = { ...offset({ ...skiff, heading }, 0, skiff.speed * dt), heading }
-  if ([offset(candidate, 0, 1.85), offset(candidate, 0, -1.62), offset(candidate, -0.62, 0),
-    offset(candidate, 0.62, 0)].every(navigable)) Object.assign(skiff, candidate)
+  if (hullIsNavigable(candidate)) Object.assign(skiff, candidate)
   else skiff.speed = 0
   return paddles.every((input) => input.x === 0 && input.z === 0)
 }

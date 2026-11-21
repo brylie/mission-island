@@ -8,7 +8,7 @@ import { barrowSolids } from '../barrow.ts'
 import { truckPoint, truckSurface } from '../truck-pose.ts'
 import type { Truck, TruckPose } from '../truck-pose.ts'
 import { islandRocks, islandTrees, northernProps, treeTrunkRadius } from '../scenery.ts'
-import { coastPoint, groundHeight, maxWadeDepth, shoreProfile, walkingHeight, waterDepth, waterLevel } from '../terrain.ts'
+import { coastBounds, groundHeight, maxWadeDepth, shoreProfile, walkingHeight, waterDepth, waterLevel } from '../terrain.ts'
 import { createTruckPhysics } from './truck.ts'
 
 // The garden gate leaf moves with host state, so crates meet it where players see it.
@@ -50,11 +50,11 @@ export function createCargoPhysics() {
 
   // Cover the whole island, including the wading shelf and a margin for falling cargo.
   const outerRadius = shoreProfile[shoreProfile.length - 1].radius
-  const coast = Array.from({ length: 256 }, (_, i) => coastPoint(i * Math.PI / 128, outerRadius))
-  const west = Math.floor(Math.min(...coast.map(({ x }) => x))) - 2
-  const east = Math.ceil(Math.max(...coast.map(({ x }) => x))) + 2
-  const north = Math.ceil(Math.max(...coast.map(({ z }) => z))) + 2
-  const south = Math.floor(Math.min(...coast.map(({ z }) => z))) - 2
+  const coast = coastBounds(outerRadius)
+  const west = Math.floor(coast.west) - 2
+  const east = Math.ceil(coast.east) + 2
+  const north = Math.ceil(coast.north) + 2
+  const south = Math.floor(coast.south) - 2
   const heights = Array.from({ length: east - west + 1 }, (_, i) =>
     Array.from({ length: north - south + 1 }, (_, j) => groundHeight({ x: west + i, z: north - j })))
   const ground = new Body({ position: new Vec3(west, 0, north), shape: new Heightfield(heights, { elementSize: 1 }) })

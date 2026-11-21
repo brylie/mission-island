@@ -2,12 +2,13 @@ import { RawTexture } from '@babylonjs/core/Materials/Textures/rawTexture'
 import { Texture } from '@babylonjs/core/Materials/Textures/texture'
 import { Vector4 } from '@babylonjs/core/Maths/math.vector'
 import type { Scene } from '@babylonjs/core/scene'
-import { groundHeight, tidePool, waterLevel } from './terrain'
+import { coastBounds, groundHeight, shoreProfile, tidePool, waterLevel } from './terrain'
 
 // Heights come from the same function as the rendered beach and wading rules.
 // Give the small basin its own tile so the sill has centimetre-scale sampling.
+const { west, east, south, north } = coastBounds(shoreProfile[shoreProfile.length - 1].radius)
 const tiles = {
-  coast: { x: -145, z: -70, width: 290, length: 340, columns: 512, rows: 640 },
+  coast: { x: west - 2, z: south - 2, width: east - west + 4, length: north - south + 4, columns: 512, rows: 640 },
   basin: { x: tidePool.x - 6, z: tidePool.z - 5, width: 12, length: 10, columns: 256, rows: 224 },
 }
 type Tile = keyof typeof tiles
