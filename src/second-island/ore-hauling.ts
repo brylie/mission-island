@@ -159,8 +159,8 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
   function instructions(range: number, braking: boolean) {
     if (!driving) {
       if (!status) return 'Contacting dispatch…'
-      if (status.xp < haulerUnlockXp) return status.xp + '/' + haulerUnlockXp + ' driver XP. Drive loaded crates on Starter Island and deliver them to qualify.'
-      return 'Ore truck unlocked · ' + range + ' m to the cab.'
+      if (status.xp < haulerUnlockXp) return `Ore truck certification · ${status.xp}/${haulerUnlockXp} driver XP. Haul crates on Starter Island to earn XP when your crew delivers them.`
+      return 'Certified ore truck driver · ' + range + ' m to the cab.'
     }
     const offer = oreContracts.find(o => o.id === select.value)
     if (mode === 'contract' && offer) return offer.purpose + ' · ' + offer.coins + ' coins.'

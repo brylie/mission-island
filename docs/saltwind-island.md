@@ -6,7 +6,7 @@ Walking or inspecting a landmark pauses the guided tour. Starting or continuing 
 
 ## Slatecliff ore hauling
 
-Drive a loaded crate at least eight metres on Starter Island. When the crew delivers it, each qualifying driver earns 10 personal driver XP. Two crates unlock the ore truck at 20 XP. Returning crews can take another delivery at the Harbor Job Board.
+Earn your Slatecliff ore truck certification by hauling ten crates on Starter Island. Drive each crate at least eight metres on the flatbed. When the crew delivers it, each qualifying driver earns 10 personal driver XP. At 100 XP you can board the ore truck and accept freight contracts. After the starter missions, take repeat delivery orders at the Harbor Job Board to finish your practice.
 
 On Saltwind, use **Site map → Slatecliff Mine → Inspect site** and walk to the ochre truck on the turnaround. Press **F** to board. Pick a contract at the dispatch bay, then steer to the cones beside the hopper. Use **W/S** to drive or reverse, **A/D** to steer and **Space** to brake. Choose the ticketed ore and press **Load selected ore**. The orange diamond on the chart follows the current objective. Stop between the buyer’s cones and unload to credit the crew bank. Drive back to dispatch for another ticket.
 

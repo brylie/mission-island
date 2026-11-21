@@ -1,7 +1,7 @@
 import { distance, type Point } from './world.ts'
 
 export const crateDriverXp = 10
-export const haulerUnlockXp = 20
+export const haulerUnlockXp = 100
 export const oreNames = { 'magnetite-seam': 'Magnetite', 'malachite-bloom': 'Malachite', 'honey-calcite': 'Honey calcite' } as const
 export type Ore = keyof typeof oreNames
 

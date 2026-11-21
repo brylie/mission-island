@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createGame } from '../server/game.ts'
-import { crateDriverXp, haulerUnlockXp, dispatchBay, emptyTicket, hopperBay, oreContracts } from '../src/ore-contracts.ts'
+import { haulerUnlockXp, dispatchBay, emptyTicket, hopperBay, oreContracts } from '../src/ore-contracts.ts'
 import { offset, truckStart, town } from '../src/world.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
-test('driving loaded freight earns personal XP only when a crewmate delivers that crate', t => {
+test('a driver with 90 XP earns certification when a crewmate delivers the next crate they drove', t => {
   const start = offset(truckStart, 2.2, -1.5)
-  const h = setup(t, { players: [player(0, start), player(1, town)], arrange(save) {
+  const h = setup(t, { players: [player(0, start, { deliveryXp: 90 }), player(1, town)], arrange(save) {
     save.world.items[0].holder = 0
   } })
   const driver = h.join(tokens[0])
@@ -18,7 +18,9 @@ test('driving loaded freight earns personal XP only when a crewmate delivers tha
   h.advance()
   h.hold(driver, 105, { z: 1, careful: true })
   assert.equal(driver.player.seat, 'driver')
-  assert.deepEqual(h.game.freight.status(tokens[0]), { xp: 0, ticket: emptyTicket() })
+  assert.deepEqual(h.game.freight.status(tokens[0]), { xp: 90, ticket: emptyTicket() })
+  const accept = { action: 'accept', ...dispatchBay, choice: 'ballast', revision: 0 }
+  assert.match(h.game.freight.act(tokens[0], accept), /100 driver XP/)
   const saved = h.game.snapshotForSave()
   assert.equal(saved.crew[0].player.drivenCrates[0], 8)
   // Resume at the handoff with the other crewmate holding the driven crate.
@@ -28,7 +30,8 @@ test('driving loaded freight earns personal XP only when a crewmate delivers tha
   helper.request('interact')
   restored.advance()
   assert.equal(helper.state.items[0].delivered, true)
-  assert.equal(restored.game.freight.status(tokens[0]).xp, crateDriverXp)
+  assert.equal(restored.game.freight.status(tokens[0]).xp, 100)
+  assert.equal(restored.game.freight.act(tokens[0], accept), undefined)
   assert.equal(restored.game.freight.status(tokens[1]).xp, 0)
   assert.equal(restored.game.snapshotForSave().crew[0].player.drivenCrates[0], 0)
 })

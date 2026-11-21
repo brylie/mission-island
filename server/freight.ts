@@ -30,7 +30,7 @@ export function createFreight(crew: Pick<ReturnType<typeof createCrewRoster>, 'p
   }
   function act(token: string, command: FreightAction) {
     const player = crew.profile(token)
-    if (!player || (player.deliveryXp ?? 0) < haulerUnlockXp) return 'Earn more Starter Island delivery XP.'
+    if (!player || (player.deliveryXp ?? 0) < haulerUnlockXp) return `Ore truck certification requires ${haulerUnlockXp} driver XP from Starter Island deliveries.`
     const ticket = player.freightTicket ?? emptyTicket()
     if (ticket.revision !== command.revision) return 'Your dispatch ticket has changed.'
     const order = oreContracts.find(c => c.id === (command.action === 'accept' ? command.choice : ticket.contract))
