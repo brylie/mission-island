@@ -3,7 +3,7 @@ import { createOilLantern } from './assets/effect-props'
 import { market } from './farm'
 import { juniperCenter } from './juniper-habitat'
 import { jobBoard } from './jobs'
-import { marketAwningHem } from './market-shower'
+import { marketAwningSite } from './worlds/starter/market-awning'
 import type { MarketRunoff } from './market-runoff'
 import { coastPoint, fernfallSection, groundHeight, pool, streamX, waterLevel } from './terrain'
 import { daylight, nightLighting } from './weather'
@@ -16,7 +16,7 @@ import type { Point } from './world'
 const at = (point: Point, lift: number) => ({ ...point, y: groundHeight(point) + lift })
 const dryDay = ({ weather }: WildlifeFrame) => daylight(weather.hour) * (1 - weather.rain)
 const gust = ({ time, weather }: WildlifeFrame) => (0.25 + 0.75 * Math.max(0, Math.sin(time * 0.62)) ** 2) * (1 - weather.rain * 0.62)
-const curtain = { x: market.x, y: marketAwningHem.y - 0.127, z: marketAwningHem.z + 0.095 }
+const curtain = { x: market.x, y: marketAwningSite.hem.y - 0.127, z: marketAwningSite.hem.z + 0.095 }
 
 function shore(angle: number): LocalEffect {
   const point = coastPoint(angle, 1.003)

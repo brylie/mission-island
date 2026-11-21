@@ -434,11 +434,6 @@
       "count": 19
     }
   },
-  "src/market-shower.ts": {
-    "no-magic-numbers": {
-      "count": 270
-    }
-  },
   "src/materials-interactions.ts": {
     "no-magic-numbers": {
       "count": 12
