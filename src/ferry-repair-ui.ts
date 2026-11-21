@@ -1,9 +1,7 @@
 import { crewName, ferryNextStep, ferryProjectOpen, ferryStages, stageNeeds } from './ferry-repair'
-import { gateStepText, residentName } from './gate-repair'
 import type { ServerMessage, Snapshot } from './protocol'
 
 type FerryNotice = Extract<ServerMessage, { type: 'ferry-progress' | 'ferry-order' | 'ferry-stage' }>
-type FavorNotice = FerryNotice | Extract<ServerMessage, { type: 'favor-pay' | 'gate-step' }>
 
 // The mission card's community project, shown once four orders have opened the repair and no order is running.
 export function ferryCard(state: Snapshot) {
@@ -23,18 +21,8 @@ export function ferryCard(state: Snapshot) {
   }
 }
 
-// What the screen shows for a neighbor favor step or payout, or when someone gives to the ferry repair.
-export function favorFeedback(message: FavorNotice, state: Snapshot | undefined) {
-  if (message.type === 'favor-pay') {
-    return { key: `+${message.coins} coins`, label: `${residentName}’s gate mended · Crew bank · ${residentName} trust +${message.trust}`,
-      until: performance.now() + 4200 }
-  }
-  if (message.type === 'gate-step') return { key: '', label: gateStepText[message.step], until: performance.now() + 3200 }
-  return ferryFeedback(message, state)
-}
-
 // What both screens show when someone gives to the repair or a stage is finished.
-function ferryFeedback(message: FerryNotice, state: Snapshot | undefined) {
+export function ferryFeedback(message: FerryNotice, state: Snapshot | undefined) {
   const until = performance.now() + (message.type === 'ferry-stage' ? 5200 : 3200)
   if (message.type === 'ferry-order') {
     return { key: `${message.crates} timber`, label: 'Waiting at the Seabrook timber stack · Haul it to the ferry yard', until }

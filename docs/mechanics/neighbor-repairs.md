@@ -8,7 +8,7 @@
 2. **Inspect the sagging hinge** at the gate. The worn pin is visible, and the step feedback names the part and where to find it.
 3. **Take a hinge pin** from the tray on the mending bench. Only one unfitted pin is out at a time.
 4. **Fit the hinge pin.** The acting player must be at the gate. The pin must be with a connected crewmember at the gate. The toolbox must be there too, either held by a connected crewmember or set down within 2.5 m of the gate. The leaf straightens and a new brass pin shows in the hinge.
-5. **Swing the gate to test it.** The leaf opens fully and the opening is wide enough to walk through. The crew bank gets **+5 coins** once, and Wren's trust goes up by one. Both screens show `+5 coins · Wren's gate mended · Crew bank · Wren trust +1`.
+5. **Swing the gate to test it.** The leaf opens fully and the opening is wide enough to walk through. The crew bank gets **+5 coins** once, and Wren's trust goes up by one. Both screens show `+5 coins · Wren’s gate · Crew bank · Wren trust +1`. The favor goes through the shared resident ledger, so it counts once. See [Residents and favors](resident-favors.md).
 
 Before the repair, anyone can **Try the sagging gate**. The leaf opens about 17° and leaves less than a body's width, so walking into it shows that something is wrong without any message. After the repair, either player can open and close the gate. A close waits until nobody is standing in the opening.
 
@@ -16,7 +16,7 @@ The day after the repair, grass grows over the groove. Wren leaves by the front 
 
 ## Prompts and input
 
-**E** acts on the step the prompt shows. The client sends that step with the request, and the host carries it out only if the same step is still available to that player. When two players press at once, the first press is carried out and the second does nothing. A request with no step never moves the job along. A gate step takes priority over setting down a held toolbox. Swinging the gate and a general chat with Wren both give way to setting down or picking up an item nearby, so the toolbox on Wren's bench can be picked up while Wren is working there. Away from the gate, **E** sets the toolbox down.
+**E** acts on the step the prompt shows. The client sends that step with the request, and the host carries it out only if the same step is still available to that player. When two players press at once, the first press is carried out and the second does nothing. A request with no step never moves the job along. A gate step takes priority over setting down a held toolbox. Swinging the gate and talking to Wren both give way to setting down or picking up an item nearby, so the toolbox on Wren's bench can be picked up while Wren is working there. Away from the gate, **E** sets the toolbox down.
 
 ## Co-op roles and recovery
 
@@ -28,7 +28,7 @@ A solo player can carry the toolbox through every step. In a pair, one player ca
 
 ## Saved state
 
-The host saves the repair stage, the time the job was accepted and the gate was mended, whether the gate is open, Wren's trust, the last favor receipt and the toolbox position. Island saves are version 4. Version 1 and 2 saves gain the toolbox on the bench and an untouched gate when loaded. A carried pin returns to the bench when the host restarts.
+The host saves the repair stage, the time the job was accepted and the gate was mended, whether the gate is open, Wren's resident record, the last favor receipt and the toolbox position. Island saves are version 5. A version 3 save moves Wren's trust into Wren's record. Version 1 and 2 saves gain the toolbox on the bench and an untouched gate when loaded. A carried pin returns to the bench when the host restarts.
 
 ## Playtest
 

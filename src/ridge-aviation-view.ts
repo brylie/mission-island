@@ -37,9 +37,10 @@ export function createRidgeAviationView(meshes: MeshFactory, crew: Rig[]) {
         wing.position.y = pilot ? 0 : -.58
       }
       markMeadow(Boolean(aviation?.marked))
-      const toWillow = flight ? flight.outing === 'survey' && !flight.observed : Boolean(aviation?.qualified)
+      const toWillow = flight?.outing === 'free' || (!flight && aviation?.surveyed) ? null
+        : flight ? flight.outing === 'survey' && !flight.observed : Boolean(aviation?.qualified)
       showRoute(toWillow, pilot?.root.position)
-      drawUpdraft(time)
+      drawUpdraft(time, state?.weather.hour, state?.weather.rain)
       willow.setEnabled(flight?.outing === 'survey' && !flight.observed)
     },
     pose(state: Snapshot, player: Player, character: Rig, blend: number) {

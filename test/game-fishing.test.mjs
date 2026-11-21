@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { canWalkAt } from '../src/simulation/movement.ts'
 import { actionHint } from '../src/actions.ts'
-import { fisherAt } from '../src/harbor-fisher.ts'
+import { residentAt } from '../src/residents/schedule.ts'
+import { mara } from '../src/worlds/starter/residents/mara.ts'
 import { harborRoad } from '../src/routes.ts'
 import { maxWadeDepth, walkingHeight, waterLevel } from '../src/terrain.ts'
 import { daySeconds } from '../src/weather.ts'
@@ -83,6 +84,8 @@ test('two players board a skiff, and paddling retrieves the other player’s lin
   assert.ok(b.player.y < 1 && b.player.y > waterLevel - 0.55)
 })
 
+const fisherAt = (hour) => residentAt(mara.schedule, { islandTime: (hour - 6) * daySeconds / 24, gateRepair: { stage: 'sagging', pinHolder: null } })
+
 test('Mara moves between walkable stops and either crewmate can talk at the fishing dock', (t) => {
   for (const hour of [0, 18.25, ...Array.from({ length: 26 }, (_, index) => 6 + index / 100)]) {
     assert.ok(canWalkAt(fisherAt(hour), .25, waterLevel - maxWadeDepth))
@@ -95,8 +98,8 @@ test('Mara moves between walkable stops and either crewmate can talk at the fish
   for (const token of tokens.slice(0, 2)) {
     const client = h.join(token)
     assert.deepEqual(actionHint(client.state, client.player), ['E', 'Talk to Mara'])
-    client.request('interact')
-    assert.deepEqual(client.messages.at(-1), { type: 'fisher-chat' })
+    client.request('interact', { choice: { action: 'talk', subject: 0 } })
+    assert.deepEqual(client.messages.at(-1), { type: 'resident-chat', resident: 'mara' })
   }
   // Harbor Depot road ends at the ferry barrier, and its straight ramp lane can be walked to the terminal.
   assert.deepEqual(harborRoad[0], { x: ferryTerminal.x, z: ferryTerminal.z })

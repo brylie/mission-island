@@ -1,0 +1,67 @@
+import { activeJob } from '../jobs.ts'
+import type { Player, Snapshot } from '../protocol.ts'
+import { distance, type Point } from '../world.ts'
+import type { FavorDefinition, FavorGuide, ResidentDefinition } from './definition.ts'
+import { trustTier, type ResidentRecord } from './trust.ts'
+
+type Registry = readonly ResidentDefinition[]
+type Records = Pick<Snapshot, 'residents'>
+const blank: ResidentRecord = { trust: 0, kept: [], active: null }
+
+export function recordFor(state: Records, resident: ResidentDefinition) {
+  return state.residents[resident.id] ?? blank
+}
+
+export function activeFavor(resident: ResidentDefinition, state: Records) {
+  const { active } = recordFor(state, resident)
+  return active === null ? undefined : resident.favors.find(({ id }) => id === active)
+}
+
+// The favor a resident is asking for right now: the next one the crew has not kept, while nothing else is under way.
+export function openOffer(resident: ResidentDefinition, state: Snapshot) {
+  const record = recordFor(state, resident)
+  if (record.active !== null) return undefined
+  const next = resident.favors.find(({ id }) => !record.kept.includes(id))
+  return next && (next.available?.(state) ?? true) ? next : undefined
+}
+
+export function isCustom(favor: FavorDefinition) {
+  return 'custom' in favor.kind
+}
+
+// The resident's own lines, with the ask or the reminder in place of the advice while a favor is open.
+export function conversationLines(resident: ResidentDefinition, state: Snapshot): [string, string] {
+  const record = recordFor(state, resident)
+  const [greeting, advice] = resident.conversation.lines({ state, tier: trustTier(record.trust), kept: record.kept })
+  const active = activeFavor(resident, state)
+  const favor = active ?? openOffer(resident, state)
+  if (!favor || isCustom(favor)) return [greeting, advice]
+  return [greeting, active ? favor.reminder : favor.offer]
+}
+
+// Crew guide entries for every favor under way. Built from the shared snapshot, so a crewmate who joins mid-favor sees it too.
+export function favorGuides(registry: Registry, state: Snapshot, player: Player): FavorGuide[] {
+  return registry.flatMap((resident) => resident.favors.flatMap((favor) => {
+    const listed = favor.listed?.(state) ?? recordFor(state, resident).active === favor.id
+    if (!listed) return []
+    return [favor.guide?.(state, player) ?? { title: favor.title, detail: favor.detail, next: favor.next }]
+  }))
+}
+
+// Cargo favors wait while a crew delivery order has the crates.
+function cargoFavors(registry: Registry, state: Snapshot) {
+  if (activeJob(state)?.kind === 'delivery') return []
+  return registry.flatMap((resident) => {
+    const favor = activeFavor(resident, state)
+    return favor && 'cargo' in favor.kind ? [{ resident, favor, kind: favor.kind }] : []
+  })
+}
+
+export function wantsCargo(registry: Registry, state: Snapshot) {
+  return cargoFavors(registry, state).length > 0
+}
+
+// The cargo favor a crate set down here would complete.
+export function stagingFavor(registry: Registry, state: Snapshot, point: Point) {
+  return cargoFavors(registry, state).find(({ kind }) => distance(point, kind.drop) < kind.radius)
+}

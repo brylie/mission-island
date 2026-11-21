@@ -40,10 +40,12 @@ function walkTo(h, client, ...targets) {
 }
 
 const top = (client) => interactions(client.state, client.player)[0]?.action
-const choose = (client, action) => client.request('interact', { choice: { action } })
+// Talking is a resident interaction; Wren is the second resident in the registry.
+const choiceFor = (action) => action === 'talk' ? { action, subject: 1 } : { action }
+const choose = (client, action) => client.request('interact', { choice: choiceFor(action) })
 
 function act(h, client, action) {
-  assert.deepEqual(interactRequest(client.state, client.player), { type: 'interact', choice: { action } })
+  assert.deepEqual(interactRequest(client.state, client.player), { type: 'interact', choice: choiceFor(action) })
   choose(client, action)
   h.advance()
 }
@@ -102,7 +104,8 @@ test('a solo player borrows the toolbox, finds the fault, fetches a pin and test
   assert.deepEqual(actionHint(a.state, a.player), ['E', 'Talk to Wren'])
   act(h, a, 'talk')
   assert.equal(a.state.gateRepair.stage, 'accepted')
-  assert.equal(count(a, 'wren-chat'), 1)
+  assert.deepEqual(a.messages.filter(({ type }) => type === 'resident-chat'), [{ type: 'resident-chat', resident: 'wren' }])
+  assert.deepEqual(a.state.residents.wren, { trust: 0, kept: [], active: 'wren-gate' })
   walkTo(h, a, benchRoad[0], byBench)
   assert.deepEqual(actionHint(a.state, a.player), ['E', 'Pick up the toolbox'], 'Wren gives way to the toolbox on the bench')
   a.request('interact')
@@ -128,9 +131,10 @@ test('a solo player borrows the toolbox, finds the fault, fetches a pin and test
   act(h, a, 'test')
   assert.equal(a.state.gateRepair.stage, 'mended')
   assert.equal(a.state.crewCoins, coins + 5)
-  assert.deepEqual(a.state.residentTrust, { wren: 1 })
-  assert.deepEqual(a.state.lastFavorPay, { resident: 'wren', coins: 5 })
-  assert.deepEqual(a.messages.filter(({ type }) => type === 'favor-pay'), [{ type: 'favor-pay', resident: 'wren', coins: 5, trust: 1 }])
+  assert.deepEqual(a.state.residents.wren, { trust: 1, kept: ['wren-gate'], active: null })
+  assert.deepEqual(a.state.lastFavorPay, { resident: 'wren', favor: 'wren-gate', coins: 5 })
+  assert.deepEqual(a.messages.filter(({ type }) => type === 'favor-pay'),
+    [{ type: 'favor-pay', resident: 'wren', favor: 'wren-gate', coins: 5, trust: 1 }])
   walkTo(h, a, garden, lane)
   assert.equal(a.state.items[toolboxId].holder, 0)
 })
@@ -163,7 +167,7 @@ test('either crewmate can fit once the pin and toolbox meet at the gate, and rac
   choose(b, 'test')
   h.advance()
   assert.equal(a.state.crewCoins, coins + 5)
-  assert.equal(a.state.residentTrust.wren, 1)
+  assert.equal(a.state.residents.wren.trust, 1)
   assert.equal(count(a, 'favor-pay'), 1)
   assert.equal(count(b, 'favor-pay'), 1)
   assert.equal(a.state.gate.open, true)
@@ -293,15 +297,17 @@ test('partial and finished repairs survive a host restart; the next dawn changes
   const finished = createGame().snapshotForSave()
   finished.islandTime = at(10)
   Object.assign(finished.world, { gateRepair: { stage: 'mended', pinHolder: null, acceptedAt: at(8), mendedAt: at(10) },
-    residentTrust: { wren: 1 }, lastFavorPay: { resident: 'wren', coins: 5 }, crewCoins: 5 })
+    residents: { ...finished.world.residents, wren: { trust: 1, kept: ['wren-gate'], active: null } },
+    lastFavorPay: { resident: 'wren', favor: 'wren-gate', coins: 5 }, crewCoins: 5 })
   finished.crewCoins = 5
   file.write(finished)
   assert.deepEqual(file.load(), finished)
-  assert.deepEqual(wrenLines({ ...finished.world, islandTime: at(17) })[0], wrenLines({ ...finished.world, islandTime: at(11) })[0])
+  const kept = ['wren-gate']
+  assert.deepEqual(wrenLines({ ...finished.world, islandTime: at(17) }, kept)[0], wrenLines({ ...finished.world, islandTime: at(11) }, kept)[0])
   const morning = { ...file.load(), islandTime: at(6.95, 1) }
   const next = setup(t, { saved: morning, players: [] })
   const c = next.join(tokens[0])
-  assert.match(wrenLines(c.state)[0], /won’t forget who fixed it/)
+  assert.match(wrenLines(c.state, c.state.residents.wren.kept)[0], /won’t forget who fixed it/)
   next.advanceUntil(() => c.state.gate.open, 200)
   assert.ok(distance(wrenAt(c.state), gateway) < 1.5, 'Wren opens the mended gate on the way out')
   next.advanceUntil(() => !c.state.gate.open, 400)
@@ -310,7 +316,7 @@ test('partial and finished repairs survive a host restart; the next dawn changes
   choose(c, 'talk')
   next.advance()
   assert.equal(c.state.crewCoins, 5)
-  assert.equal(c.state.residentTrust.wren, 1)
+  assert.equal(c.state.residents.wren.trust, 1)
 })
 
 test('older saves gain the toolbox and gate defaults, and rejected gate data does not load', (t) => {
@@ -320,16 +326,17 @@ test('older saves gain the toolbox and gate defaults, and rejected gate data doe
   const current = createGame().snapshotForSave()
   const legacy = { ...JSON.parse(JSON.stringify(current)), version: 2 }
   legacy.world.items = legacy.world.items.slice(0, toolboxId)
-  for (const key of ['gate', 'gateRepair', 'residentTrust']) delete legacy.world[key]
+  for (const key of ['gate', 'gateRepair', 'residents']) delete legacy.world[key]
   file.write(legacy)
   const migrated = file.load()
-  assert.equal(migrated.version, 4)
-  const { gate, gateRepair, residentTrust } = migrated.world
-  assert.deepEqual({ gate, gateRepair, residentTrust }, initialGateRepair())
+  assert.equal(migrated.version, 5)
+  const { gate, gateRepair, residents } = migrated.world
+  assert.deepEqual({ gate, gateRepair }, initialGateRepair())
+  assert.deepEqual(residents, current.world.residents)
   assert.ok(onBench(migrated.world.items[toolboxId]))
   assert.equal(migrated.world.items[toolboxId].kind, 'toolbox')
   for (const broken of [{ gateRepair: { stage: 'mended', pinHolder: null } }, { gate: { open: 'yes', closePending: false } },
-    { residentTrust: { wren: -1 } }, { gateRepair: { stage: 'polished', pinHolder: null } }]) {
+    { residents: { wren: { trust: -1, kept: [], active: null } } }, { gateRepair: { stage: 'polished', pinHolder: null } }]) {
     file.write({ ...current, world: { ...current.world, ...broken } })
     assert.throws(() => file.load(), /Could not load island save/)
   }

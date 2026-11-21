@@ -23,8 +23,9 @@ export interface FerryRepair { stage: number; ledger: FerryLedger[]; haul: numbe
 
 export const ferryActions = ['ferry-order', 'ferry-donate', 'ferry-tally'] as const
 export type FerryAction = typeof ferryActions[number]
+export const isFerryAction = (action: string): action is FerryAction => (ferryActions as readonly string[]).includes(action)
 // Donations and timber orders change shared progress, so the host runs them only when a player chose them.
-export const ferryChoiceOnly: readonly string[] = ['ferry-order', 'ferry-donate']
+export const ferryChoiceOnly: readonly FerryAction[] = ['ferry-order', 'ferry-donate']
 
 export function emptyLedger(): FerryLedger {
   return { coins: spawns.map(() => 0), crates: spawns.map(() => 0) }

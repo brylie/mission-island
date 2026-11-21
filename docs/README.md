@@ -15,6 +15,7 @@ Mission Island is a third-person co-op game about two people making a home on a 
 | What belongs at this location? | [Inhabited places](game-design.md#an-inhabited-island), [the two-island destination survey](living-world-qa.md), and [Saltwind’s site inventory](saltwind-island.md) |
 | How should a place change with latitude, exposure, or time of year? | [Island climates and seasons](design/climate-and-seasons.md) |
 | How do I review or improve the look of a model, place, or seasonal scene? | [Creative direction](design/creative-direction.md) and [Art Director skill](../.agents/skills/mission-island-art-director/SKILL.md) |
+| How do I design or review generated sound and island ambience? | [Procedural Audio skill](../.agents/skills/mission-island-procedural-audio/SKILL.md) |
 | How do we get variation that still makes sense? | [Generativity and the Juniper Hollow habitat](game-design.md#generativity) and [the Biome Composer workflow](../CONTRIBUTING.md#asset-workbench) |
 | How do I review an ecological or procedural simulation? | [Natural Systems Reviewer skill](../.agents/skills/mission-island-natural-systems/SKILL.md) |
 | How can I check the idea with another player? | [Fresh-save playtest through the first shared payout](playtests/starter-island-first-payout.md), [LAN play and saves](../README.md#play-on-your-local-network), [Workbench guide](workbench.md), and [Saltwind traversal and performance checks](saltwind-qa.md) |

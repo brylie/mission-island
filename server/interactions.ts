@@ -1,7 +1,6 @@
 import { byTruckBed, freeBed, heldItem } from '../src/actions.ts'
-import { ferryChoiceOnly, ferryDrop } from '../src/ferry-repair.ts'
-import { gateActions } from '../src/gate-repair.ts'
-import { interactions, sameChoice } from '../src/interaction-options.ts'
+import { ferryDrop, isFerryAction } from '../src/ferry-repair.ts'
+import { deliberateActions, interactions, sameChoice } from '../src/interaction-options.ts'
 import type { Interaction, InteractionChoice } from '../src/interaction-options.ts'
 import { starterTools } from '../src/inventory.ts'
 import { deliveryDrop, deliveryRadius } from '../src/jobs.ts'
@@ -16,15 +15,17 @@ import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
 import type { createFerryRepair } from './ferry-repair.ts'
+import type { createResidents } from './residents.ts'
+import type { createMaterialsWork } from './materials-work.ts'
 
 export function createInteractions(
   state: Snapshot, growth: number[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'load' | 'release' | 'remove'>,
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
-  gate: Pick<ReturnType<typeof createGateRepair>, 'act'>, ferry: ReturnType<typeof createFerryRepair>,
+  gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
+  residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>,
+  materials: ReturnType<typeof createMaterialsWork>, ferry: ReturnType<typeof createFerryRepair>,
   checkpoint?: () => void,
 ) {
-  // Gate steps, donations and timber orders change shared progress, so they run only when the player chose them.
-  const choiceOnly: readonly string[] = [...gateActions, ...ferryChoiceOnly]
 
   function useHomeChest(member: CrewMember) {
     const { player } = member
@@ -53,6 +54,8 @@ export function createInteractions(
       ferry.deliverCrate(item, player.id)
     } else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
       orders.deliverCrate(item)
+    } else if (residents.stageCrate(item, player)) {
+      return
     } else if (item.kind === 'crate') {
       const slot = byTruckBed(state, player) ? freeBed(state) : undefined
       if (slot === undefined) {
@@ -107,12 +110,16 @@ export function createInteractions(
       case 'plant':
       case 'harvest': return tend(member, subject, action)
       case 'welcome-note': return member.notify?.({ type: 'crew-note' })
-      case 'talk-fisher': return member.notify?.({ type: 'fisher-chat' })
+      case 'talk': return residents.talk(member, subject)
+      case 'accept-favor': return residents.accept(member, subject)
+      case 'hand-over': return residents.handOver(member, subject)
+      case 'gather-material':
+      case 'check-material':
+      case 'return-material-sample':
+      case 'choose-repair-material':
+      case 'deliver-repair-material': return materials.act(member, action, subject)
       case 'job-board': return
-      case 'ferry-order':
-      case 'ferry-donate':
-      case 'ferry-tally': return ferry.act(member, action)
-      default: return gate.act(member, action)
+      default: return isFerryAction(action) ? ferry.act(member, action) : gate.act(member, action)
     }
   }
 
@@ -126,7 +133,7 @@ export function createInteractions(
     }
     const options = interactions(state, player)
     const chosen = choice ? options.find((option) => sameChoice(option, choice))
-      : options.find(({ action }) => !choiceOnly.includes(action))
+      : options.find(({ action }) => !deliberateActions.includes(action))
     if (!chosen) return
     perform(member, chosen)
     updateHeldItems(state)

@@ -160,11 +160,11 @@ test('older saves start the repair untouched, and progress that does not add up 
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const file = islandSaveFile(root, 5173)
   const current = createGame().snapshotForSave()
-  const legacy = { ...JSON.parse(JSON.stringify(current)), version: 3 }
+  const legacy = { ...JSON.parse(JSON.stringify(current)), version: 4 }
   delete legacy.world.ferryRepair
   file.write(legacy)
   const migrated = file.load()
-  assert.equal(migrated.version, 4)
+  assert.equal(migrated.version, 5)
   assert.deepEqual(migrated.world.ferryRepair, initialFerryRepair().ferryRepair)
   for (const ferryRepair of [
     { stage: 1, ledger: [full(0)], haul: 0 },

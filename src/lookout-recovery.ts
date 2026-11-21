@@ -1,5 +1,5 @@
 import type { Snapshot } from './protocol.ts'
-import { daySeconds } from './weather.ts'
+import { dawnsBetween } from './weather.ts'
 
 export type LookoutRecovery = 'undisturbed' | 'ash' | 'shoots' | 'established'
 export const lookoutRecoverySubject = 'lookout-recovery'
@@ -12,6 +12,6 @@ export const recoveryBeds = [
 export function lookoutRecoveryAt({ mission, islandTime, lookoutFireClearedAt }: Pick<Snapshot, 'mission' | 'islandTime' | 'lookoutFireClearedAt'>): LookoutRecovery {
   if (mission !== 'complete') return 'undisturbed'
   if (lookoutFireClearedAt === undefined) return 'established'
-  const dawns = Math.floor(islandTime / daySeconds) - Math.floor(lookoutFireClearedAt / daySeconds)
+  const dawns = dawnsBetween(lookoutFireClearedAt, islandTime)
   return dawns < 1 ? 'ash' : dawns < 3 ? 'shoots' : 'established'
 }

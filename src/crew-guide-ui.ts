@@ -1,25 +1,32 @@
 import { crateDriverXp, haulerUnlockXp } from './ore-contracts'
-import { fisherName } from './harbor-fisher'
-import { ferryServiceRestored, tallyLines } from './ferry-repair'
-import { gateRepairGuide, residentName, wrenLines } from './gate-repair'
+import { tallyLines } from './ferry-repair'
 import { jobs } from './jobs'
 import type { Player, Snapshot } from './protocol'
+import { conversationLines, favorGuides, isCustom, openOffer } from './residents/favors'
+import { atResident } from './residents/schedule'
 import { crewHomes, jobPay, starterPay } from './world'
+import { starterResident, starterResidents } from './worlds/starter/residents'
 
-export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismissed: boolean) => void) {
+function favorTitle(receipt: Snapshot['lastFavorPay']) {
+  return receipt && starterResident(receipt.resident)?.favors.find((favor) => favor.id === receipt.favor)?.title
+}
+
+export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismissed: boolean) => void, accept: (subject: number) => void) {
   const title = dialog.querySelector<HTMLElement>('#guide-title')!
   const note = dialog.querySelector<HTMLElement>('#guide-note')!
-  const conversation = dialog.querySelector<HTMLElement>('#fisher-conversation')!
-  const greeting = dialog.querySelector<HTMLElement>('#fisher-line')!
-  const advice = dialog.querySelector<HTMLElement>('#fisher-advice')!
-  const favor = dialog.querySelector<HTMLElement>('#guide-favor')!
-  const favorLines = ['#guide-favor-title', '#guide-favor-detail', '#guide-favor-next'].map((selector) => dialog.querySelector<HTMLElement>(selector)!)
+  const conversation = dialog.querySelector<HTMLElement>('#resident-conversation')!
+  const greeting = dialog.querySelector<HTMLElement>('#resident-line')!
+  const advice = dialog.querySelector<HTMLElement>('#resident-advice')!
+  const agree = dialog.querySelector<HTMLButtonElement>('#resident-accept')!
+  const favors = dialog.querySelector<HTMLElement>('#guide-favors')!
   const home = dialog.querySelector<HTMLElement>('#guide-home')!
   const workTitle = dialog.querySelector<HTMLElement>('#guide-work-title')!
   const work = dialog.querySelector<HTMLElement>('#guide-work')!
   const pay = dialog.querySelector<HTMLElement>('#guide-pay')!
   const lead = dialog.querySelector<HTMLElement>('#guide-lead')!
   const toggle = dialog.querySelector<HTMLButtonElement>('#toggle-fisher-lead')!
+  let shownFavors = ''
+  let speaker = -1
 
   function showLead(visible: boolean) {
     lead.hidden = !visible
@@ -31,6 +38,28 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
     showLead(lead.hidden)
     setDismissed(lead.hidden)
   })
+
+  // Agreeing goes back through the host, which checks the resident is still in reach and still asking.
+  agree.addEventListener('click', () => {
+    if (speaker >= 0) accept(speaker)
+    dialog.close()
+  })
+
+  function showFavors(state: Snapshot, player: Player) {
+    const entries = favorGuides(starterResidents, state, player)
+    const key = JSON.stringify(entries)
+    if (key === shownFavors) return
+    shownFavors = key
+    favors.replaceChildren(...entries.map(({ title: heading, detail, next }) => {
+      const section = document.createElement('section')
+      const [h3, first, second] = [document.createElement('h3'), document.createElement('p'), document.createElement('p')]
+      h3.textContent = heading
+      first.textContent = detail
+      second.textContent = next
+      section.append(h3, first, second)
+      return section
+    }))
+  }
 
   function update(state: Snapshot, player: Player) {
     if (!dialog.open || note.hidden) return
@@ -51,34 +80,35 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
     const xp = player.deliveryXp ?? 0
     const certification = xp >= haulerUnlockXp ? 'Certified to drive the Slatecliff ore truck.' :
       `Slatecliff ore truck certification takes ${haulerUnlockXp} driver XP. Earn ${crateDriverXp} XP for each crate you haul by truck and your crew delivers.`
-    const neighbor = gateRepairGuide(state, player)
-    const favorPay = state.lastFavorPay ? ` Last favor · ${residentName}’s gate mended · +${state.lastFavorPay.coins} coins.` : ''
-    favor.hidden = false
+    const kept = favorTitle(state.lastFavorPay)
+    const favorPay = kept ? ` Last favor · ${kept} · +${state.lastFavorPay!.coins} coins.` : ''
     for (const [element, value] of [
       [home, crewHomes[player.id].name], [workTitle, heading], [work, direction],
       [pay, `${balance}. ${receipt}${favorPay} ${xp} driver XP. ${certification}`],
-      [favorLines[0], neighbor.title], [favorLines[1], neighbor.detail], [favorLines[2], neighbor.next],
     ] as const) {
       if (element.textContent !== value) element.textContent = value
     }
+    showFavors(state, player)
   }
 
   return {
     update,
-    open(state: Snapshot, player: Player, talking: 'fisher' | 'wren' | 'tally' | false, dismissed: boolean) {
+    open(state: Snapshot, player: Player, talking: string | false, dismissed: boolean) {
+      // The ferry tally board opens in the same dialog as a conversation, without a resident to answer.
       const board = talking === 'tally' ? tallyLines(state) : undefined
-      title.textContent = board?.title ?? (talking === 'wren' ? `${residentName} · Neighbor` : talking ? `${fisherName} · Fisher` : 'Crew guide')
-      conversation.hidden = !talking
-      note.hidden = Boolean(talking)
+      speaker = talking && !board ? starterResidents.findIndex(({ id }) => id === talking) : -1
+      const resident = starterResidents[speaker]
+      title.textContent = board?.title ?? (resident ? `${resident.identity.name} · ${resident.identity.role}` : 'Crew guide')
+      conversation.hidden = !resident && !board
+      note.hidden = Boolean(resident || board)
       if (board) {
         [greeting.textContent, advice.textContent] = [board.lines[0], board.lines.slice(1).join('\n')]
-      } else if (talking) {
-        [greeting.textContent, advice.textContent] = talking === 'wren' ? wrenLines(state) : [ferryServiceRestored(state)
-          ? '“The ferry ramp is open again. I watched your crew lay that deck from the dock. The whole harbor is talking about it.”'
-          : state.mission === 'complete'
-          ? '“Thanks for clearing the lookout. You can find more work on the board beside the depot. The ferry terminal at the end of Harbor Depot road still needs a crew.”'
-          : '“Welcome to the harbor. The depot has a delivery and a lookout shift for your crew. That ramp east of here is the old ferry terminal. We’ll put it back to work someday.”',
-        '“You’ll find me at the small dock most mornings. Pick up the rod from your cottage chest and cast from the dock if you’d like to try your luck.”']
+        agree.hidden = true
+      } else if (resident) {
+        [greeting.textContent, advice.textContent] = conversationLines(resident, state)
+        const offer = openOffer(resident, state)
+        agree.hidden = !offer || isCustom(offer) || !atResident(resident, state, player)
+        agree.textContent = `Agree to help ${resident.identity.name}`
       } else {
         showLead(!dismissed)
       }

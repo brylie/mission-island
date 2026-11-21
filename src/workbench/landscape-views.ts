@@ -3,8 +3,9 @@ import { brinewickMarketSubject } from '../second-island/brinewick-market'
 import { longAcreSubject } from '../second-island/long-acre'
 import { shellglassCycle } from '../shellglass-tide'
 import { driftwoodShallows } from '../simulation/driftwood-school'
-import { falls } from '../terrain'
+import { falls, groundHeight } from '../terrain'
 import type { Point } from '../world'
+import { liftSites } from '../worlds/starter/lift'
 
 interface LandscapeView {
   label: string
@@ -15,6 +16,8 @@ interface LandscapeView {
   hour: number
   time: number
 }
+
+const farmThermal = liftSites.find(({ id }) => id === 'farm-fields') ?? liftSites[0]
 
 const shellglassView = {
   focus: { x: 45.35, z: -33.65, height: .49 },
@@ -61,6 +64,11 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
   'shellglass-retreating': { ...shellglassView, label: 'Shellglass retreating tide', time: shellglassCycle * .76 },
   'shellglass-low': { ...shellglassView, label: 'Shellglass low water', time: shellglassCycle * .96 },
   'shellglass-night': { ...shellglassView, label: 'Shellglass plankton at night', hour: 23, time: shellglassCycle * .96 },
+  'farm-thermal-gulls': {
+    label: 'Gulls circling the farm thermal',
+    focus: { x: farmThermal.x, z: farmThermal.z, height: groundHeight(farmThermal) + 13 },
+    alpha: 2.6, beta: 1.62, radius: 15, hour: 13, time: 40,
+  },
   'fernfall-overlook': {
     label: 'Fernfall overlook',
     focus: { ...falls, height: 0.25 },
