@@ -1,8 +1,9 @@
-import { createGullFlock } from './gull-flock'
+import { createGullFlock, createThermalGulls } from './gull-flock'
 import { starterGullPerches } from './gull-sites'
 import { createCoastalFish } from './school-fish'
 import { driftwoodShallows, type DriftwoodFrame } from './simulation/driftwood-school'
 import { onBeachTowel } from './worlds/starter/sites'
+import { liftSites } from './worlds/starter/lift'
 import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
 import { distanceToRoute, footpaths, road } from './routes'
@@ -101,6 +102,7 @@ export function createStarterWildlife(meshes: MeshFactory) {
   const tree = islandTrees.find(({ variant, x, z }) => variant % 3 === 0 && x > -14 && x < -5 && z > 13)
   const roost = tree ? { x: tree.x, z: tree.z, y: groundHeight(tree) + tree.height * 1.025 } : { x: -9, y: 1, z: 20 }
   const gulls = createGullFlock(meshes, starterGullPerches)
+  const soaringGulls = createThermalGulls(meshes, liftSites, starterGullPerches.length)
   const flocks = createFlocks(meshes, [
     { center: { x: -13, y: 5, z: 24 }, landing: roost, roost, range: 9, color: '#6f677e', count: 3, bat: true },
   ])
@@ -109,5 +111,6 @@ export function createStarterWildlife(meshes: MeshFactory) {
     schools(frame)
     flocks(frame)
     gulls(frame)
+    soaringGulls(frame)
   }
 }

@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { isFreightTicket } from '../src/ore-contracts.ts'
-import type { AviationProgress } from '../src/aviation.ts'
+import { aerialSurveys, type AviationProgress } from '../src/aviation.ts'
 import { farmPlots } from '../src/farm.ts'
 import { isJobId, jobs } from '../src/jobs.ts'
 import type { JobBoardState } from '../src/jobs.ts'
@@ -110,8 +110,11 @@ function isSavedIncident(world: Record<string, unknown>, islandTime: number) {
 }
 
 function isSavedAviation(value: unknown) {
+  const { aerial } = isRecord(value) ? value : {}
   return isRecord(value) && typeof value.qualified === 'boolean' && typeof value.surveyed === 'boolean' &&
-    (!value.surveyed || value.qualified)
+    (!value.surveyed || value.qualified) && (aerial === undefined || (Array.isArray(aerial) &&
+      new Set(aerial).size === aerial.length && aerial.every(id => aerialSurveys.some(survey => survey.id === id)) &&
+      (aerial.length === 0 || value.qualified)))
 }
 
 function hasValidProgress(world: Record<string, unknown>) {
