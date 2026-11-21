@@ -11,7 +11,14 @@ Arguments are optional. A PR number, branch or commit range sets the target. Tex
 
 ## 1. Scope the change
 
-1. Collect the diff: run `git fetch origin main`, then `git diff origin/main...HEAD` plus uncommitted changes. A worktree's local `main` is often stale and would pull in work that has already merged. List the files and summarize the player-visible effect in one or two sentences. Read the linked issue or PR when there is one, so the reviewers can judge the work against what was asked.
+1. Collect the diff of the requested target. Run `git fetch origin main` first, because a worktree's local `main` is often stale and would pull in work that has already merged.
+   - No target: `git diff origin/main...HEAD` plus uncommitted changes.
+   - A PR: `gh pr diff <number>`, or `gh pr view <number> --json headRefOid,baseRefName` and diff the base against that head. For a merged PR, diff its merge commit against its first parent.
+   - A branch or commit range: `git diff origin/main...<branch>` or `git diff <range>`.
+
+   To play or test a target that is not checked out, check it out in a separate worktree rather than reviewing the current checkout by mistake.
+
+   List the files and summarize the player-visible effect in one or two sentences. Read the linked issue or PR when there is one, so the reviewers can judge the work against what was asked.
 2. Pick the reviewers from the table. Include a reviewer when any row applies, and say in one line why each one was picked or skipped. When in doubt, include them.
 
 | Reviewer skill | Include when the change… |
@@ -25,7 +32,7 @@ Arguments are optional. A PR number, branch or commit range sets the target. Tex
 
 ## 2. Run the static checks
 
-If `package-lock.json` changed in the target, or `node_modules` is older than the lockfile, run `npm ci` first. Worktrees often keep dependencies from an older checkout, and a missing package makes lint fail before it checks anything. Then run `npm run quality:commit` (lint, type check, tests). Before a push or PR, also run `npm run quality:push` (full lint, unused code, build). When `server/` or `src/simulation/` changed, run `npm run coverage` as CI does. Fix failures before starting the reviews, because reviewers should not spend a round on a red build.
+If `node_modules` is missing, `package-lock.json` changed in the target, or `node_modules` is older than the lockfile, run `npm ci` first. Worktrees often keep dependencies from an older checkout, and a missing package makes lint fail before it checks anything. Then run `npm run quality:commit` (lint, type check, tests). Before a push or PR, also run `npm run quality:push` (full lint, unused code, build). When `server/` or `src/simulation/` changed, run `npm run coverage` as CI does. Fix failures before starting the reviews, because reviewers should not spend a round on a red build.
 
 Static checks show the code holds together. They do not show the change works for players, so continue to step 3 even when they pass.
 
@@ -55,7 +62,7 @@ Ask each reviewer to return a verdict of **ready**, **revise** or **rethink**, f
 
 1. Merge the findings. When reviewers disagree, such as an art request that costs the architecture, stop and ask the user to choose rather than picking silently.
 2. Fix **revise** items. Treat a **rethink** as a design question for the user before rewriting.
-3. Re-run the static checks and the harness from step 3. Send the changes back only to the reviewers that asked for them.
+3. Re-run the static checks and the harness from step 3. Send each change back to the reviewers who asked for it and to any other reviewer whose scope it touches. A fix that changes what players see always goes back to the Art Director, even if it approved the earlier version.
 4. Stop after the reviewers return **ready**, or after three rounds. At three rounds, report what is still open.
 
 Record tool friction as the review workflow asks. Keep a harness or tooling improvement separate from the change under review.
