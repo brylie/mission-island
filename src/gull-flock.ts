@@ -11,7 +11,7 @@ export function createGullFlock(meshes: MeshFactory, perches: readonly GullPerch
   const effects = createMovingEffects(meshes.scene)
   let previousTime = -Infinity
   return ({ time, weather, weatherAt, camera, seek }: WildlifeFrame) => {
-    const continuous = !seek && time > previousTime && time - previousTime < .35
+    const continuous = !seek && time > previousTime && time - previousTime < 0.35
     previousTime = time
     effects.begin(time, camera, !seek)
     for (const [index, bird] of birds.entries()) {
@@ -24,7 +24,7 @@ export function createGullFlock(meshes: MeshFactory, perches: readonly GullPerch
       }
       const pose = gullAt(time, index, perch, weather, weatherAt)
       if (continuous && bird.grounded && pose.phase === 'Push-off') {
-        effects.burst('takeoff-feathers', { x: pose.x, y: pose.y + .18, z: pose.z }, .91, .86, .27)
+        effects.burst('takeoff-feathers', { x: pose.x, y: pose.y + 0.18, z: pose.z }, 0.91, 0.86, 0.27)
       }
       bird.grounded = pose.grounded
       model.pose(pose)

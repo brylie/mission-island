@@ -12,25 +12,27 @@ import { createCascadeMaterial, createLakeMaterial, createSoundMaterial } from '
 import { ferryTrack, fishingPier, routes, sampleRoute } from './routes'
 import type { Route } from './routes'
 import { lowerLake, pavedYards, runway, seaLevel, sites, tarn, discoveryWalks, picnicLedge, waterBounds } from './sites'
-import { airfieldDistance, bridgeAt, cols, deckPoint, deckSection, fallsWidth, fallsX, fallsY, gridStep, groundHeight, heightGrid,
-  nearestRoad, riverY, riverZ, rows, shoreDistance, siteDistance, surfaceHeight } from './terrain'
+import { airfieldDistance, bridgeAt, cols, deckPoint, deckSection, fallsWidth, fallsX, fallsY, gridStep, groundHeight, heightGrid, nearestRoad, riverY, riverZ, rows, shoreDistance, siteDistance, surfaceHeight } from './terrain'
 
 export const palette = {
-  sea: [49, 117, 133], shoal: [101, 170, 162], yard: [186, 166, 129],
+  sea: [49, 117, 133],
+  shoal: [101, 170, 162],
+  yard: [186, 166, 129],
 } as const
 
 const yardSites = sites.filter((site) => site.id !== 'fields' && site.id !== 'cemetery')
 
 function terrainColor(x: number, y: number, z: number) {
-  const noise = .97 + .027 * Math.sin(x * .09 + z * .07) + .019 * Math.cos(z * .14 - x * .12)
+  const noise = 0.97 + 0.027 * Math.sin(x * 0.09 + z * 0.07) + 0.019 * Math.cos(z * 0.14 - x * 0.12)
   let edge = Infinity
   for (const site of yardSites) edge = Math.min(edge, siteDistance(x, z, site))
-  const yard = Math.max(0, Math.min(1, (-edge + 1) / 6)) * .72
+  const yard = Math.max(0, Math.min(1, (-edge + 1) / 6)) * 0.72
   const color = habitatColor(x, y, z).map((channel, i) => channel + (palette.yard[i] - channel) * yard)
-  const bank = z > 121 && z < 200 ? Math.max(0, Math.min(1, (z - 121) / 5, (200 - z) / 5,
-    (fallsWidth(z) + 10 - Math.abs(x - fallsX(z))) / 6)) : 0
+  const bank = z > 121 && z < 200
+    ? Math.max(0, Math.min(1, (z - 121) / 5, (200 - z) / 5, (fallsWidth(z) + 10 - Math.abs(x - fallsX(z))) / 6))
+    : 0
   const ledge = Math.max(0, 1 - Math.hypot((x - picnicLedge.x) / 9, (z - picnicLedge.z + 3) / 5))
-  const strata = .93 + .07 * Math.sin(y * 2.1 + x * .11)
+  const strata = 0.93 + 0.07 * Math.sin(y * 2.1 + x * 0.11)
   const slate = [125, 133, 125]
   return color.map((channel, i) => (channel + (slate[i] * strata - channel) * Math.max(bank, ledge)) * noise)
 }
@@ -51,14 +53,14 @@ function createTerrain(meshes: MeshFactory) {
     for (let z = iz; z <= ez; z++) for (let x = ix; x <= ex; x++) {
       const px = minX + x * gridStep, pz = minZ + z * gridStep, y = height[z * cols + x]
       positions.push(px, y, pz)
-      uvs.push((px - pz) / 3.5, (pz + px * .72) / 3.5)
+      uvs.push((px - pz) / 3.5, (pz + px * 0.72) / 3.5)
       const rgb = terrainColor(px, y, pz)
       const byPier = px >= -255 && px <= -200 && pz < -250
       if (byPier && y < 0) {
-        const wet = Math.min(1, -y / .65)
-        rgb[0] *= 1 - .43 * wet
-        rgb[1] *= 1 - .11 * wet
-        rgb[2] *= 1 + .24 * wet
+        const wet = Math.min(1, -y / 0.65)
+        rgb[0] *= 1 - 0.43 * wet
+        rgb[1] *= 1 - 0.11 * wet
+        rgb[2] *= 1 + 0.24 * wet
       }
       colors.push(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, 1)
       if (x === ex || z === ez) continue
@@ -100,7 +102,7 @@ function strip(meshes: MeshFactory, name: string, points: readonly number[][], c
 
 function createWater(meshes: MeshFactory) {
   const minX = -1600, minZ = -1600, maxX = 1600, maxZ = 1600
-  const y = seaLevel - .005
+  const y = seaLevel - 0.005
   const color = createSoundMaterial(meshes.scene)
   const sea = meshes.surface('Saltwind Sound', [minX, y, minZ, maxX, y, minZ, maxX, y, maxZ, minX, y, maxZ], [0, 1, 2, 0, 2, 3], color)
   sea.freezeWorldMatrix()
@@ -117,19 +119,19 @@ function createWater(meshes: MeshFactory) {
   }
   const river: number[][] = []
   for (let x = -444; x <= -87; x++) {
-    const y = riverY(x) - .009, z = riverZ(x)
+    const y = riverY(x) - 0.009, z = riverZ(x)
     river.push([x, y, z + 9], [x, y, z - 9])
   }
   strip(meshes, 'Reedwater River', river, '#6ba9ad')
   const stream: number[] = [], faces: number[] = [], uv: number[] = []
   const current = createCascadeMaterial(meshes.scene)
   for (let row = 0; row <= 152; row++) {
-    const z = 123 + row * .5, y = fallsY(z), width = fallsWidth(z)
-    const slope = Math.min(1, fallsY(z + .5) - fallsY(z - .5))
+    const z = 123 + row * 0.5, y = fallsY(z), width = fallsWidth(z)
+    const slope = Math.min(1, fallsY(z + 0.5) - fallsY(z - 0.5))
     for (let column = 0; column <= 8; column++) {
       const lane = column / 4 - 1
       // Extend a little into the cut bank so its terrain trims the water's edge.
-      stream.push(fallsX(z) + lane * (width + .85), y, z)
+      stream.push(fallsX(z) + lane * (width + 0.85), y, z)
       uv.push(lane, slope)
       if (row && column) {
         const d = row * 9 + column
@@ -164,7 +166,7 @@ function createRoad(meshes: MeshFactory, route: Route, solids: ScenerySolids) {
     const p = sampleRoute(route, distance)
     if (nearestRoad(p.x, p.z, false, route).distance >= 8) {
       const y = deckPoint(p, 0, route).y
-      const mark = meshes.box(p.x, y + .036, p.z, .14, .014, 2.35, '#e6d9aa', undefined, false)
+      const mark = meshes.box(p.x, y + 0.036, p.z, 0.14, 0.014, 2.35, '#e6d9aa', undefined, false)
       mark.rotation.y = p.yaw
       const a = sampleRoute(route, distance - 1)
       const b = sampleRoute(route, distance + 1)
@@ -176,13 +178,14 @@ function createRoad(meshes: MeshFactory, route: Route, solids: ScenerySolids) {
   for (const p of route.samples) {
     if (bridgeAt(route, p)) {
       start ??= p.distance
-    } else if (start !== undefined) {
+    }
+    else if (start !== undefined) {
       spans.push([start, p.distance])
       start = undefined
     }
   }
-  if (route === fishingPier) spans.push([2, length - .24])
-  if (route === ferryTrack) spans.push([16, length - .24])
+  if (route === fishingPier) spans.push([2, length - 0.24])
+  if (route === ferryTrack) spans.push([16, length - 0.24])
   const firstRail = meshes.scene.meshes.length
   for (const [from, to] of spans) addRails(meshes, route, from, to)
   solids.capture(meshes.scene.meshes.slice(firstRail))
@@ -191,25 +194,25 @@ function createRoad(meshes: MeshFactory, route: Route, solids: ScenerySolids) {
 function addRails(meshes: MeshFactory, route: Route, from: number, to: number) {
   const count = Math.ceil((to - from) / 5.5)
   for (const side of [-1, 1]) {
-    const offset = side * (route.width / 2 - .24)
+    const offset = side * (route.width / 2 - 0.24)
     let previous: ReturnType<typeof deckPoint> | undefined
     for (let i = 0; i <= count; i++) {
       const sample = sampleRoute(route, from + (to - from) * i / count)
       const p = deckPoint(sample, offset, route)
-      meshes.box(p.x, p.y + .38, p.z, .22, .80, .22, '#e7d6b2')
-      if (i % 2 === 0 && p.y - groundHeight(p.x, p.z) > .46) {
-        const corners = [-.38, .38].flatMap((dx) =>
-          [-.44, .44].map((dz) => groundHeight(p.x + dx, p.z + dz)))
-        const bottom = Math.min(...corners) - .28
+      meshes.box(p.x, p.y + 0.38, p.z, 0.22, 0.80, 0.22, '#e7d6b2')
+      if (i % 2 === 0 && p.y - groundHeight(p.x, p.z) > 0.46) {
+        const corners = [-0.38, 0.38].flatMap((dx) =>
+          [-0.44, 0.44].map((dz) => groundHeight(p.x + dx, p.z + dz)))
+        const bottom = Math.min(...corners) - 0.28
         const height = p.y - bottom
-        meshes.box(p.x, bottom + height / 2, p.z, .76, height, .88, '#93968a')
+        meshes.box(p.x, bottom + height / 2, p.z, 0.76, height, 0.88, '#93968a')
       }
       if (previous) {
         const dx = p.x - previous.x, dy = p.y - previous.y, dz = p.z - previous.z
         const length = Math.hypot(dx, dz)
         const x = (p.x + previous.x) / 2, y = (p.y + previous.y) / 2, z = (p.z + previous.z) / 2
-        for (const [height, level, color] of [[.13, .65, '#e7d6b2'], [.36, -.17, '#878277']] as const) {
-          const beam = meshes.box(x, y + level, z, .22, height, Math.hypot(length, dy), color)
+        for (const [height, level, color] of [[0.13, 0.65, '#e7d6b2'], [0.36, -0.17, '#878277']] as const) {
+          const beam = meshes.box(x, y + level, z, 0.22, height, Math.hypot(length, dy), color)
           beam.rotation.set(-Math.atan2(dy, length), Math.atan2(dx, dz), 0)
         }
       }
@@ -221,36 +224,37 @@ function addRails(meshes: MeshFactory, route: Route, from: number, to: number) {
 function createAirstrip(meshes: MeshFactory) {
   const { x, z, width, length, y } = runway
   for (const pad of pavedYards.filter(({ id }) => ['runway', 'taxi', 'air-apron'].includes(id))) {
-    meshes.box(pad.x, pad.y - .045, pad.z, pad.width, .09, pad.depth, pad.id === 'air-apron' ? '#777d72' : '#646b65', undefined, false)
+    meshes.box(pad.x, pad.y - 0.045, pad.z, pad.width, 0.09, pad.depth, pad.id === 'air-apron' ? '#777d72' : '#646b65', undefined, false)
   }
   for (const side of [-1, 1]) {
-    meshes.box(x, y + .077, z + side * (width / 2 - .78), length - 4, .011, .20, '#f7e3bc', undefined, false)
-    for (let i = 0; i < 7; i++) meshes.box(x + side * (length / 2 - 8), y + .079, z + (i - 3) * 1.65, 7.6, .012, .41, '#faf0ce', undefined, false)
+    meshes.box(x, y + 0.077, z + side * (width / 2 - 0.78), length - 4, 0.011, 0.20, '#f7e3bc', undefined, false)
+    for (let i = 0; i < 7; i++) meshes.box(x + side * (length / 2 - 8), y + 0.079, z + (i - 3) * 1.65, 7.6, 0.012, 0.41, '#faf0ce', undefined, false)
   }
-  for (let i = -7; i <= 7; i++) meshes.box(x + i * 24, y + .078, z, 10, .013, .24, '#fff1c4', undefined, false)
+  for (let i = -7; i <= 7; i++) meshes.box(x + i * 24, y + 0.078, z, 10, 0.013, 0.24, '#fff1c4', undefined, false)
   const wx = 231, wz = -119
-  meshes.cylinder(wx, y + 3.05, wz, .13, .19, 6.1, 9, '#805d48')
-  meshes.box(wx + 1.10, y + 5.89, wz, 2.35, .51, .55, '#dc774f').rotation.z = -.19
-  for (const dx of [.53, 1.56]) meshes.box(wx + dx, y + 6.05 - dx * .19, wz, .29, .53, .57, '#f1ddae').rotation.z = -.19
+  meshes.cylinder(wx, y + 3.05, wz, 0.13, 0.19, 6.1, 9, '#805d48')
+  meshes.box(wx + 1.10, y + 5.89, wz, 2.35, 0.51, 0.55, '#dc774f').rotation.z = -0.19
+  for (const dx of [0.53, 1.56]) meshes.box(wx + dx, y + 6.05 - dx * 0.19, wz, 0.29, 0.53, 0.57, '#f1ddae').rotation.z = -0.19
 }
 
-export function clearAirfield(x: number, z: number) { return airfieldDistance(x, z) < 2 }
+export function clearAirfield(x: number, z: number) {
+  return airfieldDistance(x, z) < 2
+}
 
 export function createLandscape(meshes: MeshFactory, solids: ScenerySolids) {
   createTerrain(meshes)
   const banks = [[-243, -268], [-239, -270], [-235, -276], [-231, -276], [-225, -283], [-218, -286]]
     .map(([x, z]) => ({ x, z }))
-  dressStrand(meshes, 'Sandspit', banks, 781, p => groundHeight(p.x, p.z), (_p, y) => y > -.55 && y < .55)
+  dressStrand(meshes, 'Sandspit', banks, 781, (p) => groundHeight(p.x, p.z), (_p, y) => y > -0.55 && y < 0.55)
   const water = createWater(meshes)
   for (const route of [...routes, ferryTrack, fishingPier]) createRoad(meshes, route, solids)
   for (const walk of discoveryWalks) {
-    createTrail(meshes, walk.name + ' footpath', walk.path, 1.25, 'gravel',
-      ({ x, z }) => surfaceHeight(x, z), meshes.paintRecipe('path-gravel'))
+    createTrail(meshes, walk.name + ' footpath', walk.path, 1.25, 'gravel', ({ x, z }) => surfaceHeight(x, z), meshes.paintRecipe('path-gravel'))
   }
   for (const walk of villageWalks) {
     if (!walk.points.length) continue
     const path = ribbonGeometry([walk.points], 1.45, 0)
-    for (let i = 0; i < path.positions.length; i += 3) path.positions[i + 1] = surfaceHeight(path.positions[i], path.positions[i + 2]) + .045
+    for (let i = 0; i < path.positions.length; i += 3) path.positions[i + 1] = surfaceHeight(path.positions[i], path.positions[i + 2]) + 0.045
     const uv = walk.points.flatMap((p) => {
       const d = Math.hypot(p.x - walk.points[0].x, p.z - walk.points[0].z)
       return [0, d / 1.45, 1, d / 1.45]

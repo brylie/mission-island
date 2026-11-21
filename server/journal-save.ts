@@ -21,10 +21,10 @@ function within(value: unknown, max: number): value is number {
 }
 
 function isNote(value: unknown, islandTime: number): value is JournalNote {
-  return isRecord(value) && within(value.t, islandTime) &&
-    (value.by === undefined || (within(value.by, spawns.length - 1) && Number.isInteger(value.by))) &&
-    (value.at === undefined || (typeof value.at === 'string' && Boolean(placeName(value.at)))) &&
-    (value.rain === undefined || within(value.rain, 1))
+  return isRecord(value) && within(value.t, islandTime)
+    && (value.by === undefined || (within(value.by, spawns.length - 1) && Number.isInteger(value.by)))
+    && (value.at === undefined || (typeof value.at === 'string' && Boolean(placeName(value.at))))
+    && (value.rain === undefined || within(value.rain, 1))
 }
 
 function isSavedJournal(value: Record<string, unknown>, islandTime: number): value is Record<string, unknown> & Journal {
@@ -33,8 +33,8 @@ function isSavedJournal(value: Record<string, unknown>, islandTime: number): val
     if (!journalEntry(id) || !isRecord(entry)) return false
     const { first, outing } = entry
     if (first === undefined && outing === undefined) return id.startsWith('place:')
-    return (first === undefined || isNote(first, islandTime)) &&
-      (outing === undefined || (isOutingId(id) && isNote(outing, islandTime)))
+    return (first === undefined || isNote(first, islandTime))
+      && (outing === undefined || (isOutingId(id) && isNote(outing, islandTime)))
   })
 }
 

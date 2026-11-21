@@ -3,9 +3,11 @@ import { routeContactHeight } from './route-contact.ts'
 import { offset, type Pose } from './world.ts'
 
 const { wheelHalfWidth, wheelRadius, wheelZ } = barrowRig
-const wheelSamples = [-wheelHalfWidth * .82, 0, wheelHalfWidth * .82].flatMap(x =>
-  [-.20, -.14, -.075, 0, .075, .14, .20].map(z => ({
-    x, z: z + wheelZ, lift: Math.sqrt(wheelRadius ** 2 - z ** 2) - wheelRadius,
+const wheelSamples = [-wheelHalfWidth * 0.82, 0, wheelHalfWidth * 0.82].flatMap((x) =>
+  [-0.20, -0.14, -0.075, 0, 0.075, 0.14, 0.20].map((z) => ({
+    x,
+    z: z + wheelZ,
+    lift: Math.sqrt(wheelRadius ** 2 - z ** 2) - wheelRadius,
   })))
 
 export function barrowWheelGround(pose: Pose) {

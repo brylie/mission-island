@@ -15,15 +15,15 @@ function fenceRun(meshes: MeshFactory, from: Point, to: Point) {
   const root = new TransformNode('Garden fence', meshes.scene)
   root.position.set(from.x, groundHeight(from), from.z)
   root.rotation.y = heading
-  for (let x = 0; x <= length + .01; x += Math.max(.5, length / Math.ceil(length))) {
-    meshes.box(x, fenceHeight / 2, 0, .11, fenceHeight, .11, timber, root)
+  for (let x = 0; x <= length + 0.01; x += Math.max(0.5, length / Math.ceil(length))) {
+    meshes.box(x, fenceHeight / 2, 0, 0.11, fenceHeight, 0.11, timber, root)
   }
-  for (const y of [.32, 1.18]) meshes.box(length / 2, y, .07, length, .08, .04, timber, root)
+  for (const y of [0.32, 1.18]) meshes.box(length / 2, y, 0.07, length, 0.08, 0.04, timber, root)
   // Hand-cut boards: tops vary a little so the fence reads as built, not stamped.
   // Open spacing lets the beds and path show through a fence that must stand taller than a jump.
-  for (let x = .1, i = 0; x < length; x += .21, i++) {
-    const height = 1.44 - ((i * 5) % 3) * .03
-    meshes.box(x, .06 + height / 2, .1, .075, height, .025, cap, root)
+  for (let x = 0.1, i = 0; x < length; x += 0.21, i++) {
+    const height = 1.44 - ((i * 5) % 3) * 0.03
+    meshes.box(x, 0.06 + height / 2, 0.1, 0.075, height, 0.025, cap, root)
   }
   meshes.batchModel(root)
 }
@@ -33,12 +33,12 @@ function fenceRun(meshes: MeshFactory, from: Point, to: Point) {
 function cottageBackAndSides({ box }: MeshFactory) {
   const { x, z, w, d } = wrenCottage
   const y = groundHeight(wrenCottage)
-  box(x, y + 1.2, z + d / 2 + .04, 1.1, 2.3, .13, '#4f6f62')
-  box(x + .38, y + 1.15, z + d / 2 + .12, .07, .07, .05, brass)
-  box(x, y + .09, z + d / 2 + .42, 1.4, .18, .55, '#a9a294')
+  box(x, y + 1.2, z + d / 2 + 0.04, 1.1, 2.3, 0.13, '#4f6f62')
+  box(x + 0.38, y + 1.15, z + d / 2 + 0.12, 0.07, 0.07, 0.05, brass)
+  box(x, y + 0.09, z + d / 2 + 0.42, 1.4, 0.18, 0.55, '#a9a294')
   for (const side of [-1, 1]) {
-    box(x + side * (w / 2 + .04), y + 2, z, .15, 1.03, 1.24, '#fff3d0')
-    box(x + side * (w / 2 + .12), y + 2, z, .06, .77, .96, '#4c7a83')
+    box(x + side * (w / 2 + 0.04), y + 2, z, 0.15, 1.03, 1.24, '#fff3d0')
+    box(x + side * (w / 2 + 0.12), y + 2, z, 0.06, 0.77, 0.96, '#4c7a83')
   }
 }
 
@@ -50,36 +50,35 @@ export function createGardenGate(meshes: MeshFactory) {
   cottageBackAndSides(meshes)
   createWrenGarden(meshes)
   const base = groundHeight(hingePost)
-  box(hingePost.x, base + .8, hingePost.z, .14, 1.6, .14, timber)
-  box(hingePost.x + 1.12, base + .8, hingePost.z, .14, 1.6, .14, timber)
+  box(hingePost.x, base + 0.8, hingePost.z, 0.14, 1.6, 0.14, timber)
+  box(hingePost.x + 1.12, base + 0.8, hingePost.z, 0.14, 1.6, 0.14, timber)
   const hinge = new TransformNode('Garden gate hinge', scene)
   hinge.position.set(hingePost.x, base, hingePost.z)
   const leaf = new TransformNode('Garden gate leaf', scene)
   leaf.parent = hinge
-  for (const y of [.3, 1.2]) box(gateLeaf.length / 2 + .03, y, 0, gateLeaf.length - .04, .09, .05, timber, leaf)
-  for (let x = .12; x < gateLeaf.length; x += .19) box(x, .78, .03, .075, 1.36, .025, cap, leaf)
-  const brace = box(gateLeaf.length / 2, .75, -.01, 1.08, .07, .04, timber, leaf)
-  brace.rotation.z = .74
-  for (const y of [.32, 1.2]) box(.12, y, -.04, .2, .05, .02, iron, leaf)
-  const wornPin = box(.02, 1.2, 0, .035, .1, .035, rust, hinge)
-  const newPin = cylinder(.02, 1.2, 0, .045, .045, .16, 8, brass, hinge)
+  for (const y of [0.3, 1.2]) box(gateLeaf.length / 2 + 0.03, y, 0, gateLeaf.length - 0.04, 0.09, 0.05, timber, leaf)
+  for (let x = 0.12; x < gateLeaf.length; x += 0.19) box(x, 0.78, 0.03, 0.075, 1.36, 0.025, cap, leaf)
+  const brace = box(gateLeaf.length / 2, 0.75, -0.01, 1.08, 0.07, 0.04, timber, leaf)
+  brace.rotation.z = 0.74
+  for (const y of [0.32, 1.2]) box(0.12, y, -0.04, 0.2, 0.05, 0.02, iron, leaf)
+  const wornPin = box(0.02, 1.2, 0, 0.035, 0.1, 0.035, rust, hinge)
+  const newPin = cylinder(0.02, 1.2, 0, 0.045, 0.045, 0.16, 8, brass, hinge)
   const groove = new TransformNode('Gate groove', scene)
-  for (let angle = -.05; angle <= sagAngle + .25; angle += .07) {
-    const radius = gateLeaf.length - .08
-    box(hingePost.x + Math.cos(angle) * radius, groundHeight(hingePost) + .012, hingePost.z + Math.sin(angle) * radius,
-      .16, .02, .12, soil, groove).rotation.y = -angle
+  for (let angle = -0.05; angle <= sagAngle + 0.25; angle += 0.07) {
+    const radius = gateLeaf.length - 0.08
+    box(hingePost.x + Math.cos(angle) * radius, groundHeight(hingePost) + 0.012, hingePost.z + Math.sin(angle) * radius, 0.16, 0.02, 0.12, soil, groove).rotation.y = -angle
   }
 
   const benchY = groundHeight(mendingBench)
   const bench = new TransformNode('Mending bench', scene)
   bench.position.set(mendingBench.x, benchY, mendingBench.z)
   bench.rotation.y = mendingBench.heading
-  box(0, .82, 0, 1.6, .08, .7, '#a77a52', bench)
-  for (const x of [-.7, .7]) for (const z of [-.27, .27]) box(x, .4, z, .09, .8, .09, '#7a5a3f', bench)
-  box(0, .2, 0, 1.4, .05, .55, '#7a5a3f', bench)
-  box(.35, .89, .1, .4, .06, .26, '#3f5d5a', bench)
-  const benchPin = cylinder(.35, .95, .1, .045, .045, .16, 8, brass, bench)
-  const carried = cylinder(0, 0, 0, .045, .045, .16, 8, brass)
+  box(0, 0.82, 0, 1.6, 0.08, 0.7, '#a77a52', bench)
+  for (const x of [-0.7, 0.7]) for (const z of [-0.27, 0.27]) box(x, 0.4, z, 0.09, 0.8, 0.09, '#7a5a3f', bench)
+  box(0, 0.2, 0, 1.4, 0.05, 0.55, '#7a5a3f', bench)
+  box(0.35, 0.89, 0.1, 0.4, 0.06, 0.26, '#3f5d5a', bench)
+  const benchPin = cylinder(0.35, 0.95, 0.1, 0.045, 0.045, 0.16, 8, brass, bench)
+  const carried = cylinder(0, 0, 0, 0.045, 0.045, 0.16, 8, brass)
 
   return {
     update(state: Snapshot, factor: number) {
@@ -87,7 +86,7 @@ export function createGardenGate(meshes: MeshFactory) {
       const fixed = stage === 'fitted' || stage === 'mended'
       hinge.rotation.y += (-leafAngle(state) - hinge.rotation.y) * factor
       // The worn pin lets the free end drop and scrape until a new one is fitted.
-      leaf.rotation.z += ((fixed ? 0 : -.055) - leaf.rotation.z) * factor
+      leaf.rotation.z += ((fixed ? 0 : -0.055) - leaf.rotation.z) * factor
       wornPin.setEnabled(!fixed)
       newPin.setEnabled(fixed)
       groove.setEnabled(gateMendedStage(state) !== 'settled')
@@ -95,8 +94,8 @@ export function createGardenGate(meshes: MeshFactory) {
       const holder = state.players.find((player) => player.id === state.gateRepair.pinHolder)
       carried.setEnabled(Boolean(holder))
       if (holder) {
-        const hand = offset(holder, .42, .18)
-        carried.position.set(hand.x, holder.y + .82, hand.z)
+        const hand = offset(holder, 0.42, 0.18)
+        carried.position.set(hand.x, holder.y + 0.82, hand.z)
       }
     },
   }

@@ -79,8 +79,7 @@ export function createSunShafts(scene: Scene, shadows: ShadowGenerator) {
   let depthSampler: ThinTexture
   pass.onSizeChangedObservable.add(() => {
     const input = pass.inputTexture
-    const depth = input.depthStencilTexture ?? input.createDepthStencilTexture(0, false, true,
-      input.samples, Constants.TEXTUREFORMAT_DEPTH24_STENCIL8)
+    const depth = input.depthStencilTexture ?? input.createDepthStencilTexture(0, false, true, input.samples, Constants.TEXTUREFORMAT_DEPTH24_STENCIL8)
     input.resolveMSAADepth = true
     depthSampler = new ThinTexture(depth)
   })

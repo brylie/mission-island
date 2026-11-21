@@ -23,11 +23,11 @@ function buildAsh(meshes: MeshFactory) {
     for (let j = 0; j <= steps; j++) for (let i = 0; i <= steps; i++) {
       const u = 2 * i / steps - 1, v = 2 * j / steps - 1
       const point = { x: bed.x + u * bed.rx, z: bed.z + v * bed.rz }
-      const edge = Math.hypot(u, v) + .089 * Math.sin(u * 13 + v * 7 + index) * Math.sin(v * 10)
-      const dust = (.77 + .16 * Math.sin(u * 47 + v * 11) * Math.cos(v * 46)) * clamp((1 - edge) * 6) * clamp(verge(point) * 5)
-      const soot = .62 + .28 * Math.sin(u * 9 + v * 6.5) ** 2 + .09 * Math.cos(u * 51 - v * 18)
-      vertices.push(point.x, groundHeight(point) + .017, point.z)
-      colors.push(soot, soot * .98, soot, dust)
+      const edge = Math.hypot(u, v) + 0.089 * Math.sin(u * 13 + v * 7 + index) * Math.sin(v * 10)
+      const dust = (0.77 + 0.16 * Math.sin(u * 47 + v * 11) * Math.cos(v * 46)) * clamp((1 - edge) * 6) * clamp(verge(point) * 5)
+      const soot = 0.62 + 0.28 * Math.sin(u * 9 + v * 6.5) ** 2 + 0.09 * Math.cos(u * 51 - v * 18)
+      vertices.push(point.x, groundHeight(point) + 0.017, point.z)
+      colors.push(soot, soot * 0.98, soot, dust)
       if (i && j) {
         const a = start + j * (steps + 1) + i
         indices.push(a - steps - 2, a - steps - 1, a, a - steps - 2, a, a - 1)
@@ -45,11 +45,11 @@ function buildAsh(meshes: MeshFactory) {
 }
 
 function addBlade(vertices: number[], point: Point, angle: number, height: number, bend: number, width: number, lift = 0) {
-  const y = groundHeight(point) + .021 + lift
+  const y = groundHeight(point) + 0.021 + lift
   const dx = Math.cos(angle), dz = Math.sin(angle)
   const a = [point.x - dz * width, y, point.z + dx * width]
   const b = [point.x + dz * width, y, point.z - dx * width]
-  const middle = [point.x + dx * bend * .42, y + height * .66, point.z + dz * bend * .42]
+  const middle = [point.x + dx * bend * 0.42, y + height * 0.66, point.z + dz * bend * 0.42]
   const tip = [point.x + dx * bend, y + height, point.z + dz * bend]
   vertices.push(...a, ...b, ...middle, ...middle, ...b, ...tip)
 }
@@ -65,20 +65,19 @@ function buildVerge(meshes: MeshFactory, stage: 'ash' | 'shoots' | 'established'
   const blades: number[] = [], lights: number[] = [], petals: number[] = []
   for (const bed of recoveryBeds) for (let i = 0; i < 43; i++) {
     const angle = random() * Math.PI * 2, scatter = random()
-    const radius = .15 + scatter * .84
+    const radius = 0.15 + scatter * 0.84
     const point = { x: bed.x + Math.cos(angle) * radius * bed.rx, z: bed.z + Math.sin(angle) * radius * bed.rz }
-    const scale = .58 + random() * .75, sway = random() * Math.PI * 2
+    const scale = 0.58 + random() * 0.75, sway = random() * Math.PI * 2
     // First-dawn shoots are a subset of the same rooted clumps seen on later visits.
-    if (verge(point) < .29 || (stage === 'shoots' && (radius < .59 || i % 5 === 0))) continue
-    const height = (stage === 'ash' ? .04 : stage === 'shoots' ? .21 : .37) * scale
-    const spread = (stage === 'ash' ? .29 : stage === 'shoots' ? .105 : .16) * scale
+    if (verge(point) < 0.29 || (stage === 'shoots' && (radius < 0.59 || i % 5 === 0))) continue
+    const height = (stage === 'ash' ? 0.04 : stage === 'shoots' ? 0.21 : 0.37) * scale
+    const spread = (stage === 'ash' ? 0.29 : stage === 'shoots' ? 0.105 : 0.16) * scale
     for (let leaf = 0; leaf < 5; leaf++) {
-      addBlade(leaf % 3 ? blades : lights, point, sway + leaf * (.64 + scatter * .4),
-        height * (1 - .075 * leaf), spread * (1 + leaf * .08), .026 + .008 * scale)
+      addBlade(leaf % 3 ? blades : lights, point, sway + leaf * (0.64 + scatter * 0.4), height * (1 - 0.075 * leaf), spread * (1 + leaf * 0.08), 0.026 + 0.008 * scale)
     }
     if (stage === 'established' && i % 6 === 0) {
       for (let lobe = 0; lobe < 5; lobe++) {
-        addBlade(petals, point, lobe * Math.PI * .4 + sway, .034, .075, .025, height * .92)
+        addBlade(petals, point, lobe * Math.PI * 0.4 + sway, 0.034, 0.075, 0.025, height * 0.92)
       }
     }
   }
@@ -94,12 +93,11 @@ function buildVerge(meshes: MeshFactory, stage: 'ash' | 'shoots' | 'established'
 
 function buildCharredTwigs(meshes: MeshFactory) {
   const root = new TransformNode('Fallen charred twigs', meshes.scene)
-  for (const [x, z, length, heading] of [[4.77, 28.58, .67, .69], [4.38, 28.94, .31, -.48], [5.38, 29.74, .51, 1.41], [7.25, 31.23, .56, -.21]]) {
+  for (const [x, z, length, heading] of [[4.77, 28.58, 0.67, 0.69], [4.38, 28.94, 0.31, -0.48], [5.38, 29.74, 0.51, 1.41], [7.25, 31.23, 0.56, -0.21]]) {
     const y = groundHeight({ x, z })
-    const stick = meshes.box(x, y + .046, z, .087, .075, length, '#493c35', root, false)
+    const stick = meshes.box(x, y + 0.046, z, 0.087, 0.075, length, '#493c35', root, false)
     stick.rotation.y = heading
-    const freshEnd = meshes.box(x + Math.sin(heading) * length / 2, y + .044, z + Math.cos(heading) * length / 2,
-      .077, .057, .023, '#b48c63', root, false)
+    const freshEnd = meshes.box(x + Math.sin(heading) * length / 2, y + 0.044, z + Math.cos(heading) * length / 2, 0.077, 0.057, 0.023, '#b48c63', root, false)
     freshEnd.rotation.y = heading
   }
   return root
@@ -107,8 +105,8 @@ function buildCharredTwigs(meshes: MeshFactory) {
 
 const soil = {
   ash: { tint: Color3.FromHexString('#625b58'), opacity: 1 },
-  shoots: { tint: Color3.FromHexString('#807461'), opacity: .8 },
-  established: { tint: Color3.FromHexString('#8a7f5a'), opacity: .35 },
+  shoots: { tint: Color3.FromHexString('#807461'), opacity: 0.8 },
+  established: { tint: Color3.FromHexString('#8a7f5a'), opacity: 0.35 },
 }
 
 function createLookoutRecovery(meshes: MeshFactory) {

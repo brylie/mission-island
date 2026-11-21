@@ -1,5 +1,13 @@
 import {
-  appearancePartKeys, appearanceParts, defaultAppearance, isEveryday, outfitRequirement, readAppearance, skinTones, uniforms, wearsSwimsuit,
+  appearancePartKeys,
+  appearanceParts,
+  defaultAppearance,
+  isEveryday,
+  outfitRequirement,
+  readAppearance,
+  skinTones,
+  uniforms,
+  wearsSwimsuit,
 } from './crew-appearance'
 import type { CrewAppearance, Uniform } from './crew-appearance'
 import { clothingCatalog, clothingIds, ownsClothing, shopItemFor, type ClothingId } from './clothing-catalog'
@@ -49,7 +57,7 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
     row.append(caption, select)
     control(dialog, key === 'shirt' || key === 'hat' || key === 'trousers' || key === 'shoes' ? '#everyday-pieces' : '#personal-parts').append(row)
   }
-  const pieceSelects = pieceSlots.map(slot => ({ slot, field: control<HTMLSelectElement>(dialog, `[name=${slot}]`) }))
+  const pieceSelects = pieceSlots.map((slot) => ({ slot, field: control<HTMLSelectElement>(dialog, `[name=${slot}]`) }))
   const trousers = control<HTMLSelectElement>(dialog, '[name=trousers]')
 
   function refreshAccess() {
@@ -64,21 +72,24 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
         if (item) option.textContent = clothingCatalog[item].name + (owned.includes(item) ? '' : ' · Locked')
       }
     }
-    const item = isEveryday(draft.uniform) ? pieceSelects
-      .filter(({ field }) => !field.disabled)
-      .map(({ slot }) => shopItemFor(slot, draft[slot]))
-      .find(id => id && !owned.includes(id)) : undefined
-    const reason = outfitRequirement(draft.uniform, mission, owned.includes('angler'), qualifiedFarmer) ??
-      (item ? `Buy the ${clothingCatalog[item].name} at the Seabrook clothing counter.` : undefined)
-    const note = wearsSwimsuit(draft) ? 'The swimsuit covers your top and bottoms.' :
-      isEveryday(draft.uniform) ? '' : 'Your everyday clothes are saved for when you change back.'
+    const item = isEveryday(draft.uniform)
+      ? pieceSelects
+          .filter(({ field }) => !field.disabled)
+          .map(({ slot }) => shopItemFor(slot, draft[slot]))
+          .find((id) => id && !owned.includes(id))
+      : undefined
+    const reason = outfitRequirement(draft.uniform, mission, owned.includes('angler'), qualifiedFarmer)
+      ?? (item ? `Buy the ${clothingCatalog[item].name} at the Seabrook clothing counter.` : undefined)
+    const note = wearsSwimsuit(draft)
+      ? 'The swimsuit covers your top and bottoms.'
+      : isEveryday(draft.uniform) ? '' : 'Your everyday clothes are saved for when you change back.'
     availability.textContent = reason ?? note
     applyButton.disabled = Boolean(reason)
   }
 
   function refreshDraft() {
     // Disabled everyday selects still hold the pieces to restore after wearing a work outfit.
-    draft = readAppearance(Object.fromEntries(Array.from(form.querySelectorAll('select'), select => [select.name, select.value])))
+    draft = readAppearance(Object.fromEntries(Array.from(form.querySelectorAll('select'), (select) => [select.name, select.value])))
     everyday.disabled = !isEveryday(draft.uniform)
     trousers.disabled = wearsSwimsuit(draft)
     refreshAccess()
@@ -86,7 +97,7 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
   }
 
   function update(state: Snapshot, player: Player) {
-    const next = clothingIds.filter(id => ownsClothing(player, id))
+    const next = clothingIds.filter((id) => ownsClothing(player, id))
     const farmAccess = farmingQualified(state.farmWork.progress.stage)
     if (state.mission === mission && next.join() === owned.join() && farmAccess === qualifiedFarmer) return
     mission = state.mission
@@ -108,14 +119,15 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
     try {
       preview = createWardrobePreview(canvas, player.appearanceBase ?? player.id)
       preview.show(draft)
-    } catch {
+    }
+    catch {
       previewStatus.hidden = false
       front.disabled = back.disabled = true
     }
   }
 
   form.addEventListener('change', refreshDraft)
-  form.addEventListener('submit', event => {
+  form.addEventListener('submit', (event) => {
     event.preventDefault()
     if (applyButton.disabled) return
     apply(draft)
@@ -132,7 +144,7 @@ export function createWardrobe(dialog: HTMLDialogElement, apply: (appearance: Cr
 }
 
 const starterThumbnails = {
-  angler: { src: anglerThumb, alt: 'Shirt, trousers, cap, and shoes displayed separately' },
+  'angler': { src: anglerThumb, alt: 'Shirt, trousers, cap, and shoes displayed separately' },
   'coral-shirt': { src: coralThumb, alt: 'Coral shirt with pale collar and cuffs' },
   'lagoon-swimsuit': { src: swimsuitThumb, alt: 'Teal one-piece swimsuit with short legs' },
 }
@@ -154,7 +166,7 @@ export function createClothingCounter(dialog: HTMLDialogElement, buy: (id: Cloth
   const stock = control(dialog, '#counter-stock')
   const category = control<HTMLSelectElement>(dialog, '#counter-category')
   const pending = new Set<ClothingId>()
-  const rows = clothingIds.map(id => {
+  const rows = clothingIds.map((id) => {
     const { name, price, slot } = clothingCatalog[id]
     const { src, alt } = thumbnail(id)
     const card = document.createElement('li')
@@ -211,10 +223,10 @@ export function createClothingCounter(dialog: HTMLDialogElement, buy: (id: Cloth
     if (result !== 'bought') pending.delete(id)
     const { name, price } = clothingCatalog[id]
     const results: Record<ClothingPurchaseResult, string> = {
-      bought: `${name} was added to your wardrobe.`,
+      'bought': `${name} was added to your wardrobe.`,
       'already-owned': `${name} is already in your wardrobe.`,
       'insufficient-funds': `The crew bank needs ${coinAmount(price)} to buy ${name}.`,
-      away: 'Step up to the clothing counter with your hands free.',
+      'away': 'Step up to the clothing counter with your hands free.',
     }
     note.textContent = results[result]
   } }

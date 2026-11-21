@@ -6,10 +6,13 @@ import { bakeSurfaceMaps, components, normalMap } from './surface-maps.ts'
 import { surfaceRepeatMeters, type SurfaceRecipe, type SurfaceSettings } from './surface-recipes.ts'
 
 export const noiseTypes = {
-  surface: 'Surface presets', value: 'Value noise', fractal: 'Fractal noise',
-  cellular: 'Cellular chips', grain: 'Fine grain', ripple: 'Ripples',
+  surface: 'Surface presets',
+  value: 'Value noise',
+  fractal: 'Fractal noise',
+  cellular: 'Cellular chips',
+  grain: 'Fine grain',
+  ripple: 'Ripples',
 } as const
-
 
 const size = 128
 
@@ -32,7 +35,8 @@ function cellular(u: number, v: number, cells: number) {
         nearest = d
         tone = hash(ix, iy, 18)
         face = (dx * 1.8 + dy * 0.95 > 0.04) ? 1 : 0
-      } else if (d < next) next = d
+      }
+      else if (d < next) next = d
     }
   }
   const gap = clamp((Math.sqrt(next) - Math.sqrt(nearest) - 0.04) * 3.4)
@@ -65,7 +69,7 @@ export type MetalType = keyof typeof metalTypes
 
 interface TextureDetails {
   striations?: number
-  metal?: { type: MetalType; color?: string; oxidation: number; abrasion: number }
+  metal?: { type: MetalType, color?: string, oxidation: number, abrasion: number }
 }
 
 function pattern(name: string, u: number, v: number, striations: number) {
@@ -112,7 +116,8 @@ export function createTextureSample(scene: Scene, name: string, scale = 1, contr
         for (let i = 0; i < 3; i++) color[index + i] = blend(tint[i] * brightness, oxide[i] * brightness, rust)
         color[index + 3] = 255
         packed.set([255, 255 * blend(0.16 + metal.abrasion * 0.51, 0.91, rust), 255 * (1 - rust), 255], index)
-      } else {
+      }
+      else {
         const gray = Math.round(brightness * 255)
         color.set([gray, gray, gray, 255], index)
       }

@@ -34,7 +34,8 @@ export function putDownOption(state: Snapshot, player: Player, item: Item): Inte
   if (item.kind === 'toolbox') return { ...option, label: 'Set toolbox down' }
   if (item.kind === 'extinguisher') {
     return state.mission === 'fire' && distance(player, lookout) < 5
-      ? { ...option, key: 'Left click', label: 'Hold to spray' } : { ...option, label: 'Set extinguisher down' }
+      ? { ...option, key: 'Left click', label: 'Hold to spray' }
+      : { ...option, label: 'Set extinguisher down' }
   }
   if (ferryDrop(state, player, item)) return { ...option, label: 'Stack timber for the ferry repair' }
   const drop = deliveryDrop(state)
@@ -47,7 +48,8 @@ export function putDownOption(state: Snapshot, player: Player, item: Item): Inte
 
 // Crates are cargo while a delivery is open, a resident has asked the crew to move one, or ferry timber is on the way.
 function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 'residents' | 'ferryRepair'>, item: Item, player: Player, cargoWanted: boolean) {
-  const eligible = item.kind === 'crate' ? deliveryDrop(state) !== undefined || cargoWanted || state.ferryRepair.haul > 0
+  const eligible = item.kind === 'crate'
+    ? deliveryDrop(state) !== undefined || cargoWanted || state.ferryRepair.haul > 0
     : item.kind === 'toolbox' ? toolboxPickable(state, item) : state.mission === 'fire'
   return eligible && !item.delivered && item.holder === null && distance(item, player) < 2.7 && Math.abs(item.y - player.y) < 2.1
 }
@@ -59,7 +61,6 @@ export function pickupOptions(state: Snapshot, player: Player): InteractionOptio
     .map((item) => {
       const name = item.kind === 'toolbox' ? 'Toolbox' : item.kind === 'crate' ? 'Crate' : 'Extinguisher'
       const label = item.onBed ? 'Unload crate' : item.kind === 'toolbox' ? 'Pick up the toolbox' : `Pick up ${name.toLowerCase()}`
-      return { action: 'pick-up' as const, subject: item.id, key: 'E', label, name,
-        at: { x: item.x, y: item.y + (item.kind === 'crate' ? 0 : .25), z: item.z }, radius: item.kind === 'crate' ? .6 : .4 }
+      return { action: 'pick-up' as const, subject: item.id, key: 'E', label, name, at: { x: item.x, y: item.y + (item.kind === 'crate' ? 0 : 0.25), z: item.z }, radius: item.kind === 'crate' ? 0.6 : 0.4 }
     })
 }

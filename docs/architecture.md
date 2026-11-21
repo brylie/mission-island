@@ -72,6 +72,6 @@ To add a villager, write a definition file and append it to the registry. A visi
 
 ## Static checks
 
-`npm run quality` runs the architecture rules through ESLint, followed by unused-code checks, coverage, type checking and the build. First-party TypeScript modules have a 350-line file limit, a 140-line function limit, and a cyclomatic complexity ceiling of 24. Line limits exclude comments and blank lines. Test files have the same file limit. The [ESLint config](../eslint.config.mjs) records per-file ceilings for existing hotspots. Lower an exception or remove it when the relevant code is split.
+`npm run quality` runs lint, type checking, tests, unused-code checks, and the build. CI runs coverage separately. First-party TypeScript modules have a 350-line file limit, a 140-line function limit, and a cyclomatic complexity ceiling of 24. Line limits exclude comments and blank lines. Test files have the same file limit. The [ESLint config](../eslint.config.mjs) records per-file ceilings for existing hotspots, including modules that grew through formatting. Lower an exception or remove it when the relevant code is split.
 
 Import checks keep browser modules out of `server/`. Host simulation, shared simulation and world data also have checks against imports from the rendering and transport layers. Type-only imports are allowed for host command and save contracts. These checks cover direct imports. Review how dependencies flow through a feature when moving code across layers.

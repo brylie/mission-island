@@ -41,9 +41,9 @@ export function bakeSurfaceMaps(recipe: SurfaceRecipe, settings: SurfaceSettings
         const intensity = clamp(glow)
         emissive.set([emission[0] * intensity, emission[1] * intensity, emission[2] * intensity, 255], i * 4)
       }
-      const roughness = recipe.roughness + (metal ? .55 : .14) * a + (1 - height) * .09
+      const roughness = recipe.roughness + (metal ? 0.55 : 0.14) * a + (1 - height) * 0.09
       const oxide = recipe.id === 'copper' || recipe.id === 'brass' ? a : 0
-      finish.set([255, 255 * clamp(roughness), metal ? 255 * (1 - oxide * .88) : 0, 255], 4 * i)
+      finish.set([255, 255 * clamp(roughness), metal ? 255 * (1 - oxide * 0.88) : 0, 255], 4 * i)
     }
   }
   const relief = recipe.relief * (settings.relief ?? 1) * (size / 128)

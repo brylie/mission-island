@@ -12,11 +12,15 @@ function surfaceRibbon(points: readonly Point[], width: number, height: number, 
     vertices.push({ ...point, y: positions[i + 1] + (followsTerrain ? groundHeight(point) : 0) })
   }
   return Array.from({ length: indices.length / 3 }, (_, i) => {
-    const [a, b, c] = indices.slice(i * 3, i * 3 + 3).map(index => vertices[index])
+    const [a, b, c] = indices.slice(i * 3, i * 3 + 3).map((index) => vertices[index])
     return {
-      a, b, c,
-      minX: Math.min(a.x, b.x, c.x), maxX: Math.max(a.x, b.x, c.x),
-      minZ: Math.min(a.z, b.z, c.z), maxZ: Math.max(a.z, b.z, c.z),
+      a,
+      b,
+      c,
+      minX: Math.min(a.x, b.x, c.x),
+      maxX: Math.max(a.x, b.x, c.x),
+      minZ: Math.min(a.z, b.z, c.z),
+      maxZ: Math.max(a.z, b.z, c.z),
       area: (b.z - c.z) * (a.x - c.x) + (c.x - b.x) * (a.z - c.z),
     }
   })
@@ -24,8 +28,7 @@ function surfaceRibbon(points: readonly Point[], width: number, height: number, 
 
 // Match the visible paving triangles, including squared ends and the overlaps at the village junction.
 const paving = [
-  ...roads.flatMap((path) => [...surfaceRibbon(path, roadSurface.width, roadSurface.asphalt),
-    ...surfaceRibbon(path, roadSurface.width + roadSurface.shoulderWidth, roadSurface.shoulder)]),
+  ...roads.flatMap((path) => [...surfaceRibbon(path, roadSurface.width, roadSurface.asphalt), ...surfaceRibbon(path, roadSurface.width + roadSurface.shoulderWidth, roadSurface.shoulder)]),
   ...walkways.flatMap(({ points, width }) => surfaceRibbon(points, width, sidewalkLift)),
   ...surfaceRibbon(beachTrail.points, beachTrail.width, trailLift, true),
 ]

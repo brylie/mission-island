@@ -22,8 +22,7 @@ test('the materials checkpoint resets a saved repair and the crew’s carried ma
   save.world.gateRepair = { stage: 'mended', pinHolder: null, acceptedAt: 10, mendedAt: 20 }
   save.world.residents.wren = { trust: 2, kept: [gateFavor, repairSupplyFavor.id], active: null }
   save.world.materialsWork = { checkout: 'qualified', request: { material: 'stone', delivered: 2 }, readyAt: { timber: 161, stone: 162 } }
-  save.crew = tokens.slice(0, 2).map((token, index) => ({ token, reserved: true,
-    player: player(index, undefined, { materials: { timber: 1, stone: 2 } }) }))
+  save.crew = tokens.slice(0, 2).map((token, index) => ({ token, reserved: true, player: player(index, undefined, { materials: { timber: 1, stone: 2 } }) }))
 
   const game = createGame({ save, playtest: { checkpoint: 'materials-checkout', seats: 2, revision: 1 } })
   for (const token of tokens.slice(0, 2)) assert.equal(game.join(token, () => {}).type, 'joined')
@@ -43,7 +42,7 @@ for (const { id: checkpoint } of scenarioCatalog) {
   for (const seats of [1, 2]) {
     test(`live ${checkpoint} with ${seats} seat(s)`, () => {
       const game = createGame({ playtest: { checkpoint, seats, revision: 1 } })
-      const join = index => game.join(tokens[index], () => {})
+      const join = (index) => game.join(tokens[index], () => {})
       const a = join(0)
       let b
       if (seats === 2) {
@@ -74,23 +73,27 @@ for (const { id: checkpoint } of scenarioCatalog) {
         a.disconnect()
         assert.equal(join(0).id, a.id)
         assert.equal(game.tick().gateRepair.stage, 'mended')
-      } else if (checkpoint === 'wren-morning') {
+      }
+      else if (checkpoint === 'wren-morning') {
         assert.equal(gateMendedStage(state), 'settled')
         assert.ok(state.weather.hour < 7)
         assert.equal(state.crewCoins, 5)
         assert.equal(state.residents.wren.trust, 1)
-      } else if (checkpoint === 'wren-swell') {
+      }
+      else if (checkpoint === 'wren-swell') {
         assert.equal(state.residents.wren.active, 'wren-swell')
         for (const player of state.players) assert.equal(interactions(state, player)[0]?.action, 'check-swing')
         a.dispatch({ type: 'interact', choice: { action: 'check-swing' } })
         assert.equal(game.tick().residents.wren.checked, 'fault')
         assert.equal(interactions(state, state.players[0])[0]?.action, 'plane', 'the toolbox is already at the gate')
-      } else if (checkpoint === 'wren-discover') {
+      }
+      else if (checkpoint === 'wren-discover') {
         assert.equal(state.gateRepair.stage, 'sagging')
         assert.ok(onBench(toolboxItem(state)))
-      } else if (checkpoint === 'dock-fishing') {
+      }
+      else if (checkpoint === 'dock-fishing') {
         for (const angler of [a, b].filter(Boolean)) {
-          const player = state.players.find(p => p.id === angler.id)
+          const player = state.players.find((p) => p.id === angler.id)
           assert.deepEqual(player.inventory, ['fishing-rod'])
           assert.equal(player.equipped, 'fishing-rod')
           angler.dispatch({ type: 'primary', phase: 'start' })
@@ -98,7 +101,8 @@ for (const { id: checkpoint } of scenarioCatalog) {
           angler.dispatch({ type: 'primary', phase: 'release', aim: player.heading })
           assert.ok(player.casting)
         }
-      } else if (checkpoint === 'ridge-checkout') {
+      }
+      else if (checkpoint === 'ridge-checkout') {
         assert.equal(state.aviation.qualified, false)
         if (b) {
           b.dispatch({ type: 'interact' })
@@ -107,12 +111,14 @@ for (const { id: checkpoint } of scenarioCatalog) {
         a.dispatch({ type: 'interact' })
         assert.equal(game.tick().aviation.flight?.pilotId, a.id)
         assert.equal(game.tick().aviation.flight?.outing, 'checkout')
-      } else if (checkpoint === 'ridge-soaring') {
+      }
+      else if (checkpoint === 'ridge-soaring') {
         assert.equal(state.weather.rain, 0)
         assert.ok(state.weather.hour > 10 && state.weather.hour < 11)
         a.dispatch({ type: 'interact' })
         assert.equal(game.tick().aviation.flight?.outing, 'free')
-      } else if (checkpoint === 'village-favors') {
+      }
+      else if (checkpoint === 'village-favors') {
         for (const player of state.players) {
           assert.ok(interactions(state, player).some(({ action, subject }) => action === 'accept-favor' && subject === 3), 'Bram asks')
           assert.deepEqual(player.goods, { fish: 2, carrots: 2 })
@@ -120,7 +126,8 @@ for (const { id: checkpoint } of scenarioCatalog) {
         a.dispatch({ type: 'interact', choice: { action: 'accept-favor', subject: 3 } })
         assert.equal(game.tick().residents.bram.active, 'bram-staging')
         assert.ok(state.items.some(({ kind, delivered }) => kind === 'crate' && !delivered), 'a crate waits in the yard')
-      } else if (checkpoint === 'harbor-delivery') {
+      }
+      else if (checkpoint === 'harbor-delivery') {
         assert.equal(state.mission, 'delivery')
         assert.match(actionHint(state, state.players[0])[1], /crate/i)
       }

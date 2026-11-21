@@ -17,8 +17,7 @@ const dapple: Builder = (meshes, origin, studio) => {
     vec3 color = mix(vec3(.11,.24,.18),vec3(.97,.87,.52),fleck);
     ink = vec4(color, border * (1. - rain * .6) * response * mix(.38,.53,fleck));
   ` })
-  grid(meshes, effect, 'Dapple on the forest floor', 10, 8, 28,
-    (x, z) => studio ? .025 : groundHeight({ x: origin.x + x, z: origin.z + z }) - origin.y + .04)
+  grid(meshes, effect, 'Dapple on the forest floor', 10, 8, 28, (x, z) => studio ? 0.025 : groundHeight({ x: origin.x + x, z: origin.z + z }) - origin.y + 0.04)
   return effect
 }
 
@@ -37,19 +36,19 @@ const reeds: Builder = (meshes, origin, studio) => {
   const vertices: number[] = [], uvs: number[] = [], indices: number[] = []
   const random = seededRandom(19335)
   for (let i = 0; i < 32; i++) {
-    const x = (random() - .5) * 2.6, z = (random() - .5) * 1.7
+    const x = (random() - 0.5) * 2.6, z = (random() - 0.5) * 1.7
     const base = studio ? 0 : groundHeight({ x: origin.x + x, z: origin.z + z }) - origin.y
     const angle = random() * Math.PI * 2
-    const leaf = .56 + random() * .97
-    const width = .044 + random() * .068
+    const leaf = 0.56 + random() * 0.97
+    const width = 0.044 + random() * 0.068
     const dx = Math.cos(angle), dz = Math.sin(angle)
     const rootIndex = vertices.length / 3
     for (let j = 0; j <= 5; j++) {
       const v = j / 5
-      const spread = width * (.25 + Math.sin(v * Math.PI) * .81) * (1 - v * .92)
-      const bend = v * v * leaf * .45
+      const spread = width * (0.25 + Math.sin(v * Math.PI) * 0.81) * (1 - v * 0.92)
+      const bend = v * v * leaf * 0.45
       for (const side of [-1, 1]) {
-        vertices.push(x + dz * bend + dx * spread * side, base + leaf * v - bend * .3, z - dx * bend + dz * spread * side)
+        vertices.push(x + dz * bend + dx * spread * side, base + leaf * v - bend * 0.3, z - dx * bend + dz * spread * side)
         uvs.push((side + 1) / 2, v)
       }
       if (j) {
@@ -78,8 +77,8 @@ const lichen: Builder = (meshes, origin) => {
     ink = vec4(diffuseLight(color,n)+gloss,1.);
   ` })
   for (const [x, z, size] of ridgeLichenRocks) {
-    const rock = meshes.sphere(x, size * .23, z, size, size * .74, size * .91, effect.material, effect.root, true, 8)
-    rock.rotation.y = x * .62
+    const rock = meshes.sphere(x, size * 0.23, z, size, size * 0.74, size * 0.91, effect.material, effect.root, true, 8)
+    rock.rotation.y = x * 0.62
   }
   return effect
 }
@@ -100,23 +99,20 @@ const flowers: Builder = (meshes, origin, studio) => {
   const vertices: number[] = [], uvs: number[] = [], indices: number[] = []
   const random = seededRandom(8765)
   for (let i = 0; i < 15; i++) {
-    const x = (random() - .5) * 3.5, z = (random() - .5) * 2.4
-    const height = .26 + random() * .42
+    const x = (random() - 0.5) * 3.5, z = (random() - 0.5) * 2.4
+    const height = 0.26 + random() * 0.42
     const base = studio ? 0 : groundHeight({ x: origin.x + x, z: origin.z + z }) - origin.y
     const y = base + height
-    meshes.cylinder(x, base + height / 2, z, .018, .034, height, 5, '#578044', effect.root, false)
-    meshes.sphere(x, y, z, .112, .063, .112, '#c98235', effect.root, false, 6)
+    meshes.cylinder(x, base + height / 2, z, 0.018, 0.034, height, 5, '#578044', effect.root, false)
+    meshes.sphere(x, y, z, 0.112, 0.063, 0.112, '#c98235', effect.root, false, 6)
     for (let j = 0; j < 6; j++) {
-      const direction = (j + random()*.14) / 6
+      const direction = (j + random() * 0.14) / 6
       const a = direction * Math.PI * 2
       const dx = Math.cos(a), dz = Math.sin(a)
       const b = vertices.length / 3
-      vertices.push(x, y, z,
-        x+dx*.125+dz*.062, y+.031, z+dz*.125-dx*.062,
-        x+dx*.125-dz*.062, y+.031, z+dz*.125+dx*.062,
-        x+dx*.196, y+.053, z+dz*.196)
-      uvs.push(0,direction,.63,direction,.63,direction,1,direction)
-      indices.push(b,b+1,b+2,b+1,b+3,b+2)
+      vertices.push(x, y, z, x + dx * 0.125 + dz * 0.062, y + 0.031, z + dz * 0.125 - dx * 0.062, x + dx * 0.125 - dz * 0.062, y + 0.031, z + dz * 0.125 + dx * 0.062, x + dx * 0.196, y + 0.053, z + dz * 0.196)
+      uvs.push(0, direction, 0.63, direction, 0.63, direction, 1, direction)
+      indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2)
     }
   }
   meshes.surface('Folding petals', vertices, indices, effect.material, effect.root, uvs)
@@ -133,7 +129,7 @@ function makePrint(meshes: MeshFactory, origin: Place) {
     vec3 sand = mix(vec3(.26,.17,.10),vec3(.53,.39,.22),detail);
     ink = vec4(sand,(toe + heel) * tread * decay * response * .85);
   ` })
-  grid(meshes, print, 'Heel and toe depressions', .31, .48)
+  grid(meshes, print, 'Heel and toe depressions', 0.31, 0.48)
   print.root.setEnabled(false)
   return print
 }
@@ -150,9 +146,9 @@ export function createFootprintTrail(meshes: MeshFactory, origin: Place, studio:
 
   function stamp(at: Pose, y: number, time: number) {
     const entry = stamps[next]
-    const side = next % 2 ? .117 : -.117
-    entry.print.root.position.set(at.x + Math.cos(at.heading)*side, y, at.z - Math.sin(at.heading)*side)
-    entry.print.root.rotation.y = at.heading + side * .59
+    const side = next % 2 ? 0.117 : -0.117
+    entry.print.root.position.set(at.x + Math.cos(at.heading) * side, y, at.z - Math.sin(at.heading) * side)
+    entry.print.root.rotation.y = at.heading + side * 0.59
     entry.time = time
     next = (next + 1) % stamps.length
   }
@@ -164,38 +160,43 @@ export function createFootprintTrail(meshes: MeshFactory, origin: Place, studio:
       for (const stamp of stamps) stamp.time = -1000
     },
     step(at: Pose | undefined, time: number) {
-      if (!at) { previous = undefined; return }
+      if (!at) {
+        previous = undefined
+        return
+      }
       const gap = previous ? Math.hypot(previous.x - at.x, previous.z - at.z) : 0
       if (!previous || gap > 3) previous = at
-      if (gap < .59 || gap > 3) return
-      stamp(at, groundHeight(at) + .028, time)
+      if (gap < 0.59 || gap > 3) return
+      stamp(at, groundHeight(at) + 0.028, time)
       previous = at
     },
     pose(frame: EffectFrame, response: number, demo = Number(studio)) {
       if (demo) {
         next = 0
         for (let i = 0; i < 9; i++) {
-          const across = Math.sin(i*.37) * .41 - .24
-          const along = i*.47 - 1.88
-          const angle = studio ? 0 : .70
-          const x = origin.x + across*Math.cos(angle) + along*Math.sin(angle)
-          const z = origin.z - across*Math.sin(angle) + along*Math.cos(angle)
-          const age = ((frame.time + i*.48) % 8) * .8
-          stamp({ x, z, heading: angle + Math.cos(i*.37)*.30 },
-            (studio ? origin.y : groundHeight({ x, z })) + .027, frame.time - age)
+          const across = Math.sin(i * 0.37) * 0.41 - 0.24
+          const along = i * 0.47 - 1.88
+          const angle = studio ? 0 : 0.70
+          const x = origin.x + across * Math.cos(angle) + along * Math.sin(angle)
+          const z = origin.z - across * Math.sin(angle) + along * Math.cos(angle)
+          const age = ((frame.time + i * 0.48) % 8) * 0.8
+          stamp({ x, z, heading: angle + Math.cos(i * 0.37) * 0.30 }, (studio ? origin.y : groundHeight({ x, z })) + 0.027, frame.time - age)
         }
       }
-      const life = (1.1 + response * 11.4) * (1 - frame.weather.rain * .72)
+      const life = (1.1 + response * 11.4) * (1 - frame.weather.rain * 0.72)
       for (const { print, time } of stamps) {
         const age = frame.time - time
         print.root.setEnabled(age >= 0 && age < life)
-        if (print.root.isEnabled()) print.pose(frame, .44 + response * .56, age / life)
+        if (print.root.isEnabled()) print.pose(frame, 0.44 + response * 0.56, age / life)
       }
     },
   }
 }
 
 export const vegetationBuilders = {
-  'canopy-dapple': dapple, 'reed-transmission': reeds, 'sand-footprints': createFootprintTrail,
-  'ridge-lichen': lichen, 'closing-flowers': flowers,
+  'canopy-dapple': dapple,
+  'reed-transmission': reeds,
+  'sand-footprints': createFootprintTrail,
+  'ridge-lichen': lichen,
+  'closing-flowers': flowers,
 }

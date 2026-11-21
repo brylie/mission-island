@@ -38,7 +38,9 @@ export function createWildflowers(meshes: MeshFactory) {
     }
   }
   for (const [name, vertices, color] of [
-    ['Wildflower stems', stems, '#527f57'], ['Wildflower petals', blooms, '#f1dda6'], ['Wildflower centers', centers, '#e3a348'],
+    ['Wildflower stems', stems, '#527f57'],
+    ['Wildflower petals', blooms, '#f1dda6'],
+    ['Wildflower centers', centers, '#e3a348'],
   ] as const) {
     const paint = meshes.paint(color)
     paint.backFaceCulling = false
@@ -49,30 +51,30 @@ export function createWildflowers(meshes: MeshFactory) {
 export function createUnderstory(meshes: MeshFactory) {
   const ferns: Point[] = []
   for (const habitat of [
-    { name: 'Juniper fern fans', x: grove.x + 2, z: grove.z + 1, radius: 12, height: .53, bend: .5, color: '#72925d', seed: 1632 },
-    { name: 'Mirror Pool rushes', x: pool.x, z: pool.z, radius: 16, height: 1.25, bend: .17, color: '#7b9362', seed: 2833 },
-    { name: 'Driftwood marram', x: 37, z: -32, radius: 4.4, height: .45, bend: .24, color: '#a3a677', seed: 3301 },
+    { name: 'Juniper fern fans', x: grove.x + 2, z: grove.z + 1, radius: 12, height: 0.53, bend: 0.5, color: '#72925d', seed: 1632 },
+    { name: 'Mirror Pool rushes', x: pool.x, z: pool.z, radius: 16, height: 1.25, bend: 0.17, color: '#7b9362', seed: 2833 },
+    { name: 'Driftwood marram', x: 37, z: -32, radius: 4.4, height: 0.45, bend: 0.24, color: '#a3a677', seed: 3301 },
   ]) {
     const random = seededRandom(habitat.seed)
     const positions: number[] = []
     for (let i = 0; i < 105; i++) {
       const angle = random() * Math.PI * 2
-      const radius = habitat.radius * (.68 + random() * .5)
+      const radius = habitat.radius * (0.68 + random() * 0.5)
       const point = { x: habitat.x + radius * Math.cos(angle), z: habitat.z + radius * Math.sin(angle) }
-      if (onBeachTowel(point) || waterDepth(point) > .04 || distanceToRoads(point) < 4.3 ||
-        footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + .68)) continue
+      if (onBeachTowel(point) || waterDepth(point) > 0.04 || distanceToRoads(point) < 4.3
+        || footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + 0.68)) continue
       if (habitat.seed === 1632) ferns.push(point)
-      const y = groundHeight(point) - .025, scale = .66 + random() * .82
+      const y = groundHeight(point) - 0.025, scale = 0.66 + random() * 0.82
       for (let leaf = 0; leaf < 5; leaf++) {
-        const theta = angle + leaf * 2.34 + random() * .26
-        const height = habitat.height * scale * (.7 + random() * .4)
-        const bend = habitat.bend * scale * (.6 + random() * .6)
+        const theta = angle + leaf * 2.34 + random() * 0.26
+        const height = habitat.height * scale * (0.7 + random() * 0.4)
+        const bend = habitat.bend * scale * (0.6 + random() * 0.6)
         const x = Math.cos(theta) * bend, z = Math.sin(theta) * bend
-        const wide = .03 + bend * .1
+        const wide = 0.03 + bend * 0.1
         const wx = Math.sin(theta) * wide, wz = -Math.cos(theta) * wide
-        const root = [point.x + x * .07, y, point.z + z * .07]
-        const left = [point.x + x * .42 - wx, y + height * .63, point.z + z * .42 - wz]
-        const right = [point.x + x * .42 + wx, y + height * .63, point.z + z * .42 + wz]
+        const root = [point.x + x * 0.07, y, point.z + z * 0.07]
+        const left = [point.x + x * 0.42 - wx, y + height * 0.63, point.z + z * 0.42 - wz]
+        const right = [point.x + x * 0.42 + wx, y + height * 0.63, point.z + z * 0.42 + wz]
         const tip = [point.x + x, y + height, point.z + z]
         positions.push(...root, ...left, ...right, ...left, ...tip, ...right)
       }
@@ -91,12 +93,12 @@ export function createStarterWildlife(meshes: MeshFactory) {
     const length = Math.hypot(off.x, off.z)
     return {
       swim(time: number) {
-        const phase = time * .18 + angle
-        return coastPoint(angle + .115 * Math.sin(phase), 1.042 + .007 * Math.cos(phase))
+        const phase = time * 0.18 + angle
+        return coastPoint(angle + 0.115 * Math.sin(phase), 1.042 + 0.007 * Math.cos(phase))
       },
       deep: { x: off.x / length, z: off.z / length },
       level: waterLevel,
-      isWater: (point) => waterDepth(point) > .36,
+      isWater: (point) => waterDepth(point) > 0.36,
     }
   }))
   const tree = islandTrees.find(({ variant, x, z }) => variant % 3 === 0 && x > -14 && x < -5 && z > 13)

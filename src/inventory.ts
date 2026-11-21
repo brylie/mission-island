@@ -3,6 +3,6 @@ export type InventoryItem = typeof starterTools[number]
 
 export const toolNames: Record<InventoryItem, string> = {
   'fishing-rod': 'Fishing rod',
-  hoe: 'Hoe',
+  'hoe': 'Hoe',
   'watering-can': 'Watering can',
 }

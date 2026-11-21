@@ -21,9 +21,8 @@ export function buildSigns(meshes: MeshFactory) {
     const material = new StandardMaterial(name, meshes.scene)
     material.diffuseTexture = texture
     material.backFaceCulling = false
-    for (const side of [-1, 1]) meshes.box(side * 1.45, 1.24, 0, .18, 2.54, .17, '#987958', root)
-    meshes.box(0, 2.03, 0, 3.91, 1.03, .19, '#edcf99', root)
-    meshes.surface(`${name} face`, [-1.87, 1.58, .104, 1.87, 1.58, .104, 1.87, 2.48, .104, -1.87, 2.48, .104],
-      [0, 2, 1, 0, 3, 2], material, root, [1, 0, 0, 0, 0, 1, 1, 1])
+    for (const side of [-1, 1]) meshes.box(side * 1.45, 1.24, 0, 0.18, 2.54, 0.17, '#987958', root)
+    meshes.box(0, 2.03, 0, 3.91, 1.03, 0.19, '#edcf99', root)
+    meshes.surface(`${name} face`, [-1.87, 1.58, 0.104, 1.87, 1.58, 0.104, 1.87, 2.48, 0.104, -1.87, 2.48, 0.104], [0, 2, 1, 0, 3, 2], material, root, [1, 0, 0, 0, 0, 1, 1, 1])
   }
 }

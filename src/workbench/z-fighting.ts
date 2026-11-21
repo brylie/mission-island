@@ -5,7 +5,7 @@ import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
 const planeTolerance = 0.0005
 const minimumArea = 0.00001
 
-type Point = { x: number; y: number }
+type Point = { x: number, y: number }
 type Face = {
   mesh: AbstractMesh
   points: [Vector3, Vector3, Vector3]
@@ -15,8 +15,8 @@ type Face = {
 }
 
 function facesOf(mesh: AbstractMesh, focus?: Vector3): Face[] {
-  if (!mesh.isEnabled() || !mesh.isVisible || mesh.visibility <= 0 || mesh.material?.alpha === 0 ||
-    mesh.getClassName() === 'LinesMesh') return []
+  if (!mesh.isEnabled() || !mesh.isVisible || mesh.visibility <= 0 || mesh.material?.alpha === 0
+    || mesh.getClassName() === 'LinesMesh') return []
   const positions = mesh.getVerticesData(VertexBuffer.PositionKind)
   const indices = mesh.getIndices()
   if (!positions || !indices) return []
@@ -34,8 +34,11 @@ function facesOf(mesh: AbstractMesh, focus?: Vector3): Face[] {
     const normal = Vector3.Cross(b.subtract(a), c.subtract(a))
     if (normal.lengthSquared() <= 1e-16) continue
     faces.push({
-      mesh, points: [a, b, c], normal: normal.normalize(),
-      min, max,
+      mesh,
+      points: [a, b, c],
+      normal: normal.normalize(),
+      min,
+      max,
     })
   }
   return faces
@@ -65,7 +68,8 @@ function clip(polygon: Point[], a: Point, b: Point, winding: number) {
 function overlapOnPlane(a: Face, b: Face) {
   const { x, y, z } = a.normal
   const dominant = Math.max(Math.abs(x), Math.abs(y), Math.abs(z))
-  const project = (p: Vector3): Point => dominant === Math.abs(x) ? { x: p.y, y: p.z }
+  const project = (p: Vector3): Point => dominant === Math.abs(x)
+    ? { x: p.y, y: p.z }
     : dominant === Math.abs(y) ? { x: p.x, y: p.z } : { x: p.x, y: p.y }
   let polygon = a.points.map(project)
   const edge = b.points.map(project)
@@ -86,20 +90,21 @@ function label(mesh: AbstractMesh) {
 
 export function findZFightCandidates(meshes: readonly AbstractMesh[], focus?: Vector3) {
   const faces = meshes.flatMap((mesh) => facesOf(mesh, focus)).sort((a, b) => a.min.x - b.min.x)
-  const pairs = new Map<string, { first: string; second: string; at: Vector3 }>()
+  const pairs = new Map<string, { first: string, second: string, at: Vector3 }>()
   for (const [i, a] of faces.entries()) {
     for (let j = i + 1; j < faces.length; j++) {
       const b = faces[j]
       if (b.min.x > a.max.x + planeTolerance) break
-      if (b.min.y > a.max.y + planeTolerance || a.min.y > b.max.y + planeTolerance ||
-        b.min.z > a.max.z + planeTolerance || a.min.z > b.max.z + planeTolerance) continue
+      if (b.min.y > a.max.y + planeTolerance || a.min.y > b.max.y + planeTolerance
+        || b.min.z > a.max.z + planeTolerance || a.min.z > b.max.z + planeTolerance) continue
       const alignment = Vector3.Dot(a.normal, b.normal)
       const twoSided = a.mesh.material?.backFaceCulling === false || b.mesh.material?.backFaceCulling === false
       if ((twoSided ? Math.abs(alignment) : alignment) < 0.999999) continue
-      if (b.points.some((p) => Math.abs(Vector3.Dot(a.normal, p.subtract(a.points[0]))) > planeTolerance) ||
-        a.points.some((p) => Math.abs(Vector3.Dot(b.normal, p.subtract(b.points[0]))) > planeTolerance)) continue
+      if (b.points.some((p) => Math.abs(Vector3.Dot(a.normal, p.subtract(a.points[0]))) > planeTolerance)
+        || a.points.some((p) => Math.abs(Vector3.Dot(b.normal, p.subtract(b.points[0]))) > planeTolerance)) continue
       const key = a.mesh.uniqueId < b.mesh.uniqueId
-        ? `${a.mesh.uniqueId}/${b.mesh.uniqueId}` : `${b.mesh.uniqueId}/${a.mesh.uniqueId}`
+        ? `${a.mesh.uniqueId}/${b.mesh.uniqueId}`
+        : `${b.mesh.uniqueId}/${a.mesh.uniqueId}`
       if (!pairs.has(key) && overlapOnPlane(a, b)) {
         const at = Vector3.Maximize(a.min, b.min).addInPlace(Vector3.Minimize(a.max, b.max)).scaleInPlace(0.5)
         pairs.set(key, { first: label(a.mesh), second: label(b.mesh), at })

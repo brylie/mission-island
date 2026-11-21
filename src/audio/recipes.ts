@@ -7,17 +7,17 @@ import { addMode, addThump, band, finish, lowpass, mixInto, recipeRate, samples,
 export type FootSurface = 'gravel' | 'sand' | 'boards' | 'fallback'
 export type CrateSurface = 'ground' | 'bed'
 
-type CrateTraits = { strength: number; surface: CrateSurface }
-type FootstepTraits = { surface: FootSurface; strength: number }
+type CrateTraits = { strength: number, surface: CrateSurface }
+type FootstepTraits = { surface: FootSurface, strength: number }
 type SurfTraits = { strength: number }
 
 // A recipe job is plain data, so a worker can render it off the UI thread.
 export type RecipeJob =
-  | { family: 'crate'; traits: CrateTraits; seed: number }
-  | { family: 'step'; traits: FootstepTraits; seed: number }
-  | { family: 'surf'; traits: SurfTraits; seed: number }
+  | { family: 'crate', traits: CrateTraits, seed: number }
+  | { family: 'step', traits: FootstepTraits, seed: number }
+  | { family: 'surf', traits: SurfTraits, seed: number }
 
-export type Rendered = { key: string; job: RecipeJob; gain: number; rate: number }
+export type Rendered = { key: string, job: RecipeJob, gain: number, rate: number }
 
 export function renderJob(job: RecipeJob): Float32Array {
   if (job.family === 'crate') return renderCrate(job.traits, job.seed)
@@ -138,8 +138,7 @@ export function renderSwell(traits: SurfTraits, seed: number): Float32Array {
   mixInto(out, shape(body, (t) => t < crest ? Math.sin(t / crest * Math.PI / 2) ** 2 : Math.exp(-(t - crest) / (seconds * 0.32)), surfRate), 1.3)
   const washStart = crest * 0.9
   const brightness = 1900 + strength * 1900
-  const wash = lowpass(band(whiteNoise(out.length, random), 260, 5500, surfRate),
-    (t) => t < washStart ? brightness : Math.max(420, brightness * Math.exp(-(t - washStart) / (seconds * 0.25))), surfRate)
+  const wash = lowpass(band(whiteNoise(out.length, random), 260, 5500, surfRate), (t) => t < washStart ? brightness : Math.max(420, brightness * Math.exp(-(t - washStart) / (seconds * 0.25))), surfRate)
   const washLength = seconds * (0.38 + strength * 0.22)
   mixInto(out, shape(wash, (t) => {
     const local = t - washStart

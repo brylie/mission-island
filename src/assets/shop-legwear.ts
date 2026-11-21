@@ -6,104 +6,113 @@ import { applique, panelSurface, tailored, type Section } from './shop-tailoring
 
 import { marketLegDetails, marketShoeDetails } from './shop-market-legwear'
 
-const petal = [[0, .5], [-.36, .25], [-.5, -.05], [-.31, -.39], [0, -.5], [.32, -.34], [.48, .04], [.31, .34]]
-const pocket = [[-.48, .50], [.48, .50], [.46, -.26], [.28, -.48], [-.34, -.48], [-.46, -.32]]
+const petal = [[0, 0.5], [-0.36, 0.25], [-0.5, -0.05], [-0.31, -0.39], [0, -0.5], [0.32, -0.34], [0.48, 0.04], [0.31, 0.34]]
+const pocket = [[-0.48, 0.50], [0.48, 0.50], [0.46, -0.26], [0.28, -0.48], [-0.34, -0.48], [-0.46, -0.32]]
 
 export function buildBottomLeg(m: MeshFactory, id: StockId<'trousers'>, root: TransformNode, s: number) {
-  const { color, trim, detail, short } = shopBottoms[id], x = -s * .032
-  const hem = short ? (id === 'salt-shorts' ? -.208 : -.261) : -.463
+  const { color, trim, detail, short } = shopBottoms[id], x = -s * 0.032
+  const hem = short ? (id === 'salt-shorts' ? -0.208 : -0.261) : -0.463
   const cloud = id === 'cloud-pants', wide = id === 'tide-cuffs'
-  const cuts: Partial<Record<StockId<'trousers'>, number>> = { 'night-flares': .161, 'oat-culottes': .148, 'plum-pleats': .123 }
-  const ankle = cuts[id] ?? (wide ? .144 : short ? .120 : .106)
+  const cuts: Partial<Record<StockId<'trousers'>, number>> = { 'night-flares': 0.161, 'oat-culottes': 0.148, 'plum-pleats': 0.123 }
+  const ankle = cuts[id] ?? (wide ? 0.144 : short ? 0.120 : 0.106)
   const rows: Section[] = [
-    [hem, x, .003, ankle, .124, trim], [hem + .008, x, .003, ankle + .006, .131, trim],
-    [hem + .034, x, .002, ankle + .007, .132, trim], [hem + .039, x, .001, ankle + .007, .133],
+    [hem, x, 0.003, ankle, 0.124, trim],
+    [hem + 0.008, x, 0.003, ankle + 0.006, 0.131, trim],
+    [hem + 0.034, x, 0.002, ankle + 0.007, 0.132, trim],
+    [hem + 0.039, x, 0.001, ankle + 0.007, 0.133],
   ]
-  if (!short) rows.push([-.370, x, -.003, cloud ? .142 : .116, cloud ? .143 : .125], [-.306, x, .002, cloud ? .151 : .120, cloud ? .150 : .130])
-  rows.push([-.147, x, .009, wide ? .141 : .133, .146], [-.057, x, .006, .139, .152],
-    [.055, -s * .043, -.003, .133, .141], [.093, -s * .050, -.012, .117, .119])
+  if (!short) rows.push([-0.370, x, -0.003, cloud ? 0.142 : 0.116, cloud ? 0.143 : 0.125], [-0.306, x, 0.002, cloud ? 0.151 : 0.120, cloud ? 0.150 : 0.130])
+  rows.push([-0.147, x, 0.009, wide ? 0.141 : 0.133, 0.146], [-0.057, x, 0.006, 0.139, 0.152], [0.055, -s * 0.043, -0.003, 0.133, 0.141], [0.093, -s * 0.050, -0.012, 0.117, 0.119])
   const fabric = tailored(m, root, shopBottoms[id].name, color, rows)
   const outside = panelSurface(fabric, 0, s), front = panelSurface(fabric, 2, 1)
   if (marketLegDetails(m, root, id, x, s, front, outside, detail, trim)) return
   if (id === 'crab-cargo') {
-    const panel = (u: number, v: number) => outside([x + s * .14, -.165 + v * .131, .004 + u * .148])
+    const panel = (u: number, v: number) => outside([x + s * 0.14, -0.165 + v * 0.131, 0.004 + u * 0.148])
     applique(m, root, 'Bellows pocket', detail, pocket, panel, [s, 0, 0])
-    applique(m, root, 'Pocket flap', trim, [[-.5, .5], [.5, .5], [.5, -.15], [0, -.5], [-.5, -.15]],
-      (u, v) => { const p = outside([x + s * .14, -.119 + v * .045, .005 + u * .150]); p[0] += s * .004; return p }, [s, 0, 0])
-  } else if (id === 'sail-pants') {
-    applique(m, root, 'Signal flag knee patch', detail, [[-.45, .48], [.50, .40], [.42, -.45], [-.48, -.47]],
-      (u, v) => front([x + u * .131, -.285 + v * .132, .136]), [0, 0, 1])
-  } else if (id === 'tide-cuffs') {
-    const path: Parameters<typeof sweptDetail>[4] = [-.75, -.43, 0, .46, .76].map((u, i) =>
-      [x + u * .145, hem + .060 + .008 * Math.sin(i * 1.8), .003 + .144 * Math.sqrt(1 - u * u), .003, .002])
+    applique(m, root, 'Pocket flap', trim, [[-0.5, 0.5], [0.5, 0.5], [0.5, -0.15], [0, -0.5], [-0.5, -0.15]], (u, v) => {
+      const p = outside([x + s * 0.14, -0.119 + v * 0.045, 0.005 + u * 0.150])
+      p[0] += s * 0.004
+      return p
+    }, [s, 0, 0])
+  }
+  else if (id === 'sail-pants') {
+    applique(m, root, 'Signal flag knee patch', detail, [[-0.45, 0.48], [0.50, 0.40], [0.42, -0.45], [-0.48, -0.47]], (u, v) => front([x + u * 0.131, -0.285 + v * 0.132, 0.136]), [0, 0, 1])
+  }
+  else if (id === 'tide-cuffs') {
+    const path: Parameters<typeof sweptDetail>[4] = [-0.75, -0.43, 0, 0.46, 0.76].map((u, i) =>
+      [x + u * 0.145, hem + 0.060 + 0.008 * Math.sin(i * 1.8), 0.003 + 0.144 * Math.sqrt(1 - u * u), 0.003, 0.002])
     sweptDetail(m, root, 'Tide embroidery', trim, path, [0, 0, 1], 6)
-  } else if (id === 'cloud-pants') {
-    for (const y of [-.378, -.359]) {
-      const pleat: Parameters<typeof sweptDetail>[4] = [-.78, -.45, 0, .45, .78].map(u => {
-        const [a, b, c] = front([x + u * .130, y + .016 * u * u, .13])
-        return [a, b, c, .0028, .002]
+  }
+  else if (id === 'cloud-pants') {
+    for (const y of [-0.378, -0.359]) {
+      const pleat: Parameters<typeof sweptDetail>[4] = [-0.78, -0.45, 0, 0.45, 0.78].map((u) => {
+        const [a, b, c] = front([x + u * 0.130, y + 0.016 * u * u, 0.13])
+        return [a, b, c, 0.0028, 0.002]
       })
       sweptDetail(m, root, 'Cloud tuck', detail, pleat, [0, 0, 1], 6)
     }
-    applique(m, root, 'Cloud maker label', detail, pocket, (u, v) => outside([x + s * .143, -.137 + v * .062, u * .085 + .005]), [s, 0, 0])
-  } else {
-    for (const [dx, y, size] of [[.046, -.136, .044], [.088, -.102, .032]]) {
-      applique(m, root, 'Salt crystal stitch', trim, [[0, .5], [-.43, -.06], [0, -.5], [.43, -.06]],
-        (u, v) => front([x + s * dx + u * size, y + v * size, .135]), [0, 0, 1])
+    applique(m, root, 'Cloud maker label', detail, pocket, (u, v) => outside([x + s * 0.143, -0.137 + v * 0.062, u * 0.085 + 0.005]), [s, 0, 0])
+  }
+  else {
+    for (const [dx, y, size] of [[0.046, -0.136, 0.044], [0.088, -0.102, 0.032]]) {
+      applique(m, root, 'Salt crystal stitch', trim, [[0, 0.5], [-0.43, -0.06], [0, -0.5], [0.43, -0.06]], (u, v) => front([x + s * dx + u * size, y + v * size, 0.135]), [0, 0, 1])
     }
   }
 }
 
 // All boot geometry, including the trim, is authored in the hip's bind coordinates.
 export function buildShoe(m: MeshFactory, id: StockId<'shoes'>, root: TransformNode, s: number) {
-  const { color, trim, detail, open } = shopShoes[id], x = -s * .032
-  const boot = ['kelp-boots', 'puddle-wellies'].includes(id), high = ['light-tops', 'bracken-hikers'].includes(id), toe = id === 'crab-clogs' ? .066 : .052
+  const { color, trim, detail, open } = shopShoes[id], x = -s * 0.032
+  const boot = ['kelp-boots', 'puddle-wellies'].includes(id), high = ['light-tops', 'bracken-hikers'].includes(id), toe = id === 'crab-clogs' ? 0.066 : 0.052
   const rows: Section[] = [
-    [-.680, x, toe, .114, .169, detail], [-.673, x, toe, .125, .179, detail],
-    [-.652, x, toe, .128, .182, detail], [-.646, x, toe, .128, .182, open ? color : detail],
+    [-0.680, x, toe, 0.114, 0.169, detail],
+    [-0.673, x, toe, 0.125, 0.179, detail],
+    [-0.652, x, toe, 0.128, 0.182, detail],
+    [-0.646, x, toe, 0.128, 0.182, open ? color : detail],
   ]
   if (!open) {
-    rows.push([-.641, x, toe, .129, .182], [-.600, x, toe + .007, .129, .185], [-.570, x, .060, .121, .174])
+    rows.push([-0.641, x, toe, 0.129, 0.182], [-0.600, x, toe + 0.007, 0.129, 0.185], [-0.570, x, 0.060, 0.121, 0.174])
     if (boot || high) {
-      rows.push([-.535, x, .028, .115, .143], [-.490, x, .004, .106, .119],
-        [boot ? -.364 : -.432, x, -.003, .112, .119], [boot ? -.356 : -.424, x, -.003, .117, .125, trim],
-        [boot ? -.331 : -.403, x, -.003, .116, .124, trim])
-    } else rows.push([-.552, x, .032, .104, .136], [-.542, x, .001, .086, .091, detail])
+      rows.push([-0.535, x, 0.028, 0.115, 0.143], [-0.490, x, 0.004, 0.106, 0.119], [boot ? -0.364 : -0.432, x, -0.003, 0.112, 0.119], [boot ? -0.356 : -0.424, x, -0.003, 0.117, 0.125, trim], [boot ? -0.331 : -0.403, x, -0.003, 0.116, 0.124, trim])
+    }
+    else rows.push([-0.552, x, 0.032, 0.104, 0.136], [-0.542, x, 0.001, 0.086, 0.091, detail])
   }
-  const shoe = tailored(m, root, shopShoes[id].name, color, rows, 24, open ? 0 : .054)
+  const shoe = tailored(m, root, shopShoes[id].name, color, rows, 24, open ? 0 : 0.054)
   const vamp = panelSurface(shoe, 1, 1), shaft = panelSurface(shoe, 0, s)
   if (marketShoeDetails(m, root, id, x, s, vamp, shaft, detail, trim)) return
   if (open) {
-    for (const [z, y, width, height] of [[.125, -.635, .109, .055], [-.002, -.632, .096, .076]]) {
-      const arch: Parameters<typeof sweptDetail>[4] = [-1, -.82, -.45, 0, .45, .82, 1].map(u =>
-        [x + u * width, y + height * Math.sqrt(1 - u * u), z - .014 * u * s, .020, .006])
-      sweptDetail(m, root, 'Woven sandal strap', color, arch, [0, 1, .28], 8)
+    for (const [z, y, width, height] of [[0.125, -0.635, 0.109, 0.055], [-0.002, -0.632, 0.096, 0.076]]) {
+      const arch: Parameters<typeof sweptDetail>[4] = [-1, -0.82, -0.45, 0, 0.45, 0.82, 1].map((u) =>
+        [x + u * width, y + height * Math.sqrt(1 - u * u), z - 0.014 * u * s, 0.020, 0.006])
+      sweptDetail(m, root, 'Woven sandal strap', color, arch, [0, 1, 0.28], 8)
     }
-    applique(m, root, 'Shell clasp', trim, petal, (u, v) => [x + .048 * s + u * .050, -.584 + v * .008, .127 + v * .049], [0, 1, 0])
-  } else if (id === 'moth-shoes' || id === 'crab-clogs') {
+    applique(m, root, 'Shell clasp', trim, petal, (u, v) => [x + 0.048 * s + u * 0.050, -0.584 + v * 0.008, 0.127 + v * 0.049], [0, 1, 0])
+  }
+  else if (id === 'moth-shoes' || id === 'crab-clogs') {
     for (const wing of [-1, 1]) {
       const moth = id === 'moth-shoes'
-      applique(m, root, moth ? 'Moth wing appliqué' : 'Claw appliqué', trim, moth ? petal : [[0, -.5], [-.44, -.17], [-.48, .5], [-.03, .15], [.27, .48], [.44, .03]],
-        (u, v) => vamp([x + wing * (.047 + .087 * u + .043 * v), -.560, .155 + .101 * v]), [0, 1, .4])
+      applique(m, root, moth ? 'Moth wing appliqué' : 'Claw appliqué', trim, moth ? petal : [[0, -0.5], [-0.44, -0.17], [-0.48, 0.5], [-0.03, 0.15], [0.27, 0.48], [0.44, 0.03]], (u, v) => vamp([x + wing * (0.047 + 0.087 * u + 0.043 * v), -0.560, 0.155 + 0.101 * v]), [0, 1, 0.4])
     }
     if (id === 'moth-shoes') {
-      applique(m, root, 'Moth body', detail, petal, (u, v) => vamp([x + u * .026, -.56, .154 + v * .075]), [0, 1, 0])
+      applique(m, root, 'Moth body', detail, petal, (u, v) => vamp([x + u * 0.026, -0.56, 0.154 + v * 0.075]), [0, 1, 0])
     }
-  } else if (high) {
-    for (const [y, z] of [[-.533, .145], [-.545, .165], [-.562, .186]]) {
-      const path: Parameters<typeof sweptDetail>[4] = [-1, -.5, 0, .5, 1].map(u => {
-        const [px, py, pz] = vamp([x + u * .062, y, z + .005 * (1 - u * u)])
-        return [px, py + .001, pz, .006, .004]
+  }
+  else if (high) {
+    for (const [y, z] of [[-0.533, 0.145], [-0.545, 0.165], [-0.562, 0.186]]) {
+      const path: Parameters<typeof sweptDetail>[4] = [-1, -0.5, 0, 0.5, 1].map((u) => {
+        const [px, py, pz] = vamp([x + u * 0.062, y, z + 0.005 * (1 - u * u)])
+        return [px, py + 0.001, pz, 0.006, 0.004]
       })
-      sweptDetail(m, root, 'Canvas lace', trim, path, [0, 1, .2], 6)
+      sweptDetail(m, root, 'Canvas lace', trim, path, [0, 1, 0.2], 6)
     }
-  } else {
+  }
+  else {
     const coil: Parameters<typeof sweptDetail>[4] = []
     for (let i = 0; i <= 15; i++) {
-      const a = i * Math.PI / 8 + .5
-      coil.push([x + .118 * Math.cos(a), -.467 + .082 * i / 15, -.003 + .127 * Math.sin(a), .010, .006])
+      const a = i * Math.PI / 8 + 0.5
+      coil.push([x + 0.118 * Math.cos(a), -0.467 + 0.082 * i / 15, -0.003 + 0.127 * Math.sin(a), 0.010, 0.006])
     }
     sweptDetail(m, root, 'Braided kelp coil', detail, coil, [0, 1, 0], 8)
-    applique(m, root, 'Kelp pull tab', detail, petal, (u, v) => shaft([x + s * .115, -.399 + v * .110, .008 + u * .041 + v * .025]), [s, 0, 0])
+    applique(m, root, 'Kelp pull tab', detail, petal, (u, v) => shaft([x + s * 0.115, -0.399 + v * 0.110, 0.008 + u * 0.041 + v * 0.025]), [s, 0, 0])
   }
 }

@@ -28,7 +28,8 @@ function favorAcceptedText({ resident, favor, playerId }: Notice<'favor-accepted
 function favorReportText({ resident, playerId, result, trust }: Notice<'favor-report'>, localId: number) {
   const { name } = names(resident, '')
   const who = playerId === localId ? 'You' : 'Your crewmate'
-  return result === 'honest' ? `${who} told ${name} the work still needs fixing · No penalty`
+  return result === 'honest'
+    ? `${who} told ${name} the work still needs fixing · No penalty`
     : `${who} told ${name} it was fixed, but it wasn’t · ${name} trust ${signed(trust)}`
 }
 

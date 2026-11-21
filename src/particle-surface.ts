@@ -8,7 +8,7 @@ import { createParticleTexture } from './particle-texture'
 
 type Appearance = ReturnType<typeof particleAppearance>
 
-const corners = [[-.5, -.5], [.5, -.5], [.5, .5], [-.5, .5]]
+const corners = [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]
 
 export function createSurfaceParticles(scene: Scene, name: string, recipe: ParticleRecipe, capacity: number) {
   const mesh = new Mesh(name, scene)

@@ -1,6 +1,6 @@
 // The client mix: two player-facing levels plus mute, kept quiet enough to talk over.
 
-export type SoundSettings = { ambience: number; effects: number; muted: boolean }
+export type SoundSettings = { ambience: number, effects: number, muted: boolean }
 
 export const defaultSound: SoundSettings = { ambience: 0.7, effects: 0.8, muted: false }
 

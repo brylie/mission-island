@@ -24,8 +24,7 @@ export function valueNoise(u: number, v: number, cells: number, seed: number, yC
 
 // Fractal Brownian noise built from centered value noise. Each band contributes
 // up to its amplitude, with `cells` lattice intervals per unit of position.
-export function fractalNoise1D(position: number, seed: number,
-  bands: readonly { cells: number; amplitude: number }[], periodic = true) {
+export function fractalNoise1D(position: number, seed: number, bands: readonly { cells: number, amplitude: number }[], periodic = true) {
   let sample = 0
   for (const [index, { cells, amplitude }] of bands.entries()) {
     sample += amplitude * (2 * valueNoise(position, 0, cells, seed + index, 1, periodic) - 1)

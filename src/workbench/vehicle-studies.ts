@@ -7,7 +7,11 @@ import { truckStart, cargoSlots, crateSize, truckBed } from '../world'
 import { control, range, type Entry } from './subject'
 
 export const flatbedStudy: Entry = {
-  id: 'flatbed', name: 'Flatbed truck', group: 'Starter vehicles', source: 'src/assets/flatbed.ts', duration: 4,
+  id: 'flatbed',
+  name: 'Flatbed truck',
+  group: 'Starter vehicles',
+  source: 'src/assets/flatbed.ts',
+  duration: 4,
   fieldSite: () => ({ name: 'Harbor Depot', heading: truckStart.heading, offset: { ...truckStart, y: groundHeight(truckStart) } }),
   description: 'Inspect the truck exterior, side rails, steering, and cargo fit.',
   controls: [
@@ -35,9 +39,13 @@ export const flatbedStudy: Entry = {
 }
 
 export const harborBoatStudy: Entry = {
-  id: 'boat', name: 'Harbor boat', group: 'Starter vehicles', source: 'src/assets/waterfront.ts',
+  id: 'boat',
+  name: 'Harbor boat',
+  group: 'Starter vehicles',
+  source: 'src/assets/waterfront.ts',
   description: 'Inspect the skiff hull, bench seats, and gentle motion at the dock.',
-  ground: { height: waterLevel, color: surfaces.water.color }, duration: 8,
+  ground: { height: waterLevel, color: surfaces.water.color },
+  duration: 8,
   create(meshes) {
     const boat = createHarborBoat(meshes)
     return ({ time }) => poseFloating(boat, time, 0.5, 0.048)

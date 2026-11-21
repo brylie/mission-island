@@ -10,13 +10,11 @@ import { distance } from './world'
 type Locate = (element: HTMLElement, x: number, y: number, z: number) => void
 
 // Landmark, discovery and resident name labels that float over the island.
-export function createPlaceLabels(markers: HTMLElement, residentRoots: { root: TransformNode; title: string }[]) {
+export function createPlaceLabels(markers: HTMLElement, residentRoots: { root: TransformNode, title: string }[]) {
   const places = [
     ...landmarks.map((place) => ({ ...place, discovery: '', mapOnly: false })),
-    ...starterDiscoveries.map((region) => ({ point: region.site, title: region.name, kind: 'discovery',
-      height: 2.8, discovery: region.id, mapOnly: false })),
-    ...northernRegions.map((region) => ({ point: region.at, title: region.biome, kind: 'biome',
-      height: 5, discovery: '', mapOnly: true })),
+    ...starterDiscoveries.map((region) => ({ point: region.site, title: region.name, kind: 'discovery', height: 2.8, discovery: region.id, mapOnly: false })),
+    ...northernRegions.map((region) => ({ point: region.at, title: region.biome, kind: 'biome', height: 5, discovery: '', mapOnly: true })),
   ].map((place) => {
     const label = document.createElement('span')
     label.className = `place place--${place.kind}`
@@ -33,18 +31,18 @@ export function createPlaceLabels(markers: HTMLElement, residentRoots: { root: T
 
   type Place = typeof places[number]
   function hidden(place: Place, last: Snapshot | undefined, local: Player | undefined, close: boolean, range: number) {
-    return (place.mapOnly && close) || hideLandmark(place, local?.id, close, range) ||
-      Boolean(place.discovery && !local?.discoveries?.includes(place.discovery)) ||
-      (place.kind === 'equipment' && last?.mission !== 'fire') || (place.kind === 'board' && last?.mission !== 'complete') ||
-      materialsLabelHidden(place.kind, last)
+    return (place.mapOnly && close) || hideLandmark(place, local?.id, close, range)
+      || Boolean(place.discovery && !local?.discoveries?.includes(place.discovery))
+      || (place.kind === 'equipment' && last?.mission !== 'fire') || (place.kind === 'board' && last?.mission !== 'complete')
+      || materialsLabelHidden(place.kind, last)
   }
   function active(place: Place, last: Snapshot | undefined) {
     const job = last && activeJob(last)
     const drop = last && deliveryDrop(last)
-    return Boolean(drop && (place.kind === 'harbor' || distance(place.point, drop) < 6)) ||
-      (job?.kind === 'market' && place.kind === 'market') ||
-      (last?.mission === 'complete' && !job && place.kind === 'board') ||
-      (last?.mission === 'fire' && (place.kind === 'lookout' || place.kind === 'equipment'))
+    return Boolean(drop && (place.kind === 'harbor' || distance(place.point, drop) < 6))
+      || (job?.kind === 'market' && place.kind === 'market')
+      || (last?.mission === 'complete' && !job && place.kind === 'board')
+      || (last?.mission === 'fire' && (place.kind === 'lookout' || place.kind === 'equipment'))
   }
 
   return {

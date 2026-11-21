@@ -9,11 +9,11 @@ test('the Sandspit school peels away from a swimmer, stays in water, and regroup
   let partial = false
   for (let tick = 0; tick <= 600; tick++) {
     const time = tick / 30
-    const threats = time > 2 && time < 7 ? [{ x: x - 4 + (time - 2) * 1.65, z: z - .5, range: 1.9 }] : []
+    const threats = time > 2 && time < 7 ? [{ x: x - 4 + (time - 2) * 1.65, z: z - 0.5, range: 1.9 }] : []
     const { fish } = update(time, threats)
-    const startled = fish.filter(f => f.startled).length
+    const startled = fish.filter((f) => f.startled).length
     if (startled > 0 && startled < fish.length) partial = true
-    for (const member of fish) assert.ok(groundHeight(member.x, member.z) <= -.479)
+    for (const member of fish) assert.ok(groundHeight(member.x, member.z) <= -0.479)
   }
   assert.ok(partial)
   assert.ok(update(20, []).leader >= 0)

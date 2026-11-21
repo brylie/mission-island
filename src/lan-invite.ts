@@ -12,7 +12,8 @@ export function bindLanInvite(dialog: HTMLDialogElement) {
   async function copyAddress() {
     try {
       await navigator.clipboard.writeText(address.value)
-    } catch {
+    }
+    catch {
       // Browsers on plain HTTP LAN addresses may only allow selection-based copying.
       address.hidden = false
       address.focus()
@@ -20,7 +21,8 @@ export function bindLanInvite(dialog: HTMLDialogElement) {
       status.textContent = 'Copy the selected address and send it to your crewmate.'
       try {
         if (!document.execCommand('copy')) return
-      } catch { return }
+      }
+      catch { return }
       address.hidden = !networks.hidden
       copy.focus()
     }
@@ -36,14 +38,15 @@ export function bindLanInvite(dialog: HTMLDialogElement) {
       if (!response.ok) throw new Error('Host unavailable')
       const result: unknown = await response.json()
       const links = Array.isArray(result) ? result.filter((link): link is string => typeof link === 'string') : []
-      networks.replaceChildren(...links.map(link => new Option(link, link)))
+      networks.replaceChildren(...links.map((link) => new Option(link, link)))
       networks.hidden = links.length < 2
-      const selected = links.find(link => new URL(link).origin === location.origin) ?? links[0]
+      const selected = links.find((link) => new URL(link).origin === location.origin) ?? links[0]
       networks.value = address.value = selected ?? ''
       address.hidden = !networks.hidden || !selected
       copy.disabled = !selected
       status.textContent = selected ? '' : 'This host has no LAN address. Check its Wi-Fi connection and LAN binding.'
-    } catch {
+    }
+    catch {
       address.hidden = networks.hidden = true
       status.textContent = 'Could not reach the host. Reopen Options to try again.'
     }

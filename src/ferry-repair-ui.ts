@@ -9,15 +9,17 @@ export function ferryCard(state: Snapshot) {
   const needs = stageNeeds(state)
   const stages = ferryStages.length
   if (!needs) {
-    return { label: 'COMMUNITY PROJECT', title: 'Ferry service restored', progress: 'Repair stages', value: stages, max: stages,
-      detail: 'The crew rebuilt the ferry terminal at the end of Harbor Depot road. The first crossing is being arranged.',
-      text: `${stages} / ${stages} stages`, instruction: 'Starter Island is still home. Fish, farm, explore or take another order.' }
+    return { label: 'COMMUNITY PROJECT', title: 'Ferry service restored', progress: 'Repair stages', value: stages, max: stages, detail: 'The crew rebuilt the ferry terminal at the end of Harbor Depot road. The first crossing is being arranged.', text: `${stages} / ${stages} stages`, instruction: 'Starter Island is still home. Fish, farm, explore or take another order.' }
   }
   return {
-    label: 'COMMUNITY PROJECT', title: `Ferry terminal · ${needs.title}`, progress: `Stage ${needs.number} of ${stages}`,
+    label: 'COMMUNITY PROJECT',
+    title: `Ferry terminal · ${needs.title}`,
+    progress: `Stage ${needs.number} of ${stages}`,
     detail: 'Bring crew coins and Seabrook timber to the tally board beside the ferry barrier.',
-    value: needs.coinsGiven + needs.cratesGiven, max: needs.coins + needs.crates,
-    text: `${needs.coinsGiven}/${needs.coins} coins · ${needs.cratesGiven}/${needs.crates} timber`, instruction: ferryNextStep(state),
+    value: needs.coinsGiven + needs.cratesGiven,
+    max: needs.coins + needs.crates,
+    text: `${needs.coinsGiven}/${needs.coins} coins · ${needs.cratesGiven}/${needs.crates} timber`,
+    instruction: ferryNextStep(state),
   }
 }
 
@@ -29,8 +31,7 @@ export function ferryFeedback(message: FerryNotice, state: Snapshot | undefined)
   }
   if (message.type === 'ferry-stage') {
     const finished = ferryStages[message.stage - 1]?.title ?? 'Repair stage'
-    return { key: message.stage >= ferryStages.length ? 'Ferry open' : `Stage ${message.stage}/${ferryStages.length}`,
-      label: message.stage >= ferryStages.length ? `${finished} · Ferry service restored` : `${finished} complete · Next: ${ferryStages[message.stage].title}`, until }
+    return { key: message.stage >= ferryStages.length ? 'Ferry open' : `Stage ${message.stage}/${ferryStages.length}`, label: message.stage >= ferryStages.length ? `${finished} · Ferry service restored` : `${finished} complete · Next: ${ferryStages[message.stage].title}`, until }
   }
   const who = state ? crewName(state, message.player) : 'Crew'
   return message.kind === 'coins'

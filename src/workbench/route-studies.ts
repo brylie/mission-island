@@ -5,7 +5,11 @@ import { control, range, type Entry } from './subject'
 
 export const routeStudies: Entry[] = [
   {
-    id: 'road', name: 'Island road', group: 'Routes', source: 'src/routes.ts', angle: 1.03,
+    id: 'road',
+    name: 'Island road',
+    group: 'Routes',
+    source: 'src/routes.ts',
+    angle: 1.03,
     description: 'Inspect the full road ribbon, shoulders, and lane markings through both bends.',
     ground: { height: 0, color: surfaces.grass.color },
     controls: [
@@ -22,7 +26,10 @@ export const routeStudies: Entry[] = [
     },
   },
   {
-    id: 'trail', name: 'Footpaths', group: 'Routes', source: 'src/routes.ts',
+    id: 'trail',
+    name: 'Footpaths',
+    group: 'Routes',
+    source: 'src/routes.ts',
     description: 'Compare the beach pavement, worn attraction paths, and gravel trails.',
     ground: { height: 0, color: surfaces.grass.color },
     controls: [
@@ -35,7 +42,10 @@ export const routeStudies: Entry[] = [
     },
   },
   {
-    id: 'pavement', name: 'Neighborhood pavement', group: 'Routes', source: 'src/routes.ts',
+    id: 'pavement',
+    name: 'Neighborhood pavement',
+    group: 'Routes',
+    source: 'src/routes.ts',
     description: 'Inspect the paved walks and approaches around Seabrook houses.',
     ground: { height: 0, color: surfaces.grass.color },
     controls: [control('route', 'Walkway', '0', { 0: 'North neighborhood', 1: 'South neighborhood', 2: 'House entrance', 3: 'East houses' }, true)],

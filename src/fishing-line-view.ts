@@ -35,9 +35,7 @@ export function updateFishingLine(player: Player, kit: FishingKit, gripIndex: nu
     const flight = Math.min(1, elapsed / castTravelSeconds)
     const progress = player.casting.fight?.progress ?? 0
     const pulling = player.casting.fight?.pulling
-    linePoints[2].set(target.x + (player.x - target.x) * progress * 0.88,
-      waterLevel + 0.025 - fishingFloatDip(player.casting) + Math.sin(time * (pulling ? 13 : 5)) * (pulling ? 0.09 : 0.025),
-      target.z + (player.z - target.z) * progress * 0.88)
+    linePoints[2].set(target.x + (player.x - target.x) * progress * 0.88, waterLevel + 0.025 - fishingFloatDip(player.casting) + Math.sin(time * (pulling ? 13 : 5)) * (pulling ? 0.09 : 0.025), target.z + (player.z - target.z) * progress * 0.88)
     Vector3.LerpToRef(linePoints[0], linePoints[2], flight, bobber.position)
     bobber.position.y += Math.sin(flight * Math.PI) * 1.25
     Vector3.LerpToRef(linePoints[0], bobber.position, 0.55, linePoints[1])

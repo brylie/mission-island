@@ -7,22 +7,20 @@ export const jobBoard = { x: -43.7, z: -16.1 }
 export const deliveryRadius = 4.5
 export const secondIslandGoal = 4
 
-type Job = { title: string; quantity: number; coins: number } & (
-  { kind: 'delivery'; cargo: string; color: string; destination: string; drop: Point } |
-  { kind: 'market'; goods: keyof Goods }
+type Job = { title: string, quantity: number, coins: number } & (
+  { kind: 'delivery', cargo: string, color: string, destination: string, drop: Point }
+  | { kind: 'market', goods: keyof Goods }
 )
 
 export const jobs = {
-  'farm-supplies': { kind: 'delivery', title: 'Farm supplies', cargo: 'seed crates', color: '#a9d69f',
-    quantity: 2, coins: 6, destination: 'Island Farm', drop: { x: 24, z: -17.2 } },
-  'beach-gear': { kind: 'delivery', title: 'Beach gear', cargo: 'beach gear crates', color: '#8cdaec',
-    quantity: 3, coins: 10, destination: 'Driftwood Beach', drop: { x: 29, z: -24 } },
+  'farm-supplies': { kind: 'delivery', title: 'Farm supplies', cargo: 'seed crates', color: '#a9d69f', quantity: 2, coins: 6, destination: 'Island Farm', drop: { x: 24, z: -17.2 } },
+  'beach-gear': { kind: 'delivery', title: 'Beach gear', cargo: 'beach gear crates', color: '#8cdaec', quantity: 3, coins: 10, destination: 'Driftwood Beach', drop: { x: 29, z: -24 } },
   'market-fish': { kind: 'market', title: 'Fresh fish order', goods: 'fish', quantity: 2, coins: 6 },
   'market-carrots': { kind: 'market', title: 'Carrot order', goods: 'carrots', quantity: 2, coins: 8 },
 } satisfies Record<string, Job>
 
 export type JobId = keyof typeof jobs
-export type JobBoardState = { active: { id: JobId; progress: number } | null; completed: number }
+export type JobBoardState = { active: { id: JobId, progress: number } | null, completed: number }
 
 export function isJobId(value: unknown): value is JobId {
   return typeof value === 'string' && Object.hasOwn(jobs, value)

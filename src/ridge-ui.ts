@@ -41,8 +41,8 @@ function pilotDetail(player: Player, state: Snapshot) {
   if (flight?.outing === 'free') return soaringDetail(state, player)
   const lift = flight?.climbing ? 'Updraft lifting the wing. ' : ''
   if (flight?.outing === 'survey' && !flight.observed) {
-    return lift + 'Mirror Pool willow ' + bearingWord(player, mirrorPoolWillow) + ' · ' + Math.round(distance(player, mirrorPoolWillow)) +
-      ' m. Fly past the orange marker on the east bank, then land in the meadow.'
+    return lift + 'Mirror Pool willow ' + bearingWord(player, mirrorPoolWillow) + ' · ' + Math.round(distance(player, mirrorPoolWillow))
+      + ' m. Fly past the orange marker on the east bank, then land in the meadow.'
   }
   const lead = flight?.observed ? 'Willow recorded. ' : flight?.approach ? 'Approach complete. ' : 'Follow the blue approach orbs. '
   return lift + lead + 'Meadow ' + bearingWord(player, ridgeMeadow) + ' · ' + Math.round(distance(player, ridgeMeadow)) + ' m.'
@@ -65,7 +65,9 @@ export function createRidgeHud(panel: HTMLElement) {
   const marker = panel.querySelector<HTMLElement>('[data-meadow]')!
   const receipt = panel.querySelector<HTMLElement>('[data-flight-result]')!
   let receiptUntil = 0
-  const set = (node: HTMLElement, value: string) => { if (node.textContent !== value) node.textContent = value }
+  const set = (node: HTMLElement, value: string) => {
+    if (node.textContent !== value) node.textContent = value
+  }
   return {
     receive(notice: Extract<ServerMessage, { type: 'flight-result' | 'aerial-sighting' }>) {
       if (notice.type === 'aerial-sighting') {
@@ -85,12 +87,16 @@ export function createRidgeHud(panel: HTMLElement) {
       panel.hidden = !player || (!flight && !marked && receipt.hidden && !nearRidgeCourse(player))
       if (panel.hidden || !player) return
       marker.hidden = !marked
-      set(title, flying && flight?.outing === 'survey' ? 'Mirror Pool survey' : flying && flight?.outing === 'free' ? 'Island survey flight'
-        : qualified ? 'Crew aviation qualified' : 'Windstone Ridge checkout')
+      set(title, flying && flight?.outing === 'survey'
+        ? 'Mirror Pool survey'
+        : flying && flight?.outing === 'free'
+          ? 'Island survey flight'
+          : qualified ? 'Crew aviation qualified' : 'Windstone Ridge checkout')
       if (flying) set(detail, pilotDetail(player, state))
       else if (atRidgeRack(player) && !flight) {
         set(detail, rackBrief({ qualified, surveyed })[1])
-      } else if (atLandingSign(player)) set(detail, 'Use the landing sign to mark the meadow for both players.')
+      }
+      else if (atLandingSign(player)) set(detail, 'Use the landing sign to mark the meadow for both players.')
       else if (flight) set(detail, 'One crew member is flying. You can mark the landing meadow from its sign.')
       else set(detail, 'Head uphill toward the windsock and loan rack.')
     },

@@ -12,7 +12,7 @@ import type { FieldSite } from './field-site'
 
 export interface Fixture {
   sourceAt: ParticleOrigin
-  accents?: { id: keyof typeof particleAccents; sourceAt: ParticleOrigin }[]
+  accents?: { id: keyof typeof particleAccents, sourceAt: ParticleOrigin }[]
   pose?(time: number): void
 }
 
@@ -36,30 +36,33 @@ export function worldSource(source: ParticleSource, field?: FieldSite): Particle
   if (!field) return source
   const { x, y, z } = field.offset
   return {
-    ...source, x: source.x + x, y: source.y + y, z: source.z + z,
+    ...source,
+    x: source.x + x,
+    y: source.y + y,
+    z: source.z + z,
     floor: source.floor === undefined ? undefined : source.floor + y,
   }
 }
 
 export function waterfallFixture(meshes: MeshFactory, field?: FieldSite): Fixture {
   if (!field) {
-    meshes.box(0, -.06, -.7, 7.2, .16, 4.6, water)
+    meshes.box(0, -0.06, -0.7, 7.2, 0.16, 4.6, water)
     meshes.box(0, 1.04, 1.8, 6.5, 2.08, 2.1, rock)
-    meshes.box(0, 2.08, 1.94, 5.2, .08, 1.65, water)
-    const curtain = meshes.box(0, 1.04, .36, 5.2, 2.23, .05, '#71b9bc')
-    curtain.rotation.x = .41
-    createRock(meshes, -2.9, -.06, 1.1, .3, false)
+    meshes.box(0, 2.08, 1.94, 5.2, 0.08, 1.65, water)
+    const curtain = meshes.box(0, 1.04, 0.36, 5.2, 2.23, 0.05, '#71b9bc')
+    curtain.rotation.x = 0.41
+    createRock(meshes, -2.9, -0.06, 1.1, 0.3, false)
     crewAt(meshes, 3.9, -1.35)
   }
-  return { sourceAt: () => worldSource({ x: 0, y: field ? 0 : .08, z: 0 }, field) }
+  return { sourceAt: () => worldSource({ x: 0, y: field ? 0 : 0.08, z: 0 }, field) }
 }
 
 export function shoreFixture(meshes: MeshFactory): Fixture {
-  meshes.box(0, -.14, -1.28, 5, .29, 2.56, water)
-  meshes.box(0, -.16, 1.13, 5, .33, 2.26, '#b7956c')
-  for (const x of [-1.64, -.36, 1.22]) createRock(meshes, x, .18, .49, x, true)
+  meshes.box(0, -0.14, -1.28, 5, 0.29, 2.56, water)
+  meshes.box(0, -0.16, 1.13, 5, 0.33, 2.26, '#b7956c')
+  for (const x of [-1.64, -0.36, 1.22]) createRock(meshes, x, 0.18, 0.49, x, true)
   crewAt(meshes, 2.04, 1.16)
-  return { sourceAt: () => ({ x: 0, y: .05, z: 0, floor: .012 }) }
+  return { sourceAt: () => ({ x: 0, y: 0.05, z: 0, floor: 0.012 }) }
 }
 
 export function paddleFixture(meshes: MeshFactory): Fixture {
@@ -72,108 +75,108 @@ export function paddleFixture(meshes: MeshFactory): Fixture {
   const [, gear] = createSkiffGear(meshes, crew)
   gear.grip.setEnabled(true)
   gear.rod.setEnabled(false)
-  meshes.box(0, -.14, 0, 7, .29, 6.4, water).receiveShadows = true
+  meshes.box(0, -0.14, 0, 7, 0.29, 6.4, water).receiveShadows = true
   const blade = new Vector3(0, -1.06, 0)
 
   function pose(time: number) {
-    const beat = (time - .34) * Math.PI * 2 / .85
+    const beat = (time - 0.34) * Math.PI * 2 / 0.85
     const stroke = Math.sin(beat)
     poseSkiffCrew(crew, stroke, 1, false, 1)
-    gear.paddle.rotation.x = -crew.arms[1].rotation.x + stroke * .45
-    gear.paddle.rotation.z = 1.02 + (1 - Math.cos(beat)) * .24
+    gear.paddle.rotation.x = -crew.arms[1].rotation.x + stroke * 0.45
+    gear.paddle.rotation.z = 1.02 + (1 - Math.cos(beat)) * 0.24
   }
   return {
     sourceAt(time) {
       pose(time)
       const { x, y, z } = Vector3.TransformCoordinates(blade, gear.paddle.computeWorldMatrix(true))
-      if (y < .19 && y > -.15) return { x, y: Math.max(.026, y), z, floor: .012 }
+      if (y < 0.19 && y > -0.15) return { x, y: Math.max(0.026, y), z, floor: 0.012 }
     },
     pose,
   }
 }
 
 export function rainFixture(meshes: MeshFactory): Fixture {
-  crewAt(meshes, -.1, -.23)
-  for (let i = 0; i < 4; i++) meshes.box(i * .55 - .8, .02, -.5, .53, .045, 2.1, '#566964')
-  createRock(meshes, 1.4, .65, .84, -.35, true)
-  return { sourceAt: () => ({ x: -.6, y: 4.35, z: -.45, floor: .09 }) }
+  crewAt(meshes, -0.1, -0.23)
+  for (let i = 0; i < 4; i++) meshes.box(i * 0.55 - 0.8, 0.02, -0.5, 0.53, 0.045, 2.1, '#566964')
+  createRock(meshes, 1.4, 0.65, 0.84, -0.35, true)
+  return { sourceAt: () => ({ x: -0.6, y: 4.35, z: -0.45, floor: 0.09 }) }
 }
 
 export function roofFixture(meshes: MeshFactory): Fixture {
-  for (const x of [-1.4, 1.4]) meshes.box(x, 1.15, -.68, .14, 2.3, .15, '#776555')
-  const roof = meshes.box(0, 2.57, -.65, 3.28, .13, 1.55, '#697879')
-  roof.rotation.x = .25
-  meshes.box(0, 2.36, .12, 3.28, .09, .12, '#564b41')
-  crewAt(meshes, -1.95, .08)
-  return { sourceAt: () => ({ x: 0, y: 2.309, z: .14, floor: .045 }) }
+  for (const x of [-1.4, 1.4]) meshes.box(x, 1.15, -0.68, 0.14, 2.3, 0.15, '#776555')
+  const roof = meshes.box(0, 2.57, -0.65, 3.28, 0.13, 1.55, '#697879')
+  roof.rotation.x = 0.25
+  meshes.box(0, 2.36, 0.12, 3.28, 0.09, 0.12, '#564b41')
+  crewAt(meshes, -1.95, 0.08)
+  return { sourceAt: () => ({ x: 0, y: 2.309, z: 0.14, floor: 0.045 }) }
 }
 
 export function mistFixture(meshes: MeshFactory): Fixture {
-  crewAt(meshes, -.8, -1.28)
-  for (const [x, z, size] of [[-.8, .29, .68], [.9, -1.2, .82], [2.04, .9, .58], [-1.8, -.45, .8]]) {
+  crewAt(meshes, -0.8, -1.28)
+  for (const [x, z, size] of [[-0.8, 0.29, 0.68], [0.9, -1.2, 0.82], [2.04, 0.9, 0.58], [-1.8, -0.45, 0.8]]) {
     createRock(meshes, x, z, size, x, true)
   }
-  return { sourceAt: () => ({ x: -.75, y: .19, z: 0, floor: .025 }) }
+  return { sourceAt: () => ({ x: -0.75, y: 0.19, z: 0, floor: 0.025 }) }
 }
 
 export function leavesFixture(meshes: MeshFactory): Fixture {
-  createTree(meshes, -.9, -.5, 2.8, 0)
-  crewAt(meshes, 1.23, -.75)
-  return { sourceAt: () => ({ x: -.55, y: 1.69, z: -.25, floor: .035 }) }
+  createTree(meshes, -0.9, -0.5, 2.8, 0)
+  crewAt(meshes, 1.23, -0.75)
+  return { sourceAt: () => ({ x: -0.55, y: 1.69, z: -0.25, floor: 0.035 }) }
 }
 
 export function pollenFixture(meshes: MeshFactory): Fixture {
-  crewAt(meshes, -.8, -.85)
+  crewAt(meshes, -0.8, -0.85)
   for (let index = 0; index < 15; index++) {
-    const x = Math.cos(index * 2.4) * (index + 3) * .077
-    const z = Math.sin(index * 2.4) * (index + 2) * .047
-    const height = .33 + (index % 4) * .096
-    meshes.cylinder(x, height / 2, z, .027, .034, height, 5, '#63855a')
-    meshes.sphere(x, height, z, .16, .083, .16, index % 4 ? '#e8c967' : '#edd3a8')
+    const x = Math.cos(index * 2.4) * (index + 3) * 0.077
+    const z = Math.sin(index * 2.4) * (index + 2) * 0.047
+    const height = 0.33 + (index % 4) * 0.096
+    meshes.cylinder(x, height / 2, z, 0.027, 0.034, height, 5, '#63855a')
+    meshes.sphere(x, height, z, 0.16, 0.083, 0.16, index % 4 ? '#e8c967' : '#edd3a8')
   }
-  return { sourceAt: () => ({ x: 0, y: .58, z: .02 }) }
+  return { sourceAt: () => ({ x: 0, y: 0.58, z: 0.02 }) }
 }
 
 export function dustFixture(meshes: MeshFactory, x = 0, z = 0): Fixture {
   const truck = createFlatbed(meshes)
   truck.root.position.set(x, 0, z)
   const { axles, halfTrack } = flatbedGroundDrive.wheels
-  const contact = new Vector3(halfTrack + .08, .055, axles[0] - .12)
-  meshes.box(x, -.048, z - .75, 3.85, .084, 7.7, meshes.paintSurface('gravel', gravel))
+  const contact = new Vector3(halfTrack + 0.08, 0.055, axles[0] - 0.12)
+  meshes.box(x, -0.048, z - 0.75, 3.85, 0.084, 7.7, meshes.paintSurface('gravel', gravel))
   return {
     sourceAt() {
       const { x, y, z } = Vector3.TransformCoordinates(contact, truck.root.computeWorldMatrix(true))
-      return { x, y, z, floor: y - .056 }
+      return { x, y, z, floor: y - 0.056 }
     },
-    pose: time => poseFlatbed(truck, time * 10, 0),
+    pose: (time) => poseFlatbed(truck, time * 10, 0),
   }
 }
 
 export function fireBed(meshes: MeshFactory) {
   for (let i = 0; i < 6; i++) {
     const angle = i * Math.PI / 3
-    createRock(meshes, Math.cos(angle) * .85, Math.sin(angle) * .62, .37, angle, false)
+    createRock(meshes, Math.cos(angle) * 0.85, Math.sin(angle) * 0.62, 0.37, angle, false)
   }
-  for (const angle of [-.9, .4, 1.8]) {
-    meshes.box(0, .16, 0, 1.3, .24, .22, '#514035').rotation.y = angle
-    meshes.box(0, .235, 0, .71, .095, .178, '#c26e37').rotation.y = angle
+  for (const angle of [-0.9, 0.4, 1.8]) {
+    meshes.box(0, 0.16, 0, 1.3, 0.24, 0.22, '#514035').rotation.y = angle
+    meshes.box(0, 0.235, 0, 0.71, 0.095, 0.178, '#c26e37').rotation.y = angle
   }
 }
 
 export function fireFixture(meshes: MeshFactory, y: number, field?: FieldSite): Fixture {
   fireBed(meshes)
-  crewAt(meshes, -1.65, -.9)
+  crewAt(meshes, -1.65, -0.9)
   return { sourceAt: () => worldSource({ x: 0, y, z: 0 }, field) }
 }
 
 export function extinguisherFixture(meshes: MeshFactory, busy: boolean): Fixture {
-  const crew = crewAt(meshes, .49, -3.82)
+  const crew = crewAt(meshes, 0.49, -3.82)
   poseCrew(crew, 0, 0, false, 'extinguisher', 1)
   const tool = createSupply(meshes, 'extinguisher')
-  tool.position.set(0, .24, -3.23)
+  tool.position.set(0, 0.24, -3.23)
   if (busy) {
-    const partner = crewAt(meshes, 2.7, .9, 1)
-    partner.root.rotation.y = -Math.PI * .72
+    const partner = crewAt(meshes, 2.7, 0.9, 1)
+    partner.root.rotation.y = -Math.PI * 0.72
     fireBed(meshes)
   }
   return { sourceAt: () => extinguisherSource(tool) }

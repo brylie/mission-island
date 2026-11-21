@@ -1,6 +1,6 @@
 import type { MapPoint } from './sites.ts'
 
-export const streetCanopy = { widthRatio: .72, depth: 2.85, height: 3.17 }
+export const streetCanopy = { widthRatio: 0.72, depth: 2.85, height: 3.17 }
 
 export const buildings = [
   { site: 'fish-market', kind: 'market', x: -247, z: -132, width: 15.8, depth: 11.4, height: 4.4, facing: 0, wall: '#72a6a1', roof: '#b86351' },
@@ -18,14 +18,31 @@ export const buildings = [
 ] as const
 
 export interface Exterior extends MapPoint {
-  site: string; kind: typeof buildings[number]['kind'] | 'cottage'
-  width: number; depth: number; height: number; facing: number; wall: string; roof: string
+  site: string
+  kind: typeof buildings[number]['kind'] | 'cottage'
+  width: number
+  depth: number
+  height: number
+  facing: number
+  wall: string
+  roof: string
 }
 
 const cottageLots = [
-  [-288, -86, Math.PI], [-285, -124, 0], [-268, -70, Math.PI], [-294, -64, Math.PI],
-  [125, -42, Math.PI], [146, -85, 0], [172, -84, 0], [196, -16, Math.PI], [249, 3, -Math.PI / 2],
-  [-84, 167, Math.PI], [-40, 173, Math.PI], [-28, 142, 0], [6, 162, Math.PI], [25, 137, 0],
+  [-288, -86, Math.PI],
+  [-285, -124, 0],
+  [-268, -70, Math.PI],
+  [-294, -64, Math.PI],
+  [125, -42, Math.PI],
+  [146, -85, 0],
+  [172, -84, 0],
+  [196, -16, Math.PI],
+  [249, 3, -Math.PI / 2],
+  [-84, 167, Math.PI],
+  [-40, 173, Math.PI],
+  [-28, 142, 0],
+  [6, 162, Math.PI],
+  [25, 137, 0],
 ]
 const cottagePaint = [['#edc280', '#ac6550'], ['#cba487', '#7a6254'], ['#a8b8a0', '#526f65']]
 export const islandBuildings: readonly Exterior[] = [...buildings, ...cottageLots.map(([x, z, facing], i): Exterior => {

@@ -22,16 +22,16 @@ test('the rendered wing and pilot clear Windstone and land with neutral input an
   const neutral = fly(() => ({ turn: 0, pitch: 0 }))
   assert.ok(distance(neutral.flight.pilot, ridgeMeadow) < 1)
   for (const direction of [-1, 1]) {
-    const bank = fly((t) => ({ turn: t > .8 && t < 1.24 ? .55 * direction : 0, pitch: 0 }))
+    const bank = fly((t) => ({ turn: t > 0.8 && t < 1.24 ? 0.55 * direction : 0, pitch: 0 }))
     const correction = fly((t) => ({
-      turn: t > .75 && t < 1.2 ? .7 * direction : t > 2 && t < 2.45 ? -.7 * direction : 0,
+      turn: t > 0.75 && t < 1.2 ? 0.7 * direction : t > 2 && t < 2.45 ? -0.7 * direction : 0,
       pitch: 0,
     }))
     for (const { flight, launchClearance } of [neutral, bank, correction]) {
       assert.equal(flight.outcome, 'field')
-      assert.ok(launchClearance > .5)
-      assert.ok(flight.clearance > .5)
-      assert.ok(Math.abs(flight.bank) < .001)
+      assert.ok(launchClearance > 0.5)
+      assert.ok(flight.clearance > 0.5)
+      assert.ok(Math.abs(flight.bank) < 0.001)
     }
     assert.ok(distance(correction.flight.pilot, ridgeMeadow) < distance(bank.flight.pilot, ridgeMeadow))
   }
@@ -75,7 +75,8 @@ test('the windward updraft adds height and time to scout inland', () => {
     if (flight.climbing) {
       assert.ok(distance(flight.pilot, ridgeUpdraft) < ridgeUpdraft.radius)
       climbed = true
-    } else if (climbed && !flight.outcome) resumedDescent = true
+    }
+    else if (climbed && !flight.outcome) resumedDescent = true
   }
   assert.ok(climbed && resumedDescent)
   assert.ok(highest > groundHeight(ridgeLaunch) + 10)
@@ -87,10 +88,10 @@ test('the windward updraft adds height and time to scout inland', () => {
 
 test('touchdown follows the circular landing boundary', () => {
   const meadow = { ...ridgeMeadow, heading: ridgeHeading }
-  for (const [lateral, along, outcome] of [[ridgeLandingRadius - .25, 0, 'field'], [4.7, 6.5, 'missed']]) {
+  for (const [lateral, along, outcome] of [[ridgeLandingRadius - 0.25, 0, 'field'], [4.7, 6.5, 'missed']]) {
     const flight = startRidgeFlight()
     const point = offset(meadow, lateral, along)
-    Object.assign(flight.pilot, point, { y: groundHeight(point) + .01 })
+    Object.assign(flight.pilot, point, { y: groundHeight(point) + 0.01 })
     flight.elapsed = 6
     stepRidgeFlight(flight, { turn: 0, pitch: 0 })
     assert.equal(flight.outcome, outcome)
@@ -103,16 +104,15 @@ test('a pilot can walk back to Windstone after landing inside or short of the me
     assert.equal(flight.outcome, early ? 'early' : 'field')
     const walker = { player: { ...flight.pilot, grounded: true, onBed: false, swimming: false }, verticalSpeed: 0 }
     for (const target of [ridgeReturn, ridgeLaunch]) {
-      for (let tick = 0; tick < 160 && distance(walker.player, target) > .23; tick++) {
+      for (let tick = 0; tick < 160 && distance(walker.player, target) > 0.23; tick++) {
         const { x, z } = walker.player
-        stepPlayerOnTerrain(walker, [], { x: target.x - x, z: target.z - z, careful: false, sprint: false, spray: false },
-          false, ridgeStep, () => -Infinity)
+        stepPlayerOnTerrain(walker, [], { x: target.x - x, z: target.z - z, careful: false, sprint: false, spray: false }, false, ridgeStep, () => -Infinity)
         assert.equal(walker.player.swimming, false)
       }
-      assert.ok(distance(walker.player, target) <= .23)
+      assert.ok(distance(walker.player, target) <= 0.23)
     }
     assert.equal(walker.player.grounded, true)
-    assert.ok(Math.abs(walker.player.y - groundHeight(ridgeLaunch)) < .24)
+    assert.ok(Math.abs(walker.player.y - groundHeight(ridgeLaunch)) < 0.24)
   }
 })
 

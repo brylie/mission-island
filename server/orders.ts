@@ -13,8 +13,10 @@ import type { InteractionHandlers } from './interactions.ts'
 
 export function createOrders(
   state: Pick<Snapshot, 'crewCoins' | 'lastStarterPay' | 'items' | 'jobs' | 'mission' | 'islandTime' | 'lookoutFireClearedAt' | 'ferryRepair'>,
-  physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'relocate'>, notifyCrew: (message: CrewNotice) => void,
-  creditCrate: (id: number) => void, checkpoint?: () => void,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'relocate'>,
+  notifyCrew: (message: CrewNotice) => void,
+  creditCrate: (id: number) => void,
+  checkpoint?: () => void,
 ) {
   function payCrew(message: Extract<CrewNotice, { type: 'job-pay' | 'order-pay' | 'market-sale' }>) {
     state.crewCoins += message.coins
@@ -28,8 +30,8 @@ export function createOrders(
   }
 
   function startJob(member: CrewMember, id: JobId | undefined) {
-    if (id === undefined || state.mission !== 'complete' || state.jobs.active || !atJobBoard(member.player) ||
-      member.player.sleeping || heldItem(state, member.player) || timberOnTheWay(id)) {
+    if (id === undefined || state.mission !== 'complete' || state.jobs.active || !atJobBoard(member.player)
+      || member.player.sleeping || heldItem(state, member.player) || timberOnTheWay(id)) {
       member.notify?.({ type: 'order-unavailable' })
       return
     }
@@ -63,11 +65,13 @@ export function createOrders(
     item.delivered = true
     if (state.jobs.active) {
       advanceOrder(1)
-    } else if (state.items.filter((entry) => entry.kind === 'crate').every((crate) => crate.delivered)) {
+    }
+    else if (state.items.filter((entry) => entry.kind === 'crate').every((crate) => crate.delivered)) {
       state.mission = 'fire'
       delete state.lookoutFireClearedAt
       payCrew({ type: 'job-pay', job: 'delivery', coins: starterPay.delivery.coins })
-    } else {
+    }
+    else {
       payCrew({ type: 'job-pay', job: 'crate', coins: starterPay.crate.coins })
     }
   }
@@ -97,8 +101,8 @@ export function createOrders(
   }
 
   function buySeed(player: Player) {
-    if (player.seat || !player.grounded || player.onBed || heldItem(state, player) ||
-      distance(player, market) >= 2.25 || state.crewCoins < seedPrice) return
+    if (player.seat || !player.grounded || player.onBed || heldItem(state, player)
+      || distance(player, market) >= 2.25 || state.crewCoins < seedPrice) return
     state.crewCoins -= seedPrice
     player.seeds++
     checkpoint?.()
@@ -119,7 +123,7 @@ export function createOrders(
   const interactions = {
     // The client opens this panel locally. Choosing a job sends the separate take-job command.
     'job-board': () => {},
-    market: ({ player }) => visitMarket(player),
+    'market': ({ player }) => visitMarket(player),
   } satisfies InteractionHandlers<OrderAction>
   return { startJob, deliverCrate, interactions, completeFire, buySeed, buyClothing }
 }

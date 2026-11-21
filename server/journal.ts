@@ -42,11 +42,14 @@ export function createJournal(state: Pick<Snapshot, 'journal' | 'islandTime' | '
   }
 
   function inspect(member: CrewMember, subject: number) {
-    const option = fieldInteractions(state, member.player).find(choice => choice.subject === subject)
+    const option = fieldInteractions(state, member.player).find((choice) => choice.subject === subject)
     if (!option) return member.notify?.({ type: 'field-unavailable' })
     const { record: id } = option
     const note: JournalNote = {
-      t: state.islandTime, by: member.player.id, at: outingSubjects[id].at, rain: state.weather.rain,
+      t: state.islandTime,
+      by: member.player.id,
+      at: outingSubjects[id].at,
+      rain: state.weather.rain,
     }
     if (recordEntry(state.journal, id, note, 'outing')) {
       const parent = journalEntry(id)?.parent
@@ -84,7 +87,7 @@ export function createJournal(state: Pick<Snapshot, 'journal' | 'islandTime' | '
   }
 
   const interactions = {
-    record: ({ player }, subject) => record(player, subject),
+    'record': ({ player }, subject) => record(player, subject),
     'inspect-field': inspect,
   } satisfies InteractionHandlers<FieldAction | SightingAction>
   return { interactions, hearMara, landed, explore }

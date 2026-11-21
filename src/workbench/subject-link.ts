@@ -14,7 +14,7 @@ export function readSubjectLink(hash: string) {
   const params = new URLSearchParams(hash.split('?')[1])
   const data = params.get('setup')
   if (!data) return
-  const shot = parseLandscapeShot(data, 10000, .02)
+  const shot = parseLandscapeShot(data, 10000, 0.02)
   if (!shot) return
   const light = params.get('light')
   const lighting = light === 'overcast' || light === 'golden' || light === 'grazing' || light === 'dusk' ? light : 'daylight'

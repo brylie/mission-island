@@ -24,8 +24,11 @@ export function bindBiomeRecipes(current: () => BiomeRecipe, apply: (recipe: Bio
     const chosen = file.files?.[0]
     if (!chosen) return
     file.value = ''
-    if (chosen.size > 65536) { status.textContent = 'Choose a recipe smaller than 64 KB.'; return }
-    void chosen.text().then(text => {
+    if (chosen.size > 65536) {
+      status.textContent = 'Choose a recipe smaller than 64 KB.'
+      return
+    }
+    void chosen.text().then((text) => {
       apply(parseRecipeFile(text))
       status.textContent = 'Opened ' + chosen.name
     }).catch((error: unknown) => {

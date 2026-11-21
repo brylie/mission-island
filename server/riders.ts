@@ -14,9 +14,10 @@ export function toggleSeat(state: Snapshot, member: CrewMember) {
     const boating = inSkiff(player.seat)
     if (!boating && Math.abs(state.truck.speed) > truckSeatSpeed) return
     const side = player.seat === 'driver' ? -1 : 1
-    const exit = boating ? skiffExit(state.skiff, player.seat)
+    const exit = boating
+      ? skiffExit(state.skiff, player.seat)
       : [offset(state.truck, side * 2.1, 0.9), offset(state.truck, 0, -3.8)]
-        .find((point) => canOccupyGround(point, 0.45, -0.10))
+          .find((point) => canOccupyGround(point, 0.45, -0.10))
     if (!exit) return
     player.seat = null
     stopPrimary(member)
@@ -33,8 +34,8 @@ export function toggleSeat(state: Snapshot, member: CrewMember) {
     updateRiders(state)
     return
   }
-  if (distance(state.truck, player) >= 4.5 || Math.abs(state.truck.speed) > truckSeatSpeed || !player.grounded || player.onBed || player.truckSurface ||
-    heldItem(state, player)?.kind === 'crate') return
+  if (distance(state.truck, player) >= 4.5 || Math.abs(state.truck.speed) > truckSeatSpeed || !player.grounded || player.onBed || player.truckSurface
+    || heldItem(state, player)?.kind === 'crate') return
   if (!state.players.some((entry) => entry.seat === 'driver')) player.seat = 'driver'
   else if (!state.players.some((entry) => entry.seat === 'passenger')) player.seat = 'passenger'
   if (player.seat) {

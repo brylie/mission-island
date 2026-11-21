@@ -4,8 +4,7 @@ import type { MeshFactory } from '../island-meshes'
 // Cross-sections along local Z. Moving the middle of a section bends the silhouette.
 type Section = [z: number, centerY: number, halfWidth: number, halfHeight: number]
 
-export function coastalProfile(meshes: MeshFactory, parent: TransformNode, name: string, color: string,
-  sections: Section[], sides = 12, roundness = 1) {
+export function coastalProfile(meshes: MeshFactory, parent: TransformNode, name: string, color: string, sections: Section[], sides = 12, roundness = 1) {
   const vertices: number[] = [], faces: number[] = []
   const contour = (n: number) => Math.sign(n) * Math.abs(n) ** roundness
   for (const [row, [z, center, width, height]] of sections.entries()) {

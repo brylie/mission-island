@@ -4,10 +4,10 @@
 // A rendered jump larger than this is a snap to a new pose, not walking.
 const maxStepMetres = 2
 
-type Planar = { x: number; z: number }
+type Planar = { x: number, z: number }
 
 // What the truck moved underneath a crewmate riding its bed or roof this frame.
-export function carrierShift(player: { onBed: boolean; truckSurface?: string }, truck: Planar) {
+export function carrierShift(player: { onBed: boolean, truckSurface?: string }, truck: Planar) {
   return player.onBed || player.truckSurface ? truck : undefined
 }
 

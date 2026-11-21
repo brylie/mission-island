@@ -38,7 +38,7 @@ export const landmarks: Landmark[] = [
 ]
 
 export function hideLandmark(place: Pick<Landmark, 'kind' | 'owner' | 'closeRange'>, localId: number | undefined, close: boolean, range: number) {
-  return (place.owner !== undefined && place.owner !== localId) ||
-    (place.closeRange !== undefined && (!close || range > place.closeRange)) ||
-    (place.kind === 'ferry' && close && range > 38)
+  return (place.owner !== undefined && place.owner !== localId)
+    || (place.closeRange !== undefined && (!close || range > place.closeRange))
+    || (place.kind === 'ferry' && close && range > 38)
 }

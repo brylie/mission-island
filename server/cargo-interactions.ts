@@ -27,19 +27,24 @@ export function cargoInteractions(
     const dropoff = deliveryDrop(state)
     if (ferryDrop(state, player, item)) {
       destinations.ferry(item, player.id)
-    } else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
+    }
+    else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
       destinations.delivery(item)
-    } else if (destinations.resident(item, player)) {
+    }
+    else if (destinations.resident(item, player)) {
       return
-    } else if (item.kind === 'crate') {
+    }
+    else if (item.kind === 'crate') {
       const slot = byTruckBed(state, player) ? freeBed(state) : undefined
       if (slot === undefined) {
         const drop = canOccupyGround(item, crateSize / 2, -0.10) && !isInsideTruck(state.truck, item) ? item : player
         physics.release(item, drop, item.y)
-      } else {
+      }
+      else {
         physics.load(item, state.truck, slot)
       }
-    } else {
+    }
+    else {
       item.y = groundHeight(item) + 0.04
     }
   }

@@ -19,8 +19,7 @@ class WetPaving extends MaterialPluginBase {
   override getClassName() { return 'WetPaving' }
 
   override getUniforms() {
-    return { fragment: 'uniform vec2 pavingControls; uniform vec3 pavingSky;',
-      externalUniforms: ['pavingControls', 'pavingSky'] }
+    return { fragment: 'uniform vec2 pavingControls; uniform vec3 pavingSky;', externalUniforms: ['pavingControls', 'pavingSky'] }
   }
 
   override hardBindForSubMesh(_buffer: UniformBuffer, scene: Scene, _engine: AbstractEngine, subMesh: SubMesh) {

@@ -14,7 +14,10 @@ export function extinguisherSource(tool: TransformNode) {
   const { x, y, z } = Vector3.TransformCoordinates(nozzleTip, matrix)
   const forward = Vector3.TransformNormal(nozzleForward, matrix)
   return {
-    x, y, z, yaw: Math.atan2(forward.x, forward.z),
+    x,
+    y,
+    z,
+    yaw: Math.atan2(forward.x, forward.z),
     pitch: Math.atan2(forward.y, Math.hypot(forward.x, forward.z)),
   }
 }

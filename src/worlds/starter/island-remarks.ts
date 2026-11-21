@@ -23,23 +23,19 @@ export const islandRemarks: readonly Remark[] = [
   // The crew's work.
   { text: 'Is that smoke over the lookout? I hope someone’s on it.', when: ({ state }) => state.mission === 'fire', weight: 3 },
   { text: 'Those crates for Seabrook won’t carry themselves.', when: ({ state }) => state.mission === 'delivery', weight: 2 },
-  { text: 'The lookout still smells of ash, but the green is coming back.',
-    when: ({ state }) => state.lookoutFireClearedAt !== undefined && dawnsBetween(state.lookoutFireClearedAt, state.islandTime) < 3 },
+  { text: 'The lookout still smells of ash, but the green is coming back.', when: ({ state }) => state.lookoutFireClearedAt !== undefined && dawnsBetween(state.lookoutFireClearedAt, state.islandTime) < 3 },
   { text: 'People say the harbor crew gets things done.', when: ({ state }) => state.jobs.completed >= 1 },
   { text: 'Word is the crew’s nearly ready for the second island. We’ll miss you.', when: ({ state }) => state.jobs.completed >= 3, weight: 2 },
   { text: 'Busy day for the flatbed, I see.', when: ({ state }) => state.jobs.active !== null },
   { text: 'Was that you gliding off Windstone Ridge? Braver than me.', when: ({ state }) => state.aviation.qualified },
-  { text: 'Someone said you can see the whole island from up on the ridge, wings and all.',
-    when: ({ state }) => (state.aviation.aerial?.length ?? 0) >= 3 },
+  { text: 'Someone said you can see the whole island from up on the ridge, wings and all.', when: ({ state }) => (state.aviation.aerial?.length ?? 0) >= 3 },
   { text: 'The carrots at Island Farm look ready to pull.', when: ({ state }) => state.farm.includes('ripe') },
 
   // Gossip about the neighbors' favors.
   { text: 'Mara says you brought her carrots. That was kind.', when: (c) => others(c, 'mara') && kept(c, 'mara', 'mara-supper') },
   { text: 'Ines’s fish display was the talk of the square.', when: (c) => others(c, 'ines') && kept(c, 'ines', 'ines-display') },
-  { text: 'Bram can’t stop going on about that staged load. High praise, from Bram.',
-    when: (c) => others(c, 'bram') && kept(c, 'bram', 'bram-staging') },
-  { text: 'Wren’s gate swings like new. Everyone noticed.', 
-    when: (c) => others(c, 'wren') && kept(c, 'wren', 'wren-gate') && c.state.gateRepair.swelling === undefined },
+  { text: 'Bram can’t stop going on about that staged load. High praise, from Bram.', when: (c) => others(c, 'bram') && kept(c, 'bram', 'bram-staging') },
+  { text: 'Wren’s gate swings like new. Everyone noticed.', when: (c) => others(c, 'wren') && kept(c, 'wren', 'wren-gate') && c.state.gateRepair.swelling === undefined },
   { text: 'Wren seemed upset earlier. Something about that gate.', when: (c) => brokenWith(c, 'wren'), weight: 3 },
 
   // How well the resident knows the crew.

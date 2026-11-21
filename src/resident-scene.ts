@@ -17,7 +17,8 @@ export function createResidentFigures(meshes: MeshFactory, registry: readonly Re
     rig.root.setEnabled(false)
     // A cargo favor marks where the crate goes while the favor is under way.
     const bays = resident.favors.flatMap((favor) => 'cargo' in favor.kind
-      ? [{ favor: favor.id, marker: createObjectiveMarker(meshes, favor.kind.drop, favor.kind.radius * 2, '#ffd166') }] : [])
+      ? [{ favor: favor.id, marker: createObjectiveMarker(meshes, favor.kind.drop, favor.kind.radius * 2, '#ffd166') }]
+      : [])
     for (const { marker } of bays) marker.setEnabled(false)
     return { resident, rig, cycle: 0, bays }
   })
@@ -31,7 +32,7 @@ export function createResidentFigures(meshes: MeshFactory, registry: readonly Re
         moveTo(figure.rig.root, spot, walkingHeight(spot), factor)
         figure.rig.root.setEnabled(!spot.indoors)
         if (spot.walking) figure.cycle += delta * 1.8
-        poseCrew(figure.rig, figure.cycle, spot.walking ? .65 : 0, false, undefined, 0, factor)
+        poseCrew(figure.rig, figure.cycle, spot.walking ? 0.65 : 0, false, undefined, 0, factor)
         figure.rig.blink(time)
       }
     },

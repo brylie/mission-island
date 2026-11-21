@@ -4,7 +4,7 @@ import { parkedGroundPose } from '../truck-pose.ts'
 import { surfaceHeight, waterHeight } from './terrain.ts'
 import type { ScenerySolids } from './walking.ts'
 
-const wheels = { axles: [-2.97, 2.8] as const, halfTrack: 1.02, radius: .54 }
+const wheels = { axles: [-2.97, 2.8] as const, halfTrack: 1.02, radius: 0.54 }
 export const haulerPose = (p: Pose) => parkedGroundPose(p, wheels, ({ x, z }) => surfaceHeight(x, z))
 
 export function stepHauler(pose: HaulPose, input: HaulInput, solids: ScenerySolids, loaded: boolean) {
@@ -16,8 +16,8 @@ export function stepHauler(pose: HaulPose, input: HaulInput, solids: ScenerySoli
     const { x, z } = offset(next, 0, along)
     const ground = surfaceHeight(x, z)
     const prev = offset(pose, 0, along)
-    if (waterHeight(x, z) - ground > .38 || Math.abs(surfaceHeight(prev.x, prev.z) - ground) > .28 + Math.abs(travel) * .62 ||
-      solids.at(x, z, 1.22).some(b => b.top > ground + .42 && b.bottom < ground + 2.65)) {
+    if (waterHeight(x, z) - ground > 0.38 || Math.abs(surfaceHeight(prev.x, prev.z) - ground) > 0.28 + Math.abs(travel) * 0.62
+      || solids.at(x, z, 1.22).some((b) => b.top > ground + 0.42 && b.bottom < ground + 2.65)) {
       pose.speed = 0
       return { steering, step: null }
     }

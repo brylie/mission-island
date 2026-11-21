@@ -93,19 +93,21 @@ void main() {
   gl_FragColor = vec4(color, mix(opacity, 1., cloudOpacity));
 }`
 
-interface RainRoof { x: number; y: number; z: number; width: number; depth: number }
+interface RainRoof { x: number, y: number, z: number, width: number, depth: number }
 
-export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: DirectionalLight, shadows: ShadowGenerator,
-  diameter = 1050, rainRoof?: RainRoof) {
+export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: DirectionalLight, shadows: ShadowGenerator, diameter = 1050, rainRoof?: RainRoof) {
   const engine = scene.getEngine()
-  const physical = Atmosphere.IsSupported(engine) ? new Atmosphere('Island atmospheric scattering', scene, [sunlight], {
-    skyRenderingGroup: -1,
-    aerialPerspectiveRenderingGroup: -1,
-    globeAtmosphereRenderingGroup: -1,
-    minimumMultiScatteringIntensity: 0.003,
-  }) : undefined
+  const physical = Atmosphere.IsSupported(engine)
+    ? new Atmosphere('Island atmospheric scattering', scene, [sunlight], {
+        skyRenderingGroup: -1,
+        aerialPerspectiveRenderingGroup: -1,
+        globeAtmosphereRenderingGroup: -1,
+        minimumMultiScatteringIntensity: 0.003,
+      })
+    : undefined
   const updateSunShafts = physical && !engine.isWebGPU && shadows.usePercentageCloserFiltering
-    ? createSunShafts(scene, shadows) : undefined
+    ? createSunShafts(scene, shadows)
+    : undefined
   let physicalReady = false
   let drawPhysicalSky = false
   let incidentSunIntensity = Math.PI
@@ -131,7 +133,8 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
   dome.alwaysSelectAsActiveMesh = true
   dome.alphaIndex = -1
   const material = new ShaderMaterial('Island atmosphere', scene, { vertexSource: skyVertex, fragmentSource: skyFragment }, {
-    attributes: ['position'], uniforms: ['worldViewProjection', 'sunDir', 'horizon', 'zenith', 'time', 'rain', 'light', 'physicalSky'],
+    attributes: ['position'],
+    uniforms: ['worldViewProjection', 'sunDir', 'horizon', 'zenith', 'time', 'rain', 'light', 'physicalSky'],
     needAlphaBlending: true,
   })
   material.backFaceCulling = false
@@ -156,8 +159,7 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
   const white = Color3.FromHexString('#fff3d7')
   return {
     supportsSunShafts: Boolean(updateSunShafts),
-    update(time: number, weather: Weather, camera: Vector3, close: boolean,
-      { shaftIntensity = 1, fogScale = 1 }: { shaftIntensity?: number; fogScale?: number } = {}) {
+    update(time: number, weather: Weather, camera: Vector3, close: boolean, { shaftIntensity = 1, fogScale = 1 }: { shaftIntensity?: number, fogScale?: number } = {}) {
       const theta = (weather.hour - 6) * Math.PI / 12
       sun.set(-Math.cos(theta), Math.sin(theta), -0.24).normalize()
       const light = Math.max(0, Math.min(1, (sun.y + 0.11) * 2.65))
@@ -205,7 +207,7 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
           tail.copyFromFloats(head.x + 0.08, head.y - 0.56, head.z)
           if (!rainRoof || tail.y >= rainRoof.y || Math.abs(head.z - rainRoof.z) >= rainRoof.depth / 2) continue
           // Follow the slant of the streak back to its intersection with the roof.
-          const roofX = tail.x - (rainRoof.y - tail.y) * .08 / .56
+          const roofX = tail.x - (rainRoof.y - tail.y) * 0.08 / 0.56
           if (Math.abs(roofX - rainRoof.x) >= rainRoof.width / 2) continue
           if (head.y <= rainRoof.y) tail.copyFrom(head)
           else tail.copyFromFloats(roofX, rainRoof.y, head.z)

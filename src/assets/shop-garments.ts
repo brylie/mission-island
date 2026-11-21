@@ -52,9 +52,13 @@ function createShopGarment(meshes: MeshFactory, rig: GarmentRig, id: StockId, dy
     const belt = garmentRoot(id, rig.root)
     const { color, detail } = shopBottoms[id]
     tailored(meshes, belt, 'Waistband and seat', color, [
-      [.718, 0, -.002, .256, .156], [.755, 0, -.002, .277, .165], [.784, 0, -.004, .275, .169], [.800, 0, -.005, .270, .169, detail],
-      [.823, 0, -.011, .258, .155, detail], [.829, 0, -.011, .253, .150, detail],
-    ], 32, .036)
+      [0.718, 0, -0.002, 0.256, 0.156],
+      [0.755, 0, -0.002, 0.277, 0.165],
+      [0.784, 0, -0.004, 0.275, 0.169],
+      [0.800, 0, -0.005, 0.270, 0.169, detail],
+      [0.823, 0, -0.011, 0.258, 0.155, detail],
+      [0.829, 0, -0.011, 0.253, 0.150, detail],
+    ], 32, 0.036)
     roots.push(belt)
   }
   return roots
@@ -69,7 +73,7 @@ export function wornStock<Slot extends PieceSlot>(slot: Slot, appearance: CrewAp
 }
 
 export function createShopAttachments(meshes: MeshFactory, rig: GarmentRig) {
-  const worn = new Map<PieceSlot, { id: StockId; roots: TransformNode[]; dye?: string }>()
+  const worn = new Map<PieceSlot, { id: StockId, roots: TransformNode[], dye?: string }>()
   function sync(appearance: CrewAppearance, dye?: string) {
     for (const slot of pieceSlots) {
       const id = wornStock(slot, appearance)

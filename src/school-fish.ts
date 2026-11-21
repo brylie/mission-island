@@ -12,14 +12,14 @@ export function createCoastalFish(meshes: MeshFactory, origin: Point, waterLevel
   const bodies = Array.from({ length: schoolSize }, (_, id) => {
     const body = createSchoolFish(meshes, paint)
     body.setEnabled(false)
-    body.scaling.setAll(.87 + id % 4 * .08)
-    body.position.y = waterLevel - .21 - .014 * (id % 3)
+    body.scaling.setAll(0.87 + id % 4 * 0.08)
+    body.position.y = waterLevel - 0.21 - 0.014 * (id % 3)
     return body
   })
   let visible = false
   return (frame: WildlifeFrame, school?: CoastalSchoolFrame) => {
-    const near = Boolean(school) && frame.camera.y - waterLevel < 47 &&
-      Math.hypot(frame.camera.x - origin.x, frame.camera.z - origin.z) < 75
+    const near = Boolean(school) && frame.camera.y - waterLevel < 47
+      && Math.hypot(frame.camera.x - origin.x, frame.camera.z - origin.z) < 75
     if (near && school) {
       const blend = visible && !frame.seek ? 1 - Math.exp(-24 * frame.delta) : 1
       for (const [id, fish] of school.fish.entries()) {
@@ -30,7 +30,8 @@ export function createCoastalFish(meshes: MeshFactory, origin: Point, waterLevel
         body.position.x += (fish.x - body.position.x) * blend
         body.position.z += (fish.z - body.position.z) * blend
       }
-    } else if (visible) {
+    }
+    else if (visible) {
       for (const body of bodies) body.setEnabled(false)
     }
     visible = near

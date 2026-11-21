@@ -5,11 +5,11 @@ import type { Pose } from './world.ts'
 
 // How far each leg swings from vertical, in radians, grows with pace up to
 // the widest stride the model can take.
-const swingPerPace = .072
-const widestSwing = .92
-const narrowestSwing = .05
+const swingPerPace = 0.072
+const widestSwing = 0.92
+const narrowestSwing = 0.05
 // The pace at which a crew member pushing the barrow reaches a full stride.
-const barrowFullStridePace = .9
+const barrowFullStridePace = 0.9
 
 export const crewSwing = (pace: number) => Math.min(widestSwing, pace * swingPerPace)
 
@@ -31,7 +31,8 @@ export function moveTo(node: TransformNode, pose: Pose, y: number, factor: numbe
   if (!node.isEnabled() || Math.hypot(node.position.x - pose.x, node.position.z - pose.z) > placeBeyondMetres) {
     node.position.set(pose.x, y, pose.z)
     node.rotation.y = pose.heading
-  } else {
+  }
+  else {
     node.position.x += (pose.x - node.position.x) * factor
     node.position.y += (y - node.position.y) * factor
     node.position.z += (pose.z - node.position.z) * factor

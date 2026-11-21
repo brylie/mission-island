@@ -28,8 +28,24 @@ export function createHouse(meshes: MeshFactory, building: typeof buildings[numb
       ridge.position.z += sign * 0.03
     }
     const gable = surface('Gables', [
-      left + 0.22, h, front, left + 0.22, h, back, left + 0.22, top, 0,
-      right - 0.22, h, front, right - 0.22, top, 0, right - 0.22, h, back,
+      left + 0.22,
+      h,
+      front,
+      left + 0.22,
+      h,
+      back,
+      left + 0.22,
+      top,
+      0,
+      right - 0.22,
+      h,
+      front,
+      right - 0.22,
+      top,
+      0,
+      right - 0.22,
+      h,
+      back,
     ], [0, 2, 1, 3, 5, 4], building.wall, root)
     shadows.addShadowCaster(gable, false)
     box(0, top + 0.01, 0, right - left + 0.07, 0.14, 0.17, color, root)

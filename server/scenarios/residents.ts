@@ -7,7 +7,9 @@ import { standAt, type Scenario } from './scenario.ts'
 // to keep Mara's and Ines's favors, so one session can try all three and hear the greetings change.
 export const residentScenarios: Scenario[] = [
   {
-    id: 'village-favors', title: 'Residents · Favors for Mara, Ines and Bram', island: 'Starter Island',
+    id: 'village-favors',
+    title: 'Residents · Favors for Mara, Ines and Bram',
+    island: 'Starter Island',
     prepareWorld(state: Snapshot) {
       state.mission = 'complete'
       state.fire = 0
@@ -15,7 +17,7 @@ export const residentScenarios: Scenario[] = [
     },
     placePlayer(player) {
       const { work } = bram.schedule
-      standAt(player, { x: work.x - 1.6, z: work.z + (player.id === 0 ? -.8 : .8) }, Math.PI / 2)
+      standAt(player, { x: work.x - 1.6, z: work.z + (player.id === 0 ? -0.8 : 0.8) }, Math.PI / 2)
       player.goods = { fish: 2, carrots: 2 }
     },
   },

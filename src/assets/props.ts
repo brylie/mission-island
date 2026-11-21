@@ -6,7 +6,7 @@ import { chestSize, crateSize } from '../world'
 import type { Point } from '../world'
 const cream = '#fff3d0'
 
-export const extinguisherNozzle = { height: .98, center: .19, length: .35 }
+export const extinguisherNozzle = { height: 0.98, center: 0.19, length: 0.35 }
 
 export const umbrellaColors = ['#e97a59', '#ffce64', '#4faba4']
 
@@ -57,13 +57,15 @@ export function createSupply({ scene, box, cylinder }: MeshFactory, kind: 'crate
     for (const z of [-0.17, 0.17]) box(0, 0.32, z, 0.035, 0.11, 0.035, '#3c3d3f', node)
     box(0, 0.375, 0, 0.04, 0.035, 0.38, '#3c3d3f', node)
     box(0.105, 0.2, 0, 0.012, 0.03, 0.07, '#e7c46a', node)
-  } else if (kind === 'crate') {
+  }
+  else if (kind === 'crate') {
     box(0, 0, 0, crateSize, crateSize, crateSize, '#cf8b4f', node)
     for (const side of [-1, 1]) {
       box(side * 0.3, 0, 0, 0.11, 0.91, 0.91, '#f9c174', node)
     }
     box(0, 0.06, -0.453, 0.35, 0.23, 0.02, '#ffe8b1', node)
-  } else {
+  }
+  else {
     cylinder(0, 0.48, 0, 0.56, 0.56, 0.83, 12, '#d4513d', node)
     cylinder(0, 0.57, 0, 0.57, 0.57, 0.18, 12, cream, node)
     const { height, center, length } = extinguisherNozzle
@@ -73,16 +75,15 @@ export function createSupply({ scene, box, cylinder }: MeshFactory, kind: 'crate
   return node
 }
 
-export function createUmbrella({ cylinder, surface }: MeshFactory, x: number, z: number, color: string,
-  heightAt: (point: Point) => number = () => 0) {
+export function createUmbrella({ cylinder, surface }: MeshFactory, x: number, z: number, color: string, heightAt: (point: Point) => number = () => 0) {
   const y = heightAt({ x, z })
   cylinder(x, y + 1.25, z, 0.12, 0.16, 2.5, 6, '#8c6545')
   cylinder(x, y + 2.6, z, 0.15, 3, 0.67, 8, color)
   // Adjacent woven bands share their hems and follow the sand beneath each corner.
-  const ends = [-1.15, -.99, -.92, -.84, .84, .92, .99, 1.15]
+  const ends = [-1.15, -0.99, -0.92, -0.84, 0.84, 0.92, 0.99, 1.15]
   for (let i = 1; i < ends.length; i++) {
-    const corners = [[.35, ends[i - 1]], [1.45, ends[i - 1]], [1.45, ends[i]], [.35, ends[i]]]
-    const vertices = corners.flatMap(([dx, dz]) => [x + dx, heightAt({ x: x + dx, z: z + dz }) + .022, z + dz])
+    const corners = [[0.35, ends[i - 1]], [1.45, ends[i - 1]], [1.45, ends[i]], [0.35, ends[i]]]
+    const vertices = corners.flatMap(([dx, dz]) => [x + dx, heightAt({ x: x + dx, z: z + dz }) + 0.022, z + dz])
     surface('Beach towel', vertices, [0, 1, 2, 0, 2, 3], i === 2 || i === 6 ? color : '#f4e2b6').freezeWorldMatrix()
   }
 }
@@ -93,15 +94,15 @@ export function createTree({ cylinder, sphere, paintSurface }: MeshFactory, x: n
   if (variant % 3 === 0) {
     sphere(x, ground + height * 0.64, z, height * 0.8, height * 0.8, height * 0.77, canopy)
     sphere(x + height * 0.23, ground + height * 0.54, z + 0.27, height * 0.58, height * 0.57, height * 0.54, paintSurface('leaves', '#619553'))
-  } else {
+  }
+  else {
     cylinder(x, ground + height * 0.55, z, 0.1, height * 0.67, height * 0.63, 7, canopy)
     cylinder(x, ground + height * 0.76, z, 0.04, height * 0.48, height * 0.61, 7, paintSurface('leaves', variant % 2 ? '#55894e' : '#3e7852'))
   }
 }
 
 export function createRock({ sphere, paintSurface }: MeshFactory, x: number, z: number, size: number, angle: number, light: boolean, ground = 0) {
-  const rock = sphere(x, size * 0.12 + ground, z, size, size * 0.78, size * 1.1,
-    paintSurface('stone', light ? '#b0ad91' : surfaces.stone.color))
+  const rock = sphere(x, size * 0.12 + ground, z, size, size * 0.78, size * 1.1, paintSurface('stone', light ? '#b0ad91' : surfaces.stone.color))
   rock.rotation.y = angle
   return rock
 }

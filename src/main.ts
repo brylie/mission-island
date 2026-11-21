@@ -75,8 +75,8 @@ const reticle = createReticleFocus(playfield, document.querySelector('.reticle')
 const openWardrobe = element<HTMLButtonElement>('open-wardrobe')
 const wardrobeDialog = element<HTMLDialogElement>('wardrobe-dialog')
 const counterDialog = element<HTMLDialogElement>('clothing-counter-dialog')
-const wardrobe = createWardrobe(wardrobeDialog, appearance => send({ type: 'appearance', appearance }))
-const counter = createClothingCounter(counterDialog, item => send({ type: 'buy-clothing', item }))
+const wardrobe = createWardrobe(wardrobeDialog, (appearance) => send({ type: 'appearance', appearance }))
+const counter = createClothingCounter(counterDialog, (item) => send({ type: 'buy-clothing', item }))
 const fishingWallet = element('fishing-wallet')
 const toolSlots = element('tool-slots')
 const chargeMeter = element('charge-meter')
@@ -110,13 +110,13 @@ let leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
 const skipNameKey = () => `mission-island-skip-name-${token}`
 const checkpointControls = bindCheckpointControls(optionsDialog, () => token)
 let offerJoinName = false
-let editingName: { id: number; token: string; name: string } | undefined
-let actionFeedback: { key: string; label: string; until: number } | undefined
+let editingName: { id: number, token: string, name: string } | undefined
+let actionFeedback: { key: string, label: string, until: number } | undefined
 const feedbackText: Record<FishingResult, [string, string]> = {
-  caught: ['+1 fish', 'Caught a fish'],
+  'caught': ['+1 fish', 'Caught a fish'],
   'no-bite': ['', 'No bite'],
   'dry-cast': ['', 'Aim at open water'],
-  escaped: ['', 'The fish escaped'],
+  'escaped': ['', 'The fish escaped'],
   'line-snapped': ['', 'The line snapped'],
   'boat-moving': ['', 'Let the skiff settle before casting'],
 }
@@ -136,8 +136,7 @@ const toolButtons = starterTools.map((item, index) => {
   return button
 })
 function newToken() {
-  return Array.from(crypto.getRandomValues(new Uint8Array(16)),
-    (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
 const renderFailed = 'This browser could not start WebGL. Try a browser with hardware acceleration enabled.'
@@ -152,7 +151,8 @@ try {
   renderer.setLook(lookSettings())
   renderer.setSound(soundSettings())
   bootMessage.textContent = 'Connecting to the host…'
-} catch (error) {
+}
+catch (error) {
   renderer?.dispose()
   renderer = undefined
   console.error(error)
@@ -173,8 +173,7 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
     const quantity = player.materials?.[material]
     return quantity ? [`${quantity} ${material}`] : []
   })
-  const contents = [balance, player.deliveryXp ? player.deliveryXp + ' driver XP' : '', `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`,
-    fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '', ...materials]
+  const contents = [balance, player.deliveryXp ? player.deliveryXp + ' driver XP' : '', `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`, fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '', ...materials]
     .filter(Boolean).join(' · ')
   if (fishingWallet.textContent !== contents) fishingWallet.textContent = contents
   fishingWallet.hidden = false
@@ -191,7 +190,8 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
     chargeMeter.dataset.kind = 'cast'
     chargeLabel.textContent = `Reeled ${Math.round(fight.progress * 100)}% · tension ${Math.round(fight.tension * 100)}%`
     chargePower.value = fight.progress
-  } else if (player.charge) {
+  }
+  else if (player.charge) {
     chargeMeter.dataset.kind = player.charge.kind
     const label = player.charge.kind === 'throw' ? 'Throw power' : 'Cast power'
     if (chargeLabel.textContent !== label) chargeLabel.textContent = label
@@ -222,8 +222,13 @@ function update(state: Snapshot) {
     if (title) title.textContent = player?.name || `Crew ${index + 1}`
     const role = row.querySelector('small')
     if (role) role.textContent = player
-      ? player.sleeping ? 'Turning in' : player.seat === 'driver' ? 'Driving' : player.seat === 'passenger' ? 'Riding'
-        : inSkiff(player.seat) ? 'Afloat' : index === id ? 'You' : 'Online'
+      ? player.sleeping
+        ? 'Turning in'
+        : player.seat === 'driver'
+          ? 'Driving'
+          : player.seat === 'passenger'
+            ? 'Riding'
+            : inSkiff(player.seat) ? 'Afloat' : index === id ? 'You' : 'Online'
       : 'Open'
   })
 
@@ -250,9 +255,11 @@ function update(state: Snapshot) {
   const focus = reticle.update(state, player, renderer?.aimRay())
   renderer?.pinTip(reticle.tip, focus?.at)
   const ridgeHint = player && ridgeActionHint(state, player)
-  const [key, action] = ridgeHint ?? (player?.charge ? ['', 'Release left click']
-    : actionFeedback && performance.now() < actionFeedback.until ? [actionFeedback.key, actionFeedback.label]
-    : player ? actionHint(state, player, focus) : ['', ''])
+  const [key, action] = ridgeHint ?? (player?.charge
+    ? ['', 'Release left click']
+    : actionFeedback && performance.now() < actionFeedback.until
+      ? [actionFeedback.key, actionFeedback.label]
+      : player ? actionHint(state, player, focus) : ['', ''])
   const waiting = checkpointControls.waitingPrompt(state.playtest)
   prompt.hidden = !action && !waiting
   promptKey.hidden = !key || Boolean(waiting)
@@ -318,8 +325,7 @@ function connect() {
         actionFeedback = { key: `+${incoming.coins} coins`, label: 'Market sale · Crew bank', until: performance.now() + 2100 }
         break
       case 'job-pay': {
-        actionFeedback = { key: `+${incoming.coins} coins`, label: `${starterPay[incoming.job].label} · Crew bank`,
-          until: performance.now() + 3200 }
+        actionFeedback = { key: `+${incoming.coins} coins`, label: `${starterPay[incoming.job].label} · Crew bank`, until: performance.now() + 3200 }
         break
       }
       case 'crew-note':
@@ -391,8 +397,7 @@ function send(message: ClientMessage) {
   if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message))
 }
 
-const keyBindings = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown',
-  'ArrowRight', 'KeyB', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyF', 'KeyC', 'KeyR', 'Space', 'Digit1', 'Digit2', 'Digit3'])
+const keyBindings = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'KeyB', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyF', 'KeyC', 'KeyR', 'Space', 'Digit1', 'Digit2', 'Digit3'])
 
 function aimHeading() {
   return follow ? renderer?.aimHeading() : undefined
@@ -462,13 +467,13 @@ function openJobBoard() {
 }
 
 function modalOpen() {
-  return optionsDialog.open || boardDialog.open || guideDialog.open || joinNameDialog.open ||
-    wardrobeDialog.open || counterDialog.open || journal.dialog.open
+  return optionsDialog.open || boardDialog.open || guideDialog.open || joinNameDialog.open
+    || wardrobeDialog.open || counterDialog.open || journal.dialog.open
 }
 
 function openClothing(fromWardrobe: boolean) {
   if (!live || !snapshot || modalOpen()) return
-  const player = snapshot.players.find(entry => entry.id === id)
+  const player = snapshot.players.find((entry) => entry.id === id)
   if (!player) return
   pauseControls()
   if (fromWardrobe) wardrobe.open(snapshot, player)
@@ -559,8 +564,8 @@ function cancelMouseActions() {
 }
 
 function overGameplay(target: EventTarget | null) {
-  return document.pointerLockElement === canvas || (target instanceof Element && playfield.contains(target) &&
-    !target.closest('button, a, input, select, textarea, dialog'))
+  return document.pointerLockElement === canvas || (target instanceof Element && playfield.contains(target)
+    && !target.closest('button, a, input, select, textarea, dialog'))
 }
 
 function beginMouseAction(event: MouseEvent) {
@@ -657,7 +662,8 @@ if (import.meta.hot) {
         bootMessage.textContent = 'Connecting to the host…'
         connect()
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error(error)
     }
     showNotice()

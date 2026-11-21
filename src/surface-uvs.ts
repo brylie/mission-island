@@ -9,9 +9,11 @@ export function boxSurfaceUVs(mesh: Mesh, alongX = false, phase = 0) {
     const [x, y, z] = [positions[i], positions[i + 1], positions[i + 2]]
     if (normals[i + 1]) {
       uvs.push(alongX ? z : x, (alongX ? x : z) + phase)
-    } else if (normals[i]) {
+    }
+    else if (normals[i]) {
       uvs.push(alongX ? z : y, (alongX ? y : z) + phase)
-    } else {
+    }
+    else {
       uvs.push(alongX ? y : x, (alongX ? x : y) + phase)
     }
   }
@@ -26,7 +28,7 @@ export function cylinderSurfaceUVs(mesh: Mesh, diameter: number, height: number,
   const circumference = Math.max(1, Math.round(Math.PI * diameter / repeat)) * repeat
   const uvs = []
   for (let i = 0, uv = 0; i < positions.length; i += 3, uv += 2) {
-    if (Math.abs(normals[i + 1]) > .99) uvs.push(positions[i] * mesh.scaling.x, positions[i + 2] * mesh.scaling.z)
+    if (Math.abs(normals[i + 1]) > 0.99) uvs.push(positions[i] * mesh.scaling.x, positions[i + 2] * mesh.scaling.z)
     else uvs.push(baseUVs[uv] * circumference, baseUVs[uv + 1] * height)
   }
   mesh.setVerticesData(VertexBuffer.UVKind, uvs)

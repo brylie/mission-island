@@ -15,22 +15,31 @@ const hz = 30
 
 export const mechanicStudies: Entry[] = [
   {
-    id: 'cast-trial', name: 'Fishing cast & reel', group: 'Fishing', source: 'src/simulation/fishing.ts', duration: 27,
+    id: 'cast-trial',
+    name: 'Fishing cast & reel',
+    group: 'Fishing',
+    source: 'src/simulation/fishing.ts',
+    duration: 27,
     description: 'Compare cast strength and reeling strategies from the end of the harbor dock. Each trial includes a bite.',
     fieldSite: () => ({ name: 'Harbor dock', offset: { ...dock, y: waterLevel } }),
-    readout: 'Fishing trial', controls: [
+    readout: 'Fishing trial',
+    controls: [
       { key: 'power', type: 'range', label: 'Cast strength (%)', min: 0, max: 100, step: 1, value: 75 },
       { key: 'reel', type: 'select', label: 'Reeling strategy', value: 'calm', choices: { calm: 'Reel during calm water', always: 'Always reel', never: 'Let out line' } },
     ],
     create(meshes, _, _error, observe) {
-      const bobber = meshes.sphere(0, .09, 0, .18, .22, .18, '#ed9358')
+      const bobber = meshes.sphere(0, 0.09, 0, 0.18, 0.22, 0.18, '#ed9358')
       // Frame the entire cast, including its farthest landing point.
-      meshes.box(0, .1, -6.2, .2, .2, 12.4, '#fff', undefined, false).isVisible = false
+      meshes.box(0, 0.1, -6.2, 0.2, 0.2, 12.4, '#fff', undefined, false).isVisible = false
       return ({ time }, values) => {
         const power = Number(values.power) / 100
         const target = castPoint(dock, power)
-        if (!target) { bobber.setEnabled(false); observe('Dry cast'); return }
-        const fight = { progress: 0, tension: .25, pulling: false }
+        if (!target) {
+          bobber.setEnabled(false)
+          observe('Dry cast')
+          return
+        }
+        const fight = { progress: 0, tension: 0.25, pulling: false }
         const ticks = Math.floor((time - castTravelSeconds - biteSeconds) * hz)
         let outcome
         for (let i = 1; i <= ticks && !outcome; i++) {
@@ -40,23 +49,27 @@ export const mechanicStudies: Entry[] = [
         const flight = Math.min(1, time / castTravelSeconds)
         const distance = Math.hypot(target.z - dock.z, target.x - dock.x)
         bobber.setEnabled(true)
-        bobber.position.set(0, .09 + (1 - flight) * 1.2 + Math.sin(flight * Math.PI) * 1.25, -distance * flight * (1 - .88 * fight.progress))
+        bobber.position.set(0, 0.09 + (1 - flight) * 1.2 + Math.sin(flight * Math.PI) * 1.25, -distance * flight * (1 - 0.88 * fight.progress))
         const phase = outcome ?? (flight < 1 ? 'Casting' : ticks < 0 ? 'Waiting for bite' : fight.pulling ? 'Fish pulling' : 'Fish calm')
         observe(`${phase} · ${distance.toFixed(1)} m cast · ${Math.round(catchChance(power) * 100)}% bite chance\nReeled ${Math.round(fight.progress * 100)}% · Tension ${Math.round(fight.tension * 100)}%`)
       }
     },
   },
   {
-    id: 'cargo-trial', name: 'Throw into flatbed', group: 'Physics', source: 'src/simulation/cargo.ts', duration: 3,
+    id: 'cargo-trial',
+    name: 'Throw into flatbed',
+    group: 'Physics',
+    source: 'src/simulation/cargo.ts',
+    duration: 3,
     description: 'Replay a crate throw against the parked truck using the multiplayer cargo physics.',
-    fieldSite: () => ({ name: 'Harbor Depot', offset: { ...truckStart, y: 0 } }), readout: 'Cargo trial',
+    fieldSite: () => ({ name: 'Harbor Depot', offset: { ...truckStart, y: 0 } }),
+    readout: 'Cargo trial',
     controls: [{ key: 'power', type: 'range', label: 'Throw strength (%)', min: 0, max: 100, step: 5, value: 55, rebuild: true }],
     create(meshes, values, _error, observe) {
       const physics = createCargoPhysics()
       let pose = physics.parkTruck(truckStart)
       const start = { x: truckStart.x - 5.5, z: truckStart.z }
-      const item: Item = { ...start, id: 0, kind: 'crate', holder: null, heading: truckStart.heading, y: 1.35,
-        onBed: false, delivered: false, rotation: null, spraying: false }
+      const item: Item = { ...start, id: 0, kind: 'crate', holder: null, heading: truckStart.heading, y: 1.35, onBed: false, delivered: false, rotation: null, spraying: false }
       physics.launch(item, start, groundHeight(start) + item.y, Number(values.power) / 100)
       const frames = [{ item: { ...item }, pose }]
       for (let i = 0; i < 3 * hz; i++) {

@@ -4,7 +4,10 @@ import type { PlotStage } from '../farm'
 import { control, type Entry } from './subject'
 
 export const farmStudy: Entry = {
-  id: 'farm', name: 'Carrot plots', group: 'Farming', source: 'src/island-farm.ts',
+  id: 'farm',
+  name: 'Carrot plots',
+  group: 'Farming',
+  source: 'src/island-farm.ts',
   fieldSite: () => ({ name: 'Carrot farm', offset: { x: 0, y: 0, z: 0 }, replaceFarm: true }),
   description: 'Compare soil and carrot growth through each stage of the crop.',
   controls: [control('plot', 'Growth stage', 'ripe', { grass: 'Grass', tilled: 'Tilled', planted: 'Planted', watered: 'Watered', ripe: 'Ripe' })],

@@ -33,11 +33,11 @@ test('the front of the tire climbs the asphalt seam before the axle reaches it',
 })
 
 test('the barrow gait sweeps a planted shoe backward at the crew’s travel speed', () => {
-  const start = barrowLegPose(.1, 0, 1)
-  const end = barrowLegPose(.2, 0, 1)
+  const start = barrowLegPose(0.1, 0, 1)
+  const end = barrowLegPose(0.2, 0, 1)
   assert.equal(start.knee, 0)
   assert.equal(end.knee, 0)
-  near(.66 * (Math.sin(end.hip) - Math.sin(start.hip)), .1 * barrowWalk.cycleMetres)
-  assert.ok(barrowLegPose(.2, 1, 1).knee > 0, 'the other foot lifts')
-  assert.deepEqual(barrowLegPose(.2, 0, 0), { hip: -0, knee: 0 })
+  near(0.66 * (Math.sin(end.hip) - Math.sin(start.hip)), 0.1 * barrowWalk.cycleMetres)
+  assert.ok(barrowLegPose(0.2, 1, 1).knee > 0, 'the other foot lifts')
+  assert.deepEqual(barrowLegPose(0.2, 0, 0), { hip: -0, knee: 0 })
 })

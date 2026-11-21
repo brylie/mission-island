@@ -5,7 +5,9 @@ import { sampleTray } from '../../src/worlds/starter/materials.ts'
 import { standAt, type Scenario } from './scenario.ts'
 
 export const materialsScenario: Scenario = {
-  id: 'materials-checkout', title: 'Wren · Materials checkout', island: 'Starter Island',
+  id: 'materials-checkout',
+  title: 'Wren · Materials checkout',
+  island: 'Starter Island',
   prepareWorld(state) {
     state.islandTime = 84
     state.mission = 'complete'
@@ -17,7 +19,7 @@ export const materialsScenario: Scenario = {
     state.lastFavorPay = { resident: 'wren', favor: gateFavor, coins: favorCoins }
   },
   placePlayer(player) {
-    standAt(player, { x: sampleTray.x - 1.3 + player.id * .85, z: sampleTray.z + .35 })
+    standAt(player, { x: sampleTray.x - 1.3 + player.id * 0.85, z: sampleTray.z + 0.35 })
     delete player.materials
   },
 }

@@ -4,7 +4,7 @@ import type { AudioEngine, AudioState, Lane } from './engine.ts'
 import { swellCue, swellSeconds } from './recipes.ts'
 import { createShoreFollower, surfVoices } from './shore.ts'
 
-type SurfSettings = { strength: number; spacing: number }
+type SurfSettings = { strength: number, spacing: number }
 
 // Average seconds between breakers on one voice before seeded variation.
 const baseSpacing = 5.2
@@ -13,7 +13,7 @@ export const swellVariants = 3
 
 export const swellSeed = (count: number, voice: number) => count % swellVariants + voice * swellVariants
 
-type Voice = { lane: Lane; next: number; random: () => number; count: number }
+type Voice = { lane: Lane, next: number, random: () => number, count: number }
 
 // Schedules overlapping swells on each persistent surf voice in audio time.
 export function createSurfPlayer(engine: AudioEngine, seed = 1) {

@@ -5,7 +5,7 @@ import { daySeconds, isNight, weatherAt } from '../weather.ts'
 import { beach, distance, ferryTerminal, forest, harbor, harborDock, lookout, town, type Point } from '../world.ts'
 import { journalCatalog, type JournalPage } from './catalog.ts'
 
-export interface JournalNote { t: number; by?: number; at?: string; rain?: number }
+export interface JournalNote { t: number, by?: number, at?: string, rain?: number }
 export interface JournalRecord {
   first?: JournalNote
   outing?: JournalNote
@@ -30,8 +30,10 @@ export function recordEntry(journal: Journal, id: string, note: JournalNote, kin
 }
 
 export function journalTally(journal: Journal) {
-  const pages: Record<JournalPage, { recorded: number; total: number }> = {
-    fish: { recorded: 0, total: 0 }, places: { recorded: 0, total: 0 }, nature: { recorded: 0, total: 0 },
+  const pages: Record<JournalPage, { recorded: number, total: number }> = {
+    fish: { recorded: 0, total: 0 },
+    places: { recorded: 0, total: 0 },
+    nature: { recorded: 0, total: 0 },
   }
   for (const { id, page } of journalCatalog) {
     pages[page].total++
@@ -41,7 +43,7 @@ export function journalTally(journal: Journal) {
   return { pages, recorded: all.reduce((sum, page) => sum + page.recorded, 0), total: journalCatalog.length }
 }
 
-const namedPlaces: readonly { key: string; name: string; point: Point; range: number }[] = [
+const namedPlaces: readonly { key: string, name: string, point: Point, range: number }[] = [
   // A region's signpost can stand just past its scatter of trees and stones, so its name reaches a little further.
   ...northernRegions.map(({ id, name, at, spread }) => ({ key: id, name, point: at, range: spread + 4 })),
   { key: 'shellglass', name: 'Shellglass Tide Pool', point: shellglassPoint, range: 9 },
@@ -79,6 +81,6 @@ export function noteConditions({ t, rain: recordedRain }: JournalNote) {
   const { hour, rain: inferredRain } = weatherAt(t)
   const rain = recordedRain ?? inferredRain
   const time = isNight(hour) ? 'night' : hour < 10 ? 'morning' : hour < 14 ? 'midday' : 'afternoon'
-  const conditions = rain >= .65 && recordedRain !== undefined ? 'heavy rain' : rain >= .3 ? 'rain' : ''
+  const conditions = rain >= 0.65 && recordedRain !== undefined ? 'heavy rain' : rain >= 0.3 ? 'rain' : ''
   return [`Day ${Math.floor(t / daySeconds) + 1}`, time, conditions].filter(Boolean).join(' · ')
 }

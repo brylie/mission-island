@@ -19,12 +19,12 @@ const features = [
 const noiseBands = [
   { wavelength: 64, amplitude: 4.2 },
   { wavelength: 24, amplitude: 1.6 },
-  { wavelength: 9, amplitude: .45 },
+  { wavelength: 9, amplitude: 0.45 },
 ]
 
 function baselineScale(angle: number) {
   const northern = Math.max(0, Math.sin(angle))
-  return (1 + 2.85 * northern ** 2) * (1 + Math.sin(angle * 5 + .2) * .018 + Math.cos(angle * 9) * .013)
+  return (1 + 2.85 * northern ** 2) * (1 + Math.sin(angle * 5 + 0.2) * 0.018 + Math.cos(angle * 9) * 0.013)
 }
 
 function rayLength(angle: number) {
@@ -64,11 +64,11 @@ const protectedShore = [
   { along: coastDistance(231), halfWidth: 13, fade: 9 },
   { along: coastDistance(314), halfWidth: 21, fade: 13 },
 ]
-const landforms = features.map(feature => ({ ...feature, along: coastDistance(feature.bearing) }))
+const landforms = features.map((feature) => ({ ...feature, along: coastDistance(feature.bearing) }))
 const bands = noiseBands.map(({ wavelength, amplitude }) => ({ cells: Math.round(perimeter / wavelength), amplitude }))
 
 export function createStarterCoast(seed: number) {
-  const offsets = distances.map(along => {
+  const offsets = distances.map((along) => {
     let influence = 1
     for (const { along: centre, halfWidth, fade } of protectedShore) {
       influence *= smooth((distanceAlongCoast(along, centre) - halfWidth) / fade)

@@ -7,20 +7,20 @@ import { daySeconds } from '../src/weather.ts'
 import { distance } from '../src/world.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
-const lane = { x: gateway.x, z: fenceZ - .9 }
+const lane = { x: gateway.x, z: fenceZ - 0.9 }
 const noon = daySeconds / 4
 const at = (hour, day = 0) => day * daySeconds + ((hour - 6 + 24) % 24) * daySeconds / 24
 
 function walkTo(h, client, ...targets) {
   for (const target of targets) {
-    for (let tick = 0; tick < 190 && distance(client.player, target) > .17; tick++) {
+    for (let tick = 0; tick < 190 && distance(client.player, target) > 0.17; tick++) {
       const d = distance(client.player, target)
       h.input(client, { x: (target.x - client.player.x) / d, z: (target.z - client.player.z) / d })
       h.advance()
     }
     h.input(client)
     h.advance()
-    assert.ok(distance(client.player, target) <= .3, `walked to ${target.x}, ${target.z}`)
+    assert.ok(distance(client.player, target) <= 0.3, `walked to ${target.x}, ${target.z}`)
   }
 }
 
@@ -29,7 +29,7 @@ test('E at the gate picks up a crate in reach instead of swinging the gate', (t)
     players: [player(0, lane)],
     arrange(save) {
       save.islandTime = noon
-      Object.assign(save.world.items[0], { x: gateway.x + .9, z: lane.z, y: .45 })
+      Object.assign(save.world.items[0], { x: gateway.x + 0.9, z: lane.z, y: 0.45 })
     },
   })
   const a = h.join(tokens[0])
@@ -49,7 +49,7 @@ test('a closing gate waits for a loose crate to leave the opening', (t) => {
       save.islandTime = noon
       Object.assign(save.world.gateRepair, { stage: 'mended', acceptedAt: 0, mendedAt: 0 })
       save.world.gate = { open: true, closePending: true }
-      Object.assign(save.world.items[0], { x: gateway.x + .2, z: fenceZ - .3, y: .45 })
+      Object.assign(save.world.items[0], { x: gateway.x + 0.2, z: fenceZ - 0.3, y: 0.45 })
     },
   })
   const a = h.join(tokens[0])
@@ -69,11 +69,11 @@ test('a player following Wren out through the mended gate is never shut in, and 
     Object.assign(save.world.gateRepair, { stage: 'mended', acceptedAt: at(8), mendedAt: at(10) })
     save.world.residents.wren = { ...blankRecord(), trust: 1, kept: ['wren-gate'], active: null }
   }
-  const h = setup(t, { players: [player(0, { x: gateway.x - .5, z: fenceZ + 1.3 })], arrange: settled })
+  const h = setup(t, { players: [player(0, { x: gateway.x - 0.5, z: fenceZ + 1.3 })], arrange: settled })
   const a = h.join(tokens[0])
   assert.ok(distance(wrenAt({ ...a.state, islandTime: at(3, 1) }), gateway) >= 1.5, 'home is clear of the gateway')
   h.advanceUntil(() => a.state.gate.open, 200)
-  walkTo(h, a, { x: gateway.x, z: fenceZ + .4 })
+  walkTo(h, a, { x: gateway.x, z: fenceZ + 0.4 })
   h.advance(90)
   assert.ok(distance(wrenAt(a.state), gateway) > 1.5, 'Wren has gone through')
   assert.equal(a.state.gate.open, true, 'held open for the crewmate in the opening')

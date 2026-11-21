@@ -12,7 +12,8 @@ try {
   })
   if (values.help) {
     process.stdout.write(usage + '\n')
-  } else {
+  }
+  else {
     if (positionals.length !== 2) throw new Error(usage)
     const base = new URL(positionals[0])
     if (!/^https?:$/.test(base.protocol) || !base.hash.slice(1).split('?')[0]) throw new Error('Use a Workbench URL with a subject such as #clover.')
@@ -22,7 +23,8 @@ try {
     if (values.crop !== undefined && crop === fitCrop) throw new Error('Crop needs zoom above 1 through 8 and x,y between 0 and 1. Omit --crop to fit.')
     process.stdout.write(withReference(base.href, ref.source, crop, values.description) + '\n')
   }
-} catch (error) {
+}
+catch (error) {
   process.stderr.write(error.message + '\n')
   process.exitCode = 1
 }

@@ -6,7 +6,7 @@ import { activeFavor, isCustom, openOffer, pendingReport } from './favors.ts'
 import { atResident, residentAt } from './schedule.ts'
 
 export const residentActions = {
-  talk: 'explicit',
+  'talk': 'explicit',
   'accept-favor': 'explicit',
   'hand-over': 'explicit',
   'report-sound': 'explicit',
@@ -14,11 +14,11 @@ export const residentActions = {
 } as const satisfies InteractionPolicies
 export type ResidentAction = keyof typeof residentActions
 
-interface ResidentOptions { talk: InteractionOption<ResidentAction>[]; accept: InteractionOption<ResidentAction>[] }
+interface ResidentOptions { talk: InteractionOption<ResidentAction>[], accept: InteractionOption<ResidentAction>[] }
 
 function residentTarget(resident: ResidentDefinition, state: Snapshot) {
   const spot = residentAt(resident.schedule, state)
-  return { name: resident.identity.name, at: { x: spot.x, y: walkingHeight(spot) + 1.1, z: spot.z }, radius: .55 }
+  return { name: resident.identity.name, at: { x: spot.x, y: walkingHeight(spot) + 1.1, z: spot.z }, radius: 0.55 }
 }
 
 function handOver(resident: ResidentDefinition, state: Snapshot, player: Player, subject: number): InteractionOption<ResidentAction> | undefined {
@@ -48,8 +48,7 @@ export function residentInteractions(registry: readonly ResidentDefinition[], st
     // Reporting back is a choice in the conversation too: both answers are always offered side by side.
     const waiting = pendingReport(resident, state)
     if (waiting) {
-      options.accept.push({ action: 'report-sound', subject, key: 'E', label: waiting.report.sound, name },
-        { action: 'report-fault', subject, key: 'E', label: waiting.report.fault, name })
+      options.accept.push({ action: 'report-sound', subject, key: 'E', label: waiting.report.sound, name }, { action: 'report-fault', subject, key: 'E', label: waiting.report.fault, name })
     }
   }
   return options

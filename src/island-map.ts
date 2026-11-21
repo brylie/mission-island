@@ -19,7 +19,7 @@ const mapWidth = coast.east - coast.west + 14
 const mapHeight = coast.north - coast.south + 14
 const rings = Array.from({ length: coastSegments }, (_, i) => {
   const angle = i * 2 * Math.PI / coastSegments
-  return { shore: coastPoint(angle), grass: coastPoint(angle, .916), boundary: buoyBoundaryPoint(angle) }
+  return { shore: coastPoint(angle), grass: coastPoint(angle, 0.916), boundary: buoyBoundaryPoint(angle) }
 })
 
 function drawShift(state: Snapshot, dot: MapDot) {
@@ -43,9 +43,9 @@ function drawWork(state: Snapshot, local: Player | undefined, dot: MapDot) {
   drawRidgeMap(state, dot)
 }
 
-function drawIslandPaths(drawRoute: (points: readonly { x: number; z: number }[], width: number, color: string) => void) {
+function drawIslandPaths(drawRoute: (points: readonly { x: number, z: number }[], width: number, color: string) => void) {
   for (const { points, surface } of footpaths) {
-    if (surface === 'desire') drawRoute(points, .85, '#b5a77e')
+    if (surface === 'desire') drawRoute(points, 0.85, '#b5a77e')
     else drawRoute(points, 2, surface === 'pavement' ? '#c4c9c1' : '#a5a77e')
   }
   for (const { points } of walkways) drawRoute(points, 2, '#c4c9c1')

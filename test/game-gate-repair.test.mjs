@@ -8,8 +8,7 @@ import { createGame } from '../server/game.ts'
 import { islandSaveFile } from '../server/save.ts'
 import { actionHint, interactRequest } from '../src/actions.ts'
 import { interactions } from '../src/interaction-options.ts'
-import { canFit, fenceZ, gateMendedStage, gateRepairGuide, gateway, initialGateRepair, onBench, wrenAt, wrenLines,
-  wrenRoute } from '../src/gate-repair.ts'
+import { canFit, fenceZ, gateMendedStage, gateRepairGuide, gateway, initialGateRepair, onBench, wrenAt, wrenLines, wrenRoute } from '../src/gate-repair.ts'
 import { jobBoard } from '../src/jobs.ts'
 import { canWalkAt } from '../src/simulation/movement.ts'
 import { daySeconds } from '../src/weather.ts'
@@ -20,7 +19,7 @@ import { player, setup, tokens } from './support/game-harness.mjs'
 
 const toolboxId = itemStarts.findIndex(({ kind }) => kind === 'toolbox')
 const at = (hour, day = 0) => day * daySeconds + ((hour - 6 + 24) % 24) * daySeconds / 24
-const lane = { x: gateway.x, z: fenceZ - .9 }
+const lane = { x: gateway.x, z: fenceZ - 0.9 }
 const garden = { x: gateway.x, z: fenceZ + 1.8 }
 const byWren = { x: -25.8, z: -14.8 }
 const byBench = { x: -22.4, z: -15.8 }
@@ -29,14 +28,14 @@ const toBench = [...benchRoad].reverse()
 
 function walkTo(h, client, ...targets) {
   for (const target of targets) {
-    for (let tick = 0; tick < 190 && distance(client.player, target) > .17; tick++) {
+    for (let tick = 0; tick < 190 && distance(client.player, target) > 0.17; tick++) {
       const d = distance(client.player, target)
       h.input(client, { x: (target.x - client.player.x) / d, z: (target.z - client.player.z) / d })
       h.advance()
     }
     h.input(client)
     h.advance()
-    assert.ok(distance(client.player, target) <= .3, `walked to ${target.x}, ${target.z}`)
+    assert.ok(distance(client.player, target) <= 0.3, `walked to ${target.x}, ${target.z}`)
   }
 }
 
@@ -69,13 +68,13 @@ test('Wren takes the long way before the repair and the gate shortcut from the n
   const samples = (state, from, to) => Array.from({ length: 120 }, (_, i) => wrenAt({ ...state, islandTime: from + (to - from) * i / 119 }))
   for (const spot of [...samples({ ...broken }, at(6.9), at(8)), ...samples({ ...mended }, at(17), at(18.2))]) {
     assert.ok(distance(spot, gateway) > 1.2, 'the detour stays clear of the closed gate')
-    if (!spot.indoors) assert.ok(canWalkAt(spot, .3, -.3), `detour point ${spot.x}, ${spot.z}`)
+    if (!spot.indoors) assert.ok(canWalkAt(spot, 0.3, -0.3), `detour point ${spot.x}, ${spot.z}`)
   }
   assert.ok(samples({ ...broken }, at(7), at(7.4)).some((spot) => spot.indoors), 'Wren goes out the back of the cottage')
   assert.equal(gateMendedStage({ ...mended, islandTime: at(17) }), 'fixed-today')
   const tomorrow = samples({ ...mended }, at(7, 1), at(8, 1))
   assert.equal(gateMendedStage({ ...mended, islandTime: at(7, 1) }), 'settled')
-  assert.ok(tomorrow.some((spot) => distance(spot, gateway) < .2), 'the morning commute passes through the gate')
+  assert.ok(tomorrow.some((spot) => distance(spot, gateway) < 0.2), 'the morning commute passes through the gate')
   assert.ok(tomorrow.every((spot) => !spot.indoors))
   assert.notEqual(wrenRoute({ ...mended, islandTime: at(7) }), wrenRoute({ ...mended, islandTime: at(7, 1) }))
   assert.deepEqual(wrenAt({ ...broken, islandTime: at(12) }), { ...wrenAt({ ...broken, islandTime: at(12) }), walking: false })
@@ -83,24 +82,28 @@ test('Wren takes the long way before the repair and the gate shortcut from the n
 })
 
 test('a sagging gate drags short of an opening anyone can walk through', (t) => {
-  const h = setup(t, { players: [player(0, lane)], arrange: (save) => { save.islandTime = at(12) } })
+  const h = setup(t, { players: [player(0, lane)], arrange: (save) => {
+    save.islandTime = at(12)
+  } })
   const a = h.join(tokens[0])
   assert.deepEqual(actionHint(a.state, a.player), ['E', 'Try the sagging gate'])
   act(h, a, 'open')
   assert.equal(a.state.gate.open, true)
   assert.deepEqual(a.messages.at(-1), { type: 'gate-step', step: 'stuck' })
-  for (const x of [gateway.x - .2, gateway.x, gateway.x + .25]) {
+  for (const x of [gateway.x - 0.2, gateway.x, gateway.x + 0.25]) {
     walkTo(h, a, { x, z: lane.z })
     for (let tick = 0; tick < 60; tick++) {
       h.input(a, { x: 0, z: 1 })
       h.advance()
     }
-    assert.ok(a.player.z < fenceZ - .15, 'the leaf and fence keep the crew out of the garden')
+    assert.ok(a.player.z < fenceZ - 0.15, 'the leaf and fence keep the crew out of the garden')
   }
 })
 
 test('a solo player borrows the toolbox, finds the fault, fetches a pin and tests the mended gate', (t) => {
-  const h = setup(t, { players: [player(0, byWren)], arrange: (save) => { save.islandTime = at(10) } })
+  const h = setup(t, { players: [player(0, byWren)], arrange: (save) => {
+    save.islandTime = at(10)
+  } })
   const a = h.join(tokens[0])
   assert.deepEqual(actionHint(a.state, a.player), ['E', 'Talk to Wren'])
   act(h, a, 'talk')
@@ -134,15 +137,14 @@ test('a solo player borrows the toolbox, finds the fault, fetches a pin and test
   assert.equal(a.state.crewCoins, coins + 5)
   assert.deepEqual(a.state.residents.wren, { ...blankRecord(), trust: 1, kept: ['wren-gate'], active: null })
   assert.deepEqual(a.state.lastFavorPay, { resident: 'wren', favor: 'wren-gate', coins: 5 })
-  assert.deepEqual(a.messages.filter(({ type }) => type === 'favor-pay'),
-    [{ type: 'favor-pay', resident: 'wren', favor: 'wren-gate', coins: 5, trust: 1, restored: false }])
+  assert.deepEqual(a.messages.filter(({ type }) => type === 'favor-pay'), [{ type: 'favor-pay', resident: 'wren', favor: 'wren-gate', coins: 5, trust: 1, restored: false }])
   walkTo(h, a, garden, lane)
   assert.equal(a.state.items[toolboxId].holder, 0)
 })
 
 test('either crewmate can fit once the pin and toolbox meet at the gate, and racing presses pay once', (t) => {
   const h = setup(t, {
-    players: [player(0, { x: gateway.x - .6, z: lane.z }), player(1, byBench)],
+    players: [player(0, { x: gateway.x - 0.6, z: lane.z }), player(1, byBench)],
     arrange: repairStage('inspected', { arrange: (save) => { save.world.items[toolboxId].holder = 0 } }),
   })
   const a = h.join(tokens[0])
@@ -153,7 +155,7 @@ test('either crewmate can fit once the pin and toolbox meet at the gate, and rac
   assert.equal(a.state.gateRepair.stage, 'inspected')
   act(h, b, 'take-pin')
   assert.equal(canFit(a.state, a.player), false, 'the pin is still at the depot')
-  walkTo(h, b, ...benchRoad, { x: gateway.x + .6, z: lane.z })
+  walkTo(h, b, ...benchRoad, { x: gateway.x + 0.6, z: lane.z })
   assert.equal(top(a), 'fit')
   assert.equal(top(b), 'fit')
   const coins = a.state.crewCoins
@@ -188,8 +190,11 @@ test('fit refuses a pin or toolbox that is not at the gate', () => {
   const base = createGame().snapshotForSave().world
   const crew = (overrides) => [0, 1].map((id) => player(id, lane, overrides[id]))
   const state = (players, pinHolder, toolbox) => ({
-    ...initialGateRepair(), islandTime: at(12), gateRepair: { stage: 'inspected', pinHolder },
-    players, items: base.items.map((item) => item.kind === 'toolbox' ? { ...item, ...toolbox } : item),
+    ...initialGateRepair(),
+    islandTime: at(12),
+    gateRepair: { stage: 'inspected', pinHolder },
+    players,
+    items: base.items.map((item) => item.kind === 'toolbox' ? { ...item, ...toolbox } : item),
   })
   const ready = crew({})
   assert.equal(canFit(state(ready, 1, { holder: 0 }), ready[0]), true)
@@ -297,9 +302,7 @@ test('partial and finished repairs survive a host restart; the next dawn changes
 
   const finished = createGame().snapshotForSave()
   finished.islandTime = at(10)
-  Object.assign(finished.world, { gateRepair: { stage: 'mended', pinHolder: null, acceptedAt: at(8), mendedAt: at(10) },
-    residents: { ...finished.world.residents, wren: { ...blankRecord(), trust: 1, kept: ['wren-gate'], active: null } },
-    lastFavorPay: { resident: 'wren', favor: 'wren-gate', coins: 5 }, crewCoins: 5 })
+  Object.assign(finished.world, { gateRepair: { stage: 'mended', pinHolder: null, acceptedAt: at(8), mendedAt: at(10) }, residents: { ...finished.world.residents, wren: { ...blankRecord(), trust: 1, kept: ['wren-gate'], active: null } }, lastFavorPay: { resident: 'wren', favor: 'wren-gate', coins: 5 }, crewCoins: 5 })
   finished.crewCoins = 5
   file.write(finished)
   assert.deepEqual(file.load(), finished)
@@ -336,8 +339,7 @@ test('older saves gain the toolbox and gate defaults, and rejected gate data doe
   assert.deepEqual(residents, current.world.residents)
   assert.ok(onBench(migrated.world.items[toolboxId]))
   assert.equal(migrated.world.items[toolboxId].kind, 'toolbox')
-  for (const broken of [{ gateRepair: { stage: 'mended', pinHolder: null } }, { gate: { open: 'yes', closePending: false } },
-    { residents: { wren: { ...blankRecord(), trust: -1, kept: [], active: null } } }, { gateRepair: { stage: 'polished', pinHolder: null } }]) {
+  for (const broken of [{ gateRepair: { stage: 'mended', pinHolder: null } }, { gate: { open: 'yes', closePending: false } }, { residents: { wren: { ...blankRecord(), trust: -1, kept: [], active: null } } }, { gateRepair: { stage: 'polished', pinHolder: null } }]) {
     file.write({ ...current, world: { ...current.world, ...broken } })
     assert.throws(() => file.load(), /Could not load island save/)
   }
@@ -355,7 +357,7 @@ test('the toolbox goes home from an unsafe respawn, and the repair sites stay cl
   const stack = starterFeatures.find(({ name }) => name === 'Depot freight stack')
   assert.ok(distance(mendingBench, stack) > 3)
   const { x, z, w, d } = wrenCottage
-  for (const site of [mendingBench, ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => ({ x: x + sx * (w / 2 + .6), z: z + sz * d / 2 }))), { x, z: fenceZ }]) {
+  for (const site of [mendingBench, ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => ({ x: x + sx * (w / 2 + 0.6), z: z + sz * d / 2 }))), { x, z: fenceZ }]) {
     assert.ok(coastRadius(site) <= shoreProfile[1].radius, `on grass, not sand: ${site.x}, ${site.z}`)
   }
   for (const site of [gateway, mendingBench, wrenAt({ gateRepair: { stage: 'sagging', pinHolder: null }, islandTime: at(12) }), toolboxHome]) {

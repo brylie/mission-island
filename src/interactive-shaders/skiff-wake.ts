@@ -3,7 +3,7 @@ import { waterDepth } from '../terrain.ts'
 import { offset, type Point, type Pose } from '../world.ts'
 
 const wakeSpeed = 5.8
-const minimumSpeed = .04
+const minimumSpeed = 0.04
 const replayDuration = 4
 
 export function movingWakeStrength(speed: number) {
@@ -24,7 +24,7 @@ export function skiffStudyPose(origin: Point, time = 0, response = 0): Skiff {
   const travel = phase - Math.sin(angle) / (Math.PI * 2)
   return {
     x: origin.x + 4.8 - travel * response * wakeSpeed * replayDuration / 2,
-    z: origin.z - .65,
+    z: origin.z - 0.65,
     heading: -Math.PI / 2,
     speed: response * wakeSpeed * (1 - Math.cos(angle)) / 2,
   }

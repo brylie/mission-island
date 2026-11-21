@@ -38,8 +38,9 @@ export function createPhotoControls(picture: HTMLElement, changed: () => void) {
     changed()
     window.clearTimeout(announcement)
     announcement = window.setTimeout(() => {
-      position.textContent = crop.zoom === 1 ? 'Whole photo in view.' :
-        `Zoom ${percent.value}. Center ${Math.round(crop.x * 100)}% from left, ${Math.round(crop.y * 100)}% from top.`
+      position.textContent = crop.zoom === 1
+        ? 'Whole photo in view.'
+        : `Zoom ${percent.value}. Center ${Math.round(crop.x * 100)}% from left, ${Math.round(crop.y * 100)}% from top.`
     }, 300)
   }
   function pan(key: string) {
@@ -54,31 +55,31 @@ export function createPhotoControls(picture: HTMLElement, changed: () => void) {
     const box = picture.getBoundingClientRect()
     return { x: e.clientX - box.left, y: e.clientY - box.top }
   }
-  picture.addEventListener('wheel', e => {
+  picture.addEventListener('wheel', (e) => {
     if (!image) return
     e.preventDefault()
     const units = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? picture.clientHeight : 1
-    move(crop.zoom * Math.exp(-e.deltaY * units * .0025), local(e))
+    move(crop.zoom * Math.exp(-e.deltaY * units * 0.0025), local(e))
   }, { passive: false })
   function gesture() {
     const [a, b] = pointers.values()
     if (!b) return { point: a, distance: 0 }
     return { point: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, distance: Math.hypot(a.x - b.x, a.y - b.y) }
   }
-  picture.addEventListener('pointerdown', e => {
+  picture.addEventListener('pointerdown', (e) => {
     if (!image || e.button !== 0 || pointers.size >= 2) return
     picture.setPointerCapture(e.pointerId)
     pointers.set(e.pointerId, local(e))
   })
-  picture.addEventListener('pointermove', e => {
+  picture.addEventListener('pointermove', (e) => {
     if (!pointers.has(e.pointerId)) return
     const before = gesture()
     pointers.set(e.pointerId, local(e))
     const after = gesture()
     move(crop.zoom * (before.distance && after.distance ? after.distance / before.distance : 1), before.point, after.point)
   })
-  picture.addEventListener('lostpointercapture', e => pointers.delete(e.pointerId))
-  picture.addEventListener('keydown', e => {
+  picture.addEventListener('lostpointercapture', (e) => pointers.delete(e.pointerId))
+  picture.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return
     if (Object.hasOwn(offsets, e.key)) pan(e.key)
     else if (e.key === '+' || e.key === '=') move(crop.zoom * 1.5)
@@ -107,7 +108,7 @@ export function createPhotoControls(picture: HTMLElement, changed: () => void) {
       if (focalX !== undefined) {
         const view = size(), frame = photoFrame(view, fitCrop)
         if (frame.height > 0) {
-          crop = { zoom: Math.max(1, Math.min(maxZoom, view.height / frame.height)), x: focalX, y: .5 }
+          crop = { zoom: Math.max(1, Math.min(maxZoom, view.height / frame.height)), x: focalX, y: 0.5 }
           changed()
         }
       }

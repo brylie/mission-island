@@ -24,9 +24,9 @@ export type IslandSave = {
   lastStarterPay?: Snapshot['lastStarterPay']
   islandTime: number
   growth: number[]
-  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay' | 'ferryRepair'> &
-    { truck: Pose; jobs?: JobBoardState; aviation?: AviationProgress; journal?: Journal; produce?: FarmProgress; materialsWork?: Snapshot['materialsWork'] }
-  crew: { token: string; player: Player; reserved: boolean }[]
+  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay' | 'ferryRepair'>
+    & { truck: Pose, jobs?: JobBoardState, aviation?: AviationProgress, journal?: Journal, produce?: FarmProgress, materialsWork?: Snapshot['materialsWork'] }
+  crew: { token: string, player: Player, reserved: boolean }[]
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -59,7 +59,7 @@ function migrateWallets(value: unknown): unknown {
     if (typeof lastStarterPay === 'string') receipts.add(lastStarterPay)
     crew.push({ ...entry, player })
   }
-  const lastStarterPay = ['fire', 'delivery', 'crate'].find(job => receipts.has(job))
+  const lastStarterPay = ['fire', 'delivery', 'crate'].find((job) => receipts.has(job))
   return { version: 2, islandTime: value.islandTime, growth: value.growth, world: value.world, crewCoins, lastStarterPay, crew }
 }
 
@@ -88,10 +88,10 @@ function isGateRepair(world: Record<string, unknown>, islandTime: number) {
   if (!isRecord(gate) || typeof gate.open !== 'boolean' || typeof gate.closePending !== 'boolean') return false
   if (!isResidentRecords(residents, islandTime)) return false
   if (lastFavorPay !== undefined && !isFavorReceipt(lastFavorPay)) return false
-  return isRecord(gateRepair) && gateStages.some((stage) => stage === gateRepair.stage) &&
-    (gateRepair.pinHolder === null || (isNumber(gateRepair.pinHolder) && Number.isInteger(gateRepair.pinHolder))) &&
-    time(gateRepair.acceptedAt) && time(gateRepair.mendedAt) && (gateRepair.stage !== 'mended' || gateRepair.mendedAt !== undefined) &&
-    (gateRepair.swelling === undefined || ((gateRepair.swelling === 'swollen' || gateRepair.swelling === 'planed') && gateRepair.stage === 'mended'))
+  return isRecord(gateRepair) && gateStages.some((stage) => stage === gateRepair.stage)
+    && (gateRepair.pinHolder === null || (isNumber(gateRepair.pinHolder) && Number.isInteger(gateRepair.pinHolder)))
+    && time(gateRepair.acceptedAt) && time(gateRepair.mendedAt) && (gateRepair.stage !== 'mended' || gateRepair.mendedAt !== undefined)
+    && (gateRepair.swelling === undefined || ((gateRepair.swelling === 'swollen' || gateRepair.swelling === 'planed') && gateRepair.stage === 'mended'))
 }
 
 function isPose(value: unknown): value is Record<string, unknown> {
@@ -105,30 +105,30 @@ function isCrewToken(value: unknown) {
 function isJobBoard(value: unknown, mission: unknown) {
   if (!isRecord(value) || !isNumber(value.completed) || !Number.isSafeInteger(value.completed) || value.completed < 0) return false
   const { active } = value
-  return active === null || (mission === 'complete' && isRecord(active) && isJobId(active.id) &&
-    isNumber(active.progress) && Number.isInteger(active.progress) && active.progress >= 0 && active.progress < jobs[active.id].quantity)
+  return active === null || (mission === 'complete' && isRecord(active) && isJobId(active.id)
+    && isNumber(active.progress) && Number.isInteger(active.progress) && active.progress >= 0 && active.progress < jobs[active.id].quantity)
 }
 
 function validDrivingRecord(player: Record<string, unknown>) {
-  return (player.deliveryXp === undefined || isCoinBalance(player.deliveryXp)) &&
-    (player.freightTicket === undefined || isFreightTicket(player.freightTicket)) &&
-    (player.drivenCrates === undefined || (Array.isArray(player.drivenCrates) && player.drivenCrates.length === crateStarts.length &&
-      player.drivenCrates.every(metres => isNumber(metres) && metres >= 0)))
+  return (player.deliveryXp === undefined || isCoinBalance(player.deliveryXp))
+    && (player.freightTicket === undefined || isFreightTicket(player.freightTicket))
+    && (player.drivenCrates === undefined || (Array.isArray(player.drivenCrates) && player.drivenCrates.length === crateStarts.length
+      && player.drivenCrates.every((metres) => isNumber(metres) && metres >= 0)))
 }
 
 function isSavedIncident(world: Record<string, unknown>, islandTime: number) {
   const clearedAt = world.lookoutFireClearedAt
-  return isNumber(world.fire) &&
-    ['delivery', 'fire', 'complete'].some(mission => mission === world.mission) &&
-    (clearedAt === undefined || (isNumber(clearedAt) && clearedAt >= 0 && clearedAt <= islandTime))
+  return isNumber(world.fire)
+    && ['delivery', 'fire', 'complete'].some((mission) => mission === world.mission)
+    && (clearedAt === undefined || (isNumber(clearedAt) && clearedAt >= 0 && clearedAt <= islandTime))
 }
 
 function isSavedAviation(value: unknown) {
   const { aerial } = isRecord(value) ? value : {}
-  return isRecord(value) && typeof value.qualified === 'boolean' && typeof value.surveyed === 'boolean' &&
-    (!value.surveyed || value.qualified) && (aerial === undefined || (Array.isArray(aerial) &&
-      new Set(aerial).size === aerial.length && aerial.every(id => aerialSurveys.some(survey => survey.id === id)) &&
-      (aerial.length === 0 || value.qualified)))
+  return isRecord(value) && typeof value.qualified === 'boolean' && typeof value.surveyed === 'boolean'
+    && (!value.surveyed || value.qualified) && (aerial === undefined || (Array.isArray(aerial)
+      && new Set(aerial).size === aerial.length && aerial.every((id) => aerialSurveys.some((survey) => survey.id === id))
+      && (aerial.length === 0 || value.qualified)))
 }
 
 function isSavedFarmWork(value: unknown) {
@@ -140,9 +140,9 @@ function isSavedFarmWork(value: unknown) {
 }
 
 function hasValidProgress(world: Record<string, unknown>) {
-  return (world.jobs === undefined || isJobBoard(world.jobs, world.mission)) &&
-    (world.aviation === undefined || isSavedAviation(world.aviation)) &&
-    (world.produce === undefined || isSavedFarmWork(world.produce))
+  return (world.jobs === undefined || isJobBoard(world.jobs, world.mission))
+    && (world.aviation === undefined || isSavedAviation(world.aviation))
+    && (world.produce === undefined || isSavedFarmWork(world.produce))
 }
 
 function isSavedMaterials(world: Record<string, unknown>, islandTime: number) {
@@ -152,7 +152,7 @@ function isSavedMaterials(world: Record<string, unknown>, islandTime: number) {
   const kept = residents.wren?.kept.includes(repairSupplyFavor.id) ?? false
   const active = residents.wren?.active === repairSupplyFavor.id
   if (work === undefined) return !active && !kept
-  if (!isRecord(work) || (work.checkout !== 'qualified' && !repairMaterials.some(material => material === work.checkout))) return false
+  if (!isRecord(work) || (work.checkout !== 'qualified' && !repairMaterials.some((material) => material === work.checkout))) return false
   const { readyAt, request } = work
   if (!isRecord(readyAt) || !repairMaterials.every((material) => {
     const time = readyAt[material]
@@ -160,8 +160,8 @@ function isSavedMaterials(world: Record<string, unknown>, islandTime: number) {
   })) return false
   if (gate.stage !== 'mended' && work.checkout !== 'timber') return false
   if (request === null) return !active && !kept
-  if (!isRecord(request) || work.checkout !== 'qualified' || !repairMaterials.some(material => material === request.material) ||
-    !isCoinBalance(request.delivered) || request.delivered > repairQuantity) return false
+  if (!isRecord(request) || work.checkout !== 'qualified' || !repairMaterials.some((material) => material === request.material)
+    || !isCoinBalance(request.delivered) || request.delivered > repairQuantity) return false
   return request.delivered === repairQuantity ? kept && !active : active && !kept
 }
 
@@ -173,16 +173,16 @@ function isSavedMaterialPocket(value: unknown) {
 }
 
 function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] {
-  if (!isRecord(entry) || !isCrewToken(entry.token) ||
-    typeof entry.reserved !== 'boolean' || !isPose(entry.player)) return false
+  if (!isRecord(entry) || !isCrewToken(entry.token)
+    || typeof entry.reserved !== 'boolean' || !isPose(entry.player)) return false
   const player = entry.player
-  return isNumber(player.id) && Number.isInteger(player.id) && player.id >= 0 && player.id < spawns.length &&
-    validDrivingRecord(player) &&
-    isSavedMaterialPocket(player.materials) &&
-    [player.y, player.seeds].every(isNumber) && Array.isArray(player.inventory) &&
-    (player.starterSeedClaimed === undefined || typeof player.starterSeedClaimed === 'boolean') &&
-    (player.ownedClothes === undefined || (Array.isArray(player.ownedClothes) && player.ownedClothes.every(item => typeof item === 'string'))) &&
-    isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
+  return isNumber(player.id) && Number.isInteger(player.id) && player.id >= 0 && player.id < spawns.length
+    && validDrivingRecord(player)
+    && isSavedMaterialPocket(player.materials)
+    && [player.y, player.seeds].every(isNumber) && Array.isArray(player.inventory)
+    && (player.starterSeedClaimed === undefined || typeof player.starterSeedClaimed === 'boolean')
+    && (player.ownedClothes === undefined || (Array.isArray(player.ownedClothes) && player.ownedClothes.every((item) => typeof item === 'string')))
+    && isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
 }
 
 // Shared repair work: Wren's materials checkout and the ferry terminal.
@@ -193,21 +193,21 @@ function isSavedProjects(world: Record<string, unknown>, islandTime: number) {
 type SaveFields = Omit<IslandSave, 'world'> & { world: Omit<IslandSave['world'], 'journal'> & { journal?: unknown } }
 
 function isSave(value: unknown): value is SaveFields {
-  if (!isRecord(value) || value.version !== 6 || !isCoinBalance(value.crewCoins) ||
-    !validReceipt(value.lastStarterPay) || !isNumber(value.islandTime) || value.islandTime < 0 ||
-    !Array.isArray(value.growth) || value.growth.length !== farmPlots.length || !value.growth.every(isNumber) ||
-    !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
+  if (!isRecord(value) || value.version !== 6 || !isCoinBalance(value.crewCoins)
+    || !validReceipt(value.lastStarterPay) || !isNumber(value.islandTime) || value.islandTime < 0
+    || !Array.isArray(value.growth) || value.growth.length !== farmPlots.length || !value.growth.every(isNumber)
+    || !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
   const { world } = value
   const reservedIds = new Set(value.crew.filter(({ reserved }) => reserved).map(({ player }) => player.id))
   if (!hasValidProgress(world)) return false
-  return isPose(world.truck) && isPose(world.skiff) && isSavedIncident(world, value.islandTime) && isGateRepair(world, value.islandTime) &&
-    isSavedProjects(world, value.islandTime) &&
-    Array.isArray(world.farm) && world.farm.length === farmPlots.length &&
-    world.farm.every((stage: unknown) => ['grass', 'tilled', 'planted', 'watered', 'ripe'].some((name) => name === stage)) &&
-    Array.isArray(world.items) && world.items.length === itemStarts.length &&
-    world.items.every((item: unknown, id) => isPose(item) && item.id === id && isNumber(item.y) &&
-      (item.holder === null || (isNumber(item.holder) && reservedIds.has(item.holder))) &&
-      item.kind === itemStarts[id].kind)
+  return isPose(world.truck) && isPose(world.skiff) && isSavedIncident(world, value.islandTime) && isGateRepair(world, value.islandTime)
+    && isSavedProjects(world, value.islandTime)
+    && Array.isArray(world.farm) && world.farm.length === farmPlots.length
+    && world.farm.every((stage: unknown) => ['grass', 'tilled', 'planted', 'watered', 'ripe'].some((name) => name === stage))
+    && Array.isArray(world.items) && world.items.length === itemStarts.length
+    && world.items.every((item: unknown, id) => isPose(item) && item.id === id && isNumber(item.y)
+      && (item.holder === null || (isNumber(item.holder) && reservedIds.has(item.holder)))
+      && item.kind === itemStarts[id].kind)
 }
 
 export function islandSaveFile(root: string, port: number, slot = `island-${port}`) {
@@ -226,7 +226,8 @@ export function islandSaveFile(root: string, port: number, slot = `island-${port
         const journal = stored === undefined ? undefined : readJournal(stored, parsed.islandTime)
         if (stored !== undefined && !journal) throw new Error('Unsupported or malformed save')
         return { ...parsed, world: { ...world, ...(journal && { journal }) } }
-      } catch (error) {
+      }
+      catch (error) {
         if (isRecord(error) && error.code === 'ENOENT') return undefined
         throw new Error(`Could not load island save ${path}`, { cause: error })
       }

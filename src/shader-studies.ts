@@ -1,9 +1,9 @@
 export const shaderPresets = {
   clearWater: { clarity: 1.35 },
-  surfWash: { foamReach: .34 },
-  seaBreeze: { gust: .65 },
-  rollingMeadow: { grassDistance: 26, patchContrast: .32 },
-  rainPolished: { wetness: 1, reflection: .72 },
+  surfWash: { foamReach: 0.34 },
+  seaBreeze: { gust: 0.65 },
+  rollingMeadow: { grassDistance: 26, patchContrast: 0.32 },
+  rainPolished: { wetness: 1, reflection: 0.72 },
   dawnSilver: { mistDensity: 1, scattering: 1.5 },
 } as const
 
@@ -22,11 +22,14 @@ export interface MeadowSettings {
 }
 
 export const shoreDefaults: ShoreSettings = {
-  ...shaderPresets.clearWater, ...shaderPresets.surfWash, quality: 'full',
+  ...shaderPresets.clearWater,
+  ...shaderPresets.surfWash,
+  quality: 'full',
 }
 
 export const meadowDefaults: MeadowSettings = {
-  ...shaderPresets.seaBreeze, ...shaderPresets.rollingMeadow,
+  ...shaderPresets.seaBreeze,
+  ...shaderPresets.rollingMeadow,
 }
 
 // A small world-space pattern shared by the blade and terrain materials.

@@ -22,7 +22,7 @@ function featurePieces(meshes: MeshFactory, root: TransformNode) {
       return meshes.cylinder(x, y, z, top, bottom, height, 10, color, root)
     },
     leaf: (x: number, y: number, z: number, color: string) =>
-      meshes.sphere(x, y, z, .091, .17, .045, color, root, false, 5),
+      meshes.sphere(x, y, z, 0.091, 0.17, 0.045, color, root, false, 5),
   }
 }
 
@@ -40,15 +40,15 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
   planter({ box, round, leaf }, color) {
     box(0, 0.15, 0, 1.6, 0.30, 0.5, wood)
     box(0, 0.30, 0, 1.66, 0.09, 0.57, lightWood)
-    for (const [i, x] of [-.56, -.28, 0, .28, .56].entries()) {
-      const height = .21 + i % 3 * .035
-      round(x, .34 + height / 2, .03, .025, .041, height, '#638851')
+    for (const [i, x] of [-0.56, -0.28, 0, 0.28, 0.56].entries()) {
+      const height = 0.21 + i % 3 * 0.035
+      round(x, 0.34 + height / 2, 0.03, 0.025, 0.041, height, '#638851')
       for (const side of [-1, 1]) {
-        const blade = leaf(x + side * .066, .37 + height * .54, .055 + side * .014, side < 0 ? '#638c55' : '#8ba661')
+        const blade = leaf(x + side * 0.066, 0.37 + height * 0.54, 0.055 + side * 0.014, side < 0 ? '#638c55' : '#8ba661')
         blade.rotation.z = -side * 1.02
-        blade.rotation.y = i * .61
+        blade.rotation.y = i * 0.61
       }
-      round(x, .34 + height, .03, .133, .046, .075, color)
+      round(x, 0.34 + height, 0.03, 0.133, 0.046, 0.075, color)
     }
   },
   crates({ box }, color) {
@@ -68,16 +68,16 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     // The flat opposing faces are a single fracture. Bedding dips the same
     // way on both sides, even where the shorter eastern fin has weathered away.
     const fins = [
-      { x: -1.73, z: .45, height: 2.08, outline: [[-.94, -.55], [-.34, -1.32], [.71, -.94], [.81, .96], [.09, 1.44], [-.78, .77]] },
-      { x: 1.61, z: -.22, height: 1.43, outline: [[-.76, -1.09], [.22, -1.21], [.91, -.35], [.62, .82], [-.12, 1.23], [-.69, .72]] },
+      { x: -1.73, z: 0.45, height: 2.08, outline: [[-0.94, -0.55], [-0.34, -1.32], [0.71, -0.94], [0.81, 0.96], [0.09, 1.44], [-0.78, 0.77]] },
+      { x: 1.61, z: -0.22, height: 1.43, outline: [[-0.76, -1.09], [0.22, -1.21], [0.91, -0.35], [0.62, 0.82], [-0.12, 1.23], [-0.69, 0.72]] },
     ]
     for (const fin of fins) {
       const ring = (level: number, width: number, cap = false) => fin.outline.map(([x, z]) => [
-        fin.x + x * width + level * .06,
-        level + x * .14 + z * .09 + (cap ? .22 * Math.sin(x * 2 + z) : 0),
+        fin.x + x * width + level * 0.06,
+        level + x * 0.14 + z * 0.09 + (cap ? 0.22 * Math.sin(x * 2 + z) : 0),
         fin.z + z * width,
       ])
-      const layers = [ring(-.32, 1.04), ring(.62, .98), ring(.74, .95), ring(fin.height, .82, true)]
+      const layers = [ring(-0.32, 1.04), ring(0.62, 0.98), ring(0.74, 0.95), ring(fin.height, 0.82, true)]
       for (let k = 1; k < layers.length; k++) {
         const low = layers[k - 1], high = layers[k]
         for (let a = 0; a < low.length; a++) {
@@ -91,50 +91,50 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
   picnic(parts, color) {
     // A low seat built into the rock, with a basket and folded cloth at one end.
     const { box, round } = parts
-    for (const x of [-.82, .82]) box(x, .19, 0, .38, .46, .68, '#817f6d')
-    box(0, .46, 0, 2.16, .13, .60, lightWood)
-    box(.66, .54, .015, .65, .035, .64, color)
-    box(.66, .685, .012, .40, .255, .31, '#b88655')
-    for (const y of [.622, .713]) box(.66, y, .012, .413, .025, .32, '#dbb887')
-    for (const dx of [-.15, .15]) round(.66 + dx, .865, .01, .028, .03, .13, wood)
-    box(.66, .93, .01, .32, .04, .045, wood)
+    for (const x of [-0.82, 0.82]) box(x, 0.19, 0, 0.38, 0.46, 0.68, '#817f6d')
+    box(0, 0.46, 0, 2.16, 0.13, 0.60, lightWood)
+    box(0.66, 0.54, 0.015, 0.65, 0.035, 0.64, color)
+    box(0.66, 0.685, 0.012, 0.40, 0.255, 0.31, '#b88655')
+    for (const y of [0.622, 0.713]) box(0.66, y, 0.012, 0.413, 0.025, 0.32, '#dbb887')
+    for (const dx of [-0.15, 0.15]) round(0.66 + dx, 0.865, 0.01, 0.028, 0.03, 0.13, wood)
+    box(0.66, 0.93, 0.01, 0.32, 0.04, 0.045, wood)
   },
   benchmark({ round, box, paintRecipe, paintSurface }, color) {
-    const base = round(0, .18, 0, .9, 1.15, .47, paintRecipe('lichen-clock'))
-    base.scaling.z = .8
-    cylinderSurfaceUVs(base, .92, .47, surfaceRepeatMeters(surfaceRecipe('lichen-clock'), {}))
-    const stone = round(.025, .65, .02, .53, .77, .66, paintSurface('stone', '#a59e86'))
-    stone.scaling.z = .86
-    round(.025, .997, .02, .43, .48, .044, color)
-    box(.025, 1.025, .02, .024, .019, .35, '#d5b87d')
-    box(.025, 1.026, .02, .215, .020, .022, '#d5b87d')
+    const base = round(0, 0.18, 0, 0.9, 1.15, 0.47, paintRecipe('lichen-clock'))
+    base.scaling.z = 0.8
+    cylinderSurfaceUVs(base, 0.92, 0.47, surfaceRepeatMeters(surfaceRecipe('lichen-clock'), {}))
+    const stone = round(0.025, 0.65, 0.02, 0.53, 0.77, 0.66, paintSurface('stone', '#a59e86'))
+    stone.scaling.z = 0.86
+    round(0.025, 0.997, 0.02, 0.43, 0.48, 0.044, color)
+    box(0.025, 1.025, 0.02, 0.024, 0.019, 0.35, '#d5b87d')
+    box(0.025, 1.026, 0.02, 0.215, 0.020, 0.022, '#d5b87d')
   },
   log({ round }, color) {
-    const trunk = round(0, .2, 0, .34, .52, 2.4, color)
+    const trunk = round(0, 0.2, 0, 0.34, 0.52, 2.4, color)
     trunk.rotation.z = Math.PI / 2
-    const branch = round(-.45, .44, .09, .11, .19, .51, wood)
-    branch.rotation.z = -.56
-    branch.rotation.x = .35
+    const branch = round(-0.45, 0.44, 0.09, 0.11, 0.19, 0.51, wood)
+    branch.rotation.z = -0.56
+    branch.rotation.x = 0.35
   },
   cairn({ round }, color) {
-    for (const [x, y, width, height, turn] of [[0, .10, .86, .25, .4], [.055, .31, .56, .19, 1.1], [.02, .46, .32, .13, 2.3]]) {
-      const stone = round(x, y, 0, width * .72, width, height, color)
-      stone.scaling.z = .75
+    for (const [x, y, width, height, turn] of [[0, 0.10, 0.86, 0.25, 0.4], [0.055, 0.31, 0.56, 0.19, 1.1], [0.02, 0.46, 0.32, 0.13, 2.3]]) {
+      const stone = round(x, y, 0, width * 0.72, width, height, color)
+      stone.scaling.z = 0.75
       stone.rotation.y = turn
     }
   },
   gauge({ box }, color) {
-    box(0, .65, 0, .14, 1.4, .13, wood)
-    box(0, .72, -.075, .13, 1.08, .025, color)
-    for (let i = 0; i < 10; i++) box(-.02, .26 + i * .1, -.093, i % 2 ? .045 : .09, .022, .012, linen)
+    box(0, 0.65, 0, 0.14, 1.4, 0.13, wood)
+    box(0, 0.72, -0.075, 0.13, 1.08, 0.025, color)
+    for (let i = 0; i < 10; i++) box(-0.02, 0.26 + i * 0.1, -0.093, i % 2 ? 0.045 : 0.09, 0.022, 0.012, linen)
   },
   'tide-staff'(parts, color) {
     models.gauge(parts, color)
     // A scarf repair and an old red high-water notch face the beach approach.
-    parts.box(.02, .27, .081, .155, .48, .057, lightWood)
-    for (const y of [.115, .402]) parts.box(.005, y, .029, .173, .044, .19, '#52685e')
-    parts.box(.01, 1.11, -.099, .122, .042, .025, '#a95239')
-    parts.box(.005, 1.055, .076, .13, .035, .024, '#a95239')
+    parts.box(0.02, 0.27, 0.081, 0.155, 0.48, 0.057, lightWood)
+    for (const y of [0.115, 0.402]) parts.box(0.005, y, 0.029, 0.173, 0.044, 0.19, '#52685e')
+    parts.box(0.01, 1.11, -0.099, 0.122, 0.042, 0.025, '#a95239')
+    parts.box(0.005, 1.055, 0.076, 0.13, 0.035, 0.024, '#a95239')
   },
   marker({ box, round }, color) {
     box(0, 0.13, 0, 0.95, 0.26, 0.72, metal)
@@ -143,22 +143,21 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     round(0, 0.98, 0, 0.26, 0.26, 0.04, linen)
   },
   shelter({ box }, color) {
-    for (const x of [-1.42, 1.42]) for (const z of [-.76, .76]) box(x, 1.17, z, .11, 2.34, .11, wood)
-    box(0, 2.37, 0, 3.18, .15, 1.94, color).rotation.x = -.06
-    for (const y of [.53, .76, .99, 1.22]) box(0, y, .76, 2.81, .18, .08, lightWood)
-    box(0, .47, .44, 2.61, .12, .47, lightWood)
-    for (const x of [-1, 1]) box(x, .22, .43, .12, .44, .35, metal)
-    box(.89, 1.58, .75, .55, .67, .09, wood)
-    box(.89, 1.58, .69, .46, .58, .025, linen)
-    for (let i = 0; i < 4; i++) box(.89, 1.73 - i * .1, .67, .31, .019, .012, metal)
+    for (const x of [-1.42, 1.42]) for (const z of [-0.76, 0.76]) box(x, 1.17, z, 0.11, 2.34, 0.11, wood)
+    box(0, 2.37, 0, 3.18, 0.15, 1.94, color).rotation.x = -0.06
+    for (const y of [0.53, 0.76, 0.99, 1.22]) box(0, y, 0.76, 2.81, 0.18, 0.08, lightWood)
+    box(0, 0.47, 0.44, 2.61, 0.12, 0.47, lightWood)
+    for (const x of [-1, 1]) box(x, 0.22, 0.43, 0.12, 0.44, 0.35, metal)
+    box(0.89, 1.58, 0.75, 0.55, 0.67, 0.09, wood)
+    box(0.89, 1.58, 0.69, 0.46, 0.58, 0.025, linen)
+    for (let i = 0; i < 4; i++) box(0.89, 1.73 - i * 0.1, 0.67, 0.31, 0.019, 0.012, metal)
   },
   lifebuoy({ box }, color) {
-    box(0, .88, 0, .14, 1.76, .16, wood)
-    box(0, 1.48, -.08, .45, .08, .12, metal)
+    box(0, 0.88, 0, 0.14, 1.76, 0.16, wood)
+    box(0, 1.48, -0.08, 0.45, 0.08, 0.12, metal)
     for (let i = 0; i < 16; i++) {
       const angle = i * Math.PI / 8
-      box(.34 * Math.cos(angle), 1.16 + .34 * Math.sin(angle), -.19,
-        .155, .151, .13, i % 4 < 2 ? linen : color).rotation.z = angle
+      box(0.34 * Math.cos(angle), 1.16 + 0.34 * Math.sin(angle), -0.19, 0.155, 0.151, 0.13, i % 4 < 2 ? linen : color).rotation.z = angle
     }
   },
   scope({ box, round }, color) {
@@ -186,15 +185,15 @@ const models: Record<FeatureModel, (parts: Pieces, color: string) => void> = {
     }
   },
   hose({ box, round }, color) {
-    for (const x of [-.72, .72]) box(x, .65, 0, .14, 1.32, .23, metal)
-    box(0, 1.23, 0, 1.6, .14, .24, color)
-    for (const x of [-.36, .36]) {
-      const mount = round(x, .86, .135, .65, .65, .17, '#976d56')
+    for (const x of [-0.72, 0.72]) box(x, 0.65, 0, 0.14, 1.32, 0.23, metal)
+    box(0, 1.23, 0, 1.6, 0.14, 0.24, color)
+    for (const x of [-0.36, 0.36]) {
+      const mount = round(x, 0.86, 0.135, 0.65, 0.65, 0.17, '#976d56')
       mount.rotation.x = Math.PI / 2
-      for (const [diameter, z] of [[.57, .25], [.46, .29], [.35, .323]]) {
-        round(x, .86, z, diameter, diameter, .068, color).rotation.x = Math.PI / 2
+      for (const [diameter, z] of [[0.57, 0.25], [0.46, 0.29], [0.35, 0.323]]) {
+        round(x, 0.86, z, diameter, diameter, 0.068, color).rotation.x = Math.PI / 2
       }
-      round(x + .24, .57, .31, .079, .095, .32, '#bcb99b').rotation.z = -.23
+      round(x + 0.24, 0.57, 0.31, 0.079, 0.095, 0.32, '#bcb99b').rotation.z = -0.23
     }
   },
 }

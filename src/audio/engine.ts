@@ -3,7 +3,7 @@ import { workerRenderer, type RecipeRenderer } from './recipe-renderer.ts'
 import type { Rendered } from './recipes.ts'
 
 export type AudioState = 'locked' | 'running' | 'suspended' | 'closed'
-export type Point3 = { x: number; y: number; z: number }
+export type Point3 = { x: number, y: number, z: number }
 type Bus = 'effects' | 'ambience'
 
 // A lane is a persistent gain and optional panner that several one-shots play through,
@@ -16,9 +16,9 @@ export type Lane = {
 }
 
 // lateness: how long after its start time a cue may still begin if its buffer was not ready.
-type PlayOptions = { bus?: Bus; position?: Point3; lane?: Lane; at?: number; gain?: number; lateness?: number }
+type PlayOptions = { bus?: Bus, position?: Point3, lane?: Lane, at?: number, gain?: number, lateness?: number }
 
-type Voice = { source: AudioBufferSourceNode; gain: GainNode; bus: Bus }
+type Voice = { source: AudioBufferSourceNode, gain: GainNode, bus: Bus }
 
 const fadeSeconds = 0.03
 const lateSeconds = 0.15
@@ -83,7 +83,8 @@ function createVoicePool() {
     voice.gain.gain.setTargetAtTime(0, at, fadeSeconds / 3)
     try {
       voice.source.stop(at + fadeSeconds * 2)
-    } catch {
+    }
+    catch {
       // A source that never started or already stopped needs no stop.
     }
   }
@@ -94,8 +95,7 @@ function createVoicePool() {
     voice.gain.disconnect()
   }
   return {
-    start(context: BaseAudioContext, output: AudioNode, bus: Bus, buffer: AudioBuffer, level: number,
-      { position, lane, at }: Pick<PlayOptions, 'position' | 'lane' | 'at'>) {
+    start(context: BaseAudioContext, output: AudioNode, bus: Bus, buffer: AudioBuffer, level: number, { position, lane, at }: Pick<PlayOptions, 'position' | 'lane' | 'at'>) {
       const playing = voices.filter((voice) => voice.bus === bus)
       if (playing.length >= voiceBudget[bus]) {
         release(playing[0], context.currentTime)
@@ -113,7 +113,8 @@ function createVoicePool() {
         gain.connect(panner)
         panner.connect(output)
         source.addEventListener('ended', () => panner.disconnect())
-      } else gain.connect(output)
+      }
+      else gain.connect(output)
       const voice = { source, gain, bus }
       voices.push(voice)
       source.addEventListener('ended', () => forget(voice))
@@ -164,10 +165,9 @@ function placeListener(context: BaseAudioContext, point: Point3, forward: Point3
   listener.forwardZ.setTargetAtTime(-forward.z, at, 0.03)
 }
 
-type EngineOptions = { cacheSize?: number; makeRenderer?: () => RecipeRenderer }
+type EngineOptions = { cacheSize?: number, makeRenderer?: () => RecipeRenderer }
 
-export function createAudioEngine(makeContext: () => AudioContext = () => new AudioContext(),
-  { cacheSize = 160, makeRenderer = workerRenderer }: EngineOptions = {}) {
+export function createAudioEngine(makeContext: () => AudioContext = () => new AudioContext(), { cacheSize = 160, makeRenderer = workerRenderer }: EngineOptions = {}) {
   let context: AudioContext | null = null
   let renderer: RecipeRenderer | null = null
   // Stopping or hiding starts a new generation, so a buffer that finishes later cannot start an old cue.
@@ -263,7 +263,8 @@ export function createAudioEngine(makeContext: () => AudioContext = () => new Au
         stopAll()
         void context.suspend().then(report, report)
         report()
-      } else void wake()
+      }
+      else void wake()
     },
     onState(watch: (state: AudioState) => void) {
       watchers.add(watch)

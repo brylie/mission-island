@@ -8,9 +8,14 @@ export const offshoreLimitMetres = 75
 export const coastSegments = 512
 
 export const shoreProfile = [
-  { radius: 0, y: 0 }, { radius: 0.865, y: 0 }, { radius: 0.905, y: -0.015 },
-  { radius: 0.978, y: -0.065 }, { radius: 1, y: waterLevel }, { radius: 1.048, y: -0.98 },
-  { radius: 1.10, y: -2.15 }, { radius: 1.19, y: -4.3 },
+  { radius: 0, y: 0 },
+  { radius: 0.865, y: 0 },
+  { radius: 0.905, y: -0.015 },
+  { radius: 0.978, y: -0.065 },
+  { radius: 1, y: waterLevel },
+  { radius: 1.048, y: -0.98 },
+  { radius: 1.10, y: -2.15 },
+  { radius: 1.19, y: -4.3 },
 ]
 
 export const tidePool = { x: 46, z: -33 }
@@ -31,8 +36,10 @@ export function coastPoint(angle: number, radius = 1): Point {
 export function coastBounds(radius = 1) {
   const coast = Array.from({ length: coastSegments }, (_, i) => coastPoint(i * 2 * Math.PI / coastSegments, radius))
   return {
-    west: Math.min(...coast.map(({ x }) => x)), east: Math.max(...coast.map(({ x }) => x)),
-    south: Math.min(...coast.map(({ z }) => z)), north: Math.max(...coast.map(({ z }) => z)),
+    west: Math.min(...coast.map(({ x }) => x)),
+    east: Math.max(...coast.map(({ x }) => x)),
+    south: Math.min(...coast.map(({ z }) => z)),
+    north: Math.max(...coast.map(({ z }) => z)),
   }
 }
 
@@ -58,10 +65,14 @@ export function streamX(z: number) {
 // Surveyed along the course, from the spring shelf to the creek below Fernfall.
 // Each pair of ledges has a shallow run followed by a steeper spill.
 export const fernfallProfile = [
-  { z: 81, y: 4.85, halfWidth: .18 }, { z: 82, y: 4.82, halfWidth: 1.07 },
-  { z: 83.6, y: 4.66, halfWidth: .86 }, { z: 85.1, y: 3.42, halfWidth: 1.22 },
-  { z: 86.0, y: 3.23, halfWidth: 1.01 }, { z: 88.5, y: .18, halfWidth: 1.55 },
-  { z: 89.9, y: waterLevel + .018, halfWidth: 1.86 }, { z: 91.4, y: waterLevel - .04, halfWidth: 2.12 },
+  { z: 81, y: 4.85, halfWidth: 0.18 },
+  { z: 82, y: 4.82, halfWidth: 1.07 },
+  { z: 83.6, y: 4.66, halfWidth: 0.86 },
+  { z: 85.1, y: 3.42, halfWidth: 1.22 },
+  { z: 86.0, y: 3.23, halfWidth: 1.01 },
+  { z: 88.5, y: 0.18, halfWidth: 1.55 },
+  { z: 89.9, y: waterLevel + 0.018, halfWidth: 1.86 },
+  { z: 91.4, y: waterLevel - 0.04, halfWidth: 2.12 },
 ]
 
 export function fernfallSection(z: number) {
@@ -100,7 +111,7 @@ export function groundHeight(point: Point) {
       const section = fernfallSection(point.z)
       const bank = Math.abs(point.x - streamX(point.z)) - section.halfWidth
       const weight = Math.min(1, point.z - 80, (93 - point.z) / 1.6, Math.max(0, 1 - Math.max(0, bank) / 1.7))
-      const streambed = section.y + Math.max(-.46, Math.min(.42, bank * .74))
+      const streambed = section.y + Math.max(-0.46, Math.min(0.42, bank * 0.74))
       relief += (streambed - relief) * weight
     }
     return relief * edge * edge * (3 - 2 * edge)
@@ -113,12 +124,12 @@ export function groundHeight(point: Point) {
       const dx = point.x - tidePool.x, dz = point.z - tidePool.z
       if (Math.abs(dx) > 5 || Math.abs(dz) > 4) return shore
       // A tilted basin with a low seaward sill. The ocean plane fills the hollow.
-      const along = dx * .89 - dz * .45, across = dx * .45 + dz * .89
+      const along = dx * 0.89 - dz * 0.45, across = dx * 0.45 + dz * 0.89
       const bearing = Math.atan2(across / 1.82, along / 2.65)
-      const r = Math.hypot(along / 2.65, across / 1.82) * (1 + .085 * Math.sin(3 * bearing + .7) + .045 * Math.cos(5 * bearing))
+      const r = Math.hypot(along / 2.65, across / 1.82) * (1 + 0.085 * Math.sin(3 * bearing + 0.7) + 0.045 * Math.cos(5 * bearing))
       const basin = Math.max(0, 1 - r * r)
-      const rim = Math.max(0, 1 - Math.abs(r - 1) / .48)
-      return shore - .63 * basin * basin + .61 * rim * rim
+      const rim = Math.max(0, 1 - Math.abs(r - 1) / 0.48)
+      return shore - 0.63 * basin * basin + 0.61 * rim * rim
     }
   }
   return shoreProfile[shoreProfile.length - 1].y

@@ -38,7 +38,7 @@ function arcStep(angle: number) {
   return voiceSpacing / (Math.hypot(b.x - a.x, b.z - a.z) / 0.01)
 }
 
-type SurfVoice = { x: number; y: number; z: number; gain: number }
+type SurfVoice = { x: number, y: number, z: number, gain: number }
 
 // Follows the nearest coast angle with a time constant, unwrapping across a full turn.
 export function createShoreFollower(seconds = 0.8) {

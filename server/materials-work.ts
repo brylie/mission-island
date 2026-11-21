@@ -35,8 +35,8 @@ export function createMaterialsWork(state: Snapshot, notifyCrew: (message: CrewN
       const material = repairMaterials[subject]
       const { request } = state.materialsWork
       const wrenRecord = state.residents.wren
-      if (!request || wrenRecord.active !== repairSupplyFavor.id || wrenRecord.kept.includes(repairSupplyFavor.id) ||
-        carriedMaterial(player, material) === 0) return
+      if (!request || wrenRecord.active !== repairSupplyFavor.id || wrenRecord.kept.includes(repairSupplyFavor.id)
+        || carriedMaterial(player, material) === 0) return
       player.materials![material] -= 1
       const remaining = repairQuantity - ++request.delivered
       if (remaining === 0) keepRepair()

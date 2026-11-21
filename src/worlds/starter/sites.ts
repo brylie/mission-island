@@ -3,16 +3,21 @@ import type { SiteFeature } from '../site-feature.ts'
 
 export const ridgeViewpoint = { x: 36.5, z: 134 }
 export const ridgeLichenSite = { x: 40.2, z: 131.1 }
-export const ridgeLichenRocks = [[0, 0, 2.85], [-1.3, .78, 1.25], [.95, .71, .83]] as const
+export const ridgeLichenRocks = [[0, 0, 2.85], [-1.3, 0.78, 1.25], [0.95, 0.71, 0.83]] as const
 export const mirrorPoolWillow = { x: 44.5, z: 106 }
 export const shellglassStaff = { x: 44.65, z: -31.45 }
 export const driftwoodWrack = { x: 42.6, z: -30.99 }
 export const driftwoodFoxgloves = [
-  { x: 40.4, z: -28.45 }, { x: 39.9, z: -28.18 }, { x: 40.78, z: -28.25 },
-  { x: 40.25, z: -27.95 }, { x: 41, z: -28.02 },
+  { x: 40.4, z: -28.45 },
+  { x: 39.9, z: -28.18 },
+  { x: 40.78, z: -28.25 },
+  { x: 40.25, z: -27.95 },
+  { x: 41, z: -28.02 },
 ]
 export const shellglassLimpets = [
-  { x: 45.62, z: -31.27 }, { x: 45.75, z: -31.34 }, { x: 45.86, z: -31.25 },
+  { x: 45.62, z: -31.27 },
+  { x: 45.75, z: -31.34 },
+  { x: 45.86, z: -31.25 },
 ]
 
 export const starterFeatures = [
@@ -35,9 +40,9 @@ export const starterFeatures = [
 export const beachUmbrellas = [{ x: 26, z: -39.6 }, { x: 33, z: -37.7 }, { x: 38.1, z: -35.3 }]
 export const lampPosts = [{ x: -55, z: -7.1 }, { x: -39, z: -7.1 }, { x: 34, z: 17.45 }, { x: 46.5, z: 6.45 }]
 
-export const shellRocks = [[.63, -.98, .68, .9], [1.14, -1.55, .41, 1.6], [.05, -1.36, .43, -1.1]]
+export const shellRocks = [[0.63, -0.98, 0.68, 0.9], [1.14, -1.55, 0.41, 1.6], [0.05, -1.36, 0.43, -1.1]]
   .map(([dx, dz, size, heading]) => ({ x: shellglassPoint.x + dx, z: shellglassPoint.z + dz, size, heading }))
 
-export function onBeachTowel(point: { x: number; z: number }) {
-  return beachUmbrellas.some(({ x, z }) => Math.abs(point.x - x - .9) <= .7 && Math.abs(point.z - z) <= 1.32)
+export function onBeachTowel(point: { x: number, z: number }) {
+  return beachUmbrellas.some(({ x, z }) => Math.abs(point.x - x - 0.9) <= 0.7 && Math.abs(point.z - z) <= 1.32)
 }

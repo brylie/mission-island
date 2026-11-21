@@ -5,7 +5,7 @@ import type { Snapshot } from './protocol'
 
 export function createDeliveryWayfindingView(meshes: MeshFactory) {
   const routes = Object.entries(deliveryWaypoints).map(([id, points]) => {
-    const orbs = createWayfindingOrbs(meshes, 'Delivery route ' + id, '#ffc66d', .38)
+    const orbs = createWayfindingOrbs(meshes, 'Delivery route ' + id, '#ffc66d', 0.38)
     orbs.setPath(points)
     orbs.setEnabled(false)
     return { id, orbs }

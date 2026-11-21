@@ -9,7 +9,10 @@ import { control, range, type Control, type Entry } from './subject'
 
 export const materialStudies: Entry[] = [
   {
-    id: 'texture-gallery', name: 'Texture gallery', group: 'Materials', source: 'src/surface-recipes.ts',
+    id: 'texture-gallery',
+    name: 'Texture gallery',
+    group: 'Materials',
+    source: 'src/surface-recipes.ts',
     description: 'Compare 54 named finishes across the Surface catalog and Gameplay surfaces galleries. Open a swatch from the Library to inspect its scale, wear, and relief.',
     cameraRadius: 10.9,
     topView: true,
@@ -29,15 +32,18 @@ export const materialStudies: Entry[] = [
           ? createIslandMaterial(meshes.scene, surface, color)
           : createSurfaceMaterial(meshes.scene, surface, undefined, { grainSize: spacing })
         if (repeated && 'diffuseTexture' in material) material.diffuseTexture = repeated
-        const tile = meshes.box((1 - i % 3) * 2.48, 0.07, (Math.floor(i / 3) - 1) * 2.48,
-          2.25, 0.14, 2.25, material, undefined, false)
+        const tile = meshes.box((1 - i % 3) * 2.48, 0.07, (Math.floor(i / 3) - 1) * 2.48, 2.25, 0.14, 2.25, material, undefined, false)
         tile.receiveShadows = true
       }
     },
   },
   ...surfaceStudies,
   {
-    id: 'shader-drafts', name: 'Shader drafts', group: 'Materials', source: 'src/workbench/surface.frag.glsl', duration: 12,
+    id: 'shader-drafts',
+    name: 'Shader drafts',
+    group: 'Materials',
+    source: 'src/workbench/surface.frag.glsl',
+    duration: 12,
     description: 'A stage for iterating on the editable shader source.',
     controls: [control('surface', 'Substance', 'water', Object.fromEntries(
       Object.entries(surfaces).map(([key, value]) => [key, value.name]),
@@ -50,7 +56,11 @@ export const materialStudies: Entry[] = [
     },
   },
   ...Object.entries(surfaces).map(([id, surface]): Entry => ({
-    id, name: surface.name, group: 'Materials', swatch: surface.color, source: 'src/materials.ts',
+    id,
+    name: surface.name,
+    group: 'Materials',
+    swatch: surface.color,
+    source: 'src/materials.ts',
     duration: id === 'water' ? 12 : undefined,
     description: id === 'metal'
       ? 'Compare steel, brass, and copper with brushed wear and oxidation.'
@@ -64,7 +74,9 @@ export const materialStudies: Entry[] = [
       const water = id === 'water' ? createOceanMaterial(meshes.scene, 'preview') : undefined
       water?.setAppearance(color ?? surface.color, grainSize, strength)
       const finish = water?.material ?? createSurfaceMaterial(meshes.scene, name, color, {
-        grainSize, contrast: strength, relief: Number(values.relief ?? 1),
+        grainSize,
+        contrast: strength,
+        relief: Number(values.relief ?? 1),
         striations: id === 'wood' ? Number(values.striations) : undefined,
         metalType: id === 'metal' ? values.metal as MetalType : undefined,
         abrasion: id === 'metal' ? Number(values.abrasion) : undefined,

@@ -19,7 +19,10 @@ function createScoutControls(meshes: MeshFactory) {
   const commands = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'KeyC', 'KeyR'])
   const taps = new Set(['KeyE', 'KeyC', 'KeyR'])
   const events = new AbortController()
-  const clear = () => { keys.clear(); pending.clear() }
+  const clear = () => {
+    keys.clear()
+    pending.clear()
+  }
   canvas?.addEventListener('keydown', (event) => {
     if (!commands.has(event.code) || event.altKey || event.ctrlKey || event.metaKey) return
     event.preventDefault()
@@ -40,11 +43,10 @@ function createScoutControls(meshes: MeshFactory) {
 }
 
 function scoutWalker() {
-  return { player: { ...ridgeLaunch, y: groundHeight(ridgeLaunch), heading: ridgeHeading,
-    grounded: true, swimming: false, onBed: false }, verticalSpeed: 0 }
+  return { player: { ...ridgeLaunch, y: groundHeight(ridgeLaunch), heading: ridgeHeading, grounded: true, swimming: false, onBed: false }, verticalSpeed: 0 }
 }
 
-function returnHeading(point: { x: number; z: number }) {
+function returnHeading(point: { x: number, z: number }) {
   const waypoint = distance(point, ridgeReturn) > 2 && distance(point, ridgeLaunch) > 14 ? ridgeReturn : ridgeLaunch
   return Math.atan2(waypoint.x - point.x, waypoint.z - point.z)
 }
@@ -54,10 +56,10 @@ function updateScoutCamera(camera: ArcRotateCamera, pilot: ReturnType<typeof cre
     camera.target.set(0, 0, 66)
     camera.getScene().fogStart = 330
     camera.getScene().fogEnd = 490
-  } else {
+  }
+  else {
     const yaw = pilot.rotation.y
-    camera.target.set(pilot.position.x + Math.sin(yaw) * 1.35, pilot.position.y + 1,
-      pilot.position.z + Math.cos(yaw) * 1.35)
+    camera.target.set(pilot.position.x + Math.sin(yaw) * 1.35, pilot.position.y + 1, pilot.position.z + Math.cos(yaw) * 1.35)
   }
 }
 
@@ -65,16 +67,19 @@ function aimScoutCamera(camera: ArcRotateCamera, heading: number, overview: bool
   camera.lowerRadiusLimit = 3.4
   camera.upperRadiusLimit = 260
   camera.alpha = overview ? -Math.PI / 2 : Math.PI * 1.5 - heading
-  camera.beta = overview ? .53 : returning ? 1.13 : .88
+  camera.beta = overview ? 0.53 : returning ? 1.13 : 0.88
   camera.radius = overview ? 235 : 6.3
 }
 
 export const ridgeScoutStudy: Entry = {
-  id: 'ridge-glider-scout', name: 'Windstone Ridge glider scout', group: 'Island',
+  id: 'ridge-glider-scout',
+  name: 'Windstone Ridge glider scout',
+  group: 'Island',
   source: 'src/simulation/ridge-flight.ts',
   description: 'Choose On the island and focus the viewport to scout, fly, and walk back. Inspect the wing and harness in the studio.',
   readout: 'Ridge scout',
-  cameraRadius: 5.4, angle: -.9,
+  cameraRadius: 5.4,
+  angle: -0.9,
   fieldSite: () => ({ name: 'Windstone Ridge, Starter Island', offset: { x: 0, y: 0, z: 0 } }),
   weather: () => ({ hour: 13, rain: 0 }),
   controls: [
@@ -136,11 +141,11 @@ export const ridgeScoutStudy: Entry = {
       stepPlayerOnTerrain(walker, [], { x, z, spray: false, careful: false, sprint: false }, false, ridgeStep, () => -Infinity)
       const traveled = distance(previous, walker.player)
       walkCycle += traveled / 4.8
-      walkStride = Math.min(.75, traveled / ridgeStep * .08)
+      walkStride = Math.min(0.75, traveled / ridgeStep * 0.08)
     }
 
     function advance(camera: ArcRotateCamera, delta: number) {
-      accumulator += Math.min(delta, .25)
+      accumulator += Math.min(delta, 0.25)
       while (accumulator >= ridgeStep) {
         if (flight && !flight.outcome) fly()
         else walk(camera)
@@ -155,7 +160,7 @@ export const ridgeScoutStudy: Entry = {
         const target = toWillow ? mirrorPoolWillow : ridgeMeadow
         const heading = Math.atan2(target.x - pilot.x, target.z - pilot.z) - pilot.heading
         const angle = Math.atan2(Math.sin(heading), Math.cos(heading))
-        const bearing = Math.abs(angle) < .21 ? 'ahead' : angle > 0 ? 'right' : 'left'
+        const bearing = Math.abs(angle) < 0.21 ? 'ahead' : angle > 0 ? 'right' : 'left'
         const lift = flight.climbing ? 'Updraft lifting the wing. ' : ''
         return lift + (toWillow ? 'Willow ' : 'Meadow ') + bearing + ' · ' + Math.round(distance(pilot, target)) + ' m' + stats
           + '\nA / D bank · W nose down · S pull up · C change view'
@@ -199,16 +204,16 @@ export const ridgeScoutStudy: Entry = {
         if (!overview) initializeCamera = true
       }
       const pilot = flightPilot ?? walker.player
-      crew.root.position.set(pilot.x, pilot.y + .035, pilot.z)
+      crew.root.position.set(pilot.x, pilot.y + 0.035, pilot.z)
       crew.root.rotation.set(flying?.pitch ?? 0, pilot.heading, flying?.bank ?? 0)
       crew.setAppearance(undefined, { base: Number(fitting) })
       wing.parent = flying ? crew.root : rack
-      wing.position.y = flying ? 0 : -.58
+      wing.position.y = flying ? 0 : -0.58
       const blend = Math.min(1, delta * 15)
       if (flying) poseHangGliderPilot(crew, blend)
       else poseCrew(crew, walkCycle, walkStride, !walker.player.grounded, undefined, 0, blend)
       if (initializeCamera) {
-        const heading = returning ? returnHeading(walker.player) : ridgeHeading - .13
+        const heading = returning ? returnHeading(walker.player) : ridgeHeading - 0.13
         aimScoutCamera(camera, heading, overview, returning)
         initializeCamera = false
       }

@@ -32,7 +32,9 @@ const returnRoad: Pose = { x: 8, z: 10.6, heading: -2.21 }
 
 export const ferryScenarios: Scenario[] = [
   {
-    id: 'ferry-approach', title: 'Ferry · Find the ramp from the truck', island: 'Starter Island',
+    id: 'ferry-approach',
+    title: 'Ferry · Find the ramp from the truck',
+    island: 'Starter Island',
     prepareWorld(state) {
       readyCrew(state)
       park(state, returnRoad)
@@ -40,20 +42,24 @@ export const ferryScenarios: Scenario[] = [
     placePlayer: besideTruck,
   },
   {
-    id: 'ferry-yard', title: 'Ferry · Stack the timber', island: 'Starter Island',
+    id: 'ferry-yard',
+    title: 'Ferry · Stack the timber',
+    island: 'Starter Island',
     prepareWorld(state) {
       readyCrew(state)
       state.ferryRepair = { stage: 1, ledger: [finished(0), { coins: [6, 6], crates: [0, 0] }], haul: 2 }
       park(state, { x: yardDrop.x + 1.5, z: yardDrop.z + 3.5, heading: 0 })
       for (const [i, crate] of state.items.filter(({ kind }) => kind === 'crate').slice(0, 2).entries()) {
-        const point = offset(state.truck, i ? .7 : -.7, -4.6)
-        Object.assign(crate, { ...point, y: groundHeight(point) + crateSize / 2 + .02, heading: 0, delivered: false, holder: null, onBed: false })
+        const point = offset(state.truck, i ? 0.7 : -0.7, -4.6)
+        Object.assign(crate, { ...point, y: groundHeight(point) + crateSize / 2 + 0.02, heading: 0, delivered: false, holder: null, onBed: false })
       }
     },
     placePlayer: besideTruck,
   },
   {
-    id: 'ferry-restored', title: 'Ferry · Drive onto the open ramp', island: 'Starter Island',
+    id: 'ferry-restored',
+    title: 'Ferry · Drive onto the open ramp',
+    island: 'Starter Island',
     prepareWorld(state) {
       readyCrew(state)
       state.ferryRepair = { stage: ferryStages.length, ledger: ferryStages.map((_, i) => finished(i)), haul: 0, restoredAt: state.islandTime }

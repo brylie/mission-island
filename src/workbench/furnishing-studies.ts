@@ -6,12 +6,16 @@ import { defaultPlacement, editedFeature } from './site-drafts'
 import { range, type Entry } from './subject'
 
 export const furnishingStudies = starterFeatures.map((feature): Entry => ({
-  id: 'site-' + feature.site, name: feature.name, group: 'Site furnishings', source: 'src/worlds/starter/sites.ts',
+  id: 'site-' + feature.site,
+  name: feature.name,
+  group: 'Site furnishings',
+  source: 'src/worlds/starter/sites.ts',
   description: 'Adjust the placement and finish, then check clearances on the island.',
   controls: [
-    range('east', 'East offset (m)', 0, -6, 6, .1), range('north', 'North offset (m)', 0, -6, 6, .1),
+    range('east', 'East offset (m)', 0, -6, 6, 0.1),
+    range('north', 'North offset (m)', 0, -6, 6, 0.1),
     range('heading', 'Heading (°)', defaultPlacement(feature).heading, -180, 180, 1),
-    range('scale', 'Scale', 'scale' in feature ? feature.scale : 1, .25, 3, .01),
+    range('scale', 'Scale', 'scale' in feature ? feature.scale : 1, 0.25, 3, 0.01),
     { type: 'color', key: 'color', label: 'Accent color', value: feature.color, rebuild: true },
   ],
   angle: -(('heading' in feature ? feature.heading : 0)) - 1.1,
@@ -22,6 +26,8 @@ export const furnishingStudies = starterFeatures.map((feature): Entry => ({
     const local = { ...feature, x: 0, z: 0 }
     const apply = () => poseSiteFeature(root, editedFeature(local, values), height)
     apply()
-    return ({ seek }) => { if (seek) apply() }
+    return ({ seek }) => {
+      if (seek) apply()
+    }
   },
 }))

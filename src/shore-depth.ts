@@ -22,9 +22,9 @@ function uploadDepth(scene: Scene, tile: Tile) {
     pixels = new Uint8Array(columns * rows * 4)
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < columns; col++) {
-        const point = { x: x + (col + .5) * width / columns, z: z + (row + .5) * length / rows }
+        const point = { x: x + (col + 0.5) * width / columns, z: z + (row + 0.5) * length / rows }
         const depth = waterLevel - groundHeight(point)
-        const normalized = Math.max(0, Math.min(1, (depth + .25) / 2.75))
+        const normalized = Math.max(0, Math.min(1, (depth + 0.25) / 2.75))
         const packed = Math.round(normalized * 65535)
         pixels.set([packed >> 8, packed & 255, 0, 255], (row * columns + col) * 4)
       }

@@ -24,8 +24,8 @@ export function createRidgeAviationView(meshes: MeshFactory, crew: Rig[]) {
   const wing = createHangGlider(meshes)
   const willow = createObjectiveMarker(meshes, mirrorPoolWillow, 3.8, '#ffb16f')
   const orange = meshes.paint('#ee713d', true)
-  const clue = meshes.box(0, .98, -1.6, .72, .54, .11, orange, willow, false)
-  clue.rotation.y = -.65
+  const clue = meshes.box(0, 0.98, -1.6, 0.72, 0.54, 0.11, orange, willow, false)
+  clue.rotation.y = -0.65
   return {
     update(state: Snapshot | undefined, time: number) {
       const aviation = state?.aviation
@@ -34,10 +34,11 @@ export function createRidgeAviationView(meshes: MeshFactory, crew: Rig[]) {
       const parent = pilot ? pilot.root : rack
       if (wing.parent !== parent) {
         wing.parent = parent
-        wing.position.y = pilot ? 0 : -.58
+        wing.position.y = pilot ? 0 : -0.58
       }
       markMeadow(Boolean(aviation?.marked))
-      const toWillow = flight?.outing === 'free' || (!flight && aviation?.surveyed) ? null
+      const toWillow = flight?.outing === 'free' || (!flight && aviation?.surveyed)
+        ? null
         : flight ? flight.outing === 'survey' && !flight.observed : Boolean(aviation?.qualified)
       showRoute(toWillow, pilot?.root.position)
       drawUpdraft(time, state?.weather.hour, state?.weather.rain)
@@ -46,7 +47,7 @@ export function createRidgeAviationView(meshes: MeshFactory, crew: Rig[]) {
     pose(state: Snapshot, player: Player, character: Rig, blend: number) {
       const flight = state.aviation.flight
       if (flight?.pilotId !== player.id) return false
-      moveTo(character.root, player, player.y + .035, blend)
+      moveTo(character.root, player, player.y + 0.035, blend)
       character.root.rotation.x += (flight.pitch - character.root.rotation.x) * blend
       character.root.rotation.z += (flight.bank - character.root.rotation.z) * blend
       poseHangGliderPilot(character, blend)

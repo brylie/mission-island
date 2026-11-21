@@ -24,8 +24,8 @@ function emitter(scene: Scene, id: WorldEffectId, key: string) {
 const off = { strength: 0, footprint: 1 }
 
 export function createMovingEffects(scene: Scene) {
-  const streams = new Map<string, { pool: Emitter; source?: ParticleSource; tuning?: ParticleTuning }>()
-  const bursts = new Map<WorldEffectId, { pool: Emitter; particles: Particle[]; sequence: number }>()
+  const streams = new Map<string, { pool: Emitter, source?: ParticleSource, tuning?: ParticleTuning }>()
+  const bursts = new Map<WorldEffectId, { pool: Emitter, particles: Particle[], sequence: number }>()
   let time = 0
   type Eye = Pick<ParticleSource, 'x' | 'y' | 'z'>
   let eye: Eye | undefined
@@ -46,7 +46,7 @@ export function createMovingEffects(scene: Scene) {
       stream.source = source
       stream.tuning = tuning
     },
-    burst(id: WorldEffectId, origin: ParticleSource, strength = 1, footprint = 1, length = .16, delay = 0) {
+    burst(id: WorldEffectId, origin: ParticleSource, strength = 1, footprint = 1, length = 0.16, delay = 0) {
       if (!eye || Math.hypot(eye.x - origin.x, eye.y - origin.y, eye.z - origin.z) > 36) return
       let burst = bursts.get(id)
       if (!burst) {
@@ -65,7 +65,7 @@ export function createMovingEffects(scene: Scene) {
         stream.tuning = undefined
       }
       for (const burst of bursts.values()) {
-        burst.particles = burst.particles.filter(particle => time < particle.birth + particle.life)
+        burst.particles = burst.particles.filter((particle) => time < particle.birth + particle.life)
         burst.pool.draw(time, eye ? burst.particles : [])
       }
     },
@@ -94,16 +94,16 @@ export function createLocalEffects(scene: Scene, placements: readonly LocalEffec
       const { x, y, z } = frame.camera
       const range = site.range ?? 25
       const distance = Math.hypot(x - anchor.x, y - anchor.y, z - anchor.z)
-      const opacity = overview ? 0 : site.opacity(frame) * (1 - smoothRange(range * .7, range, distance))
-      if (opacity <= .015) {
+      const opacity = overview ? 0 : site.opacity(frame) * (1 - smoothRange(range * 0.7, range, distance))
+      if (opacity <= 0.015) {
         pool?.draw(0, [])
         return
       }
       if (!pool) {
         pool = emitter(scene, site.id, key)
         const cycle = particleBurst(recipe, seed(site.id + key), 0, period, site.tuning, site.origin ?? (() => anchor))
-        const tail = cycle.filter(particle => particle.birth + particle.life > period)
-          .map(particle => ({ ...particle, birth: particle.birth - period }))
+        const tail = cycle.filter((particle) => particle.birth + particle.life > period)
+          .map((particle) => ({ ...particle, birth: particle.birth - period }))
         particles = [...tail, ...cycle]
       }
       pool.draw(frame.time % period, particles, opacity)

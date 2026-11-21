@@ -36,8 +36,14 @@ export function jump(member: CrewMember) {
 }
 
 export function walkCrew(
-  state: Snapshot, member: CrewMember, before: TruckPose, connected: boolean, now: number,
-  tickSeconds: number, completeFire: () => void, explore: (player: Snapshot['players'][number]) => void,
+  state: Snapshot,
+  member: CrewMember,
+  before: TruckPose,
+  connected: boolean,
+  now: number,
+  tickSeconds: number,
+  completeFire: () => void,
+  explore: (player: Snapshot['players'][number]) => void,
 ) {
   const { player, input } = member
   const { truck } = state
@@ -47,21 +53,23 @@ export function walkCrew(
   const pushing = barrow?.handler === player.id
   const walkingInput = pushing ? { ...input, sprint: false } : input
   const extraSurface = (point: Point, margin: number) =>
-    Math.max(looseCargoTop(state.items, point, margin), solidTop(solids, point, margin),
-      barrow && !pushing ? barrowTop(barrow, point, margin) : -Infinity)
-  stepPlayer(member, before, truck, connected ? walkingInput : stopped, Boolean(item), tickSeconds, extraSurface,
-    pushing ? { pace: progress.load ? barrowWalk.loadedSpeed : barrowWalk.emptySpeed, allows: (pose) => canPushBarrow(state, player, pose) } : undefined)
+    Math.max(looseCargoTop(state.items, point, margin), solidTop(solids, point, margin), barrow && !pushing ? barrowTop(barrow, point, margin) : -Infinity)
+  stepPlayer(member, before, truck, connected ? walkingInput : stopped, Boolean(item), tickSeconds, extraSurface, pushing ? { pace: progress.load ? barrowWalk.loadedSpeed : barrowWalk.emptySpeed, allows: (pose) => canPushBarrow(state, player, pose) } : undefined)
   if (!connected) return
   explore(player)
   if (player.charge && input.aim !== undefined && !input.x && !input.z) player.heading = input.aim
   player.reaching = !item && (member.primary?.kind === 'reach' || now < member.reachUntil)
-  player.rightHandRaised = !pushing && input.raiseRightHand === true && !player.swimming && !player.sleeping &&
-    item?.kind !== 'crate' && !player.throwing
+  player.rightHandRaised = !pushing && input.raiseRightHand === true && !player.swimming && !player.sleeping
+    && item?.kind !== 'crate' && !player.throwing
   sprayExtinguisher(state, member, item, tickSeconds, completeFire)
 }
 
 function sprayExtinguisher(
-  state: Snapshot, member: CrewMember, item: Item | undefined, tickSeconds: number, completeFire: () => void,
+  state: Snapshot,
+  member: CrewMember,
+  item: Item | undefined,
+  tickSeconds: number,
+  completeFire: () => void,
 ) {
   const { player, input, primary } = member
   if (!item || !canSpray(state, player, item)) return

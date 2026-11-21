@@ -7,18 +7,22 @@ import { garment } from './crew-shapes'
 
 type Profile = Parameters<typeof garment>[4]
 
-export function createSwimArm(meshes: MeshFactory, root: TransformNode, arm: TransformNode,
-  side: number, color: string, forearm: Profile) {
+export function createSwimArm(meshes: MeshFactory, root: TransformNode, arm: TransformNode, side: number, color: string, forearm: Profile) {
   // The inner rings stay inside the trunk. Successive rings turn with the arm,
   // keeping the shoulder and upper arm a continuous surface through the stroke.
   const sides = 20
   const profile: Profile = [
-    ...forearm, [-.222, side * .037, -.018, .080, .090], [-.175, side * .018, -.024, .086, .095],
-    [-.131, -side * .004, -.030, .091, .102], [-.089, -side * .026, -.034, .094, .111],
-    [-.049, -side * .057, -.035, .094, .114], [-.012, -side * .085, -.032, .086, .101],
-    [.023, -side * .114, -.031, .081, .093], [.042, -side * .148, -.033, .042, .054],
+    ...forearm,
+    [-0.222, side * 0.037, -0.018, 0.080, 0.090],
+    [-0.175, side * 0.018, -0.024, 0.086, 0.095],
+    [-0.131, -side * 0.004, -0.030, 0.091, 0.102],
+    [-0.089, -side * 0.026, -0.034, 0.094, 0.111],
+    [-0.049, -side * 0.057, -0.035, 0.094, 0.114],
+    [-0.012, -side * 0.085, -0.032, 0.086, 0.101],
+    [0.023, -side * 0.114, -0.031, 0.081, 0.093],
+    [0.042, -side * 0.148, -0.033, 0.042, 0.054],
   ]
-  const mesh = garment(meshes, root, 'Continuous swim shoulder and arm', color, profile, .93, sides)
+  const mesh = garment(meshes, root, 'Continuous swim shoulder and arm', color, profile, 0.93, sides)
   mesh.position.copyFrom(arm.position)
   const rest = mesh.getVerticesData(VertexBuffer.PositionKind)!
   const positions = Array.from(rest), normals = Array.from(mesh.getVerticesData(VertexBuffer.NormalKind)!)
@@ -30,8 +34,8 @@ export function createSwimArm(meshes: MeshFactory, root: TransformNode, arm: Tra
   const exit = Vector3.Zero(), exitTangent = Vector3.Zero()
   const [endY, endX, endZ] = profile[forearm.length]
   const [startY, startX, startZ] = profile[profile.length - 1]
-  const entry = new Vector3(startX - side * .058, startY - .031, startZ)
-  const entryTangent = new Vector3(side * .32, .074, .007)
+  const entry = new Vector3(startX - side * 0.058, startY - 0.031, startZ)
+  const entryTangent = new Vector3(side * 0.32, 0.074, 0.007)
   const travel = profile.map(([y]) => Math.min(1, (startY - y) / (startY - endY)))
   let lastX = NaN, lastZ = NaN
 
@@ -68,7 +72,7 @@ export function createSwimArm(meshes: MeshFactory, root: TransformNode, arm: Tra
     lastZ = z
     Matrix.RotationYawPitchRollToRef(0, x, z, matrix)
     Vector3.TransformCoordinatesFromFloatsToRef(endX, endY, endZ, matrix, exit)
-    Vector3.TransformNormalFromFloatsToRef(0, -.195, 0, matrix, exitTangent)
+    Vector3.TransformNormalFromFloatsToRef(0, -0.195, 0, matrix, exitTangent)
     const rigidEnd = (forearm.length + 1) * sides * 3
     for (let i = 0; i < rigidEnd; i += 3) {
       Vector3.TransformCoordinatesFromFloatsToRef(rest[i], rest[i + 1], rest[i + 2], matrix, point)

@@ -12,12 +12,12 @@ export function createDriftwoodSchool(seed: number) {
   function step(players: readonly Player[], skiff?: Skiff) {
     const threats: SchoolThreat[] = []
     for (const p of players) {
-      if (p.connected && !p.sleeping && !p.seat && (p.swimming || (p.y <= waterLevel + .08 && waterDepth(p) > .04))) {
+      if (p.connected && !p.sleeping && !p.seat && (p.swimming || (p.y <= waterLevel + 0.08 && waterDepth(p) > 0.04))) {
         threats.push({ x: p.x, z: p.z, range: 1.9 })
       }
     }
     // Riders disturb the water once, through the hull.
-    if (skiff && (Math.abs(skiff.speed) > .12 || players.some(p => p.connected && inSkiff(p.seat)))) {
+    if (skiff && (Math.abs(skiff.speed) > 0.12 || players.some((p) => p.connected && inSkiff(p.seat)))) {
       threats.push({ x: skiff.x, z: skiff.z, range: 2.9 })
     }
     school.step(threats)

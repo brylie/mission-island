@@ -16,7 +16,7 @@ const coastalCodex = [
 export const habitatCodex = [...codex, ...coastalCodex]
 
 type Counts = Record<typeof habitatCodex[number]['key'], number>
-export type BiomeRecipe = Counts & { seed: number; hour: number; rain: number; ground: 'grass' | 'soil' | 'stone' }
+export type BiomeRecipe = Counts & { seed: number, hour: number, rain: number, ground: 'grass' | 'soil' | 'stone' }
 
 export const presets = {
   'Meadow edge': { seed: 42, hour: 15, rain: 0, ground: 'grass', foxgloves: 0, oystercatchers: 0, clover: 12, grass: 8, trees: 2, logs: 2, stones: 3, hares: 5, foxes: 1 },
@@ -60,15 +60,15 @@ export function serializeRecipe(recipe: BiomeRecipe) {
 
 export function parseRecipeFile(text: string) {
   const file: unknown = JSON.parse(text)
-  if (!file || typeof file !== 'object' || !('version' in file) || file.version !== 1 ||
-      !('recipe' in file) || !file.recipe || typeof file.recipe !== 'object') {
+  if (!file || typeof file !== 'object' || !('version' in file) || file.version !== 1
+    || !('recipe' in file) || !file.recipe || typeof file.recipe !== 'object') {
     throw new Error('Choose a version 1 biome recipe.')
   }
   const values = file.recipe as Record<string, unknown>
   const recipe = readRecipe(values)
   for (const [key, value] of Object.entries(recipe)) {
     // Original version 1 files predate the coastal species.
-    if (!(key in values) && coastalCodex.some(item => item.key === key)) continue
+    if (!(key in values) && coastalCodex.some((item) => item.key === key)) continue
     if (value !== values[key]) throw new Error('Check the recipe value for ' + key + '.')
   }
   return recipe

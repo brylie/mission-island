@@ -16,8 +16,12 @@ import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 
 export function createEquipment(
-  state: Snapshot, physics: Pick<ReturnType<typeof createCargoPhysics>, 'launch'>,
-  tickSeconds: number, random: () => number, landed: (player: Player, bobber: Point) => FishId, checkpoint?: () => void,
+  state: Snapshot,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'launch'>,
+  tickSeconds: number,
+  random: () => number,
+  landed: (player: Player, bobber: Point) => FishId,
+  checkpoint?: () => void,
 ) {
   function fishResult(member: CrewMember, result: FishingResult, fish?: FishId) {
     member.notify?.({ type: 'fishing-result', result, ...(fish && { fish }) })
@@ -25,8 +29,8 @@ export function createEquipment(
 
   function isReadyToCast(member: CrewMember) {
     const { player, input } = member
-    return canCast(state, player) && !input.x && !input.z &&
-      (!inSkiff(player.seat) || !state.players.some((other) => other.rowing))
+    return canCast(state, player) && !input.x && !input.z
+      && (!inSkiff(player.seat) || !state.players.some((other) => other.rowing))
   }
 
   function startPrimary(member: CrewMember, now: number) {
@@ -36,9 +40,11 @@ export function createEquipment(
     if (item?.kind === 'crate' && !player.seat) {
       member.primary = { kind: 'throw', since: now, itemId: item.id }
       player.charge = { kind: 'throw', power: 0 }
-    } else if (item && canSpray(state, player, item)) {
+    }
+    else if (item && canSpray(state, player, item)) {
       member.primary = { kind: 'spray', since: now, itemId: item.id }
-    } else if (!item && player.equipped === 'fishing-rod') {
+    }
+    else if (!item && player.equipped === 'fishing-rod') {
       if (!isReadyToCast(member)) {
         if (inSkiff(player.seat)) fishResult(member, 'boat-moving')
         return
@@ -50,7 +56,8 @@ export function createEquipment(
       if (player.casting) return
       member.primary = { kind: 'cast', since: now }
       player.charge = { kind: 'cast', power: 0 }
-    } else if (!item && !player.seat) {
+    }
+    else if (!item && !player.seat) {
       if (player.grounded && !player.onBed) {
         const plot = nearbyPlot(player)
         if (player.equipped === 'hoe' && state.farm[plot] === 'grass') {
@@ -78,7 +85,8 @@ export function createEquipment(
       if (bobber) {
         if (!player.seat) player.heading = heading
         player.casting = { bobber, elapsed: 0, power }
-      } else fishResult(member, 'dry-cast')
+      }
+      else fishResult(member, 'dry-cast')
     }
     if (primary.kind !== 'throw' || player.seat) return
     const item = heldItem(state, player)
@@ -86,8 +94,10 @@ export function createEquipment(
     player.heading = heading
     item.heading = heading
     const front = offset(player, 0, 0.89)
-    const origin = canOccupyGround(front, crateSize / 2, -1) &&
-      (!isInsideTruck(state.truck, front) || player.onBed) ? front : player
+    const origin = canOccupyGround(front, crateSize / 2, -1)
+      && (!isInsideTruck(state.truck, front) || player.onBed)
+      ? front
+      : player
     item.holder = null
     physics.launch(item, origin, player.y + 1.76, power)
     member.throwUntil = now + 270
@@ -99,12 +109,12 @@ export function createEquipment(
     if (!allowed) {
       if (member.primary?.kind === 'cast' || member.primary?.kind === 'reel') stopPrimary(member)
       player.casting = null
-    } else if (player.casting) {
+    }
+    else if (player.casting) {
       const cast = player.casting
       cast.elapsed += tickSeconds
       if (cast.fight) {
-        const result = stepFight(cast.fight, cast.elapsed - castTravelSeconds - biteSeconds,
-          member.primary?.kind === 'reel', tickSeconds)
+        const result = stepFight(cast.fight, cast.elapsed - castTravelSeconds - biteSeconds, member.primary?.kind === 'reel', tickSeconds)
         if (result) {
           if (result === 'caught') player.goods.fish++
           fishResult(member, result, result === 'caught' ? landed(player, cast.bobber) : undefined)
@@ -112,10 +122,12 @@ export function createEquipment(
           stopPrimary(member)
           if (result === 'caught') checkpoint?.()
         }
-      } else if (cast.elapsed >= castTravelSeconds + biteSeconds) {
+      }
+      else if (cast.elapsed >= castTravelSeconds + biteSeconds) {
         if (random() < catchChance(cast.power)) {
           cast.fight = { progress: 0, tension: 0.25, pulling: false }
-        } else {
+        }
+        else {
           fishResult(member, 'no-bite')
           player.casting = null
         }
@@ -127,10 +139,12 @@ export function createEquipment(
     if (message.phase === 'start') {
       member.lastInput = now
       startPrimary(member, now)
-    } else if (message.phase === 'release') {
+    }
+    else if (message.phase === 'release') {
       if (now - member.lastInput <= 400) releasePrimary(member, message.aim, now)
       else stopPrimary(member)
-    } else if (message.phase === 'cancel') {
+    }
+    else if (message.phase === 'cancel') {
       stopPrimary(member)
     }
   }
@@ -151,8 +165,9 @@ export function createEquipment(
 
 export function setAppearance(player: Player, appearance: CrewAppearance, mission: Snapshot['mission'], qualifiedFarmer: boolean) {
   const uniform = outfitRequirement(appearance.uniform, mission, ownsClothing(player, 'angler'), qualifiedFarmer)
-    ? player.appearance?.uniform ?? 'default' : appearance.uniform
-  const pieces = pieceSlots.map(slot => {
+    ? player.appearance?.uniform ?? 'default'
+    : appearance.uniform
+  const pieces = pieceSlots.map((slot) => {
     const item = shopItemFor(slot, appearance[slot])
     return [slot, item && !ownsClothing(player, item) ? player.appearance?.[slot] : appearance[slot]] as const
   })

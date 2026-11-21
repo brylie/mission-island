@@ -10,8 +10,10 @@ import type { InteractionHandlers } from './interactions.ts'
 // Host transitions for the ferry terminal repair. The interaction layer has already checked that the chosen
 // action is still offered to this player, so each effect is recomputed from the current state and never overshoots.
 export function createFerryRepair(
-  state: Snapshot, physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'relocate'>,
-  notifyCrew: (message: CrewNotice) => void, creditCrate: (id: number) => void,
+  state: Snapshot,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'relocate'>,
+  notifyCrew: (message: CrewNotice) => void,
+  creditCrate: (id: number) => void,
 ) {
   const repair = () => state.ferryRepair
 

@@ -46,7 +46,7 @@ test('Ines’s first order survives a skipped night and restart, then pays and q
 
   const night = h.game.snapshotForSave()
   night.crew[0].player.goods.carrots = 2
-  night.islandTime = daySeconds * .73
+  night.islandTime = daySeconds * 0.73
   place(night, 0, door(0))
   place(night, 1, door(1))
   const bedtime = setup(t, { saved: night })
@@ -117,11 +117,13 @@ test('both players pack and recover one loaded barrow, and only its handler can 
   assert.equal(driver.state.farmWork.barrow.handler, 1)
   // Follow the actual west-side approach to the market building.
   for (const [point, input] of [
-    [{ x: 33, z: -8 }, { x: 1 }], [{ x: 33, z: 8 }, { z: 1 }], [produceCounter, { x: 1 }],
+    [{ x: 33, z: -8 }, { x: 1 }],
+    [{ x: 33, z: 8 }, { z: 1 }],
+    [produceCounter, { x: 1 }],
   ]) {
     const axis = input.x ? 'x' : 'z'
-    for (let i = 0; i < 330 && driver.player[axis] < point[axis] - .2; i++) restart.hold(driver, 1, input)
-    assert.ok(driver.player[axis] >= point[axis] - .2, JSON.stringify(driver.player))
+    for (let i = 0; i < 330 && driver.player[axis] < point[axis] - 0.2; i++) restart.hold(driver, 1, input)
+    assert.ok(driver.player[axis] >= point[axis] - 0.2, JSON.stringify(driver.player))
     assert.equal(driver.state.farmWork.barrow.handler, 1, JSON.stringify({ point, barrow: driver.state.farmWork.barrow }))
   }
   const teammate = restart.join(tokens[0])
@@ -193,7 +195,7 @@ test('the parked barrow blocks walkers and the loaded barrow stops at farm props
   const walker = h.join(tokens[0])
   const handler = h.join(tokens[1])
   h.hold(walker, 28, { x: 1 })
-  assert.ok(walker.player.x > 27 && walker.player.x < barrowPickup.x - .5)
+  assert.ok(walker.player.x > 27 && walker.player.x < barrowPickup.x - 0.5)
   act(handler, 'grip-barrow')
   h.hold(handler, 54, { z: -1 })
   const stoppedAt = handler.player.z

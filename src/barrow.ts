@@ -2,15 +2,15 @@ import { walkingHeight } from './terrain.ts'
 import { localPoint, offset, type Point, type Pose } from './world.ts'
 
 export const barrowRig = {
-  pushOffset: .94,
-  trayHalfWidth: .39,
-  trayHalfDepth: .50,
-  rimHeight: .82,
-  wheelRadius: .26,
-  wheelZ: .55,
-  wheelHalfWidth: .095,
-  grip: { x: .46, y: .90, z: -.48 },
-  lift: .13,
+  pushOffset: 0.94,
+  trayHalfWidth: 0.39,
+  trayHalfDepth: 0.50,
+  rimHeight: 0.82,
+  wheelRadius: 0.26,
+  wheelZ: 0.55,
+  wheelHalfWidth: 0.095,
+  grip: { x: 0.46, y: 0.90, z: -0.48 },
+  lift: 0.13,
 }
 
 const { trayHalfWidth, trayHalfDepth, rimHeight, wheelRadius, wheelZ, wheelHalfWidth } = barrowRig
@@ -21,8 +21,8 @@ export const barrowSolids = [
 
 // Overlapping circles cover the tray’s corners and the wheel during a push.
 export const barrowClearance = [
-  ...[-.22, .22].flatMap(x => [-.31, 0, .31].map(z => ({ x, z, radius: .23 }))),
-  { x: 0, z: wheelZ + wheelRadius / 2, radius: .15 },
+  ...[-0.22, 0.22].flatMap((x) => [-0.31, 0, 0.31].map((z) => ({ x, z, radius: 0.23 }))),
+  { x: 0, z: wheelZ + wheelRadius / 2, radius: 0.15 },
 ]
 
 export function pushedBarrowPose(player: Pose): Pose {

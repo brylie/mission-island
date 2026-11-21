@@ -16,7 +16,7 @@ export type SightingAction = keyof typeof sightingActions
 
 type World = Pick<Snapshot, 'driftwood' | 'juniper' | 'islandTime' | 'weather' | 'journal'>
 // Where one animal, plant or landmark is right now, and what it is visibly doing.
-interface Instance { at: Point & { y: number }; radius: number; behavior?: string }
+interface Instance { at: Point & { y: number }, radius: number, behavior?: string }
 
 // How far a walker can be from something and still record it. Closer than `besideRange`, no aim is needed.
 export const sightingRange = 14
@@ -41,14 +41,14 @@ function instances(state: World, subject: SubjectId): Instance[] {
     case 'sight:hare':
     case 'sight:fox':
       return state.juniper[subject === 'sight:hare' ? 'hares' : 'foxes']
-        .map((animal) => ({ at: raised(inHollow(animal), .3), radius: .7, behavior: animal.behavior }))
+        .map((animal) => ({ at: raised(inHollow(animal), 0.3), radius: 0.7, behavior: animal.behavior }))
     case 'sight:gull':
       return starterGullPerches.map((perch, index) => {
         const { x, y, z, phase } = gullAt(state.islandTime, index, perch, state.weather, weatherAt)
-        return { at: { x, y: y + .15, z }, radius: .7, behavior: gullBehavior[phase] }
+        return { at: { x, y: y + 0.15, z }, radius: 0.7, behavior: gullBehavior[phase] }
       })
-    case 'sight:willow': return [{ at: raised(mirrorPoolWillow, .5), radius: 1.6 }]
-    case 'sight:clover': return cloverPatches.map(patch => ({ at: raised(patch, .1), radius: .55 }))
+    case 'sight:willow': return [{ at: raised(mirrorPoolWillow, 0.5), radius: 1.6 }]
+    case 'sight:clover': return cloverPatches.map((patch) => ({ at: raised(patch, 0.1), radius: 0.55 }))
     case 'sight:lookout': return [{ at: raised(lookout, 2.4), radius: 2.6 }]
     case 'sight:ferry': return [{ at: raised(ferryTerminal, 1.2), radius: 3 }]
   }
@@ -84,7 +84,11 @@ export function journalInteractions(state: World, player: Player): InteractionOp
       const behaviors: Record<string, string> = subject.behaviors
       const doing = instance.behavior ? behaviors[instance.behavior] : undefined
       options.push({
-        action: 'record', subject: kind * instanceSlots + slot, key: 'E', at: instance.at, radius: instance.radius,
+        action: 'record',
+        subject: kind * instanceSlots + slot,
+        key: 'E',
+        at: instance.at,
+        radius: instance.radius,
         name: doing ? `${subject.name} · ${doing.toLowerCase()}` : subject.name,
         label: ids[0] === subject.id ? 'Record in journal' : 'Add this behavior to the journal',
       })

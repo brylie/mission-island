@@ -36,8 +36,7 @@ const embers: Builder = (meshes, origin, studio) => {
     float ragged = bed + (grain-.5)*.19;
     ink = vec4(color,1.-smoothstep(.65,1.11,ragged));
   ` })
-  grid(meshes, effect, 'Charred forest floor', 3.6, 3.1, 18,
-    (x, z) => studio ? .022 : groundHeight({ x: origin.x + x, z: origin.z + z }) - origin.y + .074)
+  grid(meshes, effect, 'Charred forest floor', 3.6, 3.1, 18, (x, z) => studio ? 0.022 : groundHeight({ x: origin.x + x, z: origin.z + z }) - origin.y + 0.074)
   return effect
 }
 
@@ -55,13 +54,13 @@ const lampHalo: Builder = (meshes, origin, studio) => {
     ink = vec4(vec3(1.,.66,.29), detail * (halo * (.29 + response*.67) + droplets * 1.24 + pool*response*.38));
   ` })
   const veil = card(meshes, effect, 'Lamp halo and falling droplets', 4.3, 4.05, true)
-  veil.position.y = -.70
+  veil.position.y = -0.70
   if (studio) {
-    meshes.cylinder(.28,-1.26,.03,.084,.132,2.57,8,'#48584e',effect.root)
-    meshes.box(.12,.11,0,.39,.084,.084,'#4e5b54',effect.root)
-    meshes.cylinder(0,.08,0,.20,.36,.13,10,'#4e5b54',effect.root)
+    meshes.cylinder(0.28, -1.26, 0.03, 0.084, 0.132, 2.57, 8, '#48584e', effect.root)
+    meshes.box(0.12, 0.11, 0, 0.39, 0.084, 0.084, '#4e5b54', effect.root)
+    meshes.cylinder(0, 0.08, 0, 0.20, 0.36, 0.13, 10, '#4e5b54', effect.root)
     const globe = meshes.paint('#ffdf89', true)
-    meshes.sphere(0,-.04,0,.22,.16,.22,globe,effect.root,false,8)
+    meshes.sphere(0, -0.04, 0, 0.22, 0.16, 0.22, globe, effect.root, false, 8)
   }
   return effect
 }
@@ -82,22 +81,22 @@ const pollen: Builder = (meshes, origin) => {
   const positions: number[] = [], uvs: number[] = [], normals: number[] = [], indices: number[] = []
   const random = seededRandom(876)
   for (let i = 0; i < 56; i++) {
-    const x = (random()-.5)*7, y = .37 + random() * 1.42, z = (random()-.5)*5
-    const radius = .019 + random()*.042
-    const seed = [random(),random()*.46+.27,random()*.44+.22]
-    for (const dir of [-1,1]) {
-      const first = positions.length/3
-      for (const [u,v] of [[0,0],[1,0],[1,1],[0,1]]) {
-        const edge = (u-.5)*radius*2
-        positions.push(x+edge,y+(v-.5)*radius*2,z+dir*edge*.74)
-        uvs.push(u,v)
+    const x = (random() - 0.5) * 7, y = 0.37 + random() * 1.42, z = (random() - 0.5) * 5
+    const radius = 0.019 + random() * 0.042
+    const seed = [random(), random() * 0.46 + 0.27, random() * 0.44 + 0.22]
+    for (const dir of [-1, 1]) {
+      const first = positions.length / 3
+      for (const [u, v] of [[0, 0], [1, 0], [1, 1], [0, 1]]) {
+        const edge = (u - 0.5) * radius * 2
+        positions.push(x + edge, y + (v - 0.5) * radius * 2, z + dir * edge * 0.74)
+        uvs.push(u, v)
         normals.push(...seed)
       }
-      indices.push(first,first+1,first+2,first,first+2,first+3)
+      indices.push(first, first + 1, first + 2, first, first + 2, first + 3)
     }
   }
-  const motes = meshes.surface('Seeded pollen motes',positions,indices,effect.material,effect.root,uvs)
-  motes.setVerticesData(VertexBuffer.NormalKind,normals)
+  const motes = meshes.surface('Seeded pollen motes', positions, indices, effect.material, effect.root, uvs)
+  motes.setVerticesData(VertexBuffer.NormalKind, normals)
   motes.alphaIndex = 5
   return effect
 }
@@ -118,11 +117,14 @@ const moon: Builder = (meshes, origin) => {
     vec3 silver = mix(vec3(.27,.48,.72),vec3(.73,.89,1.),glint);
     ink = vec4(silver, border * response * ribbon * glint * crest * .9);
   ` })
-  grid(meshes,effect,'Glitter path',22,28)
+  grid(meshes, effect, 'Glitter path', 22, 28)
   return effect
 }
 
 export const lightBuilders = {
-  'fernfall-rainbow': rainbow, 'cooling-embers': embers, 'streetlamp-droplets': lampHalo,
-  'meadow-pollen': pollen, 'moon-glitter': moon,
+  'fernfall-rainbow': rainbow,
+  'cooling-embers': embers,
+  'streetlamp-droplets': lampHalo,
+  'meadow-pollen': pollen,
+  'moon-glitter': moon,
 }

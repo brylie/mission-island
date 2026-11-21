@@ -11,8 +11,16 @@ export function restingY(id: number) {
 
 export function makeItems(): Item[] {
   return itemStarts.map(({ kind, start }, id) => ({
-    ...start, id, heading: 0, kind,
-    holder: null, onBed: false, delivered: false, spraying: false, y: restingY(id), rotation: null,
+    ...start,
+    id,
+    heading: 0,
+    kind,
+    holder: null,
+    onBed: false,
+    delivered: false,
+    spraying: false,
+    y: restingY(id),
+    rotation: null,
   }))
 }
 

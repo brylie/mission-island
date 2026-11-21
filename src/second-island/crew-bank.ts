@@ -9,7 +9,8 @@ export function displayCrewBank(bank: HTMLElement) {
       }
       const { crewCoins } = data
       bank.textContent = `Crew bank · ${crewCoins} ${crewCoins === 1 ? 'coin' : 'coins'}`
-    } catch {
+    }
+    catch {
       bank.textContent = 'Crew bank · Reconnecting…'
     }
     window.setTimeout(() => void refreshBank(), 3000)

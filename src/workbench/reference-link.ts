@@ -13,7 +13,8 @@ export function readReference(raw: string) {
       return { source, image: 'https://commons.wikimedia.org/wiki/Special:FilePath/' + filename + '?width=960', commons: true }
     }
     return { source: url.href, image: url.href, commons: false }
-  } catch {
+  }
+  catch {
     return
   }
 }

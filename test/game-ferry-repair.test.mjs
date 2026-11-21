@@ -55,7 +55,7 @@ test('the tally board introduces the repair at four orders, and E alone never sp
 })
 
 test('donations debit the crew bank, name the donor, and racing presses cannot overshoot the stage', (t) => {
-  const h = setup(t, { players: [player(0, atTally), player(1, { x: atTally.x + .8, z: atTally.z })], arrange: ready({ coins: 9 }) })
+  const h = setup(t, { players: [player(0, atTally), player(1, { x: atTally.x + 0.8, z: atTally.z })], arrange: ready({ coins: 9 }) })
   const a = h.join(tokens[0])
   const b = h.join(tokens[1])
   choose(a, 'ferry-donate')
@@ -80,7 +80,7 @@ test('a timber order stages crates at Seabrook, holds back delivery orders, and 
   h.advance(20)
   assert.equal(a.state.ferryRepair.haul, 2)
   assert.deepEqual(b.messages.at(-1), { type: 'ferry-order', crates: 2 })
-  assert.ok([0, 1].every((id) => distance(a.state.items[id], timberPickups[id]) < .6 && !a.state.items[id].delivered))
+  assert.ok([0, 1].every((id) => distance(a.state.items[id], timberPickups[id]) < 0.6 && !a.state.items[id].delivered))
   assert.ok(a.state.items[2].delivered, 'only the crates the stage needs are staged')
   assert.ok(!offered(a).includes('ferry-order'), 'one haul at a time')
   b.request('take-job', { id: 'farm-supplies' })
@@ -90,8 +90,7 @@ test('a timber order stages crates at Seabrook, holds back delivery orders, and 
 
   const yard = setup(t, {
     players: [player(0, inYard)],
-    arrange: ready({ repair: { ...initialFerryRepair().ferryRepair, haul: 2 }, holding: 0,
-      arrange: (save) => { save.world.items[1].delivered = false } }),
+    arrange: ready({ repair: { ...initialFerryRepair().ferryRepair, haul: 2 }, holding: 0, arrange: (save) => { save.world.items[1].delivered = false } }),
   })
   const c = yard.join(tokens[0])
   assert.deepEqual(actionHint(c.state, c.player), ['E', 'Stack timber for the ferry repair'])
@@ -127,7 +126,7 @@ test('the last coin and crate finish the stage once, restore service, and surviv
   file.write({ ...h.game.snapshotForSave(), world: { ...h.game.snapshotForSave().world, truck: { x: -30, z: -42, heading: Math.PI } } })
   const resumed = setup(t, { saved: file.load() })
   const c = resumed.join(tokens[1])
-  assert.ok(c.state.truck.y > deckTop(c.state.truck) - .05, 'a truck saved on the ramp parks on the deck')
+  assert.ok(c.state.truck.y > deckTop(c.state.truck) - 0.05, 'a truck saved on the ramp parks on the deck')
   assert.equal(c.state.ferryRepair.stage, ferryStages.length)
   assert.equal(c.state.crewCoins, 15)
   assert.equal(tallyLines(c.state).title, 'Ferry terminal · Service restored')

@@ -17,8 +17,13 @@ export class GameClient extends EventEmitter {
     if (message.type === 'state') this.state = message
     else this.messages.push(message)
   }
+
   request(type, extra = {}) { this.emit('message', Buffer.from(JSON.stringify({ type, ...extra }))) }
-  close() { this.readyState = 3; this.emit('close') }
+  close() {
+    this.readyState = 3
+    this.emit('close')
+  }
+
   terminate() { this.close() }
   get player() {
     const id = this.messages.find(({ type }) => type === 'welcome')?.id
@@ -28,9 +33,27 @@ export class GameClient extends EventEmitter {
 
 export function player(id, point = spawns[id], overrides = {}) {
   return {
-    ...point, id, heading: 0, y: groundHeight(point), grounded: true, onBed: false, reaching: false, rightHandRaised: false,
-    connected: true, sleeping: false, seat: null, inventory: [], equipped: null, goods: { fish: 0, carrots: 0 },
-    seeds: 0, charge: null, casting: null, throwing: false, rowing: false, ownsAngler: false, ...overrides,
+    ...point,
+    id,
+    heading: 0,
+    y: groundHeight(point),
+    grounded: true,
+    onBed: false,
+    reaching: false,
+    rightHandRaised: false,
+    connected: true,
+    sleeping: false,
+    seat: null,
+    inventory: [],
+    equipped: null,
+    goods: { fish: 0, carrots: 0 },
+    seeds: 0,
+    charge: null,
+    casting: null,
+    throwing: false,
+    rowing: false,
+    ownsAngler: false,
+    ...overrides,
   }
 }
 

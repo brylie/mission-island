@@ -11,8 +11,8 @@ import type { Point } from '../world'
 function batchFlowers(meshes: MeshFactory, root: TransformNode) {
   for (const pivot of [root, ...root.getChildTransformNodes(true)]) {
     const parts = pivot.getChildMeshes(true).filter((m): m is Mesh => m instanceof Mesh)
-    for (const material of new Set(parts.map(m => m.material))) {
-      const group = parts.filter(m => m.material === material)
+    for (const material of new Set(parts.map((m) => m.material))) {
+      const group = parts.filter((m) => m.material === material)
       if (group.length < 2) continue
       const merged = Mesh.MergeMeshes(group, false)
       if (!merged) continue
@@ -52,8 +52,8 @@ export function createCoastalPatch(meshes: MeshFactory, recipe: BiomeRecipe) {
     for (const other of flock) {
       const sx = position.x - other.root.position.x, sz = position.z - other.root.position.z
       const apart = Math.hypot(sx, sz)
-      if (apart > .48 || apart < .001) continue
-      const push = (.48 - apart) / apart * 3
+      if (apart > 0.48 || apart < 0.001) continue
+      const push = (0.48 - apart) / apart * 3
       x += sx * push
       z += sz * push
       crowded = true
@@ -65,14 +65,14 @@ export function createCoastalPatch(meshes: MeshFactory, recipe: BiomeRecipe) {
     for (const plant of plants) plant.sway(time)
     const elapsed = time - lastTime
     lastTime = time
-    const dt = Math.min(.12, Math.max(0, elapsed))
+    const dt = Math.min(0.12, Math.max(0, elapsed))
     let alert = 0
     for (const bird of flock) {
       const { position, rotation } = bird.root
-      const angle = time * .18 + bird.phase
-      const x = bird.home.x + .55 * Math.sin(time * .24) + .38 * Math.cos(angle)
-      const z = bird.home.z + .36 * Math.cos(time * .20) + .29 * Math.sin(angle)
-      if (elapsed < 0 || elapsed > .5) position.set(x, 0, z)
+      const angle = time * 0.18 + bird.phase
+      const x = bird.home.x + 0.55 * Math.sin(time * 0.24) + 0.38 * Math.cos(angle)
+      const z = bird.home.z + 0.36 * Math.cos(time * 0.20) + 0.29 * Math.sin(angle)
+      if (elapsed < 0 || elapsed > 0.5) position.set(x, 0, z)
       const dx = position.x - (walker?.x ?? 20), dz = position.z - (walker?.z ?? 20)
       const distance = Math.hypot(dx, dz)
       const wary = distance < 2.15
@@ -83,12 +83,12 @@ export function createCoastalPatch(meshes: MeshFactory, recipe: BiomeRecipe) {
       vx += separation.x
       vz += separation.z
       const gap = Math.hypot(vx, vz)
-      const stepping = separation.crowded || wary || (gap > .17 && Math.sin(time + bird.phase) > .15)
+      const stepping = separation.crowded || wary || (gap > 0.17 && Math.sin(time + bird.phase) > 0.15)
       if (stepping && dt > 0) {
         const target = Math.atan2(vx, vz)
         const turn = Math.atan2(Math.sin(target - rotation.y), Math.cos(target - rotation.y))
         rotation.y += Math.sign(turn) * Math.min(Math.abs(turn), dt * 4)
-        const step = dt * (wary ? .94 : .34) * Math.max(0, Math.cos(turn))
+        const step = dt * (wary ? 0.94 : 0.34) * Math.max(0, Math.cos(turn))
         position.x += step * Math.sin(rotation.y)
         position.z += step * Math.cos(rotation.y)
         const radius = Math.hypot(position.x, position.z)

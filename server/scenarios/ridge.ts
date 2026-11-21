@@ -8,7 +8,9 @@ const besideSign = offset({ ...ridgeMeadow, heading: ridgeHeading }, 5.55, -8)
 
 export const ridgeScenarios: Scenario[] = [
   {
-    id: 'ridge-checkout', title: 'Windstone Ridge · Glider checkout', island: 'Starter Island',
+    id: 'ridge-checkout',
+    title: 'Windstone Ridge · Glider checkout',
+    island: 'Starter Island',
     prepareWorld(state) {
       state.mission = 'complete'
       state.fire = 0
@@ -20,7 +22,9 @@ export const ridgeScenarios: Scenario[] = [
     },
   },
   {
-    id: 'ridge-soaring', title: 'Windstone Ridge · Soar the island', island: 'Starter Island',
+    id: 'ridge-soaring',
+    title: 'Windstone Ridge · Soar the island',
+    island: 'Starter Island',
     prepareWorld(state) {
       state.mission = 'complete'
       state.fire = 0
@@ -31,7 +35,7 @@ export const ridgeScenarios: Scenario[] = [
     },
     placePlayer(player) {
       if (player.id === 0) standAt(player, ridgeLaunch, ridgeHeading)
-      else standAt(player, offset({ ...ridgeLaunch, heading: ridgeHeading }, -1.4, -.8), ridgeHeading)
+      else standAt(player, offset({ ...ridgeLaunch, heading: ridgeHeading }, -1.4, -0.8), ridgeHeading)
     },
   },
 ]

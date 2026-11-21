@@ -19,7 +19,10 @@ const day = 0, shower = 122, night = 300
 function island(overrides = {}) {
   const state = JSON.parse(JSON.stringify(createGame().tick()))
   return {
-    ...state, islandTime: day, weather: weatherAt(day), journal: emptyJournal(),
+    ...state,
+    islandTime: day,
+    weather: weatherAt(day),
+    journal: emptyJournal(),
     juniper: { hares: [{ x: 0, z: 0, heading: 0, behavior: 'fleeing' }], foxes: [{ x: 4, z: 0, heading: 0, behavior: 'chasing' }], clover: [] },
     driftwood: { leader: -1, fish: [{ x: 30, z: -52, heading: 0, startled: false }, { x: 32, z: -52, heading: 0, startled: false }] },
     ...overrides,
@@ -43,17 +46,43 @@ test('journal ids are unique and keep their saved spelling', () => {
   const ids = journalCatalog.map(({ id }) => id)
   assert.equal(new Set(ids).size, ids.length)
   assert.deepEqual(ids, [
-    'fish:lantern-eel', 'fish:rain-smelt', 'fish:channel-mackerel', 'fish:sand-dab', 'fish:shore-perch',
-    'place:juniper', 'place:fernfall', 'place:pool', 'place:ridge', 'place:shellglass', 'place:splitstone',
-    'biome:juniper', 'biome:fernfall', 'biome:pool', 'biome:ridge',
-    'sight:school', 'sight:school/regrouping', 'sight:hare', 'sight:hare/grazing', 'sight:hare/fleeing', 'sight:hare/sheltering',
-    'sight:fox', 'sight:fox/patrolling', 'sight:fox/watching', 'sight:gull', 'sight:gull/resting', 'sight:gull/gliding',
-    'sight:willow', 'sight:clover', 'sight:lookout', 'sight:ferry',
-    'biome:driftwood-edge', 'sight:foxglove', 'sight:limpet',
+    'fish:lantern-eel',
+    'fish:rain-smelt',
+    'fish:channel-mackerel',
+    'fish:sand-dab',
+    'fish:shore-perch',
+    'place:juniper',
+    'place:fernfall',
+    'place:pool',
+    'place:ridge',
+    'place:shellglass',
+    'place:splitstone',
+    'biome:juniper',
+    'biome:fernfall',
+    'biome:pool',
+    'biome:ridge',
+    'sight:school',
+    'sight:school/regrouping',
+    'sight:hare',
+    'sight:hare/grazing',
+    'sight:hare/fleeing',
+    'sight:hare/sheltering',
+    'sight:fox',
+    'sight:fox/patrolling',
+    'sight:fox/watching',
+    'sight:gull',
+    'sight:gull/resting',
+    'sight:gull/gliding',
+    'sight:willow',
+    'sight:clover',
+    'sight:lookout',
+    'sight:ferry',
+    'biome:driftwood-edge',
+    'sight:foxglove',
+    'sight:limpet',
   ])
   // Interactions name a subject by its place in this list, so the order is part of the wire contract.
-  assert.deepEqual(journalSubjects.map(({ id }) => id),
-    ['sight:school', 'sight:hare', 'sight:fox', 'sight:gull', 'sight:willow', 'sight:clover', 'sight:lookout', 'sight:ferry'])
+  assert.deepEqual(journalSubjects.map(({ id }) => id), ['sight:school', 'sight:hare', 'sight:fox', 'sight:gull', 'sight:willow', 'sight:clover', 'sight:lookout', 'sight:ferry'])
   assert.equal(journalEntry('sight:hare/grazing').parent, 'sight:hare')
   assert.equal(journalEntry('sight:unicorn'), undefined)
 })
@@ -87,7 +116,8 @@ test('the reticle offers each subject in range once, then only a behavior the cr
   const state = island()
   const options = journalInteractions(state, watcher)
   assert.deepEqual(options.slice(0, 2).map(({ name, label, subject }) => [name, label, subject]), [
-    ['Brown hare · fleeing', 'Record in journal', 16], ['Juniper fox', 'Record in journal', 32],
+    ['Brown hare · fleeing', 'Record in journal', 16],
+    ['Juniper fox', 'Record in journal', 32],
   ])
   assert.ok(options.slice(2).some(({ name, subject }) =>
     name === 'White clover' && sightingEntries(state, watcher, subject).ids.includes('sight:clover')))

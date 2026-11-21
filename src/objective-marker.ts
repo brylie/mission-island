@@ -22,7 +22,12 @@ export function createObjectiveMarker({ scene, paint }: MeshFactory, point: Poin
 
   const height = 1.58
   const curtain = CreateCylinder('Objective halo', {
-    diameterBottom: size, diameterTop: size * 1.013, height, cap: 0, tessellation: 64, subdivisions: 8,
+    diameterBottom: size,
+    diameterTop: size * 1.013,
+    height,
+    cap: 0,
+    tessellation: 64,
+    subdivisions: 8,
   }, scene)
   const tint = Color3.FromHexString(color)
   const vertices = curtain.getVerticesData(VertexBuffer.PositionKind) ?? []

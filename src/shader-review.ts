@@ -11,10 +11,10 @@ import type { ShaderQuality } from './shader-studies'
 import { groundHeight, meadowFoot, meadowHill, pool, tidePool, waterLevel } from './terrain'
 
 const sites = {
-  shore: { point: tidePool, height: .20, alpha: -1.97, beta: 1.08, radius: 7.5, hour: 11.5, rain: 0 },
-  meadow: { point: meadowFoot, height: .66, alpha: -1.72, beta: 1.35, radius: 6.5, hour: 15, rain: 0 },
-  paving: { point: { x: 40, z: 8.24 }, height: .12, alpha: -.19, beta: 1.47, radius: 10, hour: 12, rain: .65 },
-  mist: { point: { x: pool.x, z: pool.z - 2 }, height: .84, alpha: .09, beta: 1.46, radius: 17, hour: 6.6, rain: 0 },
+  shore: { point: tidePool, height: 0.20, alpha: -1.97, beta: 1.08, radius: 7.5, hour: 11.5, rain: 0 },
+  meadow: { point: meadowFoot, height: 0.66, alpha: -1.72, beta: 1.35, radius: 6.5, hour: 15, rain: 0 },
+  paving: { point: { x: 40, z: 8.24 }, height: 0.12, alpha: -0.19, beta: 1.47, radius: 10, hour: 12, rain: 0.65 },
+  mist: { point: { x: pool.x, z: pool.z - 2 }, height: 0.84, alpha: 0.09, beta: 1.46, radius: 17, hour: 6.6, rain: 0 },
 }
 
 interface Measurement {
@@ -28,13 +28,13 @@ interface Measurement {
 function describe(samples: number[]) {
   if (!samples.length) return 'unavailable'
   samples.sort((a, b) => a - b)
-  return [0.5, 0.95].map(p => samples[Math.ceil(p * samples.length) - 1].toFixed(2)).join(' / ') + ' ms'
+  return [0.5, 0.95].map((p) => samples[Math.ceil(p * samples.length) - 1].toFixed(2)).join(' / ') + ' ms'
 }
 
 function keepCameraAboveTerrain(camera: ArcRotateCamera) {
   camera.getViewMatrix()
   const eye = camera.position
-  const floor = Math.max(waterLevel, groundHeight(eye)) + .28
+  const floor = Math.max(waterLevel, groundHeight(eye)) + 0.28
   if (eye.y < floor) {
     camera.beta = Math.max(camera.lowerBetaLimit ?? 0, Math.acos(Math.min(1, (floor - camera.target.y) / camera.radius)))
     camera.getViewMatrix()
@@ -43,13 +43,13 @@ function keepCameraAboveTerrain(camera: ArcRotateCamera) {
 
 function createFieldCamera(scene: Scene) {
   const camera = new ArcRotateCamera('Shader field camera', 0, 1.1, 9, Vector3.Zero(), scene)
-  camera.minZ = .065
+  camera.minZ = 0.065
   camera.maxZ = 620
   camera.lowerRadiusLimit = 1.5
   camera.layerMask &= ~objectiveLayer
-  camera.lowerBetaLimit = .12
-  camera.upperBetaLimit = Math.PI * .49
-  camera.wheelDeltaPercentage = .06
+  camera.lowerBetaLimit = 0.12
+  camera.upperBetaLimit = Math.PI * 0.49
+  camera.wheelDeltaPercentage = 0.06
   camera.panningSensibility = 0
   camera.inputs.removeByType('ArcRotateCameraKeyboardMoveInput')
   return camera
@@ -92,7 +92,7 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
     const z = start.z + (meadowHill.z - start.z) * fraction
     camera.target.set(x, groundHeight({ x, z }) + sites.meadow.height, z)
     // Gain a little altitude as the viewpoint climbs the slope.
-    camera.beta = sites.meadow.beta - fraction * .2
+    camera.beta = sites.meadow.beta - fraction * 0.2
   }
 
   const tideClock = () => tidePhase.valueAsNumber / 100 * shellglassCycle
@@ -125,7 +125,7 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
     camera.attachControl(canvas, false)
   }
 
-  siteSelect.value = [...siteSelect.options].some(option => option.value === initialSite) ? initialSite : 'shore'
+  siteSelect.value = [...siteSelect.options].some((option) => option.value === initialSite) ? initialSite : 'shore'
   frameSite()
   labelTide()
   panel.hidden = false
@@ -164,8 +164,7 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
       const { hour, rain } = view
       scene.activeCamera = camera
       keepCameraAboveTerrain(camera)
-      return { camera, time: freeze.checked || stats ? 7 : time, weather: { hour, rain },
-        tideTime: site === 'shore' ? tideClock() : undefined, inspection: studies.inspection() }
+      return { camera, time: freeze.checked || stats ? 7 : time, weather: { hour, rain }, tideTime: site === 'shore' ? tideClock() : undefined, inspection: studies.inspection() }
     },
     render() {
       const start = stats ? performance.now() : 0

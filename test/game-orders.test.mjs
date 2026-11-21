@@ -97,7 +97,9 @@ test('an older completed shift pools legacy wallets and keeps its order and farm
   save.version = 1
   delete save.crewCoins
   save.crew = [13, 9].map((coins, id) => ({
-    token: tokens[id], player: player(id, door(id), { coins, starterSeedClaimed: true, lastStarterPay: id === 0 ? 'delivery' : 'fire' }), reserved: id === 0,
+    token: tokens[id],
+    player: player(id, door(id), { coins, starterSeedClaimed: true, lastStarterPay: id === 0 ? 'delivery' : 'fire' }),
+    reserved: id === 0,
   }))
   file.write(save)
   const h = setup(t, { saved: file.load() })

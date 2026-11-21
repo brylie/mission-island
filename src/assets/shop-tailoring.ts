@@ -11,11 +11,10 @@ export type Section = [y: number, x: number, z: number, width: number, depth: nu
 export function tailored(meshes: MeshFactory, root: TransformNode, name: string, color: string, rows: Section[], sides = 24, opening = 0) {
   if (opening) {
     const [y, x, z, w, d, tint = color] = rows[rows.length - 1]
-    const lining = Color3.FromHexString(tint).scale(.46).toHexString()
-    rows = [...rows, [y + .001, x, z, w - .006, d - .006, tint],
-    [y - .005, x, z, w - .009, d - .009, lining], [y - opening, x, z, w * .80, d * .80, lining]]
+    const lining = Color3.FromHexString(tint).scale(0.46).toHexString()
+    rows = [...rows, [y + 0.001, x, z, w - 0.006, d - 0.006, tint], [y - 0.005, x, z, w - 0.009, d - 0.009, lining], [y - opening, x, z, w * 0.80, d * 0.80, lining]]
   }
-  const mesh = garment(meshes, root, name, '#ffffff', rows.map(([y, x, z, w, d]) => [y, x, z, w, d]), .90, sides)
+  const mesh = garment(meshes, root, name, '#ffffff', rows.map(([y, x, z, w, d]) => [y, x, z, w, d]), 0.90, sides)
   const pigments: number[] = []
   for (const row of rows) {
     const tone = Color3.FromHexString(row[5] ?? color)
@@ -45,17 +44,16 @@ export function panelSurface(mesh: Mesh, axis: 0 | 1 | 2, sign: number) {
       const depth = positions[p + axis] + u * (positions[q + axis] - positions[p + axis]) + v * (positions[r + axis] - positions[p + axis])
       outside = Math.max(outside, sign * depth)
     }
-    if (Number.isFinite(outside)) point[axis] = sign * (outside + .0035)
+    if (Number.isFinite(outside)) point[axis] = sign * (outside + 0.0035)
     return point
   }
 }
 
 // Subdivide the appliqué so its center and edges conform to the same curved panel.
-export function applique(meshes: MeshFactory, root: TransformNode, name: string, color: string,
-  outline: number[][], point: (u: number, v: number) => number[], outward: number[]) {
+export function applique(meshes: MeshFactory, root: TransformNode, name: string, color: string, outline: number[][], point: (u: number, v: number) => number[], outward: number[]) {
   const boundary = outline.flatMap(([u, v], i) => {
     const [x, y] = outline[(i + 1) % outline.length]
-    return [0, .25, .5, .75].map(t => [u + t * (x - u), v + t * (y - v)])
+    return [0, 0.25, 0.5, 0.75].map((t) => [u + t * (x - u), v + t * (y - v)])
   })
   const vertices = [...point(0, 0)], faces: number[] = []
   const n = boundary.length

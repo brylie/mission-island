@@ -15,12 +15,13 @@ const skiffPreviewHeight = 0.44
 
 function describeOutfit(appearance: CrewAppearance) {
   const everyday = isEveryday(appearance.uniform)
-  const item = (everyday && shopItemFor('shirt', appearance.shirt)) ||
-    shopItemFor('uniform', appearance.uniform)
+  const item = (everyday && shopItemFor('shirt', appearance.shirt))
+    || shopItemFor('uniform', appearance.uniform)
   if (item) {
     const { name, price } = clothingCatalog[item]
     const bottoms = everyday && appearance.shirt !== 'lagoon' && appearance.trousers
-      ? ' · ' + appearanceParts.trousers.choices[appearance.trousers] : ''
+      ? ' · ' + appearanceParts.trousers.choices[appearance.trousers]
+      : ''
     return `${name} · ${price} ${price === 1 ? 'coin' : 'coins'}${bottoms}`
   }
   const uniform = uniforms[appearance.uniform === 'default' ? 'amber' : appearance.uniform]
@@ -30,7 +31,12 @@ function describeOutfit(appearance: CrewAppearance) {
 }
 
 export const crewStudy: Entry = {
-  id: 'crew', name: 'Crew character', group: 'Wardrobe', source: 'src/assets/crew.ts', duration, headroom: 1.45,
+  id: 'crew',
+  name: 'Crew character',
+  group: 'Wardrobe',
+  source: 'src/assets/crew.ts',
+  duration,
+  headroom: 1.45,
   fieldSite: ({ state }) => state === 'paddle'
     ? { name: 'Harbor', offset: { x: skiffStart.x - 6, z: skiffStart.z, y: waterLevel - skiffPreviewHeight } }
     : { name: 'Seabrook', offset: { x: 39, z: 16, y: walkingHeight({ x: 39, z: 16 }) } },
@@ -41,7 +47,7 @@ export const crewStudy: Entry = {
     control('state', 'Animation', 'walk', { idle: 'Idle', walk: 'Walk', sprint: 'Sprint', jump: 'Jump', paddle: 'Paddle skiff', swim: 'Swim', tread: 'Tread water', reach: 'Left reach', raise: 'Raise right hand', carry: 'Carry crate', throw: 'Throw crate', spray: 'Use extinguisher' }, true),
     control('uniform', 'Outfit preset', 'amber', Object.fromEntries(Object.entries(uniforms).map(([id, uniform]) => [id, uniform.name])), true),
     control('skin', 'Skin tone', 'light', Object.fromEntries(Object.entries(skinTones).map(([id, tone]) => [id, tone.name]))),
-    ...appearancePartKeys.map(key => {
+    ...appearancePartKeys.map((key) => {
       const { label, choices } = appearanceParts[key]
       const select = control(key, label, 'default', { default: 'Default', ...choices }, crewClothingSlots.has(key))
       if (crewClothingSlots.has(key)) select.displayValue = (values) => shownCrewChoice(key, values)
@@ -99,8 +105,7 @@ export const crewStudy: Entry = {
       crew.root.rotation.x = 0
       if (paddling) poseSkiffCrew(crew, Math.sin(time * 4 * Math.PI / duration), -1, false, 1)
       else if (values.state === 'swim' || values.state === 'tread') poseSwimming(crew, time, Number(values.state === 'swim'))
-      else poseCrew(crew, time * pace / strideCycleMetres(stride), stride, elevation > 0.08,
-        carrying ? 'crate' : spraying ? 'extinguisher' : undefined, reach, 1, power, throwing, values.state === 'raise')
+      else poseCrew(crew, time * pace / strideCycleMetres(stride), stride, elevation > 0.08, carrying ? 'crate' : spraying ? 'extinguisher' : undefined, reach, 1, power, throwing, values.state === 'raise')
       alignPaddle?.()
       crate.setEnabled(carrying)
       crate.position.y = 1.13 + power * 0.41

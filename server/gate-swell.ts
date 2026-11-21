@@ -21,7 +21,11 @@ export function createGateSwell(state: Snapshot, notifyCrew: (message: CrewNotic
   } satisfies InteractionHandlers<SwellAction>
 
   // Agreeing to the job is when the swelling shows; keeping it leaves a gate that swings clear.
-  const accepted = () => { state.gateRepair.swelling = 'swollen' }
-  const kept = () => { delete state.gateRepair.swelling }
+  const accepted = () => {
+    state.gateRepair.swelling = 'swollen'
+  }
+  const kept = () => {
+    delete state.gateRepair.swelling
+  }
   return { interactions, hooks: { accepted: { [swellFavor]: accepted }, kept: { [swellFavor]: kept } } }
 }

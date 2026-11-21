@@ -51,10 +51,13 @@ class MeadowShader extends MaterialPluginBase {
   override getCustomCode(type: string): Record<string, string> {
     if (type === 'vertex') {
       return {
-        CUSTOM_VERTEX_DEFINITIONS: this.blades ? `attribute vec3 bladeRoot;
+        CUSTOM_VERTEX_DEFINITIONS: this.blades
+          ? `attribute vec3 bladeRoot;
           varying vec2 stemXZ;
-          ${patchNoise}` : '',
-        CUSTOM_VERTEX_UPDATE_POSITION: this.blades ? `
+          ${patchNoise}`
+          : '',
+        CUSTOM_VERTEX_UPDATE_POSITION: this.blades
+          ? `
           stemXZ = bladeRoot.xz;
           vec3 blade = positionUpdated - bladeRoot;
           float stemWeight = pow(max(0., blade.y), 2.) * 5.;
@@ -65,14 +68,16 @@ class MeadowShader extends MaterialPluginBase {
           }
           float limit = meadowControls.z;
           if (limit > 0.) blade *= 1. - meadowFade(limit, distance(meadowEye, bladeRoot));
-          positionUpdated = bladeRoot + blade;` : '',
+          positionUpdated = bladeRoot + blade;`
+          : '',
       }
     }
     const patchPoint = this.blades ? 'stemXZ' : 'vPositionW.xz'
     const color = this.pbr ? 'surfaceAlbedo' : 'baseColor.rgb'
     const fragmentHook = this.pbr ? 'CUSTOM_FRAGMENT_BEFORE_LIGHTS' : 'CUSTOM_FRAGMENT_UPDATE_DIFFUSE'
     // A coarse mip keeps the recipe's own tint as the close grain fades.
-    const farAlbedo = this.pbr ? `
+    const farAlbedo = this.pbr
+      ? `
       vec3 farAlbedo = vAlbedoColor.rgb;
       #ifdef ALBEDO
         vec3 coarseGrain = texture2D(albedoSampler, vAlbedoUV, 6.).rgb;
@@ -80,8 +85,11 @@ class MeadowShader extends MaterialPluginBase {
           coarseGrain = toLinearSpace(coarseGrain);
         #endif
         farAlbedo *= coarseGrain * vAlbedoInfos.y;
-      #endif` : 'vec3 farAlbedo = vec3(.88);'
-    const terrain = this.blades ? '' : `
+      #endif`
+      : 'vec3 farAlbedo = vec3(.88);'
+    const terrain = this.blades
+      ? ''
+      : `
       float far = meadowFade(max(1., meadowControls.z), distance(meadowEye, vPositionW));
       ${farAlbedo}
       #ifdef VERTEXCOLOR
@@ -123,13 +131,11 @@ export function createMeadowBlades(meshes: MeshFactory, points: Iterable<Point>,
     const angle = random() * Math.PI
     for (let k = 0; k < 3; k++) {
       const theta = angle + k * Math.PI / 3
-      const width = .058 + random() * .038
-      const height = .20 + random() * .25
+      const width = 0.058 + random() * 0.038
+      const height = 0.20 + random() * 0.25
       const dx = Math.cos(theta) * width, dz = Math.sin(theta) * width
       const base = positions.length / 3
-      positions.push(x - dx, y, z - dz, x + dx, y, z + dz,
-        x, y + height * .52, z, x + dx * .93, y + height * .52, z + dz * .93,
-        x + dx * 2.4, y + height, z + dz * 2.4)
+      positions.push(x - dx, y, z - dz, x + dx, y, z + dz, x, y + height * 0.52, z, x + dx * 0.93, y + height * 0.52, z + dz * 0.93, x + dx * 2.4, y + height, z + dz * 2.4)
       for (let i = 0; i < 5; i++) roots.push(x, y, z)
       indices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2, base + 2, base + 3, base + 4)
     }

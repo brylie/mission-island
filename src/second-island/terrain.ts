@@ -10,7 +10,10 @@ export const rows = (maxZ - minZ) / gridStep + 1
 
 const mix = (a: number, b: number, t: number) => a + (b - a) * t
 const clamp = (v: number) => Math.min(1, Math.max(0, v))
-const smooth = (v: number) => { const t = clamp(v); return t * t * (3 - 2 * t) }
+const smooth = (v: number) => {
+  const t = clamp(v)
+  return t * t * (3 - 2 * t)
+}
 const radius = (x: number, z: number, cx: number, cz: number, rx: number, rz: number) => Math.hypot((x - cx) / rx, (z - cz) / rz)
 const mound = (x: number, z: number, cx: number, cz: number, rx: number, rz: number, height: number) =>
   height * Math.max(0, 1 - radius(x, z, cx, cz, rx, rz) ** 2) ** 2
@@ -31,9 +34,11 @@ export function riverY(x: number) {
   return Math.max(0, Math.min(lowerLake.y, (x + 440) * 0.0165))
 }
 
-export function fallsX(z: number) { return -120 + 5 * Math.sin((z - 186) * 0.065) }
+export function fallsX(z: number) {
+  return -120 + 5 * Math.sin((z - 186) * 0.065)
+}
 export function fallsWidth(z: number) {
-  return 3.2 + .83 * Math.cos((z - 169) * .29) + .48 * Math.sin(z * .51)
+  return 3.2 + 0.83 * Math.cos((z - 169) * 0.29) + 0.48 * Math.sin(z * 0.51)
 }
 export function fallsY(z: number) {
   return lowerLake.y + 7.1 * smooth((z - 125) / 30) + 10.8 * smooth((z - 171) / 8.5)
@@ -53,7 +58,7 @@ export function bridgeAt(route: Route, point: MapPoint) {
     || (Math.abs(point.z - 153) < 11 && Math.abs(point.x - fallsX(point.z)) < 11))
 }
 
-interface Segment { route: Route; a: RoadSample; b: RoadSample }
+interface Segment { route: Route, a: RoadSample, b: RoadSample }
 const indexSize = 25
 const roadIndex = new Map<number, Segment[]>()
 const key = (ix: number, iz: number) => (ix + 32) * 128 + iz + 32
@@ -102,9 +107,9 @@ function junctionGrade(x: number, z: number, height: number, route: Route) {
     if (main.distance < 11) return mix(main.y, height, smooth((main.distance - 3.6) / 6.4))
   }
   const mill = Math.hypot(x + 259, z - 114)
-  if (mill < 22) return mix(28 + .014 * (x + 259) + .036 * (z - 114), height, smooth((mill - 5) / 17))
+  if (mill < 22) return mix(28 + 0.014 * (x + 259) + 0.036 * (z - 114), height, smooth((mill - 5) / 17))
   const mine = Math.hypot(x - 213, z - 101)
-  if (mine < 25) return mix(21 + .016 * (x - 213) + .054 * (z - 101), height, smooth((mine - 8) / 17))
+  if (mine < 25) return mix(21 + 0.016 * (x - 213) + 0.054 * (z - 101), height, smooth((mine - 8) / 17))
   return height
 }
 
@@ -135,14 +140,14 @@ function terrainShape(x: number, z: number) {
   }
   if (x < -87 && x > -155 && Math.abs(z - riverZ(x)) < 12) {
     const distance = Math.abs(z - riverZ(x))
-    height = Math.min(height, mix(riverY(x) + (distance - 9) * .48, height, smooth((distance - 8) / 4)))
+    height = Math.min(height, mix(riverY(x) + (distance - 9) * 0.48, height, smooth((distance - 8) / 4)))
   }
   if (z >= 121 && z <= 199) {
     const distance = Math.abs(x - fallsX(z))
     const width = fallsWidth(z)
     const bank = distance - width
     const spread = 11 + 5 * smooth((z - 163) / 12)
-    if (bank < spread) height = mix(fallsY(z) + bank * .67, height, smooth(bank / spread))
+    if (bank < spread) height = mix(fallsY(z) + bank * 0.67, height, smooth(bank / spread))
   }
   const ungraded = height
   const nearest = nearestRoad(x, z, true)
@@ -163,17 +168,17 @@ function terrainShape(x: number, z: number) {
   }
   for (const pad of pavedYards) {
     const edge = Math.max(Math.abs(x - pad.x) - pad.width / 2, Math.abs(z - pad.z) - pad.depth / 2)
-    if (edge < 5 && nearest.distance > (nearest.road?.width ?? 0) * .5 + 2) {
-      height = mix(Math.min(height, pad.y - .08), height, smooth((edge - 1) / 4))
+    if (edge < 5 && nearest.distance > (nearest.road?.width ?? 0) * 0.5 + 2) {
+      height = mix(Math.min(height, pad.y - 0.08), height, smooth((edge - 1) / 4))
     }
   }
   for (const pad of roundYards) {
     const edge = Math.hypot(x - pad.x, z - pad.z) - pad.radius
-    if (edge < 5) height = mix(Math.min(height, pad.y - .10), height, smooth((edge - 1) / 4))
+    if (edge < 5) height = mix(Math.min(height, pad.y - 0.10), height, smooth((edge - 1) / 4))
   }
   // An exposed bed of slate forms a level picnic shelf above the steeper shore.
   const ledge = radius(x, z, picnicLedge.x, picnicLedge.z, 6.8, 3.8)
-  if (ledge < 1.6) height = mix(30.85 + .027 * (z - picnicLedge.z), height, smooth((ledge - .65) / .95))
+  if (ledge < 1.6) height = mix(30.85 + 0.027 * (z - picnicLedge.z), height, smooth((ledge - 0.65) / 0.95))
   // The cemetery gate and loop sit on two graded pads. Carry the walk across
   // the shallow hollow between them, feathering the fill into the hillside.
   if (z > 153 && z < 176 && Math.abs(x - 19) < 9) {
@@ -212,8 +217,8 @@ export function deckPoint(p: RoadSample, offset: number, route: Route) {
   const x = p.x + Math.cos(p.yaw) * offset, z = p.z - Math.sin(p.yaw) * offset
   const ground = groundHeight(x, z)
   const design = junctionGrade(x, z, p.y, route)
-  const stack = accessLanes.includes(route) ? .02 : Math.max(0, routes.indexOf(route)) * .009
-  return { x, z, y: Math.max(design + deckLift, ground + .095) + stack }
+  const stack = accessLanes.includes(route) ? 0.02 : Math.max(0, routes.indexOf(route)) * 0.009
+  return { x, z, y: Math.max(design + deckLift, ground + 0.095) + stack }
 }
 
 type DeckPoint = ReturnType<typeof deckPoint>
@@ -241,8 +246,7 @@ export function surfaceHeight(x: number, z: number, maxDeck = Infinity) {
     if (Math.abs(a.x - x) > 7 || Math.abs(a.z - z) > 7) continue
     const first = deckSection(a, route), next = deckSection(b, route)
     for (const lane of [0, 1]) {
-      const deck = Math.max(triangleHeight(point, first[lane], first[lane + 1], next[lane]),
-        triangleHeight(point, first[lane + 1], next[lane + 1], next[lane]))
+      const deck = Math.max(triangleHeight(point, first[lane], first[lane + 1], next[lane]), triangleHeight(point, first[lane + 1], next[lane + 1], next[lane]))
       if (deck <= maxDeck) height = Math.max(height, deck)
     }
   }

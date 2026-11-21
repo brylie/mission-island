@@ -51,7 +51,9 @@ function createAudition() {
     const spatial = values.spatial !== false
     const placed = engine.play(rendered, {
       // An audition waits for a buffer rendered on demand rather than skipping the cue.
-      bus: layer === 'surf' ? 'ambience' : 'effects', at, lateness: 2,
+      bus: layer === 'surf' ? 'ambience' : 'effects',
+      at,
+      lateness: 2,
       position: spatial ? source(number(values, 'distance', 6)) : undefined,
     })
     if (placed) last = `${layer} · ${rendered.key} · gain ${rendered.gain.toFixed(2)}`
@@ -101,11 +103,14 @@ let audition: ReturnType<typeof createAudition> | undefined
 const activeAudition = () => audition ??= createAudition()
 
 export const audioStudy: Entry = {
-  id: 'starter-audio', name: 'Starter Island sound', group: 'Sound', source: 'src/audio/recipes.ts',
+  id: 'starter-audio',
+  name: 'Starter Island sound',
+  group: 'Sound',
+  source: 'src/audio/recipes.ts',
   description: 'Audition the surf, footstep and crate recipes used on Starter Island at a chosen seed and listening distance.',
   readout: 'Audition',
   duration: 8,
-  angle: .9,
+  angle: 0.9,
   ground: { height: 0, color: '#8e9b84' },
   controls: [
     control('layer', 'Sound layer', 'crate', { surf: 'Surf', footsteps: 'Footsteps', crate: 'Crate impact' }),
@@ -113,11 +118,11 @@ export const audioStudy: Entry = {
     { type: 'number', key: 'seed', label: 'Seed', value: 1, min: 1, max: 9999, step: 1 },
     range('distance', 'Listener distance (m)', 6, 0, 60, 1),
     { type: 'checkbox', key: 'spatial', label: 'Spatial audition', value: true },
-    range('breaker', 'Breaker strength', .5, 0, 1, .05),
-    range('spacing', 'Breaker spacing (×)', 1, .6, 1.6, .05),
+    range('breaker', 'Breaker strength', 0.5, 0, 1, 0.05),
+    range('spacing', 'Breaker spacing (×)', 1, 0.6, 1.6, 0.05),
     control('surface', 'Footstep surface', 'gravel', { gravel: 'Gravel', sand: 'Sand', boards: 'Dock boards', fallback: 'Soft ground' }),
-    range('pace', 'Walking pace (m/s)', 8, 2, 12, .5),
-    range('impact', 'Drop strength', .6, 0, 1, .05),
+    range('pace', 'Walking pace (m/s)', 8, 2, 12, 0.5),
+    range('impact', 'Drop strength', 0.6, 0, 1, 0.05),
     control('receiving', 'Receiving surface', 'ground', { ground: 'Ground', bed: 'Truck bed' }),
     { type: 'checkbox', key: 'mute', label: 'Mute', value: false },
   ],

@@ -14,8 +14,7 @@ const piling: Builder = (meshes, origin, studio) => {
     ink = vec4(diffuseLight(timber,n),1.);
   ` })
   const { bottom, top, diameter } = saltBloomPile
-  meshes.cylinder(0, 0, 0, studio ? .73 : diameter, studio ? .78 : diameter, top - bottom,
-    studio ? 18 : 7, effect.material, effect.root)
+  meshes.cylinder(0, 0, 0, studio ? 0.73 : diameter, studio ? 0.78 : diameter, top - bottom, studio ? 18 : 7, effect.material, effect.root)
   return effect
 }
 
@@ -33,12 +32,12 @@ const awning: Builder = (meshes, origin) => {
     vec3 color = diffuseLight(canvas * (1. - pond*.48),gl_FrontFacing ? n : -n);
     ink = vec4(color + vec3(.37,.49,.51) * pond * sheen * .39,1.);
   ` })
-  grid(meshes, effect, 'Canvas stretched to fixed edges', 3.35, 2.1, 28, (_x,z) => 2.18 - z*.19)
+  grid(meshes, effect, 'Canvas stretched to fixed edges', 3.35, 2.1, 28, (_x, z) => 2.18 - z * 0.19)
   for (const x of [-1.66, 1.66]) {
-    meshes.box(x, .98, 1.04, .069, 1.98, .069, '#566457', effect.root)
-    meshes.box(x, 1.18, -1.04, .069, 2.38, .069, '#566457', effect.root)
+    meshes.box(x, 0.98, 1.04, 0.069, 1.98, 0.069, '#566457', effect.root)
+    meshes.box(x, 1.18, -1.04, 0.069, 2.38, 0.069, '#566457', effect.root)
   }
-  for (const z of [-1.05,1.05]) meshes.box(0,2.176-z*.19,z,3.46,.061,.068,'#756854',effect.root)
+  for (const z of [-1.05, 1.05]) meshes.box(0, 2.176 - z * 0.19, z, 3.46, 0.061, 0.068, '#756854', effect.root)
   return effect
 }
 
@@ -60,13 +59,13 @@ const window: Builder = (meshes, origin, studio) => {
     vec3 exterior = mix(vec3(.18,.31,.36), fogTint, .38);
     ink = vec4(mix(exterior, mix(wall, exterior, glass), smoothstep(.04,.41,response)),1.);
   ` })
-  card(meshes, effect, 'Window pane', .958, .766)
+  card(meshes, effect, 'Window pane', 0.958, 0.766)
   if (studio) {
-    for (const x of [-.56,.56]) meshes.box(x,0,.028,.14,.96,.12,'#e7cda1',effect.root)
-    for (const y of [-.475,.475]) meshes.box(0,y,.022,1.25,.11,.14,'#dfc89e',effect.root)
-    meshes.box(0,0,-.013,.04,.85,.04,'#d4bf97',effect.root)
-    meshes.box(-.93,0,.18,.65,2.1,.24,'#71958e',effect.root)
-    meshes.box(.93,0,.18,.65,2.1,.24,'#71958e',effect.root)
+    for (const x of [-0.56, 0.56]) meshes.box(x, 0, 0.028, 0.14, 0.96, 0.12, '#e7cda1', effect.root)
+    for (const y of [-0.475, 0.475]) meshes.box(0, y, 0.022, 1.25, 0.11, 0.14, '#dfc89e', effect.root)
+    meshes.box(0, 0, -0.013, 0.04, 0.85, 0.04, '#d4bf97', effect.root)
+    meshes.box(-0.93, 0, 0.18, 0.65, 2.1, 0.24, '#71958e', effect.root)
+    meshes.box(0.93, 0, 0.18, 0.65, 2.1, 0.24, '#71958e', effect.root)
   }
   return effect
 }
@@ -85,12 +84,12 @@ const reflectors: Builder = (meshes, origin) => {
     vec3 matte = vec3(.48,.40,.19) * (.24 + daylight*.6);
     ink = vec4(matte + beamTint * 1.8 * response * cone * retro * facing * nearFalloff * beads,1.);
   ` })
-  for (const x of [-1.2,-.15,.9,1.95]) {
-    const body = meshes.box(x,.09,0,.42,.16,.21,'#555950',effect.root,false)
+  for (const x of [-1.2, -0.15, 0.9, 1.95]) {
+    const body = meshes.box(x, 0.09, 0, 0.42, 0.16, 0.21, '#555950', effect.root, false)
     body.rotation.y = 1.15
-    const lens = card(meshes,effect,'Roadside bead inset',.35,.105)
+    const lens = card(meshes, effect, 'Roadside bead inset', 0.35, 0.105)
     lens.rotation.y = 1.15
-    lens.position.set(x-.111,.104,-.050)
+    lens.position.set(x - 0.111, 0.104, -0.050)
   }
   return effect
 }
@@ -109,23 +108,26 @@ const rope: Builder = (meshes, origin) => {
   const pos: number[] = [], uvs: number[] = [], indices: number[] = []
   for (let i = 0; i <= 132; i++) {
     const u = i / 132, a = u * Math.PI * 6
-    const center = .67 - u * .21
+    const center = 0.67 - u * 0.21
     for (let j = 0; j <= 12; j++) {
       const v = j / 12, turn = v * Math.PI * 2
-      const r = center + Math.cos(turn) * .075
-      pos.push(Math.cos(a)*r, .095 + u*.36 + Math.sin(turn)*.075, Math.sin(a)*r)
-      uvs.push(u,v)
+      const r = center + Math.cos(turn) * 0.075
+      pos.push(Math.cos(a) * r, 0.095 + u * 0.36 + Math.sin(turn) * 0.075, Math.sin(a) * r)
+      uvs.push(u, v)
       if (i && j) {
-        const d = i*13+j, b = d-13
-        indices.push(b-1,d,b,b-1,d-1,d)
+        const d = i * 13 + j, b = d - 13
+        indices.push(b - 1, d, b, b - 1, d - 1, d)
       }
     }
   }
-  meshes.surface('Three turns of mooring rope',pos,indices,effect.material,effect.root,uvs)
+  meshes.surface('Three turns of mooring rope', pos, indices, effect.material, effect.root, uvs)
   return effect
 }
 
 export const surfaceBuilders = {
-  'timber-salt-bloom': piling, 'awning-rain-load': awning, 'window-parallax': window,
-  'road-retroreflector': reflectors, 'rope-fiber-sheen': rope,
+  'timber-salt-bloom': piling,
+  'awning-rain-load': awning,
+  'window-parallax': window,
+  'road-retroreflector': reflectors,
+  'rope-fiber-sheen': rope,
 }

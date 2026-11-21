@@ -17,10 +17,7 @@ interface Hooks {
 
 // Host side of every resident. The interaction layer has already checked the resident is in reach and the
 // choice is still open, so a stale or simultaneous request never reaches here. Favors are crew-wide.
-export function createResidents(state: Snapshot, registry: readonly ResidentDefinition[],
-  physics: Pick<ReturnType<typeof createCargoPhysics>, 'relocate'>, notifyCrew: (message: CrewNotice) => void,
-  hooks: Hooks = {}, checkpoint?: () => void) {
-
+export function createResidents(state: Snapshot, registry: readonly ResidentDefinition[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'relocate'>, notifyCrew: (message: CrewNotice) => void, hooks: Hooks = {}, checkpoint?: () => void) {
   function keep(resident: ResidentDefinition, favor: FavorDefinition) {
     const receipt = keepFavor(state, resident, favor)
     if (!receipt) return false

@@ -9,8 +9,8 @@ import { crateSize, itemStarts, spawns } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
 import { restingY, updateHeldItems } from './items.ts'
 
-export type InteractionHandlers<Action extends InteractionAction = InteractionAction> =
-  Record<Action, (member: CrewMember, subject: number) => void>
+export type InteractionHandlers<Action extends InteractionAction = InteractionAction>
+  = Record<Action, (member: CrewMember, subject: number) => void>
 
 export function createInteractions(
   state: Snapshot,
@@ -32,7 +32,8 @@ export function createInteractions(
       return
     }
     const options = interactions(state, player)
-    const chosen = choice ? options.find((option) => sameChoice(option, choice))
+    const chosen = choice
+      ? options.find((option) => sameChoice(option, choice))
       : options.find(({ action }) => !requiresExplicitChoice(action))
     if (!chosen) return
     handlers[chosen.action](member, chosen.subject ?? -1)
@@ -54,8 +55,7 @@ export function createInteractions(
       }
     }
     const home = spawns[player.id]
-    Object.assign(player, { ...home, y: groundHeight(home), heading: 0, seat: null, grounded: true, onBed: false, truckSurface: undefined,
-      swimming: false, sleeping: false, casting: null, reaching: false, rightHandRaised: false, throwing: false, rowing: false })
+    Object.assign(player, { ...home, y: groundHeight(home), heading: 0, seat: null, grounded: true, onBed: false, truckSurface: undefined, swimming: false, sleeping: false, casting: null, reaching: false, rightHandRaised: false, throwing: false, rowing: false })
     stopPrimary(member)
     member.input = stopped
     member.verticalSpeed = 0

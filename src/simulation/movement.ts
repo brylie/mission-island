@@ -8,10 +8,9 @@ import type { Point, Pose } from '../world.ts'
 
 function clearFixedWalls(point: Point, radius: number) {
   return buildings.every((building) =>
-      Math.abs(point.x - building.x) > building.w / 2 + radius ||
-      Math.abs(point.z - building.z) > building.d / 2 + radius,
-    ) && crewHomes.every(({ chest }) => Math.abs(point.x - chest.x) > chestSize.width / 2 + radius ||
-      Math.abs(point.z - chest.z) > chestSize.depth / 2 + radius)
+    Math.abs(point.x - building.x) > building.w / 2 + radius
+    || Math.abs(point.z - building.z) > building.d / 2 + radius) && crewHomes.every(({ chest }) => Math.abs(point.x - chest.x) > chestSize.width / 2 + radius
+      || Math.abs(point.z - chest.z) > chestSize.depth / 2 + radius)
 }
 
 export function canOccupyGround(point: Point, radius: number, minimumY: number) {
@@ -25,12 +24,12 @@ export function canWalkAt(point: Point, radius: number, minimumY: number) {
 // A saved jump can land inside a moved building. Props also need recovery at ground level.
 export function recoverSceneryOverlap(player: Player, extra: ExtraSurface = () => -Infinity) {
   if (player.seat || player.swimming || player.onBed || player.truckSurface) return
-  const top = Math.max(propTop(player, .18), extra(player, .18))
-  if (clearFixedWalls(player, .4) && (!player.grounded || top <= player.y + .055)) return
-  for (let radius = .5; radius <= 8; radius += .5) {
+  const top = Math.max(propTop(player, 0.18), extra(player, 0.18))
+  if (clearFixedWalls(player, 0.4) && (!player.grounded || top <= player.y + 0.055)) return
+  for (let radius = 0.5; radius <= 8; radius += 0.5) {
     for (let direction = 0; direction < 16; direction++) {
       const point = offset({ ...player, heading: Math.PI + direction * Math.PI / 8 }, 0, radius)
-      if (!canWalkAt(point, .4, waterLevel - maxWadeDepth) || extra(point, .4) > -Infinity) continue
+      if (!canWalkAt(point, 0.4, waterLevel - maxWadeDepth) || extra(point, 0.4) > -Infinity) continue
       Object.assign(player, point, { y: walkingHeight(point), grounded: true })
       return
     }
@@ -44,16 +43,16 @@ export function isInsideTruck(truck: Pose, point: Point, padding = 0) {
 
 const platforms = { roof: truckRoof, hood: truckHood, bed: truckBed } as const
 type Platform = keyof typeof platforms
-type Motor = { player: Pick<Player, 'x' | 'z' | 'y' | 'heading' | 'grounded' | 'onBed' | 'swimming' | 'truckSurface'>; verticalSpeed: number }
+type Motor = { player: Pick<Player, 'x' | 'z' | 'y' | 'heading' | 'grounded' | 'onBed' | 'swimming' | 'truckSurface'>, verticalSpeed: number }
 type ExtraSurface = (point: Point, padding: number) => number
-interface WalkLimit { pace: number; allows(point: Pose): boolean }
+interface WalkLimit { pace: number, allows(point: Pose): boolean }
 
 function truckPlatform(truck: TruckPose, point: Point, clearance: number) {
   for (const surface of Object.keys(platforms) as Platform[]) {
     const { top, width, center, length } = platforms[surface]
     const local = truckSurface(truck, point, top)
-    if (clearance >= local.y - 0.025 && Math.abs(local.x) <= width / 2 + 0.04 &&
-      Math.abs(local.z - center) <= length / 2 + 0.04) return { surface, height: local.y }
+    if (clearance >= local.y - 0.025 && Math.abs(local.x) <= width / 2 + 0.04
+      && Math.abs(local.z - center) <= length / 2 + 0.04) return { surface, height: local.y }
   }
 }
 
@@ -70,15 +69,20 @@ function truckOverlap(truck: TruckPose, point: Point, clearance: number) {
     truckBed.length / 2 + 0.06 - Math.abs(local.z - truckBed.center),
   )
   const lip = feet < truckBed.top + truckTailLip.height
-    ? Math.min(truckBed.width / 2 + 0.12 - Math.abs(local.x),
-      truckTailLip.thickness / 2 + 0.10 - Math.abs(local.z - truckTailLip.z))
+    ? Math.min(truckBed.width / 2 + 0.12 - Math.abs(local.x), truckTailLip.thickness / 2 + 0.10 - Math.abs(local.z - truckTailLip.z))
     : 0
   return Math.max(chassis, rail, lip)
 }
 
 function moveHorizontally(
-  player: Motor['player'], trucks: readonly TruckPose[], input: Input, carrying: boolean, dt: number, clearance: number,
-  extra: ExtraSurface, limit?: WalkLimit,
+  player: Motor['player'],
+  trucks: readonly TruckPose[],
+  input: Input,
+  carrying: boolean,
+  dt: number,
+  clearance: number,
+  extra: ExtraSurface,
+  limit?: WalkLimit,
 ) {
   if (!input.x && !input.z) return
   const { x, z, heading } = player
@@ -107,7 +111,14 @@ function moveHorizontally(
 }
 
 export function stepPlayer(
-  motion: Motor, before: TruckPose, truck: TruckPose, input: Input, carrying: boolean, dt: number, extra: ExtraSurface = () => -Infinity, limit?: WalkLimit,
+  motion: Motor,
+  before: TruckPose,
+  truck: TruckPose,
+  input: Input,
+  carrying: boolean,
+  dt: number,
+  extra: ExtraSurface = () => -Infinity,
+  limit?: WalkLimit,
 ) {
   const { player } = motion
   const riding = player.truckSurface ?? (player.onBed ? 'bed' : undefined)
@@ -121,7 +132,13 @@ export function stepPlayer(
 }
 
 export function stepPlayerOnTerrain(
-  motion: Motor, trucks: readonly TruckPose[], input: Input, carrying: boolean, dt: number, extra: ExtraSurface, limit?: WalkLimit,
+  motion: Motor,
+  trucks: readonly TruckPose[],
+  input: Input,
+  carrying: boolean,
+  dt: number,
+  extra: ExtraSurface,
+  limit?: WalkLimit,
 ) {
   const { player } = motion
   const nextFeet = player.y + motion.verticalSpeed * dt

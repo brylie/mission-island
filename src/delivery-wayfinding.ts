@@ -30,13 +30,13 @@ const farmDrop = jobs['farm-supplies'].drop
 const beachDrop = jobs['beach-gear'].drop
 
 export const deliveryWaypoints = {
-  delivery: makeWaypoints(routeUntil(trunk, town)),
+  'delivery': makeWaypoints(routeUntil(trunk, town)),
   'farm-supplies': makeWaypoints([...branch, ...routeUntil(beachTrail.points, farmDrop), farmDrop]),
   'beach-gear': makeWaypoints([...branch, ...routeUntil(beachTrail.points, beachDrop)]),
 }
 
 function makeWaypoints(path: Point[]) {
-  const surface = path.map(point => ({ ...point, y: groundHeight(point) + .85 }))
+  const surface = path.map((point) => ({ ...point, y: groundHeight(point) + 0.85 }))
   const points = waypointsAlongPath(surface, 5)
   const end = surface.at(-1)
   const last = points.at(-1)
@@ -45,7 +45,7 @@ function makeWaypoints(path: Point[]) {
 }
 
 export function loadedDeliveryRoute(state?: Pick<Snapshot, 'items' | 'mission' | 'jobs'>) {
-  if (!state?.items.some(item => item.kind === 'crate' && item.onBed && !item.delivered)) return
+  if (!state?.items.some((item) => item.kind === 'crate' && item.onBed && !item.delivered)) return
   if (state.mission === 'delivery') return 'delivery'
   const id = state.jobs.active?.id
   if (id === 'farm-supplies' || id === 'beach-gear') return id

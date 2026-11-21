@@ -10,13 +10,11 @@ import { stopPrimary, stopped, stowTool, type CrewMember, type CrewNotice } from
 import { looseCargoTop } from './items.ts'
 import type { IslandSave } from './save.ts'
 
-const recoveryPoints = [ridgeLaunch, offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, -1.5),
-  offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, 1.5), ridgeReturn, ridgeMeadow]
+const recoveryPoints = [ridgeLaunch, offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, -1.5), offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, 1.5), ridgeReturn, ridgeMeadow]
 const meadowPose = { ...ridgeMeadow, heading: ridgeHeading }
 
 function landedPose({ x, z, heading }: Pose) {
-  return { x, z, heading, y: groundHeight({ x, z }), grounded: true, seat: null,
-    swimming: false, onBed: false, truckSurface: undefined, reaching: false, rightHandRaised: false, throwing: false }
+  return { x, z, heading, y: groundHeight({ x, z }), grounded: true, seat: null, swimming: false, onBed: false, truckSurface: undefined, reaching: false, rightHandRaised: false, throwing: false }
 }
 
 function landingResult(record: NonNullable<AviationState['flight']>, outcome: 'field' | 'early' | 'missed'): FlightResult {
@@ -31,8 +29,8 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
   let flight: ReturnType<typeof startRidgeFlight> | undefined
 
   function safeGround(point: Point) {
-    return canOccupyGround(point, .45, 0) && !isInsideTruck(state.truck, point) &&
-      looseCargoTop(state.items, point, .45) <= groundHeight(point)
+    return canOccupyGround(point, 0.45, 0) && !isInsideTruck(state.truck, point)
+      && looseCargoTop(state.items, point, 0.45) <= groundHeight(point)
   }
 
   function recoveryPose(player: Player) {
@@ -68,8 +66,7 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
     }
     resetPilot(member)
     flight = startRidgeFlight()
-    aviation.flight = { pilotId: player.id, outing: nextOuting(aviation),
-      bank: 0, pitch: 0, climbing: false, approach: false, observed: false, spotted: [] }
+    aviation.flight = { pilotId: player.id, outing: nextOuting(aviation), bank: 0, pitch: 0, climbing: false, approach: false, observed: false, spotted: [] }
     Object.assign(player, flight.pilot, { grounded: false, reaching: false, throwing: false, rightHandRaised: false })
     // The checkpoint uses the pilot's recovery pose while the loan is active.
     checkpoint?.()
@@ -87,7 +84,7 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
     if (result === 'qualified') aviation.qualified = true
     if (result === 'surveyed') aviation.surveyed = true
     // Aerial surveys count only after a safe landing. A crash or an interruption loses this flight's sightings.
-    const aerial = recover ? [] : spotted.filter(id => !aviation.aerial?.includes(id))
+    const aerial = recover ? [] : spotted.filter((id) => !aviation.aerial?.includes(id))
     if (aerial.length) aviation.aerial = [...aviation.aerial ?? [], ...aerial]
     checkpoint?.()
     notifyCrew({ type: 'flight-result', result, pilotId: player.id, ...aerial.length ? { aerial, recorded: aviation.aerial?.length } : {} })

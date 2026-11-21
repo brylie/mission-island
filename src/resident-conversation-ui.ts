@@ -21,7 +21,7 @@ export function createResidentConversation(dialog: HTMLDialogElement, act: (acti
     'report-sound': dialog.querySelector('#resident-report-sound')!,
     'report-fault': dialog.querySelector('#resident-report-fault')!,
   }
-  const talks = new Map<string, { count: number; last?: string }>()
+  const talks = new Map<string, { count: number, last?: string }>()
   let speaker = -1
 
   // Every choice goes back through the host, which checks the resident is still in reach and still waiting.

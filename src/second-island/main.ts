@@ -32,13 +32,13 @@ function start() {
   const canvas = get<HTMLCanvasElement>('island')
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
   const scene = new Scene(engine)
-  scene.clearColor.set(.65, .79, .79, 1)
-  scene.fogColor.set(.65, .79, .79)
+  scene.clearColor.set(0.65, 0.79, 0.79, 1)
+  scene.fogColor.set(0.65, 0.79, 0.79)
   scene.fogMode = Scene.FOGMODE_LINEAR
   const lighting = createIslandLighting(scene)
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, lighting.shadows, 3350, brinewickRainRoof)
   lighting.sunlight.shadowMaxZ = 1400
-  lighting.sunlight.shadowOrthoScale = .04
+  lighting.sunlight.shadowOrthoScale = 0.04
   lighting.shadows.getShadowMap()?.resetRefreshCounter()
   const meshes = createMeshFactory(scene, lighting.shadows)
   const crew = createCrew(meshes, 0)
@@ -50,8 +50,11 @@ function start() {
   const overview = new FreeCamera('Saltwind overview', new Vector3(0, 910, -389), scene)
   overview.mode = Camera.ORTHOGRAPHIC_CAMERA
   overview.setTarget(new Vector3(0, 0, 8))
-  for (const camera of [follow, overview]) { camera.minZ = .22; camera.maxZ = 1900 }
-  follow.fov = .82
+  for (const camera of [follow, overview]) {
+    camera.minZ = 0.22
+    camera.maxZ = 1900
+  }
+  follow.fov = 0.82
   scene.activeCamera = follow
 
   const atlas = get<HTMLDialogElement>('atlas')
@@ -80,10 +83,13 @@ function start() {
   }
   resume.addEventListener('click', resumePreview)
   const point = placeWalker(arrival)
-  let yaw = 0, orbit = 0, pitch = .48, arm = 12, cycle = 0, sceneTime = 0, lastDraw = -1
+  let yaw = 0, orbit = 0, pitch = 0.48, arm = 12, cycle = 0, sceneTime = 0, lastDraw = -1
   let broad = false, stop = 0, playing = false, leg = 0, progress = 0, drag: PointerEvent | undefined
   let jump = false, snapCamera = true
-  const honey = createHoneyDelivery(meshes, crew, () => { resumePreview(); canvas.focus() })
+  const honey = createHoneyDelivery(meshes, crew, () => {
+    resumePreview()
+    canvas.focus()
+  })
   const freight = createOreHauling(meshes, solids, point, (driving, heading) => {
     resumePreview()
     stopTour()
@@ -114,8 +120,11 @@ function start() {
     direction.textContent = playing ? `Following the road to ${tour[stop + 1].name}. Walk at any time to take over.` : tour[stop].detail
     stage.textContent = playing ? 'Guided tour' : 'Development preview'
     tourButton.textContent = playing ? 'Pause tour' : stop === 0 && !leg && !progress ? 'Start tour' : stop === tour.length - 1 ? 'Restart tour' : 'Continue tour'
-    tourButton.title = playing ? 'Pause at this point on the route' : stop === tour.length - 1
-      ? 'Return to the ferry and start again' : 'Follow the route from the last tour position'
+    tourButton.title = playing
+      ? 'Pause at this point on the route'
+      : stop === tour.length - 1
+        ? 'Return to the ferry and start again'
+        : 'Follow the route from the last tour position'
     stopLabels.forEach((label, i) => i === stop ? label.setAttribute('aria-current', 'step') : label.removeAttribute('aria-current'))
   }
 
@@ -141,7 +150,7 @@ function start() {
     resumePreview()
     setPoint(arrival, 0)
     arm = 12
-    pitch = .48
+    pitch = 0.48
     stop = leg = progress = 0
     playing = false
     setOverview(false)
@@ -182,7 +191,7 @@ function start() {
     resumePreview()
     const site = sites.find(({ id }) => id === landmark.id)
     const walk = villageWalks.find(({ name }) => name === landmark.id)
-    const trail = discoveryWalks.find(route => route.id === landmark.id)
+    const trail = discoveryWalks.find((route) => route.id === landmark.id)
     const target = trail?.path[0] ?? walk?.points.at(-1) ?? site?.access ?? landmark
     const nearest = routes.flatMap(({ samples }) => samples).reduce((best, p) =>
       Math.hypot(p.x - target.x, p.z - target.z) < Math.hypot(best.x - target.x, best.z - target.z) ? p : best)
@@ -191,7 +200,7 @@ function start() {
     const dx = sight.x - approach.x, dz = sight.z - approach.z
     setPoint(approach, Math.hypot(dx, dz) < 1 ? nearest.yaw : Math.atan2(dx, dz))
     arm = landmark.id === 'airport' || landmark.id === 'mine' || landmark.id === 'falls' ? 20 : 13
-    pitch = .18
+    pitch = 0.18
     stopTour()
     setOverview(false)
     showSite(landmark.id)
@@ -200,7 +209,10 @@ function start() {
   })
   tourButton.addEventListener('click', () => {
     resumePreview()
-    if (playing) { stopTour(); return }
+    if (playing) {
+      stopTour()
+      return
+    }
     // Walking and site inspection leave the route cursor intact. Continue returns to that cursor.
     if (stop === tour.length - 1) reset()
     playing = true
@@ -219,15 +231,24 @@ function start() {
     if (key === ' ' && (event.target === canvas || event.target === document.body)) {
       event.preventDefault()
       if (freight.driving) keys.add(key)
-      else if (!event.repeat) { resumePreview(); stopTour(); jump = true }
+      else if (!event.repeat) {
+        resumePreview()
+        stopTour()
+        jump = true
+      }
     }
     if (key === 'f' && !event.repeat) freight.toggleSeat()
     if (key === 'e' && !event.repeat && !freight.interact()) honey.interact()
     if (key === 'c' && !event.repeat) setOverview(!broad)
     if (key === 'm' && !event.repeat) openMap()
   })
-  window.addEventListener('keyup', (event) => { keys.delete(event.key.toLowerCase()) })
-  window.addEventListener('blur', () => { keys.clear(); jump = false })
+  window.addEventListener('keyup', (event) => {
+    keys.delete(event.key.toLowerCase())
+  })
+  window.addEventListener('blur', () => {
+    keys.clear()
+    jump = false
+  })
   canvas.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return
     canvas.setPointerCapture(event.pointerId)
@@ -236,22 +257,24 @@ function start() {
   canvas.addEventListener('pointermove', (event) => {
     if (!drag || drag.pointerId !== event.pointerId || broad) return
     fixedEye = undefined
-    orbit -= (event.clientX - drag.clientX) * .005
-    pitch = Math.max(.08, Math.min(1.22, pitch + (event.clientY - drag.clientY) * .004))
+    orbit -= (event.clientX - drag.clientX) * 0.005
+    pitch = Math.max(0.08, Math.min(1.22, pitch + (event.clientY - drag.clientY) * 0.004))
     drag = event
   })
-  canvas.addEventListener('lostpointercapture', () => { drag = undefined })
+  canvas.addEventListener('lostpointercapture', () => {
+    drag = undefined
+  })
   canvas.addEventListener('wheel', (event) => {
     event.preventDefault()
     fixedEye = undefined
-    arm = Math.max(3.4, Math.min(38, arm + event.deltaY * .018))
+    arm = Math.max(3.4, Math.min(38, arm + event.deltaY * 0.018))
   }, { passive: false })
 
   function walk(dt: number) {
     if (freight.driving) {
       const pose = freight.drive(keys, dt)
       yaw = pose.heading
-      if (!drag && Math.abs(pose.speed) > .2) orbit += Math.atan2(Math.sin(yaw - orbit), Math.cos(yaw - orbit)) * Math.min(1, dt * 3)
+      if (!drag && Math.abs(pose.speed) > 0.2) orbit += Math.atan2(Math.sin(yaw - orbit), Math.cos(yaw - orbit)) * Math.min(1, dt * 3)
       return 0
     }
     const side = Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft'))
@@ -259,7 +282,7 @@ function start() {
     if (side || forward) stopTour()
     if (playing) return 0
     const angle = orbit + Math.atan2(side, forward)
-    const pace = point.swimming ? 3.8 : (keys.has('shift') ? 10 : 5.4) * (point.y < waterHeight(point.x, point.z) ? .68 : 1)
+    const pace = point.swimming ? 3.8 : (keys.has('shift') ? 10 : 5.4) * (point.y < waterHeight(point.x, point.z) ? 0.68 : 1)
     const speed = side || forward ? pace : 0
     if (speed) yaw = angle
     const moved = walkSaltwind(point, solids, Math.sin(angle) * speed, Math.cos(angle) * speed, jump, dt)
@@ -291,7 +314,7 @@ function start() {
   const cameraGoal = Vector3.Zero(), subject = Vector3.Zero()
   function updateCamera(dt: number) {
     if (broad) return
-    const distance = playing ? 30 : arm, angle = playing ? .58 : pitch
+    const distance = playing ? 30 : arm, angle = playing ? 0.58 : pitch
     const trailing = Math.cos(angle) * distance
     subject.set(point.x, point.y + (playing ? 3.7 : 1.6), point.z)
     if (fixedEye) {
@@ -306,7 +329,7 @@ function start() {
       const t = i / 13
       const px = subject.x + t * (x - subject.x), pz = subject.z + t * (z - subject.z)
       const obstruction = groundHeight(px, pz)
-      if (obstruction + .45 > subject.y + t * (cameraGoal.y - subject.y)) cameraGoal.y = subject.y + (obstruction - subject.y + .45) / t
+      if (obstruction + 0.45 > subject.y + t * (cameraGoal.y - subject.y)) cameraGoal.y = subject.y + (obstruction - subject.y + 0.45) / t
     }
     if (!playing) {
       const fraction = clearCameraDistance(point, solids, x - point.x, cameraGoal.y - subject.y, z - point.z)
@@ -315,7 +338,8 @@ function start() {
     if (snapCamera || Vector3.DistanceSquared(cameraGoal, subject) < Vector3.DistanceSquared(follow.position, subject)) {
       follow.position.copyFrom(cameraGoal)
       snapCamera = false
-    } else Vector3.LerpToRef(follow.position, cameraGoal, 1 - Math.exp(-dt * (playing ? 8 : 12)), follow.position)
+    }
+    else Vector3.LerpToRef(follow.position, cameraGoal, 1 - Math.exp(-dt * (playing ? 8 : 12)), follow.position)
     follow.setTarget(subject)
   }
 
@@ -323,22 +347,25 @@ function start() {
     engine.resize()
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
     const half = Math.max(365, (waterBounds.maxX - waterBounds.minX) / (2 * aspect) - 30)
-    overview.orthoTop = half; overview.orthoBottom = -half; overview.orthoLeft = -half * aspect; overview.orthoRight = half * aspect
+    overview.orthoTop = half
+    overview.orthoBottom = -half
+    overview.orthoLeft = -half * aspect
+    overview.orthoRight = half * aspect
   }
   new ResizeObserver(resize).observe(canvas)
   resize()
   setOverview(false)
   syncTour()
   function showSite(id: string) {
-    const landmark = landmarks.find(pin => pin.id === id)
+    const landmark = landmarks.find((pin) => pin.id === id)
     if (!landmark) return
     inspectedSite = id
-    if (![...select.options].some(option => option.value === id)) select.add(new Option(landmark.name, id))
+    if (![...select.options].some((option) => option.value === id)) select.add(new Option(landmark.name, id))
     known.add(id)
     select.value = id
     place.textContent = landmark.name
     stage.textContent = 'Site inspection'
-    direction.textContent = discoveryWalks.find(walk => walk.id === id)?.detail ?? sites.find(site => site.id === id)?.assets ?? 'Walk from the access point to survey the landmark.'
+    direction.textContent = discoveryWalks.find((walk) => walk.id === id)?.detail ?? sites.find((site) => site.id === id)?.assets ?? 'Walk from the access point to survey the landmark.'
   }
   if (shared) {
     Object.assign(point, shared.point)
@@ -362,13 +389,11 @@ function start() {
     showSite(shared.site)
     resume.hidden = false
   }
-  bindPlaytestCopy(() => saltwindLink(location.href, { point, yaw, orbit, pitch, arm, cycle, speed, time: sceneTime,
-    eye: follow.position.asArray(), tour: { stop, leg, progress, playing }, weather: climate.value, overview: broad, site: inspectedSite }))
+  bindPlaytestCopy(() => saltwindLink(location.href, { point, yaw, orbit, pitch, arm, cycle, speed, time: sceneTime, eye: follow.position.asArray(), tour: { stop, leg, progress, playing }, weather: climate.value, overview: broad, site: inspectedSite }))
   updateCamera(1)
   function poseWalkingCrew(walking: number, dt: number) {
     if (point.swimming) poseSwimming(crew, sceneTime, Math.min(1, walking / 3.8))
-    else poseCrew(crew, cycle, walking ? Math.min(.85, walking * .1) : 0, !point.grounded,
-      honey.carrying() ? 'tool' : undefined, 0, frozen ? 1 : Math.min(1, dt * 10))
+    else poseCrew(crew, cycle, walking ? Math.min(0.85, walking * 0.1) : 0, !point.grounded, honey.carrying() ? 'tool' : undefined, 0, frozen ? 1 : Math.min(1, dt * 10))
   }
   function discoverLandmarks() {
     for (const pin of landmarks) if (!known.has(pin.id) && Math.hypot(point.x - pin.x, point.z - pin.z) <= pin.radius) {
@@ -383,7 +408,7 @@ function start() {
     }
   }
   engine.runRenderLoop(() => {
-    const dt = Math.min(.065, engine.getDeltaTime() / 1000)
+    const dt = Math.min(0.065, engine.getDeltaTime() / 1000)
     const simulationDelta = frozen ? 0 : dt
     sceneTime += simulationDelta
     if (!frozen) speed = atlas.open ? 0 : walk(dt)
@@ -391,7 +416,7 @@ function start() {
     if (playing && !frozen) advance(dt)
     cycle += simulationDelta * walking / 2.8
     crew.root.setEnabled(!broad && !playing && !freight.driving)
-    crew.root.position.set(point.x, point.y + (point.swimming ? .036 * Math.sin(sceneTime * Math.PI * 1.25) : .02), point.z)
+    crew.root.position.set(point.x, point.y + (point.swimming ? 0.036 * Math.sin(sceneTime * Math.PI * 1.25) : 0.02), point.z)
     crew.root.rotation.x = 0
     crew.root.rotation.y = yaw
     crew.blink(sceneTime)
@@ -403,15 +428,14 @@ function start() {
     const camera = scene.activeCamera ?? follow
     const weather = saltwindWeather(climate.value, sceneTime)
     const light = atmosphere.update(sceneTime, weather, camera.position, !broad, { fogScale: 7 })
-    const threats = point.y < waterHeight(point.x, point.z) - .04 ? [point] : []
-    const frame = { time: sceneTime, delta: simulationDelta, weather, camera: camera.position, threats,
-      weatherAt: climate.value === 'live' ? saltwindLiveWeather : undefined }
+    const threats = point.y < waterHeight(point.x, point.z) - 0.04 ? [point] : []
+    const frame = { time: sceneTime, delta: simulationDelta, weather, camera: camera.position, threats, weatherAt: climate.value === 'live' ? saltwindLiveWeather : undefined }
     updateScenery(frame, broad, climate.value === 'live' ? saltwindRainAt : undefined)
     updateEffects(frame, point, broad, frozen)
     updateWater(sceneTime, light)
     scene.render()
     updateLabels(point, broad)
-    if (sceneTime - lastDraw > .24) {
+    if (sceneTime - lastDraw > 0.24) {
       lastDraw = sceneTime
       const edge = point.swimming ? ' · Swimming' : point.y < waterHeight(point.x, point.z) ? ' · Wading' : ''
       coordinates.textContent = `X ${Math.round(point.x)} · Z ${Math.round(point.z)} · ${point.y.toFixed(1)} m${edge}`
@@ -428,7 +452,10 @@ function start() {
   })
 }
 
-try { start() } catch (error) {
+try {
+  start()
+}
+catch (error) {
   document.getElementById('boot-message')!.textContent = 'The preview could not start. Reload with WebGL enabled.'
   console.error(error)
 }

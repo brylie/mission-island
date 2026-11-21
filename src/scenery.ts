@@ -23,8 +23,8 @@ export const northernRegions = [
     const angle = northernRandom() * Math.PI * 2
     const radius = Math.sqrt(northernRandom()) * region.spread
     const point = { x: region.at.x + Math.cos(angle) * radius, z: region.at.z + Math.sin(angle) * radius }
-    if (coastRadius(point) > 0.94 || waterDepth(point) > 0.05 ||
-      (region.id === 'fernfall' && Math.abs(point.x - falls.x) < 5)) continue
+    if (coastRadius(point) > 0.94 || waterDepth(point) > 0.05
+      || (region.id === 'fernfall' && Math.abs(point.x - falls.x) < 5)) continue
     props.push({ ...point, y: groundHeight(point), size: 0.8 + northernRandom() * 1.35, angle, index, tree: region.trees })
   }
   const site = region.id === 'ridge' ? ridgeViewpoint : { x: region.at.x + (region.id === 'pool' ? 21 : -5), z: region.at.z - 6 }
@@ -48,9 +48,9 @@ export const islandTrees = Array.from({ length: 92 }, (_, variant) => {
   return { x, z, height, variant }
 }).filter((tree) => {
   const { x, z } = tree
-  return coastRadius(tree) <= 0.89 && !(x < -34 && z < 0) && !(x > 18 && z > -1) &&
-    !(x > 2 && z < -10) && distance(tree, lookout) >= 7 && distanceToRoads(tree) >= 5.2 && !inFerryYard(tree, 1.5) &&
-    footpaths.every(({ points }) => distanceToRoute(tree, points) >= 2.2)
+  return coastRadius(tree) <= 0.89 && !(x < -34 && z < 0) && !(x > 18 && z > -1)
+    && !(x > 2 && z < -10) && distance(tree, lookout) >= 7 && distanceToRoads(tree) >= 5.2 && !inFerryYard(tree, 1.5)
+    && footpaths.every(({ points }) => distanceToRoute(tree, points) >= 2.2)
 })
 
 export const islandRocks = Array.from({ length: 82 }, (_, index) => {
@@ -62,16 +62,14 @@ export const islandRocks = Array.from({ length: 82 }, (_, index) => {
   const ground = groundHeight({ x, z })
   return { x, z, size, angle, light: index % 3 === 0, ground }
 }).filter((rock) =>
-  distance(rock, harbor) >= 8 && distance(rock, town) >= 13 && distance(rock, beach) >= 12 &&
-  distance(rock, lookout) >= 6 && distanceToRoads(rock) >= 4.2 + rock.size * 0.55 &&
-  !inFerryYard(rock, 1 + rock.size * .5) &&
-  footpaths.every(({ points, width }) => distanceToRoute(rock, points) >= width / 2 + rock.size * 0.56 + 0.5),
-)
+  distance(rock, harbor) >= 8 && distance(rock, town) >= 13 && distance(rock, beach) >= 12
+  && distance(rock, lookout) >= 6 && distanceToRoads(rock) >= 4.2 + rock.size * 0.55
+  && !inFerryYard(rock, 1 + rock.size * 0.5)
+  && footpaths.every(({ points, width }) => distanceToRoute(rock, points) >= width / 2 + rock.size * 0.56 + 0.5))
 
 // Embedded stones flank the spring outlet, ledges and plunge pool.
-for (const [x, z, size, angle] of [[9.7, 80.7, 1.65, .8], [9.2, 82.6, 1.45, -.5], [12.55, 83.8, 1.9, .3],
-  [10.63, 85.2, 1.25, 1.5], [14.06, 86.6, 1.7, .75], [12.16, 88.3, 1.15, -.8], [16.8, 90.2, 1.06, .8]]) {
-  islandRocks.push({ x, z, size, angle, light: false, ground: groundHeight({ x, z }) - size * .08 })
+for (const [x, z, size, angle] of [[9.7, 80.7, 1.65, 0.8], [9.2, 82.6, 1.45, -0.5], [12.55, 83.8, 1.9, 0.3], [10.63, 85.2, 1.25, 1.5], [14.06, 86.6, 1.7, 0.75], [12.16, 88.3, 1.15, -0.8], [16.8, 90.2, 1.06, 0.8]]) {
+  islandRocks.push({ x, z, size, angle, light: false, ground: groundHeight({ x, z }) - size * 0.08 })
 }
 
 export function overlapsProp(point: Point, padding: number) {
@@ -93,8 +91,7 @@ export function overlapsProp(point: Point, padding: number) {
   })
 }
 
-function rockTop(point: Point, rock: Point, angle: number, width: number, depth: number,
-  centerY: number, height: number, padding: number) {
+function rockTop(point: Point, rock: Point, angle: number, width: number, depth: number, centerY: number, height: number, padding: number) {
   const dx = point.x - rock.x
   const dz = point.z - rock.z
   const x = dx * Math.cos(angle) - dz * Math.sin(angle)
@@ -110,16 +107,15 @@ export function propTop(point: Point, padding: number) {
   }
   for (const rock of islandRocks) {
     if (distance(point, rock) > rock.size * 0.55 + padding) continue
-    top = Math.max(top, rockTop(point, rock, rock.angle, rock.size * 0.5, rock.size * 0.55,
-      rock.ground + rock.size * 0.12, rock.size * 0.39, padding))
+    top = Math.max(top, rockTop(point, rock, rock.angle, rock.size * 0.5, rock.size * 0.55, rock.ground + rock.size * 0.12, rock.size * 0.39, padding))
   }
   if (point.z > 40) {
     for (const prop of northernProps) {
       if (prop.tree) {
         if (distance(point, prop) < 0.14 + padding) top = Math.max(top, prop.y + prop.size * 2)
-      } else if (distance(point, prop) <= prop.size * 1.15 + padding) {
-        top = Math.max(top, rockTop(point, prop, prop.angle, prop.size * 1.15, prop.size * 0.8,
-          prop.y + prop.size * 0.27, prop.size / 2, padding))
+      }
+      else if (distance(point, prop) <= prop.size * 1.15 + padding) {
+        top = Math.max(top, rockTop(point, prop, prop.angle, prop.size * 1.15, prop.size * 0.8, prop.y + prop.size * 0.27, prop.size / 2, padding))
       }
     }
   }

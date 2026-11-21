@@ -17,15 +17,14 @@ export function createFlatbed({ scene, box, cylinder, paint, paintSurface }: Mes
   beam.diffuse = Color3.FromHexString('#ffe9ad')
   beam.range = 28
   beam.setEnabled(false)
-  const brakeBeam = new SpotLight('Flatbed brake lights', new Vector3(0, 0.57, -3.12),
-    new Vector3(0, -0.28, -1), 1.5, 1.4, scene)
+  const brakeBeam = new SpotLight('Flatbed brake lights', new Vector3(0, 0.57, -3.12), new Vector3(0, -0.28, -1), 1.5, 1.4, scene)
   brakeBeam.parent = truck
   brakeBeam.diffuse = Color3.FromHexString('#ff391f')
   brakeBeam.range = 5
   brakeBeam.intensity = 2.2
   brakeBeam.setEnabled(false)
-  const lamps: { mesh: Mesh; lit: Material; unlit: Material; braking?: Material }[] = []
-  const wheels: { axle: TransformNode; spin: TransformNode; steering: boolean }[] = []
+  const lamps: { mesh: Mesh, lit: Material, unlit: Material, braking?: Material }[] = []
+  const wheels: { axle: TransformNode, spin: TransformNode, steering: boolean }[] = []
   // The deck overhang keeps the joined side faces at distinct depths.
   box(0, 0.68, 0, truckBed.width - 0.16, 0.53, 5.7, '#374848', truck).name = 'Chassis'
   box(0, 1.09, 1.55, 2.46, 0.68, 2.63, '#f5bc54', truck)
@@ -38,8 +37,7 @@ export function createFlatbed({ scene, box, cylinder, paint, paintSurface }: Mes
     const tail = paint('#be5848')
     lamps.push(
       { mesh: box(side * 0.86, 1.08, 2.9, 0.47, 0.25, 0.09, head, truck), unlit: head, lit: paint('#fff3b0', true) },
-      { mesh: box(side * 0.89, 0.57, -3.065, 0.33, 0.17, 0.042, tail, truck),
-        unlit: tail, lit: paint('#c83832', true), braking: paint('#ff7763', true) },
+      { mesh: box(side * 0.89, 0.57, -3.065, 0.33, 0.17, 0.042, tail, truck), unlit: tail, lit: paint('#c83832', true), braking: paint('#ff7763', true) },
     )
     for (const [index, z] of axles.entries()) {
       const axle = new TransformNode('Wheel steering', scene)
@@ -66,8 +64,7 @@ export function createFlatbed({ scene, box, cylinder, paint, paintSurface }: Mes
   for (const side of [-1, 1]) {
     const x = side * railX
     for (const along of posts) {
-      box(x, railBase + railHeight / 2, truckBed.center + along,
-        thickness + 0.036, railHeight, postDepth, '#415653', truck)
+      box(x, railBase + railHeight / 2, truckBed.center + along, thickness + 0.036, railHeight, postDepth, '#415653', truck)
     }
     for (let i = 1; i < posts.length; i++) {
       const start = posts[i - 1] + joint
@@ -77,12 +74,12 @@ export function createFlatbed({ scene, box, cylinder, paint, paintSurface }: Mes
       box(x, railBase + railHeight - 0.085, center, thickness, 0.17, end - start, planks, truck)
     }
   }
-  box(0, railBase + truckTailLip.height / 2, truckTailLip.z,
-    truckBed.width, truckTailLip.height, truckTailLip.thickness, planks, truck)
+  box(0, railBase + truckTailLip.height / 2, truckTailLip.z, truckBed.width, truckTailLip.height, truckTailLip.thickness, planks, truck)
   box(0, 0.61, 2.87, 2.51, 0.27, 0.2, paintSurface('metal', surfaces.metal.color), truck)
   box(0, 0.56, -2.94, 2.52, 0.24, 0.2, paintSurface('metal', surfaces.metal.color), truck)
   return {
-    root: truck, wheels,
+    root: truck,
+    wheels,
     setLights(strength: number, braking = false) {
       const lit = strength > 0.04
       beam.setEnabled(lit)
@@ -93,9 +90,7 @@ export function createFlatbed({ scene, box, cylinder, paint, paintSurface }: Mes
   }
 }
 
-export function poseFlatbed(truck: ReturnType<typeof createFlatbed>, rotation: number, steering: number,
-  suspension?: number[], blend = 1,
-) {
+export function poseFlatbed(truck: ReturnType<typeof createFlatbed>, rotation: number, steering: number, suspension?: number[], blend = 1) {
   for (const [index, wheel] of truck.wheels.entries()) {
     wheel.spin.rotation.x = rotation
     wheel.axle.rotation.y = wheel.steering ? steering : 0

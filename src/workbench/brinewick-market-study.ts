@@ -4,11 +4,13 @@ import { control, type Entry, type Values } from './subject'
 
 function studyWeather(time: number, values: Values) {
   const hour = values.phase === 'setup' ? 8.5 : values.phase === 'trading' ? tradingHour + 1 : closingHour + time / 20
-  return { hour, rain: values.weather === 'rain' ? .85 : 0 }
+  return { hour, rain: values.weather === 'rain' ? 0.85 : 0 }
 }
 
 export const brinewickMarketStudy: Entry = {
-  id: brinewickMarketSubject, name: 'Brinewick Fish Market routine', group: 'Saltwind buildings',
+  id: brinewickMarketSubject,
+  name: 'Brinewick Fish Market routine',
+  group: 'Saltwind buildings',
   source: 'src/second-island/brinewick-market-art.ts',
   description: 'Compare drying nets, the trading display, and covered fish trays. Choose rain during setup to move the net under the awning.',
   readout: 'Market activity',

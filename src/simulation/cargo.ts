@@ -16,8 +16,7 @@ import { watchCrateImpacts } from './cargo-impacts.ts'
 // The garden gate leaf moves with host state, so crates meet it where players see it.
 function gateLeafBody(world: World) {
   const [leaf] = gateBlockers({ gate: { open: false, closePending: false }, gateRepair: { stage: 'sagging', pinHolder: null } })
-  const body = new Body({ position: new Vec3(leaf.x, (leaf.top + leaf.floor) / 2, leaf.z),
-    shape: new Box(new Vec3(leaf.halfWidth, (leaf.top - leaf.floor) / 2, leaf.halfDepth)) })
+  const body = new Body({ position: new Vec3(leaf.x, (leaf.top + leaf.floor) / 2, leaf.z), shape: new Box(new Vec3(leaf.halfWidth, (leaf.top - leaf.floor) / 2, leaf.halfDepth)) })
   world.addBody(body)
   return (state: Pick<Snapshot, 'gate' | 'gateRepair'>) => {
     const [solid] = gateBlockers(state)
@@ -219,16 +218,15 @@ export function createCargoPhysics() {
       }
       const relative = truckSurface(after, position, truckBed.top)
       const bedClearance = position.y - relative.y
-      const onBed = bedClearance > 0.22 && bedClearance < 0.76 &&
-        Math.abs(velocity.y - (after.y - before.y) / dt) < 1.9 &&
-        Math.abs(relative.x) < truckBed.width / 2 + 0.24 &&
-        Math.abs(relative.z - truckBed.center) < truckBed.length / 2 + 0.22
+      const onBed = bedClearance > 0.22 && bedClearance < 0.76
+        && Math.abs(velocity.y - (after.y - before.y) / dt) < 1.9
+        && Math.abs(relative.x) < truckBed.width / 2 + 0.24
+        && Math.abs(relative.z - truckBed.center) < truckBed.length / 2 + 0.22
       const { x, y, z, w } = quaternion
       Object.assign(item, position, { onBed, rotation: { x, y, z, w } })
     }
     return after
   }
 
-  return { release, relocate, launch, load, remove, restore, step, drainImpacts: () => impacts.drain(world.time), placeBarrow: barrowBody(world),
-    placeGateLeaf: gateLeafBody(world), placeFerry: ferry.place, parkTruck: truck.park }
+  return { release, relocate, launch, load, remove, restore, step, drainImpacts: () => impacts.drain(world.time), placeBarrow: barrowBody(world), placeGateLeaf: gateLeafBody(world), placeFerry: ferry.place, parkTruck: truck.park }
 }

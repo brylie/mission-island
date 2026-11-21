@@ -24,15 +24,15 @@ export const crewWalkSpeed = 8
 export const crewCarrySpeed = 6.5
 export const crewSprintMultiplier = 1.55
 // Height of the crew's hip joint above the soles.
-export const crewHipHeight = .68
+export const crewHipHeight = 0.68
 export const jumpSpeed = 6.85
 export const jumpGravity = 17
 export const truckStart: Pose = { x: -41, z: -11, heading: Math.PI / 2 }
 export const truckSeatSpeed = 2
 export const skiffStart: Pose = { x: -48.5, z: -35.8, heading: -2.5 }
 export const harborDock = { x: -44, firstZ: -29, planks: 18, spacing: 0.49, width: 3.45, plankDepth: 0.45, top: 0.23 }
-export const harborDockPiles = [-45.6, -42.4].flatMap(x =>
-  [-31, -34, -37].map(z => ({ x, z, bottom: -1.545, top: .705, diameter: .43 })))
+export const harborDockPiles = [-45.6, -42.4].flatMap((x) =>
+  [-31, -34, -37].map((z) => ({ x, z, bottom: -1.545, top: 0.705, diameter: 0.43 })))
 export const dockEndZ = harborDock.firstZ - (harborDock.planks - 1) * harborDock.spacing
 export const ferryTerminal = { x: -30, z: -31, width: 6 }
 export const truckBed = { width: 2.28, length: 3.12, center: -1.39, top: 1.12 }
@@ -42,15 +42,15 @@ const railThickness = 0.14
 export const truckSideRails = { thickness: railThickness, height: 0.62, x: (truckBed.width - railThickness) / 2 }
 const tailLipThickness = 0.12
 export const truckTailLip = {
-  thickness: tailLipThickness, height: 0.28, z: truckBed.center - (truckBed.length + tailLipThickness) / 2,
+  thickness: tailLipThickness,
+  height: 0.28,
+  z: truckBed.center - (truckBed.length + tailLipThickness) / 2,
 }
 export const cargoSlots = [-0.46, -1.46, -2.46]
 export const crateSize = 0.89
 export const crewHomes = [
-  { name: 'Amber cottage', building: { x: -52, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#f2d5a4', roof: '#a85d36' },
-    chest: { x: -50.65, z: -7.52 }, wardrobe: { x: -53.35, z: -7.27 } },
-  { name: 'Blue cottage', building: { x: -45, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#d5e9dc', roof: '#477986' },
-    chest: { x: -43.65, z: -7.52 }, wardrobe: { x: -46.35, z: -7.27 } },
+  { name: 'Amber cottage', building: { x: -52, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#f2d5a4', roof: '#a85d36' }, chest: { x: -50.65, z: -7.52 }, wardrobe: { x: -53.35, z: -7.27 } },
+  { name: 'Blue cottage', building: { x: -45, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#d5e9dc', roof: '#477986' }, chest: { x: -43.65, z: -7.52 }, wardrobe: { x: -46.35, z: -7.27 } },
 ]
 
 export function cottageDoor(home: typeof crewHomes[number]) {
@@ -60,13 +60,15 @@ export function cottageDoor(home: typeof crewHomes[number]) {
 export const chestSize = { width: 0.92, depth: 0.64, height: 0.66 }
 export const spawns: Point[] = crewHomes.map(({ chest }) => ({ x: chest.x, z: chest.z - 1.34 }))
 export const crateStarts: Point[] = [
-  { x: -49, z: -15 }, { x: -47, z: -17 }, { x: -45, z: -15 },
+  { x: -49, z: -15 },
+  { x: -47, z: -17 },
+  { x: -45, z: -15 },
 ]
 export const extinguisherStarts: Point[] = [{ x: 20, z: 22 }, { x: 22, z: 22 }]
 // Wren works at a mending bench on the grass beside Harbor Depot road, at the north edge of the ferry freight yard.
 // The loaned toolbox lives on its top.
-export const mendingBench = { x: -23.4, z: -15.8, heading: Math.PI / 2, top: .86 }
-export const toolboxHome: Point = { x: mendingBench.x, z: mendingBench.z + .42 }
+export const mendingBench = { x: -23.4, z: -15.8, heading: Math.PI / 2, top: 0.86 }
+export const toolboxHome: Point = { x: mendingBench.x, z: mendingBench.z + 0.42 }
 export const itemStarts = [
   ...crateStarts.map((start) => ({ kind: 'crate' as const, start })),
   ...extinguisherStarts.map((start) => ({ kind: 'extinguisher' as const, start })),
@@ -89,8 +91,8 @@ export const buildings = [
 ]
 
 export function onDock(point: Point) {
-  return Math.abs(point.x - harborDock.x) <= harborDock.width / 2 &&
-    point.z <= harborDock.firstZ + harborDock.plankDepth / 2 && point.z >= dockEndZ - harborDock.plankDepth / 2
+  return Math.abs(point.x - harborDock.x) <= harborDock.width / 2
+    && point.z <= harborDock.firstZ + harborDock.plankDepth / 2 && point.z >= dockEndZ - harborDock.plankDepth / 2
 }
 
 export function distance(a: Point, b: Point) {

@@ -5,14 +5,13 @@ import type { Point, Pose } from '../src/world'
 import { canWalkAt } from '../src/simulation/movement.ts'
 
 function navigable(point: Point) {
-  const byDock = Math.abs(point.x - harborDock.x) < harborDock.width / 2 + 0.275 &&
-    point.z > dockEndZ - 0.67 && point.z < harborDock.firstZ + 0.5
+  const byDock = Math.abs(point.x - harborDock.x) < harborDock.width / 2 + 0.275
+    && point.z > dockEndZ - 0.67 && point.z < harborDock.firstZ + 0.5
   return !byDock && withinSkiffBoundary(point) && waterDepth(point) >= 0.24
 }
 
 function hullIsNavigable(pose: Pose) {
-  return [offset(pose, 0, 1.85), offset(pose, 0, -1.62), offset(pose, -0.62, 0),
-    offset(pose, 0.62, 0)].every(navigable)
+  return [offset(pose, 0, 1.85), offset(pose, 0, -1.62), offset(pose, -0.62, 0), offset(pose, 0.62, 0)].every(navigable)
 }
 
 export function restoreSkiff(saved: Pose = skiffStart): Skiff {
@@ -35,7 +34,6 @@ export function stepSkiff(skiff: Skiff, paddles: readonly Input[], dt: number) {
 export function skiffExit(skiff: Skiff, seat: Player['seat']) {
   if (Math.abs(skiff.speed) > 0.65) return
   const side = seat === 'port' ? -1 : 1
-  const locations = [offset(skiff, side * 2.1, 0.36), offset(skiff, -side * 2.1, 0.36),
-    offset(skiff, 0, 2.95), offset(skiff, 0, -2.6)]
+  const locations = [offset(skiff, side * 2.1, 0.36), offset(skiff, -side * 2.1, 0.36), offset(skiff, 0, 2.95), offset(skiff, 0, -2.6)]
   return locations.find((point) => canWalkAt(point, 0.43, waterLevel - 0.55))
 }

@@ -27,18 +27,21 @@ function rehearsal(values: Values) {
   const islandTime = ((Number(values.hour) - 6 + 24) % 24) * daySeconds / 24
   const residents = initialResidents(starterResidents)
   const breach = values.standing === 'wronged' || values.standing === 'wary'
-    ? { favor: favor.id, at: 0, amended: values.standing === 'wary', rebuilt: 0 } : null
-  residents[subject.id] = { ...residents[subject.id], trust: Number(values.trust), breach, forgiven: values.standing === 'forgiven' ? 1 : 0,
-    kept: values.favor === 'kept' ? [favor.id] : [], active: values.favor === 'active' ? favor.id : null }
+    ? { favor: favor.id, at: 0, amended: values.standing === 'wary', rebuilt: 0 }
+    : null
+  residents[subject.id] = { ...residents[subject.id], trust: Number(values.trust), breach, forgiven: values.standing === 'forgiven' ? 1 : 0, kept: values.favor === 'kept' ? [favor.id] : [], active: values.favor === 'active' ? favor.id : null }
   const weather = { hour: Number(values.hour), rain: values.rain ? 1 : 0 }
-  return { islandTime, weather, farmWork: restoreFarmWork(), mission: 'complete', jobs: { active: null, completed: 0 }, farm: [],
-    aviation: { qualified: false }, residents, gateRepair: { stage: 'sagging', pinHolder: null } } as unknown as Snapshot
+  return { islandTime, weather, farmWork: restoreFarmWork(), mission: 'complete', jobs: { active: null, completed: 0 }, farm: [], aviation: { qualified: false }, residents, gateRepair: { stage: 'sagging', pinHolder: null } } as unknown as Snapshot
 }
 
 export const residentRoutinesStudy: Entry = {
-  id: 'resident-routines', name: 'Resident routines', group: 'NPC interactions', source: 'src/worlds/starter/residents.ts',
+  id: 'resident-routines',
+  name: 'Resident routines',
+  group: 'NPC interactions',
+  source: 'src/worlds/starter/residents.ts',
   description: 'Pick a resident and an hour to see where the shared schedule puts them, then set the crew’s trust, standing, favor and weather to hear what they say. Change the remark seed to hear other small talk that fits.',
-  readout: 'Resident routine', duration: 6,
+  readout: 'Resident routine',
+  duration: 6,
   // On the island the stage moves to wherever the resident is at that hour.
   fieldSite: (values) => {
     const spot = residentAt(resident(values).schedule, rehearsal(values))
@@ -46,7 +49,7 @@ export const residentRoutinesStudy: Entry = {
   },
   controls: [
     control('resident', 'Resident', starterResidents[0].id, choices, true),
-    range('hour', 'Island hour', 10, 0, 23.75, .25, true),
+    range('hour', 'Island hour', 10, 0, 23.75, 0.25, true),
     control('trust', 'Crew trust', '0', trustLevels),
     control('favor', 'First favor', 'open', favorStates),
     control('standing', 'Standing', 'steady', standings),
@@ -61,7 +64,7 @@ export const residentRoutinesStudy: Entry = {
     rig.root.rotation.y = spot.heading
     return ({ time }, current) => {
       rig.blink(time)
-      poseCrew(rig, time * 1.8, spot.walking ? .65 : 0, false, undefined, 0, 1)
+      poseCrew(rig, time * 1.8, spot.walking ? 0.65 : 0, false, undefined, 0, 1)
       const state = rehearsal(current)
       const [greeting, advice] = conversationLines(subject, state)
       const where = spot.indoors ? 'indoors' : spot.stop === 'walking' ? 'walking' : `at ${spot.stop}`

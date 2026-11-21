@@ -1,16 +1,39 @@
 import type { MapPoint } from './sites.ts'
 
 interface RoadPoint extends MapPoint { y: number }
-export interface RoadSample extends RoadPoint { distance: number; yaw: number }
+export interface RoadSample extends RoadPoint { distance: number, yaw: number }
 
 type Knot = [x: number, z: number, y: number]
 const loopKnots: Knot[] = [
-  [-270, -105, 9], [-244, -105, 9], [-185, -87, 11], [-111, -74, 12], [18, -66, 13],
-  [109, -65, 13], [162, -65, 13], [205, -55, 13], [233, -26, 14], [235, 7, 15.5],
-  [234, 35, 17], [231, 69, 19], [213, 101, 21], [168, 127, 23], [116, 141, 24],
-  [20, 150, 28], [-26, 154, 29], [-56, 158, 29], [-108, 153, 31], [-172, 150, 31],
-  [-236, 127, 29.7], [-259, 114, 28], [-297, 88, 24], [-337, 55, 18.6], [-351, 15, 14.4],
-  [-353, -31, 11.7], [-342, -76, 10], [-315, -99, 9.5], [-296, -105, 9],
+  [-270, -105, 9],
+  [-244, -105, 9],
+  [-185, -87, 11],
+  [-111, -74, 12],
+  [18, -66, 13],
+  [109, -65, 13],
+  [162, -65, 13],
+  [205, -55, 13],
+  [233, -26, 14],
+  [235, 7, 15.5],
+  [234, 35, 17],
+  [231, 69, 19],
+  [213, 101, 21],
+  [168, 127, 23],
+  [116, 141, 24],
+  [20, 150, 28],
+  [-26, 154, 29],
+  [-56, 158, 29],
+  [-108, 153, 31],
+  [-172, 150, 31],
+  [-236, 127, 29.7],
+  [-259, 114, 28],
+  [-297, 88, 24],
+  [-337, 55, 18.6],
+  [-351, 15, 14.4],
+  [-353, -31, 11.7],
+  [-342, -76, 10],
+  [-315, -99, 9.5],
+  [-296, -105, 9],
 ]
 
 function cubic(a: number, b: number, c: number, d: number, t: number) {
@@ -42,22 +65,42 @@ function sampleKnots(knots: Knot[], closed: boolean): RoadSample[] {
   return samples
 }
 
-export interface Route { name: string; width: number; samples: RoadSample[]; crossings: boolean }
+export interface Route { name: string, width: number, samples: RoadSample[], crossings: boolean }
 const route = (name: string, width: number, knots: Knot[], closed = false, crossings = false): Route =>
   ({ name, width, samples: sampleKnots(knots, closed), crossings })
 
 export const islandLoop = route('Saltwind Loop', 9, loopKnots, true, true)
 export const quayRoad = route('Ferry Approach', 9, [
-  [-274, -229, 4], [-274, -210, 4], [-274, -177, 6], [-272, -139, 8], [-270, -105, 9],
+  [-274, -229, 4],
+  [-274, -210, 4],
+  [-274, -177, 6],
+  [-272, -139, 8],
+  [-270, -105, 9],
 ])
 const millRoad = route('Mill Road', 8, [
-  [-185, -87, 11], [-174, -57, 13], [-174, -21, 15.6], [-190, 17, 19.2], [-210, 69, 24], [-224, 92, 26.2], [-241, 104, 27.1], [-259, 114, 28],
+  [-185, -87, 11],
+  [-174, -57, 13],
+  [-174, -21, 15.6],
+  [-190, 17, 19.2],
+  [-210, 69, 24],
+  [-224, 92, 26.2],
+  [-241, 104, 27.1],
+  [-259, 114, 28],
 ], false, true)
 const mineRoad = route('Slatecliff Road', 8, [
-  [213, 101, 21], [233, 112, 23.1], [252, 130, 25.65], [264, 148, 28.1], [271, 165, 29.12], [274, 172, 29.12],
+  [213, 101, 21],
+  [233, 112, 23.1],
+  [252, 130, 25.65],
+  [264, 148, 28.1],
+  [271, 165, 29.12],
+  [274, 172, 29.12],
 ])
 const airfieldRoad = route('Airfield Lane', 7, [
-  [162, -65, 13], [186, -71, 12.85], [205, -88, 11.2], [215, -108, 9.2], [219, -128, 8],
+  [162, -65, 13],
+  [186, -71, 12.85],
+  [205, -88, 11.2],
+  [215, -108, 9.2],
+  [219, -128, 8],
 ])
 const quaySpurs = [
   route('Fishing Pier Lane', 6, [[-274, -210, 4], [-260, -214, 4.05], [-252, -232, 2.8], [-253, -253, 1.6]]),
@@ -90,8 +133,7 @@ export function sampleRoute(route: Route, distance: number): RoadSample {
   }
   const a = samples[low], b = samples[high]
   const t = (target - a.distance) / (b.distance - a.distance)
-  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t,
-    yaw: a.yaw + Math.atan2(Math.sin(b.yaw - a.yaw), Math.cos(b.yaw - a.yaw)) * t, distance: target }
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t, yaw: a.yaw + Math.atan2(Math.sin(b.yaw - a.yaw), Math.cos(b.yaw - a.yaw)) * t, distance: target }
 }
 
 export const fishingPier = route('Fishing Pier', 4.5, [[-253, -253, 1.6], [-253, -271, 1.6]])

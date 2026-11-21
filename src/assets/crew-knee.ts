@@ -8,7 +8,7 @@ import type { TransformNode } from '@babylonjs/core/Meshes/transformNode.js'
 
 // All leg garments are authored in the hip's local space. The same knee bends
 // bare calves and trouser cloth, while shoes below the joint remain rigid.
-const height = -.305
+const height = -0.305
 
 export function rigCrewKnee(hip: TransformNode) {
   const skeleton = new Skeleton('Leg', `crew-leg-${hip.uniqueId}`, hip.getScene())
@@ -21,7 +21,7 @@ export function rigCrewKnee(hip: TransformNode) {
   let angle = 0
   function bend(target: number, blend: number) {
     const next = angle + (target - angle) * blend
-    if (Math.abs(next - angle) < .00001) return
+    if (Math.abs(next - angle) < 0.00001) return
     angle = next
     shin.setAxisAngle(Axis.X, angle, Space.LOCAL)
   }
@@ -32,7 +32,7 @@ export function bindLegMesh(mesh: Mesh, skeleton: Skeleton) {
   const positions = mesh.getVerticesData(VertexBuffer.PositionKind)!
   const indices: number[] = [], weights: number[] = []
   for (let i = 1; i < positions.length; i += 3) {
-    const t = Math.max(0, Math.min(1, (height + .078 - positions[i]) / .156))
+    const t = Math.max(0, Math.min(1, (height + 0.078 - positions[i]) / 0.156))
     const flex = t * t * (3 - 2 * t)
     indices.push(0, 1, 0, 0)
     weights.push(1 - flex, flex, 0, 0)

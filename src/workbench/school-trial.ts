@@ -24,7 +24,8 @@ export function readSchoolRoute(raw: unknown): Waypoint[] {
       before = tick
     }
     return points as Waypoint[]
-  } catch { return [] }
+  }
+  catch { return [] }
 }
 
 export function createSchoolTrial(seed: number, kind: Disturbance, raw: unknown, nudge = false, crossing: Crossing = {}) {
@@ -57,7 +58,7 @@ export function createSchoolTrial(seed: number, kind: Disturbance, raw: unknown,
       }
       const dx = target.x - actor.x, dz = target.z - actor.z, distance = Math.hypot(dx, dz)
       actor.speed = Math.min(kind === 'skiff' ? 2.7 : 1.8, distance / schoolStep)
-      if (distance > .001) {
+      if (distance > 0.001) {
         actor.heading = Math.atan2(dx, dz)
         actor.x += dx / distance * actor.speed * schoolStep
         actor.z += dz / distance * actor.speed * schoolStep
@@ -74,7 +75,7 @@ export function createSchoolTrial(seed: number, kind: Disturbance, raw: unknown,
     }
   }
   function steer(point: Point) {
-    const clipped = Math.min(1, 6 / Math.max(.01, Math.hypot(point.x, point.z)))
+    const clipped = Math.min(1, 6 / Math.max(0.01, Math.hypot(point.x, point.z)))
     const keep = route.findIndex(([at]) => at >= tick)
     if (keep < 0 && route.length === routeLimit) return false
     if (keep >= 0) route.length = keep

@@ -32,7 +32,7 @@ export const liftSites: readonly LiftSite[] = [
 // Thermals build through the morning, peak after noon and fade before dusk. Rain cools the ground.
 export function thermalStrength(hour: number, rain: number) {
   const sun = Math.sin(Math.PI * (hour - 6.5) / 13)
-  return Math.max(0, sun) ** .5 * (1 - .8 * Math.min(1, Math.max(0, rain)))
+  return Math.max(0, sun) ** 0.5 * (1 - 0.8 * Math.min(1, Math.max(0, rain)))
 }
 
 export function liftStrength(site: LiftSite, hour: number, rain: number) {

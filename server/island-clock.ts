@@ -4,7 +4,9 @@ import { daylight, isNight, nextDawn, weatherAt } from '../src/weather.ts'
 
 export function advanceIsland(
   state: Pick<Snapshot, 'farm' | 'islandTime' | 'players' | 'weather'>,
-  growth: number[], tickSeconds: number, checkpoint?: () => void,
+  growth: number[],
+  tickSeconds: number,
+  checkpoint?: () => void,
 ) {
   state.islandTime += tickSeconds
   state.weather = weatherAt(state.islandTime)

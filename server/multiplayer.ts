@@ -17,8 +17,8 @@ function isCommand(value: unknown): value is FreightAction {
   switch (value.action) {
     case 'board': case 'leave': case 'deliver': return true
     case 'accept': case 'load': return 'choice' in value && typeof value.choice === 'string' && value.choice.length <= 40
-    case 'drive': return 'steps' in value && Array.isArray(value.steps) && value.steps.length > 0 &&
-      value.steps.length <= maxHaulSteps && value.steps.every(isHaulStep)
+    case 'drive': return 'steps' in value && Array.isArray(value.steps) && value.steps.length > 0
+      && value.steps.length <= maxHaulSteps && value.steps.every(isHaulStep)
     default: return false
   }
 }
@@ -30,20 +30,37 @@ function freightHandler(freight: ReturnType<typeof createGame>['freight']) {
     const token = /^Bearer ([a-f0-9]{32})$/.exec(request.headers.authorization ?? '')?.[1] ?? ''
     const send = (code: number, error?: string) =>
       response.writeHead(code).end(JSON.stringify({ ...freight.status(token), error }))
-    if (request.method === 'GET') { send(200); return }
-    if (request.method !== 'POST') { response.setHeader('Allow', 'GET, POST'); send(405); return }
-    if (!token) { send(401, 'Join Starter Island to register as a driver.'); return }
+    if (request.method === 'GET') {
+      send(200)
+      return
+    }
+    if (request.method !== 'POST') {
+      response.setHeader('Allow', 'GET, POST')
+      send(405)
+      return
+    }
+    if (!token) {
+      send(401, 'Join Starter Island to register as a driver.')
+      return
+    }
     try {
       let body = ''
       for await (const chunk of request) {
         body += chunk
-        if (body.length > 4096) { send(413); return }
+        if (body.length > 4096) {
+          send(413)
+          return
+        }
       }
       const command: unknown = JSON.parse(body)
-      if (!isCommand(command)) { send(400); return }
+      if (!isCommand(command)) {
+        send(400)
+        return
+      }
       const error = freight.act(token, command)
       send(error ? 409 : 200, error)
-    } catch { send(400) }
+    }
+    catch { send(400) }
   }
 }
 
@@ -61,7 +78,8 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
     try {
       archive.write(game.snapshotForSave())
       saveFailed = false
-    } catch (error) {
+    }
+    catch (error) {
       if (!saveFailed) console.error('Could not save Mission Island:', error)
       saveFailed = true
     }
@@ -77,16 +95,20 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
     }
     response.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ crewCoins: game.crewCoins }))
   })
-  middlewares.use('/api/slatecliff-freight', (request, response) => { void freightHandler(game.freight)(request, response) })
+  middlewares.use('/api/slatecliff-freight', (request, response) => {
+    void freightHandler(game.freight)(request, response)
+  })
   let sessions = createSocketSessions(game, trialMode ? scenarioCatalog : undefined)
   const sockets = new WebSocketServer({ noServer: true, maxPayload: 256 })
   const live = new Set<WebSocket>()
   if (trialMode) middlewares.use('/api/live-checkpoint', (req, res) => {
     res.setHeader('Cache-Control', 'no-store')
-    const stop = (code: number, text: string) => { res.writeHead(code).end(text) }
+    const stop = (code: number, text: string) => {
+      res.writeHead(code).end(text)
+    }
     if (req.method !== 'POST') return stop(405, 'Use POST.')
     const seats = sessions.seats()
-    if (!seats.some(seat => req.headers.authorization === 'Bearer ' + seat.token)) return stop(403, 'Join the crew first.')
+    if (!seats.some((seat) => req.headers.authorization === 'Bearer ' + seat.token)) return stop(403, 'Join the crew first.')
     const args = new URL(req.url ?? '/', 'http://localhost').searchParams
     const settings = checkpointSettings(args.get('checkpoint'), args.get('seats'))
     if (!settings) return stop(400, 'Unknown checkpoint or crew size.')
@@ -120,8 +142,8 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
   server.on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
     if (request.url !== '/play') return
     const origin = request.headers.origin
-    if (origin !== undefined && origin !== `http://${request.headers.host}` &&
-      origin !== `https://${request.headers.host}`) {
+    if (origin !== undefined && origin !== `http://${request.headers.host}`
+      && origin !== `https://${request.headers.host}`) {
       socket.destroy()
       return
     }

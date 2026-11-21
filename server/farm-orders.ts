@@ -81,7 +81,7 @@ export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotic
       stopPrimary(member)
       stowTool(member)
       member.reachUntil = 0
-      if (distance(barrow, player) > .1) player.heading = Math.atan2(barrow.x - player.x, barrow.z - player.z)
+      if (distance(barrow, player) > 0.1) player.heading = Math.atan2(barrow.x - player.x, barrow.z - player.z)
       barrow.handler = player.id
     },
     'park-barrow': () => parkBarrow(false),

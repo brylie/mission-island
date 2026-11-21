@@ -8,8 +8,7 @@ export function defaultPlacement(feature: SiteFeature) {
   return { east: 0, north: 0, heading: (feature.heading ?? 0) * 180 / Math.PI, scale: feature.scale ?? 1, color: feature.color }
 }
 export function editedFeature(feature: SiteFeature, values: Values): SiteFeature {
-  return { ...feature, x: feature.x + Number(values.east), z: feature.z + Number(values.north),
-    heading: Number(values.heading) * Math.PI / 180, scale: Number(values.scale), color: String(values.color) }
+  return { ...feature, x: feature.x + Number(values.east), z: feature.z + Number(values.north), heading: Number(values.heading) * Math.PI / 180, scale: Number(values.scale), color: String(values.color) }
 }
 function within(n: unknown, min: number, max: number) {
   return typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max
@@ -18,7 +17,7 @@ function valid(value: unknown): value is ReturnType<typeof defaultPlacement> {
   if (!value || typeof value !== 'object') return false
   const v = value as Values
   return within(v.east, -6, 6) && within(v.north, -6, 6) && within(v.heading, -180, 180)
-    && within(v.scale, .25, 3) && typeof v.color === 'string' && /^#[a-f0-9]{6}$/i.test(v.color)
+    && within(v.scale, 0.25, 3) && typeof v.color === 'string' && /^#[a-f0-9]{6}$/i.test(v.color)
 }
 export function readSiteDrafts(): Record<string, ReturnType<typeof defaultPlacement>> {
   try {
@@ -30,13 +29,14 @@ export function readSiteDrafts(): Record<string, ReturnType<typeof defaultPlacem
       if (valid(placement)) drafts[f.site] = placement
     }
     return drafts
-  } catch { return {} }
+  }
+  catch { return {} }
 }
 export function saveSiteDraft(site: string, values: Values) {
-  if (!valid(values) || !starterFeatures.some(feature => feature.site === site)) return false
+  if (!valid(values) || !starterFeatures.some((feature) => feature.site === site)) return false
   return writeStorage('localStorage', key, JSON.stringify({ ...readSiteDrafts(), [site]: values }))
 }
 export function draftFeatures() {
   const drafts = readSiteDrafts()
-  return starterFeatures.map(f => drafts[f.site] ? editedFeature(f, drafts[f.site]) : f)
+  return starterFeatures.map((f) => drafts[f.site] ? editedFeature(f, drafts[f.site]) : f)
 }

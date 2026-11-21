@@ -67,15 +67,17 @@ export function createSurfaceMaterial(scene: Scene, surface: SurfaceName, color?
   const metal = surface === 'metal'
   const tint = color ?? surfaces[surface].color
   const relief = gravel ? 2.4 : concrete ? 1.25 : metal ? 0.9 : surface === 'wood' ? 0.75 : 0.44
-  const { diffuse, normal, finishMap } = createTextureSample(scene, surface, 1 / (appearance.grainSize ?? 1),
-    (gravel ? 0.65 : concrete ? 0.35 : 0.36) * (appearance.contrast ?? 1), relief * (appearance.relief ?? 1), {
-      striations: appearance.striations,
-      metal: metal ? {
-        type: appearance.metalType ?? 'steel', color,
-        oxidation: appearance.oxidation ?? 0,
-        abrasion: appearance.abrasion ?? 0.34,
-      } : undefined,
-    })
+  const { diffuse, normal, finishMap } = createTextureSample(scene, surface, 1 / (appearance.grainSize ?? 1), (gravel ? 0.65 : concrete ? 0.35 : 0.36) * (appearance.contrast ?? 1), relief * (appearance.relief ?? 1), {
+    striations: appearance.striations,
+    metal: metal
+      ? {
+          type: appearance.metalType ?? 'steel',
+          color,
+          oxidation: appearance.oxidation ?? 0,
+          abrasion: appearance.abrasion ?? 0.34,
+        }
+      : undefined,
+  })
   if (gravel || concrete || metal) {
     const material = new PBRMaterial(surface, scene)
     material.albedoColor = metal ? Color3.White() : Color3.FromHexString(tint)

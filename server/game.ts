@@ -39,8 +39,11 @@ const impactSession = Date.now().toString(36)
 let impactCount = 0
 
 function stepVehicles(
-  state: Snapshot, members: CrewMember[], active: (member: CrewMember) => boolean,
-  physics: ReturnType<typeof createCargoPhysics>, freight: ReturnType<typeof createFreight>,
+  state: Snapshot,
+  members: CrewMember[],
+  active: (member: CrewMember) => boolean,
+  physics: ReturnType<typeof createCargoPhysics>,
+  freight: ReturnType<typeof createFreight>,
   notifyAll: (notice: CrewNotice) => void,
 ) {
   const driver = members.find((member) => member.player.seat === 'driver')
@@ -79,8 +82,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const journal = createJournal(state, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint)
-  const { interactions, gate, residents, farm } =
-    createGameInteractions(world, physics, { crew, orders, freight, journal, clock, checkpoint })
+  const { interactions, gate, residents, farm }
+    = createGameInteractions(world, physics, { crew, orders, freight, journal, clock, checkpoint })
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
@@ -116,7 +119,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     state.driftwood = driftwood.step(state.players, state.skiff)
     // Animal motion follows real simulation ticks, even when the crew sleeps through the night.
     if (++wildlifeTick % 3 === 0) {
-      state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter(p => p.connected && !p.sleeping))
+      state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping))
     }
     return state
   }
@@ -180,7 +183,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     if (aviation.hasFlight(member)) {
       if (message.type === 'respawn') aviation.interrupt(member)
       if (message.type !== 'input' && message.type !== 'appearance' && message.type !== 'crew-name') return
-    } else if (message.type === 'interact' && !pushing && aviation.interact(member)) return
+    }
+    else if (message.type === 'interact' && !pushing && aviation.interact(member)) return
     handleAction(member, message)
   }
 

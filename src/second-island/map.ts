@@ -23,9 +23,10 @@ export function createChart(canvas: HTMLCanvasElement, detailed: boolean) {
   for (let py = 0; py < chart.height; py++) for (let px = 0; px < chart.width; px++) {
     const x = minX + (maxX - minX) * px / chart.width, z = maxZ - (maxZ - minZ) * py / chart.height
     const y = groundHeight(x, z), water = waterHeight(x, z)
-    const color = y <= water ? (water > 0 || y > -3.1 ? palette.shoal : palette.sea)
+    const color = y <= water
+      ? (water > 0 || y > -3.1 ? palette.shoal : palette.sea)
       : habitatColor(x, y, z)
-    const contour = y > water && Math.floor(y / 8) !== Math.floor(groundHeight(x + 3, z + 2) / 8) ? .89 : 1
+    const contour = y > water && Math.floor(y / 8) !== Math.floor(groundHeight(x + 3, z + 2) / 8) ? 0.89 : 1
     image.data.set([color[0] * contour, color[1] * contour, color[2] * contour, 255], (py * chart.width + px) * 4)
   }
   base.putImageData(image, 0, 0)
@@ -77,7 +78,10 @@ export function createChart(canvas: HTMLCanvasElement, detailed: boolean) {
       const sx = 24, sy = canvas.height - 22, width = 100 / (maxX - minX) * canvas.width
       context.strokeStyle = '#fce8c3'
       context.lineWidth = 2
-      context.moveTo(sx, sy - 5); context.lineTo(sx, sy); context.lineTo(sx + width, sy); context.lineTo(sx + width, sy - 5)
+      context.moveTo(sx, sy - 5)
+      context.lineTo(sx, sy)
+      context.lineTo(sx + width, sy)
+      context.lineTo(sx + width, sy - 5)
       context.stroke()
       context.fillStyle = '#fff0d6'
       context.font = '13px system-ui'

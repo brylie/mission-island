@@ -5,12 +5,14 @@ import { maxHaulSteps, type HaulStep } from '../simulation/ore-truck'
 async function exchange(revision: number, command?: FreightCommand) {
   const token = readStorage('sessionStorage', 'mission-island-crew') ?? readStorage('localStorage', 'mission-island-crew')
   const response = await fetch('/api/slatecliff-freight', {
-    method: command ? 'POST' : 'GET', headers: token ? { Authorization: 'Bearer ' + token } : {},
-    body: command && JSON.stringify({ ...command, revision }), signal: AbortSignal.timeout(6000),
+    method: command ? 'POST' : 'GET',
+    headers: token ? { Authorization: 'Bearer ' + token } : {},
+    body: command && JSON.stringify({ ...command, revision }),
+    signal: AbortSignal.timeout(6000),
   })
   const data: unknown = await response.json()
-  if (!data || typeof data !== 'object' || !('xp' in data) || typeof data.xp !== 'number' ||
-    !('boarded' in data) || typeof data.boarded !== 'boolean' || !('ticket' in data) || !isFreightTicket(data.ticket)) throw new Error('Dispatch radio offline.')
+  if (!data || typeof data !== 'object' || !('xp' in data) || typeof data.xp !== 'number'
+    || !('boarded' in data) || typeof data.boarded !== 'boolean' || !('ticket' in data) || !isFreightTicket(data.ticket)) throw new Error('Dispatch radio offline.')
   const status: DriverStatus = { boarded: data.boarded, xp: data.xp, ticket: data.ticket }
   if (!response.ok && data.ticket.revision !== revision) throw new Error('Dispatch changed. Board again to resume.')
   const error = response.ok ? undefined : 'error' in data && typeof data.error === 'string' ? data.error : 'Dispatch unavailable.'

@@ -9,17 +9,22 @@ import { draftFeatures } from './site-drafts'
 import { range, type Entry } from './subject'
 
 export const landscapeStudy: Entry = {
-  id: 'landscape', name: 'Landscape Workbench', group: 'Island', source: 'src/island-world.ts',
+  id: 'landscape',
+  name: 'Landscape Workbench',
+  group: 'Island',
+  source: 'src/island-world.ts',
   description: 'Focus on map coordinates in metres, orbit and pan, and inspect scenery under different skies.',
   readout: 'Shellglass tide',
-  landscape: true, duration: landscapeDuration, angle: -Math.PI / 2,
+  landscape: true,
+  duration: landscapeDuration,
+  angle: -Math.PI / 2,
   controls: [
     { type: 'number', key: 'x', label: 'Focus X (m)', value: falls.x, min: -500, max: 500, step: 0.1 },
     { type: 'number', key: 'z', label: 'Focus Z (m)', value: falls.z, min: -500, max: 500, step: 0.1 },
     { type: 'number', key: 'focusHeight', label: 'Focus above ground (m)', value: 0.25, min: -5, max: 80, step: 0.05 },
     range('hour', 'Island hour', 16.5, 0, 24, 0.1),
     range('rain', 'Rain intensity', 0, 0, 1, 0.01),
-    range('marketRainAge', 'Market · seconds since rain stopped', dryMarketRainAge, 0, dryMarketRainAge, .1),
+    range('marketRainAge', 'Market · seconds since rain stopped', dryMarketRainAge, 0, dryMarketRainAge, 0.1),
     { type: 'checkbox', key: 'sunShafts', label: 'Volumetric sunlight', value: true },
     range('shaftIntensity', 'Sun shaft intensity (%)', 100, 0, 150, 5),
   ],

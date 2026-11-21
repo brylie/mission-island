@@ -37,8 +37,8 @@ export function migrateTrust(value: unknown): unknown {
 // A breach names a favor of this resident. Until amends it is the favor still under way; after, it is kept.
 function isBreach(value: unknown, record: Record<string, unknown>, owns: (favor: unknown) => boolean | undefined, islandTime: number) {
   if (value === null) return true
-  if (!isRecord(value) || !owns(value.favor) || typeof value.amended !== 'boolean' || !isCount(value.rebuilt) ||
-    typeof value.at !== 'number' || value.at < 0 || value.at > islandTime) return false
+  if (!isRecord(value) || !owns(value.favor) || typeof value.amended !== 'boolean' || !isCount(value.rebuilt)
+    || typeof value.at !== 'number' || value.at < 0 || value.at > islandTime) return false
   const kept = Array.isArray(record.kept) && record.kept.includes(value.favor)
   return value.amended ? kept && value.rebuilt < rebuildFavors : !kept && record.active === value.favor && value.rebuilt === 0
 }
@@ -50,15 +50,15 @@ export function isResidentRecords(value: unknown, islandTime: number) {
   return Object.entries(value).every(([id, record]) => {
     const resident = starterResident(id)
     const owns = (favor: unknown) => resident?.favors.some((entry) => entry.id === favor)
-    return resident && isRecord(record) && isCount(record.trust) && isCount(record.forgiven) && Array.isArray(record.kept) &&
-      new Set(record.kept).size === record.kept.length && record.kept.every(owns) &&
-      (record.active === null || (owns(record.active) && !record.kept.includes(record.active))) &&
-      (record.checked === null || ((record.checked === 'fault' || record.checked === 'sound') && record.active !== null)) &&
-      isBreach(record.breach, record, owns, islandTime)
+    return resident && isRecord(record) && isCount(record.trust) && isCount(record.forgiven) && Array.isArray(record.kept)
+      && new Set(record.kept).size === record.kept.length && record.kept.every(owns)
+      && (record.active === null || (owns(record.active) && !record.kept.includes(record.active)))
+      && (record.checked === null || ((record.checked === 'fault' || record.checked === 'sound') && record.active !== null))
+      && isBreach(record.breach, record, owns, islandTime)
   })
 }
 
 export function isFavorReceipt(value: unknown) {
-  return isRecord(value) && isCount(value.coins) && typeof value.resident === 'string' &&
-    Boolean(starterResident(value.resident)?.favors.some((favor) => favor.id === value.favor))
+  return isRecord(value) && isCount(value.coins) && typeof value.resident === 'string'
+    && Boolean(starterResident(value.resident)?.favors.some((favor) => favor.id === value.favor))
 }

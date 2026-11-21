@@ -10,7 +10,7 @@ function frame(trial) {
 }
 
 function spread(members) {
-  return Math.max(...members.flatMap(f => members.map(g => Math.hypot(f.x - g.x, f.z - g.z))))
+  return Math.max(...members.flatMap((f) => members.map((g) => Math.hypot(f.x - g.x, f.z - g.z))))
 }
 
 for (const kind of ['player', 'skiff']) {
@@ -20,10 +20,10 @@ for (const kind of ['player', 'skiff']) {
     for (let tick = 1; tick <= 450; tick++) {
       trial.seek(tick / 30)
       const members = trial.school.fish
-      const scared = members.filter(f => f.alarm > 0).length
+      const scared = members.filter((f) => f.alarm > 0).length
       if (scared > 0 && scared < members.length) partial = true
       widest = Math.max(widest, spread(members))
-      assert.ok(members.every(f => Math.hypot(f.x, f.z) < poolRadius))
+      assert.ok(members.every((f) => Math.hypot(f.x, f.z) < poolRadius))
     }
     assert.ok(partial)
     assert.ok(widest > 6 && spread(trial.school.fish) < widest / 2)
@@ -74,7 +74,7 @@ test('the same seeded school replays a five-centimetre perturbation independentl
   const original = createSchoolTrial(125, 'skiff', '')
   const nudged = createSchoolTrial(125, 'skiff', '', true)
   const fish = globalThis.structuredClone(original.school.fish)
-  fish[0].x += .05
+  fish[0].x += 0.05
   assert.deepEqual(nudged.school.fish, fish)
   assert.notDeepEqual(original.school.fish, createSchoolTrial(126, 'skiff', '').school.fish)
   original.seek(25)
@@ -88,13 +88,13 @@ test('the same seeded school replays a five-centimetre perturbation independentl
 
 test('individual reaction times vary and leader history resets at a new disturbance', () => {
   const trial = createSchoolTrial(42, 'skiff', '')
-  const delays = trial.school.fish.map(f => f.responseTicks)
-  assert.ok(delays.every(t => t >= 2 && t <= 5))
+  const delays = trial.school.fish.map((f) => f.responseTicks)
+  assert.ok(delays.every((t) => t >= 2 && t <= 5))
   assert.ok(new Set(delays).size > 1)
   trial.seek(15)
   assert.equal(trial.school.leaderTrail.length, 5)
   trial.steer(trial.school.fish[trial.school.leader])
-  for (let t = 15; t < 30 && !trial.school.scattered; t += .1) trial.seek(t)
+  for (let t = 15; t < 30 && !trial.school.scattered; t += 0.1) trial.seek(t)
   assert.ok(trial.school.scattered)
   assert.deepEqual(trial.school.leaderTrail, [])
 })
@@ -119,7 +119,7 @@ test('the return crossing disturbs the regroup and replays identically at two fr
 test('the school avoids a lingering skiff instead of scattering repeatedly', () => {
   const trial = createSchoolTrial(42, 'skiff', '[[45,0,0]]')
   trial.seek(7)
-  assert.ok(trial.actor.speed < .001)
+  assert.ok(trial.actor.speed < 0.001)
   const leader = trial.school.leader
   assert.ok(leader >= 0)
   for (let tick = 211; tick <= 900; tick++) {
@@ -136,7 +136,7 @@ test('a lone fish keeps its ID and waits until its projected path is safe to reg
   const [fish] = school.fish
   const safe = { steer: () => ({ x: 0, z: 0 }), navigable: () => true }
   const closed = { ...safe, navigable: () => false }
-  const threats = [{ x: fish.x - .2, z: fish.z, range: 2 }, { x: fish.x + .2, z: fish.z, range: 2 }]
+  const threats = [{ x: fish.x - 0.2, z: fish.z, range: 2 }, { x: fish.x + 0.2, z: fish.z, range: 2 }]
   for (let i = 0; i < fish.responseTicks; i++) advanceSchool(school, threats, safe)
   assert.ok(school.fish[0].alarm > 0)
   for (let i = 0; i < 60; i++) advanceSchool(school, [], closed)
@@ -169,7 +169,7 @@ test('body heading and swimming direction turn together, with bounded yaw and ac
 })
 
 test('wander stays correlated over short times and returns toward its mean over long runs', () => {
-  const next = createWander(seededRandom(68), schoolStep, .65, .29)
+  const next = createWander(seededRandom(68), schoolStep, 0.65, 0.29)
   let value = 0, total = 0, squares = 0, adjacentProduct = 0
   for (let i = 0; i < 30000; i++) {
     const previous = value
@@ -178,7 +178,7 @@ test('wander stays correlated over short times and returns toward its mean over 
     squares += value * value
     adjacentProduct += previous * value
   }
-  assert.ok(Math.abs(total / 30000) < .03)
-  assert.ok(Math.abs(Math.sqrt(squares / 30000) - .29) < .025)
-  assert.ok(adjacentProduct / squares > .9)
+  assert.ok(Math.abs(total / 30000) < 0.03)
+  assert.ok(Math.abs(Math.sqrt(squares / 30000) - 0.29) < 0.025)
+  assert.ok(adjacentProduct / squares > 0.9)
 })

@@ -67,7 +67,7 @@ export function createParticleEffect(scene: Scene, name: string, recipe: Particl
       let first = 0
       while (first < live.length && live[first].birth + recipe.life[1] <= time) first++
       if (first) live.splice(0, first)
-      const delta = Math.min(.08, Math.max(0, time - previous))
+      const delta = Math.min(0.08, Math.max(0, time - previous))
       previous = time
       if (source && tuning.strength > 0) {
         const density = particleDensity(recipe, tuning)
@@ -77,7 +77,8 @@ export function createParticleEffect(scene: Scene, name: string, recipe: Particl
           live.push(launchParticle(recipe, seed, sequence++, birth, source, tuning))
         }
         carry = emitted % 1
-      } else carry = 0
+      }
+      else carry = 0
       return draw(time, live)
     },
   }

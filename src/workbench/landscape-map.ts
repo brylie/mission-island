@@ -5,13 +5,22 @@ import type { Point } from '../world'
 import type { DraftMapObject } from './landscape-layout'
 import { paintLandscapeMap, paintMapGuides } from './landscape-map-art'
 import {
-  clampMapPoint, fullMapView, landscapeMapSize, mapPointInView, maxMapZoom, panMap,
-  pointInWorld, pointOnMap, shotCameraPoint, viewPointOnMap, zoomMap,
+  clampMapPoint,
+  fullMapView,
+  landscapeMapSize,
+  mapPointInView,
+  maxMapZoom,
+  panMap,
+  pointInWorld,
+  pointOnMap,
+  shotCameraPoint,
+  viewPointOnMap,
+  zoomMap,
 } from './landscape-map-projection'
 import type { MapPoint, MapView } from './landscape-map-projection'
 import type { LandscapeShot } from './landscape-shot'
 
-const landmarks: { name: string; point: Point; labelOnLeft?: boolean }[] = [
+const landmarks: { name: string, point: Point, labelOnLeft?: boolean }[] = [
   ...northernRegions.map(({ id, name, at }) => ({ name, point: at, labelOnLeft: id === 'pool' })),
   { name: 'Pinewoods', point: forest, labelOnLeft: true },
   { name: 'Lookout', point: lookout },
@@ -22,8 +31,10 @@ const landmarks: { name: string; point: Point; labelOnLeft?: boolean }[] = [
 ]
 
 const directions: Readonly<Record<string, Point>> = {
-  ArrowLeft: { x: -1, z: 0 }, ArrowRight: { x: 1, z: 0 },
-  ArrowDown: { x: 0, z: -1 }, ArrowUp: { x: 0, z: 1 },
+  ArrowLeft: { x: -1, z: 0 },
+  ArrowRight: { x: 1, z: 0 },
+  ArrowDown: { x: 0, z: -1 },
+  ArrowUp: { x: 0, z: 1 },
 }
 const viewCenter = { u: 0.5, v: 0.5 }
 
@@ -105,7 +116,7 @@ export function createLandscapeMap(controls: MapControls) {
   canvas.height = overlay.height = Math.round(canvas.width * landscapeMapSize.height / landscapeMapSize.width)
   const base = canvas.getContext('2d')
   const ink = overlay.getContext('2d')
-  const draftButtons = new Map<number, { button: HTMLButtonElement; object: DraftMapObject }>()
+  const draftButtons = new Map<number, { button: HTMLButtonElement, object: DraftMapObject }>()
   let ready = false
   let atlas: HTMLCanvasElement | undefined
   let view = fullMapView
@@ -131,7 +142,8 @@ export function createLandscapeMap(controls: MapControls) {
         return
       }
       status.textContent = `Placed ${placementKind.selectedOptions[0].text} at ${destination}.`
-    } else status.textContent = `Focused on ${destination}.`
+    }
+    else status.textContent = `Focused on ${destination}.`
     controls.jump(point)
     update()
   }
@@ -247,8 +259,7 @@ export function createLandscapeMap(controls: MapControls) {
       const art = atlas.getContext('2d')
       if (art) paintLandscapeMap(art)
     }
-    base.drawImage(atlas, atlas.width * view.u, atlas.height * view.v,
-      atlas.width / view.zoom, atlas.height / view.zoom, 0, 0, canvas.width, canvas.height)
+    base.drawImage(atlas, atlas.width * view.u, atlas.height * view.v, atlas.width / view.zoom, atlas.height / view.zoom, 0, 0, canvas.width, canvas.height)
     zoomLabel.textContent = `${Number(view.zoom.toFixed(1))}×`
     zoomOut.disabled = resetZoom.disabled = view.zoom === 1
     zoomIn.disabled = view.zoom === maxMapZoom
@@ -387,7 +398,8 @@ export function createLandscapeMap(controls: MapControls) {
       const { u, v } = clampMapPoint(viewPointOnMap({ u: start.u + delta.u, v: start.v + delta.v }, gesture.view))
       gesture.destination = roundedPoint(pointInWorld(u, v))
       update()
-    } else {
+    }
+    else {
       setView(panMap(gesture.view, delta))
     }
   }
@@ -424,7 +436,10 @@ export function createLandscapeMap(controls: MapControls) {
   zoomOut.addEventListener('click', () => changeZoom(0.5), events)
   resetZoom.addEventListener('click', () => setView(fullMapView), events)
 
-  toggle.addEventListener('click', () => { if (panel.hidden) show(true); else close() }, events)
+  toggle.addEventListener('click', () => {
+    if (panel.hidden) show(true)
+    else close()
+  }, events)
   closeButton.addEventListener('click', close, events)
   panel.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return
@@ -437,8 +452,12 @@ export function createLandscapeMap(controls: MapControls) {
       canvas.classList.toggle('is-placing', placeMode.checked)
     }, events)
   }
-  placementKind.addEventListener('change', () => { layoutKind.value = placementKind.value }, events)
-  layoutKind.addEventListener('change', () => { placementKind.value = layoutKind.value }, events)
+  placementKind.addEventListener('change', () => {
+    layoutKind.value = placementKind.value
+  }, events)
+  layoutKind.addEventListener('change', () => {
+    placementKind.value = layoutKind.value
+  }, events)
   canvas.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && !event.repeat) {
       event.preventDefault()

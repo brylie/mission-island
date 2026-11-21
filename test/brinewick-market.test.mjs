@@ -16,12 +16,12 @@ test('Brinewick sets up at dawn, trades, and settles the covers as the market cl
   assert.deepEqual(brinewickMarketAt({ hour: 17, rain: 0 }), { phase: 'closing', net: null, cover: 0 })
   const mid = brinewickMarketAt({ hour: 17.1, rain: 0 }).cover
   assert.ok(mid > 0 && mid < 1)
-  assert.equal(brinewickMarketAt({ hour: 18, rain: .8 }).cover, 1)
+  assert.equal(brinewickMarketAt({ hour: 18, rain: 0.8 }).cover, 1)
   assert.equal(brinewickMarketAt(weatherAt(nextDawn(301))).phase, 'setup')
 })
 
 test('a rainy setup restores directly to the rack inside the existing awning footprint', () => {
-  const hall = islandBuildings.find(b => b.site === 'fish-market')
+  const hall = islandBuildings.find((b) => b.site === 'fish-market')
   const awningLeft = hall.x - hall.width * streetCanopy.widthRatio / 2
   const awningRight = hall.x + hall.width * streetCanopy.widthRatio / 2
   const awningBack = hall.z + hall.depth / 2
@@ -43,14 +43,13 @@ test('market fixtures clear the storefront walk, delivery lane, marked bay, and 
   const apron = pavedYards.find(({ id }) => id === 'fish-market')
   const { stop } = sites.find(({ id }) => id === 'fish-market')
   function distanceToFixture(point, fixture) {
-    return Math.hypot(Math.max(0, Math.abs(point.x - fixture.x) - fixture.width / 2),
-      Math.max(0, Math.abs(point.z - fixture.z) - fixture.depth / 2))
+    return Math.hypot(Math.max(0, Math.abs(point.x - fixture.x) - fixture.width / 2), Math.max(0, Math.abs(point.z - fixture.z) - fixture.depth / 2))
   }
   assert.ok(walk.length > 2 && lane.samples.length > 2)
   for (const fixture of Object.values(brinewickMarketStops)) {
     // The 1.45 m walk plus room for the preview walker's collision radius.
-    assert.ok(walk.every(point => distanceToFixture(point, fixture) > 1), fixture.id)
-    assert.ok(lane.samples.every(point => distanceToFixture(point, fixture) > lane.width / 2), fixture.id)
+    assert.ok(walk.every((point) => distanceToFixture(point, fixture) > 1), fixture.id)
+    assert.ok(lane.samples.every((point) => distanceToFixture(point, fixture) > lane.width / 2), fixture.id)
     assert.ok(fixture.x + fixture.width / 2 < apron.x - apron.width / 2, fixture.id)
   }
   const [rear, front] = flatbedGroundDrive.wheels.axles

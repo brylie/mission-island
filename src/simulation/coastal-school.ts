@@ -6,15 +6,15 @@ export function createCoastalSchool(seed: number, origin: Point, waterDepth: (po
   const depth = (p: Point) => waterDepth(toWorld(p))
   const habitat: SwimHabitat = {
     // Leave room above the bed for the head and tail, including on a slope.
-    navigable: p => depth(p) >= .48,
+    navigable: (p) => depth(p) >= 0.48,
     steer(p, vx, vz) {
-      const d = depth({ x: p.x + vx * .65, z: p.z + vz * .65 })
-      const shallow = Math.max(0, .95 - d) * 6
-      const deep = Math.min(.8, Math.max(0, d - 1.45) * 1.3)
+      const d = depth({ x: p.x + vx * 0.65, z: p.z + vz * 0.65 })
+      const shallow = Math.max(0, 0.95 - d) * 6
+      const deep = Math.min(0.8, Math.max(0, d - 1.45) * 1.3)
       if (!shallow && !deep) return { x: 0, z: 0 }
-      const dx = depth({ x: p.x + .4, z: p.z }) - depth({ x: p.x - .4, z: p.z })
-      const dz = depth({ x: p.x, z: p.z + .4 }) - depth({ x: p.x, z: p.z - .4 })
-      const scale = (shallow - deep) / Math.max(.01, Math.hypot(dx, dz))
+      const dx = depth({ x: p.x + 0.4, z: p.z }) - depth({ x: p.x - 0.4, z: p.z })
+      const dz = depth({ x: p.x, z: p.z + 0.4 }) - depth({ x: p.x, z: p.z - 0.4 })
+      const scale = (shallow - deep) / Math.max(0.01, Math.hypot(dx, dz))
       return { x: dx * scale, z: dz * scale }
     },
   }
@@ -22,8 +22,8 @@ export function createCoastalSchool(seed: number, origin: Point, waterDepth: (po
   for (const fish of school.fish) {
     // Seeds can straddle the waterline. Pull those fish in toward the authored wet origin.
     for (let attempt = 0; attempt < 12 && !habitat.navigable(fish); attempt++) {
-      fish.x *= .75
-      fish.z *= .75
+      fish.x *= 0.75
+      fish.z *= 0.75
     }
   }
   function step(threats: readonly SchoolThreat[]) {
@@ -37,7 +37,7 @@ export function createCoastalSchool(seed: number, origin: Point, waterDepth: (po
   function frame() {
     return {
       leader: school.leader,
-      fish: school.fish.map(f => {
+      fish: school.fish.map((f) => {
         const { x, z } = toWorld(f)
         return { x: round(x), z: round(z), heading: round(f.heading), startled: f.alarm > 0 }
       }),

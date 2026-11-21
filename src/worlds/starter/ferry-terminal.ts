@@ -5,8 +5,8 @@ import type { Point } from '../../world.ts'
 export const ferryYard = { minX: -26.3, maxX: -16.5, minZ: -29.5, maxZ: -19.5 }
 
 export function inFerryYard({ x, z }: Point, margin = 0) {
-  return x > ferryYard.minX - margin && x < ferryYard.maxX + margin &&
-    z > ferryYard.minZ - margin && z < ferryYard.maxZ + margin
+  return x > ferryYard.minX - margin && x < ferryYard.maxX + margin
+    && z > ferryYard.minZ - margin && z < ferryYard.maxZ + margin
 }
 
 // The timber stack where hauled crates count toward the current repair stage.
@@ -22,4 +22,4 @@ export const timberPickups: readonly Point[] = [-1.2, 0, 1.2].map((dx) => ({ x: 
 
 // The landing deck beyond the barrier, restored with the last repair stage. It rises gently out to the ferry berth,
 // in segments shallow enough to walk and drive straight onto.
-export const rampDeck = { near: -36, far: -46.8, nearTop: .02, farTop: .14, segments: 4 }
+export const rampDeck = { near: -36, far: -46.8, nearTop: 0.02, farTop: 0.14, segments: 4 }

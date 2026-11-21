@@ -33,14 +33,23 @@ export function restoreIsland(
   // Place the barrier or the restored deck before parking, so a truck saved on the ramp parks on it.
   physics.placeFerry(savedFerry(save))
   const state: Snapshot = {
-    crewCoins: save?.crewCoins ?? 0, lastStarterPay: save?.lastStarterPay,
-    type: 'state', players: [], items: makeItems(),
-    mission: 'delivery', fire: 1, farm: farmPlots.map(() => 'grass'), ...initialGateRepair(), ...initialFerryRepair(),
+    crewCoins: save?.crewCoins ?? 0,
+    lastStarterPay: save?.lastStarterPay,
+    type: 'state',
+    players: [],
+    items: makeItems(),
+    mission: 'delivery',
+    fire: 1,
+    farm: farmPlots.map(() => 'grass'),
+    ...initialGateRepair(),
+    ...initialFerryRepair(),
     ...structuredClone(save?.world),
     skiff: restoreSkiff(save?.world.skiff),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
-    weather: weatherAt(islandTime), islandTime,
-    driftwood, juniper: juniper(0, weatherAt(islandTime), []),
+    weather: weatherAt(islandTime),
+    islandTime,
+    driftwood,
+    juniper: juniper(0, weatherAt(islandTime), []),
     jobs: structuredClone(save?.world.jobs ?? { active: null, completed: 0 }),
     // A resident added since the save starts as a stranger.
     residents: { ...initialResidents(starterResidents), ...structuredClone(save?.world.residents) },
@@ -66,11 +75,12 @@ export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['
   const { x, z, heading } = truck
   const { qualified, surveyed, aerial } = state.aviation
   return {
-    version: 6, crewCoins: state.crewCoins, islandTime: state.islandTime, growth: growth.slice(),
+    version: 6,
+    crewCoins: state.crewCoins,
+    islandTime: state.islandTime,
+    growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
-    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial },
-      gate, gateRepair, residents, journal, materialsWork, ferryRepair, produce: state.farmWork.progress,
-      ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
+    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial }, gate, gateRepair, residents, journal, materialsWork, ferryRepair, produce: state.farmWork.progress, ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }
 }

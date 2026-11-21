@@ -40,7 +40,8 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
     if (current.stage === 'sagging') {
       Object.assign(current, { stage: 'accepted', acceptedAt: state.islandTime })
       state.residents.wren = { ...state.residents.wren, active: gateFavor }
-    } else if (recallToolbox()) step(member, 'recalled')
+    }
+    else if (recallToolbox()) step(member, 'recalled')
   }
 
   const interactions = {

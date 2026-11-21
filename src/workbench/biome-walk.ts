@@ -7,7 +7,7 @@ import type { Point } from '../world'
 
 interface WalkState extends Point {
   heading: number
-  overview?: { alpha: number; beta: number; radius: number; target: [number, number, number] }
+  overview?: { alpha: number, beta: number, radius: number, target: [number, number, number] }
 }
 // Population edits rebuild the scene while keeping its settings object.
 const walks = new WeakMap<Values, WalkState>()
@@ -70,7 +70,7 @@ export function createBiomeWalk(meshes: MeshFactory, settings: Values, navigatio
     const height = navigation.lift(state)
     crew.root.position.set(state.x, height, state.z)
     crew.root.rotation.y = state.heading
-    poseCrew(crew, phase, moving ? .55 : 0, false)
+    poseCrew(crew, phase, moving ? 0.55 : 0, false)
     crew.blink(phase + performance.now() / 1000)
     cam.target.set(state.x, height + 1.03, state.z)
     cam.beta = Math.min(cam.beta, 1.55)

@@ -49,8 +49,8 @@ const caustics: Builder = (meshes, origin, studio) => {
     ink = vec4(.70,.97,.66, focus * bed * border * response * .62);
   ` })
   grid(meshes, effect, 'Caustics on the bed', 6.7, 5.7, 32, (x, z) => studio
-    ? -.29 - .14 * Math.exp(-(x*x+z*z) * .75)
-    : groundHeight({ x: origin.x + x, z: origin.z + z }) - origin.y + .029, -1)
+    ? -0.29 - 0.14 * Math.exp(-(x * x + z * z) * 0.75)
+    : groundHeight({ x: origin.x + x, z: origin.z + z }) - origin.y + 0.029, -1)
   return effect
 }
 
@@ -96,10 +96,10 @@ const shear: Builder = (meshes, origin, studio) => {
     for (let col = 0; col <= 12; col++) {
       const u = col / 12
       const lane = u * 2 - 1
-      const center = studio ? Math.sin(progress * 2.9) * .34 : streamX(z) - origin.x
-      const y = studio ? (section.y + .115) * .72 : section.y - origin.y
+      const center = studio ? Math.sin(progress * 2.9) * 0.34 : streamX(z) - origin.x
+      const y = studio ? (section.y + 0.115) * 0.72 : section.y - origin.y
       const localZ = studio ? z - 87.4 : z - origin.z
-      vertices.push(center + lane * section.halfWidth * .92, y + .041, localZ)
+      vertices.push(center + lane * section.halfWidth * 0.92, y + 0.041, localZ)
       uvs.push(u, progress)
       if (row && col) {
         const d = row * 13 + col, b = d - 13
@@ -113,5 +113,9 @@ const shear: Builder = (meshes, origin, studio) => {
 }
 
 export const waterBuilders = {
-  'skiff-wake': wake, 'wading-rings': wading, 'seabed-caustics': caustics, 'water-rain-rings': rainRings, 'waterfall-shear': shear,
+  'skiff-wake': wake,
+  'wading-rings': wading,
+  'seabed-caustics': caustics,
+  'water-rain-rings': rainRings,
+  'waterfall-shear': shear,
 }

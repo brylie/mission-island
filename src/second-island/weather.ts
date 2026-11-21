@@ -7,7 +7,7 @@ export const saltwindRainAt = (seconds: number) => saltwindLiveWeather(seconds).
 const surveyWeather: Record<string, Weather> = {
   morning: { hour: 6.8, rain: 0 },
   daylight: { hour: 13, rain: 0 },
-  rain: { hour: 15, rain: .85 },
+  rain: { hour: 15, rain: 0.85 },
   dusk: { hour: 17.6, rain: 0 },
   night: { hour: 23, rain: 0 },
 }

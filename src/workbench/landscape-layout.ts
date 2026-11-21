@@ -18,7 +18,7 @@ type Draft = ReturnType<typeof createLandscapeDraft>
 type DraftChange = ReturnType<Draft['undo']>
 type Motor = Parameters<typeof stepPlayerOnTerrain>[0]
 
-export type DraftMapObject = Point & { id: number; name: string }
+export type DraftMapObject = Point & { id: number, name: string }
 
 function nodeFor(meshes: MeshFactory, placement: Draft['objects'][number]) {
   const crew = placement.kind === 'player' ? createCrew(meshes, 0) : undefined
@@ -33,17 +33,22 @@ function nodeFor(meshes: MeshFactory, placement: Draft['objects'][number]) {
     const crate = createSupply(meshes, 'crate')
     crate.parent = root
     crate.position.y = crateSize / 2
-  } else if (placement.kind === 'rock') {
+  }
+  else if (placement.kind === 'rock') {
     meshes.sphere(0, 0.37, 0, 2.24, 1.34, 1.81, meshes.paintSurface('stone'), root)
-  } else if (placement.kind === 'tree') {
+  }
+  else if (placement.kind === 'tree') {
     meshes.cylinder(0, 1.1, 0, 0.32, 0.42, 2.2, 8, '#765b48', root)
     meshes.cylinder(0, 2.7, 0, 0.12, 3.1, 3.5, 9, meshes.paintSurface('leaves'), root)
-  } else if (placement.kind === 'chest') {
+  }
+  else if (placement.kind === 'chest') {
     createHomeChest(meshes, { x: 0, z: 0 }, '#4faba4').root.parent = root
-  } else if (placement.kind === 'rail' || placement.kind === 'bench' || placement.kind === 'planter') {
+  }
+  else if (placement.kind === 'rail' || placement.kind === 'bench' || placement.kind === 'planter') {
     const model = placement.kind
     createSiteFeature(meshes, { x: 0, z: 0, site: 'draft', name: labels[model], model, color: '#539285' }).parent = root
-  } else if (truckPose) {
+  }
+  else if (truckPose) {
     const truck = createFlatbed(meshes)
     truck.root.parent = root
     root.position.y = truckPose.y
@@ -52,8 +57,7 @@ function nodeFor(meshes: MeshFactory, placement: Draft['objects'][number]) {
   return { placement, root, motor, crew, truckPose, stride: 0 }
 }
 
-export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasElement, draft: Draft,
-  focus: () => Point & { yaw: number }) {
+export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasElement, draft: Draft, focus: () => Point & { yaw: number }) {
   const panel = document.getElementById('landscape-layout')!
   const kind = document.querySelector<HTMLSelectElement>('#landscape-kind')!
   const selected = document.querySelector<HTMLSelectElement>('#landscape-selected')!
@@ -91,7 +95,8 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
       const { y, heading, pitch, roll } = object.truckPose
       object.root.position.set(x, y, z)
       object.root.rotation.set(pitch, heading, roll)
-    } else {
+    }
+    else {
       const y = walkingHeight({ x, z })
       object.root.position.set(x, y, z)
       if (object.crew) {
@@ -108,12 +113,14 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
     if (action === 'insert') {
       objects.splice(index, 0, nodeFor(meshes, object))
       refreshSelection(index)
-    } else if (action === 'remove') {
+    }
+    else if (action === 'remove') {
       const previous = selected.selectedIndex
       const [removed] = objects.splice(index, 1)
       removed.root.dispose()
       refreshSelection(previous > index ? previous - 1 : Math.min(previous, objects.length - 1))
-    } else {
+    }
+    else {
       positionObject(objects[index])
       selected.selectedIndex = index
     }
@@ -133,7 +140,9 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
 
   const objectIndex = (id: number) => objects.findIndex(({ placement }) => placement.id === id)
   const placeAt = (point: Point) => showChange(draft.place(kind.value, point), 'Object placed.')
-  document.getElementById('landscape-add')?.addEventListener('click', () => { placeAt(focus()) }, events)
+  document.getElementById('landscape-add')?.addEventListener('click', () => {
+    placeAt(focus())
+  }, events)
   move.addEventListener('click', () => {
     showChange(draft.move(selected.selectedIndex, focus()), 'Object moved.')
   }, events)
@@ -145,8 +154,8 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
   window.addEventListener('keydown', (event) => {
     if (event.defaultPrevented || event.isComposing || event.altKey || (!event.metaKey && !event.ctrlKey)) return
     const target = event.target
-    if (target instanceof HTMLElement && (target.isContentEditable ||
-      target.matches('textarea, input:not([type="range"], [type="checkbox"], [type="radio"])'))) return
+    if (target instanceof HTMLElement && (target.isContentEditable
+      || target.matches('textarea, input:not([type="range"], [type="checkbox"], [type="radio"])'))) return
     const key = event.key.toLowerCase()
     if (key !== 'z' && !(key === 'y' && event.ctrlKey && !event.metaKey && !event.shiftKey)) return
     event.preventDefault()
@@ -154,7 +163,8 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
   }, events)
   document.getElementById('landscape-save')?.addEventListener('click', () => {
     status.textContent = writeStorage('localStorage', draftStorageKey, JSON.stringify(draft.placements()))
-      ? 'Draft saved in this browser.' : 'Browser storage is unavailable. Export the draft as JSON.'
+      ? 'Draft saved in this browser.'
+      : 'Browser storage is unavailable. Export the draft as JSON.'
   }, events)
   document.getElementById('landscape-export')?.addEventListener('click', () => {
     const url = URL.createObjectURL(new Blob([JSON.stringify(draft.placements(), null, 2) + '\n'], { type: 'application/json' }))
@@ -188,8 +198,8 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
     let top = -Infinity
     for (const { placement, root } of objects) {
       const { kind } = placement
-      if (kind === 'crate' && Math.abs(point.x - placement.x) < crateSize / 2 + margin &&
-        Math.abs(point.z - placement.z) < crateSize / 2 + margin) top = Math.max(top, root.position.y + crateSize)
+      if (kind === 'crate' && Math.abs(point.x - placement.x) < crateSize / 2 + margin
+        && Math.abs(point.z - placement.z) < crateSize / 2 + margin) top = Math.max(top, root.position.y + crateSize)
       if (kind === 'rock' && distance(point, placement) < 1.05 + margin) top = Math.max(top, root.position.y + 1.04)
       if (kind === 'tree' && distance(point, placement) < 0.24 + margin) top = Math.max(top, root.position.y + 2.2)
     }
@@ -204,7 +214,10 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
       if (index >= 0) selected.selectedIndex = index
     },
     mapObjects: (): DraftMapObject[] => draft.objects.map(({ id, kind, x, z }, index) => ({
-      id, name: `${labels[kind]} ${index + 1}`, x, z,
+      id,
+      name: `${labels[kind]} ${index + 1}`,
+      x,
+      z,
     })),
     meshes: () => objects.flatMap(({ root }) => root.getChildMeshes()),
     update(delta: number, time: number) {
@@ -214,8 +227,11 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
       const dz = Number(keys.has('KeyW')) - Number(keys.has('KeyS'))
       const { yaw } = focus()
       const input = {
-        x: dx * Math.cos(yaw) + dz * Math.sin(yaw), z: dz * Math.cos(yaw) - dx * Math.sin(yaw),
-        sprint: keys.has('ShiftLeft') || keys.has('ShiftRight'), spray: false, careful: false,
+        x: dx * Math.cos(yaw) + dz * Math.sin(yaw),
+        z: dz * Math.cos(yaw) - dx * Math.sin(yaw),
+        sprint: keys.has('ShiftLeft') || keys.has('ShiftRight'),
+        spray: false,
+        careful: false,
       }
       const trucks = objects.flatMap(({ truckPose }) => truckPose ? [truckPose] : [])
       carriedTime += delta

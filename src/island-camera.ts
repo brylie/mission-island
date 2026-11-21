@@ -72,8 +72,7 @@ function frameOverview(camera: FreeCamera, aspect: number) {
 // and always looks through it, so the reticle sits over the shoulder rather than on the character.
 // Looking down tips the aim ray onto the ground just ahead. A vehicle keeps a lower, centred pivot.
 function shoulderRig(vehicleBlend: number, pitch: number) {
-  return { radius: 5.92 + vehicleBlend * 3.38, elevation: 0.32 - vehicleBlend * 0.025 + pitch,
-    shoulder: 0.38 * (1 - vehicleBlend), pivotHeight: 1.55 + 0.5 * (1 - vehicleBlend) }
+  return { radius: 5.92 + vehicleBlend * 3.38, elevation: 0.32 - vehicleBlend * 0.025 + pitch, shoulder: 0.38 * (1 - vehicleBlend), pivotHeight: 1.55 + 0.5 * (1 - vehicleBlend) }
 }
 
 export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
@@ -111,7 +110,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   let mouseLook = true
   let attemptedLock = false
   let hadLock = false
-  let previousMouse: { x: number; y: number } | undefined
+  let previousMouse: { x: number, y: number } | undefined
   let look: LookSettings = { invertHorizontal: false, invertVertical: false, speed: 1 }
 
   function syncMouseLook() {
@@ -131,7 +130,8 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       // Some browsers and embedded previews limit pointer lock. Mouse look
       // still works while the cursor is over the canvas in those environments.
       void canvas.requestPointerLock()?.catch(() => {})
-    } catch {
+    }
+    catch {
       // Older implementations can report the restriction synchronously.
     }
   }
@@ -190,7 +190,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
         return overview
       }
 
-      if (ridge && ridge !== ridgeView) orbitPitch = .14
+      if (ridge && ridge !== ridgeView) orbitPitch = 0.14
       const snap = !tracking || Vector3.DistanceSquared(anchor, subject.position) > 196
       const blend = snap ? 1 : 1 - Math.exp(-delta * 8)
       seated ||= ridge === 'flight'
@@ -211,8 +211,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       const forwardZ = Math.cos(heading)
       const { radius, elevation, shoulder, pivotHeight } = shoulderRig(vehicleBlend, pitch)
       pivot.set(anchor.x + forwardZ * shoulder, anchor.y + pivotHeight, anchor.z - forwardX * shoulder)
-      desired.set(pivot.x - forwardX * radius * Math.cos(elevation), pivot.y + radius * Math.sin(elevation),
-        pivot.z - forwardZ * radius * Math.cos(elevation))
+      desired.set(pivot.x - forwardX * radius * Math.cos(elevation), pivot.y + radius * Math.sin(elevation), pivot.z - forwardZ * radius * Math.cos(elevation))
       const clear = terrainClearance(pivot, desired, visibleArm(pivot, desired))
       arm = snap ? clear : Math.min(clear, arm + (clear - arm) * blend)
       Vector3.LerpToRef(pivot, desired, arm, follow.position)
@@ -235,8 +234,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       if (!tracking) return
       const offset = follow.position.subtract(target)
       const radius = offset.length()
-      return { target: target.asArray(), alpha: Math.atan2(offset.z, offset.x), beta: Math.acos(offset.y / radius),
-        radius, fov: follow.fov }
+      return { target: target.asArray(), alpha: Math.atan2(offset.z, offset.x), beta: Math.acos(offset.y / radius), radius, fov: follow.fov }
     },
     walkInput(x: number, z: number) {
       if (!tracking || wasSeated || (!x && !z)) return { x, z }

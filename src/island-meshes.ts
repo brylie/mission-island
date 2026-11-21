@@ -70,8 +70,7 @@ export function createMeshFactory(scene: Scene, shadows: ShadowGenerator) {
     return material
   }
 
-  function place(mesh: Mesh, x: number, y: number, z: number, color: string | Material,
-    root?: TransformNode, casts = true) {
+  function place(mesh: Mesh, x: number, y: number, z: number, color: string | Material, root?: TransformNode, casts = true) {
     mesh.position.set(x, y, z)
     const material = typeof color === 'string' ? paint(color) : color
     mesh.material = material
@@ -79,30 +78,29 @@ export function createMeshFactory(scene: Scene, shadows: ShadowGenerator) {
     if (root) {
       mesh.parent = root
       if (casts) shadows.addShadowCaster(mesh, false)
-    } else if (casts) {
+    }
+    else if (casts) {
       const batch = batches.get(material) ?? []
       batch.push(mesh)
       batches.set(material, batch)
-    } else {
+    }
+    else {
       noShadow.push(mesh)
     }
     return mesh
   }
 
-  function box(x: number, y: number, z: number, width: number, height: number, depth: number,
-    color: string | Material, root?: TransformNode, casts = true) {
+  function box(x: number, y: number, z: number, width: number, height: number, depth: number, color: string | Material, root?: TransformNode, casts = true) {
     return place(CreateBox('Box', { width, height, depth }, scene), x, y, z, color, root, casts)
   }
 
-  function sphere(x: number, y: number, z: number, width: number, height: number, depth: number,
-    color: string | Material, root?: TransformNode, casts = true, segments = 6) {
+  function sphere(x: number, y: number, z: number, width: number, height: number, depth: number, color: string | Material, root?: TransformNode, casts = true, segments = 6) {
     const mesh = CreateSphere('Sphere', { diameter: 1, segments }, scene)
     mesh.scaling.set(width, height, depth)
     return place(mesh, x, y, z, color, root, casts)
   }
 
-  function cylinder(x: number, y: number, z: number, top: number, bottom: number, height: number,
-    sides: number, color: string | Material, root?: TransformNode, casts = true) {
+  function cylinder(x: number, y: number, z: number, top: number, bottom: number, height: number, sides: number, color: string | Material, root?: TransformNode, casts = true) {
     const mesh = CreateCylinder('Cylinder', { diameterTop: top, diameterBottom: bottom, height, tessellation: sides }, scene)
     return place(mesh, x, y, z, color, root, casts)
   }

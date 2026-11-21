@@ -45,11 +45,13 @@ class FakeContext {
       stop() { ended.forEach((listener) => listener()) },
     })
   }
+
   setState(state) {
     this.state = state
     this.onstatechange?.()
     return Promise.resolve()
   }
+
   resume() { return this.setState('running') }
   suspend() { return this.setState('suspended') }
   close() { return this.setState('closed') }
@@ -64,7 +66,10 @@ function heldRenderer() {
   return {
     held,
     renderer: () => ({ render: (rendered) => new Promise((resolve) => held.push(() => resolve(inlineRenderer().render(rendered)))), dispose() {} }),
-    release: async () => { held.splice(0).forEach((finish) => finish()); await settle() },
+    release: async () => {
+      held.splice(0).forEach((finish) => finish())
+      await settle()
+    },
   }
 }
 

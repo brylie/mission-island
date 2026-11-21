@@ -6,10 +6,11 @@ import { readReference, referenceDescription, withReference } from './reference-
 
 function savedReference(key: string) {
   try {
-    const saved = JSON.parse(readStorage('localStorage', key) ?? 'null') as { address?: string; open?: boolean; description?: string; crop?: string } | null
+    const saved = JSON.parse(readStorage('localStorage', key) ?? 'null') as { address?: string, open?: boolean, description?: string, crop?: string } | null
     const address = readReference(saved?.address ?? '')?.source ?? ''
     return { address, description: referenceDescription(saved?.description), open: Boolean(address && saved?.open), crop: readCrop(saved?.crop) }
-  } catch {
+  }
+  catch {
     return { address: '', description: '', open: false, crop: fitCrop }
   }
 }
@@ -50,7 +51,9 @@ export function createReferencePane() {
     window.clearTimeout(pending)
     pending = window.setTimeout(remember, 150)
   })
-  window.addEventListener('pagehide', () => { if (pending !== undefined) remember() })
+  window.addEventListener('pagehide', () => {
+    if (pending !== undefined) remember()
+  })
 
   function display(open: boolean, crop = controls.crop, focalX?: number) {
     controls.reset(crop)
@@ -105,7 +108,7 @@ export function createReferencePane() {
     remember()
     if (!pane.hidden) (editor.open ? input : editor.querySelector('summary'))?.focus()
   })
-  pane.addEventListener('keydown', event => {
+  pane.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return
     event.stopPropagation()
     display(false)
@@ -113,7 +116,7 @@ export function createReferencePane() {
     toggle.focus()
   })
   input.addEventListener('input', () => input.setCustomValidity(''))
-  form.addEventListener('submit', event => {
+  form.addEventListener('submit', (event) => {
     event.preventDefault()
     const ref = readReference(input.value.trim())
     if (!ref) {
@@ -161,7 +164,8 @@ export function createReferencePane() {
         description = referenceDescription(params.get('refAlt'))
         display(true, readCrop(params.get('crop')), focalX)
         remember()
-      } else {
+      }
+      else {
         display(open, crop)
         if (open) remember()
       }

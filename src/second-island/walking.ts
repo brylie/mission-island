@@ -5,7 +5,11 @@ import type { MapPoint } from './sites.ts'
 import { groundHeight, surfaceHeight, waterHeight } from './terrain.ts'
 
 interface Block extends MapPoint {
-  bottom: number; top: number; width: number; depth: number; heading: number
+  bottom: number
+  top: number
+  width: number
+  depth: number
+  heading: number
 }
 
 // Index the unmerged, metre-scale model parts. This keeps the spaces between
@@ -32,7 +36,7 @@ export class ScenerySolids {
     for (const mesh of meshes) {
       const m = mesh.computeWorldMatrix(true).m
       const box = mesh.getBoundingInfo().boundingBox
-      if (box.maximumWorld.y - box.minimumWorld.y < .055) continue
+      if (box.maximumWorld.y - box.minimumWorld.y < 0.055) continue
       const heading = Math.atan2(-m[2], m[0])
       const c = Math.cos(heading), s = Math.sin(heading)
       const { x, z } = box.centerWorld
@@ -41,8 +45,7 @@ export class ScenerySolids {
         halfWidth = Math.max(halfWidth, Math.abs((p.x - x) * c - (p.z - z) * s))
         halfDepth = Math.max(halfDepth, Math.abs((p.x - x) * s + (p.z - z) * c))
       }
-      this.add({ x, z, heading, width: 2 * halfWidth, depth: 2 * halfDepth,
-        bottom: box.minimumWorld.y, top: box.maximumWorld.y })
+      this.add({ x, z, heading, width: 2 * halfWidth, depth: 2 * halfDepth, bottom: box.minimumWorld.y, top: box.maximumWorld.y })
     }
   }
 
@@ -63,7 +66,7 @@ export class ScenerySolids {
   }
 }
 
-interface Walker extends MapPoint { y: number; velocity: number; swimming: boolean; grounded: boolean }
+interface Walker extends MapPoint { y: number, velocity: number, swimming: boolean, grounded: boolean }
 export function placeWalker(p: MapPoint): Walker {
   const floor = surfaceHeight(p.x, p.z), water = waterHeight(p.x, p.z)
   const swimming = water - floor > wadeDepth
@@ -71,31 +74,39 @@ export function placeWalker(p: MapPoint): Walker {
 }
 
 export function walkSaltwind(p: Walker, solids: ScenerySolids, vx: number, vz: number, jump: boolean, dt: number) {
-  if (jump && p.grounded) { p.velocity = jumpSpeed; p.grounded = false }
+  if (jump && p.grounded) {
+    p.velocity = jumpSpeed
+    p.grounded = false
+  }
   const beforeX = p.x, beforeZ = p.z
   const steps = Math.max(1, Math.ceil(dt * 90)), step = dt / steps
   for (let i = 0; i < steps; i++) {
     const feet = p.y
-    const allowance = p.grounded || p.swimming ? .31 : .055
+    const allowance = p.grounded || p.swimming ? 0.31 : 0.055
     const move = (x: number, z: number) => {
       if (x < waterBounds.minX || x > waterBounds.maxX || z < waterBounds.minZ || z > waterBounds.maxZ) return
       const surface = surfaceHeight(x, z, feet + allowance)
-      if (surface > feet + allowance || solids.at(x, z, .28).some((b) =>
+      if (surface > feet + allowance || solids.at(x, z, 0.28).some((b) =>
         b.top > feet + allowance && b.bottom < feet + 1.78)) return
-      p.x = x; p.z = z
+      p.x = x
+      p.z = z
     }
     if (vx) move(p.x + vx * step, p.z)
     if (vz) move(p.x, p.z + vz * step)
     let floor = surfaceHeight(p.x, p.z, feet + allowance)
     let ceiling = Infinity
-    for (const b of solids.at(p.x, p.z, .21)) {
+    for (const b of solids.at(p.x, p.z, 0.21)) {
       if (b.top <= feet + allowance) floor = Math.max(floor, b.top)
       if (b.bottom >= feet + 1.78) ceiling = Math.min(ceiling, b.bottom)
     }
     const water = waterHeight(p.x, p.z)
-    if (water - floor > wadeDepth && feet <= water + .05 && p.velocity <= 0) {
-      p.swimming = true; p.grounded = false; p.velocity = 0; p.y = water - 1.01
-    } else {
+    if (water - floor > wadeDepth && feet <= water + 0.05 && p.velocity <= 0) {
+      p.swimming = true
+      p.grounded = false
+      p.velocity = 0
+      p.y = water - 1.01
+    }
+    else {
       p.swimming = false
       p.velocity -= jumpGravity * step
       if (feet + p.velocity * step + 1.78 >= ceiling) p.velocity = Math.min(p.velocity, 0)
@@ -109,11 +120,11 @@ export function walkSaltwind(p: Walker, solids: ScenerySolids, vx: number, vz: n
 
 export function clearCameraDistance(p: Walker, solids: ScenerySolids, dx: number, dy: number, dz: number) {
   const length = Math.hypot(dx, dy, dz)
-  const samples = Math.ceil(length / .24)
+  const samples = Math.ceil(length / 0.24)
   for (let i = 1; i <= samples; i++) {
     const t = i / samples, x = p.x + dx * t, z = p.z + dz * t, y = p.y + 1.6 + dy * t
-    if (groundHeight(x, z) > y - .15 || solids.at(x, z, .17).some((b) => b.bottom - .12 < y && b.top + .12 > y)) {
-      return Math.max(.02, (i - 1) / samples)
+    if (groundHeight(x, z) > y - 0.15 || solids.at(x, z, 0.17).some((b) => b.bottom - 0.12 < y && b.top + 0.12 > y)) {
+      return Math.max(0.02, (i - 1) / samples)
     }
   }
   return 1

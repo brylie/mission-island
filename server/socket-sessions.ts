@@ -9,7 +9,8 @@ function readMessage(data: RawData): Record<string, unknown> | undefined {
     const buffer = Array.isArray(data) ? Buffer.concat(data) : Buffer.isBuffer(data) ? data : Buffer.from(new Uint8Array(data))
     const parsed: unknown = JSON.parse(buffer.toString('utf8'))
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : undefined
-  } catch {
+  }
+  catch {
     return undefined
   }
 }
@@ -18,7 +19,7 @@ type Simulation = Pick<ReturnType<typeof createGame>, 'join' | 'tick'>
 type JoinedCrew = Extract<ReturnType<Simulation['join']>, { type: 'joined' }>
 
 export function createSocketSessions(game: Simulation, scenarios?: readonly ScenarioSummary[]) {
-  const joinedSockets = new Map<WebSocket, { token: string; id: number }>()
+  const joinedSockets = new Map<WebSocket, { token: string, id: number }>()
 
   function connect(socket: WebSocket) {
     let crew: JoinedCrew | undefined

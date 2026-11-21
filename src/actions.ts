@@ -9,8 +9,8 @@ export { heldItem }
 export { atClothingCounter, atHomeDoor } from './interactions/home.ts'
 
 export function canSpray(state: Snapshot, player: Player, item?: Item) {
-  return state.mission === 'fire' && !player.seat &&
-    item?.kind === 'extinguisher'
+  return state.mission === 'fire' && !player.seat
+    && item?.kind === 'extinguisher'
 }
 
 export function inSkiff(seat: Player['seat']) {
@@ -18,9 +18,9 @@ export function inSkiff(seat: Player['seat']) {
 }
 
 export function canBoardSkiff(state: Snapshot, player: Player) {
-  return !player.seat && player.grounded && !player.onBed && !heldItem(state, player) &&
-    Math.abs(state.skiff.speed) < 0.65 && distance(state.skiff, player) < 3.3 &&
-    state.players.filter((crew) => inSkiff(crew.seat)).length < 2
+  return !player.seat && player.grounded && !player.onBed && !heldItem(state, player)
+    && Math.abs(state.skiff.speed) < 0.65 && distance(state.skiff, player) < 3.3
+    && state.players.filter((crew) => inSkiff(crew.seat)).length < 2
 }
 
 export function canCast(state: Snapshot, player: Player) {
@@ -39,9 +39,10 @@ function fallbackHint(state: Snapshot, player: Player): [string, string] {
   if (plot === 'tilled') return ['', player.starterSeedClaimed ? 'Buy carrot seeds at Seabrook Market' : 'Pick up a starter seed at home']
   if (plot === 'planted') return player.equipped === 'watering-can' ? ['Left click', 'Water carrots'] : ['3', 'Equip watering can']
   if (plot === 'watered') return ['', state.weather.hour > 6 && state.weather.hour < 18
-    ? 'Carrots are growing' : 'Watered · growth resumes at sunrise']
-  if (player.grounded && !player.onBed && !player.truckSurface && distance(player, state.truck) < 4.5 &&
-    Math.abs(state.truck.speed) <= truckSeatSpeed) return ['F', 'Board truck']
+    ? 'Carrots are growing'
+    : 'Watered · growth resumes at sunrise']
+  if (player.grounded && !player.onBed && !player.truckSurface && distance(player, state.truck) < 4.5
+    && Math.abs(state.truck.speed) <= truckSeatSpeed) return ['F', 'Board truck']
   if (canBoardSkiff(state, player)) return ['F', 'Board skiff']
   if (canCast(state, player)) return ['Left click', 'Hold and release to cast']
   return ['', '']
@@ -51,7 +52,8 @@ function ridingHint(state: Snapshot, player: Player): [string, string] {
   if (inSkiff(player.seat)) {
     if (canCast(state, player)) return ['Left click', 'Hold and release to cast']
     return player.inventory.includes('fishing-rod') && !player.equipped
-      ? ['1', 'Equip fishing rod'] : ['WASD', 'Paddle and steer']
+      ? ['1', 'Equip fishing rod']
+      : ['WASD', 'Paddle and steer']
   }
   if (Math.abs(state.truck.speed) <= truckSeatSpeed) return ['F', 'Exit truck']
   return player.seat === 'driver' ? ['Space', 'Brake to exit truck'] : ['', 'Wait for the truck to stop']
@@ -77,7 +79,7 @@ export function actionHint(state: Snapshot, player: Player, focus?: Interaction)
 
 // What E sends: the interaction the player chose, so the host can refuse one that is no longer open.
 export function interactRequest(state: Snapshot, player: Player, focus?: Interaction):
-  { type: 'interact'; choice?: InteractionChoice } | 'open-job-board' {
+  { type: 'interact', choice?: InteractionChoice } | 'open-job-board' {
   const option = chosenInteraction(state, player, focus)
   if (!option) return { type: 'interact' }
   if (option.action === 'job-board') return 'open-job-board'
