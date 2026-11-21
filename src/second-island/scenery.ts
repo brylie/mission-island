@@ -9,6 +9,8 @@ import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import '@babylonjs/core/Meshes/thinInstanceMesh'
 import { createHarborBoat } from '../assets/waterfront'
+import { createBrinewickFerry } from '../assets/brinewick-ferry'
+import { quayBollard, quayCrateStack, rescueSkiffOutboard, rescueSlipPosts } from '../assets/geometry/brinewick-waterfront'
 import { createTree } from '../assets/props'
 import { createPhenomena } from '../island-phenomena'
 import { createTarnstepSpray } from './tarnstep-spray'
@@ -17,16 +19,15 @@ import { placeSiteFeatures } from '../assets/site-props'
 import { distanceToRoute } from '../routes'
 import { createFlocks, createSchools } from '../wildlife'
 import type { WildlifeFrame } from '../wildlife'
-import { buildStockpiles, buildTarnstepLedges } from './quarry-art'
+import { buildStockpiles } from './quarry-art'
 import { habitatAt } from './habitats'
 import { brinewickMarketSubject } from './brinewick-market'
 import { createBrinewickMarket } from './brinewick-market-art'
-import { createExterior } from './exteriors'
 import { islandBuildings } from './lots'
 import { clearAirfield } from './landscape'
 import { createHoneyMarketStand, createLongAcreGarden } from './long-acre-art'
 import { longAcreSubject } from './long-acre'
-import { arrival, helipad, lowerLake, pavedYards, roundYards, seaLevel, sites, discoveryWalks, waterfront } from './sites'
+import { arrival, helipad, lowerLake, seaLevel, sites, discoveryWalks, waterfront } from './sites'
 import type { MapPoint } from './sites'
 import { groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
 import { createSaltwindVehicle } from './vehicles'
@@ -34,38 +35,8 @@ import { previewSandspit, sandspitShallows } from './sandspit-school'
 import type { VehicleId } from './vehicles'
 import { buildSigns } from './site-signs'
 import { saltwindFeatures } from './site-features'
-
-const cream = '#f5e5c2', slate = '#8a9185', pavement = '#858780'
-
-function createFerry(meshes: MeshFactory) {
-  const root = new TransformNode('Brinewick Ferry', meshes.scene)
-  const box = (x: number, y: number, z: number, w: number, h: number, d: number, color: string) =>
-    meshes.box(x, y, z, w, h, d, color, root)
-  box(0, 0.13, -3.02, 12, 1.32, 36, '#3b5158')
-  box(0, 0.96, -3.07, 11.7, 0.77, 35.78, '#a9473d')
-  box(0, 1.58, -3.04, 11.8, 0.38, 35.70, '#bca685')
-  box(0, 1.12, -21.20, 10.7, 0.87, 0.62, '#375058')
-  for (const side of [-1, 1]) {
-    box(side * 5.65, 1.49, -2.98, 0.37, 0.38, 35.9, cream)
-    box(side * 5.6, 2.64, -3, 0.13, 0.16, 35.45, cream)
-    for (let z = -19; z < 15; z += 4.5) box(side * 5.6, 2.18, z, 0.17, 0.92, 0.17, cream)
-    box(side * 3.2, 1.79, 3, 0.13, 0.018, 12.7, cream)
-    box(side * 5.1, 2.10, 12.7, 0.95, 0.78, 2.0, '#52696c')
-  }
-  box(0, 3.22, -15.9, 9.1, 3, 7.65, cream)
-  box(0, 4.86, -15.9, 9.6, 0.31, 8.16, '#42686c')
-  box(0, 3.84, -12.04, 7.75, 1.12, 0.10, '#547a83')
-  for (const x of [-2.75, -1.37, 0, 1.37, 2.75]) box(x, 3.84, -11.98, 0.12, 1.18, 0.08, cream)
-  box(-3.65, 5.54, -18.12, 0.69, 1.99, 0.81, '#ac5648')
-  box(0.47, 5.75, -16, 0.13, 1.63, 0.13, '#626f69')
-  box(0.47, 6.27, -16, 1.38, 0.10, 0.13, '#626f69')
-  return root
-}
-
-function paintBay(meshes: MeshFactory, x: number, y: number, z: number, width: number, depth: number) {
-  for (const side of [-1, 1]) meshes.box(x + side * width / 2, y + 0.024, z, 0.14, 0.025, depth, cream, undefined, false)
-  meshes.box(x, y + 0.026, z - depth / 2, width, 0.025, 0.14, cream, undefined, false)
-}
+import { buildYards } from './yard-scenery'
+import { ferryQuay, rescueSkiffMooring } from '../worlds/saltwind/layout/brinewick-waterfront'
 
 const vehicleSites: Record<Exclude<VehicleId, 'helicopter'>, string> = {
   ambulance: 'hospital',
@@ -93,102 +64,52 @@ function placeVehicles(meshes: MeshFactory, omit?: string) {
   }
 }
 
-function buildYards(meshes: MeshFactory, omit?: string) {
-  for (const building of islandBuildings) {
-    if (building.site === omit) continue
-    const { x, z, width, depth, facing } = building
-    const sideways = Math.abs(Math.sin(facing)) > 0.5
-    const a = sideways ? depth / 2 : width / 2, b = sideways ? width / 2 : depth / 2
-    const y = groundHeight(x, z)
-    const low = Math.min(...[-1, 1].flatMap((dx) => [-1, 1].map((dz) => groundHeight(x + dx * a, z + dz * b))))
-    const model = createExterior(meshes, building, Math.max(0.48, y - low + 0.22))
-    model.position.set(x, y, z)
-    model.rotation.y = facing
-    meshes.batchModel(model)
-  }
-
-  for (const pad of pavedYards.filter(({ id }) => !['runway', 'taxi', 'air-apron'].includes(id))) {
-    meshes.box(pad.x, pad.y - 0.12, pad.z, pad.width, 0.24, pad.depth, pavement, undefined, false)
-  }
-  const [, mine] = roundYards
-  const padRoot = new TransformNode('Mine turnaround', meshes.scene)
-  const turnaround = meshes.cylinder(mine.x, mine.y - 0.11, mine.z, mine.radius * 2, mine.radius * 2, 0.22, 42, pavement, padRoot)
-  turnaround.receiveShadows = true
-  meshes.shadows.removeShadowCaster(turnaround)
-  for (const site of sites.filter(({ id }) => ['fish-market', 'farmers-market', 'hospital', 'fire', 'mine', 'timber'].includes(id))) {
-    paintBay(meshes, site.stop.x, surfaceHeight(site.stop.x, site.stop.z), site.stop.z, site.id === 'fire' ? 5.1 : 4.4, site.id === 'timber' ? 13 : 9.5)
-  }
-
-  const padY = groundHeight(helipad.x, helipad.z)
-  meshes.cylinder(helipad.x, padY + 0.09, helipad.z, helipad.radius * 2, helipad.radius * 2, 0.18, 40, '#677670')
-  for (const side of [-1, 1]) meshes.box(helipad.x + side * 1.48, padY + 0.194, helipad.z, 0.41, 0.025, 4.8, cream, undefined, false)
-  meshes.box(helipad.x, padY + 0.196, helipad.z, 2.9, 0.025, 0.44, cream, undefined, false)
-  for (let i = 0; i < 12; i++) {
-    const angle = i * Math.PI / 6
-    meshes.box(helipad.x + 8.1 * Math.cos(angle), padY + 0.2, helipad.z + 8.1 * Math.sin(angle), 0.22, 0.06, 0.22, '#f1c679')
-  }
-
-  buildTarnstepLedges(meshes)
-
-  // A clear service corridor runs between the log stacks and the mill.
-  for (const [x, z] of [[-204, 164], [-209, 177], [-225, 177]]) for (let layer = 0; layer < 3; layer++) {
-    for (let n = 0; n < 5 - layer; n++) {
-      const log = meshes.cylinder(x + (n + layer * 0.5 - 2) * 0.76, 30.42 + layer * 0.61, z, 0.74, 0.82, 7.5, 10, '#936b47')
-      log.rotation.x = Math.PI / 2
-      for (const side of [-1, 1]) meshes.cylinder(log.position.x, log.position.y, z + side * 3.76, 0.61, 0.61, 0.035, 10, '#d4ad73').rotation.x = Math.PI / 2
-    }
-  }
-  for (const z of [182, 187, 192, 197]) for (const x of [9, 16, 24, 31]) {
-    const y = groundHeight(x, z)
-    const height = 0.76 + ((x + z) % 3) * 0.09
-    meshes.box(x, y + 0.07, z, 0.98, 0.14, 0.48, '#989888')
-    meshes.box(x, y + height / 2 + 0.1, z, 0.74, height, 0.30, slate)
-    meshes.sphere(x, y + height + 0.1, z, 0.74, 0.27, 0.31, slate, undefined, true, 8)
-    if ((x + z) % 3 === 0) {
-      meshes.cylinder(x + 0.28, y + 0.14, z - 0.4, 0.19, 0.14, 0.28, 7, '#a58167')
-      for (const dx of [-0.05, 0.05]) {
-        meshes.box(x + 0.28 + dx, y + 0.34, z - 0.4, 0.022, 0.16, 0.022, '#778958')
-        meshes.sphere(x + 0.28 + dx, y + 0.44, z - 0.4, 0.12, 0.10, 0.12, '#e1be92')
-      }
-    }
-  }
-  for (const dx of [-19, 19]) meshes.box(20 + dx, 30.43, 190, 0.55, 0.87, 28, '#a39c86')
-  for (const dx of [-10.3, 10.3]) meshes.box(20 + dx, 30.43, 176, 17.4, 0.87, 0.55, '#a39c86')
-  meshes.box(20, 30.42, 204, 38.4, 0.85, 0.56, '#a39c86')
-}
+const half = 0.5
+const rescueBobHeight = 0.065
+const rescueBobSpeed = 1.7
+const rescueRollAngle = 0.039
+const rescueRollSpeed = 1.28
 
 function buildWaterfront(meshes: MeshFactory) {
-  const ferry = createFerry(meshes)
-  ferry.position.set(arrival.x, 0, arrival.z)
+  const ferry = createBrinewickFerry(meshes)
+  ferry.position.set(arrival.x, seaLevel, arrival.z)
   meshes.batchModel(ferry)
-  for (const [x, z] of [[-287, -197], [-288, -203], [-261, -205], [-263, -202]]) {
-    const y = surfaceHeight(x, z)
-    for (let i = 0; i < 3; i++) {
-      meshes.box(x, y + i * 0.59 + 0.32, z, 1.3, 0.59, 1.2, i % 2 ? '#95a690' : '#c4a275')
-      for (const dx of [-0.52, 0.52]) meshes.box(x + dx, y + i * 0.59 + 0.32, z, 0.12, 0.61, 1.24, '#e2c29a')
+  const { count, baseCentreY, size, colors, band } = quayCrateStack
+  const [, crateHeight] = size
+  for (const { x, z } of ferryQuay.crateStacks) {
+    const floor = surfaceHeight(x, z)
+    for (let i = 0; i < count; i++) {
+      const y = floor + i * crateHeight + baseCentreY
+      meshes.box(x, y, z, ...size, colors[i % colors.length])
+      for (const dx of band.x) meshes.box(x + dx, y, z, ...band.size, band.color)
     }
   }
   // A vehicle stands clear of the eight-metre ramp and the quay's manoeuvring apron.
   const lorry = createSaltwindVehicle(meshes, 'hauler')
-  lorry.position.set(-278.3, 1.78, -268.5)
+  const { x: lorryX, y: lorryY, z: lorryZ } = ferryQuay.parkedHauler
+  lorry.position.set(lorryX, lorryY, lorryZ)
   meshes.batchModel(lorry)
-  for (const x of [-280.1, -267.9, -256.3, -249.7]) {
-    const z = x < -260 ? -241 : -260
-    const y = groundHeight(x, z)
-    meshes.cylinder(x, y + (4.7 - y) / 2, z, 0.69, 0.86, 4.7 - y, 10, slate)
-    meshes.sphere(x, 4.70, z, 0.78, 0.27, 0.78, cream)
+  const { top, body, cap } = quayBollard
+  for (const { x, z } of ferryQuay.bollards) {
+    const floor = groundHeight(x, z)
+    const height = top - floor
+    meshes.cylinder(x, floor + height * half, z, body.topDiameter, body.bottomDiameter, height, body.sides, body.color)
+    meshes.sphere(x, top, z, ...cap.size, cap.color)
   }
   const { x, z } = waterfront.rescue
-  for (const side of [-1, 1]) meshes.box(x + side * 5.2, surfaceHeight(x, z) + 0.48, z, 0.36, 1.1, 0.36, '#e29c62')
+  const posts = rescueSlipPosts
+  for (const side of [-1, 1]) {
+    meshes.box(x + side * posts.distanceFromCentre, surfaceHeight(x, z) + posts.centreY, z, ...posts.size, posts.color)
+  }
   const boat = createHarborBoat(meshes)
+  const { offsetFromSlip, heading } = rescueSkiffMooring
   boat.name = 'Rescue skiff'
-  boat.position.set(x - 7, 0.035, z - 15.6)
-  boat.rotation.y = 0.12
-  meshes.box(0, 0.4, -2.4, 0.48, 0.69, 0.42, '#54625b', boat)
-  meshes.box(0, 0.81, -2.44, 0.68, 0.34, 0.55, '#c8734b', boat)
+  boat.position.set(x + offsetFromSlip.x, offsetFromSlip.y, z + offsetFromSlip.z)
+  boat.rotation.y = heading
+  for (const [px, py, pz, w, h, d, color] of rescueSkiffOutboard) meshes.box(px, py, pz, w, h, d, color, boat)
   return (time: number) => {
-    boat.position.y = 0.035 + 0.065 * Math.sin(time * 1.7)
-    boat.rotation.z = 0.039 * Math.sin(time * 1.28)
+    boat.position.y = offsetFromSlip.y + rescueBobHeight * Math.sin(time * rescueBobSpeed)
+    boat.rotation.z = rescueRollAngle * Math.sin(time * rescueRollSpeed)
   }
 }
 

@@ -1,7 +1,7 @@
 {
   "eslint.config.mjs": {
     "no-magic-numbers": {
-      "count": 35
+      "count": 34
     }
   },
   "scripts/workbench-reference.mjs": {
@@ -244,16 +244,6 @@
       "count": 76
     }
   },
-  "src/assets/gameplay-surface-patterns.ts": {
-    "no-magic-numbers": {
-      "count": 705
-    }
-  },
-  "src/assets/gameplay-surface-recipes.ts": {
-    "no-magic-numbers": {
-      "count": 164
-    }
-  },
   "src/assets/gull.ts": {
     "no-magic-numbers": {
       "count": 110
@@ -277,11 +267,6 @@
   "src/assets/net-shed.ts": {
     "no-magic-numbers": {
       "count": 56
-    }
-  },
-  "src/assets/ore-hauler.ts": {
-    "no-magic-numbers": {
-      "count": 420
     }
   },
   "src/assets/oystercatcher.ts": {
@@ -402,16 +387,6 @@
   "src/assets/surface-pattern-tools.ts": {
     "no-magic-numbers": {
       "count": 12
-    }
-  },
-  "src/assets/surface-patterns.ts": {
-    "no-magic-numbers": {
-      "count": 447
-    }
-  },
-  "src/assets/surface-recipes.ts": {
-    "no-magic-numbers": {
-      "count": 167
     }
   },
   "src/assets/surface-textures.ts": {
@@ -951,17 +926,12 @@
   },
   "src/second-island/scenery.ts": {
     "no-magic-numbers": {
-      "count": 519
+      "count": 219
     }
   },
   "src/second-island/site-features.ts": {
     "no-magic-numbers": {
       "count": 33
-    }
-  },
-  "src/second-island/sites.ts": {
-    "no-magic-numbers": {
-      "count": 284
     }
   },
   "src/second-island/tarnstep-spray.ts": {

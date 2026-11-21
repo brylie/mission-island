@@ -69,7 +69,7 @@ export const surfaceStudies: Entry[] = surfaceRecipes.map((recipe) => {
     group: family,
     description,
     swatch: colors[1],
-    source: gameplaySurfaceFamilies.some((group) => group === family) ? 'src/assets/gameplay-surface-recipes.ts' : 'src/assets/surface-recipes.ts',
+    source: gameplaySurfaceFamilies.some((group) => group === family) ? 'src/assets/recipes/gameplay-surfaces.ts' : 'src/assets/recipes/standard-surfaces.ts',
     cameraRadius: width * 1.5,
     fieldSite: site && ((values) => {
       const { name, offset, ...view } = site
