@@ -4,7 +4,7 @@ import { actionHint, interactRequest } from '../src/actions.ts'
 import { juniperCenter } from '../src/juniper-habitat.ts'
 import { journalCatalog, journalEntry, journalSubjects } from '../src/journal/catalog.ts'
 import { fishAt, fishKinds } from '../src/journal/fish.ts'
-import { journalTally, noteConditions, placeName, placeNear, recordEntry } from '../src/journal/journal.ts'
+import { emptyJournal, journalTally, noteConditions, placeName, placeNear, recordEntry } from '../src/journal/journal.ts'
 import { journalInteractions, sightingEntries, sightingRange } from '../src/journal/sightings.ts'
 import { daySeconds, weatherAt } from '../src/weather.ts'
 import { beach, harbor } from '../src/world.ts'
@@ -18,18 +18,18 @@ const day = 0, shower = 122, night = 300
 function island(overrides = {}) {
   const state = JSON.parse(JSON.stringify(createGame().tick()))
   return {
-    ...state, islandTime: day, weather: weatherAt(day), journal: {},
-    juniper: { hares: [{ x: 0, z: 0, heading: 0, behavior: 'grazing' }], foxes: [{ x: 4, z: 0, heading: 0, behavior: 'chasing' }], clover: [] },
+    ...state, islandTime: day, weather: weatherAt(day), journal: emptyJournal(),
+    juniper: { hares: [{ x: 0, z: 0, heading: 0, behavior: 'fleeing' }], foxes: [{ x: 4, z: 0, heading: 0, behavior: 'chasing' }], clover: [] },
     driftwood: { leader: -1, fish: [{ x: 30, z: -52, heading: 0, startled: false }, { x: 32, z: -52, heading: 0, startled: false }] },
     ...overrides,
   }
 }
 
 test('the first record of an entry stands and the tally counts each page', () => {
-  const journal = {}
-  assert.deepEqual(recordEntry(journal, 'fish:sand-dab', { t: 4, by: 0 }), { t: 4, by: 0 })
-  assert.equal(recordEntry(journal, 'fish:sand-dab', { t: 9, by: 1 }), undefined)
-  assert.deepEqual(journal, { 'fish:sand-dab': { t: 4, by: 0 } })
+  const journal = emptyJournal()
+  assert.equal(recordEntry(journal, 'fish:sand-dab', { t: 4, by: 0 }), true)
+  assert.equal(recordEntry(journal, 'fish:sand-dab', { t: 9, by: 1 }), false)
+  assert.deepEqual(journal.entries, { 'fish:sand-dab': { first: { t: 4, by: 0 } } })
   recordEntry(journal, 'place:juniper', { t: 5, by: 1 })
   const tally = journalTally(journal)
   assert.equal(tally.total, journalCatalog.length)
@@ -48,6 +48,7 @@ test('journal ids are unique and keep their saved spelling', () => {
     'sight:school', 'sight:school/regrouping', 'sight:hare', 'sight:hare/grazing', 'sight:hare/fleeing', 'sight:hare/sheltering',
     'sight:fox', 'sight:fox/patrolling', 'sight:fox/watching', 'sight:gull', 'sight:gull/resting', 'sight:gull/gliding',
     'sight:willow', 'sight:clover', 'sight:lookout', 'sight:ferry',
+    'biome:driftwood-edge', 'sight:foxglove', 'sight:limpet',
   ])
   // Interactions name a subject by its place in this list, so the order is part of the wire contract.
   assert.deepEqual(journalSubjects.map(({ id }) => id),
@@ -85,17 +86,16 @@ test('the reticle offers each subject in range once, then only a behavior the cr
   const state = island()
   const options = journalInteractions(state, watcher)
   assert.deepEqual(options.map(({ name, label, subject }) => [name, label, subject]), [
-    ['Juniper hare · grazing', 'Record in journal', 16], ['Juniper fox', 'Record in journal', 32],
-    ...options.slice(2).map(({ name, subject }) => [name, 'Record in journal', subject]),
+    ['Brown hare · fleeing', 'Record in journal', 16], ['Juniper fox', 'Record in journal', 32],
   ])
-  assert.ok(options.slice(2).every(({ name }) => name === 'Hollow clover'))
-  assert.deepEqual(sightingEntries(state, watcher, 16).ids, ['sight:hare', 'sight:hare/grazing'])
+  assert.deepEqual(sightingEntries(state, watcher, 16).ids, ['sight:hare', 'sight:hare/fleeing'])
   // A fox that is chasing shows nothing the journal lists, so only the fox itself is new.
   assert.deepEqual(sightingEntries(state, watcher, 32).ids, ['sight:fox'])
 
-  state.journal = { 'sight:hare': { t: 0, by: 1 }, 'sight:fox': { t: 0, by: 1 } }
+  recordEntry(state.journal, 'sight:hare', { t: 0, by: 1 })
+  recordEntry(state.journal, 'sight:fox', { t: 0, by: 1 })
   assert.deepEqual(journalInteractions(state, watcher).filter(({ subject }) => subject < 48).map(({ label }) => label), ['Add this behavior to the journal'])
-  state.journal['sight:hare/grazing'] = { t: 0, by: 1 }
+  recordEntry(state.journal, 'sight:hare/fleeing', { t: 0, by: 1 })
   assert.deepEqual(journalInteractions(state, watcher).filter(({ subject }) => subject < 48), [])
   assert.deepEqual(sightingEntries(state, watcher, 16).ids, [])
 

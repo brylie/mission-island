@@ -5,8 +5,7 @@ import { aerialSurveys, type AviationProgress } from '../src/aviation.ts'
 import { farmOrders, type FarmProgress } from '../src/farm-orders.ts'
 import { farmPlots } from '../src/farm.ts'
 import { isJobId, jobs } from '../src/jobs.ts'
-import { journalEntry } from '../src/journal/catalog.ts'
-import { placeName, type Journal } from '../src/journal/journal.ts'
+import type { Journal } from '../src/journal/journal.ts'
 import type { JobBoardState } from '../src/jobs.ts'
 import type { Player, Snapshot } from '../src/protocol'
 import { gateFavor, gateStages, initialGateRepair } from '../src/gate-repair.ts'
@@ -15,6 +14,7 @@ import { initialResidents } from '../src/residents/trust.ts'
 import { starterResident, starterResidents } from '../src/worlds/starter/residents.ts'
 import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
 import { makeItems } from './items.ts'
+import { readJournal } from './journal-save.ts'
 import { crateStarts, itemStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
 
@@ -165,18 +165,9 @@ function isSavedFarmWork(value: unknown) {
   return (stage === 'offer' || stage === 'qualified' || stage === 'complete') && delivered === 0 && load === 0
 }
 
-// Older saves have no journal. A saved one lists only known entries, each noted by a crew seat at a time the island has reached.
-function isSavedJournal(value: unknown, islandTime: number) {
-  return isRecord(value) && Object.entries(value).every(([id, note]) => Boolean(journalEntry(id)) && isRecord(note) &&
-    isNumber(note.t) && Number.isInteger(note.t) && note.t >= 0 && note.t <= islandTime &&
-    isNumber(note.by) && Number.isInteger(note.by) && note.by >= 0 && note.by < spawns.length &&
-    (note.at === undefined || (typeof note.at === 'string' && Boolean(placeName(note.at)))))
-}
-
-function hasValidProgress(world: Record<string, unknown>, islandTime: number) {
+function hasValidProgress(world: Record<string, unknown>) {
   return (world.jobs === undefined || isJobBoard(world.jobs, world.mission)) &&
     (world.aviation === undefined || isSavedAviation(world.aviation)) &&
-    (world.journal === undefined || isSavedJournal(world.journal, islandTime)) &&
     (world.produce === undefined || isSavedFarmWork(world.produce))
 }
 
@@ -220,14 +211,16 @@ function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] 
     isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
 }
 
-function isSave(value: unknown): value is IslandSave {
+type SaveFields = Omit<IslandSave, 'world'> & { world: Omit<IslandSave['world'], 'journal'> & { journal?: unknown } }
+
+function isSave(value: unknown): value is SaveFields {
   if (!isRecord(value) || value.version !== 4 || !isCoinBalance(value.crewCoins) ||
     !validReceipt(value.lastStarterPay) || !isNumber(value.islandTime) || value.islandTime < 0 ||
     !Array.isArray(value.growth) || value.growth.length !== farmPlots.length || !value.growth.every(isNumber) ||
     !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
   const { world } = value
   const reservedIds = new Set(value.crew.filter(({ reserved }) => reserved).map(({ player }) => player.id))
-  if (!hasValidProgress(world, value.islandTime)) return false
+  if (!hasValidProgress(world)) return false
   return isPose(world.truck) && isPose(world.skiff) && isSavedIncident(world, value.islandTime) && isGateRepair(world, value.islandTime) &&
     isSavedMaterials(world, value.islandTime) &&
     Array.isArray(world.farm) && world.farm.length === farmPlots.length &&
@@ -250,7 +243,10 @@ export function islandSaveFile(root: string, port: number, slot = `island-${port
       try {
         const parsed = migrateSave(JSON.parse(readFileSync(path, 'utf8')))
         if (!isSave(parsed)) throw new Error('Unsupported or malformed save')
-        return parsed
+        const { journal: stored, ...world } = parsed.world
+        const journal = stored === undefined ? undefined : readJournal(stored, parsed.islandTime)
+        if (stored !== undefined && !journal) throw new Error('Unsupported or malformed save')
+        return { ...parsed, world: { ...world, ...(journal && { journal }) } }
       } catch (error) {
         if (isRecord(error) && error.code === 'ENOENT') return undefined
         throw new Error(`Could not load island save ${path}`, { cause: error })

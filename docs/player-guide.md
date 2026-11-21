@@ -44,6 +44,14 @@ Wren lives in the lilac-roofed cottage just east of the Blue cottage. The garden
 
 Mara fishes from the small dock, Ines keeps the Seabrook Market stall, and Bram keeps the freight tally beside the Harbor Depot job board. Each walks to work in the morning and home in the evening on the shared clock. Aim at a resident and press **E** to talk. When someone needs a hand, the conversation offers **Agree to help**. Mara would like two carrots, Ines two fish, and Bram a crate set down in the yellow bay beside the depot. Either of you can agree, and either can finish it. The crew bank gets five coins once, the resident trusts the crew a little more, and their greeting changes. See [residents and favors](mechanics/resident-favors.md).
 
+## Mara’s field outing
+
+Find Mara at the small fishing dock during the day. Talk to her for walking directions to Shellglass Tide Pool and Juniper Hollow. Either player can open **Field journal → Mara’s outing** to reread the clues. You can split up and compare entries when you get back.
+
+Press **E** when the prompt offers to inspect a detail or record an observation. At Driftwood, look for pink foxglove bells above the sand and a line of weed and shells where the track fades. Shellglass has a mended tide staff and small conical limpets clamped to rock. At Juniper, the trail cairn leads to low white clover with three leaflets and pale flower heads. Stand back to watch brown hares lower their heads to graze. During heavy rain, look for a hare crouching under a pine or beside a fallen trunk.
+
+Each new journal record gives the crew one observation XP. If you have already discovered Shellglass or Juniper, reading its landmark completes an outing step using the existing place entry. Grazing and sheltering are separate observations. Talk to Mara again after the first outing record for her advice about the rain.
+
 ## Windstone Ridge gliding
 
 Follow the northern hills toward Windstone Ridge. At the orange loan rack, face the windsock and find the landing circle below. Press **E** with free hands to borrow the wing and launch for free. Use **A/D** or **←/→** to bank and turn. Push **W** or **↑** to lower the nose and gain speed. Pull **S** or **↓** to raise the nose and slow the descent. Press **C** to switch views. Follow the airborne blue orbs and land inside the circle. If you come up short, head back uphill to the windsock.

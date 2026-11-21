@@ -16,6 +16,7 @@ import { gateStepText } from './gate-repair'
 import { favorFeedback } from './resident-notices'
 import { createJobBoard } from './job-board-ui'
 import { catchLabel, createJournalPage } from './journal-ui'
+import { shellglassTideAt } from './shellglass-tide'
 import { atJobBoard, jobs } from './jobs'
 import { starterTools, toolNames } from './inventory'
 import type { InventoryItem } from './inventory'
@@ -316,6 +317,12 @@ function connect() {
         break
       case 'resident-chat':
         openGuide(incoming.resident)
+        break
+      case 'tide-staff':
+        actionFeedback = { key: '', label: `Shellglass Tide Pool · ${shellglassTideAt(incoming.time).phase}`, until: performance.now() + 3900 }
+        break
+      case 'field-unavailable':
+        actionFeedback = { key: '', label: 'Find a clear view of the subject and try again', until: performance.now() + 1900 }
         break
       case 'favor-accepted':
       case 'favor-pay':

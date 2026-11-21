@@ -1,5 +1,6 @@
 import { northernRegions, starterDiscoveries } from '../scenery.ts'
 import { fishKinds } from './fish.ts'
+import { outingSubjects } from './outing.ts'
 
 export type JournalPage = 'fish' | 'places' | 'nature'
 
@@ -26,14 +27,14 @@ const placeClues: Record<string, string> = {
 export const journalSubjects = [
   { id: 'sight:school', page: 'nature', name: 'Driftwood fish school', clue: 'Something silver moves in the Driftwood shallows.',
     behaviors: { regrouping: 'Regrouping after a scare' } },
-  { id: 'sight:hare', page: 'nature', name: 'Juniper hare', clue: 'Long ears among the Juniper Hollow clover.',
-    behaviors: { grazing: 'Grazing', fleeing: 'Fleeing', sheltering: 'Sheltering from rain' } },
+  { id: 'sight:hare', page: 'nature', name: 'Brown hare', clue: 'Long ears among the Juniper Hollow clover.',
+    behaviors: { grazing: 'Grazing', fleeing: 'Fleeing', sheltering: 'Sheltering' } },
   { id: 'sight:fox', page: 'nature', name: 'Juniper fox', clue: 'A red coat on the edge of the Juniper Hollow clearing.',
     behaviors: { patrolling: 'Patrolling', watching: 'Watching' } },
   { id: 'sight:gull', page: 'nature', name: 'Dock gull', clue: 'White birds keep to the harbor dock piles.',
     behaviors: { resting: 'Resting on a pile', gliding: 'Gliding over the water' } },
   { id: 'sight:willow', page: 'nature', name: 'Fallen willow', clue: 'A tree lies on the east bank of Mirror Pool.', behaviors: {} },
-  { id: 'sight:clover', page: 'nature', name: 'Hollow clover', clue: 'Low green leaves the Juniper hares feed on.', behaviors: {} },
+  { id: 'sight:clover', page: 'nature', name: 'White clover', clue: 'Low green leaves the Juniper hares feed on.', behaviors: {} },
   { id: 'sight:lookout', page: 'places', name: 'Forest Lookout', clue: 'A tower above the pinewoods.', behaviors: {} },
   { id: 'sight:ferry', page: 'places', name: 'Ferry terminal', clue: 'A closed ramp east of Harbor Depot.', behaviors: {} },
 ] as const satisfies readonly (JournalEntry & { behaviors: Record<string, string> })[]
@@ -53,6 +54,12 @@ export const journalCatalog: readonly JournalEntry[] = [
     subject,
     ...Object.entries(behaviors).map(([key, name]) => ({ id: behaviorId(subject.id, key), page: subject.page, name, clue: 'Seen doing something else.', parent: subject.id })),
   ]),
+  { id: 'biome:driftwood-edge', page: 'places', name: outingSubjects['biome:driftwood-edge'].name,
+    clue: 'Look where the worn trail meets the sand.' },
+  { id: 'sight:foxglove', page: 'nature', name: outingSubjects['sight:foxglove'].name,
+    clue: 'Look for tall pink bells on the grass above Driftwood.' },
+  { id: 'sight:limpet', page: 'nature', name: outingSubjects['sight:limpet'].name,
+    clue: 'Look for small shells clinging to rock near the tide staff.' },
 ]
 
 const byId = new Map(journalCatalog.map((entry) => [entry.id, entry]))

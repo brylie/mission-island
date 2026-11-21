@@ -26,7 +26,7 @@ export function createInteractions(
   residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>,
   farm: Pick<ReturnType<typeof createFarmOrders>, 'act'>,
   materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>,
-  journal: Pick<ReturnType<typeof createJournal>, 'record'>, checkpoint?: () => void,
+  journal: Pick<ReturnType<typeof createJournal>, 'record' | 'inspect'>, checkpoint?: () => void,
 ) {
   function useHomeChest(member: CrewMember) {
     const { player } = member
@@ -96,7 +96,7 @@ export function createInteractions(
     recordCultivation(state, 'harvest', plot, player.id)
   }
 
-  function perform(member: CrewMember, action: Exclude<Interaction['action'], 'record'>, subject = -1) {
+  function perform(member: CrewMember, action: Exclude<Interaction['action'], 'record' | 'inspect-field'>, subject = -1) {
     if (isFarmAction(action)) return farm.act(member, action)
     const item = state.items[subject]
     switch (action) {
@@ -131,10 +131,11 @@ export function createInteractions(
       player.sleeping = false
       return
     }
+    if (choice?.action === 'inspect-field') return journal.inspect(member, choice.subject)
     const options = interactions(state, player)
     const chosen = choice ? options.find((option) => sameChoice(option, choice))
       : options.find(({ action }) => !deliberateActions.includes(action))
-    if (!chosen) return
+    if (!chosen || chosen.action === 'inspect-field') return
     // A journal record touches nothing the other interactions handle, so it stays out of their switch.
     const { action, subject } = chosen
     if (action === 'record') journal.record(player, subject ?? -1)

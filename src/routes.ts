@@ -49,6 +49,16 @@ export const beachTrail: Footpath = {
   points: roundCorners([{ x: 35, z: 12 }, { x: 33.1, z: 4 }, { x: 29.6, z: -24.7 }, beach], 4),
 }
 
+export const juniperTrail: Footpath = {
+  name: 'Juniper trail', surface: 'desire', width: 1.2,
+  points: roundCorners([
+    { x: -48.55, z: -10.9 }, { x: -48.55, z: -.8 }, { x: -49, z: 9 },
+    { x: -52, z: 21 }, { x: -54, z: 33 }, { x: -54.5, z: 52 },
+    { x: -54.5, z: 65.9 }, { x: -53.45, z: 68 }, { x: -54.5, z: 70 },
+    { x: -54.8, z: 73 }, { x: -54.65, z: 75.9 },
+  ], 2),
+}
+
 export const footpaths: Footpath[] = [
   { name: 'Lookout trail', surface: 'gravel', width: 3.2, points: roundCorners([{ x: 17, z: 12 }, { x: 20, z: 22 }, lookout], 4) },
   beachTrail,
@@ -62,6 +72,7 @@ export const footpaths: Footpath[] = [
     { x: 30.1, z: -24.7 }, { x: 34.7, z: -26.3 }, { x: 39, z: -29.2 }, { x: 42.6, z: -30.68 },
   ], 1.1) },
   meadowPath,
+  juniperTrail,
 ]
 
 export function distanceToRoute(point: Point, path: readonly Point[]) {

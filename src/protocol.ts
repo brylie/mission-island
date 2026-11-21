@@ -135,6 +135,8 @@ export type ServerMessage =
   | { type: 'order-pay'; coins: number; id: JobId }
   | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'open-wardrobe' | 'open-clothing-counter' }
   | { type: 'resident-chat'; resident: string }
+  | { type: 'tide-staff'; time: number }
+  | { type: 'field-unavailable' }
   | { type: 'favor-accepted'; resident: string; favor: string; playerId: number }
   | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number }
   | { type: 'gate-step'; step: GateStep }

@@ -55,6 +55,7 @@ export function animalPose(species: 'hare' | 'fox', behavior: string, time: numb
   if (species === 'fox') return { height: behavior === 'watching' ? 0 : .035 * Math.abs(Math.sin(time * 6 + index)), pitch: 0 }
   const still = behavior === 'grazing' || behavior === 'sheltering'
   const hop = still ? 0 : .11 * Math.abs(Math.sin(time * (behavior === 'fleeing' ? 12 : 7) + index))
+  if (behavior === 'sheltering') return { height: .075, pitch: -.06 }
   return { height: .12 + hop, pitch: behavior === 'grazing' ? .18 : 0 }
 }
 

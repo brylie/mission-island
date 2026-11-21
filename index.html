@@ -200,6 +200,7 @@
         <p id="resident-line"></p>
         <p id="resident-advice"></p>
         <button id="resident-accept" type="button" hidden></button>
+        <section id="resident-field-notes" aria-label="Field clues"></section>
       </div>
       <form method="dialog"><button type="submit" autofocus>Close</button></form>
     </dialog>
@@ -211,7 +212,9 @@
         <button type="button" data-page="fish" aria-pressed="true">Fish <span></span></button>
         <button type="button" data-page="places" aria-pressed="false">Places <span></span></button>
         <button type="button" data-page="nature" aria-pressed="false">Nature <span></span></button>
+        <button type="button" data-page="outing" aria-pressed="false">Mara’s outing <span></span></button>
       </div>
+      <ul id="journal-clues" aria-label="Clues from Mara" hidden></ul>
       <ul id="journal-list"></ul>
       <p id="journal-help">The journal notes a fish when you land it and a place when you walk there. Aim at an animal, a plant or a landmark and press E to record it. Both of you share one journal.</p>
       <form method="dialog"><button type="submit" autofocus>Close</button></form>

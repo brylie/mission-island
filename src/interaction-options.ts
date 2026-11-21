@@ -1,4 +1,5 @@
 import { atHomeChest, atHomeDoor, byTruckBed, clothingInteraction, freeBed, heldItem } from './actions.ts'
+import { fieldInteractions } from './field-interactions.ts'
 import { clothingCounter, farmPlots, market, nearbyPlot, saleValue, seedPrice } from './farm.ts'
 import { canPickUp, gateActions, gateHint, gateOptions, gateTarget } from './gate-repair.ts'
 import { farmActions, farmInteractions, type FarmAction } from './farm-orders.ts'
@@ -16,13 +17,13 @@ import type { Point } from './world.ts'
 import { starterResidents } from './worlds/starter/residents.ts'
 
 export type InteractionAction = GateAction | ResidentAction | FarmAction | MaterialsAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
-  'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note' | 'record'
+  'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note' | 'record' | 'inspect-field'
 export const interactionActions: readonly InteractionAction[] = [
   ...gateActions, ...residentActions, ...farmActions, ...materialsActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
-  'harvest', 'pick-up', 'welcome-note', 'record',
+  'harvest', 'pick-up', 'welcome-note', 'record', 'inspect-field',
 ]
 // These change shared progress or speak for the crew, so the host runs them only when the player chose them.
-export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions, ...farmActions, ...materialsActions, 'record']
+export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions, ...farmActions, ...materialsActions, 'record', 'inspect-field']
 
 // What E sends: an action and, for items, farm plots and residents, which one.
 export interface InteractionChoice { action: InteractionAction; subject?: number }
@@ -135,7 +136,8 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
     options.push({ action: 'welcome-note', key: 'E', label: 'Read your welcome note', name: 'Your door',
       at: aimedAt(cottageDoor(crewHomes[player.id]), 1.2), radius: .7 })
   }
-  return [...options, ...materialsInteractions(state, player), ...gateInteractions(state, gate.secondary), ...residents.talk, ...residents.accept, ...journalInteractions(state, player)]
+  return [...options, ...materialsInteractions(state, player), ...gateInteractions(state, gate.secondary),
+    ...residents.talk, ...residents.accept, ...fieldInteractions(state, player), ...journalInteractions(state, player)]
 }
 
 // What E does with nothing under the reticle. A journal record needs an aim, so it is never the default.

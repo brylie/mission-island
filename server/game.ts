@@ -71,7 +71,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const journal = createJournal(state, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint)
   const gate = createGateRepair(state, crew.notifyAll, () => residents.keep(wren, wren.favors[0]))
-  const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk }, checkpoint)
+  const residents = createResidents(state, starterResidents, physics, crew.notifyAll, { wren: gate.talk, mara: journal.hearMara }, checkpoint)
   const farm = createFarmOrders(state, crew.notifyAll, clock, checkpoint)
   const materials = createMaterialsWork(state, crew.notifyAll, () => residents.keep(wren, repairSupplyFavor))
   const interactions = createInteractions(state, growth, physics, orders, gate, residents, farm, materials, journal, checkpoint)

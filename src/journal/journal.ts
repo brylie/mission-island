@@ -5,16 +5,28 @@ import { daySeconds, isNight, weatherAt } from '../weather.ts'
 import { beach, distance, ferryTerminal, forest, harbor, harborDock, lookout, town, type Point } from '../world.ts'
 import { journalCatalog, type JournalPage } from './catalog.ts'
 
-// When an entry was first recorded, by which seat and, if it has a name, where.
-// The weather is not stored: it follows from the island time.
-export interface JournalNote { t: number; by: number; at?: string }
-export type Journal = Record<string, JournalNote>
+export interface JournalNote { t: number; by?: number; at?: string; rain?: number }
+export interface JournalRecord {
+  first?: JournalNote
+  outing?: JournalNote
+}
+export interface Journal {
+  version: 1
+  heardMara: boolean
+  entries: Record<string, JournalRecord>
+}
 
-// The first record stands. A later one returns nothing and changes nothing.
-export function recordEntry(journal: Journal, id: string, note: JournalNote) {
-  if (journal[id]) return undefined
-  journal[id] = note
-  return note
+export function emptyJournal(): Journal {
+  return { version: 1, heardMara: false, entries: {} }
+}
+
+// An inspection can finish the outing even if the place or subject is already known.
+export function recordEntry(journal: Journal, id: string, note: JournalNote, kind: 'first' | 'outing' = 'first') {
+  const existing = journal.entries[id]
+  if (!existing) journal.entries[id] = { [kind]: note }
+  else if (kind === 'outing' && !existing.outing) existing.outing = note
+  else return false
+  return true
 }
 
 export function journalTally(journal: Journal) {
@@ -23,7 +35,7 @@ export function journalTally(journal: Journal) {
   }
   for (const { id, page } of journalCatalog) {
     pages[page].total++
-    if (journal[id]) pages[page].recorded++
+    if (journal.entries[id]) pages[page].recorded++
   }
   const all = Object.values(pages)
   return { pages, recorded: all.reduce((sum, page) => sum + page.recorded, 0), total: journalCatalog.length }
@@ -63,8 +75,10 @@ export function placeName(key: string | undefined) {
 }
 
 // The pencil note under a recorded entry, for example "Day 3 · afternoon · rain".
-export function noteConditions({ t }: JournalNote) {
-  const { hour, rain } = weatherAt(t)
+export function noteConditions({ t, rain: recordedRain }: JournalNote) {
+  const { hour, rain: inferredRain } = weatherAt(t)
+  const rain = recordedRain ?? inferredRain
   const time = isNight(hour) ? 'night' : hour < 10 ? 'morning' : hour < 14 ? 'midday' : 'afternoon'
-  return [`Day ${Math.floor(t / daySeconds) + 1}`, time, ...(rain >= .3 ? ['rain'] : [])].join(' · ')
+  const conditions = rain >= .65 && recordedRain !== undefined ? 'heavy rain' : rain >= .3 ? 'rain' : ''
+  return [`Day ${Math.floor(t / daySeconds) + 1}`, time, conditions].filter(Boolean).join(' · ')
 }

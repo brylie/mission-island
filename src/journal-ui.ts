@@ -1,9 +1,13 @@
 import { journalCatalog, journalEntry, type JournalEntry, type JournalPage } from './journal/catalog'
 import { journalTally, noteConditions, placeName, type Journal } from './journal/journal'
+import { fieldLeads, isOutingId, outingCount, outingIds, outingSubjects, rainLead } from './journal/outing'
 import type { Player, Snapshot } from './protocol'
 import { starterDiscoveries } from './scenery'
+import { shellglassTideAt } from './shellglass-tide'
 
-const crewName = (state: Snapshot, id: number) => state.players.find((player) => player.id === id)?.name || `Crew ${id + 1}`
+type Page = JournalPage | 'outing'
+const crewName = (state: Snapshot, id: number | undefined) =>
+  id === undefined ? undefined : state.players.find(player => player.id === id)?.name || `Crew ${id + 1}`
 
 export function catchLabel(fish: string | undefined) {
   const name = fish && journalEntry(fish)?.name
@@ -11,24 +15,35 @@ export function catchLabel(fish: string | undefined) {
 }
 
 // One line of the page: a pencilled box, the entry's name once recorded or its clue until then, and when and where it was noted.
-function row(state: Snapshot, entry: JournalEntry) {
-  const note = state.journal[entry.id]
+function row(state: Snapshot, entry: JournalEntry, outing: boolean) {
+  const record = state.journal.entries[entry.id]
+  const note = outing ? record?.outing : record?.first ?? record?.outing
+  const recorded = outing ? Boolean(note) : Boolean(record)
+  const subject = outing && isOutingId(entry.id) ? outingSubjects[entry.id] : undefined
   const item = document.createElement('li')
-  item.className = entry.parent ? 'journal-row journal-behavior' : 'journal-row'
-  item.toggleAttribute('data-recorded', Boolean(note))
+  item.className = entry.parent && !outing ? 'journal-row journal-behavior' : 'journal-row'
+  item.toggleAttribute('data-recorded', recorded)
   const box = document.createElement('span')
   box.className = 'journal-box'
   box.setAttribute('aria-hidden', 'true')
-  box.textContent = note ? '✓' : ''
+  box.textContent = recorded ? '✓' : ''
   const text = document.createElement('div')
   const title = document.createElement('strong')
   // The box is decoration. The words carry whether the line is filled in.
-  title.textContent = note ? `${entry.name} · recorded` : `Not yet recorded · ${entry.clue}`
+  const name = subject?.name ?? entry.name
+  title.textContent = recorded ? `${name} · recorded` : outing ? name : `Not yet recorded · ${entry.clue}`
   text.append(title)
-  if (note) {
+  if (recorded) {
     const detail = document.createElement('small')
-    detail.textContent = [noteConditions(note), placeName(note.at), crewName(state, note.by)].filter(Boolean).join(' · ')
+    const phase = outing && entry.id === 'place:shellglass' && note ? shellglassTideAt(note.t).phase : undefined
+    detail.textContent = note ? [noteConditions(note), placeName(note.at), phase, crewName(state, note.by)]
+      .filter(Boolean).join(' · ') : 'Earlier discovery'
     text.append(detail)
+    if (subject) {
+      const description = document.createElement('small')
+      description.textContent = subject.detail
+      text.append(description)
+    }
   }
   item.append(box, text)
   return item
@@ -38,8 +53,9 @@ function row(state: Snapshot, entry: JournalEntry) {
 export function createJournalPage(dialog: HTMLDialogElement, button: HTMLButtonElement, canOpen: () => boolean, pause: () => void) {
   const tally = dialog.querySelector<HTMLElement>('#journal-tally')!
   const list = dialog.querySelector<HTMLElement>('#journal-list')!
+  const clues = dialog.querySelector<HTMLElement>('#journal-clues')!
   const tabs = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-page]'))
-  let page: JournalPage = 'fish'
+  let page: Page = 'fish'
   let latest: Snapshot | undefined
   let known: Journal | undefined
   let shown = ''
@@ -51,15 +67,29 @@ export function createJournalPage(dialog: HTMLDialogElement, button: HTMLButtonE
     if (key === shown) return
     shown = key
     const { pages, recorded, total } = journalTally(state.journal)
-    tally.textContent = `${recorded} of ${total} recorded by the crew`
+    tally.textContent = `${recorded} observation XP · ${recorded} of ${total} recorded`
+    const completed = outingCount(state.journal)
     for (const tab of tabs) {
-      const name = tab.dataset.page as JournalPage
+      const name = tab.dataset.page as Page
       tab.setAttribute('aria-pressed', String(name === page))
-      tab.querySelector('span')!.textContent = `${pages[name].recorded} of ${pages[name].total}`
+      tab.querySelector('span')!.textContent = name === 'outing'
+        ? `${completed} of ${outingIds.length}` : `${pages[name].recorded} of ${pages[name].total}`
     }
-    // A behavior stays off the page until its animal has been recorded.
-    list.replaceChildren(...journalCatalog.filter((entry) => entry.page === page && (!entry.parent || state.journal[entry.parent]))
-      .map((entry) => row(state, entry)))
+    const outing = page === 'outing'
+    clues.hidden = !outing
+    if (outing) {
+      const leads = state.journal.heardMara
+        ? [...fieldLeads, ...(completed ? [rainLead] : [])]
+        : ['Find Mara at the small fishing dock during the day, or at her porch by the depot trail in the evening.']
+      clues.replaceChildren(...leads.map(line => {
+        const item = document.createElement('li')
+        item.textContent = line
+        return item
+      }))
+    }
+    const entries = outing ? outingIds.map(id => journalEntry(id)!) : journalCatalog.filter(entry =>
+      entry.page === page && (!entry.parent || state.journal.entries[entry.parent] || state.journal.entries[entry.id]))
+    list.replaceChildren(...entries.map(entry => row(state, entry, outing)))
   }
 
   function open() {
@@ -71,7 +101,7 @@ export function createJournalPage(dialog: HTMLDialogElement, button: HTMLButtonE
 
   for (const tab of tabs) {
     tab.addEventListener('click', () => {
-      page = tab.dataset.page as JournalPage
+      page = tab.dataset.page as Page
       render()
     })
   }
@@ -95,12 +125,18 @@ export function createJournalPage(dialog: HTMLDialogElement, button: HTMLButtonE
       render()
       const found = earlier && starterDiscoveries.find(({ id }) => player.discoveries.includes(id) && !earlier.discoveries?.includes(id))
       if (found) return `Discovered ${found.name}`
-      const added = before && Object.keys(state.journal).find((id) => !before[id])
+      const confirmed = before && outingIds.find(key => state.journal.entries[key]?.outing && !before.entries[key]?.outing)
+      if (confirmed) {
+        const { outing } = state.journal.entries[confirmed]
+        const name = outingSubjects[confirmed].name
+        return confirmed === 'place:shellglass' && outing ? `${name} · ${shellglassTideAt(outing.t).phase}` : `Outing · ${name} recorded`
+      }
+      const added = before && Object.keys(state.journal.entries).find(id => !before.entries[id])
       const entry = added ? journalEntry(added) : undefined
       if (!added || !entry) return undefined
       const subject = entry.parent ? `${journalEntry(entry.parent)?.name} · ${entry.name.toLowerCase()}` : entry.name
-      const by = state.journal[added].by
-      return by === player.id ? `Journal · ${subject} recorded` : `${crewName(state, by)} recorded ${subject} in the journal`
+      const by = state.journal.entries[added].first?.by
+      return by === undefined || by === player.id ? `Journal · ${subject} recorded` : `${crewName(state, by)} recorded ${subject} in the journal`
     },
   }
 }
