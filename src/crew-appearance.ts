@@ -5,6 +5,7 @@ export const uniforms = {
   blue: { name: 'Coastal blue', color: '#77dffc', trim: '#e4faff', unlock: '' },
   courier: { name: 'Delivery crew', color: '#488a73', trim: '#e8d397', unlock: 'Deliver all three crates' },
   rescue: { name: 'Fire crew', color: '#be4540', trim: '#ffe18a', unlock: 'Put out the lookout fire' },
+  farmer: { name: 'Island Farm workwear', color: '#507c99', trim: '#e7bb78', unlock: 'Fill Ines’s first produce order' },
   angler: { name: 'Harbor angler', color: '#537d8c', trim: '#ccead7', unlock: '' },
 } as const
 export const anglerCost = 3
@@ -67,7 +68,8 @@ export function shirtColor(appearance: CrewAppearance, id: number) {
   return isStockPiece('shirt', appearance.shirt) ? shopTops[appearance.shirt] : everydayColors[appearance.shirt]
 }
 
-export function outfitRequirement(uniform: Uniform, mission: 'delivery' | 'fire' | 'complete', ownsAngler: boolean) {
+export function outfitRequirement(uniform: Uniform, mission: 'delivery' | 'fire' | 'complete', ownsAngler: boolean, qualifiedFarmer = false) {
+  if (uniform === 'farmer' && !qualifiedFarmer) return uniforms.farmer.unlock
   if (uniform === 'courier' && mission === 'delivery') return uniforms.courier.unlock
   if (uniform === 'rescue' && mission !== 'complete') return uniforms.rescue.unlock
   if (uniform === 'angler' && !ownsAngler) return 'Buy at the Seabrook clothing counter'

@@ -15,6 +15,9 @@ import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
 import type { createGateRepair } from './gate-repair.ts'
 import type { createFerryRepair } from './ferry-repair.ts'
+import { isFarmAction } from '../src/farm-orders.ts'
+import { isMaterialsAction } from '../src/materials-interactions.ts'
+import type { createFarmOrders } from './farm-orders.ts'
 import type { createResidents } from './residents.ts'
 import type { createMaterialsWork } from './materials-work.ts'
 
@@ -23,7 +26,8 @@ export function createInteractions(
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'visitMarket'>,
   gate: Pick<ReturnType<typeof createGateRepair>, 'act'>,
   residents: Pick<ReturnType<typeof createResidents>, 'talk' | 'accept' | 'handOver' | 'stageCrate'>,
-  materials: ReturnType<typeof createMaterialsWork>, ferry: ReturnType<typeof createFerryRepair>,
+  farm: Pick<ReturnType<typeof createFarmOrders>, 'act'>,
+  materials: Pick<ReturnType<typeof createMaterialsWork>, 'act'>, ferry: ReturnType<typeof createFerryRepair>,
   checkpoint?: () => void,
 ) {
 
@@ -98,6 +102,7 @@ export function createInteractions(
   }
 
   function perform(member: CrewMember, { action, subject = -1 }: Interaction) {
+    if (isFarmAction(action)) return farm.act(member, action)
     const item = state.items[subject]
     switch (action) {
       case 'put-down': return putDown(member, heldItem(state, member.player)!)
@@ -113,13 +118,10 @@ export function createInteractions(
       case 'talk': return residents.talk(member, subject)
       case 'accept-favor': return residents.accept(member, subject)
       case 'hand-over': return residents.handOver(member, subject)
-      case 'gather-material':
-      case 'check-material':
-      case 'return-material-sample':
-      case 'choose-repair-material':
-      case 'deliver-repair-material': return materials.act(member, action, subject)
       case 'job-board': return
-      default: return isFerryAction(action) ? ferry.act(member, action) : gate.act(member, action)
+      default:
+        if (isMaterialsAction(action)) return materials.act(member, action, subject)
+        return isFerryAction(action) ? ferry.act(member, action) : gate.act(member, action)
     }
   }
 

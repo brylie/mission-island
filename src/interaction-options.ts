@@ -1,6 +1,7 @@
 import { atHomeChest, atHomeDoor, byTruckBed, clothingInteraction, freeBed, heldItem } from './actions.ts'
 import { clothingCounter, farmPlots, market, nearbyPlot, saleValue, seedPrice } from './farm.ts'
 import { canPickUp, gateActions, gateHint, gateOptions, gateTarget } from './gate-repair.ts'
+import { farmActions, farmInteractions, type FarmAction } from './farm-orders.ts'
 import type { GateAction } from './gate-repair.ts'
 import { ferryActions, ferryChoiceOnly, ferryDrop, ferryInteractions } from './ferry-repair.ts'
 import type { FerryAction } from './ferry-repair.ts'
@@ -15,14 +16,14 @@ import { cottageDoor, crewHomes, distance, lookout } from './world.ts'
 import type { Point } from './world.ts'
 import { starterResidents } from './worlds/starter/residents.ts'
 
-export type InteractionAction = GateAction | ResidentAction | MaterialsAction | FerryAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
+export type InteractionAction = GateAction | ResidentAction | FarmAction | MaterialsAction | FerryAction | 'put-down' | 'open-wardrobe' | 'open-clothing-counter' | 'sleep' | 'chest' |
   'job-board' | 'market' | 'plant' | 'harvest' | 'pick-up' | 'welcome-note'
 export const interactionActions: readonly InteractionAction[] = [
-  ...gateActions, ...residentActions, ...materialsActions, ...ferryActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
+  ...gateActions, ...residentActions, ...farmActions, ...materialsActions, ...ferryActions, 'put-down', 'open-wardrobe', 'open-clothing-counter', 'sleep', 'chest', 'job-board', 'market', 'plant',
   'harvest', 'pick-up', 'welcome-note',
 ]
 // These change shared progress or speak for the crew, so the host runs them only when the player chose them.
-export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions, ...materialsActions,
+export const deliberateActions: readonly InteractionAction[] = [...gateActions, ...residentActions, ...farmActions, ...materialsActions,
   ...ferryChoiceOnly]
 
 // What E sends: an action and, for items, farm plots and residents, which one.
@@ -126,11 +127,13 @@ function pickups(state: Snapshot, player: Player): Interaction[] {
 // Every E interaction open to this player, best default first. The prompt, the reticle and the host all read this list.
 export function interactions(state: Snapshot, player: Player): Interaction[] {
   if (player.sleeping || player.seat || player.swimming) return []
+  const held = heldItem(state, player)
+  const farm = farmInteractions(state.farmWork, player, Boolean(held))
+  if (state.farmWork.barrow?.handler === player.id) return farm
   const gate = gateOptions(state, player)
   const residents = residentInteractions(starterResidents, state, player)
-  const held = heldItem(state, player)
   const options = [...gateInteractions(state, gate.primary), ...(held ? [putDown(state, player, held)] : []),
-    ...homeInteractions(state, player), ...workInteractions(state, player), ...(held ? [] : pickups(state, player)),
+    ...homeInteractions(state, player), ...farm, ...workInteractions(state, player), ...(held ? [] : pickups(state, player)),
     ...ferryInteractions(state, player)]
   if (atHomeDoor(player) && !isNight(state.weather.hour)) {
     options.push({ action: 'welcome-note', key: 'E', label: 'Read your welcome note', name: 'Your door',

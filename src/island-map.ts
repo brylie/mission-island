@@ -1,6 +1,7 @@
 import { inSkiff } from './actions'
 import { defaultAppearance, shirtColor } from './crew-appearance'
 import { farm, market } from './farm'
+import { drawFarmMap } from './farm-order-ui'
 import { activeJob, deliveryDrop, jobBoard } from './jobs'
 import { materialsWaypoint } from './materials-work'
 import type { Player, Snapshot } from './protocol'
@@ -30,6 +31,7 @@ function drawWork(state: Snapshot, local: Player | undefined, dot: MapDot) {
   if (state.mission === 'complete' && !state.jobs.active) dot(jobBoard.x, jobBoard.z, '#ffd379', 5.5)
   const supplies = local && materialsWaypoint(state, local)
   if (supplies) dot(supplies.x, supplies.z, '#efac5b', 5.5)
+  drawFarmMap(state, dot)
   drawRidgeMap(state, dot)
 }
 

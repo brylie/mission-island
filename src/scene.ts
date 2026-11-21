@@ -8,10 +8,12 @@ import { createAtmosphere, sceneWeather } from './island-atmosphere'
 import { landscapeLink } from './playtest-link'
 import { inSkiff } from './actions'
 import { castTravelSeconds } from './charged-actions'
+import { routeContactHeight } from './route-contact'
+import { createFarmOrderView } from './farm-order-view'
 import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutIncident } from './lookout-recovery-art'
-import { moveTo } from './island-render-pose'
+import { moveTo, walkGait } from './island-render-pose'
 import { fishingFloatDip } from './starter-effect-cues'
 import { createIslandCamera } from './island-camera'
 import { createPlaceLabels } from './place-labels'
@@ -77,6 +79,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const cycles = crew.map(() => 0)
   const aviation = createRidgeAviationView(meshes, crew)
   const showDeliveryRoute = createDeliveryWayfindingView(meshes)
+  const showFarmOrder = createFarmOrderView(meshes, crew.map(character => character.root))
   const farmTools = crew.map((character) => createFarmTools(meshes, character))
   const skiffGear = crew.map((character) => {
     const gear = createSkiffGear(meshes, character)
@@ -212,19 +215,21 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       } else {
         node.rotation.x = 0
         node.rotation.z = 0
+        const pushing = state.farmWork.barrow?.handler === id
         const { x, z } = node.position
         moveTo(node, player, player.swimming ? swimmingHeight(time + id) : player.y + 0.05, factor)
         if (player.grounded && !player.onBed && !player.swimming) {
-          node.position.y = Math.max(node.position.y, walkingHeight(node.position) + 0.05)
+          const floor = pushing ? routeContactHeight(node.position) : walkingHeight(node.position)
+          node.position.y = Math.max(node.position.y, floor + .05)
         }
         const traveled = Math.hypot(node.position.x - x, node.position.z - z)
         const step = wasVisible && traveled < 2 ? traveled : 0
         const held = state.items.find((item) => item.holder === id)
-        cycles[id] += step / 4.8
-        const stride = delta > 0 ? Math.min(0.92, step / delta * 0.072) : 0
+        const gait = walkGait(step, delta, pushing)
+        cycles[id] += gait.cycles
         const winding = player.charge?.kind === 'throw' ? player.charge.power : 0
         if (player.swimming) poseSwimming(character, time + id, Math.min(1, step / Math.max(.001, delta * 3.8)), factor)
-        else poseCrew(character, cycles[id], stride, !player.grounded, held?.kind ?? (player.equipped ? 'tool' : undefined),
+        else poseCrew(character, cycles[id], gait.stride, !player.grounded, held?.kind ?? (pushing ? 'barrow' : player.equipped ? 'tool' : undefined),
           Number(Boolean(player.reaching || held?.spraying || player.casting)),
           wasVisible ? 1 - Math.exp(-delta * 16) : 1, winding, player.throwing, player.rightHandRaised)
       }
@@ -308,6 +313,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       firePad.setEnabled(false)
       equipmentPad.setEnabled(false)
     }
+    showFarmOrder(last, factor)
     aviation.update(last, time)
     const local = last?.players.find((player) => player.id === viewer && player.connected)
     const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? truck : crew[local.id].root) : undefined

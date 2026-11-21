@@ -37,15 +37,16 @@ export function recoverSceneryOverlap(player: Player, extra: ExtraSurface = () =
   }
 }
 
-export function isInsideTruck(truck: Pose, point: Point) {
+export function isInsideTruck(truck: Pose, point: Point, padding = 0) {
   const local = localPoint(truck, point)
-  return Math.abs(local.x) < 1.39 && Math.abs(local.z) < 3.15
+  return Math.abs(local.x) < 1.39 + padding && Math.abs(local.z) < 3.15 + padding
 }
 
 const platforms = { roof: truckRoof, hood: truckHood, bed: truckBed } as const
 type Platform = keyof typeof platforms
 type Motor = { player: Pick<Player, 'x' | 'z' | 'y' | 'heading' | 'grounded' | 'onBed' | 'swimming' | 'truckSurface'>; verticalSpeed: number }
 type ExtraSurface = (point: Point, padding: number) => number
+interface WalkLimit { pace: number; allows(point: Pose): boolean }
 
 function truckPlatform(truck: TruckPose, point: Point, clearance: number) {
   for (const surface of Object.keys(platforms) as Platform[]) {
@@ -77,13 +78,14 @@ function truckOverlap(truck: TruckPose, point: Point, clearance: number) {
 
 function moveHorizontally(
   player: Motor['player'], trucks: readonly TruckPose[], input: Input, carrying: boolean, dt: number, clearance: number,
-  extra: ExtraSurface,
+  extra: ExtraSurface, limit?: WalkLimit,
 ) {
   if (!input.x && !input.z) return
+  const { x, z, heading } = player
   player.heading = Math.atan2(input.x, input.z)
   const depth = player.truckSurface ? 0 : Math.max(0, waterLevel - Math.max(walkingHeight(player), extra(player, 0)))
   const wading = 1 - 0.48 * Math.min(1, depth / maxWadeDepth)
-  const pace = player.swimming ? 3.8 : (carrying ? 6.5 : 8) * (input.sprint ? 1.55 : 1) * wading
+  const pace = player.swimming ? 3.8 : (limit?.pace ?? (carrying ? 6.5 : 8)) * (input.sprint ? 1.55 : 1) * wading
   const walk = offset(player, 0, pace * dt)
   const canWalk = (point: Point) => {
     if (!withinSkiffBoundary(point) || !clearFixedWalls(point, 0.4)) return false
@@ -93,17 +95,19 @@ function moveHorizontally(
     if (player.grounded && !player.truckSurface && rise > maxRise) return false
     const top = Math.max(propTop(point, 0.18), extra(point, 0.18))
     if (top > clearance + 0.055 && top >= Math.max(propTop(player, 0.18), extra(player, 0.18))) return false
+    if (limit && !limit.allows({ ...point, heading: player.heading })) return false
     return trucks.every((truck) => {
       const overlap = truckOverlap(truck, point, clearance)
       return overlap <= 0 || overlap < truckOverlap(truck, player, clearance)
     })
   }
-  if (canWalk({ x: walk.x, z: player.z })) player.x = walk.x
-  if (canWalk({ x: player.x, z: walk.z })) player.z = walk.z
+  if (walk.x !== player.x && canWalk({ x: walk.x, z: player.z })) player.x = walk.x
+  if (walk.z !== player.z && canWalk({ x: player.x, z: walk.z })) player.z = walk.z
+  if (limit && player.x === x && player.z === z) player.heading = heading
 }
 
 export function stepPlayer(
-  motion: Motor, before: TruckPose, truck: TruckPose, input: Input, carrying: boolean, dt: number, extra: ExtraSurface = () => -Infinity,
+  motion: Motor, before: TruckPose, truck: TruckPose, input: Input, carrying: boolean, dt: number, extra: ExtraSurface = () => -Infinity, limit?: WalkLimit,
 ) {
   const { player } = motion
   const riding = player.truckSurface ?? (player.onBed ? 'bed' : undefined)
@@ -113,16 +117,16 @@ export function stepPlayer(
     Object.assign(player, truckPoint(truck, local.x, height, local.z))
     player.heading += truck.heading - before.heading
   }
-  stepPlayerOnTerrain(motion, [truck], input, carrying, dt, extra)
+  stepPlayerOnTerrain(motion, [truck], input, carrying, dt, extra, limit)
 }
 
 export function stepPlayerOnTerrain(
-  motion: Motor, trucks: readonly TruckPose[], input: Input, carrying: boolean, dt: number, extra: ExtraSurface,
+  motion: Motor, trucks: readonly TruckPose[], input: Input, carrying: boolean, dt: number, extra: ExtraSurface, limit?: WalkLimit,
 ) {
   const { player } = motion
   const nextFeet = player.y + motion.verticalSpeed * dt
   const clearance = Math.max(player.y, nextFeet)
-  moveHorizontally(player, trucks, input, carrying, dt, clearance, extra)
+  moveHorizontally(player, trucks, input, carrying, dt, clearance, extra, limit)
 
   let platform: ReturnType<typeof truckPlatform>
   for (const truck of trucks) {

@@ -15,6 +15,7 @@ import type { GardenGate, GateRepair, GateStep } from './gate-repair'
 import type { FavorReceipt, ResidentRecords } from './residents/trust'
 import type { InteractionChoice } from './interaction-options'
 import type { FerryRepair } from './ferry-repair'
+import type { FarmOrderId, FarmWork } from './farm-orders'
 import type { MaterialPockets, MaterialsWork, RepairMaterial } from './materials-work'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
 
@@ -108,6 +109,7 @@ export interface Snapshot {
   fire: number
   lookoutFireClearedAt?: number
   farm: PlotStage[]
+  farmWork: FarmWork
   cultivation?: CultivationCue[]
   weather: Weather
   islandTime: number
@@ -126,6 +128,8 @@ export type ServerMessage =
   | { type: 'welcome'; id: number; scenarios?: readonly ScenarioSummary[] }
   | { type: 'fishing-result'; result: FishingResult }
   | { type: 'market-sale'; coins: number }
+  | { type: 'farm-pay'; id: FarmOrderId; coins: number }
+  | { type: 'barrow-returned' }
   | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
   | { type: 'order-pay'; coins: number; id: JobId }
   | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'ferry-tally' | 'open-wardrobe' | 'open-clothing-counter' }
