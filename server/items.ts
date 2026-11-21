@@ -1,11 +1,18 @@
 import type { Item, Snapshot } from '../src/protocol.ts'
 import type { Point } from '../src/world.ts'
+import { groundHeight } from '../src/terrain.ts'
 import { crateSize, itemStarts, localPoint, offset } from '../src/world.ts'
+
+// Where an item rests at its home: on the ground, or on top of a bench for the toolbox.
+export function restingY(id: number) {
+  const entry = itemStarts[id]
+  return 'lift' in entry ? groundHeight(entry.start) + entry.lift : 0.04
+}
 
 export function makeItems(): Item[] {
   return itemStarts.map(({ kind, start }, id) => ({
     ...start, id, heading: 0, kind,
-    holder: null, onBed: false, delivered: false, spraying: false, y: 0.04, rotation: null,
+    holder: null, onBed: false, delivered: false, spraying: false, y: restingY(id), rotation: null,
   }))
 }
 

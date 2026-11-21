@@ -5,6 +5,7 @@ import { actionHint, atClothingCounter, heldItem, inSkiff, interactRequest } fro
 import { readStorage, writeStorage } from './browser-storage'
 import { cleanCrewName, defaultAppearance, shirtColor } from './crew-appearance'
 import { createCrewGuide } from './crew-guide-ui'
+import { bindControlsToggle } from './controls-toggle-ui'
 import { favorProgress, gateMendedStage, gateRepairGuide, gateStepText, residentName } from './gate-repair'
 import { farm, market } from './farm'
 import { createJobBoard, jobDescription, secondIslandProgress } from './job-board-ui'
@@ -55,6 +56,7 @@ const guide = createCrewGuide(guideDialog, (dismissed) => {
   writeStorage('localStorage', leadKey(), dismissed ? 'yes' : null)
 })
 const respawn = element<HTMLButtonElement>('respawn')
+bindControlsToggle(element<HTMLButtonElement>('controls-toggle'), element('game-controls'))
 const spray = element('spray-control')
 const cameraButton = element<HTMLButtonElement>('camera')
 const orbitControl = element('orbit-control')

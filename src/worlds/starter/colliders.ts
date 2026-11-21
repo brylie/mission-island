@@ -1,9 +1,9 @@
-import { fenceHeight, fenceRuns, mendingBench, plank } from '../../gate-repair.ts'
+import { fenceHeight, fenceRuns, plank } from '../../gate-repair.ts'
 import { juniperSolids } from '../../juniper-habitat.ts'
 import { jobBoard } from '../../jobs.ts'
 import { beachUmbrellas, lampPosts, shellRocks, starterFeatures } from './sites.ts'
 import { walkingHeight } from '../../terrain.ts'
-import { ferryTerminal, offset } from '../../world.ts'
+import { ferryTerminal, mendingBench, offset } from '../../world.ts'
 import type { Point } from '../../world.ts'
 
 // Local support volumes in metres. Separate surfaces preserve the seat and taller back,
@@ -43,7 +43,7 @@ export const starterSolids = [
   ...beachUmbrellas.flatMap((post) => solidsAt(post, [[.16, .16, 2.27]])),
   ...shellRocks.flatMap((rock) => solidsAt(rock, [[rock.size, rock.size * .65, .17]], rock.heading)),
   ...fenceRuns.map(({ from, to }) => plank(from, to, .12, fenceHeight)),
-  ...solidsAt(mendingBench, [[1.6, .7, .86]], mendingBench.heading),
+  ...solidsAt(mendingBench, [[1.6, .7, mendingBench.top]], mendingBench.heading),
 ]
 
 export function starterPropTop(point: Point, padding: number) {

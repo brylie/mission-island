@@ -9,7 +9,7 @@ import { isNight } from '../src/weather.ts'
 import { crateSize, distance, itemStarts, spawns } from '../src/world.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { stopPrimary, stopped, stowTool, type CrewMember } from './crew.ts'
-import { updateHeldItems } from './items.ts'
+import { restingY, updateHeldItems } from './items.ts'
 import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { createOrders } from './orders.ts'
@@ -127,7 +127,7 @@ export function createInteractions(
       if (item.kind === 'crate') physics.release(item, safe ? player : itemStarts[item.id].start)
       else {
         const point = safe ? player : itemStarts[item.id].start
-        Object.assign(item, { x: point.x, z: point.z, y: groundHeight(point) + 0.04, spraying: false })
+        Object.assign(item, { x: point.x, z: point.z, y: safe ? groundHeight(point) + 0.04 : restingY(item.id), spraying: false })
       }
     }
     const home = spawns[player.id]

@@ -1,28 +1,28 @@
-import { favorCoins, gateAction, gateMendedStage, gateway, gatewayClear, onPeg, toolboxItem, wrenAt } from '../src/gate-repair.ts'
+import { favorCoins, gateAction, gateMendedStage, gateway, gatewayClear, onBench, toolboxItem, wrenAt } from '../src/gate-repair.ts'
 import type { GateAction, GateStep } from '../src/gate-repair.ts'
 import type { Snapshot } from '../src/protocol.ts'
-import { groundHeight } from '../src/terrain.ts'
-import { distance, toolboxPeg } from '../src/world.ts'
+import { distance, toolboxHome } from '../src/world.ts'
 import type { CrewMember, CrewNotice } from './crew.ts'
+import { restingY } from './items.ts'
 
 // Host transitions for Wren's gate. Every step re-checks the action the player saw,
 // so a stale or simultaneous request changes nothing.
 export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNotice) => void) {
   const repair = () => state.gateRepair
 
-  function hangToolbox() {
+  function shelveToolbox() {
     const toolbox = toolboxItem(state)
     if (!toolbox) return
-    Object.assign(toolbox, { ...toolboxPeg, holder: null, heading: 0, y: groundHeight(toolboxPeg) + 0.04, rotation: null })
+    Object.assign(toolbox, { ...toolboxHome, holder: null, heading: 0, y: restingY(toolbox.id), rotation: null })
   }
 
   // Wren takes the toolbox back from wherever it was left, including from a crewmate who dropped out.
   function recallToolbox() {
     const toolbox = toolboxItem(state)
-    if (!toolbox || repair().stage === 'sagging' || onPeg(toolbox)) return false
+    if (!toolbox || repair().stage === 'sagging' || onBench(toolbox)) return false
     const holder = state.players.find((player) => player.id === toolbox.holder)
     if (holder?.connected) return false
-    hangToolbox()
+    shelveToolbox()
     return true
   }
 
@@ -41,7 +41,7 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
         member.notify?.({ type: 'wren-chat' })
         break
       case 'return-toolbox':
-        hangToolbox()
+        shelveToolbox()
         step(member, 'returned')
         break
       case 'inspect':

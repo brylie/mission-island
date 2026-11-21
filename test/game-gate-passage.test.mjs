@@ -1,12 +1,27 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { actionHint, interactRequest } from '../src/actions.ts'
-import { fenceZ, gateway } from '../src/gate-repair.ts'
+import { fenceZ, gateway, wrenAt } from '../src/gate-repair.ts'
 import { daySeconds } from '../src/weather.ts'
+import { distance } from '../src/world.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
 const lane = { x: gateway.x, z: fenceZ - .9 }
 const noon = daySeconds / 4
+const at = (hour, day = 0) => day * daySeconds + ((hour - 6 + 24) % 24) * daySeconds / 24
+
+function walkTo(h, client, ...targets) {
+  for (const target of targets) {
+    for (let tick = 0; tick < 190 && distance(client.player, target) > .17; tick++) {
+      const d = distance(client.player, target)
+      h.input(client, { x: (target.x - client.player.x) / d, z: (target.z - client.player.z) / d })
+      h.advance()
+    }
+    h.input(client)
+    h.advance()
+    assert.ok(distance(client.player, target) <= .3, `walked to ${target.x}, ${target.z}`)
+  }
+}
 
 test('E at the gate picks up a crate in reach instead of swinging the gate', (t) => {
   const h = setup(t, {
@@ -45,4 +60,24 @@ test('a closing gate waits for a loose crate to leave the opening', (t) => {
   assert.equal(a.state.items[0].holder, 0)
   h.advance()
   assert.equal(a.state.gate.open, false, 'once the crate is carried out of the opening the gate closes')
+})
+
+test('a player following Wren out through the mended gate is never shut in, and Wren at home leaves it alone', (t) => {
+  const settled = (save) => {
+    save.islandTime = at(6.98, 1)
+    Object.assign(save.world.gateRepair, { stage: 'mended', acceptedAt: at(8), mendedAt: at(10) })
+    save.world.residentTrust.wren = 1
+  }
+  const h = setup(t, { players: [player(0, { x: gateway.x - .5, z: fenceZ + 1.3 })], arrange: settled })
+  const a = h.join(tokens[0])
+  assert.ok(distance(wrenAt({ ...a.state, islandTime: at(3, 1) }), gateway) >= 1.5, 'home is clear of the gateway')
+  h.advanceUntil(() => a.state.gate.open, 200)
+  walkTo(h, a, { x: gateway.x, z: fenceZ + .4 })
+  h.advance(90)
+  assert.ok(distance(wrenAt(a.state), gateway) > 1.5, 'Wren has gone through')
+  assert.equal(a.state.gate.open, true, 'held open for the crewmate in the opening')
+  walkTo(h, a, gateway, { x: gateway.x, z: fenceZ - 1.6 })
+  h.advance()
+  assert.equal(a.state.gate.open, false)
+  assert.ok(a.player.z < fenceZ - 1)
 })
