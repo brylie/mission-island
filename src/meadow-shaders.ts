@@ -1,5 +1,6 @@
 import { MaterialPluginBase } from '@babylonjs/core/Materials/materialPluginBase'
 import type { Material } from '@babylonjs/core/Materials/material'
+import { PBRMaterial } from '@babylonjs/core/Materials/PBR/pbrMaterial'
 import type { UniformBuffer } from '@babylonjs/core/Materials/uniformBuffer'
 import type { AbstractEngine } from '@babylonjs/core/Engines/abstractEngine'
 import type { Scene } from '@babylonjs/core/scene'
@@ -16,9 +17,11 @@ class MeadowShader extends MaterialPluginBase {
   private time = 0
   private settings = meadowDefaults
   private eye?: Point & { y: number }
+  private readonly pbr: boolean
 
   constructor(material: Material, private readonly blades: boolean) {
     super(material, blades ? 'Stem wind' : 'Meadow distance', 180)
+    this.pbr = material instanceof PBRMaterial
     this.registerForExtraEvents = true
     this._enable(true)
   }
@@ -66,24 +69,36 @@ class MeadowShader extends MaterialPluginBase {
       }
     }
     const patchPoint = this.blades ? 'stemXZ' : 'vPositionW.xz'
+    const color = this.pbr ? 'surfaceAlbedo' : 'baseColor.rgb'
+    const fragmentHook = this.pbr ? 'CUSTOM_FRAGMENT_BEFORE_LIGHTS' : 'CUSTOM_FRAGMENT_UPDATE_DIFFUSE'
+    // A coarse mip keeps the recipe's own tint as the close grain fades.
+    const farAlbedo = this.pbr ? `
+      vec3 farAlbedo = vAlbedoColor.rgb;
+      #ifdef ALBEDO
+        vec3 coarseGrain = texture2D(albedoSampler, vAlbedoUV, 6.).rgb;
+        #ifdef GAMMAALBEDO
+          coarseGrain = toLinearSpace(coarseGrain);
+        #endif
+        farAlbedo *= coarseGrain * vAlbedoInfos.y;
+      #endif` : 'vec3 farAlbedo = vec3(.88);'
     const terrain = this.blades ? '' : `
       float far = meadowFade(max(1., meadowControls.z), distance(meadowEye, vPositionW));
+      ${farAlbedo}
       #ifdef VERTEXCOLOR
-        baseColor.rgb = mix(baseColor.rgb, vColor.rgb * .88, far * .86);
-      #else
-        baseColor.rgb = mix(baseColor.rgb, vec3(.88), far * .86);
+        farAlbedo *= vColor.rgb;
       #endif
+      ${color} = mix(${color}, farAlbedo, far * .86);
       #ifdef NORMAL
         normalW = normalize(mix(normalW, normalize(vNormalW), far));
       #endif`
     return {
       CUSTOM_FRAGMENT_DEFINITIONS: `${this.blades ? 'varying vec2 stemXZ;' : ''}
         ${patchNoise}`,
-      CUSTOM_FRAGMENT_UPDATE_DIFFUSE: `
+      [fragmentHook]: `
         if (meadowControls.w > 0.) {
           ${terrain}
           float grassPatch = meadowPatch(${patchPoint});
-          baseColor.rgb *= mix(vec3(1.05, .82, .59), vec3(.63, .99, 1.06), grassPatch)
+          ${color} *= mix(vec3(1.05, .82, .59), vec3(.63, .99, 1.06), grassPatch)
             * (meadowControls.w * 1.7) + (1. - meadowControls.w * 1.7);
         }`,
     }

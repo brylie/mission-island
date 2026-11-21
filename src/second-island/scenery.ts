@@ -16,6 +16,7 @@ import { placeSiteFeatures } from '../assets/site-props'
 import { distanceToRoute } from '../routes'
 import { createFlocks, createSchools } from '../wildlife'
 import type { WildlifeFrame } from '../wildlife'
+import { buildStockpiles, buildTarnstepLedges } from './quarry-art'
 import { habitatAt } from './habitats'
 import { brinewickMarketSubject } from './brinewick-market'
 import { createBrinewickMarket } from './brinewick-market-art'
@@ -26,7 +27,7 @@ import { createHoneyMarketStand, createLongAcreGarden } from './long-acre-art'
 import { longAcreSubject } from './long-acre'
 import { arrival, helipad, lowerLake, pavedYards, roundYards, sites, discoveryWalks, waterfront } from './sites'
 import type { MapPoint } from './sites'
-import { fallsWidth, fallsX, groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
+import { groundHeight, nearestRoad, siteDistance, surfaceHeight, waterHeight } from './terrain'
 import { createSaltwindVehicle } from './vehicles'
 import type { VehicleId } from './vehicles'
 import { buildSigns } from './site-signs'
@@ -120,16 +121,7 @@ function buildYards(meshes: MeshFactory, omit?: string) {
     meshes.box(helipad.x + 8.1 * Math.cos(angle), padY + .2, helipad.z + 8.1 * Math.sin(angle), .22, .06, .22, '#f1c679')
   }
 
-  // Slate outcrops break the current at the two lips and on the downstream banks.
-  for (const [z, lane, width, depth, height, turn] of [
-    [193.2, -.91, 3.8, 2.4, 1.3, .6], [190.8, .77, 2.7, 2.1, 1.5, -.3],
-    [184, -1.02, 4.9, 3.1, 1.6, .2], [180, .62, 2.4, 2.9, 1.3, 1.1],
-    [174.8, -.94, 3.6, 2.4, 1.2, .4], [170.7, .97, 3.2, 3.7, 1.5, -.6],
-  ]) {
-    const x = fallsX(z) + lane * fallsWidth(z)
-    const rock = meshes.cylinder(x, groundHeight(x, z), z, .72, 1.1, height, 6, '#75817b')
-    rock.scaling.set(width, 1, depth); rock.rotation.y = turn
-  }
+  buildTarnstepLedges(meshes)
 
   // A clear service corridor runs between the log stacks and the mill.
   for (const [x, z] of [[-204, 164], [-209, 177], [-225, 177]]) for (let layer = 0; layer < 3; layer++) {
@@ -139,11 +131,6 @@ function buildYards(meshes: MeshFactory, omit?: string) {
       for (const side of [-1, 1]) meshes.cylinder(log.position.x, log.position.y, z + side * 3.76, .61, .61, .035, 10, '#d4ad73').rotation.x = Math.PI / 2
     }
   }
-  meshes.box(282, 32.61, 178, 7.4, 3, 5.8, '#9f7653')
-  meshes.box(282, 31.1, 175.6, 4.2, .78, 1.9, '#625d54').rotation.x = .23
-  for (const dx of [-2.82, 2.82]) for (const dz of [-2.2, 2.2]) meshes.box(282 + dx, 30.52, 178 + dz, .39, 3.3, .39, '#685e52')
-  for (const x of [292, 296, 300]) meshes.sphere(x, 30.3, 177, 5.7, 2.5, 5.9, '#8d8174')
-
   for (const z of [182, 187, 192, 197]) for (const x of [9, 16, 24, 31]) {
     const y = groundHeight(x, z)
     const height = .76 + ((x + z) % 3) * .09
@@ -382,6 +369,7 @@ function createWildlife(meshes: MeshFactory, solids: ScenerySolids) {
 }
 
 export function createScenery(meshes: MeshFactory, solids: ScenerySolids, omit?: string) {
+  buildStockpiles(meshes, solids)
   const firstFixture = meshes.scene.meshes.length
   buildYards(meshes, omit)
   buildSigns(meshes)

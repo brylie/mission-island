@@ -21,6 +21,10 @@ Open **Construction → Site furnishings → Seabrook village bench**. Select **
 
 Use **Saved variations** to build a named, browser-local collection for a subject. Each variation restores its controls, viewport and clock. Use **Copy setup link** to share a specific model, context, parameter set, camera, lighting and paused time. Use a LAN address when sharing between computers. Landscape studies and biome recipes retain their specialized formats. The map’s **Save layout** and **Export JSON** manage additional placed objects. Scene drafts and setups run separately from multiplayer saves.
 
+## Procedural surfaces
+
+Open **Surfaces → Texture gallery** to compare 54 named materials across **Surface catalog** and **Gameplay surfaces**, or select a family in the Library. Use **Grazing light** to reveal relief, **Overcast** for diffuse light, and **Dusk** to see glow algae emit light. Meadow turf, Path gravel, and Weathered board also have an **On island** view. Both collections include contact sheets and reopenable setups. [Surface catalog](surface-catalog.md) · [Gameplay surfaces](gameplay-surfaces.md)
+
 ## Compare an asset with a reference photo
 
 Open **Reference image** beside the subject title. Paste a direct image URL or a Wikimedia Commons **File:** page, add a **Photo description** of the detail you want to compare, then choose **Load image**. The description is optional and supplies the image’s alternative text. **Search Wikimedia Commons** opens a search for the current asset. For a Commons file page, **File & license** opens the original credit and licensing information. You can orbit, animate, or change the model while the photograph stays in place.

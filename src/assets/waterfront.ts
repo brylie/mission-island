@@ -1,17 +1,47 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import type { Material } from '@babylonjs/core/Materials/material'
+import { hash } from '../surface-noise'
+import { boxSurfaceUVs } from '../surface-uvs'
 import type { MeshFactory } from '../island-meshes'
 import { waterLevel } from '../terrain'
 import type { Point } from '../world'
 import { harborDock, harborDockPiles, skiffStart } from '../world'
 
-export function createDock({ box, cylinder, paintSurface }: MeshFactory, shaderPile?: Point) {
-  for (let i = 0; i < harborDock.planks; i++) {
-    box(harborDock.x, harborDock.top - 0.1, harborDock.firstZ - i * harborDock.spacing,
-      harborDock.width, 0.2, harborDock.plankDepth, paintSurface('wood', i % 3 ? '#a67548' : '#b88758'))
+export function createDock(meshes: MeshFactory, shaderPile?: Point, deck: Material = meshes.paintRecipe('weathered-board')) {
+  const { box, cylinder, paintSurface } = meshes
+  const { x, top, planks, spacing, width, firstZ, plankDepth } = harborDock
+  const length = (planks - 1) * spacing + plankDepth
+  const timber = paintSurface('wood')
+  for (const side of [-1, 1]) {
+    box(x + side * 1.34, top - .31, firstZ - (length - plankDepth) / 2, .19, .25, length, timber)
   }
-  for (const { x, z, bottom, top, diameter } of harborDockPiles) {
-    if (x === shaderPile?.x && z === shaderPile.z) continue
-    cylinder(x, (top + bottom) / 2, z, diameter, diameter, top - bottom, 7, paintSurface('wood'))
+  for (let i = 0; i < planks; i++) {
+    const z = firstZ - i * spacing, offset = (hash(i, 1, 931) - .5) * .04
+    const plank = box(x + offset, top - .1, z, width, .2, plankDepth, deck)
+    boxSurfaceUVs(plank, true, hash(i, 0, 931) * 1.7)
+    for (const side of [-1, 1]) {
+      const nail = box(x + side * 1.34, top + .002, z + side * .065, .035, .008, .035, '#584e40', undefined, false)
+      nail.rotation.y = hash(i, side, 931) * .8
+    }
+  }
+  const barnacles = meshes.paintRecipe('barnacle-belt')
+  for (const { x: px, z, top: cap, bottom: foot, diameter } of harborDockPiles) {
+    if (px === shaderPile?.x && z === shaderPile.z) continue
+    cylinder(px, (cap + foot) / 2, z, diameter, diameter, cap - foot, 7, timber)
+    // A broken crust hugs the wet outer faces below the deck. Above it,
+    // the exposed timber remains bare.
+    const vertices: number[] = [], uvs: number[] = [], indices: number[] = []
+    for (let i = 0; i <= 4; i++) {
+      const k = i + (px < x ? 2 : -1), a = k * 2 * Math.PI / 7
+      const radius = diameter / 2 + .003
+      const dx = radius * Math.cos(a), dz = -radius * Math.sin(a)
+      const low = waterLevel - .055, high = waterLevel + .085 + hash(i, z, 409) * .10
+      vertices.push(px + dx, low, z + dz, px + dx, high, z + dz)
+      uvs.push(i * .19, low, i * .19, high)
+      const bottom = i * 2
+      if (i) indices.push(bottom - 2, bottom - 1, bottom, bottom, bottom - 1, bottom + 1)
+    }
+    meshes.surface('Barnacles on intertidal piling', vertices, indices, barnacles, undefined, uvs).freezeWorldMatrix()
   }
 }
 

@@ -1,3 +1,4 @@
+import type { Material } from '@babylonjs/core/Materials/material'
 import { createBuoy, createDock, createHarborBoat } from './assets/waterfront'
 import { createClothingCounter, createHomeChest, createRock, createTree, createUmbrella, createWardrobe, umbrellaColors } from './assets/props'
 import { createHouse } from './assets/buildings'
@@ -33,7 +34,10 @@ import { createStreetLights } from './street-lights'
 import { boundaryBuoys, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
 import { buildings, crewHomes } from './world'
 
+export type IslandSurfaceTarget = 'meadow' | 'harbor-trail' | 'dock'
+
 interface WorldSubstitutions {
+  surfaceStudy?: { target: IslandSurfaceTarget; material: Material; wear: number }
   replaceBuilding?: number
   features?: readonly SiteFeature[]
   replaceFeature?: SiteFeature
@@ -42,8 +46,13 @@ interface WorldSubstitutions {
 }
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
-  const water = createIslandTerrain(meshes)
-  for (const { name, points, width, surface } of footpaths) createTrail(meshes, name, points, width, surface, groundHeight)
+  const study = substitutions.surfaceStudy
+  const water = createIslandTerrain(meshes, study?.target === 'meadow' ? study : undefined)
+  const harborFinish = study?.target === 'harbor-trail' ? study.material : meshes.paintRecipe('path-gravel')
+  for (const { name, points, width, surface } of footpaths) {
+    const finish = name === 'Harbor trail' ? harborFinish : undefined
+    createTrail(meshes, name, points, width, surface, groundHeight, finish)
+  }
   const paving = createSurfaceMaterial(meshes.scene, 'concrete')
   const wetPaving = createWetPaving(paving)
   for (const path of walkways) createSidewalk(meshes, path, paving)
@@ -66,7 +75,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   for (const dx of [-0.52, 0, 0.52]) {
     meshes.box(jobBoard.x + dx, boardY + 1.38, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
   }
-  createDock(meshes, saltBloomPile)
+  createDock(meshes, saltBloomPile, study?.target === 'dock' ? study.material : undefined)
   createFerryTerminal(meshes)
   const features = (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site)
   placeSiteFeatures(meshes, features, walkingHeight)

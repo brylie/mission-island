@@ -23,12 +23,13 @@ function comparison(label: string, settings: Values) {
 function terrainSample(meshes: MeshFactory, center: Point, width: number, depth: number, segments: number,
   surface: 'sand' | 'grass') {
   const positions: number[] = [], indices: number[] = [], uvs: number[] = []
+  const tile = surface === 'sand' ? 4.5 : 1
   for (let j = 0; j <= segments; j++) {
     for (let i = 0; i <= segments; i++) {
       const x = center.x + (i / segments - .5) * width
       const z = center.z + (j / segments - .5) * depth
       positions.push(x, groundHeight({ x, z }), z)
-      uvs.push(x / 4.5, z / 4.5)
+      uvs.push(x / tile, z / tile)
       if (i && j) {
         const d = j * (segments + 1) + i
         const b = d - segments - 1
@@ -36,7 +37,7 @@ function terrainSample(meshes: MeshFactory, center: Point, width: number, depth:
       }
     }
   }
-  const material = meshes.paintSurface(surface)
+  const material = surface === 'sand' ? meshes.paintSurface('sand') : meshes.paintRecipe('meadow-turf')
   meshes.surface(surface === 'sand' ? 'Shellglass basin and sill' : 'Meadow slope', positions, indices, material, undefined, uvs)
   return material
 }

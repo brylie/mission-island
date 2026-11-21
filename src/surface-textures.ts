@@ -1,6 +1,9 @@
 import { RawTexture } from '@babylonjs/core/Materials/Textures/rawTexture'
 import { Texture } from '@babylonjs/core/Materials/Textures/texture'
 import type { Scene } from '@babylonjs/core/scene'
+import { blend, clamp, hash, valueNoise, wrap } from './surface-noise.ts'
+import { bakeSurfaceMaps, components, normalMap } from './surface-maps.ts'
+import { surfaceRepeatMeters, type SurfaceRecipe, type SurfaceSettings } from './surface-recipes.ts'
 
 export const noiseTypes = {
   surface: 'Surface presets', value: 'Value noise', fractal: 'Fractal noise',
@@ -9,28 +12,6 @@ export const noiseTypes = {
 
 
 const size = 128
-const wrap = (value: number, period: number) => ((value % period) + period) % period
-const blend = (a: number, b: number, t: number) => a + (b - a) * t
-const clamp = (value: number) => Math.max(0, Math.min(1, value))
-
-function hash(x: number, y: number, seed: number) {
-  let n = Math.imul(x + 103, 1597334677) ^ Math.imul(y + 89, 3812015801) ^ Math.imul(seed, 1103515245)
-  n = Math.imul(n ^ (n >>> 15), 2246822519)
-  return ((n ^ (n >>> 13)) >>> 0) / 4294967296
-}
-
-function valueNoise(u: number, v: number, cells: number, seed: number) {
-  const x = u * cells
-  const y = v * cells
-  const ix = Math.floor(x)
-  const iy = Math.floor(y)
-  const fx = x - ix
-  const fy = y - iy
-  const point = (dx: number, dy: number) => hash(wrap(ix + dx, cells), wrap(iy + dy, cells), seed)
-  const sx = fx * fx * (3 - 2 * fx)
-  const sy = fy * fy * (3 - 2 * fy)
-  return blend(blend(point(0, 0), point(1, 0), sx), blend(point(0, 1), point(1, 1), sx), sy)
-}
 
 function cellular(u: number, v: number, cells: number) {
   const x = u * cells
@@ -87,10 +68,6 @@ interface TextureDetails {
   metal?: { type: MetalType; color?: string; oxidation: number; abrasion: number }
 }
 
-function components(hex: string) {
-  return [1, 3, 5].map((offset) => parseInt(hex.slice(offset, offset + 2), 16))
-}
-
 function pattern(name: string, u: number, v: number, striations: number) {
   const fine = valueNoise(u, v, 48, 8)
   const broad = valueNoise(u, v, 6, 3)
@@ -122,15 +99,13 @@ export function createTextureSample(scene: Scene, name: string, scale = 1, contr
   const tint = finish ? components(metal?.color ?? finish.color) : undefined
   const oxide = finish ? components(finish.oxide) : undefined
   const packed = metal ? new Uint8Array(color.length) : undefined
-  const normals = normalStrength > 0 ? new Uint8Array(color.length) : undefined
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) heights[y * size + x] = pattern(name, x / size, y / size, details.striations ?? 25)
   }
-  const sample = (x: number, y: number) => heights[wrap(y, size) * size + wrap(x, size)]
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const index = (y * size + x) * 4
-      const brightness = clamp(0.94 + (sample(x, y) - 0.5) * contrast)
+      const brightness = clamp(0.94 + (heights[y * size + x] - 0.5) * contrast)
       if (metal && packed && tint && oxide) {
         const patches = valueNoise(x / size, y / size, 7, 70) * 0.69 + valueNoise(x / size, y / size, 21, 53) * 0.31
         const rust = metal.oxidation > 0 ? clamp((patches - 0.95 + metal.oxidation * 1.02) * 6) : 0
@@ -141,25 +116,33 @@ export function createTextureSample(scene: Scene, name: string, scale = 1, contr
         const gray = Math.round(brightness * 255)
         color.set([gray, gray, gray, 255], index)
       }
-      if (!normals) continue
-      const dx = (sample(x - 1, y) - sample(x + 1, y)) * normalStrength
-      const dy = (sample(x, y - 1) - sample(x, y + 1)) * normalStrength
-      const length = Math.hypot(dx, dy, 1)
-      normals.set([128 + 127 * dx / length, 128 + 127 * dy / length, 128 + 127 / length, 255], index)
     }
   }
 
-  function upload(pixels: Uint8Array) {
-    const texture = RawTexture.CreateRGBATexture(pixels, size, size, scene, true, false, Texture.TRILINEAR_SAMPLINGMODE)
-    texture.wrapU = texture.wrapV = Texture.WRAP_ADDRESSMODE
-    texture.uScale = texture.vScale = scale
-    texture.anisotropicFilteringLevel = 8
-    return texture
+  return {
+    diffuse: uploadTexture(scene, color, size, scale, true),
+    normal: normalStrength > 0 ? uploadTexture(scene, normalMap(heights, size, normalStrength), size, scale, false) : null,
+    finishMap: packed ? uploadTexture(scene, packed, size, scale, false) : null,
   }
+}
 
-  const normal = normals ? upload(normals) : null
-  if (normal) normal.gammaSpace = false
-  const finishMap = packed ? upload(packed) : null
-  if (finishMap) finishMap.gammaSpace = false
-  return { diffuse: upload(color), normal, finishMap }
+function uploadTexture(scene: Scene, pixels: Uint8Array, size: number, scale: number, gammaSpace: boolean, lengthwise = 1) {
+  const texture = RawTexture.CreateRGBATexture(pixels, size, size, scene, true, false, Texture.TRILINEAR_SAMPLINGMODE)
+  texture.wrapU = texture.wrapV = Texture.WRAP_ADDRESSMODE
+  texture.uScale = scale
+  texture.vScale = scale / lengthwise
+  texture.anisotropicFilteringLevel = 8
+  texture.gammaSpace = gammaSpace
+  return texture
+}
+
+export function createRecipeTextures(scene: Scene, recipe: SurfaceRecipe, settings: SurfaceSettings, size: 128 | 256) {
+  const { color, normals, finish, emissive } = bakeSurfaceMaps(recipe, settings, size)
+  const scale = 1 / surfaceRepeatMeters(recipe, settings)
+  return {
+    diffuse: uploadTexture(scene, color, size, scale, true, recipe.lengthwise),
+    normal: uploadTexture(scene, normals, size, scale, false, recipe.lengthwise),
+    finishMap: uploadTexture(scene, finish, size, scale, false, recipe.lengthwise),
+    emissive: emissive ? uploadTexture(scene, emissive, size, scale, false, recipe.lengthwise) : null,
+  }
 }
