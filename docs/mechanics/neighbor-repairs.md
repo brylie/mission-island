@@ -1,6 +1,6 @@
 # Neighbor repairs: Wren's gate
 
-**Playable.** Wren lives in the lilac-roofed cottage east of the Blue cottage, at about (−35.8, −3.2). A picket fence taller than a jump closes off the front garden. The garden gate at (−35.8, −7.5) opens onto the main road and has a worn top hinge pin. The free end of the gate drops and drags a groove in the path, and the leaf sticks a short way open. Wren works at the **mending bench** on the grass beside the ferry approach, at about (−27.4, −26.6), from 07:00 to 17:00. Until the gate is fixed, Wren leaves by the back door and walks the long way round, between the Blue cottage and the fence.
+**Playable.** Wren lives in the lilac-roofed cottage east of the Blue cottage, at about (−35.8, −3.2). A picket fence taller than a jump closes off the front garden. The garden gate at (−35.8, −7.5) opens onto the depot lane and has a worn top hinge pin. The free end of the gate drops and drags a groove in the path, and the leaf sticks a short way open. Wren works at the **mending bench** on the grass beside Harbor Depot road, at the north edge of the ferry freight yard, at about (−23.4, −15.8), from 07:00 to 17:00. Wren crosses the road just south of the fork. Until the gate is fixed, Wren leaves by the back door and walks the long way round, between the Blue cottage and the fence.
 
 ## The job
 
@@ -28,7 +28,7 @@ A solo player can carry the toolbox through every step. In a pair, one player ca
 
 ## Saved state
 
-The host saves the repair stage, the time the job was accepted and the gate was mended, whether the gate is open, Wren's trust, the last favor receipt and the toolbox position. Island saves are version 3. Version 1 and 2 saves gain the toolbox on the bench and an untouched gate when loaded. A carried pin returns to the bench when the host restarts.
+The host saves the repair stage, the time the job was accepted and the gate was mended, whether the gate is open, Wren's trust, the last favor receipt and the toolbox position. Island saves are version 4. Version 1 and 2 saves gain the toolbox on the bench and an untouched gate when loaded. A carried pin returns to the bench when the host restarts.
 
 ## Playtest
 
