@@ -1,7 +1,7 @@
 import { RawTexture } from '@babylonjs/core/Materials/Textures/rawTexture'
 import { Texture } from '@babylonjs/core/Materials/Textures/texture'
 import type { Scene } from '@babylonjs/core/scene'
-import { blend, clamp, hash, valueNoise, wrap } from './surface-noise.ts'
+import { blend, clamp, hash, valueNoise, wrap } from './math/noise.ts'
 import { bakeSurfaceMaps, components, normalMap } from './surface-maps.ts'
 import { surfaceRepeatMeters, type SurfaceRecipe, type SurfaceSettings } from './surface-recipes.ts'
 

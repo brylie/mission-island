@@ -8,11 +8,19 @@ import type { Player, Snapshot } from './protocol'
 import { drawRidgeMap } from './ridge-ui'
 import { footpaths, road, walkways } from './routes'
 import { northernRegions, starterDiscoveries } from './scenery'
-import { boundaryBuoys, buoyBoundaryPoint, coastPoint } from './terrain'
+import { boundaryBuoys, buoyBoundaryPoint, coastBounds, coastPoint, coastSegments, offshoreLimitMetres } from './terrain'
 import { crewHomes, ferryTerminal, harbor, lookout } from './world'
-import type { Point } from './world'
 
 type MapDot = (x: number, z: number, color: string, radius: number) => void
+
+const coast = coastBounds()
+const mapCentre = { x: (coast.east + coast.west) / 2, z: (coast.north + coast.south) / 2 }
+const mapWidth = coast.east - coast.west + 14
+const mapHeight = coast.north - coast.south + 14
+const rings = Array.from({ length: coastSegments }, (_, i) => {
+  const angle = i * 2 * Math.PI / coastSegments
+  return { shore: coastPoint(angle), grass: coastPoint(angle, .916), boundary: buoyBoundaryPoint(angle) }
+})
 
 function drawShift(state: Snapshot, dot: MapDot) {
   if (state.mission === 'fire') dot(lookout.x, lookout.z, '#f7a17d', 6)
@@ -50,19 +58,20 @@ export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapsh
   const { width, height } = map
   const local = state?.players.find((player) => player.id === id)
   const afloat = local && inSkiff(local.seat)
-  const scale = Math.min(width / (afloat ? 390 : 224), height / (afloat ? 400 : 245))
-  const mx = (x: number) => width / 2 + x * scale
-  const mz = (z: number) => height / 2 - (z - 66) * scale
+  const offshore = afloat ? offshoreLimitMetres * 2 : 0
+  const scale = Math.min(width / (mapWidth + offshore), height / (mapHeight + offshore))
+  const mx = (x: number) => width / 2 + (x - mapCentre.x) * scale
+  const mz = (z: number) => height / 2 - (z - mapCentre.z) * scale
   const dot = (x: number, z: number, color: string, radius: number) => {
     ink.fillStyle = color
     ink.beginPath()
     ink.arc(mx(x), mz(z), radius, 0, Math.PI * 2)
     ink.fill()
   }
-  const traceRing = (pointAt: (angle: number) => Point) => {
+  const traceRing = (ring: 'shore' | 'grass' | 'boundary') => {
     ink.beginPath()
-    for (let i = 0; i < 128; i++) {
-      const { x, z } = pointAt(i / 128 * Math.PI * 2)
+    for (const [i, points] of rings.entries()) {
+      const { x, z } = points[ring]
       if (i === 0) ink.moveTo(mx(x), mz(z))
       else ink.lineTo(mx(x), mz(z))
     }
@@ -71,15 +80,15 @@ export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapsh
   ink.fillStyle = '#245e68'
   ink.fillRect(0, 0, width, height)
   if (afloat) {
-    traceRing(buoyBoundaryPoint)
+    traceRing('boundary')
     ink.strokeStyle = '#9abfc1'
     ink.lineWidth = 1
     ink.stroke()
     for (const { x, z } of boundaryBuoys) dot(x, z, '#ffd37b', 2)
   }
-  for (const [radius, color] of [[1, '#acc293'], [0.916, '#6f9667']] as const) {
+  for (const [ring, color] of [['shore', '#acc293'], ['grass', '#6f9667']] as const) {
     ink.fillStyle = color
-    traceRing((angle) => coastPoint(angle, radius))
+    traceRing(ring)
     ink.fill()
   }
   for (const region of northernRegions) {
