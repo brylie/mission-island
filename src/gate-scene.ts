@@ -1,14 +1,15 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { createCrew, poseCrew } from './assets/crew'
+import { createWrenGarden } from './assets/wren-garden'
 import type { MeshFactory } from './island-meshes'
-import { backPath, fenceHeight, fenceRuns, gateLeaf, gateMendedStage, hingePost, leafAngle, sagAngle, wrenAt } from './gate-repair'
+import { fenceHeight, fenceRuns, gateLeaf, gateMendedStage, hingePost, leafAngle, sagAngle, wrenAt } from './gate-repair'
 import { moveTo } from './island-render-pose'
 import type { Snapshot } from './protocol'
 import { groundHeight, walkingHeight } from './terrain'
 import { distance, mendingBench, offset, wrenCottage } from './world'
 import type { Point } from './world'
 
-const timber = '#9a8263', cap = '#c9b48d', iron = '#4a4644', rust = '#8c5a3c', brass = '#e2b55a', soil = '#5b4532'
+const timber = '#7d6a52', cap = '#d6c7a3', iron = '#4a4644', rust = '#8c5a3c', brass = '#e2b55a', soil = '#5b4532'
 
 function fenceRun(meshes: MeshFactory, from: Point, to: Point) {
   const length = distance(from, to)
@@ -20,12 +21,18 @@ function fenceRun(meshes: MeshFactory, from: Point, to: Point) {
     meshes.box(x, fenceHeight / 2, 0, .11, fenceHeight, .11, timber, root)
   }
   for (const y of [.32, 1.18]) meshes.box(length / 2, y, .07, length, .08, .04, timber, root)
-  for (let x = .08; x < length; x += .16) meshes.box(x, .78, .1, .1, 1.46, .025, cap, root)
+  // Hand-cut boards: tops vary a little so the fence reads as built, not stamped.
+  // Open spacing lets the beds and path show through a fence that must stand taller than a jump.
+  for (let x = .1, i = 0; x < length; x += .21, i++) {
+    const height = 1.44 - ((i * 5) % 3) * .03
+    meshes.box(x, .06 + height / 2, .1, .075, height, .025, cap, root)
+  }
+  meshes.batchModel(root)
 }
 
-// The plain house model only dresses the front. Wren's cottage also needs a back door, side windows
-// and the stepping stones of the long way round, so the detour reads from the street.
-function cottageBackAndSides({ box, cylinder }: MeshFactory) {
+// The plain house model only dresses the front. Wren's cottage also needs a back door and side windows,
+// so the long way round reads from the street.
+function cottageBackAndSides({ box }: MeshFactory) {
   const { x, z, w, d } = wrenCottage
   const y = groundHeight(wrenCottage)
   box(x, y + 1.2, z + d / 2 + .04, 1.1, 2.3, .13, '#4f6f62')
@@ -35,15 +42,6 @@ function cottageBackAndSides({ box, cylinder }: MeshFactory) {
     box(x + side * (w / 2 + .04), y + 2, z, .15, 1.03, 1.24, '#fff3d0')
     box(x + side * (w / 2 + .12), y + 2, z, .06, .77, .96, '#4c7a83')
   }
-  for (let i = 1; i < backPath.length; i++) {
-    const [from, to] = [backPath[i - 1], backPath[i]]
-    const steps = Math.floor(distance(from, to) / .85)
-    for (let s = 1; s <= steps; s++) {
-      const f = s / (steps + 1), wobble = Math.sin(s * 2.3 + i) * .12
-      const p = { x: from.x + (to.x - from.x) * f + wobble, z: from.z + (to.z - from.z) * f - wobble * .5 }
-      cylinder(p.x, groundHeight(p) + .02, p.z, .5, .55, .05, 9, '#b7ae9c')
-    }
-  }
 }
 
 // Wren's gate: a leaf on a hinge pivot that the host swings, a hinge whose worn top pin
@@ -52,6 +50,7 @@ export function createGardenGate(meshes: MeshFactory, residentId: number) {
   const { box, cylinder, scene } = meshes
   for (const { from, to } of fenceRuns) fenceRun(meshes, from, to)
   cottageBackAndSides(meshes)
+  createWrenGarden(meshes)
   const base = groundHeight(hingePost)
   box(hingePost.x, base + .8, hingePost.z, .14, 1.6, .14, timber)
   box(hingePost.x + 1.12, base + .8, hingePost.z, .14, 1.6, .14, timber)
@@ -60,7 +59,7 @@ export function createGardenGate(meshes: MeshFactory, residentId: number) {
   const leaf = new TransformNode('Garden gate leaf', scene)
   leaf.parent = hinge
   for (const y of [.3, 1.2]) box(gateLeaf.length / 2 + .03, y, 0, gateLeaf.length - .04, .09, .05, timber, leaf)
-  for (let x = .12; x < gateLeaf.length; x += .15) box(x, .78, .03, .1, 1.36, .025, cap, leaf)
+  for (let x = .12; x < gateLeaf.length; x += .19) box(x, .78, .03, .075, 1.36, .025, cap, leaf)
   const brace = box(gateLeaf.length / 2, .75, -.01, 1.08, .07, .04, timber, leaf)
   brace.rotation.z = .74
   for (const y of [.32, 1.2]) box(.12, y, -.04, .2, .05, .02, iron, leaf)

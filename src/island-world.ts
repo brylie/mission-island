@@ -2,6 +2,7 @@ import type { Material } from '@babylonjs/core/Materials/material'
 import { createBuoy, createDock, createHarborBoat } from './assets/waterfront'
 import { createClothingCounter, createHomeChest, createRock, createTree, createUmbrella, createWardrobe, umbrellaColors } from './assets/props'
 import { createHouse } from './assets/buildings'
+import { createGardenGate } from './gate-scene'
 import { createRoad, createSidewalk, createTrail } from './assets/routes'
 import { playerColors } from './assets/crew'
 import { clothingCounter } from './farm'
@@ -121,6 +122,8 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     ]),
   ])
   const lights = createStreetLights(meshes)
+  // Wren's cottage garden belongs to the island, so the Workbench shows it too. The game animates it.
+  const garden = createGardenGate(meshes, playerColors.length + 1)
 
   beachUmbrellas.forEach(({ x, z }, index) => createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))
 
@@ -154,5 +157,5 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     return tide
   }
 
-  return { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns }
+  return { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden }
 }

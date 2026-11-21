@@ -12,7 +12,6 @@ import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutIncident } from './lookout-recovery-art'
 import { fisherAt, fisherName } from './harbor-fisher'
-import { createGardenGate } from './gate-scene'
 import { residentName } from './gate-repair'
 import { moveTo } from './island-render-pose'
 import { fishingFloatDip } from './starter-effect-cues'
@@ -58,7 +57,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
-  const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns } = createIslandWorld(meshes, { liveParticles: true })
+  const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden } = createIslandWorld(meshes, { liveParticles: true })
 
   const pickupPad = createObjectiveMarker(meshes, harbor, 8, sun)
   const dropPad = createObjectiveMarker(meshes, town, deliveryRadius * 2, '#67ecdc')
@@ -115,7 +114,6 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     markers.append(tag)
     return tag
   })
-  const garden = createGardenGate(meshes, playerColors.length + 1)
   const labels = createPlaceLabels(markers, [{ root: fisher.root, title: `${fisherName} · Fisher` },
     { root: garden.resident, title: `${residentName} · Neighbor` }])
   function locate(element: HTMLElement, viewport: Viewport, x: number, y: number, z: number) {

@@ -2,6 +2,7 @@ import { fenceHeight, fenceRuns, plank } from '../../gate-repair.ts'
 import { juniperSolids } from '../../juniper-habitat.ts'
 import { jobBoard } from '../../jobs.ts'
 import { beachUmbrellas, lampPosts, shellRocks, starterFeatures } from './sites.ts'
+import { flowerBeds, rainBarrel, sawhorse, woodpile } from './wren-garden.ts'
 import { walkingHeight } from '../../terrain.ts'
 import { ferryTerminal, mendingBench, offset } from '../../world.ts'
 import type { Point } from '../../world.ts'
@@ -44,6 +45,10 @@ export const starterSolids = [
   ...shellRocks.flatMap((rock) => solidsAt(rock, [[rock.size, rock.size * .65, .17]], rock.heading)),
   ...fenceRuns.map(({ from, to }) => plank(from, to, .12, fenceHeight)),
   ...solidsAt(mendingBench, [[1.6, .7, mendingBench.top]], mendingBench.heading),
+  ...flowerBeds.flatMap((bed) => solidsAt(bed, [[bed.width + .1, bed.depth + .1, .16]])),
+  ...solidsAt(woodpile, [[1.05, .65, .6]], woodpile.heading),
+  ...solidsAt(rainBarrel, [[.55, .55, .8]]),
+  ...solidsAt(sawhorse, [[1.1, .4, .75]], sawhorse.heading),
 ]
 
 export function starterPropTop(point: Point, padding: number) {
