@@ -25,8 +25,8 @@ const complexity = (max) => ['error', max]
 const existingLimits = {
   'src/biome-model.ts': { 'max-lines-per-function': lineLimit(174) },
   'src/island-camera.ts': { 'max-lines-per-function': lineLimit(169) },
-  'src/main.ts': { 'max-lines': lineLimit(743), complexity: complexity(38) },
-  'src/scene.ts': { 'max-lines': lineLimit(366), 'max-lines-per-function': lineLimit(322), complexity: complexity(43) },
+  'src/main.ts': { 'max-lines': lineLimit(731), complexity: complexity(38) },
+  'src/scene.ts': { 'max-lines': lineLimit(339), 'max-lines-per-function': lineLimit(295), complexity: complexity(43) },
   'src/second-island/exteriors.ts': { complexity: complexity(40) },
   'src/second-island/main.ts': { 'max-lines': lineLimit(424), 'max-lines-per-function': lineLimit(391), complexity: complexity(25) },
   'src/second-island/scenery.ts': { 'max-lines': lineLimit(401), complexity: complexity(30) },

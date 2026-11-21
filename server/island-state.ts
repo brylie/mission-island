@@ -24,7 +24,7 @@ function restoreAviation(saved: AviationProgress | undefined): Snapshot['aviatio
 const savedFerry = (save?: IslandSave) => save?.world ?? initialFerryRepair()
 
 export function restoreIsland(
-  physics: Pick<ReturnType<typeof createCargoPhysics>, 'parkTruck' | 'restore' | 'release' | 'placeFerry'>,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'parkTruck' | 'restore' | 'relocate' | 'placeFerry'>,
   juniper: ReturnType<typeof createJuniperHabitat>,
   driftwood: DriftwoodFrame,
   save?: IslandSave,
@@ -56,7 +56,7 @@ export function restoreIsland(
     item.spraying = false
     if (state.mission === 'complete' && item.kind === 'extinguisher') item.holder = null
     if (save) physics.restore(item)
-    else physics.release(item, item)
+    else physics.relocate(item, item)
   }
   return { state, growth }
 }

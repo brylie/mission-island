@@ -9,7 +9,7 @@ import type { CrewMember, CrewNotice } from './crew.ts'
 // Host transitions for the ferry terminal repair. The interaction layer has already checked that the chosen
 // action is still offered to this player, so each effect is recomputed from the current state and never overshoots.
 export function createFerryRepair(
-  state: Snapshot, physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'release'>,
+  state: Snapshot, physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'relocate'>,
   notifyCrew: (message: CrewNotice) => void, creditCrate: (id: number) => void,
 ) {
   const repair = () => state.ferryRepair
@@ -43,7 +43,7 @@ export function createFerryRepair(
       const crate = state.items[i]
       physics.remove(crate)
       Object.assign(crate, { holder: null, heading: 0, delivered: false, onBed: false })
-      physics.release(crate, point)
+      physics.relocate(crate, point)
     }
     repair().haul = crates
     notifyCrew({ type: 'ferry-order', crates })
