@@ -11,6 +11,8 @@ export function createTruckPhysics(world: World) {
   const box = (x: number, y: number, z: number, width: number, height: number, length: number) =>
     body.addShape(new Box(new Vec3(width / 2, height / 2, length / 2)), new Vec3(x, y - centreOfMass, z))
   box(0, truckBed.top - 0.095, truckBed.center, truckBed.width, 0.19, truckBed.length)
+  // Only the deck counts as the bed for cargo sounds; rails, lip and cab are separate shapes.
+  const bedShape = body.shapes[0]
   box(0, 1.5, 1.05, 2.36, 1.6, 1.6)
   box(0, 0.74, 0, 2.28, 0.5, 5.7)
   box(0, 1.08, 2.3, 2.44, 0.7, 1.08)
@@ -23,6 +25,8 @@ export function createTruckPhysics(world: World) {
   const drive = createGroundDrive(world, body, flatbedGroundDrive, centreOfMass, groundHeight)
   return {
     ...drive,
+    body,
+    bedShape,
     matchBedMotion(cargo: Body) {
       body.getVelocityAtWorldPoint(cargo.position, cargo.velocity)
       cargo.angularVelocity.copy(body.angularVelocity)

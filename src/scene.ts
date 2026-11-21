@@ -1,26 +1,26 @@
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
-import { Color3 } from '@babylonjs/core/Maths/math.color'
-import { CreateLines } from '@babylonjs/core/Meshes/Builders/linesBuilder'
 import type { Viewport } from '@babylonjs/core/Maths/math.viewport'
 import { Scene } from '@babylonjs/core/scene'
 import { createAtmosphere, sceneWeather } from './island-atmosphere'
 import { landscapeLink } from './playtest-link'
 import { inSkiff } from './actions'
-import { castTravelSeconds } from './charged-actions'
 import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutIncident } from './lookout-recovery-art'
 import { fisherAt, fisherName } from './harbor-fisher'
 import { residentName } from './gate-repair'
 import { moveTo } from './island-render-pose'
-import { fishingFloatDip } from './starter-effect-cues'
 import { createIslandCamera } from './island-camera'
+import { aimFishingRod, createFishingGear, updateFishingLine } from './fishing-line-view'
+import { createIslandAudio, type CrateImpactNotice } from './audio/island-audio'
+import { advanceGait, groundTravel } from './audio/gait'
+import type { SoundSettings } from './audio/mix'
 import { createPlaceLabels } from './place-labels'
 import type { LookSettings } from './look-options-ui'
 import { createRidgeAviationView, ridgeCameraMode } from './ridge-aviation-view'
 import { createDeliveryWayfindingView } from './delivery-wayfinding-view'
-import { createCrew, createFarmTools, createSkiffGear, playerColors, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight } from './assets/crew'
+import { createCrew, createFarmTools, playerColors, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight } from './assets/crew'
 import { createFlatbed, poseFlatbed } from './assets/flatbed'
 import { createSupply } from './assets/props'
 import { poseFloating } from './assets/waterfront'
@@ -28,7 +28,7 @@ import { createIslandLighting, createMeshFactory } from './island-meshes'
 import { createIslandWorld } from './island-world'
 import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'
 import { createObjectiveMarker } from './objective-marker'
-import type { Player, Snapshot } from './protocol'
+import type { Snapshot } from './protocol'
 import { groundHeight, walkingHeight, waterDepth, waterLevel } from './terrain'
 import { flatbedGroundDrive } from './vehicles/flatbed'
 import { createStarterActionEffects } from './starter-action-effects'
@@ -50,6 +50,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const scene = new Scene(engine)
   const islandCamera = createIslandCamera(scene, canvas)
   const review = createShaderReview(scene, canvas, engine, islandCamera.releaseMouse)
+  const audio = createIslandAudio()
 
   const lighting = createIslandLighting(scene)
   const { shadows } = lighting
@@ -75,6 +76,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     return character
   })
   const cycles = crew.map(() => 0)
+  const truckStep = { x: 0, z: 0 }
   const aviation = createRidgeAviationView(meshes, crew)
   const showDeliveryRoute = createDeliveryWayfindingView(meshes)
   const fisher = createCrew(meshes, playerColors.length)
@@ -82,17 +84,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   fisher.root.setEnabled(false)
   let fisherCycle = 0
   const farmTools = crew.map((character) => createFarmTools(meshes, character))
-  const skiffGear = crew.map((character) => {
-    const gear = createSkiffGear(meshes, character)
-    const bobber = meshes.sphere(0, 0, 0, 0.135, 0.135, 0.135, '#ff845e', undefined, false)
-    const linePoints = [Vector3.Zero(), Vector3.Zero(), Vector3.Zero()]
-    const line = CreateLines('Fishing line', { points: linePoints, updatable: true }, scene)
-    line.color = Color3.FromHexString('#eee7c7')
-    line.isPickable = false
-    line.isVisible = false
-    bobber.isVisible = false
-    return { gear, bobber, linePoints, line, tip: new Vector3(0, -1.425, 0) }
-  })
+  const skiffGear = createFishingGear(scene, meshes, crew)
   // One mesh per host item, built from the same table the host uses.
   const items = itemStarts.map(({ kind }) => {
     const node = createSupply(meshes, kind)
@@ -145,41 +137,13 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const pose = state.truck
     const snap = !truck.isEnabled() || Math.hypot(truck.position.x - pose.x, truck.position.z - pose.z) > 14
     const blend = snap ? 1 : factor
+    const { x, z } = truck.position
     moveTo(truck, pose, pose.y, factor)
+    Object.assign(truckStep, { x: truck.position.x - x, z: truck.position.z - z })
     truck.rotation.x += (pose.pitch - truck.rotation.x) * blend
     truck.rotation.z += (pose.roll - truck.rotation.z) * blend
     if (!snap) wheelRotation += pose.speed * delta / flatbedGroundDrive.wheels.radius
     poseFlatbed(flatbed, wheelRotation, pose.steering, pose.suspension, blend)
-  }
-
-  function updateFishingLine(player: Player, kit: typeof skiffGear[number], gripIndex: number) {
-    const { gear, bobber, line, linePoints, tip } = kit
-    if (player.casting && gripIndex >= 0) {
-      const { bobber: target, elapsed } = player.casting
-      Vector3.TransformCoordinatesToRef(tip, gear[gripIndex].rod.computeWorldMatrix(true), linePoints[0])
-      const flight = Math.min(1, elapsed / castTravelSeconds)
-      const progress = player.casting.fight?.progress ?? 0
-      const pulling = player.casting.fight?.pulling
-      linePoints[2].set(target.x + (player.x - target.x) * progress * 0.88,
-        waterLevel + 0.025 - fishingFloatDip(player.casting) + Math.sin(time * (pulling ? 13 : 5)) * (pulling ? 0.09 : 0.025),
-        target.z + (player.z - target.z) * progress * 0.88)
-      Vector3.LerpToRef(linePoints[0], linePoints[2], flight, bobber.position)
-      bobber.position.y += Math.sin(flight * Math.PI) * 1.25
-      Vector3.LerpToRef(linePoints[0], bobber.position, 0.55, linePoints[1])
-      linePoints[1].y -= 0.13 * flight
-      linePoints[2].copyFrom(bobber.position)
-      CreateLines('Fishing line', { points: linePoints, instance: line })
-    }
-  }
-
-  function aimFishingRod(player: Player, kit: typeof skiffGear[number], gripIndex: number) {
-    const tool = kit.gear[gripIndex]
-    if (!tool) return
-    const { grip, rod } = tool
-    grip.computeWorldMatrix(true)
-    const lean = player.casting?.fight?.pulling ? 0.21 : 0.07
-    rod.rotationQuaternion = Quaternion.Inverse(grip.absoluteRotationQuaternion)
-      .multiply(Quaternion.RotationYawPitchRoll(player.heading, lean, Math.PI))
   }
 
   function updateCharacters(state: Snapshot, factor: number, delta: number) {
@@ -224,10 +188,12 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         if (player.grounded && !player.onBed && !player.swimming) {
           node.position.y = Math.max(node.position.y, walkingHeight(node.position) + 0.05)
         }
-        const traveled = Math.hypot(node.position.x - x, node.position.z - z)
-        const step = wasVisible && traveled < 2 ? traveled : 0
+        // Riding the truck bed moves the crew without walking.
+        const step = wasVisible ? groundTravel({ x, z }, node.position, player.onBed || player.truckSurface ? truckStep : undefined) : 0
         const held = state.items.find((item) => item.holder === id)
-        cycles[id] += step / 4.8
+        const gait = advanceGait(cycles[id], step)
+        cycles[id] = gait.cycle
+        if (gait.footfalls && !player.swimming) audio.footstep(player, node.position, step / Math.max(delta, .001), id === viewer)
         const stride = delta > 0 ? Math.min(0.92, step / delta * 0.072) : 0
         const winding = player.charge?.kind === 'throw' ? player.charge.power : 0
         if (player.swimming) poseSwimming(character, time + id, Math.min(1, step / Math.max(.001, delta * 3.8)), factor)
@@ -236,7 +202,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
           wasVisible ? 1 - Math.exp(-delta * 16) : 1, winding, player.throwing, player.rightHandRaised)
       }
       if (rod) aimFishingRod(player, skiffGear[id], gripIndex)
-      updateFishingLine(player, skiffGear[id], gripIndex)
+      updateFishingLine(player, skiffGear[id], gripIndex, time)
 
     }
   }
@@ -339,6 +305,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const strength = nightLighting(weather.hour)
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
     const light = atmosphere.update(field?.time ?? time, weather, camera.position, close)
+    audio.frame(camera.position, camera.getDirection(Vector3.Forward()), weather.rain, delta)
     updateEnvironment(frame, light, close, runoff, {
       driftwood: last?.driftwood, quality: review?.quality(), tideTime: field ? field.tideTime : clock,
       actors: { snapshot: last, waterCrew: crewInWater, inspection: field?.inspection,
@@ -357,6 +324,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   return {
     update(snapshot: Snapshot, id: number, trackPlayer: boolean) {
       actionFx.snapshot(last, snapshot)
+      audio.snapshot(snapshot)
       last = snapshot
       viewer = id
       follow = trackPlayer
@@ -375,7 +343,11 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     captureMouse: () => { if (!review?.active()) islandCamera.captureMouse() },
     releaseMouse: islandCamera.releaseMouse,
     setLook: (settings: LookSettings) => islandCamera.setLook(settings),
+    setSound: (settings: SoundSettings) => audio.setSound(settings),
+    hearImpact: (notice: CrateImpactNotice) => audio.impact(notice),
+    resetSound: () => audio.resetRun(),
     dispose() {
+      audio.dispose()
       review?.dispose()
       islandCamera.dispose()
       resize.disconnect()

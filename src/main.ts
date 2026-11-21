@@ -5,6 +5,8 @@ import { actionHint, atClothingCounter, heldItem, inSkiff, interactRequest } fro
 import { createRidgeHud, drawRidgeMap, flightInput, ridgeActionHint } from './ridge-ui'
 import { readStorage, writeStorage } from './browser-storage'
 import { cleanCrewName, defaultAppearance, shirtColor } from './crew-appearance'
+import { bindJoinName, openJoinName } from './join-name-ui'
+import { bindSoundOptions } from './sound-options-ui'
 import { createCrewGuide } from './crew-guide-ui'
 import { missionCard } from './mission-card'
 import { bindControlsToggle } from './controls-toggle-ui'
@@ -71,6 +73,7 @@ const joinNameDialog = element<HTMLDialogElement>('join-name-dialog')
 const joinName = element<HTMLInputElement>('join-name')
 const editCrewName = element<HTMLButtonElement>('edit-crew-name')
 const lookSettings = bindLookOptions((settings) => renderer?.setLook(settings))
+const soundSettings = bindSoundOptions((settings) => renderer?.setSound(settings))
 const reticle = createReticleFocus(playfield, document.querySelector('.reticle'))
 const openWardrobe = element<HTMLButtonElement>('open-wardrobe')
 const wardrobeDialog = element<HTMLDialogElement>('wardrobe-dialog')
@@ -242,6 +245,7 @@ try {
   bootMessage.textContent = 'Building the island scenery…'
   renderer = createRenderer(canvas, markers)
   renderer.setLook(lookSettings())
+  renderer.setSound(soundSettings())
   bootMessage.textContent = 'Connecting to the host…'
 } catch (error) {
   renderer?.dispose()
@@ -345,10 +349,7 @@ function update(state: Snapshot) {
       offerJoinName = false
       if (!player.name) {
         pauseControls()
-        joinName.value = ''
-        joinName.setCustomValidity('')
-        joinName.placeholder = `Crew ${player.id + 1}`
-        joinNameDialog.showModal()
+        openJoinName(joinNameDialog, joinName, `Crew ${player.id + 1}`)
       }
     }
   }
@@ -383,12 +384,16 @@ function connect() {
         offerJoinName = readStorage('localStorage', skipNameKey()) !== 'yes'
         id = incoming.id
         live = true
+        renderer?.resetSound()
         respawn.disabled = false
         if (renderer) bootMessage.textContent = 'Restoring your crew and map…'
         status.textContent = 'LAN connected'
         light.dataset.online = 'true'
         message = ''
         showNotice()
+        break
+      case 'crate-impact':
+        renderer?.hearImpact(incoming)
         break
       case 'state':
         update(incoming)
@@ -708,25 +713,7 @@ editCrewName.addEventListener('click', () => {
   crewName.focus()
   crewName.select()
 })
-joinName.addEventListener('input', () => joinName.setCustomValidity(''))
-element('join-name-form').addEventListener('submit', (event) => {
-  const name = cleanCrewName(joinName.value)
-  if (!name) {
-    event.preventDefault()
-    joinName.setCustomValidity('Enter a game name or choose Skip for now.')
-    joinName.reportValidity()
-    return
-  }
-  if (live) send({ type: 'crew-name', name })
-})
-function skipJoinName() {
-  writeStorage('localStorage', skipNameKey(), 'yes')
-}
-joinNameDialog.addEventListener('cancel', skipJoinName)
-element('skip-join-name').addEventListener('click', () => {
-  skipJoinName()
-  joinNameDialog.close()
-})
+bindJoinName(joinNameDialog, joinName, (name) => live && send({ type: 'crew-name', name }), () => writeStorage('localStorage', skipNameKey(), 'yes'))
 function saveCrewName() {
   const original = editingName
   editingName = undefined
@@ -763,6 +750,7 @@ if (import.meta.hot) {
     try {
       renderer = module.createRenderer(canvas, markers)
       renderer.setLook(lookSettings())
+      renderer.setSound(soundSettings())
       if (modalOpen()) renderer.releaseMouse()
       if (snapshot) renderer.update(snapshot, id, follow)
       if (!socket) {

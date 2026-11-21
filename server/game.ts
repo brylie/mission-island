@@ -51,6 +51,14 @@ function stepVehicles(
   return { before, still }
 }
 
+// Crate contacts from this tick's physics become sound cues for every crewmate. IDs stay unique per host run.
+function createImpactAnnouncer(physics: ReturnType<typeof createCargoPhysics>, notifyAll: (notice: CrewNotice) => void, session: string) {
+  let count = 0
+  return () => {
+    for (const impact of physics.drainImpacts()) notifyAll({ type: 'crate-impact', id: `${session}:${++count}`, ...impact })
+  }
+}
+
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat()
@@ -65,6 +73,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const gate = createGateRepair(state, crew.notifyAll)
   const interactions = createInteractions(state, growth, physics, orders, gate, checkpoint)
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
+  const announceImpacts = createImpactAnnouncer(physics, crew.notifyAll, (clock() >>> 0).toString(36))
 
   function tick(): Readonly<Snapshot> {
     const now = clock()
@@ -79,6 +88,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     const members = crew.members()
     const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - 400
     const { before, still } = stepVehicles(state, members, active, physics, freight)
+    announceImpacts()
     for (const item of state.items) item.spraying = false
     for (const member of members) {
       const { player } = member

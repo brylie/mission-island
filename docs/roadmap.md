@@ -17,6 +17,7 @@ The [Starter Island milestone](https://github.com/brylie/mission-island/mileston
 | Fishing | Cast from shore, a dock, or the skiff. Time the meter, then reel between pulls. Line tension can snap the line. |
 | Farming | Till, plant bought seeds, water by hand or rain, and harvest after daylight growth. |
 | Hauling | Walk up to the truck to board. Load physically simulated crates by hand or toss them over the bed lip. Side rails retain cargo during turns. Headlights, taillights, and nearby street lamps come on around dusk. |
+| Sound | Generated surf along the coast, footsteps that change on gravel, dock boards and sand, and crate impacts both crewmates hear from their own positions. Ambience and effects levels and mute are under **Options → Sound**. Audition the recipes in the Workbench under **Effects → Sound**. |
 | Movement | Sprint, jump, wade, and swim. Low rocks and crates support jumps. Reach the cab roof from the bed or hood. Respawn at home if stuck. |
 | Skiff | Both seats can paddle. Buoys mark the 75 m offshore limit. A reconnect reservation follows the moving skiff. |
 | Island | Explore towns, forest, beach, northern hills, wetlands, ridge, stream, and waterfall. Discoveries persist and their labels fade with distance. The overview and simplified minimap show landmarks and biomes. |

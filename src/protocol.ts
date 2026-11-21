@@ -129,6 +129,8 @@ export type ServerMessage =
   | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }
   | { type: 'flight-result'; result: FlightResult; pilotId: number; aerial?: string[]; recorded?: number }
   | { type: 'aerial-sighting'; id: string }
+  // A transient sound cue from host physics. Never saved; clients drop repeated or late IDs.
+  | { type: 'crate-impact'; id: string; item: number; x: number; y: number; z: number; strength: number; surface: 'ground' | 'bed' }
   | { type: 'full' | 'duplicate' }
 
 export type ClothingPurchaseResult = 'bought' | 'already-owned' | 'insufficient-funds' | 'away'
