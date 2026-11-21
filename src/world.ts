@@ -20,6 +20,11 @@ export const starterPay = {
   delivery: { label: 'Harbor delivery complete', coins: jobPay.crate + jobPay.delivery },
   fire: { label: 'Lookout fire out', coins: jobPay.fire },
 }
+export const crewWalkSpeed = 8
+export const crewCarrySpeed = 6.5
+export const crewSprintMultiplier = 1.55
+// Height of the crew's hip joint above the soles.
+export const crewHipHeight = .68
 export const jumpSpeed = 6.85
 export const jumpGravity = 17
 export const truckStart: Pose = { x: -41, z: -11, heading: Math.PI / 2 }
