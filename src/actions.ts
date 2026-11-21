@@ -5,7 +5,7 @@ import { truckPoint } from './truck-pose.ts'
 import { isNight } from './weather.ts'
 import { atJobBoard, deliveryDrop, deliveryRadius, orderContribution } from './jobs.ts'
 import { atFisher, fisherName } from './harbor-fisher.ts'
-import { gateAction, gateHint, toolboxPickable } from './gate-repair.ts'
+import { canPickUp, gateAction, gateHint } from './gate-repair.ts'
 import type { GateAction } from './gate-repair.ts'
 
 export function heldItem(state: Pick<Snapshot, 'items'>, player: Player) {
@@ -13,13 +13,8 @@ export function heldItem(state: Pick<Snapshot, 'items'>, player: Player) {
 }
 
 export function nearbyItem(state: Snapshot, player: Player) {
-  const delivering = deliveryDrop(state) !== undefined
   return state.items
-    .filter((item) =>
-      !item.delivered && item.holder === null &&
-      (item.kind === 'crate' ? delivering : item.kind === 'toolbox' ? toolboxPickable(state, item) : state.mission === 'fire') &&
-      distance(item, player) < 2.7 && Math.abs(item.y - player.y) < 2.1,
-    )
+    .filter((item) => canPickUp(state, item, player))
     .sort((a, b) => distance(a, player) - distance(b, player))[0]
 }
 

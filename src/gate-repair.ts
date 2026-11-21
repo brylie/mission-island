@@ -1,4 +1,5 @@
 import type { Item, Player, Snapshot } from './protocol.ts'
+import { deliveryDrop } from './jobs.ts'
 import { walkingHeight } from './terrain.ts'
 import { daySeconds, weatherAt } from './weather.ts'
 import { distance, toolboxPeg, wrenCottage } from './world.ts'
@@ -25,7 +26,7 @@ export type GateAction = 'talk' | 'inspect' | 'take-pin' | 'fit' | 'test' | 'ope
 export const gateActions: readonly GateAction[] = ['talk', 'inspect', 'take-pin', 'fit', 'test', 'open', 'close', 'return-toolbox']
 export const gateStages: readonly GateStage[] = ['sagging', 'accepted', 'inspected', 'fitted', 'mended']
 export type GateStep = 'inspected' | 'pin' | 'fitted' | 'stuck' | 'recalled' | 'returned'
-type GateWorld = Pick<Snapshot, 'gate' | 'gateRepair' | 'items' | 'players' | 'islandTime'>
+type GateWorld = Pick<Snapshot, 'gate' | 'gateRepair' | 'items' | 'players' | 'islandTime' | 'mission' | 'jobs'>
 
 export function initialGateRepair() {
   return {
@@ -144,7 +145,7 @@ export function onPeg(item: Pick<Item, 'x' | 'z' | 'holder'>) {
 }
 
 // The toolbox is on loan from the moment Wren asks. Once it is back on the peg after the repair, it stays there.
-export function toolboxPickable(state: Pick<Snapshot, 'gateRepair'>, item: Item) {
+function toolboxPickable(state: Pick<Snapshot, 'gateRepair'>, item: Item) {
   const { stage } = state.gateRepair
   return stage !== 'sagging' && !(stage === 'mended' && onPeg(item))
 }
@@ -167,9 +168,15 @@ function handsFor(state: GateWorld, player: Player) {
   return state.items.find((item) => item.holder === player.id)
 }
 
+// The one pick-up rule, shared by E's item pickup and the gate, so a swing never hides an item in reach.
+export function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs'>, item: Item, player: Player) {
+  const eligible = item.kind === 'crate' ? deliveryDrop(state) !== undefined
+    : item.kind === 'toolbox' ? toolboxPickable(state, item) : state.mission === 'fire'
+  return eligible && !item.delivered && item.holder === null && distance(item, player) < 2.7 && Math.abs(item.y - player.y) < 2.1
+}
+
 function pickableNear(state: GateWorld, player: Player) {
-  const toolbox = toolboxItem(state)
-  return toolbox && toolbox.holder === null && toolboxPickable(state, toolbox) && distance(toolbox, player) < 2.7
+  return state.items.some((item) => canPickUp(state, item, player))
 }
 
 function repairStep(state: GateWorld, player: Player): GateAction | null {
@@ -253,10 +260,12 @@ export function gateBlockers(state: Pick<Snapshot, 'gate' | 'gateRepair'>) {
   return [leafSolid(leafAngle(state))]
 }
 
-export function gatewayClear(state: Pick<Snapshot, 'players' | 'gateRepair' | 'islandTime'>) {
+// The leaf only swings shut once Wren, the crew and any loose cargo are out of the opening.
+export function gatewayClear(state: Pick<Snapshot, 'players' | 'items' | 'gateRepair' | 'islandTime'>) {
   const wren = wrenAt(state)
   return distance(wren, gateway) >= 1.5 &&
-    state.players.every((player) => !player.connected || distance(player, gateway) >= 1.3)
+    state.players.every((player) => !player.connected || distance(player, gateway) >= 1.3) &&
+    state.items.every((item) => item.holder !== null || item.delivered || distance(item, gateway) >= 1.3)
 }
 
 interface FavorGuide { title: string; detail: string; next: string }
