@@ -4,9 +4,9 @@ import { PBRMaterial } from '@babylonjs/core/Materials/PBR/pbrMaterial'
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 import { Color3 } from '@babylonjs/core/Maths/math.color'
 import type { Scene } from '@babylonjs/core/scene'
-import { createRecipeTextures, createTextureSample } from './surface-textures'
+import { createRecipeTextures, createTextureSample } from './assets/surface-textures'
 import type { SurfaceRecipe, SurfaceSettings } from './assets/surface-recipes'
-import type { MetalType } from './surface-textures'
+import type { MetalType } from './assets/surface-textures'
 
 export const surfaces = {
   water: { name: 'Water', color: '#237d8b', pattern: 0, scale: 1 },

@@ -1,4 +1,4 @@
-import { blend, clamp, hash, wrap } from './math/noise.ts'
+import { blend, clamp, hash, wrap } from '../math/noise.ts'
 
 export const wave = (phase: number) => 0.5 + 0.5 * Math.sin(2 * Math.PI * phase)
 export const fraction = (n: number) => n - Math.floor(n)

@@ -4,7 +4,7 @@ import { ParticleSystem } from '@babylonjs/core/Particles/particleSystem'
 import type { Scene } from '@babylonjs/core/scene'
 import { createParticleEffect } from './particle-effect'
 import { lookoutParticleHeights, particleRecipes } from './assets/particle-recipes'
-import { createParticleTexture } from './particle-texture'
+import { createParticleTexture } from './assets/particle-texture'
 import { groundHeight } from './terrain'
 
 export function createLookoutFire(scene: Scene, x: number, z: number, visitPreview = false) {

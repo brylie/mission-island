@@ -4,8 +4,8 @@ import { URL } from 'node:url'
 import test from 'node:test'
 import { libraryResults } from '../src/workbench/library.ts'
 import { readSubjectLink, subjectLink } from '../src/workbench/subject-link.ts'
-import { bakeSurfaceMaps } from '../src/surface-maps.ts'
-import { meadowGroundTone, sampleSurface } from '../src/surface-patterns.ts'
+import { bakeSurfaceMaps } from '../src/assets/surface-maps.ts'
+import { meadowGroundTone, sampleSurface } from '../src/assets/surface-patterns.ts'
 import { surfaceFamilies, surfaceRecipes, surfaceRepeatMeters } from '../src/assets/surface-recipes.ts'
 
 test('the library carries three uniquely named, searchable recipes per surface family', () => {

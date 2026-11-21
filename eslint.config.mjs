@@ -65,7 +65,7 @@ const existingLimits = {
   'src/second-island/scenery.ts': { 'max-lines': lineLimit(401), 'complexity': complexity(30) },
   'src/second-island/terrain.ts': { complexity: complexity(33) },
   'src/second-island/vehicles.ts': { complexity: complexity(41) },
-  'src/surface-textures.ts': { complexity: complexity(28) },
+  'src/assets/surface-textures.ts': { complexity: complexity(28) },
   'src/workbench/landscape-layout.ts': { 'max-lines-per-function': lineLimit(193) },
   'src/workbench/landscape-map.ts': { 'max-lines': lineLimit(459), 'max-lines-per-function': lineLimit(379) },
   'src/workbench/landscape-studies.ts': { 'max-lines-per-function': lineLimit(207) },

@@ -304,11 +304,6 @@
       "count": 16
     }
   },
-  "src/gameplay-surface-patterns.ts": {
-    "no-magic-numbers": {
-      "count": 705
-    }
-  },
   "src/gull-flight.ts": {
     "no-magic-numbers": {
       "count": 125
@@ -562,11 +557,6 @@
   "src/particle-surface.ts": {
     "no-magic-numbers": {
       "count": 31
-    }
-  },
-  "src/particle-texture.ts": {
-    "no-magic-numbers": {
-      "count": 162
     }
   },
   "src/place-labels.ts": {
@@ -907,26 +897,6 @@
   "src/street-lights.ts": {
     "no-magic-numbers": {
       "count": 25
-    }
-  },
-  "src/surface-maps.ts": {
-    "no-magic-numbers": {
-      "count": 30
-    }
-  },
-  "src/surface-pattern-tools.ts": {
-    "no-magic-numbers": {
-      "count": 12
-    }
-  },
-  "src/surface-patterns.ts": {
-    "no-magic-numbers": {
-      "count": 447
-    }
-  },
-  "src/surface-textures.ts": {
-    "no-magic-numbers": {
-      "count": 113
     }
   },
   "src/surface-uvs.ts": {

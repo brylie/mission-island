@@ -3,7 +3,7 @@ import { SpriteManager } from '@babylonjs/core/Sprites/spriteManager'
 import type { Scene } from '@babylonjs/core/scene'
 import { launchParticle, particleAppearance, particleDensity, particleHeight } from './particle-motion'
 import type { Particle, ParticleSource, ParticleTuning } from './particle-motion'
-import { particleTextureSize, createParticleTexture } from './particle-texture'
+import { particleTextureSize, createParticleTexture } from './assets/particle-texture'
 import { createSurfaceParticles } from './particle-surface'
 import type { ParticleRecipe } from './assets/particle-recipes'
 
