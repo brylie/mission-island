@@ -48,13 +48,13 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const scene = new Scene(engine)
   const islandCamera = createIslandCamera(scene, canvas)
   const review = createShaderReview(scene, canvas, engine, islandCamera.releaseMouse)
-  const audio = createIslandAudio()
 
   const lighting = createIslandLighting(scene)
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
-  const { juniper, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, garden, residents, ferry } = createIslandWorld(meshes, { liveParticles: true })
+  const { juniper, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, plants, garden, residents, ferry } = createIslandWorld(meshes, { liveParticles: true })
+  const audio = createIslandAudio(window, plants)
   const showMaterialsWork = createMaterialsWorkView(meshes)
 
   const pickupPad = createObjectiveMarker(meshes, harbor, starterObjectiveDiameters.pickup, sun)
@@ -229,7 +229,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const strength = nightLighting(weather.hour)
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
     const light = atmosphere.update(field?.time ?? time, weather, camera.position, close)
-    audio.frame(camera.position, camera.getDirection(Vector3.Forward()), weather.rain, delta)
+    audio.frame({ listener: camera.position, forward: camera.getDirection(Vector3.Forward()), weather, weatherAt: frame.weatherAt, time: frame.time, delta, state: last, truckAt: truck.isEnabled() ? truck.position : undefined })
     updateEnvironment(frame, light, close, runoff, {
       driftwood: last?.driftwood,
       quality: review?.quality(),

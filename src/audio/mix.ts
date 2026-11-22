@@ -1,7 +1,8 @@
 const defaultAmbienceLevel = 0.7
 const defaultEffectsLevel = 0.8
 const effectsVoiceLimit = 12
-const ambienceVoiceLimit = 8
+// Surf swells overlap on three voices; bird calls share the ambience bus with them.
+const ambienceVoiceLimit = 14
 const volumeTaperPower = 2
 
 // The client mix: two player-facing levels plus mute, kept quiet enough to talk over.

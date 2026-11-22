@@ -1,6 +1,7 @@
 import { busGains, defaultSound, voiceBudget, type SoundSettings } from './mix.ts'
 import { workerRenderer, type RecipeRenderer } from './recipe-renderer.ts'
 import type { Rendered } from './recipes.ts'
+import { startLoopVoice, type LoopVoice } from './loop-voice.ts'
 
 const spatialSmoothingSeconds = 0.03
 const pannerReferenceMetres = 3
@@ -9,7 +10,8 @@ const pannerMaximumMetres = 90
 const rampTimeConstants = 3
 const releaseStopMultiplier = 2
 const defaultLaneRampSeconds = 0.4
-const defaultBufferCacheEntries = 160
+// Room for every island variant, dry and soaked, with headroom for auditions.
+const defaultBufferCacheEntries = 320
 const busRampTimeConstantSeconds = 0.05
 
 export type AudioState = 'locked' | 'running' | 'suspended' | 'closed'
@@ -188,6 +190,7 @@ export function createAudioEngine(makeContext: () => AudioContext = () => new Au
   let reported: AudioState = 'locked'
   const cache = createBufferCache(cacheSize, () => renderer ??= makeRenderer())
   const pool = createVoicePool()
+  const loops = new Set<LoopVoice>()
   const watchers = new Set<(state: AudioState) => void>()
 
   function state(): AudioState {
@@ -254,6 +257,22 @@ export function createAudioEngine(makeContext: () => AudioContext = () => new Au
   function stopAll() {
     generation++
     pool.stopAll(context?.currentTime ?? 0)
+    for (const voice of loops) voice.stop(fadeSeconds)
+    loops.clear()
+  }
+
+  // Starts a looping voice into a lane when its buffer is ready; until then, renders it and returns null.
+  // Callers ask again each frame and keep the voice while it reports alive.
+  function loop(rendered: Rendered, lane: Lane, offsetSeconds = 0) {
+    if (state() !== 'running' || !context) return null
+    const ready = cache.peek(rendered.key)
+    if (!ready) {
+      void cache.load(context, rendered)
+      return null
+    }
+    const voice: LoopVoice = startLoopVoice(context, ready, lane.input, offsetSeconds, () => loops.delete(voice))
+    loops.add(voice)
+    return voice
   }
 
   return {
@@ -283,6 +302,7 @@ export function createAudioEngine(makeContext: () => AudioContext = () => new Au
     now: () => context?.currentTime ?? 0,
     voices: (bus?: Bus) => pool.count(bus),
     play,
+    loop,
     // Render buffers ahead of need, in the background, so the first cue of each kind is ready.
     warm(cues: Rendered[]) {
       if (context) for (const rendered of cues) void cache.load(context, rendered)

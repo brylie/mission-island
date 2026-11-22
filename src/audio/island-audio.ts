@@ -1,10 +1,22 @@
-import type { Player, ServerMessage, Snapshot } from '../protocol.ts'
+import type { Player, ServerMessage, Snapshot, Weather } from '../protocol.ts'
 import { createAudioEngine, type Point3 } from './engine.ts'
 import { createImpactInbox } from './impact-inbox.ts'
 import type { SoundSettings } from './mix.ts'
 import { crateCue, footstepCue, swellCue, type Rendered } from './recipes.ts'
-import { footSurface } from './surface.ts'
+import { footGround } from './surface.ts'
+import type { FootSurface } from './footstep-recipes.ts'
 import { createSurfPlayer, swellSeed, swellVariants } from './surf-player.ts'
+import { createTruckEngine } from './truck-engine.ts'
+import { createWindPlayer } from './wind-player.ts'
+import { windCue } from './wind-recipes.ts'
+import { createFoliageContacts } from './foliage-contact.ts'
+import { foliageCue, type FoliageKind } from './foliage-recipes.ts'
+import { createBirdCalls } from './bird-calls.ts'
+import { birdCue } from './bird-recipes.ts'
+import type { UnderstoryPlant } from '../island-wildlife.ts'
+import { engineInputs } from './truck-engine-model.ts'
+import { motorCue } from './motor-recipes.ts'
+import { flatbedEngineDrive } from '../assets/audio/flatbed-engine.ts'
 import { surfVoices } from './shore.ts'
 
 const softFootstepStrength = 0.15
@@ -17,7 +29,24 @@ const localFootstepGain = 0.7
 
 export type CrateImpactNotice = Extract<ServerMessage, { type: 'crate-impact' }>
 
+// What the renderer hands the mix each frame. Time is the smoothed island clock the visible effects use,
+// so wind and wildlife sounds stay in step with what players see.
+export type AudioFrame = {
+  listener: Point3
+  forward: Point3
+  weather: Weather
+  time: number
+  weatherAt?: (time: number) => Weather
+  delta: number
+  state?: Snapshot
+  truckAt?: Point3
+}
+
 const variants = 4
+const foliageKinds: FoliageKind[] = ['fern', 'rushes', 'marram', 'trunk']
+const footSurfaces: FootSurface[] = ['gravel', 'sand', 'boards', 'pavement', 'grass', 'litter', 'shallows', 'fallback']
+// Rain at which footsteps start to sound soaked; damp variants are rendered ahead only in rain.
+const dampWarmRain = 0.3
 // Walking pace in metres per second, where footsteps reach full strength.
 const brisk = 12
 // One level inside each strength tier, used to render every variant ahead of need.
@@ -29,12 +58,19 @@ const surfStrength = (rain: number) => clearWeatherSurfStrength + Math.min(1, Ma
 // so no cue in play waits on a buffer.
 function islandVariants(rain: number) {
   const cues: Rendered[] = []
+  for (const layer of ['low', 'high', 'leaves', 'needles'] as const) cues.push(windCue({ layer }, 1))
+  for (const call of ['kek', 'mew', 'flap', 'song'] as const) for (let seed = 0; seed < variants; seed++) cues.push(birdCue({ call }, seed))
+  for (const layer of ['idle', 'load'] as const) cues.push(motorCue({ layer, roughness: flatbedEngineDrive.roughness }, 1))
   for (let voice = 0; voice < surfVoices; voice++) {
     for (let count = 0; count < swellVariants; count++) cues.push(swellCue({ strength: surfStrength(rain) }, swellSeed(count, voice)))
   }
   for (const strength of tierLevels) {
+    for (const kind of foliageKinds) for (let seed = 0; seed < variants; seed++) cues.push(foliageCue({ kind, strength }, seed))
     for (let seed = 0; seed < variants; seed++) {
-      for (const surface of ['gravel', 'sand', 'boards', 'fallback'] as const) cues.push(footstepCue({ surface, strength }, seed))
+      for (const surface of footSurfaces) {
+        cues.push(footstepCue({ surface, strength }, seed))
+        if (rain >= dampWarmRain || surface === 'sand') cues.push(footstepCue({ surface, strength, damp: true }, seed))
+      }
       for (const surface of ['ground', 'bed'] as const) cues.push(crateCue({ strength, surface }, seed))
     }
   }
@@ -43,13 +79,19 @@ function islandVariants(rain: number) {
 
 // Starter Island's client mix: owns the audio context, its gesture and visibility lifecycle,
 // and turns host notices and local world state into cues.
-export function createIslandAudio(target: Window = window) {
+export function createIslandAudio(target: Window = window, plants: readonly UnderstoryPlant[] = []) {
   const engine = createAudioEngine()
   const inbox = createImpactInbox(() => performance.now())
   let revision: number | undefined
   const steps = new Map<number, number>()
   const surf = createSurfPlayer(engine)
+  const truck = createTruckEngine(engine)
+  const wind = createWindPlayer(engine)
+  const birds = createBirdCalls(engine)
+  const foliage = createFoliageContacts(plants)
+  let brushes = 0
   let rain = 0
+  let truckSpeed: number | undefined
   engine.onState((state) => {
     if (state === 'running') engine.warm(islandVariants(rain))
   })
@@ -85,18 +127,28 @@ export function createIslandAudio(target: Window = window) {
     },
     // Called each frame with the feet that landed in the visible gait; speed sets how firmly they land.
     footsteps(footfalls: number, player: Player, point: Point3, speed: number, own: boolean) {
-      const surface = footfalls > 0 ? footSurface(point, player) : null
-      if (!surface || engine.state() !== 'running') return
+      const brush = engine.state() === 'running' ? foliage.step(player.id, point, speed, engine.now()) : null
+      if (brush) engine.play(foliageCue(brush, ++brushes % variants), { position: { ...point, x: brush.x, z: brush.z }, gain: own ? localFootstepGain : 1 })
+      const ground = footfalls > 0 ? footGround(point, player, rain) : null
+      if (!ground || engine.state() !== 'running') return
       const count = (steps.get(player.id) ?? 0) + 1
       steps.set(player.id, count)
-      const cue = footstepCue({ surface, strength: Math.min(1, speed / brisk) }, count % variants)
+      const cue = footstepCue({ ...ground, strength: Math.min(1, speed / brisk) }, count % variants)
       engine.play(cue, { position: { x: point.x, y: point.y + footfallEmitterLiftMetres, z: point.z }, gain: own ? localFootstepGain : 1 })
     },
-    // Per frame: the listener follows the camera, and rain raises the surf.
-    frame(position: Point3, forward: Point3, weatherRain: number, delta: number) {
-      engine.setListener(position, forward)
-      rain = weatherRain
-      surf.frame(position, { strength: surfStrength(rain), spacing: 1 }, delta)
+    // Per frame: the listener follows the camera, rain raises the surf, and the truck's motion drives its engine.
+    frame({ listener, forward, weather, weatherAt, time, delta, state, truckAt }: AudioFrame) {
+      engine.setListener(listener, forward)
+      rain = weather.rain
+      surf.frame(listener, { strength: surfStrength(rain), spacing: 1 }, delta)
+      wind.frame(listener, time, rain, delta)
+      birds.frame(listener, time, weather, weatherAt)
+      if (state && truckAt && delta > 0) {
+        const speed = Math.abs(state.truck.speed)
+        const acceleration = truckSpeed === undefined ? 0 : (speed - truckSpeed) / delta
+        truckSpeed = speed
+        truck.frame(engineInputs(state, acceleration), truckAt, delta)
+      }
     },
     setSound(settings: SoundSettings) {
       engine.setSettings(settings)
@@ -106,6 +158,8 @@ export function createIslandAudio(target: Window = window) {
       target.removeEventListener('keydown', wake, true)
       target.document.removeEventListener('visibilitychange', visibility)
       surf.dispose()
+      truck.dispose()
+      wind.dispose()
       engine.dispose()
     },
   }

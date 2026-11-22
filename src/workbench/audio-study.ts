@@ -39,7 +39,7 @@ function cue(layer: Layer, values: Values, variant: number): Rendered {
   if (layer === 'surf') return swellCue({ strength: number(values, 'breaker', auditionControls.breaker[0]) }, seed)
   if (layer === 'footsteps') {
     const strength = Math.min(1, number(values, 'pace', auditionControls.pace[0]) / auditionControls.pace[2])
-    return footstepCue({ surface: String(values.surface) as FootSurface, strength }, seed)
+    return footstepCue({ surface: String(values.surface) as FootSurface, strength, damp: values.damp === true }, seed)
   }
   return crateCue({ strength: number(values, 'impact', auditionControls.impact[0]), surface: String(values.receiving) as CrateSurface }, seed)
 }
@@ -136,7 +136,8 @@ export const audioStudy: Entry = {
     { type: 'checkbox', key: 'spatial', label: 'Spatial audition', value: true },
     range('breaker', 'Breaker strength', ...auditionControls.breaker),
     range('spacing', 'Breaker spacing (×)', ...auditionControls.spacing),
-    control('surface', 'Footstep surface', 'gravel', { gravel: 'Gravel', sand: 'Sand', boards: 'Dock boards', fallback: 'Soft ground' }),
+    control('surface', 'Footstep surface', 'gravel', { gravel: 'Gravel', sand: 'Sand', boards: 'Dock boards', pavement: 'Pavement', grass: 'Grass', litter: 'Leaf litter', shallows: 'Shallow water', fallback: 'Bare earth' }),
+    { type: 'checkbox', key: 'damp', label: 'Soaked ground', value: false },
     range('pace', 'Walking pace (m/s)', ...auditionControls.pace),
     range('impact', 'Drop strength', ...auditionControls.impact),
     control('receiving', 'Receiving surface', 'ground', { ground: 'Ground', bed: 'Truck bed' }),

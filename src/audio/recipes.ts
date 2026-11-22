@@ -1,16 +1,20 @@
 import { crateImpactRecipe } from '../assets/audio/crate-impact.ts'
-import { footstepRecipe } from '../assets/audio/footsteps.ts'
 import { surfRecipe } from '../assets/audio/surf.ts'
-import { seededRandom } from '../seeded-random.ts'
 import { addMode, addThump, band, finish, lowpass, mixInto, recipeRate, samples, shape, strike, whiteNoise } from './dsp.ts'
+import { renderFootstep, type FootstepTraits } from './footstep-recipes.ts'
+import { renderMotor, type MotorTraits } from './motor-recipes.ts'
+import { renderWind, type WindTraits } from './wind-recipes.ts'
+import { renderFoliage, type FoliageTraits } from './foliage-recipes.ts'
+import { renderBird, type BirdTraits } from './bird-recipes.ts'
+import { clamp01, half, jitter, tierOf, tierValue, variantRandom } from './recipe-kit.ts'
+
+export { footstepCue, renderFootstep, type FootSurface } from './footstep-recipes.ts'
 
 // Each recipe renders a peak-normalised shape. Loudness is applied at playback from the same traits,
 // and the traits that also change timbre are quantised into tiers that form part of the cache key.
 
-export type FootSurface = 'gravel' | 'sand' | 'boards' | 'fallback'
 export type CrateSurface = 'ground' | 'bed'
 type CrateTraits = { strength: number, surface: CrateSurface }
-type FootstepTraits = { surface: FootSurface, strength: number }
 type SurfTraits = { strength: number }
 
 // A recipe job is plain data, so a worker can render it off the UI thread.
@@ -18,36 +22,22 @@ export type RecipeJob =
   | { family: 'crate', traits: CrateTraits, seed: number }
   | { family: 'step', traits: FootstepTraits, seed: number }
   | { family: 'surf', traits: SurfTraits, seed: number }
+  | { family: 'motor', traits: MotorTraits, seed: number }
+  | { family: 'wind', traits: WindTraits, seed: number }
+  | { family: 'foliage', traits: FoliageTraits, seed: number }
+  | { family: 'bird', traits: BirdTraits, seed: number }
 
 export type Rendered = { key: string, job: RecipeJob, gain: number, rate: number }
 
 export function renderJob(job: RecipeJob): Float32Array {
   if (job.family === 'crate') return renderCrate(job.traits, job.seed)
   if (job.family === 'step') return renderFootstep(job.traits, job.seed)
+  if (job.family === 'motor') return renderMotor(job.traits, job.seed)
+  if (job.family === 'wind') return renderWind(job.traits, job.seed)
+  if (job.family === 'foliage') return renderFoliage(job.traits, job.seed)
+  if (job.family === 'bird') return renderBird(job.traits, job.seed)
   return renderSwell(job.traits, job.seed)
 }
-
-const strengthTiers = 3
-const half = 0.5
-const tierOf = (value: number) => Math.min(strengthTiers - 1, Math.max(0, Math.floor(clamp01(value) * strengthTiers)))
-const tierValue = (tier: number) => (tier + half) / strengthTiers
-
-function clamp01(value: number) {
-  return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0
-}
-
-// Seeds pick related variants; the recipe name keeps the streams of each family apart.
-const seedHashMultiplier = 2_654_435_761
-const tierHashMultiplier = 97
-const familyHashMultiplier = 16_777_619
-function variantRandom(family: string, seed: number, tier: number) {
-  let hash = Math.abs(Math.floor(seed)) * seedHashMultiplier + tier * tierHashMultiplier
-  for (const char of family) hash = Math.imul(hash ^ char.charCodeAt(0), familyHashMultiplier)
-  return seededRandom((hash >>> 0) || 1)
-}
-
-const signedRandomRange = 2
-const jitter = (random: () => number, amount: number) => 1 + (random() * signedRandomRange - 1) * amount
 
 export function renderCrate(traits: CrateTraits, seed: number): Float32Array {
   const tier = tierOf(traits.strength)
@@ -79,61 +69,6 @@ export function crateCue(traits: CrateTraits, seed: number): Rendered {
     key: `crate:${traits.surface}:${tierOf(strength)}:${seed}`,
     job: { family: 'crate', traits: { strength: traits.strength, surface: traits.surface }, seed },
     gain: baseGain + strength * strengthGain,
-    rate: recipeRate,
-  }
-}
-
-function gravelStep(out: Float32Array, random: () => number, strength: number) {
-  const { body, grains } = footstepRecipe.gravel
-  mixInto(out, shape(lowpass(whiteNoise(out.length, random), body.cutoffHz), strike(...body.envelopeSeconds)), body.gain)
-  const ticks = grains.baseCount + Math.floor(random() * grains.countVariation + strength * grains.strengthCount)
-  for (let i = 0; i < ticks; i++) {
-    const at = Math.round((grains.startSeconds + random() * grains.startVariationSeconds) * recipeRate)
-    const noise = whiteNoise(Math.round(grains.durationSeconds * recipeRate), random)
-    const grain = shape(band(noise, grains.lowHz + random() * grains.lowVariationHz, grains.highHz), strike(...grains.envelopeSeconds))
-    const gain = (grains.baseGain + random() * grains.gainVariation) * (grains.strengthBase + strength * grains.strengthGain)
-    mixInto(out, grain, gain, at)
-  }
-}
-
-function sandStep(out: Float32Array, random: () => number, strength: number) {
-  const { scrape, body } = footstepRecipe.sand
-  const friction = lowpass(whiteNoise(out.length, random), (t) => scrape.cutoffHz + strength * scrape.strengthCutoffHz - t * scrape.cutoffDropHzPerSecond)
-  mixInto(out, shape(friction, strike(scrape.attackSeconds, scrape.decaySeconds + strength * scrape.strengthDecaySeconds)), 1)
-  mixInto(out, shape(lowpass(whiteNoise(out.length, random), body.cutoffHz), strike(...body.envelopeSeconds)), body.gain)
-}
-
-function boardStep(out: Float32Array, random: () => number, strength: number) {
-  const { body, modes, pitchJitter, modeStrengthGain, grain } = footstepRecipe.boards
-  mixInto(out, shape(lowpass(whiteNoise(out.length, random), body.cutoffHz), strike(...body.envelopeSeconds)), body.gain)
-  for (const mode of modes) {
-    addMode(out, mode.frequencyHz * jitter(random, pitchJitter), mode.decaySeconds, mode.gain + strength * modeStrengthGain, mode.startSeconds)
-  }
-  mixInto(out, shape(band(whiteNoise(out.length, random), ...grain.bandHz), strike(...grain.envelopeSeconds)), grain.baseGain + strength * grain.strengthGain)
-}
-
-export function renderFootstep(traits: FootstepTraits, seed: number): Float32Array {
-  const tier = tierOf(traits.strength)
-  const strength = tierValue(tier)
-  const random = variantRandom(`step-${traits.surface}`, seed, tier)
-  const out = samples(traits.surface === 'boards' ? footstepRecipe.boards.durationSeconds : footstepRecipe.durationSeconds)
-  if (traits.surface === 'gravel') gravelStep(out, random, strength)
-  else if (traits.surface === 'sand') sandStep(out, random, strength)
-  else if (traits.surface === 'boards') boardStep(out, random, strength)
-  else {
-    const { cutoffHz, envelopeSeconds } = footstepRecipe.fallback
-    mixInto(out, shape(lowpass(whiteNoise(out.length, random), cutoffHz), strike(...envelopeSeconds)), 1)
-  }
-  return finish(out)
-}
-
-export function footstepCue(traits: FootstepTraits, seed: number): Rendered {
-  const strength = clamp01(traits.strength)
-  const { baseGain, strengthGain } = footstepRecipe.playback
-  return {
-    key: `step:${traits.surface}:${tierOf(strength)}:${seed}`,
-    job: { family: 'step', traits: { surface: traits.surface, strength: traits.strength }, seed },
-    gain: footstepRecipe[traits.surface].level * (baseGain + strength * strengthGain),
     rate: recipeRate,
   }
 }

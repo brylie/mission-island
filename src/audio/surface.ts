@@ -1,25 +1,56 @@
+import { groundSurfaces } from '../assets/audio/ground.ts'
 import type { Player } from '../protocol.ts'
-import { distanceToRoads, distanceToRoute, footpaths } from '../routes.ts'
-import { coastRadius, shoreProfile } from '../terrain.ts'
+import { distanceToRoads, distanceToRoute, footpaths, walkways } from '../routes.ts'
+import { islandTrees, northernRegions } from '../scenery.ts'
+import { coastRadius, shoreProfile, waterDepth } from '../terrain.ts'
 import { onDock, type Point } from '../world.ts'
-import type { FootSurface } from './recipes.ts'
+import { shoreStations } from '../worlds/starter/layout/terrain.ts'
+import type { FootSurface } from './footstep-recipes.ts'
 
 const halfWidthDivisor = 2
-const roadSurfaceHalfWidthMetres = 3.3
 
-// The rendered beach band begins where the meadow blend ends.
+// The rendered beach band begins where the meadow blend ends, and darkens where the sand stays wet.
 export const sandRadius = shoreProfile[2].radius
+const wetSandRadius = shoreStations.wetSand.radius
 
-const onPath = (point: Point, surface: string) =>
-  footpaths.some((path) => path.surface === surface && distanceToRoute(point, path.points) < path.width / halfWidthDivisor)
+export type Ground = { surface: FootSurface, damp: boolean }
 
-// The surface a grounded crewmate is standing on, or null when no footstep should sound.
-export function footSurface(point: Point, player: Pick<Player, 'seat' | 'grounded' | 'swimming' | 'truckSurface'>): FootSurface | null {
+const within = (point: Point, path: { width: number, points: readonly Point[] }) =>
+  distanceToRoute(point, path.points) < path.width / halfWidthDivisor
+const onPath = (point: Point, surface: string) => footpaths.some((path) => path.surface === surface && within(point, path))
+const paved = (point: Point) =>
+  onPath(point, 'pavement') || walkways.some((path) => within(point, path)) || distanceToRoads(point) < groundSurfaces.roadHalfWidthMetres
+
+function wooded(point: Point) {
+  const { treeReachMetres, nearbyTrees } = groundSurfaces.litter
+  if (northernRegions.some((region) => region.trees && Math.hypot(point.x - region.at.x, point.z - region.at.z) < region.spread)) return true
+  let near = 0
+  for (const tree of islandTrees) {
+    if (Math.hypot(tree.x - point.x, tree.z - point.z) < treeReachMetres && ++near >= nearbyTrees) return true
+  }
+  return false
+}
+
+// The ground surface without people or weather: what a boot lands on at this point.
+export function groundSurface(point: Point): FootSurface {
+  if (onDock(point)) return 'boards'
+  const depth = waterDepth(point)
+  if (depth > groundSurfaces.shallows.minDepthMetres && depth < groundSurfaces.shallows.maxDepthMetres) return 'shallows'
+  if (onPath(point, 'gravel')) return 'gravel'
+  if (paved(point)) return 'pavement'
+  if (coastRadius(point) >= sandRadius) return 'sand'
+  if (onPath(point, 'desire')) return 'fallback'
+  return wooded(point) ? 'litter' : 'grass'
+}
+
+// The surface a grounded crewmate is standing on and whether rain or the tide has soaked it,
+// or null when no footstep should sound.
+export function footGround(point: Point, player: Pick<Player, 'seat' | 'grounded' | 'swimming' | 'truckSurface'>, rain = 0): Ground | null {
   if (player.seat || !player.grounded || player.swimming) return null
   // Supporting boards win over the terrain beneath them.
-  if (onDock(point) || player.truckSurface) return 'boards'
-  if (onPath(point, 'gravel')) return 'gravel'
-  if (onPath(point, 'pavement') || distanceToRoads(point) < roadSurfaceHalfWidthMetres) return 'fallback'
-  if (coastRadius(point) >= sandRadius) return 'sand'
-  return 'fallback'
+  if (player.truckSurface) return { surface: 'boards', damp: false }
+  const surface = groundSurface(point)
+  const { damp } = groundSurfaces
+  const soaked = surface === 'pavement' || surface === 'boards' ? rain >= damp.pavingRain : rain >= damp.rain
+  return { surface, damp: soaked || (surface === 'sand' && coastRadius(point) >= wetSandRadius) }
 }

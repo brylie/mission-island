@@ -2,7 +2,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { carrierShift, countFootfalls, groundTravel } from '../src/audio/gait.ts'
 import { walkGait } from '../src/island-render-pose.ts'
-import { footSurface, sandRadius } from '../src/audio/surface.ts'
+import { footGround, sandRadius } from '../src/audio/surface.ts'
+
+const footSurface = (point, player) => footGround(point, player)?.surface ?? null
 import { coastPoint, coastRadius } from '../src/terrain.ts'
 import { dockEndZ, harbor, harborDock } from '../src/world.ts'
 
