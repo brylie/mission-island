@@ -10,7 +10,7 @@ import { multiplayer } from '../server/multiplayer.ts'
 import { playtestEventQuery, readPlaytestEvent } from '../src/playtest-events.ts'
 import { wildfireSizes } from '../src/wildfire.ts'
 import { playtestPlaces } from '../src/playtest-places.ts'
-import { walkingHeight } from '../src/terrain.ts'
+import { groundHeight, walkingHeight } from '../src/terrain.ts'
 import { tokens } from './support/game-harness.mjs'
 
 const read = (query) => readPlaytestEvent(new URLSearchParams(query))
@@ -102,8 +102,11 @@ test('a playtest crewmate can go to a named place, standing on its ground', () =
   const summit = playtestPlaces.find(({ id }) => id === 'cairn-summit').point
   assert.ok(Math.hypot(player.x - summit.x, player.z - summit.z) < 1, `${player.x}, ${player.z}`)
   assert.ok(Math.abs(player.y - walkingHeight(player)) < 0.5)
-  game.playtestEvent({ type: 'go-to', place: 'fire-watch-deck' }, tokens[0])
-  assert.ok(game.tick().players[0].y > walkingHeight({ x: 10000, z: 10000 }) + 5, 'the deck is up the tower')
+  assert.equal(game.playtestEvent({ type: 'go-to', place: 'fire-watch-deck' }, tokens[0]).ok, true)
+  const deck = playtestPlaces.find(({ id }) => id === 'fire-watch-deck').point
+  const onDeck = game.tick().players[0]
+  assert.ok(Math.hypot(onDeck.x - deck.x, onDeck.z - deck.z) < 0.5, 'standing at the deck spot')
+  assert.ok(Math.abs(onDeck.y - walkingHeight(deck)) < 0.1 && onDeck.y > groundHeight(deck) + 5, 'on the deck, up the tower')
 
   // Arriving resets the crewmate as respawn does, and the barrow must be set down first.
   const state = game.tick()
@@ -112,8 +115,8 @@ test('a playtest crewmate can go to a named place, standing on its ground', () =
   const arrived = game.tick().players[0]
   assert.deepEqual([arrived.sleeping, arrived.onBed, arrived.rowing], [false, false, false])
   // A hero view's spot faces the view's target.
-  game.playtestEvent({ type: 'go-to', place: 'hero-ridge-south' }, tokens[0])
-  const hero = playtestPlaces.find(({ id }) => id === 'hero-ridge-south')
+  game.playtestEvent({ type: 'go-to', place: 'highwood-ridge-home' }, tokens[0])
+  const hero = playtestPlaces.find(({ id }) => id === 'highwood-ridge-home')
   assert.equal(game.tick().players[0].heading, hero.heading)
   state.players[0].seat = 'driver'
   assert.deepEqual(game.playtestEvent({ type: 'go-to', place: 'bracken' }, tokens[0]), { ok: false, text: 'Leave your seat or land first.' })

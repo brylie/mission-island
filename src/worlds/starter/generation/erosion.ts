@@ -170,7 +170,8 @@ export function weatherSlopes(grid: HeightGrid, { iterations, rate }: ThermalEro
           }
         }
         if (steepest < 0) continue
-        const move = drop * rate * half * strength(i)
+        // Protected ground neither sheds nor receives material.
+        const move = drop * rate * half * Math.min(strength(i), strength(steepest))
         heights[i] -= move
         heights[steepest] += move
       }

@@ -85,8 +85,8 @@ function buildGround(meshes: MeshFactory, angles: readonly number[], rings: read
   const indices: number[] = []
   const owned: boolean[] = []
   const segments = angles.length
-  for (const [i, ring] of rings.entries()) {
-    for (const [j, angle] of angles.entries()) {
+  for (const ring of rings) {
+    for (const angle of angles) {
       const point = originalCoastPoint(angle, ring)
       const { x, z } = point
       const height = groundHeight(point)
@@ -95,11 +95,15 @@ function buildGround(meshes: MeshFactory, angles: readonly number[], rings: read
       uvs.push(x, z)
       appendMeadowColor(colors, point, wear)
       beach.push(...beachVertex(point, coastalSurface(point, height)))
-      if (i === 0) continue
+    }
+  }
+  // Ground the Highwood generator owns is drawn by its own tiles. Every vertex's
+  // ownership is known before the triangles are chosen.
+  const generated = (...corners: number[]) => corners.every((corner) => owned[corner])
+  for (let i = 1; i < rings.length; i++) {
+    for (let j = 0; j < segments; j++) {
       const offset = (i - 1) * segments
       const a = offset + j, next = offset + (j + 1) % segments
-      // Ground the Highwood generator owns is drawn by its own tiles.
-      const generated = (...corners: number[]) => corners.every((corner) => owned[corner])
       if (rings[i - 1] > 0 && !generated(a, next + segments, next)) indices.push(a, next + segments, next)
       if (!generated(a, a + segments, next + segments)) indices.push(a, a + segments, next + segments)
     }
@@ -111,7 +115,8 @@ function buildGround(meshes: MeshFactory, angles: readonly number[], rings: read
 }
 
 const fullyAuthored = 0.999
-const tileMetres = 64
+// A whole number of cells per tile, so neighbouring tiles share their edge vertices.
+const tileMetres = 63
 const tileCell = 1.5
 // Generated tiles dip this far below the ring mesh where both cover the old shore, so they never fight.
 const seamDip = 0.03

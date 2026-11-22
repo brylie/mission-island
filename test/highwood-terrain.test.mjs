@@ -82,11 +82,12 @@ test('generated land meets the old shore without a step', () => {
 })
 
 test('wheel raycasts reach the far north of the physics heightfield', () => {
+  // Record each vehicle's wheel contact by where its chassis stands.
   const contact = new Map()
   const update = RaycastVehicle.prototype.updateVehicle
   RaycastVehicle.prototype.updateVehicle = function (...args) {
     const result = update.apply(this, args)
-    contact.set(this.chassisBody.id, this.numWheelsOnGround)
+    contact.set(this.chassisBody.id, { wheels: this.numWheelsOnGround, at: { x: this.chassisBody.position.x, z: this.chassisBody.position.z } })
     return result
   }
   try {
@@ -94,7 +95,10 @@ test('wheel raycasts reach the far north of the physics heightfield', () => {
     const at = highwoodPlaces.pineDraw
     let truck = physics.parkTruck({ ...at, heading: 0 })
     for (let i = 0; i < 30; i++) truck = physics.step([], truck, { x: 0, z: 0 }, 1 / 30)
-    assert.equal(Math.max(...contact.values()), 4)
+    // Only the truck parked at Pine Draw counts: the learner vehicles stand far to the south.
+    const truckWheels = [...contact.values()].find(({ at: point }) => Math.hypot(point.x - at.x, point.z - at.z) < 5)
+    // With the clamp bug no wheel touches; on Pine Draw's eroded floor one may hang over a gully.
+    assert.ok(truckWheels && truckWheels.wheels >= 3, `wheels down: ${truckWheels?.wheels}`)
   }
   finally {
     RaycastVehicle.prototype.updateVehicle = update

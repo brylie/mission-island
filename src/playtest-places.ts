@@ -1,6 +1,6 @@
 import { fireFinder, fireWatchEntrance } from './fire-watch.ts'
 import type { Point } from './world.ts'
-import { highwoodHeroViews } from './worlds/starter/layout/hero-views.ts'
+import { capturePresets } from './assets/recipes/capture-presets.ts'
 import { highwoodPlaces } from './worlds/starter/layout/island-generation.ts'
 
 // Somewhere to stand beside the fire finder, clear of its post.
@@ -17,6 +17,8 @@ export const playtestPlaces: readonly { id: string, label: string, point: Point,
   { id: 'bracken', label: 'Bracken Meadow', point: highwoodPlaces.bracken },
   { id: 'birch-flats', label: 'Birch Flats', point: highwoodPlaces.birchFlats },
   { id: 'alder-creek', label: 'Alder Creek head', point: highwoodPlaces.creekHead },
-  // A hero view's spot faces its target, as the view does.
-  ...highwoodHeroViews.map(({ id, short, eye, target }) => ({ id, label: `Hero: ${short}`, point: eye, heading: Math.atan2(target.x - eye.x, target.z - eye.z) })),
+  // Highwood's hero views: stand at the view's eye, facing what it looks at.
+  ...Object.entries(capturePresets).flatMap(([id, preset]) => id.startsWith('highwood-') && preset.kind === 'landscape'
+    ? [{ id, label: `Hero: ${preset.label}`, point: preset.eye, heading: Math.atan2(preset.look.x - preset.eye.x, preset.look.z - preset.eye.z) }]
+    : []),
 ]

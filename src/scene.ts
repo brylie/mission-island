@@ -1,4 +1,3 @@
-import { createPerfReadout } from './perf-readout'
 import type { Camera } from '@babylonjs/core/Cameras/camera'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
@@ -15,6 +14,8 @@ import { createWildfireView } from './wildfire-view'
 import { moveTo, waterActors } from './island-render-pose'
 import { createCrewPresentation } from './crew-presentation'
 import { createIslandCamera } from './island-camera'
+import { createDevTools } from './dev-tools'
+import type { OverlayContext } from './debug-overlays/registry'
 import { createIslandAudio, type CrateImpactNotice } from './audio/island-audio'
 import type { SoundSettings } from './audio/mix'
 import { createPlaceLabels } from './place-labels'
@@ -68,12 +69,21 @@ function createItemNodes(meshes: ReturnType<typeof createMeshFactory>) {
   })
 }
 
+// Dev tools draw overlays and can pin the camera; a shader review renders its own split view.
+function renderView(scene: Scene, review: ReturnType<typeof createShaderReview>, dev: ReturnType<typeof createDevTools>, context: OverlayContext, time: number) {
+  dev?.frame(context, time)
+  if (review) return review.render()
+  if (dev?.camera) scene.activeCamera = dev.camera
+  scene.render()
+}
+
 export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) {
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
   const scene = new Scene(engine)
-  createPerfReadout(scene, engine)
   const islandCamera = createIslandCamera(scene, canvas)
   const review = createShaderReview(scene, canvas, engine, islandCamera.releaseMouse)
+  const dev = createDevTools(scene, canvas)
+  const pinned = (camera: Camera) => dev?.camera ?? camera
 
   const lighting = createIslandLighting(scene)
   const { shadows } = lighting
@@ -232,7 +242,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   }
 
   function drawEnvironment(delta: number, factor: number, { camera, close, field, livePlayer }: EnvironmentView) {
-    const climate = sceneWeather(field?.weather, last?.weather)
+    const climate = sceneWeather(field?.weather ?? dev?.weather, last?.weather)
     const { weather } = climate
     const clock = last?.islandTime ?? time
     const timeError = clock - ambientTime
@@ -280,11 +290,10 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
     const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta, ridgeCameraMode(last, local))
     const field = review?.view(time)
-    const camera = field?.camera ?? normalCamera
+    const camera = field?.camera ?? pinned(normalCamera)
     const close = Boolean(field || subject)
     drawEnvironment(delta, factor, { camera, close, field, livePlayer: !field && subject ? local : undefined })
-    if (review) review.render()
-    else scene.render()
+    renderView(scene, review, dev, { islandTime: last?.islandTime ?? ambientTime, state: last }, time)
     const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
     labels.update(last, local, close, (element, x, y, z) => locate(element, viewport, x, y, z))
     updateCrewTags(close, viewport)
@@ -320,6 +329,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     dispose() {
       audio.dispose()
       review?.dispose()
+      dev?.dispose()
       islandCamera.dispose()
       resize.disconnect()
       engine.dispose()

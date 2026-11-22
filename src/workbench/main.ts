@@ -24,12 +24,13 @@ import type { FieldSite } from './field-site'
 import { createStage, type Angle, type CameraState } from './stage'
 import { showScaleTools } from './scale-figure'
 import { landscapeViews, openFieldView, scenicChoices } from './landscape-views'
-import { captureMode } from './capture-mode'
 import { createLandscapeDraft, draftLabels, draftStorageKey } from './landscape-draft'
 import { createLandscapeMap } from './landscape-map'
 import { createLandscapeStudies } from './landscape-studies'
-import { parseLandscapeShot, type LandscapeShot } from './landscape-shot'
-import { lightingPresets, type LightingPreset } from './lighting'
+import { parseLandscapeShot } from './landscape-shot'
+import type { LandscapeShot } from './landscape-shot'
+import { lightingPresets } from './lighting'
+import type { LightingPreset } from './lighting'
 
 function element<T extends HTMLElement = HTMLElement>(id: string) {
   const target = document.getElementById(id)
@@ -385,7 +386,7 @@ function openLandscapeView(id: string) {
     z: view.focus.z,
     focusHeight: view.focus.height,
     hour: view.hour,
-    rain: view.rain ?? 0,
+    rain: 0,
     marketRainAge: dryMarketRainAge,
     clockStart: timeline.start,
     sunShafts: true,
@@ -567,7 +568,7 @@ catch (error) {
 reference.select(asset.id, asset.name)
 if (!openSubjectSetup()) loadAsset(saved.id === asset.id && Boolean(saved.field) === onIsland ? saved.camera : undefined)
 openFurnishingLocation()
-const initialUrl = new URL(location.href), captured = captureMode()
+const initialUrl = new URL(location.href)
 const initialView = initialUrl.searchParams.get('view')
 if (!openLinkedStudy() && asset.landscape && initialView && Object.hasOwn(landscapeViews, initialView)) {
   openLandscapeView(initialView)
@@ -594,7 +595,6 @@ engine?.runRenderLoop(() => {
   seek = false
   studies.afterDraw()
   landscapeMap.update()
-  captured()
 })
 
 if (import.meta.hot) {

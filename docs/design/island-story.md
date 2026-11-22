@@ -48,7 +48,7 @@ Bare ground left by the ice slowly became soil. Lichens and mosses came first, t
 
 Fire has always been part of this landscape. Lightning, and later people, set dry grass and heath alight in long dry spells. A pinewood survives most ground fires, and its thick-barked old trees often live through them. After a fire, birch and grass come back quickly into the gaps, and young pine follows. Charred standing trees can stay for decades as snags that birds and insects use. So the forest is a patchwork of different ages, each patch recording a fire.
 
-- **Still visible.** The burn scar at the Forest Lookout and its recovering verge. Snags and charred stumps in Highwood. Even-aged patches of young birch and pine where an old fire opened the canopy. Each wildfire the crew fights adds a new patch to this record.
+- **Still visible.** The burn scar at the Forest Lookout and its recovering verge. Snags and charred stumps in Highwood. Even-aged patches of young birch and pine where an old fire opened the canopy. Today the game keeps the scar of the most recent wildfire, and a new fire replaces it; scars that accumulate into a patchwork of ages are planned.
 - **Habitats.** Pinewoods and the Highwood stands. The [Fire Watch](../mechanics/fire-watch.md) and the [Forest Lookout recovery](../forest-lookout-recovery.md) are the playable parts of this era.
 
 ## 7. People make the island a home

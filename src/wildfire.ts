@@ -69,6 +69,21 @@ const halfSector = compassSector * half
 const metresPerHundred = 10
 const homeReachM = 1.4
 
+// The next hotspot is the one the wind carries embers toward: downwind of a burning one and close by.
+const catchRangeM = 5
+const distancePenaltyPerM = 0.12
+
+// Each unburnt hotspot within reach of a burning one, scored by how far downwind and how close it is.
+// The host adds a seeded jitter before choosing. Debug overlays read the scores without drawing from the seed.
+export function spreadCandidates(fire: Wildfire, wind: Point) {
+  const burning = burningHotspots(fire)
+  return fire.hotspots.filter((candidate) => !candidate.caught).flatMap((spot) => burning.flatMap((source) => {
+    const gap = distance(spot, source)
+    if (gap > catchRangeM) return []
+    return [{ spot, source, score: ((spot.x - source.x) * wind.x + (spot.z - source.z) * wind.z) / gap - gap * distancePenaltyPerM }]
+  }))
+}
+
 export function fireSite(id: FireSiteId) {
   return starterFireSites.find((site) => site.id === id) ?? starterFireSites[0]
 }

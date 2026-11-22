@@ -3,6 +3,7 @@ import type { HeightGrid } from './erosion.ts'
 
 const { boxSizes, slopeBands: bands, steepRise } = highwoodGeneration.metrics
 const halves = 2
+const neighbours = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]] as const
 const quarterTurns = 4
 // A shoreline traced along cell edges overstates a curve by 4 / pi on average.
 const edgeToCurve = Math.PI / quarterTurns
@@ -56,7 +57,9 @@ export function slopeShares({ columns, rows, cell, heights }: HeightGrid, land: 
     for (let x = 1; x < columns - 1; x++) {
       const i = z * columns + x
       if (!land(i)) continue
-      const rise = Math.hypot(heights[i + 1] - heights[i - 1], heights[i + columns] - heights[i - columns]) / (cell * halves)
+      // The steepest drop to any of the eight neighbours, so a lone spike counts as steep.
+      let rise = 0
+      for (const [dx, dz] of neighbours) rise = Math.max(rise, Math.abs(heights[i + dz * columns + dx] - heights[i]) / (cell * Math.hypot(dx, dz)))
       total++
       if (rise > steepRise) steep++
       const band = bands.findIndex((limit) => rise <= limit)

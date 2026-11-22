@@ -11,7 +11,7 @@ const minimumLoopM = 24
 const marginM = 10
 const boundsRadius = 1.05
 
-export interface ShoreLoop {
+interface ShoreLoop {
   points: readonly Point[]
   // Metres along the loop at each point, from its first point.
   along: readonly number[]

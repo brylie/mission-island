@@ -9,6 +9,7 @@ import {
   fireSightRangeM,
   fireSite,
   finderReading,
+  spreadCandidates,
   sprayTarget,
   wildfireSizes,
   type IslandEvents,
@@ -45,12 +46,10 @@ const caughtHeatShare = 0.25
 const heatRiseSeconds = 45
 const spreadShare = 0.7
 const spreadSeconds = 20
-// The next hotspot is the one the wind carries embers toward: downwind of a burning one and close by.
-const catchRangeM = 5
-const distancePenaltyPerM = 0.12
+// Embers carry a little randomly, so close calls between downwind hotspots vary.
 const spreadJitter = 0.25
 // Rain slowly douses a fire and stops it spreading.
-const dousingRain = 0.35
+export const dousingRain = 0.35
 const rainDouseSeconds = 80
 // One crewmate's spray takes a hotspot from full heat to out in this time.
 const sprayKnockdownSeconds = 6
@@ -122,17 +121,10 @@ function canIgnite(state: Pick<Snapshot, 'mission' | 'weather' | 'players' | 'is
 
 // Picks the unburnt hotspot the wind is most likely to carry the fire to next.
 export function downwindHotspot(events: IslandEvents, fire: Wildfire, islandTime: number) {
-  const wind = windAt(islandTime)
-  const burning = burningHotspots(fire)
   let best: { spot: Wildfire['hotspots'][number], score: number } | undefined
-  for (const spot of fire.hotspots.filter((candidate) => !candidate.caught)) {
-    for (const source of burning) {
-      const gap = distance(spot, source)
-      if (gap > catchRangeM) continue
-      const along = ((spot.x - source.x) * wind.x + (spot.z - source.z) * wind.z) / gap
-      const score = along - gap * distancePenaltyPerM + (draw(events) - half) * spreadJitter
-      if (!best || score > best.score) best = { spot, score }
-    }
+  for (const { spot, score: lean } of spreadCandidates(fire, windAt(islandTime))) {
+    const score = lean + (draw(events) - half) * spreadJitter
+    if (!best || score > best.score) best = { spot, score }
   }
   return best?.spot
 }

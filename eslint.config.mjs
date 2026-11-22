@@ -66,7 +66,6 @@ const authoredWorldLayouts = [
   'src/worlds/saltwind/layout/terrain.ts',
   'src/worlds/starter/layout/island-generation.ts',
   'src/worlds/starter/layout/fire-sites.ts',
-  'src/worlds/starter/layout/hero-views.ts',
   'src/worlds/starter/layout/places.ts',
   'src/worlds/starter/layout/routes.ts',
   'src/worlds/starter/layout/scenery.ts',
@@ -167,7 +166,7 @@ const sharedInteractionFiles = [
 
 export default defineConfig(
   // .claude/ holds agent worktrees: full copies of the repo that git ignores but ESLint would walk.
-  { ignores: ['dist/**', 'coverage/**', '.claude/**'] },
+  { ignores: ['dist/**', 'coverage/**', '.claude/**', 'captures/**', 'sims/**'] },
   {
     files: ['**/*.{cjs,js,mjs,ts}'],
     extends: [stylistic.configs.recommended],
