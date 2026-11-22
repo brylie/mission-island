@@ -48,8 +48,10 @@ export const publicBuildings: StarterBuilding[] = [
   { x: 39, z: 2.6, heading: Math.PI, w: 6, d: 5, h: 4.9, wall: '#f5e3b2', roof: '#b74e36' },
   { x: 48, z: 2.6, heading: Math.PI, w: 5, d: 5, h: 4.35, wall: '#76b7a3', roof: '#25585f' },
   { x: 25, z: 18, w: 4, d: 4, h: 4.1, wall: '#e47c63', roof: '#a02e30' },
-  { x: 10, z: 33, w: 3, d: 3, h: 4.65, wall: '#d6b188', roof: '#12605b' },
 ]
+
+// The Fire Watch tower stands beside Fire Supplies, north-east of the lookout. Its stairs run south to the trail.
+export const fireWatchSite = { x: 21, z: 36, heading: 0 }
 
 // Supply order defines the initial item IDs.
 export const crateStarts = [
@@ -59,6 +61,15 @@ export const crateStarts = [
 ]
 export const extinguisherStock = { x: 21, z: 22 }
 export const extinguisherStarts = [{ ...extinguisherStock, x: extinguisherStock.x - 1 }, { ...extinguisherStock, x: extinguisherStock.x + 1 }]
+
+// Each fire station holds one extinguisher on a stand. Station order follows the item IDs after the toolbox.
+export const extinguisherStations = [
+  { id: 'harbor', name: 'Harbor Depot fire station', x: -41.65, z: -15.6, heading: -Math.PI / 2 },
+  { id: 'seabrook', name: 'Seabrook fire station', x: 32.5, z: 18, heading: Math.PI },
+  { id: 'farm', name: 'Island Farm fire station', x: 26.4, z: -8.6, heading: 0 },
+  { id: 'fire-watch', name: 'Fire Watch fire station', x: 25, z: 27.4, heading: Math.PI },
+  { id: 'pinewoods', name: 'Pinewoods fire station', x: -29, z: 10.5, heading: Math.PI / 2 },
+] as const
 
 // Wren keeps the loaned toolbox on the mending bench at the north edge of the ferry yard.
 export const mendingBenchSite = { x: -23.4, z: -15.8, heading: Math.PI / 2 }

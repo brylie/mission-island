@@ -10,7 +10,8 @@ import { barrowSolids } from '../barrow.ts'
 import { truckPoint, truckSurface } from '../truck-pose.ts'
 import type { Truck, TruckPose } from '../truck-pose.ts'
 import { islandRocks, islandTrees, northernProps } from '../scenery.ts'
-import { coastBounds, groundHeight, maxWadeDepth, shoreProfile, walkingHeight, waterDepth, waterLevel } from '../terrain.ts'
+import { coastBounds, fireWatchBaseHeight, groundHeight, maxWadeDepth, shoreProfile, walkingHeight, waterDepth, waterLevel } from '../terrain.ts'
+import { fireWatchColumns } from '../fire-watch.ts'
 import { createTruckPhysics } from './truck.ts'
 import { watchCrateImpacts } from './cargo-impacts.ts'
 
@@ -128,6 +129,15 @@ function addIslandColliders(world: World) {
       position: new Vec3(chest.x, groundHeight(chest) + chestSize.height * half, chest.z),
       shape: new Box(new Vec3(chestSize.width * half, chestSize.height * half, chestSize.depth * half)),
     }))
+  }
+  const towerBase = fireWatchBaseHeight()
+  for (const column of fireWatchColumns()) {
+    const body = new Body({
+      position: new Vec3(column.x, towerBase + column.top * half, column.z),
+      shape: new Box(new Vec3(column.halfWidth, column.top * half, column.halfDepth)),
+    })
+    body.quaternion.setFromEuler(0, column.heading, 0)
+    world.addBody(body)
   }
   const plankHalfThickness = harborDock.plankThickness * half
   world.addBody(new Body({

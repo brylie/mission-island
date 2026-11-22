@@ -67,7 +67,7 @@ export function createEquipment(
       member.primary = { kind: 'throw', since: now, itemId: item.id }
       player.charge = { kind: 'throw', power: 0 }
     }
-    else if (item && canSpray(state, player, item)) {
+    else if (item && canSpray(player, item)) {
       member.primary = { kind: 'spray', since: now, itemId: item.id }
     }
     else if (!item && player.equipped === 'fishing-rod') {

@@ -1,3 +1,4 @@
+import { fireStationGeometry } from '../../assets/geometry/fire-station.ts'
 import { lichenStoneProfile, sitePropGeometry, type SupportBox } from '../../assets/geometry/site-props.ts'
 import { fenceHeight, fenceRuns } from '../../gate-layout.ts'
 import { plank, solidTop } from '../../gate-repair.ts'
@@ -6,8 +7,9 @@ import { jobBoard } from '../../jobs.ts'
 import { beachUmbrellas, lampPosts, ridgeLichenRocks, ridgeLichenSite, shellRocks, starterFeatures } from './sites.ts'
 import { ridgeLandingSign, ridgeRack, ridgeWindsock } from './ridge-scout.ts'
 import { flowerBeds, rainBarrel, sawhorse, woodpile } from './wren-garden.ts'
-import { walkingHeight } from '../../terrain.ts'
-import { localPoint, mendingBench, offset } from '../../world.ts'
+import { fireWatchRails } from '../../fire-watch.ts'
+import { fireWatchBaseHeight, walkingHeight } from '../../terrain.ts'
+import { extinguisherStations, localPoint, mendingBench, offset } from '../../world.ts'
 import type { Point } from '../../world.ts'
 
 const half = 0.5
@@ -52,6 +54,8 @@ export const starterSolids = [
   ...solidsAt(ridgeRack),
   ...solidsAt(ridgeWindsock),
   ...solidsAt(ridgeLandingSign),
+  ...fireWatchRails(fireWatchBaseHeight()),
+  ...extinguisherStations.flatMap((station) => solidsAt({ ...station, geometry: fireStationGeometry })),
 ]
 
 const lichenBase = walkingHeight(ridgeLichenSite)

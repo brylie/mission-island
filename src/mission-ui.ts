@@ -30,7 +30,7 @@ export function createMissionHud(element: (id: string) => HTMLElement, boardButt
       segment.classList.toggle('active', card.value >= (index + 1) * card.max / count)
     })
     boardButton.hidden = state.mission !== 'complete'
-    spray.hidden = state.mission !== 'fire'
+    spray.hidden = !state.items.some((item) => item.kind === 'extinguisher' && item.holder === id)
     if (missionStep.textContent !== card.instruction) missionStep.textContent = card.instruction
   }
 }

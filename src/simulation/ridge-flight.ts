@@ -1,5 +1,5 @@
 import { propTop } from '../scenery.ts'
-import { groundHeight, waterLevel } from '../terrain.ts'
+import { groundHeight, walkingHeight, waterLevel } from '../terrain.ts'
 import { distance, localPoint, offset } from '../world.ts'
 import type { Point, Pose } from '../world.ts'
 import { liftSites, liftStrength } from '../worlds/starter/lift.ts'
@@ -77,7 +77,7 @@ function wingClearance({ pilot, bank, pitch }: Flight) {
     const y = pilot.y + rolledY * pitchCos - probe.z * pitchSin
     const z = rolledY * pitchSin + probe.z * pitchCos
     const point = offset(pilot, x, z)
-    return y - Math.max(groundHeight(point), waterLevel, propTop(point, wingRadiusM))
+    return y - Math.max(walkingHeight(point), waterLevel, propTop(point, wingRadiusM))
   }))
 }
 
@@ -116,7 +116,7 @@ export function stepRidgeFlight(flight: Flight, input: Steering, conditions: Fli
   const next = offset(pilot, 0, speed * ridgeStep)
   pilot.x = next.x + ridgeWind.x * ridgeStep
   pilot.z = next.z + ridgeWind.z * ridgeStep
-  const surface = Math.max(groundHeight(pilot), waterLevel)
+  const surface = Math.max(walkingHeight(pilot), waterLevel)
   const initial = Math.min(1, flight.elapsed / launchGraceSeconds)
   const sink = Math.max(minimumSinkMps, initialSinkMps + settledSinkIncreaseMps * initial + noseDown * (noseDown > 0 ? noseDownSinkGain : noseUpSinkGain))
   const verticalSpeed = liftAt(pilot, conditions) - sink

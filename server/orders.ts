@@ -94,10 +94,7 @@ export function createOrders(
     state.mission = 'complete'
     state.lookoutFireClearedAt = state.islandTime
     payCrew({ type: 'job-pay', job: 'fire', coins: starterPay.fire.coins })
-    for (const tool of state.items.filter(({ kind }) => kind === 'extinguisher')) {
-      tool.holder = null
-      tool.spraying = false
-    }
+    for (const tool of state.items.filter(({ kind }) => kind === 'extinguisher')) tool.spraying = false
     checkpoint?.()
   }
 

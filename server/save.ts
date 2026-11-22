@@ -11,6 +11,7 @@ import type { Player, Snapshot } from '../src/protocol'
 import { gateStages, initialGateRepair } from '../src/gate-repair.ts'
 import { materialRefillSeconds, repairMaterials, repairQuantity } from '../src/materials-work.ts'
 import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
+import { isSavedEvents, isSavedExtinguisher, migrateFireWatch } from './events-save.ts'
 import { isFavorReceipt, isResidentRecords, migrateResidents, migrateTrust } from './resident-save.ts'
 import { initialFerryRepair, isFerryRepair } from '../src/ferry-repair.ts'
 import { makeItems } from './items.ts'
@@ -28,7 +29,7 @@ export type IslandSave = {
   lastStarterPay?: Snapshot['lastStarterPay']
   islandTime: number
   growth: number[]
-  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay' | 'ferryRepair'>
+  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'events' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay' | 'ferryRepair'>
     & { truck: Pose, jobs?: JobBoardState, aviation?: AviationProgress, journal?: Journal, produce?: FarmProgress, materialsWork?: Snapshot['materialsWork'] }
   crew: { token: string, player: Player, reserved: boolean }[]
 }
@@ -83,7 +84,7 @@ function migrateFerry(value: unknown): unknown {
 }
 
 function migrateSave(value: unknown) {
-  return migrateTrust(migrateFerry(migrateResidents(migrateGate(migrateWallets(value)))))
+  return migrateFireWatch(migrateTrust(migrateFerry(migrateResidents(migrateGate(migrateWallets(value))))))
 }
 
 function isGateRepair(world: Record<string, unknown>, islandTime: number) {
@@ -189,9 +190,9 @@ function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] 
     && isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
 }
 
-// Shared repair work: Wren's materials checkout and the ferry terminal.
+// Shared repair work and island events: Wren's materials checkout, the ferry terminal and any wildfire.
 function isSavedProjects(world: Record<string, unknown>, islandTime: number) {
-  return isSavedMaterials(world, islandTime) && isFerryRepair(world.ferryRepair, islandTime)
+  return isSavedMaterials(world, islandTime) && isFerryRepair(world.ferryRepair, islandTime) && isSavedEvents(world.events, islandTime)
 }
 
 type SaveFields = Omit<IslandSave, 'world'> & { world: Omit<IslandSave['world'], 'journal'> & { journal?: unknown } }
@@ -211,7 +212,7 @@ function isSave(value: unknown): value is SaveFields {
     && Array.isArray(world.items) && world.items.length === itemStarts.length
     && world.items.every((item: unknown, id) => isPose(item) && item.id === id && isNumber(item.y)
       && (item.holder === null || (isNumber(item.holder) && reservedIds.has(item.holder)))
-      && item.kind === itemStarts[id].kind)
+      && item.kind === itemStarts[id].kind && isSavedExtinguisher(item, id))
 }
 
 export function islandSaveFile(root: string, port: number, slot = `island-${port}`) {

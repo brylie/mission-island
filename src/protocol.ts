@@ -20,6 +20,7 @@ import type { FerryRepair } from './ferry-repair'
 import type { FarmOrderId, FarmWork } from './farm-orders'
 import type { MaterialPockets, MaterialsWork, RepairMaterial } from './materials-work'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
+import type { IslandEvents, WildfireSize } from './wildfire.ts'
 
 export interface Weather {
   hour: number
@@ -85,6 +86,8 @@ export interface Item extends Pose {
   rotation: { x: number, y: number, z: number, w: number } | null
   delivered: boolean
   spraying: boolean
+  // An extinguisher's remaining contents, from 0 to 1. Missing means full.
+  charge?: number
 }
 
 export type Mission = 'delivery' | 'fire' | 'complete'
@@ -110,6 +113,7 @@ export interface Snapshot {
   mission: Mission
   fire: number
   lookoutFireClearedAt?: number
+  events: IslandEvents
   farm: PlotStage[]
   farmWork: FarmWork
   cultivation?: CultivationCue[]
@@ -152,9 +156,17 @@ export type ServerMessage =
   | { type: 'clothing-purchase', item: ClothingId, result: ClothingPurchaseResult }
   | { type: 'flight-result', result: FlightResult, pilotId: number, aerial?: string[], recorded?: number }
   | { type: 'aerial-sighting', id: string }
+  | WildfireNotice
   // A transient sound cue from host physics. Never saved; clients drop repeated or late IDs.
   | { type: 'crate-impact', id: string, item: number, x: number, y: number, z: number, strength: number, surface: 'ground' | 'bed' }
   | { type: 'full' | 'duplicate' }
+
+export type WildfireNotice =
+  | { type: 'wildfire', event: 'smoke' | 'burned-out' | 'rained-out', place: string, size: WildfireSize }
+  | { type: 'wildfire', event: 'out', place: string, size: WildfireSize, coins: number }
+  | { type: 'wildfire', event: 'spread', place: string, size: WildfireSize, burning: number }
+  | { type: 'wildfire', event: 'located' | 'bearing', place: string, size: WildfireSize, degrees: number, direction: string, metres: number, playerId?: number }
+  | { type: 'wildfire', event: 'clear', playerId: number }
 
 export type ClothingPurchaseResult = 'bought' | 'already-owned' | 'insufficient-funds' | 'away'
 

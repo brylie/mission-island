@@ -14,6 +14,7 @@ import { islandSaveFile } from './save.ts'
 import { createPlaytestMetrics } from './playtest-metrics.ts'
 import { createSocketSessions } from './socket-sessions.ts'
 import { millisecondsPerSecond } from './host-time.ts'
+import { readPlaytestEvent } from '../src/playtest-events.ts'
 
 const httpOk = 200
 const httpBadRequest = 400
@@ -149,7 +150,8 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
   let sessions = createSocketSessions(game, trialMode ? scenarioCatalog : undefined)
   const sockets = new WebSocketServer({ noServer: true, maxPayload: maxSocketPayloadBytes })
   const live = new Set<WebSocket>()
-  if (trialMode) middlewares.use('/api/live-checkpoint', (req, res) => {
+  // Playtest controls answer only a crewmate who has joined this host.
+  function crewRequest(req: IncomingMessage, res: ServerResponse) {
     res.setHeader('Cache-Control', 'no-store')
     const stop = (code: number, text: string) => {
       res.writeHead(code).end(text)
@@ -157,7 +159,20 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
     if (req.method !== 'POST') return stop(httpMethodNotAllowed, 'Use POST.')
     const seats = sessions.seats()
     if (!seats.some((seat) => req.headers.authorization === 'Bearer ' + seat.token)) return stop(httpForbidden, 'Join the crew first.')
-    const args = new URL(req.url ?? '/', 'http://localhost').searchParams
+    return { stop, seats, args: new URL(req.url ?? '/', 'http://localhost').searchParams }
+  }
+  if (trialMode) middlewares.use('/api/playtest-event', (req, res) => {
+    const request = crewRequest(req, res)
+    if (!request) return
+    const event = readPlaytestEvent(request.args)
+    if (!event) return request.stop(httpBadRequest, 'Unknown event or choice.')
+    const result = game.playtestEvent(event)
+    request.stop(result.ok ? httpOk : httpConflict, result.text)
+  })
+  if (trialMode) middlewares.use('/api/live-checkpoint', (req, res) => {
+    const request = crewRequest(req, res)
+    if (!request) return
+    const { stop, seats, args } = request
     const settings = checkpointSettings(args.get('checkpoint'), args.get('seats'))
     if (!settings) return stop(httpBadRequest, 'Unknown checkpoint or crew size.')
     if (String(playtest!.revision) !== args.get('revision')) return stop(httpConflict, 'Another player already restarted the checkpoint.')

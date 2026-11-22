@@ -17,12 +17,14 @@ import { updateHeldItems } from './items.ts'
 import { createFreight } from './freight.ts'
 import { createJournal } from './journal.ts'
 import { createOrders } from './orders.ts'
+import { burningHotspots } from '../src/wildfire.ts'
 import { toggleSeat, updateRiders } from './riders.ts'
 import type { IslandSave } from './save.ts'
 import { farmingQualified } from '../src/farm-orders.ts'
 import { stepSkiff } from './skiff.ts'
 import { crewInputTimeoutMs } from './host-time.ts'
 import type { PlaytestMetricsRun } from './playtest-metrics.ts'
+import type { PlaytestEvent } from '../src/playtest-events.ts'
 
 const hostTicksPerSecond = 30
 const juniperUpdateIntervalTicks = 3
@@ -73,7 +75,7 @@ function stepWildlife(state: Snapshot, driftwood: ReturnType<typeof createDriftw
   state.driftwood = driftwood.step(state.players, state.skiff)
   // Animal motion follows real simulation ticks, even when the crew sleeps through the night.
   if (tick % juniperUpdateIntervalTicks === 0) {
-    state.juniper = juniper(tick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping))
+    state.juniper = juniper(tick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping), burningHotspots(state.events.fire))
   }
 }
 
@@ -83,6 +85,13 @@ function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoP
   state.truck = physics.parkTruck(state.truck)
   for (const item of state.items) physics.restore(item)
   return trial
+}
+
+// Live playtests can start an island event on demand. Ordinary games refuse.
+function runPlaytestEvent(state: Snapshot, wildfire: ReturnType<typeof createGameInteractions>['wildfire'], event: PlaytestEvent) {
+  if (!state.playtest) return { ok: false, text: 'Island events start on demand only in a live playtest.' }
+  if (!state.playtest.started) return { ok: false, text: 'Start the checkpoint before starting an event.' }
+  return event.type === 'wildfire' ? wildfire.start(event) : wildfire.end()
 }
 
 function observeCrewNotices(state: Snapshot, notifyCrew: CrewBroadcast, metrics?: PlaytestMetricsRun): CrewBroadcast {
@@ -96,7 +105,7 @@ function observeCrewNotices(state: Snapshot, notifyCrew: CrewBroadcast, metrics?
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest, metrics }: GameOptions = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat(), driftwood = createDriftwoodSchool(clock() >>> 0)
-  const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
+  const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save, random)
   const trial = playtest && settleTrial(state, physics, prepareTrial(state, playtest))
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
@@ -104,7 +113,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint, metrics?.gameplay)
   const journal = createJournal(state, checkpoint, metrics?.gameplay)
   const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint, metrics?.gameplay)
-  const { interactions, gate, residents, farm }
+  const { interactions, gate, residents, farm, wildfire }
     = createGameInteractions({ state, growth }, physics, { notifyCrew: observeCrewNotices(state, crew.notifyAll, metrics), orders, freight, journal, clock, checkpoint, metrics: metrics?.gameplay })
   const aviation = createAviation(state, crew.notifyAll, checkpoint, metrics?.gameplay)
 
@@ -134,9 +143,10 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         member.reachUntil = 0
         continue
       }
-      walkCrew(state, member, before, connected, now, tickSeconds, orders.completeFire, journal.explore)
+      walkCrew(state, member, before, connected, now, tickSeconds, { completeFire: orders.completeFire, wildfire: wildfire.spray }, journal.explore)
       farm.tick(player)
     }
+    wildfire.tick(tickSeconds)
     updateHeldItems(state)
     stepWildlife(state, driftwood, juniper, ++wildlifeTick)
     metrics?.sample(state, skippedFrom, { members, now })
@@ -233,6 +243,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     tick,
     join,
     freight,
+    playtestEvent: (event: PlaytestEvent) => runPlaytestEvent(state, wildfire, event),
     snapshotForSave: () => saveIsland(state, growth, aviation.groundSavedPilot(crew.savedProfiles())),
     get crewCoins() { return state.crewCoins },
   }

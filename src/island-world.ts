@@ -40,8 +40,10 @@ import { createSurfaceMaterial } from './materials'
 import { meadowDefaults, shaderPresets, shoreDefaults, type ShaderQuality } from './shader-studies'
 import type { WildlifeFrame } from './wildlife'
 import { createStreetLights } from './street-lights'
-import { boundaryBuoys, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
-import { buildings, crewHomes } from './world'
+import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
+import { buildings, crewHomes, extinguisherStations } from './world'
+import { createFireWatch } from './assets/fire-watch'
+import { createFireStation } from './assets/fire-station'
 
 export type IslandSurfaceTarget = 'meadow' | 'harbor-trail' | 'dock'
 
@@ -51,6 +53,7 @@ interface WorldSubstitutions {
   features?: readonly SiteFeature[]
   replaceFeature?: SiteFeature
   replaceFarm?: boolean
+  replaceFireWatch?: boolean
   liveParticles?: boolean
 }
 
@@ -78,6 +81,8 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     meshes.batchModel(house.root)
     return schedule ? [{ schedule, house }] : []
   })
+  if (!substitutions.replaceFireWatch) createFireWatch(meshes, fireWatchBaseHeight())
+  for (const station of extinguisherStations) createFireStation(meshes, station, groundHeight(station))
   function showHouseholds(state: ResidentWorld) {
     for (const { schedule, house } of households) house.showWindows(residentAt(schedule, state).windowLit)
   }

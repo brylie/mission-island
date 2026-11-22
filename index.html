@@ -275,6 +275,18 @@
           <button type="button">Restart checkpoint</button>
           <span role="status"></span>
         </fieldset>
+        <fieldset id="playtest-events" hidden>
+          <legend>Playtest events</legend>
+          <label>Wildfire <select name="size"><option value="">Random size</option></select></label>
+          <label>Site <select name="site"><option value="">Random site</option></select></label>
+          <label>Heat <select name="intensity"><option value="">Random heat</option></select></label>
+          <label><input type="checkbox" name="located" /> Start it already located</label>
+          <div class="playtest-event-actions">
+            <button type="button" data-event="wildfire">Start wildfire</button>
+            <button type="button" data-event="end-wildfire">End wildfire</button>
+          </div>
+          <span role="status"></span>
+        </fieldset>
         <fieldset id="playtest-tools" hidden><legend>Landscape Workbench</legend><button type="button" id="copy-playtest">Copy playtest link</button>
           <span id="copy-status" role="status"></span>
           <input id="playtest-url" type="url" readonly hidden aria-label="Playtest link" /></fieldset>
