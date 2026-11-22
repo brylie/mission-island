@@ -1,4 +1,13 @@
+import { wheelDeltaUnits } from './inspection-input'
 import { fitCrop, maxZoom, moveCrop, photoFrame, type PhotoPoint, type ReferenceCrop } from './reference-crop'
+
+const panPixels = 40
+const percentScale = 100
+const halves = 2
+const announceDelay = 300
+const buttonZoom = 1.5
+const wheelZoomRate = 0.0025
+const gesturePointerCount = 2
 
 export function createPhotoControls(picture: HTMLElement, changed: () => void) {
   const bar = document.getElementById('photo-controls')!
@@ -8,7 +17,7 @@ export function createPhotoControls(picture: HTMLElement, changed: () => void) {
   const percent = bar.querySelector('output')!
   const panButtons = bar.querySelectorAll<HTMLButtonElement>('[data-pan]')
   const position = document.getElementById('photo-position')!
-  const offsets: Record<string, [number, number]> = { ArrowLeft: [40, 0], ArrowRight: [-40, 0], ArrowUp: [0, 40], ArrowDown: [0, -40] }
+  const offsets: Record<string, [number, number]> = { ArrowLeft: [panPixels, 0], ArrowRight: [-panPixels, 0], ArrowUp: [0, panPixels], ArrowDown: [0, -panPixels] }
   let announcement: number | undefined
   let crop = fitCrop
   let image: HTMLImageElement | undefined
@@ -20,7 +29,7 @@ export function createPhotoControls(picture: HTMLElement, changed: () => void) {
     const f = photoFrame(view, crop)
     Object.assign(image.style, { width: f.width + 'px', height: f.height + 'px', transform: 'translate(' + f.left + 'px,' + f.top + 'px)' })
     if (image.srcset) image.sizes = Math.ceil(f.width) + 'px'
-    percent.value = Math.round(crop.zoom * 100) + '%'
+    percent.value = Math.round(crop.zoom * percentScale) + '%'
     const focused = document.activeElement
     zoomOut.disabled = fit.disabled = crop.zoom <= 1
     zoomIn.disabled = crop.zoom >= maxZoom
@@ -32,7 +41,7 @@ export function createPhotoControls(picture: HTMLElement, changed: () => void) {
   function move(zoom: number, from?: PhotoPoint, to?: PhotoPoint) {
     if (!image) return
     const view = size()
-    const anchor = from ?? { x: view.width / 2, y: view.height / 2 }
+    const anchor = from ?? { x: view.width / halves, y: view.height / halves }
     crop = moveCrop(view, crop, zoom, anchor, to ?? anchor)
     draw()
     changed()
@@ -40,16 +49,16 @@ export function createPhotoControls(picture: HTMLElement, changed: () => void) {
     announcement = window.setTimeout(() => {
       position.textContent = crop.zoom === 1
         ? 'Whole photo in view.'
-        : `Zoom ${percent.value}. Center ${Math.round(crop.x * 100)}% from left, ${Math.round(crop.y * 100)}% from top.`
-    }, 300)
+        : `Zoom ${percent.value}. Center ${Math.round(crop.x * percentScale)}% from left, ${Math.round(crop.y * percentScale)}% from top.`
+    }, announceDelay)
   }
   function pan(key: string) {
     const [x, y] = offsets[key]
     move(crop.zoom, { x: 0, y: 0 }, { x, y })
   }
   for (const button of panButtons) button.onclick = () => pan(button.dataset.pan!)
-  zoomIn.onclick = () => move(crop.zoom * 1.5)
-  zoomOut.onclick = () => move(crop.zoom / 1.5)
+  zoomIn.onclick = () => move(crop.zoom * buttonZoom)
+  zoomOut.onclick = () => move(crop.zoom / buttonZoom)
   fit.onclick = () => move(1)
   function local(e: MouseEvent) {
     const box = picture.getBoundingClientRect()
@@ -58,16 +67,16 @@ export function createPhotoControls(picture: HTMLElement, changed: () => void) {
   picture.addEventListener('wheel', (e) => {
     if (!image) return
     e.preventDefault()
-    const units = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? picture.clientHeight : 1
-    move(crop.zoom * Math.exp(-e.deltaY * units * 0.0025), local(e))
+    const units = wheelDeltaUnits(e.deltaMode, picture.clientHeight)
+    move(crop.zoom * Math.exp(-e.deltaY * units * wheelZoomRate), local(e))
   }, { passive: false })
   function gesture() {
     const [a, b] = pointers.values()
     if (!b) return { point: a, distance: 0 }
-    return { point: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, distance: Math.hypot(a.x - b.x, a.y - b.y) }
+    return { point: { x: (a.x + b.x) / halves, y: (a.y + b.y) / halves }, distance: Math.hypot(a.x - b.x, a.y - b.y) }
   }
   picture.addEventListener('pointerdown', (e) => {
-    if (!image || e.button !== 0 || pointers.size >= 2) return
+    if (!image || e.button !== 0 || pointers.size >= gesturePointerCount) return
     picture.setPointerCapture(e.pointerId)
     pointers.set(e.pointerId, local(e))
   })
@@ -82,8 +91,8 @@ export function createPhotoControls(picture: HTMLElement, changed: () => void) {
   picture.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return
     if (Object.hasOwn(offsets, e.key)) pan(e.key)
-    else if (e.key === '+' || e.key === '=') move(crop.zoom * 1.5)
-    else if (e.key === '-') move(crop.zoom / 1.5)
+    else if (e.key === '+' || e.key === '=') move(crop.zoom * buttonZoom)
+    else if (e.key === '-') move(crop.zoom / buttonZoom)
     else if (e.key === 'Home') move(1)
     else return
     e.preventDefault()
@@ -108,7 +117,7 @@ export function createPhotoControls(picture: HTMLElement, changed: () => void) {
       if (focalX !== undefined) {
         const view = size(), frame = photoFrame(view, fitCrop)
         if (frame.height > 0) {
-          crop = { zoom: Math.max(1, Math.min(maxZoom, view.height / frame.height)), x: focalX, y: 0.5 }
+          crop = { zoom: Math.max(1, Math.min(maxZoom, view.height / frame.height)), x: focalX, y: fitCrop.y }
           changed()
         }
       }

@@ -1,7 +1,7 @@
 import { aerialSighting, aviationInteraction, nextOuting, type AviationState, type FlightResult } from '../src/aviation.ts'
 import type { Player, Snapshot } from '../src/protocol.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
-import { startRidgeFlight, stepRidgeFlight } from '../src/simulation/ridge-flight.ts'
+import { landingFootRadiusM, startRidgeFlight, stepRidgeFlight } from '../src/simulation/ridge-flight.ts'
 import { groundHeight } from '../src/terrain.ts'
 import { distance, localPoint, offset, spawns, truckRoof, type Point, type Pose } from '../src/world.ts'
 import { ridgeApproach, ridgeHeading, ridgeLandingRadius, ridgeLaunch, ridgeMeadow, ridgeReturn } from '../src/worlds/starter/ridge-scout.ts'
@@ -10,7 +10,12 @@ import { stopPrimary, stopped, stowTool, type CrewMember, type CrewNotice } from
 import { looseCargoTop } from './items.ts'
 import type { IslandSave } from './save.ts'
 
-const recoveryPoints = [ridgeLaunch, offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, -1.5), offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, 1.5), ridgeReturn, ridgeMeadow]
+const launchRecoveryBehindM = -1.5
+const launchRecoveryAheadM = 1.5
+const willowSurveyMinimumHeightM = 2
+const willowSurveyRangeM = 7
+
+const recoveryPoints = [ridgeLaunch, offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, launchRecoveryBehindM), offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, launchRecoveryAheadM), ridgeReturn, ridgeMeadow]
 const meadowPose = { ...ridgeMeadow, heading: ridgeHeading }
 
 function landedPose({ x, z, heading }: Pose) {
@@ -29,8 +34,8 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
   let flight: ReturnType<typeof startRidgeFlight> | undefined
 
   function safeGround(point: Point) {
-    return canOccupyGround(point, 0.45, 0) && !isInsideTruck(state.truck, point)
-      && looseCargoTop(state.items, point, 0.45) <= groundHeight(point)
+    return canOccupyGround(point, landingFootRadiusM, 0) && !isInsideTruck(state.truck, point)
+      && looseCargoTop(state.items, point, landingFootRadiusM) <= groundHeight(point)
   }
 
   function recoveryPose(player: Player) {
@@ -95,7 +100,7 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
     const { x, z } = localPoint(meadowPose, pilot)
     record.approach ||= Math.abs(x) < ridgeApproach.halfWidth && z >= ridgeApproach.start && z < -ridgeLandingRadius
     const height = pilot.y - groundHeight(pilot)
-    if (record.outing === 'survey' && height >= 2 && distance(pilot, mirrorPoolWillow) <= 7) record.observed = true
+    if (record.outing === 'survey' && height >= willowSurveyMinimumHeightM && distance(pilot, mirrorPoolWillow) <= willowSurveyRangeM) record.observed = true
     const sighting = record.outing !== 'checkout' && aerialSighting(pilot, [...aviation.aerial ?? [], ...record.spotted])
     if (sighting) {
       record.spotted.push(sighting.id)

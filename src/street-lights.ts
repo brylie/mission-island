@@ -9,11 +9,16 @@ import { groundHeight } from './terrain'
 import { distance } from './world'
 import type { Point } from './world'
 
+const lightRange = 22
+const nearestLampSearchRadius = 26
+const minimumNightStrength = 0.04
+const nightIntensity = 2.15
+
 export function createStreetLights(meshes: MeshFactory) {
   const { scene, paint } = meshes
   const fill = new PointLight('Nearest street lamp', Vector3.Zero(), scene)
   fill.diffuse = Color3.FromHexString('#ffcc88')
-  fill.range = 22
+  fill.range = lightRange
   fill.setEnabled(false)
   const glass = paint('#fff0c9')
   const glow = paint('#ffe2a2', true)
@@ -22,14 +27,14 @@ export function createStreetLights(meshes: MeshFactory) {
   let lit = false
   return (camera: Point, strength: number) => {
     let nearest = -1
-    let range = 26
+    let range = nearestLampSearchRadius
     for (const [index, post] of posts.entries()) {
       const gap = distance(post, camera)
       if (gap >= range) continue
       nearest = index
       range = gap
     }
-    const night = strength > 0.04
+    const night = strength > minimumNightStrength
     if (lit !== night) {
       lit = night
       for (const globe of globes) globe.material = lit ? glow : glass
@@ -37,6 +42,6 @@ export function createStreetLights(meshes: MeshFactory) {
     fill.setEnabled(night && nearest >= 0)
     if (nearest < 0 || !night) return
     fill.position.copyFrom(globes[nearest].position)
-    fill.intensity = strength * 2.15
+    fill.intensity = strength * nightIntensity
   }
 }

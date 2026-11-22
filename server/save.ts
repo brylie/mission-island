@@ -17,9 +17,13 @@ import { makeItems } from './items.ts'
 import { readJournal } from './journal-save.ts'
 import { crateStarts, itemStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
+import { currentSaveVersion, saveVersions } from './save-version.ts'
+
+const privateDirectoryMode = 0o700
+const privateSaveFileMode = 0o600
 
 export type IslandSave = {
-  version: 6
+  version: typeof currentSaveVersion
   crewCoins: number
   lastStarterPay?: Snapshot['lastStarterPay']
   islandTime: number
@@ -60,22 +64,22 @@ function migrateWallets(value: unknown): unknown {
     crew.push({ ...entry, player })
   }
   const lastStarterPay = ['fire', 'delivery', 'crate'].find((job) => receipts.has(job))
-  return { version: 2, islandTime: value.islandTime, growth: value.growth, world: value.world, crewCoins, lastStarterPay, crew }
+  return { version: saveVersions.sharedCrewBank, islandTime: value.islandTime, growth: value.growth, world: value.world, crewCoins, lastStarterPay, crew }
 }
 
 // Version 3 added Wren's gate favor: the loaned toolbox, the gate, the repair stage and resident trust.
 function migrateGate(value: unknown): unknown {
-  if (!isRecord(value) || value.version !== 2 || !isRecord(value.world) || !Array.isArray(value.world.items)) return value
+  if (!isRecord(value) || value.version !== saveVersions.sharedCrewBank || !isRecord(value.world) || !Array.isArray(value.world.items)) return value
   const toolbox = itemStarts.findIndex(({ kind }) => kind === 'toolbox')
   const saved = value.world.items as unknown[]
   const items = saved.length === toolbox ? [...saved, makeItems()[toolbox]] : saved
-  return { ...value, version: 3, world: { ...initialGateRepair(), residentTrust: { wren: 0 }, ...value.world, items } }
+  return { ...value, version: saveVersions.gateRepair, world: { ...initialGateRepair(), residentTrust: { wren: 0 }, ...value.world, items } }
 }
 
 // Version 5 added the ferry terminal repair: its stage, each stage's contributions and any timber on the way.
 function migrateFerry(value: unknown): unknown {
-  if (!isRecord(value) || value.version !== 4 || !isRecord(value.world)) return value
-  return { ...value, version: 5, world: { ...initialFerryRepair(), ...value.world } }
+  if (!isRecord(value) || value.version !== saveVersions.residentFavor || !isRecord(value.world)) return value
+  return { ...value, version: saveVersions.ferryRepair, world: { ...initialFerryRepair(), ...value.world } }
 }
 
 function migrateSave(value: unknown) {
@@ -193,7 +197,7 @@ function isSavedProjects(world: Record<string, unknown>, islandTime: number) {
 type SaveFields = Omit<IslandSave, 'world'> & { world: Omit<IslandSave['world'], 'journal'> & { journal?: unknown } }
 
 function isSave(value: unknown): value is SaveFields {
-  if (!isRecord(value) || value.version !== 6 || !isCoinBalance(value.crewCoins)
+  if (!isRecord(value) || value.version !== currentSaveVersion || !isCoinBalance(value.crewCoins)
     || !validReceipt(value.lastStarterPay) || !isNumber(value.islandTime) || value.islandTime < 0
     || !Array.isArray(value.growth) || value.growth.length !== farmPlots.length || !value.growth.every(isNumber)
     || !Array.isArray(value.crew) || !value.crew.every(isSavedCrewMember) || !isRecord(value.world)) return false
@@ -233,9 +237,9 @@ export function islandSaveFile(root: string, port: number, slot = `island-${port
       }
     },
     write(state: IslandSave) {
-      mkdirSync(directory, { recursive: true, mode: 0o700 })
+      mkdirSync(directory, { recursive: true, mode: privateDirectoryMode })
       const temporary = `${path}.${process.pid}.tmp`
-      writeFileSync(temporary, JSON.stringify(state) + '\n', { mode: 0o600 })
+      writeFileSync(temporary, JSON.stringify(state) + '\n', { mode: privateSaveFileMode })
       renameSync(temporary, path)
     },
   }

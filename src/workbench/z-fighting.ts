@@ -4,6 +4,14 @@ import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
 
 const planeTolerance = 0.0005
 const minimumArea = 0.00001
+const coordinatesPerVertex = 3
+const verticesPerFace = 3
+const triangleFanStart = 2
+const minimumNormalLengthSquared = 1e-16
+const minimumAlignment = 0.999999
+const focusRange = 30
+const areaMultiplier = 2
+const boxMidpoint = 0.5
 
 type Point = { x: number, y: number }
 type Face = {
@@ -21,18 +29,18 @@ function facesOf(mesh: AbstractMesh, focus?: Vector3): Face[] {
   const indices = mesh.getIndices()
   if (!positions || !indices) return []
   const world = mesh.computeWorldMatrix(true)
-  const vertices = Array.from({ length: positions.length / 3 }, (_, i) =>
-    Vector3.TransformCoordinates(Vector3.FromArray(positions, i * 3), world))
+  const vertices = Array.from({ length: positions.length / coordinatesPerVertex }, (_, i) =>
+    Vector3.TransformCoordinates(Vector3.FromArray(positions, i * coordinatesPerVertex), world))
   const faces: Face[] = []
-  for (let i = 0; i < indices.length; i += 3) {
+  for (let i = 0; i < indices.length; i += verticesPerFace) {
     const a = vertices[indices[i]]
     const b = vertices[indices[i + 1]]
-    const c = vertices[indices[i + 2]]
+    const c = vertices[indices[i + triangleFanStart]]
     const min = Vector3.Minimize(a, Vector3.Minimize(b, c))
     const max = Vector3.Maximize(a, Vector3.Maximize(b, c))
-    if (focus && (min.x > focus.x + 30 || max.x < focus.x - 30 || min.z > focus.z + 30 || max.z < focus.z - 30)) continue
+    if (focus && (min.x > focus.x + focusRange || max.x < focus.x - focusRange || min.z > focus.z + focusRange || max.z < focus.z - focusRange)) continue
     const normal = Vector3.Cross(b.subtract(a), c.subtract(a))
-    if (normal.lengthSquared() <= 1e-16) continue
+    if (normal.lengthSquared() <= minimumNormalLengthSquared) continue
     faces.push({
       mesh,
       points: [a, b, c],
@@ -74,12 +82,12 @@ function overlapOnPlane(a: Face, b: Face) {
   let polygon = a.points.map(project)
   const edge = b.points.map(project)
   const winding = Math.sign(cross(edge[0], edge[1], edge[2]))
-  for (let i = 0; i < 3 && polygon.length >= 3; i++) {
-    polygon = clip(polygon, edge[i], edge[(i + 1) % 3], winding)
+  for (let i = 0; i < verticesPerFace && polygon.length >= verticesPerFace; i++) {
+    polygon = clip(polygon, edge[i], edge[(i + 1) % verticesPerFace], winding)
   }
   let twiceArea = 0
-  for (let i = 2; i < polygon.length; i++) twiceArea += cross(polygon[0], polygon[i - 1], polygon[i])
-  return Math.abs(twiceArea) > 2 * minimumArea * dominant
+  for (let i = triangleFanStart; i < polygon.length; i++) twiceArea += cross(polygon[0], polygon[i - 1], polygon[i])
+  return Math.abs(twiceArea) > areaMultiplier * minimumArea * dominant
 }
 
 function label(mesh: AbstractMesh) {
@@ -99,14 +107,14 @@ export function findZFightCandidates(meshes: readonly AbstractMesh[], focus?: Ve
         || b.min.z > a.max.z + planeTolerance || a.min.z > b.max.z + planeTolerance) continue
       const alignment = Vector3.Dot(a.normal, b.normal)
       const twoSided = a.mesh.material?.backFaceCulling === false || b.mesh.material?.backFaceCulling === false
-      if ((twoSided ? Math.abs(alignment) : alignment) < 0.999999) continue
+      if ((twoSided ? Math.abs(alignment) : alignment) < minimumAlignment) continue
       if (b.points.some((p) => Math.abs(Vector3.Dot(a.normal, p.subtract(a.points[0]))) > planeTolerance)
         || a.points.some((p) => Math.abs(Vector3.Dot(b.normal, p.subtract(b.points[0]))) > planeTolerance)) continue
       const key = a.mesh.uniqueId < b.mesh.uniqueId
         ? `${a.mesh.uniqueId}/${b.mesh.uniqueId}`
         : `${b.mesh.uniqueId}/${a.mesh.uniqueId}`
       if (!pairs.has(key) && overlapOnPlane(a, b)) {
-        const at = Vector3.Maximize(a.min, b.min).addInPlace(Vector3.Minimize(a.max, b.max)).scaleInPlace(0.5)
+        const at = Vector3.Maximize(a.min, b.min).addInPlace(Vector3.Minimize(a.max, b.max)).scaleInPlace(boxMidpoint)
         pairs.set(key, { first: label(a.mesh), second: label(b.mesh), at })
       }
     }

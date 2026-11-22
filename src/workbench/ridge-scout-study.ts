@@ -1,4 +1,5 @@
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera'
+import { ridgeScoutMotion, ridgeScoutViews } from '../assets/recipes/workbench-ridge-scout'
 import { createCrew, poseCrew } from '../assets/crew'
 import type { MeshFactory } from '../island-meshes'
 import { ridgeStep, startRidgeFlight, stepRidgeFlight } from '../simulation/ridge-flight'
@@ -11,6 +12,11 @@ import { createRidgeCourse, createHangGlider, poseHangGliderPilot } from '../ass
 import { createRidgeUpdraft } from '../assets/ridge-updraft'
 import { createRidgeFlightOrbs } from '../assets/ridge-flight-orbs'
 import { control, type Entry } from './subject'
+
+const halves = 2
+const maxFrameSeconds = 0.25
+const aheadBearingRadians = 0.21
+const clearanceDisplayDecimals = 2
 
 function createScoutControls(meshes: MeshFactory) {
   const canvas = meshes.scene.getEngine().getRenderingCanvas()
@@ -47,28 +53,31 @@ function scoutWalker() {
 }
 
 function returnHeading(point: { x: number, z: number }) {
-  const waypoint = distance(point, ridgeReturn) > 2 && distance(point, ridgeLaunch) > 14 ? ridgeReturn : ridgeLaunch
+  const { arrivalRadius, launchDistance } = ridgeScoutMotion.returnWaypoint
+  const waypoint = distance(point, ridgeReturn) > arrivalRadius && distance(point, ridgeLaunch) > launchDistance ? ridgeReturn : ridgeLaunch
   return Math.atan2(waypoint.x - point.x, waypoint.z - point.z)
 }
 
 function updateScoutCamera(camera: ArcRotateCamera, pilot: ReturnType<typeof createCrew>['root'], overview: boolean) {
+  const { overview: aerial, follow } = ridgeScoutViews
   if (overview) {
-    camera.target.set(0, 0, 66)
-    camera.getScene().fogStart = 330
-    camera.getScene().fogEnd = 490
+    camera.target.set(0, 0, aerial.focusZ)
+    camera.getScene().fogStart = aerial.fogStart
+    camera.getScene().fogEnd = aerial.fogEnd
   }
   else {
     const yaw = pilot.rotation.y
-    camera.target.set(pilot.position.x + Math.sin(yaw) * 1.35, pilot.position.y + 1, pilot.position.z + Math.cos(yaw) * 1.35)
+    camera.target.set(pilot.position.x + Math.sin(yaw) * follow.lookAhead, pilot.position.y + follow.aimHeight, pilot.position.z + Math.cos(yaw) * follow.lookAhead)
   }
 }
 
 function aimScoutCamera(camera: ArcRotateCamera, heading: number, overview: boolean, returning: boolean) {
-  camera.lowerRadiusLimit = 3.4
-  camera.upperRadiusLimit = 260
-  camera.alpha = overview ? -Math.PI / 2 : Math.PI * 1.5 - heading
-  camera.beta = overview ? 0.53 : returning ? 1.13 : 0.88
-  camera.radius = overview ? 235 : 6.3
+  const { overview: aerial, follow, zoom } = ridgeScoutViews
+  camera.lowerRadiusLimit = zoom.minimum
+  camera.upperRadiusLimit = zoom.maximum
+  camera.alpha = overview ? -Math.PI / halves : Math.PI * follow.alphaHalfTurns - heading
+  camera.beta = overview ? aerial.beta : returning ? follow.returnBeta : follow.beta
+  camera.radius = overview ? aerial.radius : follow.radius
 }
 
 export const ridgeScoutStudy: Entry = {
@@ -78,10 +87,10 @@ export const ridgeScoutStudy: Entry = {
   source: 'src/simulation/ridge-flight.ts',
   description: 'Choose On the island and focus the viewport to scout, fly, and walk back. Inspect the wing and harness in the studio.',
   readout: 'Ridge scout',
-  cameraRadius: 5.4,
-  angle: -0.9,
+  cameraRadius: ridgeScoutViews.studio.radius,
+  angle: ridgeScoutViews.studio.angle,
   fieldSite: () => ({ name: 'Windstone Ridge, Starter Island', offset: { x: 0, y: 0, z: 0 } }),
-  weather: () => ({ hour: 13, rain: 0 }),
+  weather: () => ({ hour: ridgeScoutViews.studio.hour, rain: 0 }),
   controls: [
     control('crew', 'Crew fitting', '0', { 0: 'Amber crew', 1: 'Blue crew' }),
     control('route', 'Flight destination', 'checkout', { checkout: 'Landing circle', survey: 'Mirror Pool willow' }),
@@ -91,7 +100,7 @@ export const ridgeScoutStudy: Entry = {
     const wing = createHangGlider(meshes)
     if (!field) return ({ delta }, { crew: fitting }) => {
       crew.setAppearance(undefined, { base: Number(fitting) })
-      poseHangGliderPilot(crew, Math.min(1, delta * 15))
+      poseHangGliderPilot(crew, Math.min(1, delta * ridgeScoutMotion.pose.blendRate))
       observe('Choose On the island to fly this wing over Starter Island.')
     }
 
@@ -110,7 +119,7 @@ export const ridgeScoutStudy: Entry = {
     let windTime = 0
     let returning = false
     let recovering = false
-    const atLaunch = () => walker.player.grounded && distance(walker.player, ridgeLaunch) < 1.2
+    const atLaunch = () => walker.player.grounded && distance(walker.player, ridgeLaunch) < ridgeScoutMotion.launchRadius
 
     function begin() {
       controls.releaseMovement()
@@ -140,12 +149,12 @@ export const ridgeScoutStudy: Entry = {
       const previous = { ...walker.player }
       stepPlayerOnTerrain(walker, [], { x, z, spray: false, careful: false, sprint: false }, false, ridgeStep, () => -Infinity)
       const traveled = distance(previous, walker.player)
-      walkCycle += traveled / 4.8
-      walkStride = Math.min(0.75, traveled / ridgeStep * 0.08)
+      walkCycle += traveled / ridgeScoutMotion.walk.cycleMetres
+      walkStride = Math.min(ridgeScoutMotion.walk.strideLimit, traveled / ridgeStep * ridgeScoutMotion.walk.strideGain)
     }
 
     function advance(camera: ArcRotateCamera, delta: number) {
-      accumulator += Math.min(delta, 0.25)
+      accumulator += Math.min(delta, maxFrameSeconds)
       while (accumulator >= ridgeStep) {
         if (flight && !flight.outcome) fly()
         else walk(camera)
@@ -154,13 +163,13 @@ export const ridgeScoutStudy: Entry = {
     }
 
     function status(airborne: boolean, atLaunch: boolean, toWillow: boolean) {
-      const stats = flight ? ' · ' + flight.elapsed.toFixed(1) + ' s · ' + flight.clearance.toFixed(2) + ' m minimum prop/wing clearance' : ''
+      const stats = flight ? ' · ' + flight.elapsed.toFixed(1) + ' s · ' + flight.clearance.toFixed(clearanceDisplayDecimals) + ' m minimum prop/wing clearance' : ''
       if (airborne && flight) {
         const { pilot } = flight
         const target = toWillow ? mirrorPoolWillow : ridgeMeadow
         const heading = Math.atan2(target.x - pilot.x, target.z - pilot.z) - pilot.heading
         const angle = Math.atan2(Math.sin(heading), Math.cos(heading))
-        const bearing = Math.abs(angle) < 0.21 ? 'ahead' : angle > 0 ? 'right' : 'left'
+        const bearing = Math.abs(angle) < aheadBearingRadians ? 'ahead' : angle > 0 ? 'right' : 'left'
         const lift = flight.climbing ? 'Updraft lifting the wing. ' : ''
         return lift + (toWillow ? 'Willow ' : 'Meadow ') + bearing + ' · ' + Math.round(distance(pilot, target)) + ' m' + stats
           + '\nA / D bank · W nose down · S pull up · C change view'
@@ -204,16 +213,16 @@ export const ridgeScoutStudy: Entry = {
         if (!overview) initializeCamera = true
       }
       const pilot = flightPilot ?? walker.player
-      crew.root.position.set(pilot.x, pilot.y + 0.035, pilot.z)
+      crew.root.position.set(pilot.x, pilot.y + ridgeScoutMotion.pose.groundLift, pilot.z)
       crew.root.rotation.set(flying?.pitch ?? 0, pilot.heading, flying?.bank ?? 0)
       crew.setAppearance(undefined, { base: Number(fitting) })
       wing.parent = flying ? crew.root : rack
-      wing.position.y = flying ? 0 : -0.58
-      const blend = Math.min(1, delta * 15)
+      wing.position.y = flying ? 0 : ridgeScoutMotion.pose.rackedWingY
+      const blend = Math.min(1, delta * ridgeScoutMotion.pose.blendRate)
       if (flying) poseHangGliderPilot(crew, blend)
       else poseCrew(crew, walkCycle, walkStride, !walker.player.grounded, undefined, 0, blend)
       if (initializeCamera) {
-        const heading = returning ? returnHeading(walker.player) : ridgeHeading - 0.13
+        const heading = returning ? returnHeading(walker.player) : ridgeHeading - ridgeScoutViews.follow.launchHeadingOffset
         aimScoutCamera(camera, heading, overview, returning)
         initializeCamera = false
       }

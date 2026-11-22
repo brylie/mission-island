@@ -53,6 +53,7 @@ export const longAcreHoneyStops = {
 } as const
 
 export const longAcreGardenPlacement = {
+  inspectionApproach: { x: 187, z: 27 },
   props: { marketShelfOffsetZ: 0.65, kitBenchOffsetX: 1.02, extractorBenchOffsetX: 0.68 },
   hedge: { x: 177.7, z: 25.2, count: 10, spacing: 0.34, weave: 0.15, weaveRate: 1.7 },
   rail: { z: 24.25, postX: [182.4, 184.7, 187], railCenterFromPost: 1.15 },
@@ -73,6 +74,8 @@ export const saltwindWildlifeSites = {
   meadowHares: { x: 48, z: 53 },
   forestHares: { x: -190, z: 227 },
 } as const
+
+export const brinewickGullPosts = { x: -286.7, z: [-218.9, -217.8, -216.6, -215.3], alternatingInset: 0.22 } as const
 
 export const saltwindPhenomenaSites = {
   mirrorLakeMist: { name: 'Mirror Lake dawn mist', kind: 'mist', extent: 62, seed: 5183 },

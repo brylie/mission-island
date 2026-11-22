@@ -4,4 +4,4 @@ Delegate review of every visual artifact to the [Mission Island Art Director](.a
 
 # Numeric literals
 
-Use named constants for settings in the runtime module that owns them. Put authored dimensions, shader presets, effect and audio recipes, and other numeric tables in the [approved data locations](CONTRIBUTING.md#quality-checks). Keep those modules declarative. Workbench studies should import the same production models, shaders, and attachment data. Prune the ESLint baseline after cleanup and leave new findings visible.
+Use named constants for settings in the runtime module that owns them. Put authored dimensions, shader presets, effect and audio recipes, and other numeric tables in the [approved data locations](CONTRIBUTING.md#quality-checks). Keep those modules declarative. Workbench studies should import the same production models, shaders, and attachment data. Keep numeric lint findings visible by keeping the repository free of ESLint suppressions.

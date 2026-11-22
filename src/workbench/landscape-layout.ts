@@ -4,6 +4,7 @@ import { writeStorage } from '../browser-storage'
 import { createSiteFeature } from '../assets/site-props'
 import { createCrew, poseCrew, poseSwimming, swimmingHeight } from '../assets/crew'
 import { createHomeChest, createSupply } from '../assets/props'
+import { trialRock, trialTree } from '../assets/geometry/workbench-landscape-drafts'
 import { createFlatbed } from '../assets/flatbed'
 import type { MeshFactory } from '../island-meshes'
 import { groundHeight, walkingHeight } from '../terrain'
@@ -12,7 +13,16 @@ import { parkedGroundPose } from '../truck-pose'
 import { flatbedGroundDrive } from '../vehicles/flatbed'
 import type { Point } from '../world'
 import { draftLabels as labels, draftStorageKey } from './landscape-draft'
+import { exportDraftJson } from './file-download'
 import type { createLandscapeDraft } from './landscape-draft'
+
+const halves = 2
+const trialStepsPerSecond = 30
+const trialStep = 1 / trialStepsPerSecond
+const footOffset = 0.05
+const sprintCycleRate = 2.5
+const walkCycleRate = 1.7
+const movingStride = 0.64
 
 type Draft = ReturnType<typeof createLandscapeDraft>
 type DraftChange = ReturnType<Draft['undo']>
@@ -32,14 +42,15 @@ function nodeFor(meshes: MeshFactory, placement: Draft['objects'][number]) {
   if (placement.kind === 'crate') {
     const crate = createSupply(meshes, 'crate')
     crate.parent = root
-    crate.position.y = crateSize / 2
+    crate.position.y = crateSize / halves
   }
   else if (placement.kind === 'rock') {
-    meshes.sphere(0, 0.37, 0, 2.24, 1.34, 1.81, meshes.paintSurface('stone'), root)
+    meshes.sphere(0, trialRock.centerY, 0, ...trialRock.size, meshes.paintSurface('stone'), root)
   }
   else if (placement.kind === 'tree') {
-    meshes.cylinder(0, 1.1, 0, 0.32, 0.42, 2.2, 8, '#765b48', root)
-    meshes.cylinder(0, 2.7, 0, 0.12, 3.1, 3.5, 9, meshes.paintSurface('leaves'), root)
+    const { trunk, crown } = trialTree
+    meshes.cylinder(0, trunk.y, 0, trunk.top, trunk.bottom, trunk.height, trunk.sides, trunk.color, root)
+    meshes.cylinder(0, crown.y, 0, crown.top, crown.bottom, crown.height, crown.sides, meshes.paintSurface('leaves'), root)
   }
   else if (placement.kind === 'chest') {
     createHomeChest(meshes, { x: 0, z: 0 }, '#4faba4').root.parent = root
@@ -167,12 +178,7 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
       : 'Browser storage is unavailable. Export the draft as JSON.'
   }, events)
   document.getElementById('landscape-export')?.addEventListener('click', () => {
-    const url = URL.createObjectURL(new Blob([JSON.stringify(draft.placements(), null, 2) + '\n'], { type: 'application/json' }))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'mission-island-layout.json'
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    exportDraftJson('mission-island-layout.json', draft.placements())
   }, events)
 
   canvas.addEventListener('keydown', (event) => {
@@ -198,10 +204,10 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
     let top = -Infinity
     for (const { placement, root } of objects) {
       const { kind } = placement
-      if (kind === 'crate' && Math.abs(point.x - placement.x) < crateSize / 2 + margin
-        && Math.abs(point.z - placement.z) < crateSize / 2 + margin) top = Math.max(top, root.position.y + crateSize)
-      if (kind === 'rock' && distance(point, placement) < 1.05 + margin) top = Math.max(top, root.position.y + 1.04)
-      if (kind === 'tree' && distance(point, placement) < 0.24 + margin) top = Math.max(top, root.position.y + 2.2)
+      if (kind === 'crate' && Math.abs(point.x - placement.x) < crateSize / halves + margin
+        && Math.abs(point.z - placement.z) < crateSize / halves + margin) top = Math.max(top, root.position.y + crateSize)
+      if (kind === 'rock' && distance(point, placement) < trialRock.support.radius + margin) top = Math.max(top, root.position.y + trialRock.support.top)
+      if (kind === 'tree' && distance(point, placement) < trialTree.support.radius + margin) top = Math.max(top, root.position.y + trialTree.support.top)
     }
     return top
   }
@@ -235,19 +241,19 @@ export function createLandscapeLayout(meshes: MeshFactory, canvas: HTMLCanvasEle
       }
       const trucks = objects.flatMap(({ truckPose }) => truckPose ? [truckPose] : [])
       carriedTime += delta
-      while (carriedTime >= 1 / 30) {
-        stepPlayerOnTerrain(current.motor, trucks, input, false, 1 / 30, draftedSurface)
-        carriedTime -= 1 / 30
+      while (carriedTime >= trialStep) {
+        stepPlayerOnTerrain(current.motor, trucks, input, false, trialStep, draftedSurface)
+        carriedTime -= trialStep
       }
       const { player } = current.motor
       current.placement.x = player.x
       current.placement.z = player.z
-      current.root.position.set(player.x, player.swimming ? swimmingHeight(time) : player.y + 0.05, player.z)
+      current.root.position.set(player.x, player.swimming ? swimmingHeight(time) : player.y + footOffset, player.z)
       current.root.rotation.set(0, player.heading, 0)
       const moving = Boolean(dx || dz)
-      if (moving) current.stride += delta * (input.sprint ? 2.5 : 1.7)
+      if (moving) current.stride += delta * (input.sprint ? sprintCycleRate : walkCycleRate)
       if (player.swimming) poseSwimming(current.crew, time, Number(moving))
-      else poseCrew(current.crew, current.stride, moving ? 0.64 : 0, !player.grounded)
+      else poseCrew(current.crew, current.stride, moving ? movingStride : 0, !player.grounded)
       current.crew.blink(time)
       if (document.activeElement === canvas) {
         status.textContent = `${player.x.toFixed(1)} m X · ${player.z.toFixed(1)} m Z · ${player.y.toFixed(1)} m high`

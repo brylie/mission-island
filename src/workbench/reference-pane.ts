@@ -4,6 +4,8 @@ import { encodeCrop, fitCrop, readCrop } from './reference-crop'
 import { readStorage, writeStorage } from '../browser-storage'
 import { readReference, referenceDescription, withReference } from './reference-link'
 
+const cropSaveDelay = 150
+
 function savedReference(key: string) {
   try {
     const saved = JSON.parse(readStorage('localStorage', key) ?? 'null') as { address?: string, open?: boolean, description?: string, crop?: string } | null
@@ -49,7 +51,7 @@ export function createReferencePane() {
   let pending: number | undefined
   const controls = createPhotoControls(picture, () => {
     window.clearTimeout(pending)
-    pending = window.setTimeout(remember, 150)
+    pending = window.setTimeout(remember, cropSaveDelay)
   })
   window.addEventListener('pagehide', () => {
     if (pending !== undefined) remember()

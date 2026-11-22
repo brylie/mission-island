@@ -1,25 +1,31 @@
 import type { MeshFactory } from '../island-meshes'
 import { groundHeight } from '../terrain'
 import { driftwoodFoxgloves, driftwoodWrack, shellglassLimpets } from '../worlds/starter/sites'
+import { driftwoodDressing } from '../worlds/starter/layout/scenery'
+import { shellglassLimpet, wrackFragment } from './geometry/field-outing'
 import { createFoxglove } from './foxglove'
 
 export function createFieldOutingScenery(meshes: MeshFactory) {
+  const { foxglove, wrack } = driftwoodDressing
+  const { foot, shell } = shellglassLimpet
   const foxgloves = driftwoodFoxgloves.map((point, i) => {
-    const plant = createFoxglove(meshes, 173 + i * 37)
+    const plant = createFoxglove(meshes, foxglove.firstSeed + i * foxglove.seedStep)
     plant.root.position.set(point.x, groundHeight(point), point.z)
-    plant.root.scaling.setAll(1 - i * 0.075)
+    plant.root.scaling.setAll(1 - i * foxglove.scaleStep)
     return plant
   })
-  for (let i = 0; i < 19; i++) {
-    const x = driftwoodWrack.x + (i - 7) * 0.12, z = driftwoodWrack.z - (i - 7) * 0.22 + Math.sin(i * 2.7) * 0.13
+  for (let i = 0; i < wrack.count; i++) {
+    const x = driftwoodWrack.x + (i - wrack.middle) * wrack.spacingX, z = driftwoodWrack.z - (i - wrack.middle) * wrack.spacingZ + Math.sin(i * wrack.ripple) * wrack.rippleWidth
     const y = groundHeight({ x, z })
-    const fragment = meshes.sphere(x, y + 0.026, z, i % 4 ? 0.23 : 0.10, 0.048, 0.085, i % 4 ? '#645d3d' : '#e9d4a9', undefined, false, 5)
-    fragment.rotation.y = -0.8 + Math.sin(i * 2.4) * 0.6
+    const { paleEvery, centreY, width, paleWidth, height, depth, color, paleColor, segments, turn } = wrackFragment
+    const pale = i % paleEvery === 0
+    const fragment = meshes.sphere(x, y + centreY, z, pale ? paleWidth : width, height, depth, pale ? paleColor : color, undefined, false, segments)
+    fragment.rotation.y = turn.base + Math.sin(i * turn.wave) * turn.amplitude
   }
   for (const [i, point] of shellglassLimpets.entries()) {
     const y = groundHeight(point)
-    meshes.sphere(point.x, y + 0.015, point.z, 0.20, 0.09, 0.19, '#686e5d', undefined, false, 6)
-    meshes.cylinder(point.x, y + 0.066, point.z, 0.027, 0.108 - i * 0.012, 0.065, 9, '#d8c599')
+    meshes.sphere(point.x, y + foot.centreY, point.z, ...foot.size, foot.color, undefined, false, foot.segments)
+    meshes.cylinder(point.x, y + shell.centreY, point.z, shell.tip, shell.base - i * shell.baseStep, shell.height, shell.sides, shell.color)
   }
 
   return (time: number) => {

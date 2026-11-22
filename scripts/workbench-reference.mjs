@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util'
 import { fitCrop, readCrop } from '../src/workbench/reference-crop.ts'
 import { readReference, withReference } from '../src/workbench/reference-link.ts'
 
+const requiredUrlCount = 2
 const usage = 'Usage: npm run --silent workbench:reference -- WORKBENCH_URL IMAGE_URL [--crop zoom,x,y] [--description "Detail to compare"]'
 try {
   const { values, positionals } = parseArgs({
@@ -14,7 +15,7 @@ try {
     process.stdout.write(usage + '\n')
   }
   else {
-    if (positionals.length !== 2) throw new Error(usage)
+    if (positionals.length !== requiredUrlCount) throw new Error(usage)
     const base = new URL(positionals[0])
     if (!/^https?:$/.test(base.protocol) || !base.hash.slice(1).split('?')[0]) throw new Error('Use a Workbench URL with a subject such as #clover.')
     const ref = readReference(positionals[1])

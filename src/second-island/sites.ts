@@ -14,7 +14,7 @@ import type { MapPoint, SiteLayout } from '../worlds/saltwind/layout/sites.ts'
 import { apiary } from './long-acre.ts'
 
 export type { MapPoint }
-export { biomes, lowerLake, picnicLedge, viaductWalk, villages, waterfront }
+export { biomes, lowerLake, picnicLedge, villages, waterfront }
 export { arrival, helipad, islandName, landBounds, pavedYards, roundYards, runway, tarn, waterBounds } from '../worlds/saltwind/layout/sites.ts'
 
 export const seaLevel = 0

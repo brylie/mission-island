@@ -2,13 +2,16 @@ import { readStorage } from '../browser-storage'
 import { isFreightTicket, type FreightCommand, type DriverStatus } from '../ore-contracts'
 import { maxHaulSteps, type HaulStep } from '../simulation/ore-truck'
 
+const radioTimeoutMs = 6000
+const driveSendIntervalMs = 200
+
 async function exchange(revision: number, command?: FreightCommand) {
   const token = readStorage('sessionStorage', 'mission-island-crew') ?? readStorage('localStorage', 'mission-island-crew')
   const response = await fetch('/api/slatecliff-freight', {
     method: command ? 'POST' : 'GET',
     headers: token ? { Authorization: 'Bearer ' + token } : {},
     body: command && JSON.stringify({ ...command, revision }),
-    signal: AbortSignal.timeout(6000),
+    signal: AbortSignal.timeout(radioTimeoutMs),
   })
   const data: unknown = await response.json()
   if (!data || typeof data !== 'object' || !('xp' in data) || typeof data.xp !== 'number'
@@ -47,7 +50,7 @@ export function createFreightRadio(disconnected: (message: string) => void) {
     record(step: HaulStep) { pending.push(step) },
     update() {
       if (pending.length && !sending && performance.now() >= nextSend) {
-        nextSend = performance.now() + 200
+        nextSend = performance.now() + driveSendIntervalMs
         void flush()
       }
     },

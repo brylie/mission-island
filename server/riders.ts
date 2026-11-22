@@ -8,6 +8,19 @@ import { updateHeldItems } from './items.ts'
 import { canOccupyGround } from '../src/simulation/movement.ts'
 import { skiffExit } from './skiff.ts'
 
+const cabDoorExitLateralM = 2.1
+const cabDoorExitForwardM = 0.9
+const truckRearExitM = -3.8
+const cabExitClearanceRadiusM = 0.45
+const cabExitMinimumGroundY = -0.10
+const truckBoardingRangeM = 4.5
+const skiffPortSeatM = -0.44
+const skiffStarboardSeatM = 0.44
+const skiffSeatForwardM = 0.25
+const driverSeatLateralM = -0.65
+const passengerSeatLateralM = 0.65
+const cabSeatHeightM = 1.05
+
 export function toggleSeat(state: Snapshot, member: CrewMember) {
   const { player } = member
   if (player.seat) {
@@ -16,8 +29,8 @@ export function toggleSeat(state: Snapshot, member: CrewMember) {
     const side = player.seat === 'driver' ? -1 : 1
     const exit = boating
       ? skiffExit(state.skiff, player.seat)
-      : [offset(state.truck, side * 2.1, 0.9), offset(state.truck, 0, -3.8)]
-          .find((point) => canOccupyGround(point, 0.45, -0.10))
+      : [offset(state.truck, side * cabDoorExitLateralM, cabDoorExitForwardM), offset(state.truck, 0, truckRearExitM)]
+          .find((point) => canOccupyGround(point, cabExitClearanceRadiusM, cabExitMinimumGroundY))
     if (!exit) return
     player.seat = null
     stopPrimary(member)
@@ -34,7 +47,7 @@ export function toggleSeat(state: Snapshot, member: CrewMember) {
     updateRiders(state)
     return
   }
-  if (distance(state.truck, player) >= 4.5 || Math.abs(state.truck.speed) > truckSeatSpeed || !player.grounded || player.onBed || player.truckSurface
+  if (distance(state.truck, player) >= truckBoardingRangeM || Math.abs(state.truck.speed) > truckSeatSpeed || !player.grounded || player.onBed || player.truckSurface
     || heldItem(state, player)?.kind === 'crate') return
   if (!state.players.some((entry) => entry.seat === 'driver')) player.seat = 'driver'
   else if (!state.players.some((entry) => entry.seat === 'passenger')) player.seat = 'passenger'
@@ -50,7 +63,7 @@ export function updateRiders(state: Snapshot) {
   for (const player of state.players) {
     if (!player.seat) continue
     if (inSkiff(player.seat)) {
-      Object.assign(player, offset(state.skiff, player.seat === 'port' ? -0.44 : 0.44, 0.25))
+      Object.assign(player, offset(state.skiff, player.seat === 'port' ? skiffPortSeatM : skiffStarboardSeatM, skiffSeatForwardM))
       player.heading = state.skiff.heading
       player.y = 0
       player.grounded = true
@@ -59,7 +72,7 @@ export function updateRiders(state: Snapshot) {
       player.swimming = false
       continue
     }
-    Object.assign(player, truckPoint(state.truck, player.seat === 'driver' ? -0.65 : 0.65, 0, 1.05))
+    Object.assign(player, truckPoint(state.truck, player.seat === 'driver' ? driverSeatLateralM : passengerSeatLateralM, 0, cabSeatHeightM))
     player.heading = state.truck.heading
     player.grounded = true
     player.onBed = false

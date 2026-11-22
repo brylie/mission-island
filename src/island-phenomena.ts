@@ -7,6 +7,7 @@ import type { Scene } from '@babylonjs/core/scene'
 import { mistLighting, phenomenonLooks, phenomenonPatch, phenomenonShader } from './assets/effects/phenomena'
 import { seededRandom } from './seeded-random'
 import { shaderPresets } from './shader-studies'
+import { solarAngle } from './weather'
 import type { WildlifeFrame } from './wildlife'
 import { phenomenonStrength, smoothRange } from './wildlife-motion'
 
@@ -24,8 +25,6 @@ interface Effect {
 
 const half = 0.5
 const fullTurn = Math.PI + Math.PI
-const hoursPerHalfDay = 12
-const sunriseHour = 6
 const patchAlphaIndex = 2
 const reducedDensityGroupSize = 3
 const omittedPatchIndex = 2
@@ -64,8 +63,8 @@ export function createPhenomena(scene: Scene, effects: readonly Effect[]) {
       for (const { mesh, reducedLayer } of patches) mesh.setEnabled(strength > minimumVisibleStrength && (!reduced || reducedLayer))
       if (strength <= minimumVisibleStrength) continue
       if (effect.scatter) {
-        const solarAngle = (weather.hour - sunriseHour) * Math.PI / hoursPerHalfDay
-        sun.set(-Math.cos(solarAngle), Math.sin(solarAngle), mistLighting.sunDirectionZ).normalize()
+        const sunAngle = solarAngle(weather.hour)
+        sun.set(-Math.cos(sunAngle), Math.sin(sunAngle), mistLighting.sunDirectionZ).normalize()
         material.setVector3('morningSun', sun)
         material.setVector3('mistEye', camera)
         material.setFloat('scattering', mist.scattering * (1 - weather.rain * mistLighting.rainScatteringLoss))

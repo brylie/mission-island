@@ -1,6 +1,8 @@
 import type { Material } from '@babylonjs/core/Materials/material'
 import { createFieldOutingScenery } from './assets/field-outing'
-import { mirrorPoolMist } from './assets/recipes/starter-phenomena'
+import { shellRockCap, tidePoolDressing } from './assets/geometry/tide-pool-dressing'
+import { starterDecorationOffsets } from './worlds/starter/layout/sites'
+import { fernfallSpray, mirrorPoolMist } from './assets/recipes/starter-phenomena'
 import { createBuoy, createDock, createHarborBoat } from './assets/waterfront'
 import { createClothingCounter, createHomeChest, createRock, createTree, createUmbrella, createWardrobe, umbrellaColors } from './assets/props'
 import { createHouse } from './assets/buildings'
@@ -50,6 +52,8 @@ interface WorldSubstitutions {
   liveParticles?: boolean
 }
 
+const rainPavingWetness = 0.74
+
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
   const study = substitutions.surfaceStudy
   const water = createIslandTerrain(meshes, study?.target === 'meadow' ? study : undefined)
@@ -62,24 +66,25 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const wetPaving = createWetPaving(paving)
   for (const path of walkways) createSidewalk(meshes, path, paving)
   createRoad(meshes, harborRoad)
-  createRoad(meshes, depotLane, 6, { lift: -0.003, marked: [depotLane[0], { x: depotJunction.x - 4, z: depotJunction.z }] })
+  const { depotRoad, wardrobeZ, clothingCounterZ } = starterDecorationOffsets
+  createRoad(meshes, depotLane, depotRoad.width, { lift: depotRoad.lift, marked: [depotLane[0], { x: depotJunction.x + depotRoad.markingEndX, z: depotJunction.z }] })
 
   buildings.forEach((building, index) => {
     if (index !== substitutions.replaceBuilding) meshes.batchModel(createHouse(meshes, building))
   })
   const homeChests = crewHomes.map(({ chest }, i) => createHomeChest(meshes, chest, playerColors[i]))
-  crewHomes.forEach(({ wardrobe }, i) => void createWardrobe(meshes, { ...wardrobe, z: wardrobe.z + 0.49 }, groundHeight(wardrobe), playerColors[i]))
-  createClothingCounter(meshes, { ...clothingCounter, z: clothingCounter.z - 0.65 }, groundHeight(clothingCounter))
+  crewHomes.forEach(({ wardrobe }, i) => void createWardrobe(meshes, { ...wardrobe, z: wardrobe.z + wardrobeZ }, groundHeight(wardrobe), playerColors[i]))
+  createClothingCounter(meshes, { ...clothingCounter, z: clothingCounter.z + clothingCounterZ }, groundHeight(clothingCounter))
   const showFarm = createFarm(meshes, substitutions.replaceFarm ? [] : undefined)
   showFarm([])
   const marketShower = createMarketShower(meshes)
   const boardY = groundHeight(jobBoard)
-  const { panel } = jobBoard.geometry
-  for (const dx of [-0.66, 0.66]) meshes.box(jobBoard.x + dx, boardY + 0.91, jobBoard.z, 0.12, 1.82, 0.13, '#765641')
-  meshes.box(jobBoard.x, boardY + panel.centreY, jobBoard.z, panel.width, panel.height, panel.depth, '#996447')
-  meshes.box(jobBoard.x, boardY + 1.88, jobBoard.z, 1.98, 0.14, 0.45, '#387e76')
-  for (const dx of [-0.52, 0, 0.52]) {
-    meshes.box(jobBoard.x + dx, boardY + panel.centreY, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
+  const { panel, posts, cap, cards, color } = jobBoard.geometry
+  for (const dx of posts.x) meshes.box(jobBoard.x + dx, boardY + posts.y, jobBoard.z, ...posts.size, posts.color)
+  meshes.box(jobBoard.x, boardY + panel.centreY, jobBoard.z, panel.width, panel.height, panel.depth, color)
+  meshes.box(jobBoard.x, boardY + cap.y, jobBoard.z, ...cap.size, cap.color)
+  for (const dx of cards.x) {
+    meshes.box(jobBoard.x + dx, boardY + panel.centreY, jobBoard.z + cards.z, ...cards.size, cards.color, undefined, false)
   }
   createDock(meshes, saltBloomPile, study?.target === 'dock' ? study.material : undefined)
   const ferry = createFerryTerminal(meshes)
@@ -89,23 +94,25 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const updateFieldScenery = createFieldOutingScenery(meshes)
   for (const point of shellRocks) {
     const { geometry, heading } = point
-    const rock = meshes.sphere(point.x, groundHeight(point) + geometry.centreHeight, point.z, geometry.width, geometry.height, geometry.depth, '#798b80')
+    const rock = meshes.sphere(point.x, groundHeight(point) + geometry.centreHeight, point.z, geometry.width, geometry.height, geometry.depth, shellRockCap.rockColor)
     rock.rotation.y = heading
-    meshes.sphere(point.x + 0.025, groundHeight(point) + 0.165, point.z - 0.015, 0.16, 0.055, 0.12, '#ecd3aa')
+    const [dx, dy, dz] = shellRockCap.offset
+    meshes.sphere(point.x + dx, groundHeight(point) + dy, point.z + dz, ...shellRockCap.size, shellRockCap.color)
   }
   // Limpets on the sill and wrack in the basin give the pool a scale at foot level.
-  for (let i = 0; i < 17; i++) {
-    const patch = Math.floor(i / 4)
-    const a = patch * 1.77 + 0.105 * (i % 4)
-    const x = tidePool.x + (2.18 + 0.17 * Math.sin(i * 4.1)) * Math.cos(a), z = tidePool.z + (1.47 + 0.15 * Math.cos(i * 2.5)) * Math.sin(a)
+  const { count: dressingCount, patch, across, along, limpet, wrack } = tidePoolDressing
+  for (let i = 0; i < dressingCount; i++) {
+    const a = Math.floor(i / patch.size) * patch.angle + patch.spacingAngle * (i % patch.size)
+    const x = tidePool.x + (across.radius + across.variation * Math.sin(i * across.frequency)) * Math.cos(a)
+    const z = tidePool.z + (along.radius + along.variation * Math.cos(i * along.frequency)) * Math.sin(a)
     const y = groundHeight({ x, z })
     if (y >= waterLevel) {
-      meshes.cylinder(x, y + 0.033, z, 0.024, 0.16, 0.085, 7, '#d4c1a0')
+      meshes.cylinder(x, y + limpet.centreY, z, limpet.tip, limpet.base, limpet.height, limpet.sides, limpet.color)
     }
     else {
-      for (let j = 0; j < 3; j++) {
-        const blade = meshes.sphere(x + j * 0.046, y + 0.074, z, 0.074, 0.21, 0.15, j % 2 ? '#848045' : '#65744b', undefined, false, 5)
-        blade.rotation.z = 0.3 + j * 0.25
+      for (let j = 0; j < wrack.count; j++) {
+        const blade = meshes.sphere(x + j * wrack.spacing, y + wrack.centreY, z, ...wrack.size, wrack.colors[j % wrack.colors.length], undefined, false, wrack.segments)
+        blade.rotation.z = wrack.tilt + j * wrack.tiltStep
       }
     }
   }
@@ -127,7 +134,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     ...(substitutions.liveParticles
       ? []
       : [
-          { name: 'Fernfall spray', kind: 'spray' as const, x: streamX(89.2), y: waterLevel + 0.04, z: 89.2, extent: 2.7, seed: 2961 },
+          { ...fernfallSpray, x: streamX(fernfallSpray.z), y: waterLevel + fernfallSpray.aboveWater },
         ]),
   ])
   const lights = createStreetLights(meshes)
@@ -162,7 +169,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     const meadow = enabled ? meadowDefaults : calm
     water.meadow(frame.time, frame.camera, meadow)
     blades(frame.time, frame.camera, meadow)
-    wetPaving(enabled ? Math.max(frame.weather.rain * 0.74, runoff.puddle) * shaderPresets.rainPolished.wetness : 0, shaderPresets.rainPolished.reflection)
+    wetPaving(enabled ? Math.max(frame.weather.rain * rainPavingWetness, runoff.puddle) * shaderPresets.rainPolished.wetness : 0, shaderPresets.rainPolished.reflection)
     const mist = quality === 'low' ? reducedMist : shaderPresets.dawnSilver
     phenomena(frame, enabled ? mist : unlitMist)
     interactive({ ...frame, light }, { ...actors, runoff, tideLevel: tide.level, quality })

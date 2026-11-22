@@ -40,6 +40,12 @@ const correctnessRules = {
 const lineLimit = (max) => ['error', { max, skipBlankLines: true, skipComments: true }]
 const complexity = (max) => ['error', max]
 
+const defaultModuleLineLimit = 350
+const defaultFunctionLineLimit = 140
+const defaultComplexityLimit = 24
+const defaultNestingDepthLimit = 5
+const inlineInteractionItemLimit = 4
+
 const noMagicNumbers = {
   detectObjects: true,
   ignore: [-1, 0, 1],
@@ -80,21 +86,60 @@ const executableDataSyntax = [
 ].join(', ')
 
 // Preserve exact ceilings for existing hotspots until the responsible feature is split out.
+const crewBuilderFunctionLineLimit = 165
+const biomeModelFunctionLineLimit = 199
+const islandCameraFunctionLineLimit = 169
+const starterEntryModuleLineLimit = 731
+const starterEntryComplexityLimit = 38
+const particleShelfModuleLineLimit = 463
+const starterSceneModuleLineLimit = 339
+const starterSceneFunctionLineLimit = 295
+const starterSceneComplexityLimit = 43
+const saltwindEntryModuleLineLimit = 446
+const saltwindEntryFunctionLineLimit = 412
+const saltwindEntryComplexityLimit = 25
+const oreHaulingFunctionLineLimit = 162
+const landscapeLayoutFunctionLineLimit = 193
+const landscapeMapModuleLineLimit = 459
+const landscapeMapFunctionLineLimit = 379
+const landscapeStudiesFunctionLineLimit = 207
+const workbenchEntryModuleLineLimit = 696
+const workbenchReferenceFunctionLineLimit = 142
+const workbenchStageFunctionLineLimit = 180
+const workbenchStageComplexityLimit = 40
+
 const existingLimits = {
-  'src/assets/crew.ts': { 'max-lines-per-function': lineLimit(165) },
-  'src/biome-model.ts': { 'max-lines-per-function': lineLimit(199) },
-  'src/island-camera.ts': { 'max-lines-per-function': lineLimit(169) },
-  'src/main.ts': { 'max-lines': lineLimit(731), 'complexity': complexity(38) },
-  'src/assets/recipes/particle-shelf-recipes.ts': { 'max-lines': lineLimit(463) },
-  'src/scene.ts': { 'max-lines': lineLimit(339), 'max-lines-per-function': lineLimit(295), 'complexity': complexity(43) },
-  'src/second-island/main.ts': { 'max-lines': lineLimit(446), 'max-lines-per-function': lineLimit(412), 'complexity': complexity(25) },
-  'src/second-island/ore-hauling.ts': { 'max-lines-per-function': lineLimit(162) },
-  'src/workbench/landscape-layout.ts': { 'max-lines-per-function': lineLimit(193) },
-  'src/workbench/landscape-map.ts': { 'max-lines': lineLimit(459), 'max-lines-per-function': lineLimit(379) },
-  'src/workbench/landscape-studies.ts': { 'max-lines-per-function': lineLimit(207) },
-  'src/workbench/main.ts': { 'max-lines': lineLimit(696) },
-  'src/workbench/reference-pane.ts': { 'max-lines-per-function': lineLimit(142) },
-  'src/workbench/stage.ts': { 'max-lines-per-function': lineLimit(180), 'complexity': complexity(40) },
+  'src/assets/crew.ts': { 'max-lines-per-function': lineLimit(crewBuilderFunctionLineLimit) },
+  'src/biome-model.ts': { 'max-lines-per-function': lineLimit(biomeModelFunctionLineLimit) },
+  'src/island-camera.ts': { 'max-lines-per-function': lineLimit(islandCameraFunctionLineLimit) },
+  'src/main.ts': {
+    'max-lines': lineLimit(starterEntryModuleLineLimit),
+    'complexity': complexity(starterEntryComplexityLimit),
+  },
+  'src/assets/recipes/particle-shelf-recipes.ts': { 'max-lines': lineLimit(particleShelfModuleLineLimit) },
+  'src/scene.ts': {
+    'max-lines': lineLimit(starterSceneModuleLineLimit),
+    'max-lines-per-function': lineLimit(starterSceneFunctionLineLimit),
+    'complexity': complexity(starterSceneComplexityLimit),
+  },
+  'src/second-island/main.ts': {
+    'max-lines': lineLimit(saltwindEntryModuleLineLimit),
+    'max-lines-per-function': lineLimit(saltwindEntryFunctionLineLimit),
+    'complexity': complexity(saltwindEntryComplexityLimit),
+  },
+  'src/second-island/ore-hauling.ts': { 'max-lines-per-function': lineLimit(oreHaulingFunctionLineLimit) },
+  'src/workbench/landscape-layout.ts': { 'max-lines-per-function': lineLimit(landscapeLayoutFunctionLineLimit) },
+  'src/workbench/landscape-map.ts': {
+    'max-lines': lineLimit(landscapeMapModuleLineLimit),
+    'max-lines-per-function': lineLimit(landscapeMapFunctionLineLimit),
+  },
+  'src/workbench/landscape-studies.ts': { 'max-lines-per-function': lineLimit(landscapeStudiesFunctionLineLimit) },
+  'src/workbench/main.ts': { 'max-lines': lineLimit(workbenchEntryModuleLineLimit) },
+  'src/workbench/reference-pane.ts': { 'max-lines-per-function': lineLimit(workbenchReferenceFunctionLineLimit) },
+  'src/workbench/stage.ts': {
+    'max-lines-per-function': lineLimit(workbenchStageFunctionLineLimit),
+    'complexity': complexity(workbenchStageComplexityLimit),
+  },
 }
 
 const platformImports = {
@@ -144,10 +189,10 @@ export default defineConfig(
     plugins,
     rules: {
       ...secureRules,
-      'max-lines': lineLimit(350),
-      'max-lines-per-function': lineLimit(140),
-      'complexity': complexity(24),
-      'max-depth': ['error', 5],
+      'max-lines': lineLimit(defaultModuleLineLimit),
+      'max-lines-per-function': lineLimit(defaultFunctionLineLimit),
+      'complexity': complexity(defaultComplexityLimit),
+      'max-depth': ['error', defaultNestingDepthLimit],
       'no-constant-binary-expression': 'error',
       '@typescript-eslint/no-import-type-side-effects': 'error',
       '@typescript-eslint/no-unnecessary-qualifier': 'error',
@@ -173,7 +218,7 @@ export default defineConfig(
   },
   {
     files: ['test/**/*.mjs'],
-    rules: { 'max-lines': lineLimit(350) },
+    rules: { 'max-lines': lineLimit(defaultModuleLineLimit) },
   },
   {
     files: ['**/*.{cjs,js,mjs,ts}'],
@@ -238,8 +283,8 @@ export default defineConfig(
           '[]': 'off',
           '{}': 'off',
           '<>': 'off',
-          'ArrayExpression': { singleLine: { maxItems: 4 }, multiLine: { minItems: 1 } },
-          'ObjectExpression': { singleLine: { spacing: 'always', maxItems: 4 }, multiLine: { minItems: 1 } },
+          'ArrayExpression': { singleLine: { maxItems: inlineInteractionItemLimit }, multiLine: { minItems: 1 } },
+          'ObjectExpression': { singleLine: { spacing: 'always', maxItems: inlineInteractionItemLimit }, multiLine: { minItems: 1 } },
         },
       }],
     },

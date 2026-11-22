@@ -1,4 +1,7 @@
+import { downloadJsonFile } from './file-download'
 import { parseRecipeFile, presets, serializeRecipe, type BiomeRecipe } from '../biome-recipe'
+
+const maximumRecipeBytes = 65536
 
 export function bindBiomeRecipes(current: () => BiomeRecipe, apply: (recipe: BiomeRecipe) => void) {
   const select = document.querySelector<HTMLSelectElement>('#biome-preset')!
@@ -12,19 +15,14 @@ export function bindBiomeRecipes(current: () => BiomeRecipe, apply: (recipe: Bio
   })
   document.querySelector('#biome-export')!.addEventListener('click', () => {
     const recipe = current()
-    const url = URL.createObjectURL(new Blob([serializeRecipe(recipe)], { type: 'application/json' }))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'biome-' + recipe.seed + '.json'
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    downloadJsonFile('biome-' + recipe.seed + '.json', serializeRecipe(recipe))
   })
   document.querySelector('#biome-import')!.addEventListener('click', () => file.click())
   file.addEventListener('change', () => {
     const chosen = file.files?.[0]
     if (!chosen) return
     file.value = ''
-    if (chosen.size > 65536) {
+    if (chosen.size > maximumRecipeBytes) {
       status.textContent = 'Choose a recipe smaller than 64 KB.'
       return
     }

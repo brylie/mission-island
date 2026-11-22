@@ -1,12 +1,19 @@
+import { quarterTurnRadians } from '../../../math/angles.ts'
 import type { ResidentDefinition } from '../../../residents/definition.ts'
 import { maraFieldLines } from '../../../journal/outing.ts'
 import { ferryServiceRestored } from '../../../ferry-repair.ts'
 import { maraRemarks } from './remarks.ts'
 import { distance, harborDock } from '../../../world.ts'
+import { starterResidentSites } from '../layout/sites.ts'
 
-const porch = { x: -38.6, z: -24 }
-const landing = { x: harborDock.x - 0.7, z: -28.4 }
-const dock = { x: harborDock.x - 0.7, z: -33.4 }
+const fishingStartsAtHour = 6
+const fishingEndsAtHour = 18
+const carrotsFavorRewardCoins = 5
+const requestedCarrotCount = 2
+
+const { porch, dock: { lateralInset, landingZ, fishingZ } } = starterResidentSites.mara
+const landing = { x: harborDock.x - lateralInset, z: landingZ }
+const dock = { x: harborDock.x - lateralInset, z: fishingZ }
 const route = [porch, landing, dock].map((point) => ({ point }))
 const commuteHours = 0.25
 
@@ -17,9 +24,9 @@ export const mara: ResidentDefinition = {
   appearance: { look: { uniform: 'angler', skin: 'warm' }, dye: '#b9664a' },
   schedule: {
     home: { ...porch, heading: Math.PI },
-    work: { ...dock, heading: -Math.PI / 2 },
-    departs: 6,
-    returns: 18,
+    work: { ...dock, heading: -quarterTurnRadians },
+    departs: fishingStartsAtHour,
+    returns: fishingEndsAtHour,
     pace: (distance(porch, landing) + distance(landing, dock)) / commuteHours,
     route: () => route,
   },
@@ -40,9 +47,9 @@ export const mara: ResidentDefinition = {
   favors: [{
     id: 'mara-supper',
     title: 'Carrots for Mara’s supper',
-    coins: 5,
+    coins: carrotsFavorRewardCoins,
     trust: 1,
-    kind: { goods: 'carrots', quantity: 2 },
+    kind: { goods: 'carrots', quantity: requestedCarrotCount },
     offer: '“I’ve had fish every night this week. If your crew grows a couple of carrots at Island Farm, I’d make a proper stew.”',
     reminder: '“Two carrots from Island Farm, whenever you have them. No rush. The fish will keep.”',
     detail: 'Mara would like two carrots for a stew.',

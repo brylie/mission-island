@@ -3,6 +3,9 @@ import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import type { MeshFactory } from '../island-meshes'
 
+const coordinatesPerVertex = 3
+const firstTriangleEnd = 2
+
 export type Corner = [number, number, number]
 
 // Keep fracture faces flat. Project top faces in plan and steep faces in
@@ -11,7 +14,7 @@ export function facetBatch() {
   const positions: number[] = [], indices: number[] = [], uvs: number[] = [], colors: number[] = []
   return {
     face(corners: Corner[], shade: number, phase = 0) {
-      const first = positions.length / 3
+      const first = positions.length / coordinatesPerVertex
       const [a, b, c] = corners
       const ab = b.map((v, i) => v - a[i]), ac = c.map((v, i) => v - a[i])
       const nx = Math.abs(ab[1] * ac[2] - ab[2] * ac[1])
@@ -23,7 +26,7 @@ export function facetBatch() {
         else uvs.push((nx > nz ? z : x) + phase, y)
         colors.push(shade, shade, shade, 1)
       }
-      for (let i = 2; i < corners.length; i++) indices.push(first, first + i - 1, first + i)
+      for (let i = firstTriangleEnd; i < corners.length; i++) indices.push(first, first + i - 1, first + i)
     },
     mesh(meshes: MeshFactory, name: string, material: Material, parent?: TransformNode) {
       const mesh = meshes.surface(name, positions, indices, material, parent, uvs)

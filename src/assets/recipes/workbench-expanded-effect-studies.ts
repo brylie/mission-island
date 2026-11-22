@@ -1,3 +1,5 @@
+export const wetAshSteamSeed = 5817
+
 export const expandedEffectPresets = [
   {
     id: 'skiff-wake-foam',
@@ -226,7 +228,7 @@ export const expandedEffectPresets = [
     id: 'wet-ash-steam',
     name: 'Wet-ash steam',
     group: 'Jobs',
-    seed: 5817,
+    seed: wetAshSteamSeed,
     width: 4.1,
     height: 3.4,
     angle: 0.99,

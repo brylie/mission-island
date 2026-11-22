@@ -32,6 +32,15 @@ export const brinewickMarketPlacements = {
   shelteredRack: { id: 'fish-market-sheltered-net-rack', x: -250.58, z: -125.32 },
 } as const
 
+export const oreFreightBays = {
+  quay: { name: 'Brinewick freight quay', x: -268, z: -208 },
+  school: { name: 'Barleycross School', x: 253, z: -32 },
+  market: { name: 'Barleycross Farmers Market', x: 184, z: -35 },
+  dispatch: { x: 288, z: 156 },
+  // On the turnaround, clear of the low chute and its timber supports.
+  hopper: { x: 282, z: 171.5 },
+} as const
+
 export const islandName = 'Saltwind Island'
 export const landBounds = { minX: -505, maxX: 505, minZ: -340, maxZ: 340 }
 export const waterBounds = { minX: -560, maxX: 560, minZ: -430, maxZ: 430 }
@@ -333,4 +342,22 @@ export const pavedYards = [
 export const roundYards = [
   { id: 'helipad', ...helipad, y: 23.18 },
   { id: 'mine', x: 286, z: 164, radius: 16, y: 29.16 },
+] as const
+
+export const saltwindFeatureSites = [
+  { site: 'ferry', name: 'Ferry passenger waiting shelter', model: 'shelter', color: '#9b6451', x: -264.5, z: -225, heading: Math.PI / 2 },
+  { site: 'apartments', name: 'Quay apartments herb boxes', model: 'planter', color: '#f3bc72', x: -312.3, z: -134.5 },
+  { site: 'grocery', name: 'Grocery produce display', model: 'crates', color: '#8ea456', x: -323.3, z: -83.6 },
+  { site: 'farmers-market', name: 'Farmers market produce display', model: 'crates', color: '#ce8354', x: 145, z: -41 },
+  { site: 'fields', name: 'Long Acre rain barrels', model: 'barrels', color: '#789a83', x: 178.4, z: 31.7 },
+  { site: 'school', name: 'Schoolyard reading bench', model: 'bench', color: '#dca752', x: 258.5, z: -41, heading: Math.PI / 2 },
+  { site: 'hospital', name: 'Hospital garden planter', model: 'planter', color: '#9fc8a6', x: 126.2, z: 112.8 },
+  { site: 'alderwatch', name: 'Alderwatch village bench', model: 'bench', color: '#7f8c6b', x: -40, z: 165.3 },
+  { site: 'church', name: 'Chapel garden planter', model: 'planter', color: '#dda2a1', x: -29, z: 181.5 },
+  { site: 'cemetery', name: 'Cemetery remembrance bench', model: 'bench', color: '#778678', x: 25, z: 179, heading: Math.PI },
+  { site: 'fire', name: 'Fire station hose rack', model: 'hose', color: '#c5634d', x: -69.6, z: 184.3 },
+  { site: 'fishing', name: 'Sandspit float rack', model: 'rack', color: '#d99149', x: -249.1, z: -257.5, heading: Math.PI / 2, scale: 1.1 },
+  { site: 'rescue', name: 'Rescue slip lifebuoy', model: 'lifebuoy', color: '#c97653', x: -303.3, z: -224, heading: Math.PI / 2 },
+  { site: picnicLedge.id, name: 'Mirror Lake slate picnic seat', model: 'picnic', color: '#bf7860', x: picnicLedge.x, z: picnicLedge.z, heading: -0.48 },
+  { site: viaductWalk.id, name: 'Tarnstep triangulation benchmark', model: 'benchmark', color: '#729585', heading: 0.61, x: viaductWalk.x, z: viaductWalk.z },
 ] as const

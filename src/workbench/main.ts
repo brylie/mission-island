@@ -4,6 +4,10 @@ import { createVariationLibrary } from './variations'
 import { readSubjectLink, subjectLink } from './subject-link'
 import { starterFeatures } from '../worlds/starter/sites'
 import { editedFeature, readSiteDrafts, saveSiteDraft } from './site-drafts'
+import { exportDraftJson } from './file-download'
+import { landscapeControls } from '../assets/recipes/workbench-landscape-views'
+import { landscapeFurnishingControls } from '../assets/recipes/workbench-place-studies'
+import { studioCamera, studioPlayback } from '../assets/recipes/workbench-stage'
 import { workspaceOf } from './library'
 import { createLibraryPanel } from './library-panel'
 import { bindBiomeRecipes } from './biome-files'
@@ -52,6 +56,7 @@ const status = element('stage-error')
 const checkZFighting = element<HTMLButtonElement>('check-z-fighting')
 const zFightingResult = element('z-fighting-result')
 const storeKey = 'mission-island-workbench'
+const readoutDecimals = 2
 
 interface SavedView {
   id: string
@@ -308,7 +313,7 @@ function setOption(control: Control, value: Values[string], save = true) {
 
 function renderPlayback() {
   slider.value = String(time)
-  timecode.value = `${time.toFixed(2)} s`
+  timecode.value = `${time.toFixed(readoutDecimals)} s`
   const buttonText = playing ? 'Pause' : 'Play'
   if (play.textContent !== buttonText) play.textContent = buttonText
 }
@@ -439,7 +444,7 @@ const landscapeMap = createLandscapeMap({
   openShot: studies.openShot,
   place: (point) => stage?.placeDraftAt(point) ?? false,
   jump(point) {
-    Object.assign(values, point, { focusHeight: 0.25 })
+    Object.assign(values, point, { focusHeight: studioCamera.landscapeFocusHeight })
     studies.hideComparison()
     stage?.setView('perspective', values)
     zFightingResult.replaceChildren()
@@ -493,7 +498,7 @@ function openLandscapeView(id: string) {
     marketRainAge: dryMarketRainAge,
     clockStart: timeline.start,
     sunShafts: true,
-    shaftIntensity: 100,
+    shaftIntensity: landscapeControls.shaftIntensity[0],
   })
   stage?.setLandscapeView(view)
   grid.checked = wireframe.checked = turntable.checked = false
@@ -520,13 +525,7 @@ element('save-furnishing').addEventListener('click', () => {
 element('export-furnishing').addEventListener('click', () => {
   const site = starterFeatures.find((f) => 'site-' + f.site === asset.id)
   if (!site) return
-  const json = JSON.stringify(editedFeature(site, values), null, 2)
-  const url = URL.createObjectURL(new Blob([json + '\n'], { type: 'application/json' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = site.site + '-placement.json'
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  exportDraftJson(site.site + '-placement.json', editedFeature(site, values))
 })
 
 function openFurnishingLocation() {
@@ -535,8 +534,8 @@ function openFurnishingLocation() {
   const feature = starterFeatures.find((f) => f.site === id)
   if (!feature) return
   const draft = readSiteDrafts()[feature.site]
-  Object.assign(values, { x: feature.x + (draft?.east ?? 0), z: feature.z + (draft?.north ?? 0), focusHeight: 0.65 })
-  stage?.setLandscapeView({ alpha: -0.95, beta: 1.18, radius: 8 })
+  Object.assign(values, { x: feature.x + (draft?.east ?? 0), z: feature.z + (draft?.north ?? 0), focusHeight: landscapeFurnishingControls.location.height })
+  stage?.setLandscapeView(landscapeFurnishingControls.location.camera)
   renderAssetControls()
 }
 
@@ -581,7 +580,7 @@ play.addEventListener('click', () => {
 element('restart').addEventListener('click', () => seekTo(0))
 element('step').addEventListener('click', () => {
   playing = false
-  seekTo(time + 1 / 60)
+  seekTo(time + 1 / studioPlayback.stepHz)
 })
 slider.addEventListener('input', () => {
   playing = false
@@ -605,7 +604,7 @@ checkZFighting.addEventListener('click', () => {
   const list = document.createElement('ul')
   for (const { first, second, at } of candidates) {
     const item = document.createElement('li')
-    item.textContent = `${first} and ${second} near (${at.asArray().map((value) => value.toFixed(2)).join(', ')})`
+    item.textContent = `${first} and ${second} near (${at.asArray().map((value) => value.toFixed(readoutDecimals)).join(', ')})`
     list.append(item)
   }
   zFightingResult.append(list)
@@ -655,7 +654,7 @@ function currentSetupLink() {
     grid: grid.checked,
     wireframe: wireframe.checked,
   }, lightSelect.value as LightingPreset)
-  return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? 0.8 }, hour: Number(values.hour), rain: Number(values.rain), marketRainAge: Number(values.marketRainAge), time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
+  return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? studioCamera.fov }, hour: Number(values.hour), rain: Number(values.rain), marketRainAge: Number(values.marketRainAge), time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
 }
 const shareSetup = () => {
   const link = currentSetupLink()
@@ -689,7 +688,7 @@ engine?.runRenderLoop(() => {
     engine.clear(Color4.FromHexString('#1b292aff'), true, true, true)
     return
   }
-  const delta = Math.min(0.08, engine.getDeltaTime() / 1000)
+  const delta = Math.min(studioPlayback.maximumFrameSeconds, engine.getDeltaTime() / studioPlayback.millisecondsPerSecond)
   const rate = playing ? Number(rateSelect.value) : 0
   if (rate > 0 && asset.duration && !seek) {
     time += delta * rate

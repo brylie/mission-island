@@ -4,12 +4,16 @@ import { groundHeight } from './terrain.ts'
 import { distance, type Point } from './world.ts'
 import { liftSites, liftStrength } from './worlds/starter/lift.ts'
 
+const aheadTolerance = 0.2
+const behindTolerance = 2.6
+const minimumLiftStrength = 0.25
+
 // What a pilot on a free flight needs to read at a glance: how high they are, where rising air
 // is, and which place still needs surveying. Shared by the HUD and its tests.
 export function bearingWord(player: Player, point: Point) {
   const turn = Math.atan2(point.x - player.x, point.z - player.z) - player.heading
   const bearing = Math.atan2(Math.sin(turn), Math.cos(turn))
-  return Math.abs(bearing) < 0.2 ? 'ahead' : Math.abs(bearing) > 2.6 ? 'behind' : bearing > 0 ? 'right' : 'left'
+  return Math.abs(bearing) < aheadTolerance ? 'ahead' : Math.abs(bearing) > behindTolerance ? 'behind' : bearing > 0 ? 'right' : 'left'
 }
 
 const near = (player: Player, points: readonly (Point & { name: string })[]) =>
@@ -17,7 +21,7 @@ const near = (player: Player, points: readonly (Point & { name: string })[]) =>
 
 // Lift sites working right now, with thermals that are too weak to climb in left out.
 export function activeLift(state: Pick<Snapshot, 'weather'>) {
-  return liftSites.filter((site) => liftStrength(site, state.weather.hour, state.weather.rain) > 0.25)
+  return liftSites.filter((site) => liftStrength(site, state.weather.hour, state.weather.rain) > minimumLiftStrength)
 }
 
 export function soaringDetail(state: Snapshot, player: Player) {

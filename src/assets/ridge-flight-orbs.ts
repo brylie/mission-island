@@ -3,8 +3,10 @@ import { ridgeFlightWaypoints } from '../ridge-wayfinding'
 import type { Waypoint } from '../wayfinding'
 import { createWayfindingOrbs } from './wayfinding-orbs'
 
+const destinationOrbSize = 0.48
+
 export function createRidgeFlightOrbs(meshes: MeshFactory) {
-  const orbs = createWayfindingOrbs(meshes, 'Windstone destination', '#7bdaff', 0.48)
+  const orbs = createWayfindingOrbs(meshes, 'Windstone destination', '#7bdaff', destinationOrbSize)
   let lastTarget: boolean | null | undefined
   let lastPilot: Waypoint | undefined
   // `null` hides the orbs: free flights steer by the rising air and the survey bearings instead.

@@ -7,13 +7,19 @@ import type { InventoryItem } from '../src/inventory.ts'
 import { nearbyPlot } from '../src/farm.ts'
 import type { FishId } from '../src/journal/fish.ts'
 import type { FishingResult, Player, Snapshot } from '../src/protocol.ts'
-import { crateSize, offset, type Point } from '../src/world.ts'
-import type { createCargoPhysics } from '../src/simulation/cargo.ts'
+import { offset, type Point } from '../src/world.ts'
+import { crateHalfSize, type createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewCommand } from './commands.ts'
 import { stopPrimary, stowTool, type CrewMember } from './crew.ts'
-import { castPoint, catchChance, stepFight } from '../src/simulation/fishing.ts'
+import { castPoint, catchChance, initialFishingTension, stepFight } from '../src/simulation/fishing.ts'
 import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
+import { crewInputTimeoutMs, millisecondsPerSecond } from './host-time.ts'
+import { heldCrateForwardM } from './items.ts'
+
+const toolReachDurationMs = 220
+const crateLaunchHeightM = 1.76
+const throwGestureDurationMs = 270
 
 export function createEquipment(
   state: Snapshot,
@@ -70,7 +76,7 @@ export function createEquipment(
         }
       }
       member.primary = { kind: 'reach', since: now }
-      member.reachUntil = now + 220
+      member.reachUntil = now + toolReachDurationMs
     }
   }
 
@@ -79,7 +85,7 @@ export function createEquipment(
     stopPrimary(member)
     if (!primary || (primary.kind !== 'throw' && primary.kind !== 'cast')) return
     const heading = aim ?? member.input.aim ?? player.heading
-    const power = chargePower(primary.kind, (now - primary.since) / 1000)
+    const power = chargePower(primary.kind, (now - primary.since) / millisecondsPerSecond)
     if (primary.kind === 'cast' && isReadyToCast(member)) {
       const bobber = castPoint({ ...player, heading }, power)
       if (bobber) {
@@ -93,14 +99,14 @@ export function createEquipment(
     if (!item || item.id !== primary.itemId || item.kind !== 'crate') return
     player.heading = heading
     item.heading = heading
-    const front = offset(player, 0, 0.89)
-    const origin = canOccupyGround(front, crateSize / 2, -1)
+    const front = offset(player, 0, heldCrateForwardM)
+    const origin = canOccupyGround(front, crateHalfSize, -1)
       && (!isInsideTruck(state.truck, front) || player.onBed)
       ? front
       : player
     item.holder = null
-    physics.launch(item, origin, player.y + 1.76, power)
-    member.throwUntil = now + 270
+    physics.launch(item, origin, player.y + crateLaunchHeightM, power)
+    member.throwUntil = now + throwGestureDurationMs
     player.throwing = true
   }
 
@@ -125,7 +131,7 @@ export function createEquipment(
       }
       else if (cast.elapsed >= castTravelSeconds + biteSeconds) {
         if (random() < catchChance(cast.power)) {
-          cast.fight = { progress: 0, tension: 0.25, pulling: false }
+          cast.fight = { progress: 0, tension: initialFishingTension, pulling: false }
         }
         else {
           fishResult(member, 'no-bite')
@@ -141,7 +147,7 @@ export function createEquipment(
       startPrimary(member, now)
     }
     else if (message.phase === 'release') {
-      if (now - member.lastInput <= 400) releasePrimary(member, message.aim, now)
+      if (now - member.lastInput <= crewInputTimeoutMs) releasePrimary(member, message.aim, now)
       else stopPrimary(member)
     }
     else if (message.phase === 'cancel') {

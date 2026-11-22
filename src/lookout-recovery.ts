@@ -4,14 +4,13 @@ import { dawnsBetween } from './weather.ts'
 export type LookoutRecovery = 'undisturbed' | 'ash' | 'shoots' | 'established'
 export const lookoutRecoverySubject = 'lookout-recovery'
 
-export const recoveryBeds = [
-  { x: 3.85, z: 28.75, rx: 1.55, rz: 1.66 },
-  { x: 7.23, z: 31.4, rx: 1.26, rz: 0.65 },
-] as const
+export { lookoutRecoveryBeds as recoveryBeds } from './worlds/starter/layout/scenery.ts'
+
+const establishedAfterDawns = 3
 
 export function lookoutRecoveryAt({ mission, islandTime, lookoutFireClearedAt }: Pick<Snapshot, 'mission' | 'islandTime' | 'lookoutFireClearedAt'>): LookoutRecovery {
   if (mission !== 'complete') return 'undisturbed'
   if (lookoutFireClearedAt === undefined) return 'established'
   const dawns = dawnsBetween(lookoutFireClearedAt, islandTime)
-  return dawns < 1 ? 'ash' : dawns < 3 ? 'shoots' : 'established'
+  return dawns < 1 ? 'ash' : dawns < establishedAfterDawns ? 'shoots' : 'established'
 }

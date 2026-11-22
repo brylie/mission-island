@@ -5,6 +5,14 @@ import { heldItem } from './interactions/cargo.ts'
 import { besideSubject, defaultInteraction } from './interaction-options.ts'
 import type { Interaction, InteractionChoice } from './interaction-options.ts'
 
+const skiffBoardSpeed = 0.65
+const skiffBoardReach = 3.3
+const skiffSeatCount = 2
+const skiffExitSpeed = 0.35
+const daylightGrowthStartsHour = 6
+const daylightGrowthEndsHour = 18
+const truckBoardReach = 4.5
+
 export { heldItem }
 export { atClothingCounter, atHomeDoor } from './interactions/home.ts'
 
@@ -19,13 +27,13 @@ export function inSkiff(seat: Player['seat']) {
 
 export function canBoardSkiff(state: Snapshot, player: Player) {
   return !player.seat && player.grounded && !player.onBed && !heldItem(state, player)
-    && Math.abs(state.skiff.speed) < 0.65 && distance(state.skiff, player) < 3.3
-    && state.players.filter((crew) => inSkiff(crew.seat)).length < 2
+    && Math.abs(state.skiff.speed) < skiffBoardSpeed && distance(state.skiff, player) < skiffBoardReach
+    && state.players.filter((crew) => inSkiff(crew.seat)).length < skiffSeatCount
 }
 
 export function canCast(state: Snapshot, player: Player) {
   if (player.equipped !== 'fishing-rod') return false
-  if (inSkiff(player.seat)) return Math.abs(state.skiff.speed) < 0.35
+  if (inSkiff(player.seat)) return Math.abs(state.skiff.speed) < skiffExitSpeed
   return !player.seat && player.grounded && !player.onBed && !player.swimming
 }
 
@@ -38,10 +46,10 @@ function fallbackHint(state: Snapshot, player: Player): [string, string] {
   if (plot === 'grass') return player.equipped === 'hoe' ? ['Left click', 'Till soil'] : ['2', 'Equip hoe']
   if (plot === 'tilled') return ['', player.starterSeedClaimed ? 'Buy carrot seeds at Seabrook Market' : 'Pick up a starter seed at home']
   if (plot === 'planted') return player.equipped === 'watering-can' ? ['Left click', 'Water carrots'] : ['3', 'Equip watering can']
-  if (plot === 'watered') return ['', state.weather.hour > 6 && state.weather.hour < 18
+  if (plot === 'watered') return ['', state.weather.hour > daylightGrowthStartsHour && state.weather.hour < daylightGrowthEndsHour
     ? 'Carrots are growing'
     : 'Watered · growth resumes at sunrise']
-  if (player.grounded && !player.onBed && !player.truckSurface && distance(player, state.truck) < 4.5
+  if (player.grounded && !player.onBed && !player.truckSurface && distance(player, state.truck) < truckBoardReach
     && Math.abs(state.truck.speed) <= truckSeatSpeed) return ['F', 'Board truck']
   if (canBoardSkiff(state, player)) return ['F', 'Board skiff']
   if (canCast(state, player)) return ['Left click', 'Hold and release to cast']

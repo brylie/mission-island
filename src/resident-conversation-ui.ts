@@ -6,6 +6,10 @@ import { chooseRemark, remarkContext } from './residents/remarks'
 import { islandRemarks } from './worlds/starter/island-remarks'
 import { starterResidents } from './worlds/starter/residents'
 
+const conversationCountSeed = 7919
+const playerSeed = 104729
+const nameLengthSeed = 131
+
 type Choice = Extract<ResidentAction, 'accept-favor' | 'report-sound' | 'report-fault'>
 
 // The conversation half of the crew guide dialog. Each talk adds one remark chosen for the moment; the
@@ -48,7 +52,7 @@ export function createResidentConversation(dialog: HTMLDialogElement, act: (acti
       const resident = starterResidents[speaker]
       if (!resident) return undefined
       const memory = talks.get(id) ?? { count: 0 }
-      const seed = (memory.count * 7919 + player.id * 104729 + Math.floor(state.islandTime) + id.length * 131) >>> 0
+      const seed = (memory.count * conversationCountSeed + player.id * playerSeed + Math.floor(state.islandTime) + id.length * nameLengthSeed) >>> 0
       const said = chooseRemark(resident, islandRemarks, remarkContext(resident, state, player), seed, memory.last)
       talks.set(id, { count: memory.count + 1, last: said?.template })
       remark.textContent = said ? `“${said.text}”` : ''

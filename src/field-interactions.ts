@@ -9,6 +9,25 @@ import { groundHeight } from './terrain.ts'
 import { distance, type Point } from './world.ts'
 import { driftwoodFoxgloves, driftwoodWrack, shellglassLimpets, shellglassStaff, starterFeatures } from './worlds/starter/sites.ts'
 
+const wrackAimHeight = 0.08
+const foxgloveAimHeight = 0.71
+const tideStaffAimHeight = 0.65
+const limpetAimHeight = 0.10
+const cairnAimHeight = 0.38
+const cloverAimHeight = 0.13
+const inspectionEyeHeight = 1.56
+const sightSampleStep = 0.22
+const sightEndpointClearance = 0.27
+const sceneryProbeRadius = 0.035
+const fixedSubjectReach = 2.35
+const fixedSubjectAimRadius = 0.42
+const juniperOutingReach = 19
+const hareShelterRain = 0.65
+const hareObservationReach = 11
+const hareRecordSlots = 2
+const hareAimHeight = 0.31
+const hareAimRadius = 0.48
+
 export const fieldActions = {
   'inspect-field': 'feature-recheck',
 } as const satisfies InteractionPolicies
@@ -25,21 +44,21 @@ const clover = juniperLayout.patches.filter((p) => p.kind === 'clover')
 const cairn = starterFeatures.find((p) => p.site === 'juniper')!
 
 const fixed = [
-  { record: 'biome:driftwood-edge', point: driftwoodWrack, height: 0.08, label: 'Inspect the wrack line' },
-  { record: 'sight:foxglove', point: driftwoodFoxgloves[0], height: 0.71, label: 'Record the foxglove' },
-  { record: 'place:shellglass', point: shellglassStaff, height: 0.65, label: 'Read the mended tide staff' },
-  { record: 'sight:limpet', point: shellglassLimpets[0], height: 0.10, label: 'Record a limpet' },
-  { record: 'place:juniper', point: cairn, height: 0.38, label: 'Read the trail cairn' },
-  { record: 'sight:clover', point: clover, height: 0.13, label: 'Examine the grazed clover' },
+  { record: 'biome:driftwood-edge', point: driftwoodWrack, height: wrackAimHeight, label: 'Inspect the wrack line' },
+  { record: 'sight:foxglove', point: driftwoodFoxgloves[0], height: foxgloveAimHeight, label: 'Record the foxglove' },
+  { record: 'place:shellglass', point: shellglassStaff, height: tideStaffAimHeight, label: 'Read the mended tide staff' },
+  { record: 'sight:limpet', point: shellglassLimpets[0], height: limpetAimHeight, label: 'Record a limpet' },
+  { record: 'place:juniper', point: cairn, height: cairnAimHeight, label: 'Read the trail cairn' },
+  { record: 'sight:clover', point: clover, height: cloverAimHeight, label: 'Examine the grazed clover' },
 ] as const
 
 function visibleFrom(player: Player, target: Anchor, metres: number) {
-  const eye = player.y + 1.56
-  for (let step = 0.22; step < metres - 0.27; step += 0.22) {
+  const eye = player.y + inspectionEyeHeight
+  for (let step = sightSampleStep; step < metres - sightEndpointClearance; step += sightSampleStep) {
     const fraction = step / metres
     const point = { x: player.x + (target.x - player.x) * fraction, z: player.z + (target.z - player.z) * fraction }
     const height = eye + (target.y - eye) * fraction
-    if (Math.max(groundHeight(point), propTop(point, 0.035)) > height) return false
+    if (Math.max(groundHeight(point), propTop(point, sceneryProbeRadius)) > height) return false
   }
   return true
 }
@@ -60,18 +79,18 @@ export function fieldInteractions(state: World, player: Player): FieldInteractio
   }
   for (const [subject, { record, point, height, label }] of fixed.entries()) {
     const metres = distance(player, point)
-    if (metres <= 2.35) offer(subject, record, { ...point, y: groundHeight(point) + height }, metres, label, 0.42)
+    if (metres <= fixedSubjectReach) offer(subject, record, { ...point, y: groundHeight(point) + height }, metres, label, fixedSubjectAimRadius)
   }
-  if (distance(player, juniperCenter) < 19) {
+  if (distance(player, juniperCenter) < juniperOutingReach) {
     for (const [index, hare] of state.juniper.hares.entries()) {
       const grazing = hare.behavior === 'grazing'
-      const sheltering = hare.behavior === 'sheltering' && state.weather.rain >= 0.65
+      const sheltering = hare.behavior === 'sheltering' && state.weather.rain >= hareShelterRain
       if (!grazing && !sheltering) continue
       const point = { x: juniperCenter.x + hare.x, z: juniperCenter.z + hare.z }
       const metres = distance(player, point)
-      if (metres > 11) continue
+      if (metres > hareObservationReach) continue
       // A stale grazing selection cannot turn into a sheltering record for the same hare.
-      offer(fixed.length + index * 2 + Number(sheltering), grazing ? 'sight:hare/grazing' : 'sight:hare/sheltering', { ...point, y: groundHeight(point) + navigation.lift(hare) + 0.31 }, metres, grazing ? 'Record a grazing hare' : 'Record a sheltering hare', 0.48)
+      offer(fixed.length + index * hareRecordSlots + Number(sheltering), grazing ? 'sight:hare/grazing' : 'sight:hare/sheltering', { ...point, y: groundHeight(point) + navigation.lift(hare) + hareAimHeight }, metres, grazing ? 'Record a grazing hare' : 'Record a sheltering hare', hareAimRadius)
     }
   }
   return options.sort((a, b) => Number(a.recorded) - Number(b.recorded) || a.metres - b.metres).map(({ interaction }) => interaction)

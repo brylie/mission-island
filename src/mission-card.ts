@@ -8,6 +8,11 @@ import { activeFavor, isCustom } from './residents/favors'
 import { distance } from './world'
 import { starterResidents } from './worlds/starter/residents'
 
+const deliveryHintReach = 11
+const sampleCheckoutSteps = 2
+const initialDeliveryQuota = 3
+const percentScale = 100
+
 // The first resident favor under way that has no card of its own.
 function residentFavorCard(state: Snapshot, local: Player) {
   for (const resident of starterResidents) {
@@ -21,7 +26,7 @@ function residentFavorCard(state: Snapshot, local: Player) {
 function deliveryInstruction(state: Snapshot, drop: { x: number, z: number }, quantity: number) {
   const loaded = state.items.filter((item) => item.onBed).length
   const delivered = state.jobs.active?.progress ?? state.items.filter((item) => item.delivered).length
-  if (distance(state.truck, drop) < 11) return 'Carry the crates into the teal drop zone. Press E to deliver.'
+  if (distance(state.truck, drop) < deliveryHintReach) return 'Carry the crates into the teal drop zone. Press E to deliver.'
   if (loaded > 0 && loaded + delivered === quantity) return 'Follow the amber orbs to the teal drop zone. Hold Shift on corners and Space to brake.'
   return loaded > 0 ? `${loaded} in the flatbed. Load or recover the remaining crates, then follow the amber orbs.` : 'Pick up crates at Harbor Depot and load the flatbed.'
 }
@@ -31,9 +36,9 @@ function materialsCard(state: Snapshot, player: Player) {
   const { checkout, request } = state.materialsWork
   if (request?.delivered === repairQuantity) return
   const { title, detail, next: instruction } = materialsGuide(state, player)
-  const value = request?.delivered ?? (checkout === 'timber' ? 0 : checkout === 'stone' ? 1 : 2)
+  const value = request?.delivered ?? (checkout === 'timber' ? 0 : checkout === 'stone' ? 1 : sampleCheckoutSteps)
   const progress = request ? 'Sections installed' : 'Samples checked'
-  const max = request ? repairQuantity : 2
+  const max = request ? repairQuantity : sampleCheckoutSteps
   return { label: 'NEIGHBOR FAVOR', title, detail, progress, value, max, text: `${value} / ${max}`, instruction }
 }
 
@@ -42,7 +47,7 @@ export function missionCard(state: Snapshot, id: number) {
   const job = activeJob(state)
   const drop = deliveryDrop(state)
   if (drop) {
-    const quantity = job?.quantity ?? 3
+    const quantity = job?.quantity ?? initialDeliveryQuota
     const value = state.jobs.active?.progress ?? state.items.filter((item) => item.delivered).length
     return {
       label: job ? 'CREW ORDER' : 'MISSION 01 / 02',
@@ -56,14 +61,14 @@ export function missionCard(state: Snapshot, id: number) {
     }
   }
   if (state.mission === 'fire') {
-    const value = Math.round((1 - state.fire) * 100)
+    const value = Math.round((1 - state.fire) * percentScale)
     return {
       label: 'MISSION 02 / 02',
       title: 'Forest lookout fire',
       detail: 'Collect extinguishers at Fire Supplies and head to Forest Lookout.',
       progress: 'Fire extinguished',
       value,
-      max: 100,
+      max: percentScale,
       text: `${value}% extinguished`,
       instruction: 'Hold left click near the fire to put it out.',
     }

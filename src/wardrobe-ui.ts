@@ -19,6 +19,8 @@ import { createWardrobePreview } from './wardrobe-preview'
 import { farmingQualified } from './farm-orders'
 import { pieceSlots } from './wardrobe-stock'
 
+const swatchPreviewSize = 88
+
 function control<T extends HTMLElement>(dialog: HTMLDialogElement, selector: string) {
   return dialog.querySelector<T>(selector)!
 }
@@ -171,7 +173,7 @@ export function createClothingCounter(dialog: HTMLDialogElement, buy: (id: Cloth
     const { src, alt } = thumbnail(id)
     const card = document.createElement('li')
     card.className = 'counter-item'
-    const image = new Image(88, 88)
+    const image = new Image(swatchPreviewSize, swatchPreviewSize)
     image.src = src
     image.alt = alt
     const details = document.createElement('div')

@@ -7,6 +7,14 @@ import { repairSite } from '../materials.ts'
 import { wrenSchedule } from './wren-route.ts'
 import { wrenRemarks } from './remarks.ts'
 
+const pathEdgingRewardCoins = 5
+const gateRepairRewardCoins = 5
+const swollenGateRewardCoins = 5
+const fishFavorRewardCoins = 5
+const requestedFishCount = 2
+const carrotFavorRewardCoins = 5
+const requestedCarrotCount = 2
+
 // A broken promise and a swollen gate come before anything else Wren has to say.
 function urgentLines({ state, standing }: ConversationContext): [string, string] | undefined {
   if (standing === 'wronged') {
@@ -60,7 +68,7 @@ function gateLines({ state, kept }: ConversationContext): [string, string] {
 export const repairSupplyFavor: FavorDefinition = {
   id: 'wren-edging',
   title: repairSite.name,
-  coins: 5,
+  coins: pathEdgingRewardCoins,
   trust: 1,
   kind: { custom: true },
   available: (state) => materialsOpen(state) && state.materialsWork.checkout === 'qualified',
@@ -88,7 +96,7 @@ export const wren: ResidentDefinition = {
   favors: [{
     id: gateFavor,
     title: 'Wren’s gate',
-    coins: 5,
+    coins: gateRepairRewardCoins,
     trust: 1,
     kind: { custom: true },
     available: (state) => state.gateRepair.stage === 'sagging',
@@ -103,7 +111,7 @@ export const wren: ResidentDefinition = {
   }, repairSupplyFavor, {
     id: swellFavor,
     title: 'Wren’s swollen gate',
-    coins: 5,
+    coins: swollenGateRewardCoins,
     trust: 1,
     kind: { check: true },
     available: (state) => gateMendedStage(state) === 'settled',
@@ -121,9 +129,9 @@ export const wren: ResidentDefinition = {
   }, {
     id: 'wren-pie',
     title: 'Fish for Wren’s pie',
-    coins: 5,
+    coins: fishFavorRewardCoins,
     trust: 1,
-    kind: { goods: 'fish', quantity: 2 },
+    kind: { goods: 'fish', quantity: requestedFishCount },
     available: afterSwell,
     offer: '“I’m baking a fish pie for the neighbors on Saturday. Could you spare two fish?”',
     reminder: '“Two fish for the pie, whenever you have a catch.”',
@@ -132,9 +140,9 @@ export const wren: ResidentDefinition = {
   }, {
     id: 'wren-soup',
     title: 'Carrots for Wren’s soup',
-    coins: 5,
+    coins: carrotFavorRewardCoins,
     trust: 1,
-    kind: { goods: 'carrots', quantity: 2 },
+    kind: { goods: 'carrots', quantity: requestedCarrotCount },
     available: afterSwell,
     offer: '“The garden won’t give me carrots until spring. Two from Island Farm would make a soup for the week.”',
     reminder: '“Two carrots for the soup, when the farm has some ready.”',

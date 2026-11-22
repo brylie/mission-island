@@ -1,3 +1,4 @@
+import { biomeWalkStage } from '../assets/geometry/workbench-biome-stage'
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera'
 import type { MeshFactory } from '../island-meshes'
 import { createCrew, poseCrew } from '../assets/crew'
@@ -12,8 +13,12 @@ interface WalkState extends Point {
 // Population edits rebuild the scene while keeping its settings object.
 const walks = new WeakMap<Values, WalkState>()
 
+const halves = 2
+const millisecondsPerSecond = 1000
+
 export function createBiomeWalk(meshes: MeshFactory, settings: Values, navigation: ReturnType<typeof habitatNavigation>) {
-  const state = walks.get(settings) ?? { x: 0, z: -4.5, heading: 0 }
+  const { camera, motion, startZ } = biomeWalkStage
+  const state = walks.get(settings) ?? { x: 0, z: startZ, heading: 0 }
   walks.set(settings, state)
   const crew = createCrew(meshes, 0)
   crew.root.setEnabled(false)
@@ -50,13 +55,13 @@ export function createBiomeWalk(meshes: MeshFactory, settings: Values, navigatio
     }
     if (!state.overview) {
       state.overview = { alpha: cam.alpha, beta: cam.beta, radius: cam.radius, target: [cam.target.x, cam.target.y, cam.target.z] }
-      cam.alpha = -Math.PI / 2
-      cam.beta = 1.25
-      cam.radius = 3.9
+      cam.alpha = -Math.PI / halves
+      cam.beta = camera.beta
+      cam.radius = camera.radius
     }
     const forward = Number(keys.has('KeyW')) - Number(keys.has('KeyS'))
     const sideways = Number(keys.has('KeyD')) - Number(keys.has('KeyA'))
-    const step = 2.5 * delta / (Math.hypot(forward, sideways) || 1)
+    const step = motion.speed * delta / (Math.hypot(forward, sideways) || 1)
     const dx = (-forward * Math.cos(cam.alpha) - sideways * Math.sin(cam.alpha)) * step
     const dz = (-forward * Math.sin(cam.alpha) + sideways * Math.cos(cam.alpha)) * step
     const next = { x: state.x + dx, z: state.z + dz }
@@ -65,15 +70,15 @@ export function createBiomeWalk(meshes: MeshFactory, settings: Values, navigatio
       state.x = next.x
       state.z = next.z
       state.heading = Math.atan2(dx, dz)
-      phase += delta * 1.65
+      phase += delta * motion.gaitRate
     }
     const height = navigation.lift(state)
     crew.root.position.set(state.x, height, state.z)
     crew.root.rotation.y = state.heading
-    poseCrew(crew, phase, moving ? 0.55 : 0, false)
-    crew.blink(phase + performance.now() / 1000)
-    cam.target.set(state.x, height + 1.03, state.z)
-    cam.beta = Math.min(cam.beta, 1.55)
+    poseCrew(crew, phase, moving ? motion.stride : 0, false)
+    crew.blink(phase + performance.now() / millisecondsPerSecond)
+    cam.target.set(state.x, height + camera.targetHeight, state.z)
+    cam.beta = Math.min(cam.beta, camera.maximumBeta)
     return state
   }
 }

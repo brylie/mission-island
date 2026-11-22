@@ -4,6 +4,8 @@ import { weatherAt } from '../weather.ts'
 import { distance } from '../world.ts'
 import type { Leg, ResidentDefinition, ResidentWorld, ScheduleTrait } from './definition.ts'
 
+const defaultConversationReachM = 2.4
+
 function along(route: readonly Leg[], metres: number) {
   let left = metres
   for (let i = 1; i < route.length; i++) {
@@ -43,6 +45,6 @@ export function standing(player: Player) {
 // Close enough to talk: standing, within reach on the same level, and the resident is outdoors.
 export function atResident(resident: ResidentDefinition, state: ResidentWorld, player: Player) {
   const spot = residentAt(resident.schedule, state)
-  return standing(player) && !spot.indoors && distance(player, spot) < (resident.reach ?? 2.4)
+  return standing(player) && !spot.indoors && distance(player, spot) < (resident.reach ?? defaultConversationReachM)
     && Math.abs(player.y - walkingHeight(spot)) < 1
 }

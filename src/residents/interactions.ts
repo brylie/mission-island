@@ -5,6 +5,9 @@ import type { ResidentDefinition } from './definition.ts'
 import { activeFavor, isCustom, openOffer, pendingReport } from './favors.ts'
 import { atResident, residentAt } from './schedule.ts'
 
+const residentAimHeightM = 1.1
+const residentAimRadiusM = 0.55
+
 export const residentActions = {
   'talk': 'explicit',
   'accept-favor': 'explicit',
@@ -18,7 +21,7 @@ interface ResidentOptions { talk: InteractionOption<ResidentAction>[], accept: I
 
 function residentTarget(resident: ResidentDefinition, state: Snapshot) {
   const spot = residentAt(resident.schedule, state)
-  return { name: resident.identity.name, at: { x: spot.x, y: walkingHeight(spot) + 1.1, z: spot.z }, radius: 0.55 }
+  return { name: resident.identity.name, at: { x: spot.x, y: walkingHeight(spot) + residentAimHeightM, z: spot.z }, radius: residentAimRadiusM }
 }
 
 function handOver(resident: ResidentDefinition, state: Snapshot, player: Player, subject: number): InteractionOption<ResidentAction> | undefined {

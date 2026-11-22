@@ -1,3 +1,5 @@
+const footfallsPerStride = 2
+
 // Footsteps read the same walk cycle that poses the legs (walkGait in island-render-pose).
 // A foot lands at each half cycle, where the leg swing crosses zero.
 
@@ -19,5 +21,5 @@ export function groundTravel(from: Planar, to: Planar, carrier: Planar = { x: 0,
 
 // Feet that landed while the walk cycle advanced from one phase to the next.
 export function countFootfalls(previous: number, next: number) {
-  return Math.max(0, Math.floor(next * 2) - Math.floor(previous * 2))
+  return Math.max(0, Math.floor(next * footfallsPerStride) - Math.floor(previous * footfallsPerStride))
 }

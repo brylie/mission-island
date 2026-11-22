@@ -10,6 +10,18 @@ import type { Player } from './protocol'
 import { fishingFloatDip } from './starter-effect-cues'
 import { waterLevel } from './terrain'
 
+const rodTipOffset = -1.425
+const reelTravelScale = 0.88
+const pullingFrequency = 13
+const calmFrequency = 5
+const pullingAmplitude = 0.09
+const calmAmplitude = 0.025
+const castArcHeight = 1.25
+const lineMidpoint = 0.55
+const lineSag = 0.13
+const pullingLean = 0.21
+const calmLean = 0.07
+
 type Meshes = ReturnType<typeof createMeshFactory>
 type FishingKit = ReturnType<typeof createFishingGear>[number]
 
@@ -24,7 +36,7 @@ export function createFishingGear(scene: Scene, meshes: Meshes, crew: ReturnType
     line.isPickable = false
     line.isVisible = false
     bobber.isVisible = false
-    return { gear, bobber, linePoints, line, tip: new Vector3(0, -1.425, 0) }
+    return { gear, bobber, linePoints, line, tip: new Vector3(0, rodTipOffset, 0) }
   })
 }
 
@@ -36,16 +48,16 @@ export function updateFishingLine(player: Player, kit: FishingKit, gripIndex: nu
     const flight = Math.min(1, elapsed / castTravelSeconds)
     const progress = player.casting.fight?.progress ?? 0
     const pulling = player.casting.fight?.pulling
-    linePoints[2].set(target.x + (player.x - target.x) * progress * 0.88, waterLevel + fishingFloatRestHeight - fishingFloatDip(player.casting) + Math.sin(time * (pulling ? 13 : 5)) * (pulling ? 0.09 : 0.025), target.z + (player.z - target.z) * progress * 0.88)
+    linePoints[2].set(target.x + (player.x - target.x) * progress * reelTravelScale, waterLevel + fishingFloatRestHeight - fishingFloatDip(player.casting) + Math.sin(time * (pulling ? pullingFrequency : calmFrequency)) * (pulling ? pullingAmplitude : calmAmplitude), target.z + (player.z - target.z) * progress * reelTravelScale)
     Vector3.LerpToRef(linePoints[0], linePoints[2], flight, bobber.position)
-    bobber.position.y += Math.sin(flight * Math.PI) * 1.25
+    bobber.position.y += Math.sin(flight * Math.PI) * castArcHeight
     drawFishingLine(kit, flight)
   }
 }
 
 function drawFishingLine({ bobber, line, linePoints }: FishingKit, flight: number) {
-  Vector3.LerpToRef(linePoints[0], bobber.position, 0.55, linePoints[1])
-  linePoints[1].y -= 0.13 * flight
+  Vector3.LerpToRef(linePoints[0], bobber.position, lineMidpoint, linePoints[1])
+  linePoints[1].y -= lineSag * flight
   linePoints[2].copyFrom(bobber.position)
   CreateLines('Fishing line', { points: linePoints, instance: line })
 }
@@ -61,7 +73,7 @@ export function aimFishingRod(player: Pick<Player, 'heading' | 'casting'>, kit: 
   if (!tool) return
   const { grip, rod } = tool
   grip.computeWorldMatrix(true)
-  const lean = player.casting?.fight?.pulling ? 0.21 : 0.07
+  const lean = player.casting?.fight?.pulling ? pullingLean : calmLean
   rod.rotationQuaternion = Quaternion.Inverse(grip.absoluteRotationQuaternion)
     .multiply(Quaternion.RotationYawPitchRoll(player.heading, lean, Math.PI))
 }

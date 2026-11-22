@@ -1,10 +1,12 @@
+import { juniperNatureReview } from '../assets/recipes/workbench-wildlife-studies'
 import { animalPose, createFox, createGroundCover } from '../biome-scenery'
 import { createHare } from '../hare'
 import { juniperCenter } from '../juniper-habitat'
 import { groundHeight } from '../terrain'
 import type { Entry } from './subject'
 
-const clearing = { x: juniperCenter.x + 5, z: juniperCenter.z - 3 }
+const { clearingOffset, cycleSeconds, maxGrowthSeed, scalePercent } = juniperNatureReview
+const clearing = { x: juniperCenter.x + clearingOffset.x, z: juniperCenter.z + clearingOffset.z }
 const fieldSite = () => ({ name: 'Juniper Hollow', offset: { ...clearing, y: groundHeight(clearing) } })
 
 export const natureEntries: Entry[] = [
@@ -15,7 +17,7 @@ export const natureEntries: Entry[] = [
       id: species,
       group: 'Animals',
       name: hare ? 'Woodland hare' : 'Red fox',
-      duration: 4,
+      duration: cycleSeconds,
       fieldSite,
       source: 'src/biome-scenery.ts',
       description: 'Scrub an individual behavior or open the habitat to watch encounters.',
@@ -38,12 +40,12 @@ export const natureEntries: Entry[] = [
     source: 'src/biome-scenery.ts',
     description: 'Compare leaf arrangement and growth at the scale of a single patch.',
     controls: [
-      { type: 'number', key: 'seed', label: 'Growth seed', value: 0, min: 0, max: 9999, step: 1, rebuild: true },
-      { type: 'range', key: 'growth', label: 'Mature size (%)', value: 100, min: 28, max: 120, step: 1 },
+      { type: 'number', key: 'seed', label: 'Growth seed', value: 0, min: 0, max: maxGrowthSeed, step: 1, rebuild: true },
+      { type: 'range', key: 'growth', label: 'Mature size (%)', ...scalePercent },
     ],
     create(meshes, settings) {
       const patch = createGroundCover(meshes, id === 'tussock', Number(settings.seed))
-      return (_, values) => patch.scaling.setAll(Number(values.growth) / 100)
+      return (_, values) => patch.scaling.setAll(Number(values.growth) / scalePercent.value)
     },
   })),
 ]

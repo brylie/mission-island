@@ -8,6 +8,8 @@ import { cargoSlots, crateSize, distance, lookout, truckBed } from '../world.ts'
 import { starterResidents } from '../worlds/starter/residents.ts'
 import type { InteractionOption, InteractionPolicies } from './definition.ts'
 
+const half = 2
+
 const occupiedBedSlotRadius = 0.93
 const truckBedReach = 3.5
 const itemPickupReach = 2.7
@@ -28,7 +30,7 @@ export function heldItem(state: Pick<Snapshot, 'items'>, player: Player) {
 
 export function freeBed(state: Snapshot) {
   return cargoSlots.find((slot) => {
-    const position = truckPoint(state.truck, 0, truckBed.top + crateSize / 2, slot)
+    const position = truckPoint(state.truck, 0, truckBed.top + crateSize / half, slot)
     return !state.items.some((item) => item.onBed && distance(item, position) < occupiedBedSlotRadius)
   })
 }

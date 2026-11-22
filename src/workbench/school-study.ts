@@ -5,14 +5,19 @@ import { CreateTorus } from '@babylonjs/core/Meshes/Builders/torusBuilder'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { createCrew, poseCrew } from '../assets/crew'
 import { poolSand, roundedPebble } from '../assets/strand'
+import { schoolStage } from '../assets/geometry/workbench-school-stage'
 import { createSchoolFish } from '../assets/fish'
 import { createHarborBoat } from '../assets/waterfront'
 import { poolRadius } from '../simulation/fish-school'
 import type { Point } from '../world'
-import { createSchoolTrial, trialSeconds } from './school-trial'
+import { createSchoolTrial, schoolTrailSamples, trialSeconds } from './school-trial'
 import { control, type Entry } from './subject'
 
 const seedCount = 10000
+const steerDistance = 2
+const walkerCycleRate = 1.45
+const walkerStrideScale = 0.27
+const halves = 2
 const firstSeed = Math.floor(Math.random() * seedCount)
 
 const directions: Record<string, [number, number]> = {
@@ -31,12 +36,12 @@ export const schoolStudy: Entry = {
   readout: 'School observations',
   topView: true,
   duration: trialSeconds,
-  ground: { height: -1.1, color: '#485b57' },
+  ground: schoolStage.ground,
   controls: [
     control('actor', 'Disturbance', 'player', { player: 'Wading player', skiff: 'Paddled skiff' }, true),
     control('side', 'First approach', 'west', { west: 'West edge', east: 'East edge' }, true),
     { key: 'returnPass', label: 'Cross again from the opposite edge', type: 'checkbox', value: false, rebuild: true },
-    { key: 'seed', label: 'School seed', type: 'number', min: 0, max: 9999, step: 1, value: firstSeed, rebuild: true },
+    { key: 'seed', label: 'School seed', type: 'number', min: 0, max: seedCount - 1, step: 1, value: firstSeed, rebuild: true },
     { key: 'nudge', label: 'Nudge fish 1 east by 5 cm', type: 'checkbox', value: false, rebuild: true },
     { key: 'trails', label: 'Show fish trails', type: 'checkbox', value: true },
     { key: 'leaderRing', label: 'Mark regroup leader', type: 'checkbox', value: true },
@@ -55,33 +60,36 @@ export const schoolStudy: Entry = {
     const trial = createSchoolTrial(Number(values.seed), values.actor === 'skiff' ? 'skiff' : 'player', values.route, Boolean(values.nudge), { side: values.side === 'east' ? 'east' : 'west', returnPass: Boolean(values.returnPass) })
     const { school, actor } = trial
     values.route = JSON.stringify(trial.route)
+    const { basin, water: waterShape, stones, trail, leader, crewY, boatY, fishY } = schoolStage
     const sand = meshes.paintSurface('sand', poolSand)
-    meshes.cylinder(0, -0.74, 0, 16, 16, 0.55, 64, sand)
-    const water = meshes.paint('#4d9fa6')
-    water.alpha = 0.20
-    const surface = meshes.cylinder(0, 0, 0, 16, 16, 0.015, 64, water, undefined, false)
+    meshes.cylinder(0, basin.y, 0, basin.diameter, basin.diameter, basin.height, basin.sides, sand)
+    const water = meshes.paint(waterShape.color)
+    water.alpha = waterShape.opacity
+    const surface = meshes.cylinder(0, 0, 0, waterShape.diameter, waterShape.diameter, waterShape.height, waterShape.sides, water, undefined, false)
     surface.isPickable = true
-    for (let i = 0; i < 15; i++) {
-      const angle = i * 2.4, radius = 6.6 + 0.48 * Math.sin(i * 3.1)
-      roundedPebble(meshes, Math.cos(angle) * radius, -0.49, Math.sin(angle) * radius, 0.58 + 0.3 * Math.cos(i), 0.32, 0.42, angle, i + 1)
+    for (let i = 0; i < stones.count; i++) {
+      const angle = i * stones.angleStep
+      const radius = stones.radius + stones.ripple * Math.sin(i * stones.rate)
+      const width = stones.width + stones.widthVariation * Math.cos(i)
+      roundedPebble(meshes, Math.cos(angle) * radius, stones.y, Math.sin(angle) * radius, width, stones.height, stones.depth, angle, i + 1)
     }
     const shoal = meshes.paint('#bce7b7')
     shoal.backFaceCulling = false
     const fish = school.fish.map(() => createSchoolFish(meshes, shoal))
     const startledPaint = meshes.paint('#fff0a3')
     startledPaint.backFaceCulling = false
-    const segments = fish.map(() => Array.from({ length: 10 }, () => Vector3.Zero()))
+    const segments = fish.map(() => Array.from({ length: schoolTrailSamples }, () => Vector3.Zero()))
     const trails = CreateLineSystem('School trails', { lines: segments, updatable: true }, scene)
-    trails.color = Color3.FromHexString('#b7d7cd')
-    trails.alpha = 0.65
+    trails.color = Color3.FromHexString(trail.color)
+    trails.alpha = trail.opacity
     trails.isPickable = false
     trails.alwaysSelectAsActiveMesh = true
-    const ring = CreateTorus('Regroup leader', { diameter: 1.05, thickness: 0.045, tessellation: 40 }, scene)
+    const ring = CreateTorus('Regroup leader', leader, scene)
     ring.material = meshes.paint('#ffd46a', true)
     ring.isPickable = false
     const crew = values.actor === 'player' ? createCrew(meshes, 0) : undefined
     const body = crew?.root ?? createHarborBoat(meshes)
-    body.position.set(actor.x, crew ? -0.44 : 0.02, actor.z)
+    body.position.set(actor.x, crew ? crewY : boatY, actor.z)
     body.rotation.y = actor.heading
     const canvas = scene.getEngine().getRenderingCanvas()
     let routeFull = false
@@ -101,7 +109,7 @@ export const schoolStudy: Entry = {
       event.preventDefault()
       const right = camera.getDirection(Vector3.Right())
       const length = Math.hypot(right.x, right.z) || 1
-      steer({ x: actor.x + (dir[0] * right.x - dir[1] * right.z) * 2 / length, z: actor.z + (dir[0] * right.z + dir[1] * right.x) * 2 / length })
+      steer({ x: actor.x + (dir[0] * right.x - dir[1] * right.z) * steerDistance / length, z: actor.z + (dir[0] * right.z + dir[1] * right.x) * steerDistance / length })
     }
     canvas?.addEventListener('keydown', move)
     scene.onDisposeObservable.addOnce(() => canvas?.removeEventListener('keydown', move))
@@ -110,20 +118,20 @@ export const schoolStudy: Entry = {
       body.position.x = actor.x
       body.position.z = actor.z
       body.rotation.y = actor.heading
-      if (crew) poseCrew(crew, time * 1.45, actor.speed * 0.27, false)
+      if (crew) poseCrew(crew, time * walkerCycleRate, actor.speed * walkerStrideScale, false)
       let startled = 0
       for (const [i, member] of school.fish.entries()) {
-        fish[i].position.set(member.x, -0.09, member.z)
-        fish[i].rotation.y = Math.PI / 2 - member.heading
+        fish[i].position.set(member.x, fishY, member.z)
+        fish[i].rotation.y = Math.PI / halves - member.heading
         fish[i].material = settings.trails && member.alarm > 0 ? startledPaint : shoal
         if (member.alarm > 0) startled++
         if (settings.trails) {
           const track = trial.tracks[i]
           segments[i].forEach((v, j) => {
             const p = track[Math.max(0, track.length - segments[i].length + j)] ?? member
-            v.set(p.x, -0.14, p.z)
+            v.set(p.x, trail.y, p.z)
           })
-          segments[i][segments[i].length - 1].set(member.x, -0.14, member.z)
+          segments[i][segments[i].length - 1].set(member.x, trail.y, member.z)
         }
       }
       trails.setEnabled(Boolean(settings.trails))

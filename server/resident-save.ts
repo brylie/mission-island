@@ -1,6 +1,7 @@
 import { gateFavor } from '../src/gate-repair.ts'
 import { blankRecord, initialResidents, rebuildFavors } from '../src/residents/trust.ts'
 import { starterResident, starterResidents } from '../src/worlds/starter/residents.ts'
+import { saveVersions } from './save-version.ts'
 
 // How resident records are saved, migrated and checked. A resident missing from a save is added as a stranger.
 
@@ -12,7 +13,7 @@ const isCount = (value: unknown): value is number => typeof value === 'number' &
 
 // Version 4 keeps one record per resident in place of Wren's trust, and names the favor on the last receipt.
 export function migrateResidents(value: unknown): unknown {
-  if (!isRecord(value) || value.version !== 3 || !isRecord(value.world)) return value
+  if (!isRecord(value) || value.version !== saveVersions.gateRepair || !isRecord(value.world)) return value
   const { residentTrust, lastFavorPay, ...world } = value.world
   const stage = isRecord(world.gateRepair) ? world.gateRepair.stage : undefined
   const residents = initialResidents(starterResidents)
@@ -23,15 +24,15 @@ export function migrateResidents(value: unknown): unknown {
     active: stage === 'accepted' || stage === 'inspected' || stage === 'fitted' ? gateFavor : null,
   }
   const receipt = isRecord(lastFavorPay) ? { ...lastFavorPay, favor: gateFavor } : undefined
-  return { ...value, version: 4, world: { ...world, residents, ...receipt && { lastFavorPay: receipt } } }
+  return { ...value, version: saveVersions.residentFavor, world: { ...world, residents, ...receipt && { lastFavorPay: receipt } } }
 }
 
 // Version 6 gives each record what the crew last found on checked work, any broken promise, and rebuilt breaches.
 export function migrateTrust(value: unknown): unknown {
-  if (!isRecord(value) || value.version !== 5 || !isRecord(value.world) || !isRecord(value.world.residents)) return value
+  if (!isRecord(value) || value.version !== saveVersions.ferryRepair || !isRecord(value.world) || !isRecord(value.world.residents)) return value
   const residents = Object.fromEntries(Object.entries(value.world.residents)
     .map(([id, record]) => [id, isRecord(record) ? { ...blankRecord(), ...record } : record]))
-  return { ...value, version: 6, world: { ...value.world, residents } }
+  return { ...value, version: saveVersions.residentStanding, world: { ...value.world, residents } }
 }
 
 // A breach names a favor of this resident. Until amends it is the favor still under way; after, it is kept.

@@ -10,6 +10,7 @@ import { checkpointSettings, scenarioCatalog } from './scenarios/catalog.ts'
 import { createGame, tickSeconds } from './game.ts'
 import { islandSaveFile } from './save.ts'
 import { createSocketSessions } from './socket-sessions.ts'
+import { millisecondsPerSecond } from './host-time.ts'
 
 const httpOk = 200
 const httpBadRequest = 400
@@ -22,7 +23,6 @@ const httpContentTooLarge = 413
 const maxFreightChoiceLength = 40
 const maxFreightBodyLength = 4096
 const maxSocketPayloadBytes = 256
-const millisecondsPerSecond = 1000
 const saveIntervalMs = 2000
 const heartbeatIntervalMs = 10_000
 export const defaultIslandPort = 5173

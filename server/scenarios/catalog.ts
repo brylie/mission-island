@@ -1,4 +1,4 @@
-import type { TrialRun } from '../../src/live-checkpoints.ts'
+import { fullCheckpointCrewSeats, type TrialRun } from '../../src/live-checkpoints.ts'
 import { fieldOutingScenario } from './field-outing.ts'
 import { ferryScenarios } from './ferry.ts'
 import { harborScenarios } from './harbor.ts'
@@ -21,7 +21,7 @@ export function scenarioFor(id: string) {
 }
 
 export function checkpointSettings(checkpoint: unknown, count: unknown) {
-  if (typeof checkpoint !== 'string' || !byId.has(checkpoint) || (count !== '1' && count !== '2')) return undefined
-  const seats: TrialRun['seats'] = count === '1' ? 1 : 2
+  if (typeof checkpoint !== 'string' || !byId.has(checkpoint) || (count !== '1' && count !== String(fullCheckpointCrewSeats))) return undefined
+  const seats: TrialRun['seats'] = count === '1' ? 1 : fullCheckpointCrewSeats
   return { checkpoint, seats }
 }

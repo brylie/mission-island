@@ -1,15 +1,18 @@
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 
+const profileSides = 12
+const fullTurn = Math.PI + Math.PI
+
 // Cross-sections along local Z. Moving the middle of a section bends the silhouette.
 type Section = readonly [z: number, centerY: number, halfWidth: number, halfHeight: number]
 
-export function coastalProfile(meshes: MeshFactory, parent: TransformNode, name: string, color: string, sections: readonly Section[], sides = 12, roundness = 1) {
+export function coastalProfile(meshes: MeshFactory, parent: TransformNode, name: string, color: string, sections: readonly Section[], sides = profileSides, roundness = 1) {
   const vertices: number[] = [], faces: number[] = []
   const contour = (n: number) => Math.sign(n) * Math.abs(n) ** roundness
   for (const [row, [z, center, width, height]] of sections.entries()) {
     for (let i = 0; i < sides; i++) {
-      const theta = i * 2 * Math.PI / sides
+      const theta = i * fullTurn / sides
       vertices.push(width * contour(Math.cos(theta)), center + height * contour(Math.sin(theta)), z)
       if (!row) continue
       const a = (row - 1) * sides + i, b = (row - 1) * sides + (i + 1) % sides

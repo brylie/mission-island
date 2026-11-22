@@ -1,5 +1,7 @@
 import { isStockPiece, shopBottoms, shopHats, shopShoes, shopTops, stockChoices } from './wardrobe-stock.ts'
 
+const maxCrewNameCharacters = 24
+
 export const uniforms = {
   amber: { name: 'Harbor amber', color: '#ffb54d', trim: '#fff3d0', unlock: '' },
   blue: { name: 'Coastal blue', color: '#77dffc', trim: '#e4faff', unlock: '' },
@@ -80,7 +82,7 @@ export function outfitRequirement(uniform: Uniform, mission: 'delivery' | 'fire'
 export function cleanCrewName(input: unknown) {
   if (typeof input !== 'string') return ''
   const cleaned = input.replace(/\p{White_Space}+/gu, ' ').replace(/[\p{Cc}\p{Cf}]/gu, '').replace(/ +/g, ' ').trim()
-  return Array.from(cleaned).slice(0, 24).join('').trim()
+  return Array.from(cleaned).slice(0, maxCrewNameCharacters).join('').trim()
 }
 
 export function readAppearance(raw: unknown): CrewAppearance {

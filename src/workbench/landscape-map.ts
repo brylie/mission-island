@@ -3,7 +3,8 @@ import { northernRegions } from '../scenery'
 import { beach, forest, harbor, lookout, town } from '../world'
 import type { Point } from '../world'
 import type { DraftMapObject } from './landscape-layout'
-import { paintLandscapeMap, paintMapGuides } from './landscape-map-art'
+import { wheelDeltaUnits } from './inspection-input'
+import { paintLandscapeMap, paintMapTracking } from './landscape-map-art'
 import {
   clampMapPoint,
   fullMapView,
@@ -36,7 +37,19 @@ const directions: Readonly<Record<string, Point>> = {
   ArrowDown: { x: 0, z: -1 },
   ArrowUp: { x: 0, z: 1 },
 }
-const viewCenter = { u: 0.5, v: 0.5 }
+const mapMidpoint = 0.5
+const viewCenter = { u: mapMidpoint, v: mapMidpoint }
+const metresRounding = 10
+const percentScale = 100
+const canvasWidth = 640
+const atlasScale = 2
+const fineKeyboardStep = 0.1
+const fastKeyboardPan = 10
+const dragThreshold = 4
+const maxWheelStep = 0.5
+const wheelRate = 0.006
+const zoomInScale = 2
+const zoomOutScale = 0.5
 
 interface MapControls {
   focus(): Point | undefined
@@ -69,7 +82,7 @@ function onMap({ u, v }: MapPoint) {
 }
 
 function roundedPoint({ x, z }: Point): Point {
-  return { x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10 }
+  return { x: Math.round(x * metresRounding) / metresRounding, z: Math.round(z * metresRounding) / metresRounding }
 }
 
 function makePin(title: string, kind: 'landmark' | 'shot' | 'draft') {
@@ -84,8 +97,8 @@ function makePin(title: string, kind: 'landmark' | 'shot' | 'draft') {
 function placePin(button: HTMLButtonElement, { u, v }: MapPoint) {
   button.hidden = !onMap({ u, v })
   if (button.hidden) return
-  button.style.left = `${u * 100}%`
-  button.style.top = `${v * 100}%`
+  button.style.left = `${u * percentScale}%`
+  button.style.top = `${v * percentScale}%`
 }
 
 export function createLandscapeMap(controls: MapControls) {
@@ -112,7 +125,7 @@ export function createLandscapeMap(controls: MapControls) {
   const status = document.getElementById('landscape-map-status')!
   const abort = new AbortController()
   const events = { signal: abort.signal }
-  canvas.width = overlay.width = 640
+  canvas.width = overlay.width = canvasWidth
   canvas.height = overlay.height = Math.round(canvas.width * landscapeMapSize.height / landscapeMapSize.width)
   const base = canvas.getContext('2d')
   const ink = overlay.getContext('2d')
@@ -121,7 +134,7 @@ export function createLandscapeMap(controls: MapControls) {
   let atlas: HTMLCanvasElement | undefined
   let view = fullMapView
   let paintedView: MapView | undefined
-  let cursor = pointInWorld(0.5, 0.5)
+  let cursor = pointInWorld(viewCenter.u, viewCenter.v)
   let lastOverlay = ''
   let listedShots: readonly LandscapeShot[] | undefined
   let savedPins: Pin[] = []
@@ -206,7 +219,7 @@ export function createLandscapeMap(controls: MapControls) {
       const current = draftButtons.get(object.id)?.object
       if (!direction || !current) return
       event.preventDefault()
-      const step = event.shiftKey ? 1 : 0.1
+      const step = event.shiftKey ? 1 : fineKeyboardStep
       const { u, v } = clampMapPoint(pointOnMap({ x: current.x + direction.x * step, z: current.z + direction.z * step }))
       const point = roundedPoint(pointInWorld(u, v))
       moveDraft(current, point)
@@ -254,8 +267,8 @@ export function createLandscapeMap(controls: MapControls) {
     if (!base) return
     if (!atlas) {
       atlas = document.createElement('canvas')
-      atlas.width = canvas.width * 2
-      atlas.height = canvas.height * 2
+      atlas.width = canvas.width * atlasScale
+      atlas.height = canvas.height * atlasScale
       const art = atlas.getContext('2d')
       if (art) paintLandscapeMap(art)
     }
@@ -265,36 +278,6 @@ export function createLandscapeMap(controls: MapControls) {
     zoomIn.disabled = view.zoom === maxMapZoom
     positionPins(fixedPins)
     positionPins(savedPins)
-  }
-
-  function paintTracking(context: CanvasRenderingContext2D, focus: Point | undefined, cursorVisible: boolean) {
-    const { width, height } = overlay
-    context.clearRect(0, 0, width, height)
-    paintMapGuides(context, view.zoom)
-    if (focus) {
-      const { u, v } = project(focus)
-      context.beginPath()
-      context.arc(u * width, v * height, 12, 0, Math.PI * 2)
-      context.lineWidth = 6
-      context.strokeStyle = '#203d3c'
-      context.stroke()
-      context.lineWidth = 3
-      context.strokeStyle = '#f5fff1'
-      context.stroke()
-    }
-    if (cursorVisible) {
-      const { u, v } = project(cursor)
-      const x = u * width
-      const y = v * height
-      context.beginPath()
-      context.moveTo(x - 10, y)
-      context.lineTo(x + 10, y)
-      context.moveTo(x, y - 10)
-      context.lineTo(x, y + 10)
-      context.lineWidth = 2
-      context.strokeStyle = '#ffdf91'
-      context.stroke()
-    }
   }
 
   function update() {
@@ -310,7 +293,7 @@ export function createLandscapeMap(controls: MapControls) {
     const cursorVisible = document.activeElement === canvas && !gesture?.moved
     const overlayKey = [focus?.x, focus?.z, cursorVisible, cursor.x, cursor.z].join(',')
     if (viewChanged || lastOverlay !== overlayKey) {
-      paintTracking(ink, focus, cursorVisible)
+      paintMapTracking(ink, view.zoom, focus && project(focus), cursorVisible ? project(cursor) : undefined)
       lastOverlay = overlayKey
     }
   }
@@ -329,7 +312,7 @@ export function createLandscapeMap(controls: MapControls) {
 
   function revealOnMap(point: Point) {
     const position = project(point)
-    if (!onMap(position)) setView(panMap(view, { u: 0.5 - position.u, v: 0.5 - position.v }))
+    if (!onMap(position)) setView(panMap(view, { u: viewCenter.u - position.u, v: viewCenter.v - position.v }))
   }
 
   function keepCursorVisible() {
@@ -388,7 +371,7 @@ export function createLandscapeMap(controls: MapControls) {
     if (!gesture || event.pointerId !== gesture.id) return
     const dx = event.clientX - gesture.x
     const dy = event.clientY - gesture.y
-    if (!gesture.moved && Math.hypot(dx, dy) < 4) return
+    if (!gesture.moved && Math.hypot(dx, dy) < dragThreshold) return
     gesture.moved = true
     surface.classList.add('is-dragging')
     const { width, height } = canvas.getBoundingClientRect()
@@ -428,12 +411,12 @@ export function createLandscapeMap(controls: MapControls) {
   surface.addEventListener('wheel', (event) => {
     if (!event.deltaY) return
     event.preventDefault()
-    const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? canvas.clientHeight : 1
-    const exponent = Math.max(-0.5, Math.min(0.5, -event.deltaY * units * 0.006))
+    const units = wheelDeltaUnits(event.deltaMode, canvas.clientHeight)
+    const exponent = Math.max(-maxWheelStep, Math.min(maxWheelStep, -event.deltaY * units * wheelRate))
     changeZoom(Math.exp(exponent), pointerOnView(event))
   }, { ...events, passive: false })
-  zoomIn.addEventListener('click', () => changeZoom(2), events)
-  zoomOut.addEventListener('click', () => changeZoom(0.5), events)
+  zoomIn.addEventListener('click', () => changeZoom(zoomInScale), events)
+  zoomOut.addEventListener('click', () => changeZoom(zoomOutScale), events)
   resetZoom.addEventListener('click', () => setView(fullMapView), events)
 
   toggle.addEventListener('click', () => {
@@ -466,13 +449,13 @@ export function createLandscapeMap(controls: MapControls) {
     }
     if (!event.ctrlKey && !event.metaKey && ['+', '=', '-'].includes(event.key)) {
       event.preventDefault()
-      changeZoom(event.key === '-' ? 0.5 : 2)
+      changeZoom(event.key === '-' ? zoomOutScale : zoomInScale)
       return
     }
     const direction = directions[event.key]
     if (!direction) return
     event.preventDefault()
-    const step = event.shiftKey ? 10 : 1
+    const step = event.shiftKey ? fastKeyboardPan : 1
     const { u, v } = clampMapPoint(pointOnMap({ x: cursor.x + direction.x * step, z: cursor.z + direction.z * step }))
     cursor = pointInWorld(u, v)
     revealOnMap(cursor)

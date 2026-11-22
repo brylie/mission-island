@@ -18,3 +18,9 @@ export const biomeGroundCover = {
   clover: { shoots: 18, leavesPerShoot: 3, heightBands: 3, tipHeightM: 0.1, heightStepM: 0.04, baseY: 0.04, halfWidthM: 0.074, color: '#478254' },
   flowers: { x: [-0.24, 0.18], y: 0.19, zRatio: 0.6, size: [0.13, 0.12, 0.13], segments: 4, color: '#ece4cb' },
 } as const
+
+export const juniperSupport = {
+  logs: { offsets: [-0.8, 0, 0.8], width: 0.8, depth: 0.45, height: 0.42 },
+  trees: { width: 0.5, depth: 0.5 },
+  stones: { widthRatio: 0.84, depthRatio: 0.92 },
+} as const

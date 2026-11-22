@@ -5,7 +5,8 @@ import { bindLegMesh } from './crew-knee'
 import { buildHat } from './shop-hats'
 import { buildSleeve, buildTopBody } from './shop-tops'
 import { buildBottomLeg, buildShoe } from './shop-legwear'
-import { tailored } from './shop-tailoring'
+import { waistbandGeometry } from './geometry/shop-tailoring'
+import { tailored, type Section } from './shop-tailoring'
 import type { MeshFactory } from '../island-meshes'
 import { isEveryday, wearsSwimsuit, type CrewAppearance } from '../crew-appearance'
 import { isStockPiece, pieceSlots, shopBottoms, shopTops, type PieceSlot, type StockId } from '../wardrobe-stock'
@@ -51,14 +52,9 @@ function createShopGarment(meshes: MeshFactory, rig: GarmentRig, id: StockId, dy
   if (isStockPiece('trousers', id)) {
     const belt = garmentRoot(id, rig.root)
     const { color, detail } = shopBottoms[id]
-    tailored(meshes, belt, 'Waistband and seat', color, [
-      [0.718, 0, -0.002, 0.256, 0.156],
-      [0.755, 0, -0.002, 0.277, 0.165],
-      [0.784, 0, -0.004, 0.275, 0.169],
-      [0.800, 0, -0.005, 0.270, 0.169, detail],
-      [0.823, 0, -0.011, 0.258, 0.155, detail],
-      [0.829, 0, -0.011, 0.253, 0.150, detail],
-    ], 32, 0.036)
+    const { rows, sides, opening } = waistbandGeometry
+    const profile = rows.map(([y, x, z, w, d, trim]): Section => [y, x, z, w, d, trim ? detail : undefined])
+    tailored(meshes, belt, 'Waistband and seat', color, profile, sides, opening)
     roots.push(belt)
   }
   return roots

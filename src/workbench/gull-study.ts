@@ -1,15 +1,13 @@
+import { gullReview } from '../assets/recipes/workbench-wildlife-studies'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { createGull } from '../assets/gull'
 import { gullAt, gullCycle } from '../gull-flight'
 import type { Weather } from '../protocol'
 import { control, type Entry, type Values } from './subject'
 
-const perch = { x: 0, y: 0.705, z: 0, heading: 0 }
-const conditions: Record<string, Weather> = {
-  clear: { hour: 12, rain: 0 },
-  wet: { hour: 12, rain: 1 },
-  dusk: { hour: 18, rain: 0 },
-}
+const halves = 2
+const { perch, piling } = gullReview
+const conditions: Record<string, Weather> = gullReview.conditions
 
 const sky = (_time: number, values: Values) => conditions[String(values.sky)] ?? conditions.clear
 
@@ -21,7 +19,7 @@ export const gullStudy: Entry = {
   description: 'Scrub the harbor gull’s circuit to see it bank, glide, flare, plant its feet, and fold its wings.',
   readout: 'Gull motion',
   duration: gullCycle(0).period,
-  angle: 0.48,
+  angle: gullReview.angle,
   ground: { height: 0, color: '#77999a' },
   weather: sky,
   controls: [
@@ -30,7 +28,7 @@ export const gullStudy: Entry = {
   ],
   create(meshes, _values, _reportError, observe) {
     const stage = new TransformNode('Gull study framing', meshes.scene)
-    meshes.cylinder(0, perch.y / 2, 0, 0.43, 0.43, perch.y, 7, meshes.paintSurface('wood'), stage)
+    meshes.cylinder(0, perch.y / halves, 0, piling.diameter, piling.diameter, perch.y, piling.sides, meshes.paintSurface('wood'), stage)
     const gull = createGull(meshes, 0)
     gull.root.parent = stage
     gull.pose(gullAt(0, 0, perch, conditions.clear))

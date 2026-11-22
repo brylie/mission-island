@@ -8,16 +8,37 @@ import { haulerPose, stepHauler } from './haul-drive'
 import { createOreLoad } from '../assets/quarry'
 import { vehiclePlacement } from './scenery'
 import { surfaceHeight } from './terrain'
+import { oreHaulerWalkingVolume } from '../assets/geometry/ore-hauler'
+import { oreFreightBayMarker } from '../assets/geometry/ore-freight'
 import { createOreHauler } from '../assets/ore-hauler'
 import { placeWalker, type ScenerySolids } from './walking'
+
+const exitForwardOffset = 2.2
+const exitProbeRadius = 0.3
+const exitStepClearance = 0.3
+const exitHeadClearance = 1.8
+const radioReconnectMs = 1000
+const radioPollMs = 15000
+const parkedSpeed = 0.15
+const boardReach = 6
+const headingCueRange = 4
+const statusPollReach = 45
+const panelRefreshMs = 120
+
+const compass = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const
+const radiansPerOctant = (Math.PI + Math.PI) / compass.length
+const cabExitDistance = 2.2
+const wideExitDistance = 3.1
+const exitOffsets = [-cabExitDistance, cabExitDistance, -wideExitDistance, wideExitDistance]
 
 function createBayMarkers(meshes: MeshFactory) {
   const marker = new TransformNode('Freight bay markers', meshes.scene)
   for (const side of [-1, 1]) {
-    const x = side * 3.6
-    meshes.box(x, 0.04, 0, 0.55, 0.08, 0.55, '#444e46', marker)
-    meshes.cylinder(x, 0.30, 0, 0.08, 0.39, 0.53, 8, '#de853f', marker)
-    meshes.cylinder(x, 0.33, 0, 0.17, 0.23, 0.10, 8, '#fff1cc', marker)
+    const x = side * oreFreightBayMarker.offsetX
+    const { base, cone, stripe } = oreFreightBayMarker
+    meshes.box(x, base.y, 0, ...base.size, base.color, marker)
+    meshes.cylinder(x, ...cone.shape, cone.color, marker)
+    meshes.cylinder(x, ...stripe.shape, stripe.color, marker)
   }
   return marker
 }
@@ -30,12 +51,12 @@ function freightChoices(select: HTMLSelectElement, mode: string) {
 
 function directionTo(from: Point, to: Point) {
   const bearing = Math.atan2(to.x - from.x, to.z - from.z)
-  return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][(Math.round(bearing / (Math.PI / 4)) + 8) % 8]
+  return compass[(Math.round(bearing / radiansPerOctant) + compass.length) % compass.length]
 }
 
 function exitPoint(pose: Pose, solids: ScenerySolids) {
-  return [-2.2, 2.2, -3.1, 3.1].map((x) => placeWalker(offset(pose, x, 2.2)))
-    .find((p) => !p.swimming && !solids.at(p.x, p.z, 0.3).some((b) => b.top > p.y + 0.3 && b.bottom < p.y + 1.8))
+  return exitOffsets.map((x) => placeWalker(offset(pose, x, exitForwardOffset)))
+    .find((p) => !p.swimming && !solids.at(p.x, p.z, exitProbeRadius).some((b) => b.top > p.y + exitStepClearance && b.bottom < p.y + exitHeadClearance))
 }
 
 function bindDispatchControls(select: HTMLSelectElement, action: HTMLButtonElement, submit: () => void) {
@@ -75,7 +96,7 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
     const ground = haulerPose(pose)
     truck.position.set(pose.x, ground.y, pose.z)
     truck.rotation.set(ground.pitch, pose.heading, ground.roll)
-    solids.parkedVehicle = driving ? undefined : { ...pose, bottom: ground.y + 0.25, top: ground.y + 2.65, width: 2.55, depth: 8.8 }
+    solids.parkedVehicle = driving ? undefined : { ...pose, bottom: ground.y + oreHaulerWalkingVolume.bottom, top: ground.y + oreHaulerWalkingVolume.top, width: oreHaulerWalkingVolume.width, depth: oreHaulerWalkingVolume.depth }
     if (driving) Object.assign(walker, { x: pose.x, z: pose.z, y: ground.y, swimming: false, grounded: true, velocity: 0 })
   }
   let status: DriverStatus | undefined, busy = false, driving = false, enabled = true
@@ -93,7 +114,7 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
     if (driving === seated) return
     driving = seated
     pose.speed = 0
-    if (!seated) Object.assign(walker, exitPoint(pose, solids) ?? placeWalker(offset(pose, 2.2, 2.2)))
+    if (!seated) Object.assign(walker, exitPoint(pose, solids) ?? placeWalker(offset(pose, cabExitDistance, exitForwardOffset)))
     placeTruck()
     changeSeat(seated, pose.heading)
   }
@@ -102,7 +123,7 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
     status = undefined
     receipt.textContent = message
     receipt.dataset.offline = 'true'
-    refreshAt = performance.now() + 1000
+    refreshAt = performance.now() + radioReconnectMs
   }
   const radio = createFreightRadio(disconnected)
   async function request(command?: Exclude<FreightCommand, { action: 'drive' }>) {
@@ -128,7 +149,7 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
         : command.action === 'load' ? 'Weighed and loaded. Your ticket is ready for the buyer.' : 'Dispatch ticket issued.'
       else if (receipt.dataset.offline) receipt.textContent = ''
       delete receipt.dataset.offline
-      refreshAt = performance.now() + 15000
+      refreshAt = performance.now() + radioPollMs
     }
     catch { disconnected('Dispatch radio offline. Reconnecting…') }
     finally {
@@ -137,21 +158,21 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
     }
   }
   function toggleSeat() {
-    if (!enabled || busy || !qualified() || Math.abs(pose.speed) > 0.15) return
+    if (!enabled || busy || !qualified() || Math.abs(pose.speed) > parkedSpeed) return
     if (driving && !exitPoint(pose, solids)) {
       receipt.textContent = 'Pull forward to give the cab door room.'
       return
     }
-    if (driving || distance(walker, pose) <= 6) void request({ action: driving ? 'leave' : 'board' })
+    if (driving || distance(walker, pose) <= boardReach) void request({ action: driving ? 'leave' : 'board' })
   }
   function interact() {
     if (!enabled || panel.hidden) return false
     if (!driving) {
-      if (distance(walker, pose) > 6) return false
+      if (distance(walker, pose) > boardReach) return false
       toggleSeat()
       return true
     }
-    if (!busy && status && atFreightBay(pose, destination()) && Math.abs(pose.speed) <= 0.15) {
+    if (!busy && status && atFreightBay(pose, destination()) && Math.abs(pose.speed) <= parkedSpeed) {
       const job = order()
       void request(job && status.ticket.loaded ? { action: 'deliver' } : { action: job ? 'load' : 'accept', choice: select.value })
     }
@@ -163,11 +184,11 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
     if (mode === 'contract' && offer) return offer.purpose + ' · ' + offer.coins + ' coins.'
     const job = order()
     const label = job ? oreNames[job.ore] + ' · ' + (status?.ticket.loaded ? job.buyer.name : 'Slatecliff hopper') : 'Slatecliff dispatch bay'
-    return label + ' · ' + range + ' m' + (range > 4 ? ' ' + directionTo(pose, destination()) : '') + (braking ? ' · Brake to park.' : '')
+    return label + ' · ' + range + ' m' + (range > headingCueRange ? ' ' + directionTo(pose, destination()) : '') + (braking ? ' · Brake to park.' : '')
   }
   function render() {
     const job = order(), loaded = Boolean(status?.ticket.loaded)
-    const stopped = Math.abs(pose.speed) <= 0.15, bay = destination(), parked = atFreightBay(pose, bay)
+    const stopped = Math.abs(pose.speed) <= parkedSpeed, bay = destination(), parked = atFreightBay(pose, bay)
     const nextMode = !driving || !parked ? '' : !job ? 'contract' : loaded ? '' : 'ore'
     if (mode !== nextMode) {
       mode = nextMode
@@ -181,7 +202,7 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
     action.hidden = !driving || !parked
     action.disabled = busy || !stopped
     action.textContent = !job ? 'Accept contract (E)' : loaded ? 'Unload (E)' : 'Load selected ore (E)'
-    seat.hidden = !driving && (!qualified() || distance(walker, pose) > 6)
+    seat.hidden = !driving && (!qualified() || distance(walker, pose) > boardReach)
     seat.disabled = busy || !stopped
     seat.textContent = driving ? 'Leave cab (F)' : 'Board truck (F)'
     panel.hidden = !enabled || !(driving || nearby || job)
@@ -215,10 +236,10 @@ export function createOreHauling(meshes: MeshFactory, solids: ScenerySolids, wal
     update(available: boolean) {
       radio.update()
       enabled = available
-      nearby = distance(walker, pose) < 45
+      nearby = distance(walker, pose) < statusPollReach
       if (performance.now() >= nextDraw) {
         render()
-        nextDraw = performance.now() + 120
+        nextDraw = performance.now() + panelRefreshMs
       }
       if (!driving && (nearby || !status) && performance.now() >= refreshAt && !busy) void request()
     },

@@ -15,6 +15,7 @@ import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { makeItems } from './items.ts'
 import { restoreJournal } from './journal.ts'
 import type { IslandSave } from './save.ts'
+import { currentSaveVersion } from './save-version.ts'
 import { restoreSkiff } from './skiff.ts'
 
 function restoreAviation(saved: AviationProgress | undefined): Snapshot['aviation'] {
@@ -75,7 +76,7 @@ export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['
   const { x, z, heading } = truck
   const { qualified, surveyed, aerial } = state.aviation
   return {
-    version: 6,
+    version: currentSaveVersion,
     crewCoins: state.crewCoins,
     islandTime: state.islandTime,
     growth: growth.slice(),

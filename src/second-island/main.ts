@@ -1,9 +1,10 @@
-import { Camera } from '@babylonjs/core/Cameras/camera'
-import { FreeCamera } from '@babylonjs/core/Cameras/freeCamera'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { Scene } from '@babylonjs/core/scene'
 import { createCrew, poseCrew, poseSwimming } from '../assets/crew'
+import { longAcreGardenPlacement } from '../worlds/saltwind/layout/scenery'
+import * as view from './view-settings'
+import { createInspectionCameras } from './inspection-cameras'
 import { createAtmosphere } from '../island-atmosphere'
 import { createIslandLighting, createMeshFactory } from '../island-meshes'
 import { clearCameraDistance, placeWalker, ScenerySolids, walkSaltwind } from './walking'
@@ -32,13 +33,13 @@ function start() {
   const canvas = get<HTMLCanvasElement>('island')
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
   const scene = new Scene(engine)
-  scene.clearColor.set(0.65, 0.79, 0.79, 1)
-  scene.fogColor.set(0.65, 0.79, 0.79)
+  scene.clearColor.set(view.skyRed, view.skyGreen, view.skyBlue, 1)
+  scene.fogColor.set(view.skyRed, view.skyGreen, view.skyBlue)
   scene.fogMode = Scene.FOGMODE_LINEAR
   const lighting = createIslandLighting(scene)
-  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, lighting.shadows, 3350, brinewickRainRoof)
-  lighting.sunlight.shadowMaxZ = 1400
-  lighting.sunlight.shadowOrthoScale = 0.04
+  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, lighting.shadows, view.atmosphereFarRange, brinewickRainRoof)
+  lighting.sunlight.shadowMaxZ = view.shadowFarPlane
+  lighting.sunlight.shadowOrthoScale = view.shadowFrustumPadding
   lighting.shadows.getShadowMap()?.resetRefreshCounter()
   const meshes = createMeshFactory(scene, lighting.shadows)
   const crew = createCrew(meshes, 0)
@@ -46,15 +47,7 @@ function start() {
   const updateWater = createLandscape(meshes, solids)
   const updateScenery = createScenery(meshes, solids, 'hauler')
   const updateEffects = createSaltwindEffects(meshes, solids)
-  const follow = new FreeCamera('Saltwind follow', new Vector3(arrival.x, 12, arrival.z - 19), scene)
-  const overview = new FreeCamera('Saltwind overview', new Vector3(0, 910, -389), scene)
-  overview.mode = Camera.ORTHOGRAPHIC_CAMERA
-  overview.setTarget(new Vector3(0, 0, 8))
-  for (const camera of [follow, overview]) {
-    camera.minZ = 0.22
-    camera.maxZ = 1900
-  }
-  follow.fov = 0.82
+  const { follow, overview } = createInspectionCameras(scene)
   scene.activeCamera = follow
 
   const atlas = get<HTMLDialogElement>('atlas')
@@ -68,7 +61,7 @@ function start() {
   const labels = get('world-labels'), performanceLabel = get('performance')
   displayCrewBank(get('crew-bank'))
   const showPerformance = new URLSearchParams(location.search).has('perf')
-  const area = dryLandKm2().toFixed(3)
+  const area = dryLandKm2().toFixed(view.areaDecimalPlaces)
   get('map-scale').textContent = `${area} km² of dry land · North is +Z · 1 unit = 1 metre`
   const known = new Set<string>(['ferry'])
   const keys = new Set<string>()
@@ -83,7 +76,7 @@ function start() {
   }
   resume.addEventListener('click', resumePreview)
   const point = placeWalker(arrival)
-  let yaw = 0, orbit = 0, pitch = 0.48, arm = 12, cycle = 0, sceneTime = 0, lastDraw = -1
+  let yaw = 0, orbit = 0, pitch = view.walkingOrbitPitch, arm = view.walkingOrbitArm, cycle = 0, sceneTime = 0, lastDraw = -1
   let broad = false, stop = 0, playing = false, leg = 0, progress = 0, drag: PointerEvent | undefined
   let jump = false, snapCamera = true
   const honey = createHoneyDelivery(meshes, crew, () => {
@@ -96,7 +89,7 @@ function start() {
     jump = false
     keys.clear()
     yaw = orbit = heading
-    arm = driving ? 16 : 12
+    arm = driving ? view.drivingOrbitArm : view.walkingOrbitArm
     snapCamera = true
     journey.classList.toggle('in-cab', driving)
     for (const id of ['reset', 'inspect', 'tour']) get<HTMLButtonElement>(id).disabled = driving
@@ -140,8 +133,8 @@ function start() {
     broad = value
     overviewButton.setAttribute('aria-pressed', String(value))
     scene.activeCamera = value ? overview : follow
-    scene.fogStart = value ? 1150 : 320
-    scene.fogEnd = value ? 1790 : 950
+    scene.fogStart = value ? view.overviewFogStart : view.walkingFogStart
+    scene.fogEnd = value ? view.overviewFogEnd : view.walkingFogEnd
     scene.shadowsEnabled = !value
     lastDraw = -1
   }
@@ -149,8 +142,8 @@ function start() {
   function reset() {
     resumePreview()
     setPoint(arrival, 0)
-    arm = 12
-    pitch = 0.48
+    arm = view.walkingOrbitArm
+    pitch = view.walkingOrbitPitch
     stop = leg = progress = 0
     playing = false
     setOverview(false)
@@ -195,12 +188,12 @@ function start() {
     const target = trail?.path[0] ?? walk?.points.at(-1) ?? site?.access ?? landmark
     const nearest = routes.flatMap(({ samples }) => samples).reduce((best, p) =>
       Math.hypot(p.x - target.x, p.z - target.z) < Math.hypot(best.x - target.x, best.z - target.z) ? p : best)
-    const approach = landmark.id === 'ferry' ? arrival : landmark.id === 'apiary' ? { x: 187, z: 27 } : nearest
+    const approach = landmark.id === 'ferry' ? arrival : landmark.id === 'apiary' ? longAcreGardenPlacement.inspectionApproach : nearest
     const sight = walk?.points[0] ?? (landmark.id === 'rescue' ? waterfront.skiffLaunch : landmark)
     const dx = sight.x - approach.x, dz = sight.z - approach.z
     setPoint(approach, Math.hypot(dx, dz) < 1 ? nearest.yaw : Math.atan2(dx, dz))
-    arm = landmark.id === 'airport' || landmark.id === 'mine' || landmark.id === 'falls' ? 20 : 13
-    pitch = 0.18
+    arm = landmark.id === 'airport' || landmark.id === 'mine' || landmark.id === 'falls' ? view.majorLandmarkArm : view.standardLandmarkArm
+    pitch = view.landmarkOrbitPitch
     stopTour()
     setOverview(false)
     showSite(landmark.id)
@@ -257,8 +250,8 @@ function start() {
   canvas.addEventListener('pointermove', (event) => {
     if (!drag || drag.pointerId !== event.pointerId || broad) return
     fixedEye = undefined
-    orbit -= (event.clientX - drag.clientX) * 0.005
-    pitch = Math.max(0.08, Math.min(1.22, pitch + (event.clientY - drag.clientY) * 0.004))
+    orbit -= (event.clientX - drag.clientX) * view.yawDragSensitivity
+    pitch = Math.max(view.minimumOrbitPitch, Math.min(view.maximumOrbitPitch, pitch + (event.clientY - drag.clientY) * view.pitchDragSensitivity))
     drag = event
   })
   canvas.addEventListener('lostpointercapture', () => {
@@ -267,14 +260,14 @@ function start() {
   canvas.addEventListener('wheel', (event) => {
     event.preventDefault()
     fixedEye = undefined
-    arm = Math.max(3.4, Math.min(38, arm + event.deltaY * 0.018))
+    arm = Math.max(view.minimumOrbitArm, Math.min(view.maximumOrbitArm, arm + event.deltaY * view.wheelZoomSensitivity))
   }, { passive: false })
 
   function walk(dt: number) {
     if (freight.driving) {
       const pose = freight.drive(keys, dt)
       yaw = pose.heading
-      if (!drag && Math.abs(pose.speed) > 0.2) orbit += Math.atan2(Math.sin(yaw - orbit), Math.cos(yaw - orbit)) * Math.min(1, dt * 3)
+      if (!drag && Math.abs(pose.speed) > view.steeringFollowMinSpeed) orbit += Math.atan2(Math.sin(yaw - orbit), Math.cos(yaw - orbit)) * Math.min(1, dt * view.yawFollowRate)
       return 0
     }
     const side = Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft'))
@@ -282,7 +275,7 @@ function start() {
     if (side || forward) stopTour()
     if (playing) return 0
     const angle = orbit + Math.atan2(side, forward)
-    const pace = point.swimming ? 3.8 : (keys.has('shift') ? 10 : 5.4) * (point.y < waterHeight(point.x, point.z) ? 0.68 : 1)
+    const pace = point.swimming ? view.swimPace : (keys.has('shift') ? view.sprintPace : view.walkPace) * (point.y < waterHeight(point.x, point.z) ? view.wadePaceFactor : 1)
     const speed = side || forward ? pace : 0
     if (speed) yaw = angle
     const moved = walkSaltwind(point, solids, Math.sin(angle) * speed, Math.cos(angle) * speed, jump, dt)
@@ -292,14 +285,14 @@ function start() {
 
   function advance(dt: number) {
     const segment = tour[stop + 1].legs[leg]
-    const speed = stop === 0 ? 17 : 28
+    const speed = stop === 0 ? view.firstTourPace : view.tourPace
     const direction = Math.sign(segment.to - segment.from)
     progress = Math.min(progress + dt * speed, Math.abs(segment.to - segment.from))
     const p = sampleRoute(segment.route, segment.from + progress * direction)
     const heading = p.yaw + (direction < 0 ? Math.PI : 0)
     Object.assign(point, placeWalker(p))
     yaw = heading
-    orbit += Math.atan2(Math.sin(heading - orbit), Math.cos(heading - orbit)) * Math.min(1, dt * 3)
+    orbit += Math.atan2(Math.sin(heading - orbit), Math.cos(heading - orbit)) * Math.min(1, dt * view.yawFollowRate)
     if (progress < Math.abs(segment.to - segment.from)) return
     progress = 0
     leg++
@@ -314,22 +307,22 @@ function start() {
   const cameraGoal = Vector3.Zero(), subject = Vector3.Zero()
   function updateCamera(dt: number) {
     if (broad) return
-    const distance = playing ? 30 : arm, angle = playing ? 0.58 : pitch
+    const distance = playing ? view.tourCameraArm : arm, angle = playing ? view.tourCameraPitch : pitch
     const trailing = Math.cos(angle) * distance
-    subject.set(point.x, point.y + (playing ? 3.7 : 1.6), point.z)
+    subject.set(point.x, point.y + (playing ? view.tourSubjectHeight : view.walkingSubjectHeight), point.z)
     if (fixedEye) {
       follow.position.copyFromFloats(fixedEye[0], fixedEye[1], fixedEye[2])
       follow.setTarget(subject)
       return
     }
     const x = point.x - Math.sin(orbit) * trailing, z = point.z - Math.cos(orbit) * trailing
-    const y = Math.max(point.y + 1.3 + Math.sin(angle) * distance, groundHeight(x, z) + 1.5)
+    const y = Math.max(point.y + view.cameraArmBaseRise + Math.sin(angle) * distance, groundHeight(x, z) + view.cameraGroundClearance)
     cameraGoal.set(x, y, z)
-    for (let i = 2; i <= 13; i++) {
-      const t = i / 13
+    for (let i = view.initialSightSample; i <= view.sightSampleCount; i++) {
+      const t = i / view.sightSampleCount
       const px = subject.x + t * (x - subject.x), pz = subject.z + t * (z - subject.z)
       const obstruction = groundHeight(px, pz)
-      if (obstruction + 0.45 > subject.y + t * (cameraGoal.y - subject.y)) cameraGoal.y = subject.y + (obstruction - subject.y + 0.45) / t
+      if (obstruction + view.sightObstructionGap > subject.y + t * (cameraGoal.y - subject.y)) cameraGoal.y = subject.y + (obstruction - subject.y + view.sightObstructionGap) / t
     }
     if (!playing) {
       const fraction = clearCameraDistance(point, solids, x - point.x, cameraGoal.y - subject.y, z - point.z)
@@ -339,14 +332,14 @@ function start() {
       follow.position.copyFrom(cameraGoal)
       snapCamera = false
     }
-    else Vector3.LerpToRef(follow.position, cameraGoal, 1 - Math.exp(-dt * (playing ? 8 : 12)), follow.position)
+    else Vector3.LerpToRef(follow.position, cameraGoal, 1 - Math.exp(-dt * (playing ? view.tourCameraBlendRate : view.walkingCameraBlendRate)), follow.position)
     follow.setTarget(subject)
   }
 
   function resize() {
     engine.resize()
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
-    const half = Math.max(365, (waterBounds.maxX - waterBounds.minX) / (2 * aspect) - 30)
+    const half = Math.max(view.overviewMinimumHalfWidth, (waterBounds.maxX - waterBounds.minX) / (view.overviewDiameterFactor * aspect) - view.overviewWaterInset)
     overview.orthoTop = half
     overview.orthoBottom = -half
     overview.orthoLeft = -half * aspect
@@ -392,8 +385,8 @@ function start() {
   bindPlaytestCopy(() => saltwindLink(location.href, { point, yaw, orbit, pitch, arm, cycle, speed, time: sceneTime, eye: follow.position.asArray(), tour: { stop, leg, progress, playing }, weather: climate.value, overview: broad, site: inspectedSite }))
   updateCamera(1)
   function poseWalkingCrew(walking: number, dt: number) {
-    if (point.swimming) poseSwimming(crew, sceneTime, Math.min(1, walking / 3.8))
-    else poseCrew(crew, cycle, walking ? Math.min(0.85, walking * 0.1) : 0, !point.grounded, honey.carrying() ? 'tool' : undefined, 0, frozen ? 1 : Math.min(1, dt * 10))
+    if (point.swimming) poseSwimming(crew, sceneTime, Math.min(1, walking / view.swimPace))
+    else poseCrew(crew, cycle, walking ? Math.min(view.maxStride, walking * view.stridePerPace) : 0, !point.grounded, honey.carrying() ? 'tool' : undefined, 0, frozen ? 1 : Math.min(1, dt * view.crewPoseResponse))
   }
   function discoverLandmarks() {
     for (const pin of landmarks) if (!known.has(pin.id) && Math.hypot(point.x - pin.x, point.z - pin.z) <= pin.radius) {
@@ -408,15 +401,15 @@ function start() {
     }
   }
   engine.runRenderLoop(() => {
-    const dt = Math.min(0.065, engine.getDeltaTime() / 1000)
+    const dt = Math.min(view.maxFrameSeconds, engine.getDeltaTime() / view.millisecondsPerSecond)
     const simulationDelta = frozen ? 0 : dt
     sceneTime += simulationDelta
     if (!frozen) speed = atlas.open ? 0 : walk(dt)
     const walking = speed
     if (playing && !frozen) advance(dt)
-    cycle += simulationDelta * walking / 2.8
+    cycle += simulationDelta * walking / view.walkCycleMetres
     crew.root.setEnabled(!broad && !playing && !freight.driving)
-    crew.root.position.set(point.x, point.y + (point.swimming ? 0.036 * Math.sin(sceneTime * Math.PI * 1.25) : 0.02), point.z)
+    crew.root.position.set(point.x, point.y + (point.swimming ? view.swimBobHeight * Math.sin(sceneTime * Math.PI * view.swimBobRate) : view.standingLift), point.z)
     crew.root.rotation.x = 0
     crew.root.rotation.y = yaw
     crew.blink(sceneTime)
@@ -427,15 +420,15 @@ function start() {
     updateCamera(dt)
     const camera = scene.activeCamera ?? follow
     const weather = saltwindWeather(climate.value, sceneTime)
-    const light = atmosphere.update(sceneTime, weather, camera.position, !broad, { fogScale: 7 })
-    const threats = point.y < waterHeight(point.x, point.z) - 0.04 ? [point] : []
+    const light = atmosphere.update(sceneTime, weather, camera.position, !broad, { fogScale: view.fogScale })
+    const threats = point.y < waterHeight(point.x, point.z) - view.fishThreatDepth ? [point] : []
     const frame = { time: sceneTime, delta: simulationDelta, weather, camera: camera.position, threats, weatherAt: climate.value === 'live' ? saltwindLiveWeather : undefined }
     updateScenery(frame, broad, climate.value === 'live' ? saltwindRainAt : undefined)
     updateEffects(frame, point, broad, frozen)
     updateWater(sceneTime, light)
     scene.render()
     updateLabels(point, broad)
-    if (sceneTime - lastDraw > 0.24) {
+    if (sceneTime - lastDraw > view.chartRefreshSeconds) {
       lastDraw = sceneTime
       const edge = point.swimming ? ' · Swimming' : point.y < waterHeight(point.x, point.z) ? ' · Wading' : ''
       coordinates.textContent = `X ${Math.round(point.x)} · Z ${Math.round(point.z)} · ${point.y.toFixed(1)} m${edge}`

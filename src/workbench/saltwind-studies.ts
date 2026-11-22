@@ -1,3 +1,4 @@
+import { saltwindBuildingWidth } from '../assets/recipes/workbench-building-vehicle-studies'
 import { oreNames } from '../ore-contracts'
 import { stockpiles } from '../second-island/stockpiles'
 import { createOreLoad } from '../assets/quarry'
@@ -35,7 +36,7 @@ export const saltwindAssets: Entry[] = [
     description: `${building.width} × ${building.depth} m footprint. Front entry faces local +Z.`,
     fieldSite: () => ({ name: 'Saltwind', saltwindSubject: building.site, heading: building.facing, offset: { ...building, y: saltwindGround(building.x, building.z) } }),
     controls: [
-      range('width', 'Building width (m)', building.width, building.width * 0.85, building.width * 1.3, 0.1, true),
+      range('width', 'Building width (m)', building.width, building.width * saltwindBuildingWidth.minimumScale, building.width * saltwindBuildingWidth.maximumScale, saltwindBuildingWidth.step, true),
       control('roof', 'Roof form', 'original', { original: 'As built', flat: 'Flat roof', gable: 'Gabled roof' }, true),
       control('tower', 'Tower', 'original', { original: 'As built', none: 'None', school: 'Flag tower', fire: 'Hose tower', church: 'Steeple' }, true),
       { type: 'checkbox', key: 'canopy', label: 'Street canopy', value: building.kind === 'market' || building.kind === 'shop', rebuild: true },

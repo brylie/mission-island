@@ -2,10 +2,10 @@ import { interactions, rechecksInHandler, requiresExplicitChoice, sameChoice } f
 import type { InteractionAction, InteractionChoice } from '../src/interaction-options.ts'
 import { heldItem } from '../src/interactions/cargo.ts'
 import type { Snapshot } from '../src/protocol.ts'
-import type { createCargoPhysics } from '../src/simulation/cargo.ts'
+import { crateHalfSize, type createCargoPhysics } from '../src/simulation/cargo.ts'
 import { canOccupyGround } from '../src/simulation/movement.ts'
 import { groundHeight, maxWadeDepth, waterDepth } from '../src/terrain.ts'
-import { crateSize, itemStarts, spawns } from '../src/world.ts'
+import { itemStarts, spawns } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
 import { itemGroundClearance, restingY, updateHeldItems } from './items.ts'
 
@@ -45,7 +45,7 @@ export function createInteractions(
     const item = heldItem(state, player)
     if (item) {
       item.holder = null
-      const safe = canOccupyGround(player, crateSize / 2, -maxWadeDepth) && waterDepth(player) <= maxWadeDepth
+      const safe = canOccupyGround(player, crateHalfSize, -maxWadeDepth) && waterDepth(player) <= maxWadeDepth
       // A crate carried into danger returns to its start quietly; one set down where the crewmate stands is a real drop.
       if (item.kind === 'crate' && safe) physics.release(item, player)
       else if (item.kind === 'crate') physics.relocate(item, itemStarts[item.id].start)

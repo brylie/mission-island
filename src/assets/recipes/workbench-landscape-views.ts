@@ -1,0 +1,106 @@
+export const shellglassView = {
+  focus: { x: 45.35, z: -33.65, height: 0.49 },
+  alpha: 2.11,
+  beta: 1.09,
+  radius: 7.45,
+  hour: 13,
+} as const
+
+export const shellglassShots = {
+  rising: { label: 'Shellglass rising tide', phase: 0.36 },
+  retreating: { label: 'Shellglass retreating tide', phase: 0.76 },
+  low: { label: 'Shellglass low water', phase: 0.96 },
+  night: { label: 'Shellglass plankton at night', hour: 23, phase: 0.96 },
+} as const
+
+export const landscapeShotPresets = {
+  'pinewoods-sunrise': {
+    label: 'Pinewoods sunrise',
+    focus: { x: -39.7, z: 19.2, height: 4.05 },
+    alpha: 0.43,
+    beta: Math.PI / 2 + 0.025,
+    radius: 14,
+    hour: 6.4,
+    time: 11,
+  },
+  'harbor-gulls': {
+    label: 'Harbor gulls at the pilings',
+    focus: { x: -44.5, z: -34, height: 0.9 },
+    alpha: -2.41,
+    beta: 1.31,
+    radius: 12.5,
+    hour: 12,
+    time: 33.5,
+  },
+  'ferry-approach': {
+    label: 'Ferry approach from Harbor Depot road',
+    focus: { x: -30, z: -30, height: 1.2 },
+    alpha: Math.PI / 2 - 0.05,
+    beta: 1.32,
+    radius: 24,
+    hour: 11,
+    time: 0,
+  },
+  'ferry-yard': {
+    label: 'Ferry freight yard and tally board',
+    focus: { x: -25, z: -26, height: 0.8 },
+    alpha: 0.55,
+    beta: 0.95,
+    radius: 21,
+    hour: 14,
+    time: 0,
+  },
+  'harbor-sunset': {
+    label: 'Harbor sunset',
+    focus: { x: -45, z: -12, height: 0.25 },
+    alpha: 2.87,
+    beta: 1.55,
+    radius: 15,
+    hour: 17.4,
+    time: 4,
+  },
+  'driftwood-fish': {
+    label: 'Driftwood fish shallows',
+    focusHeight: 1.6,
+    alpha: 1.9,
+    beta: 0.77,
+    radius: 9.5,
+    hour: 12,
+    time: 0,
+  },
+  'seabrook-market-runoff': {
+    label: 'Seabrook Market runoff',
+    focus: { x: 38.72, z: 5.65, height: 1.60 },
+    alpha: 1.92,
+    beta: 1.17,
+    radius: 7.4,
+    hour: 13.5,
+    time: 102.48,
+  },
+  'farm-thermal-gulls': {
+    label: 'Gulls circling the farm thermal',
+    focusHeight: 13,
+    alpha: 2.6,
+    beta: 1.62,
+    radius: 15,
+    hour: 13,
+    time: 40,
+  },
+  'fernfall-overlook': {
+    label: 'Fernfall overlook',
+    focusHeight: 0.25,
+    alpha: -Math.PI / 2,
+    beta: 1.1,
+    radius: 24,
+    hour: 16.5,
+    time: 0,
+  },
+} as const
+
+export const landscapeControls = {
+  coordinateLimits: { min: -500, max: 500, step: 0.1 },
+  focusLimits: { min: -5, max: 80, step: 0.05 },
+  hour: [16.5, 0, 24, 0.1],
+  rain: [0, 0, 1, 0.01],
+  shaftIntensity: [100, 0, 150, 5],
+} as const

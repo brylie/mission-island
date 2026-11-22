@@ -190,7 +190,14 @@ export const sitePropGeometry = {
 } as const
 
 const jobBoardPanel = { width: 1.75, depth: 0.14, height: 0.93, centreY: 1.38 } as const
-export const jobBoardGeometry = { panel: jobBoardPanel, supportBoxes: [[jobBoardPanel.width, jobBoardPanel.depth, 1.95]] } as const
+export const jobBoardGeometry = {
+  panel: jobBoardPanel,
+  color: '#996447',
+  posts: { x: [-0.66, 0.66], y: 0.91, size: [0.12, 1.82, 0.13], color: '#765641' },
+  cap: { y: 1.88, size: [1.98, 0.14, 0.45], color: '#387e76' },
+  cards: { x: [-0.52, 0, 0.52], z: 0.077, size: [0.32, 0.48, 0.012], color: '#fff0c1' },
+  supportBoxes: [[jobBoardPanel.width, jobBoardPanel.depth, 1.95]],
+} as const
 
 const lampPole = { baseDiameter: 0.14, topDiameter: 0.10, height: 2.74, centreY: 1.37, segments: 8 } as const
 const bulbZ = -0.31

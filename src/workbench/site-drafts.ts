@@ -1,14 +1,17 @@
+import { landscapeFurnishingControls } from '../assets/recipes/workbench-place-studies.ts'
 import { starterFeatures } from '../worlds/starter/sites.ts'
 import type { SiteFeature } from '../worlds/site-feature'
 import { readStorage, writeStorage } from '../browser-storage.ts'
 import type { Values } from './subject'
 
+const degreesPerHalfTurn = 180
+const { offset, heading, scale } = landscapeFurnishingControls
 const key = 'mission-island-workbench-furnishings-v1'
 export function defaultPlacement(feature: SiteFeature) {
-  return { east: 0, north: 0, heading: (feature.heading ?? 0) * 180 / Math.PI, scale: feature.scale ?? 1, color: feature.color }
+  return { east: 0, north: 0, heading: (feature.heading ?? 0) * degreesPerHalfTurn / Math.PI, scale: feature.scale ?? 1, color: feature.color }
 }
 export function editedFeature(feature: SiteFeature, values: Values): SiteFeature {
-  return { ...feature, x: feature.x + Number(values.east), z: feature.z + Number(values.north), heading: Number(values.heading) * Math.PI / 180, scale: Number(values.scale), color: String(values.color) }
+  return { ...feature, x: feature.x + Number(values.east), z: feature.z + Number(values.north), heading: Number(values.heading) * Math.PI / degreesPerHalfTurn, scale: Number(values.scale), color: String(values.color) }
 }
 function within(n: unknown, min: number, max: number) {
   return typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max
@@ -16,8 +19,8 @@ function within(n: unknown, min: number, max: number) {
 function valid(value: unknown): value is ReturnType<typeof defaultPlacement> {
   if (!value || typeof value !== 'object') return false
   const v = value as Values
-  return within(v.east, -6, 6) && within(v.north, -6, 6) && within(v.heading, -180, 180)
-    && within(v.scale, 0.25, 3) && typeof v.color === 'string' && /^#[a-f0-9]{6}$/i.test(v.color)
+  return within(v.east, offset[0], offset[1]) && within(v.north, offset[0], offset[1]) && within(v.heading, heading[0], heading[1])
+    && within(v.scale, scale[0], scale[1]) && typeof v.color === 'string' && /^#[a-f0-9]{6}$/i.test(v.color)
 }
 export function readSiteDrafts(): Record<string, ReturnType<typeof defaultPlacement>> {
   try {

@@ -21,9 +21,9 @@ import { toggleSeat, updateRiders } from './riders.ts'
 import type { IslandSave } from './save.ts'
 import { farmingQualified } from '../src/farm-orders.ts'
 import { stepSkiff } from './skiff.ts'
+import { crewInputTimeoutMs } from './host-time.ts'
 
 const hostTicksPerSecond = 30
-const crewInputTimeoutMs = 400
 const juniperUpdateIntervalTicks = 3
 
 export const tickSeconds = 1 / hostTicksPerSecond

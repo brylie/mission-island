@@ -53,7 +53,8 @@ export const crateStarts = [
   { x: -47, z: -17 },
   { x: -45, z: -15 },
 ]
-export const extinguisherStarts = [{ x: 20, z: 22 }, { x: 22, z: 22 }]
+export const extinguisherStock = { x: 21, z: 22 }
+export const extinguisherStarts = [{ ...extinguisherStock, x: extinguisherStock.x - 1 }, { ...extinguisherStock, x: extinguisherStock.x + 1 }]
 
 // Wren keeps the loaned toolbox on the mending bench at the north edge of the ferry yard.
 export const mendingBenchSite = { x: -23.4, z: -15.8, heading: Math.PI / 2 }
@@ -110,4 +111,10 @@ export const landmarkPlacements = {
   home: { height: 2.5 },
   chest: { height: 0.95, closeRange: 12 },
   wardrobe: { height: 2.09, closeRange: 12 },
+} as const
+
+export const harborJobSites = {
+  board: { x: -43.7, z: -16.1 },
+  farmDrop: { x: 24, z: -17.2 },
+  beachDrop: { x: 29, z: -24 },
 } as const

@@ -6,10 +6,14 @@ import type { AbstractEngine } from '@babylonjs/core/Engines/abstractEngine'
 import type { Scene } from '@babylonjs/core/scene'
 import type { SubMesh } from '@babylonjs/core/Meshes/subMesh'
 import type { MeshFactory } from './island-meshes'
+import { environmentalMaterialPriority } from './assets/recipes/island-shader-presets'
+import { meadowBladeGeometry } from './assets/geometry/meadow-blades'
 import { createIslandMaterial } from './materials'
 import { seededRandom } from './seeded-random'
 import { meadowDefaults, patchNoise, type MeadowSettings } from './shader-studies'
 import type { Point } from './world'
+
+const componentsPerVertex = 3
 
 const uniforms = 'uniform vec4 meadowControls; uniform vec3 meadowEye;'
 
@@ -20,7 +24,7 @@ class MeadowShader extends MaterialPluginBase {
   private readonly pbr: boolean
 
   constructor(material: Material, private readonly blades: boolean) {
-    super(material, blades ? 'Stem wind' : 'Meadow distance', 180)
+    super(material, blades ? 'Stem wind' : 'Meadow distance', environmentalMaterialPriority)
     this.pbr = material instanceof PBRMaterial
     this.registerForExtraEvents = true
     this._enable(true)
@@ -119,7 +123,8 @@ export function createMeadowSurface(material: Material) {
 }
 
 export function createMeadowBlades(meshes: MeshFactory, points: Iterable<Point>, heightAt: (point: Point) => number, seed: number) {
-  const material = createIslandMaterial(meshes.scene, 'Meadow blades', '#618752')
+  const { color, bladesPerTuft, width: bladeWidth, height: bladeHeight, profile, triangles } = meadowBladeGeometry
+  const material = createIslandMaterial(meshes.scene, 'Meadow blades', color)
   material.backFaceCulling = false
   material.twoSidedLighting = true
   const shader = new MeadowShader(material, true)
@@ -129,19 +134,21 @@ export function createMeadowBlades(meshes: MeshFactory, points: Iterable<Point>,
     const { x, z } = point
     const y = heightAt(point)
     const angle = random() * Math.PI
-    for (let k = 0; k < 3; k++) {
-      const theta = angle + k * Math.PI / 3
-      const width = 0.058 + random() * 0.038
-      const height = 0.20 + random() * 0.25
+    for (let k = 0; k < bladesPerTuft; k++) {
+      const theta = angle + k * Math.PI / bladesPerTuft
+      const width = bladeWidth.minimum + random() * bladeWidth.variation
+      const height = bladeHeight.minimum + random() * bladeHeight.variation
       const dx = Math.cos(theta) * width, dz = Math.sin(theta) * width
-      const base = positions.length / 3
-      positions.push(x - dx, y, z - dz, x + dx, y, z + dz, x, y + height * 0.52, z, x + dx * 0.93, y + height * 0.52, z + dz * 0.93, x + dx * 2.4, y + height, z + dz * 2.4)
-      for (let i = 0; i < 5; i++) roots.push(x, y, z)
-      indices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2, base + 2, base + 3, base + 4)
+      const base = positions.length / componentsPerVertex
+      for (const [reach, rise] of profile) {
+        positions.push(x + dx * reach, y + height * rise, z + dz * reach)
+        roots.push(x, y, z)
+      }
+      for (const index of triangles) indices.push(base + index)
     }
   }
   const mesh = meshes.surface('Meadow blades', positions, indices, material)
-  mesh.setVerticesData('bladeRoot', roots, false, 3)
+  mesh.setVerticesData('bladeRoot', roots, false, componentsPerVertex)
   mesh.freezeWorldMatrix()
   return shader.pose.bind(shader)
 }

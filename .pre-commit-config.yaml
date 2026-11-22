@@ -11,8 +11,6 @@ repos:
       - id: check-yaml
       - id: detect-private-key
       - id: end-of-file-fixer
-        # ESLint writes this generated baseline in its own canonical format.
-        exclude: ^eslint-suppressions\.json$
   - repo: local
     hooks:
       - id: mission-island-quality

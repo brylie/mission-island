@@ -5,6 +5,20 @@ import { daySeconds, isNight, weatherAt } from '../weather.ts'
 import { beach, distance, ferryTerminal, forest, harbor, harborDock, lookout, town, type Point } from '../world.ts'
 import { journalCatalog, type JournalPage } from './catalog.ts'
 
+const northernRegionDiscoveryMarginM = 4
+const smallSiteDiscoveryRangeM = 9
+const dockDiscoveryZM = -34
+const dockDiscoveryRangeM = 12
+const harborDiscoveryRangeM = 18
+const townDiscoveryRangeM = 20
+const lookoutDiscoveryRangeM = 10
+const forestDiscoveryRangeM = 22
+const beachDiscoveryRangeM = 26
+const morningEndsAtHour = 10
+const middayEndsAtHour = 14
+const heavyRainThreshold = 0.65
+const rainThreshold = 0.3
+
 export interface JournalNote { t: number, by?: number, at?: string, rain?: number }
 export interface JournalRecord {
   first?: JournalNote
@@ -45,17 +59,17 @@ export function journalTally(journal: Journal) {
 
 const namedPlaces: readonly { key: string, name: string, point: Point, range: number }[] = [
   // A region's signpost can stand just past its scatter of trees and stones, so its name reaches a little further.
-  ...northernRegions.map(({ id, name, at, spread }) => ({ key: id, name, point: at, range: spread + 4 })),
-  { key: 'shellglass', name: 'Shellglass Tide Pool', point: shellglassPoint, range: 9 },
-  { key: 'splitstone', name: 'Splitstone Narrows', point: splitstone, range: 9 },
-  { key: 'dock', name: 'Harbor dock', point: { x: harborDock.x, z: -34 }, range: 12 },
-  { key: 'ferry', name: 'Ferry terminal', point: ferryTerminal, range: 9 },
-  { key: 'harbor', name: 'Harbor Depot', point: harbor, range: 18 },
-  { key: 'seabrook', name: 'Seabrook', point: town, range: 20 },
-  { key: 'lookout', name: 'Forest Lookout', point: lookout, range: 10 },
-  { key: 'pinewoods', name: 'Pinewoods', point: forest, range: 22 },
-  { key: 'farm', name: 'Island Farm', point: farm, range: 9 },
-  { key: 'driftwood', name: 'Driftwood Beach', point: beach, range: 26 },
+  ...northernRegions.map(({ id, name, at, spread }) => ({ key: id, name, point: at, range: spread + northernRegionDiscoveryMarginM })),
+  { key: 'shellglass', name: 'Shellglass Tide Pool', point: shellglassPoint, range: smallSiteDiscoveryRangeM },
+  { key: 'splitstone', name: 'Splitstone Narrows', point: splitstone, range: smallSiteDiscoveryRangeM },
+  { key: 'dock', name: 'Harbor dock', point: { x: harborDock.x, z: dockDiscoveryZM }, range: dockDiscoveryRangeM },
+  { key: 'ferry', name: 'Ferry terminal', point: ferryTerminal, range: smallSiteDiscoveryRangeM },
+  { key: 'harbor', name: 'Harbor Depot', point: harbor, range: harborDiscoveryRangeM },
+  { key: 'seabrook', name: 'Seabrook', point: town, range: townDiscoveryRangeM },
+  { key: 'lookout', name: 'Forest Lookout', point: lookout, range: lookoutDiscoveryRangeM },
+  { key: 'pinewoods', name: 'Pinewoods', point: forest, range: forestDiscoveryRangeM },
+  { key: 'farm', name: 'Island Farm', point: farm, range: smallSiteDiscoveryRangeM },
+  { key: 'driftwood', name: 'Driftwood Beach', point: beach, range: beachDiscoveryRangeM },
 ]
 
 // The named place a point lies in, if any. Where two overlap, the one whose middle is closer wins.
@@ -80,7 +94,7 @@ export function placeName(key: string | undefined) {
 export function noteConditions({ t, rain: recordedRain }: JournalNote) {
   const { hour, rain: inferredRain } = weatherAt(t)
   const rain = recordedRain ?? inferredRain
-  const time = isNight(hour) ? 'night' : hour < 10 ? 'morning' : hour < 14 ? 'midday' : 'afternoon'
-  const conditions = rain >= 0.65 && recordedRain !== undefined ? 'heavy rain' : rain >= 0.3 ? 'rain' : ''
+  const time = isNight(hour) ? 'night' : hour < morningEndsAtHour ? 'morning' : hour < middayEndsAtHour ? 'midday' : 'afternoon'
+  const conditions = rain >= heavyRainThreshold && recordedRain !== undefined ? 'heavy rain' : rain >= rainThreshold ? 'rain' : ''
   return [`Day ${Math.floor(t / daySeconds) + 1}`, time, conditions].filter(Boolean).join(' · ')
 }

@@ -35,12 +35,17 @@ export const northernTreeGeometry = {
   walkingRadius: 0.14,
   cargoHalfWidth: 0.12,
   cargoHalfDepth: 0.13,
+  trunkColor: '#675341',
+  crown: { layers: 3, baseWidth: 2.25, widthStep: 0.43, baseY: 1.45, rise: 0.68, height: 1.38, segments: 4 },
+  silhouette: { every: 2, y: 1.8, width: 1.7, height: 3.4, segments: 3 },
 } as const
 
 export const northernRockGeometry = {
   centerHeightRatio: 0.27,
   widthRatio: 2.3,
   depthRatio: 1.6,
+  segments: 4,
+  silhouette: { every: 3, y: 0.24, width: 2, depth: 1.5, segments: 3 },
   walkingRadiusRatio: 0.9,
   cargoHalfExtents: { widthRatio: 0.84, heightRatio: 0.4, depthRatio: 0.62 },
 } as const

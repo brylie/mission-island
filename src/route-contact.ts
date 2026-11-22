@@ -4,17 +4,21 @@ import { beachTrail, roads, walkways } from './routes.ts'
 import { groundHeight, walkingHeight } from './terrain.ts'
 import type { Point } from './world.ts'
 
+const positionComponents = 3
+const positionZIndex = 2
+const triangleCornerCount = 3
+
 type Vertex = Point & { y: number }
 
 function surfaceRibbon(points: readonly Point[], width: number, height: number, followsTerrain = false) {
   const { positions, indices } = ribbonGeometry([points], width, height)
   const vertices: Vertex[] = []
-  for (let i = 0; i < positions.length; i += 3) {
-    const point = { x: positions[i], z: positions[i + 2] }
+  for (let i = 0; i < positions.length; i += positionComponents) {
+    const point = { x: positions[i], z: positions[i + positionZIndex] }
     vertices.push({ ...point, y: positions[i + 1] + (followsTerrain ? groundHeight(point) : 0) })
   }
-  return Array.from({ length: indices.length / 3 }, (_, i) => {
-    const [a, b, c] = indices.slice(i * 3, i * 3 + 3).map((index) => vertices[index])
+  return Array.from({ length: indices.length / triangleCornerCount }, (_, i) => {
+    const [a, b, c] = indices.slice(i * triangleCornerCount, i * triangleCornerCount + triangleCornerCount).map((index) => vertices[index])
     return {
       a,
       b,

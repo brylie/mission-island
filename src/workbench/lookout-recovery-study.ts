@@ -1,3 +1,5 @@
+import { lookoutReview } from '../assets/recipes/workbench-place-studies'
+import { wetAshSteamSeed } from '../assets/recipes/workbench-expanded-effect-studies'
 import { createLookoutIncident } from '../lookout-recovery-art'
 import { lookoutRecoverySubject } from '../lookout-recovery'
 import { createParticleEffect } from '../particle-effect'
@@ -14,11 +16,11 @@ export const lookoutRecoveryStudy: Entry = {
   source: 'src/lookout-recovery-art.ts',
   description: 'Revisit the same verge after the fire, after the first dawn, and after three dawns.',
   readout: 'Lookout verge',
-  duration: 10,
-  angle: -0.58,
+  duration: lookoutReview.duration,
+  angle: lookoutReview.angle,
   ground: { height: 0, color: '#87945c' },
   fieldSite: () => ({ name: 'Forest Lookout, Starter Island', offset: { x: 0, y: 0, z: 0 } }),
-  weather: () => ({ hour: 13, rain: 0 }),
+  weather: () => ({ hour: lookoutReview.hour, rain: 0 }),
   controls: [
     control('visit', 'Visit', 'ash', { incident: 'Active fire', ash: 'Just extinguished', shoots: 'First dawn', established: 'Third dawn' }),
   ],
@@ -26,14 +28,14 @@ export const lookoutRecoveryStudy: Entry = {
     const showLookout = createLookoutIncident(meshes, true)
     const cue = lookoutSteamCue()
     const recipe = particleRecipes[cue.id]
-    const steam = createParticleEffect(meshes.scene, 'Lookout wet-ash steam', recipe, 5817)
-    const puff = particleBurst(recipe, 5817, 0, cue.length, { strength: cue.strength, footprint: 0.88 }, () => cue.source)
+    const steam = createParticleEffect(meshes.scene, 'Lookout wet-ash steam', recipe, wetAshSteamSeed)
+    const puff = particleBurst(recipe, wetAshSteamSeed, 0, cue.length, { strength: cue.strength, footprint: lookoutReview.steamFootprint }, () => cue.source)
     return ({ time }, { visit }) => {
       const incident = visit === 'incident'
-      const days = visit === 'established' ? 3 : visit === 'shoots' ? 1 : 0
+      const days = visit === 'established' ? lookoutReview.establishedDawns : visit === 'shoots' ? 1 : 0
       const stage = showLookout({
         mission: incident ? 'fire' : 'complete',
-        fire: 0.77,
+        fire: lookoutReview.incidentFire,
         islandTime: days * daySeconds + time,
         lookoutFireClearedAt: 0,
       }, time)

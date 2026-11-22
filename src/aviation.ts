@@ -4,6 +4,13 @@ import { groundHeight } from './terrain.ts'
 import { distance, type Point } from './world.ts'
 import { ridgeLandingSign, ridgeLaunch, ridgeMeadow, ridgeRack, ridgeReturn } from './worlds/starter/ridge-scout.ts'
 
+const journalSurveyRange = 12
+const journalSurveyHeight = 4
+const loanRackReach = 2.4
+const launchReach = 2.2
+const landingSignReach = 2.4
+const ridgeContextRange = 12
+
 export type AviationOuting = 'checkout' | 'survey' | 'free'
 // `aerial` lists the discoveries the crew has surveyed from the air. Older saves have none.
 export type AviationProgress = { qualified: boolean, surveyed: boolean, aerial?: string[] }
@@ -21,7 +28,7 @@ export function nextOuting({ qualified, surveyed }: AviationProgress): AviationO
 // Every place a player can discover on foot has an aerial survey. A qualified pilot records it by
 // passing over the place with some height in hand, and the crew keeps it after a safe landing.
 export const aerialSurveys: readonly { id: string, name: string, site: Point }[] = starterDiscoveries.map(({ id, name, site }) => ({ id, name, site }))
-const aerialSpot = { range: 12, height: 4 }
+const aerialSpot = { range: journalSurveyRange, height: journalSurveyHeight }
 
 export function aerialSighting(pilot: Point & { y: number }, already: readonly string[]) {
   if (pilot.y - groundHeight(pilot) < aerialSpot.height) return undefined
@@ -56,15 +63,15 @@ function onFoot(player: Player) {
 }
 
 export function atRidgeRack(player: Player) {
-  return distance(player, ridgeRack) < 2.4 || distance(player, ridgeLaunch) < 2.2
+  return distance(player, ridgeRack) < loanRackReach || distance(player, ridgeLaunch) < launchReach
 }
 
 export function atLandingSign(player: Player) {
-  return distance(player, ridgeLandingSign) < 2.4
+  return distance(player, ridgeLandingSign) < landingSignReach
 }
 
 export function nearRidgeCourse(player: Player) {
-  return [ridgeLaunch, ridgeReturn, ridgeMeadow].some((point) => distance(player, point) < 12)
+  return [ridgeLaunch, ridgeReturn, ridgeMeadow].some((point) => distance(player, point) < ridgeContextRange)
 }
 
 export function aviationInteraction(state: Snapshot, player: Player) {

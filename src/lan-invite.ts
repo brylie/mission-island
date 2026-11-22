@@ -1,3 +1,5 @@
+const minimumLinkChoices = 2
+
 export function bindLanInvite(dialog: HTMLDialogElement) {
   const address = dialog.querySelector<HTMLInputElement>('#lan-address')!
   const networks = dialog.querySelector<HTMLSelectElement>('#lan-networks')!
@@ -39,7 +41,7 @@ export function bindLanInvite(dialog: HTMLDialogElement) {
       const result: unknown = await response.json()
       const links = Array.isArray(result) ? result.filter((link): link is string => typeof link === 'string') : []
       networks.replaceChildren(...links.map((link) => new Option(link, link)))
-      networks.hidden = links.length < 2
+      networks.hidden = links.length < minimumLinkChoices
       const selected = links.find((link) => new URL(link).origin === location.origin) ?? links[0]
       networks.value = address.value = selected ?? ''
       address.hidden = !networks.hidden || !selected

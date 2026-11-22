@@ -1,8 +1,11 @@
+import { coastalModelReview } from '../assets/recipes/workbench-building-vehicle-studies'
 import { createDockTug } from '../assets/dock-tug'
 import { createFoxglove } from '../assets/foxglove'
 import { createNetShed } from '../assets/net-shed'
 import { createOystercatcher } from '../assets/oystercatcher'
 import { range, type Entry } from './subject'
+
+const degreesPerHalfTurn = 180
 
 export const coastalModelStudies: Entry[] = [
   {
@@ -11,7 +14,7 @@ export const coastalModelStudies: Entry[] = [
     group: 'Plants',
     source: 'src/assets/foxglove.ts',
     description: 'Study the leaf rosette and the taper from open bells to buds. Change the specimen to compare its habit.',
-    controls: [range('seed', 'Specimen', 7, 1, 25, 1, true)],
+    controls: [range('seed', 'Specimen', ...coastalModelReview.foxgloveSeed, true)],
     create(meshes, values) {
       const plant = createFoxglove(meshes, Number(values.seed))
       return ({ time }) => plant.sway(time)
@@ -34,7 +37,7 @@ export const coastalModelStudies: Entry[] = [
     name: 'Harbor net shed',
     group: 'Starter buildings',
     source: 'src/assets/net-shed.ts',
-    angle: -0.65,
+    angle: coastalModelReview.netShedAngle,
     description: 'Orbit from the entrance to the sunlit drying rack. Follow the net up to its cork floats and loft vent.',
     create(meshes) { createNetShed(meshes) },
   },
@@ -44,10 +47,10 @@ export const coastalModelStudies: Entry[] = [
     group: 'Starter vehicles',
     source: 'src/assets/dock-tug.ts',
     description: 'Inspect the open driving step, low load deck and steering clearance on a short harbor freight run.',
-    controls: [range('steer', 'Front wheel angle (°)', 15, -35, 35, 1)],
+    controls: [range('steer', 'Front wheel angle (°)', ...coastalModelReview.tug.steering)],
     create(meshes) {
       const pose = createDockTug(meshes)
-      return ({ time }, values) => pose(Number(values.steer) * Math.PI / 180, time * 3)
+      return ({ time }, values) => pose(Number(values.steer) * Math.PI / degreesPerHalfTurn, time * coastalModelReview.tug.wheelRate)
     },
   },
 ]

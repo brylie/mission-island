@@ -1,3 +1,5 @@
+import { landscapeControls } from '../assets/recipes/workbench-landscape-views'
+import { studioCamera } from '../assets/recipes/workbench-stage'
 import { previewDriftwood } from './driftwood-preview'
 import { landscapeDuration } from '../playtest-link'
 import { createJuniperHabitat } from '../juniper-habitat'
@@ -8,6 +10,12 @@ import { dryMarketRainAge, marketRunoffPreview } from '../market-runoff'
 import { draftFeatures } from './site-drafts'
 import { range, type Entry } from './subject'
 
+const halves = 2
+const marketAgeStepSeconds = 0.1
+const buoyPhaseStride = 1.67
+const tideReadoutRadius = 27
+const percentScale = 100
+
 export const landscapeStudy: Entry = {
   id: 'landscape',
   name: 'Landscape Workbench',
@@ -17,16 +25,16 @@ export const landscapeStudy: Entry = {
   readout: 'Shellglass tide',
   landscape: true,
   duration: landscapeDuration,
-  angle: -Math.PI / 2,
+  angle: -Math.PI / halves,
   controls: [
-    { type: 'number', key: 'x', label: 'Focus X (m)', value: falls.x, min: -500, max: 500, step: 0.1 },
-    { type: 'number', key: 'z', label: 'Focus Z (m)', value: falls.z, min: -500, max: 500, step: 0.1 },
-    { type: 'number', key: 'focusHeight', label: 'Focus above ground (m)', value: 0.25, min: -5, max: 80, step: 0.05 },
-    range('hour', 'Island hour', 16.5, 0, 24, 0.1),
-    range('rain', 'Rain intensity', 0, 0, 1, 0.01),
-    range('marketRainAge', 'Market · seconds since rain stopped', dryMarketRainAge, 0, dryMarketRainAge, 0.1),
+    { type: 'number', key: 'x', label: 'Focus X (m)', value: falls.x, ...landscapeControls.coordinateLimits },
+    { type: 'number', key: 'z', label: 'Focus Z (m)', value: falls.z, ...landscapeControls.coordinateLimits },
+    { type: 'number', key: 'focusHeight', label: 'Focus above ground (m)', value: studioCamera.landscapeFocusHeight, ...landscapeControls.focusLimits },
+    range('hour', 'Island hour', ...landscapeControls.hour),
+    range('rain', 'Rain intensity', ...landscapeControls.rain),
+    range('marketRainAge', 'Market · seconds since rain stopped', dryMarketRainAge, 0, dryMarketRainAge, marketAgeStepSeconds),
     { type: 'checkbox', key: 'sunShafts', label: 'Volumetric sunlight', value: true },
-    range('shaftIntensity', 'Sun shaft intensity (%)', 100, 0, 150, 5),
+    range('shaftIntensity', 'Sun shaft intensity (%)', ...landscapeControls.shaftIntensity),
   ],
   create(meshes, _values, _reportError, observe) {
     const school = previewDriftwood()
@@ -35,7 +43,7 @@ export const landscapeStudy: Entry = {
     let previousSky = ''
     return ({ time, delta, rate, camera, light, rain, seek }, settings) => {
       poseFloating(world.boat, time)
-      world.buoys.forEach((buoy, index) => void poseFloating(buoy, time, index * 1.67))
+      world.buoys.forEach((buoy, index) => void poseFloating(buoy, time, index * buoyPhaseStride))
       const weather = { hour: Number(settings.hour), rain }
       const frame = { time: Number(settings.clockStart ?? 0) + time, delta: delta * rate, seek, weather, camera, threats: [] }
       const sky = weather.hour + '/' + rain
@@ -44,8 +52,8 @@ export const landscapeStudy: Entry = {
       world.juniper(habitat(time, weather, []), time)
       const runoff = marketRunoffPreview(rain, Number(settings.marketRainAge))
       const tide = world.updateEnvironment(frame, light, true, runoff, { driftwood: school(time) })
-      observe(Math.hypot(camera.x - tidePool.x, camera.z - tidePool.z) < 27
-        ? `${tide.phase} · ${Math.round(tide.fraction * 100)}% of cycle`
+      observe(Math.hypot(camera.x - tidePool.x, camera.z - tidePool.z) < tideReadoutRadius
+        ? `${tide.phase} · ${Math.round(tide.fraction * percentScale)}% of cycle`
         : '')
     }
   },

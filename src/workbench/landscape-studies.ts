@@ -3,6 +3,8 @@ import { landscapeShotLink, readLandscapeShot } from './landscape-shot'
 import type { LandscapeShot } from './landscape-shot'
 
 const shotsKey = 'mission-island-landscape-shots'
+const referenceMaxPixels = 1600
+const jpegFallbackQuality = 0.97
 const referenceKey = 'mission-island-landscape-reference'
 
 interface Reference {
@@ -227,7 +229,7 @@ export function createLandscapeStudies(canvas: HTMLCanvasElement, controls: Stud
       try {
         // Read the drawing buffer in the same frame that rendered it.
         const copy = document.createElement('canvas')
-        const scale = Math.min(1, 1600 / Math.max(canvas.width, canvas.height))
+        const scale = Math.min(1, referenceMaxPixels / Math.max(canvas.width, canvas.height))
         copy.width = Math.max(1, Math.round(canvas.width * scale))
         copy.height = Math.max(1, Math.round(canvas.height * scale))
         const context = copy.getContext('2d')
@@ -237,7 +239,7 @@ export function createLandscapeStudies(canvas: HTMLCanvasElement, controls: Stud
         reference = { shot, image: copy.toDataURL() }
         let stored = writeStorage('sessionStorage', referenceKey, JSON.stringify(reference))
         if (!stored) {
-          reference.image = copy.toDataURL('image/jpeg', 0.97)
+          reference.image = copy.toDataURL('image/jpeg', jpegFallbackQuality)
           stored = writeStorage('sessionStorage', referenceKey, JSON.stringify(reference))
         }
         image.src = reference.image

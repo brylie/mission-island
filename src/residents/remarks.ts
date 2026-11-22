@@ -4,6 +4,12 @@ import type { Remark, RemarkContext, ResidentDefinition } from './definition.ts'
 import { conversationContext } from './favors.ts'
 import { residentAt } from './schedule.ts'
 
+const dawnHour = 5
+const nightHour = 21
+const noonHour = 12
+const eveningHour = 17
+const noticeableRain = 0.1
+
 // Small talk that fits the moment. Each remark names the conditions it suits: the hour, the weather,
 // where the resident is, the crew's standing, or anything else in the shared snapshot. A conversation
 // picks one remark that fits, then fills its tokens from small pools, so the same moment can be put
@@ -13,7 +19,7 @@ type Random = () => number
 const pick = <T>(items: readonly T[], random: Random) => items[Math.floor(random() * items.length) % items.length]
 
 function partOfDay(hour: number) {
-  return hour < 5 || hour >= 21 ? 'night' : hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
+  return hour < dawnHour || hour >= nightHour ? 'night' : hour < noonHour ? 'morning' : hour < eveningHour ? 'afternoon' : 'evening'
 }
 
 // Tokens a remark can use. Each fills from a pool chosen for the moment.
@@ -25,7 +31,7 @@ const tokens: Record<string, (context: RemarkContext, random: Random) => string>
     afternoon: ['Afternoon', 'Hello', 'Good afternoon'],
     evening: ['Evening', 'Good evening', 'Hello'],
   }[partOfDay(hour)], random),
-  sky: ({ rain, hour }, random) => pick(rain > 0.1
+  sky: ({ rain, hour }, random) => pick(rain > noticeableRain
     ? ['this rain', 'the wet', 'this drizzle']
     : partOfDay(hour) === 'night' ? ['the stars tonight', 'this clear night'] : ['the sunshine', 'this weather', 'the clear sky'], random),
   today: ({ hour }) => ({ night: 'tonight', morning: 'this morning', afternoon: 'this afternoon', evening: 'this evening' })[partOfDay(hour)],
@@ -41,7 +47,7 @@ function within(hour: number, [from, to]: readonly [number, number]) {
 
 export function fits(remark: Remark, context: RemarkContext) {
   return (!remark.hours || within(context.hour, remark.hours))
-    && (remark.rain === undefined || remark.rain === (context.rain > 0.1))
+    && (remark.rain === undefined || remark.rain === (context.rain > noticeableRain))
     && (!remark.stop || remark.stop.includes(context.stop))
     && (!remark.tier || remark.tier.includes(context.tier))
     && (!remark.standing || remark.standing.includes(context.standing))

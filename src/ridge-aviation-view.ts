@@ -1,3 +1,4 @@
+import { ridgeSurveyClue } from './assets/geometry/ridge-course'
 import { createHangGlider, createRidgeCourse, poseHangGliderPilot } from './assets/ridge-glider'
 import { createRidgeFlightOrbs } from './assets/ridge-flight-orbs'
 import { createRidgeUpdraft } from './assets/ridge-updraft'
@@ -22,10 +23,10 @@ export function createRidgeAviationView(meshes: MeshFactory, crew: Rig[]) {
   const showRoute = createRidgeFlightOrbs(meshes)
   const drawUpdraft = createRidgeUpdraft(meshes)
   const wing = createHangGlider(meshes)
-  const willow = createObjectiveMarker(meshes, mirrorPoolWillow, 3.8, '#ffb16f')
-  const orange = meshes.paint('#ee713d', true)
-  const clue = meshes.box(0, 0.98, -1.6, 0.72, 0.54, 0.11, orange, willow, false)
-  clue.rotation.y = -0.65
+  const willow = createObjectiveMarker(meshes, mirrorPoolWillow, ridgeSurveyClue.markerHeight, ridgeSurveyClue.markerColor)
+  const orange = meshes.paint(ridgeSurveyClue.signColor, true)
+  const clue = meshes.box(...ridgeSurveyClue.signPosition, ...ridgeSurveyClue.signSize, orange, willow, false)
+  clue.rotation.y = ridgeSurveyClue.signHeading
   return {
     update(state: Snapshot | undefined, time: number) {
       const aviation = state?.aviation
@@ -34,7 +35,7 @@ export function createRidgeAviationView(meshes: MeshFactory, crew: Rig[]) {
       const parent = pilot ? pilot.root : rack
       if (wing.parent !== parent) {
         wing.parent = parent
-        wing.position.y = pilot ? 0 : -0.58
+        wing.position.y = pilot ? 0 : ridgeSurveyClue.rackWingY
       }
       markMeadow(Boolean(aviation?.marked))
       const toWillow = flight?.outing === 'free' || (!flight && aviation?.surveyed)
@@ -47,7 +48,7 @@ export function createRidgeAviationView(meshes: MeshFactory, crew: Rig[]) {
     pose(state: Snapshot, player: Player, character: Rig, blend: number) {
       const flight = state.aviation.flight
       if (flight?.pilotId !== player.id) return false
-      moveTo(character.root, player, player.y + 0.035, blend)
+      moveTo(character.root, player, player.y + ridgeSurveyClue.pilotRigClearance, blend)
       character.root.rotation.x += (flight.pitch - character.root.rotation.x) * blend
       character.root.rotation.z += (flight.bank - character.root.rotation.z) * blend
       poseHangGliderPilot(character, blend)

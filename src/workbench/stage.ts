@@ -5,6 +5,7 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { CreateLineSystem } from '@babylonjs/core/Meshes/Builders/linesBuilder'
 import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
 import { Scene } from '@babylonjs/core/scene'
+import { studioCamera, studioCrewLighting, studioFieldAtmosphere, studioGrid, studioSunlight } from '../assets/recipes/workbench-stage'
 import { createIslandLighting, createMeshFactory } from '../island-meshes'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { brinewickRainRoof } from '../second-island/brinewick-market-art'
@@ -31,29 +32,34 @@ export interface CameraState {
 
 export type Angle = 'perspective' | 'front' | 'side' | 'top'
 
+const halves = 2
+const indicesPerTriangle = 3
+const percentScale = 100
+const quarterTurn = Math.PI / halves
+
 function stageAtmosphere(scene: Scene, lighting: ReturnType<typeof createIslandLighting>, entry: Entry, field?: FieldSite) {
   if (entry.landscape || entry.weather) scene.fogMode = Scene.FOGMODE_LINEAR
   if (!entry.landscape && entry.id !== 'biome' && !entry.weather) return
   const { sky, sunlight, shadows } = lighting
-  return createAtmosphere(scene, sky, sunlight, shadows, field?.saltwindSubject ? 3350 : undefined, field?.saltwindSubject ? brinewickRainRoof : undefined)
+  return createAtmosphere(scene, sky, sunlight, shadows, field?.saltwindSubject ? studioFieldAtmosphere.saltwindSkySize : undefined, field?.saltwindSubject ? brinewickRainRoof : undefined)
 }
 
 function stageWeather(entry: Entry, time: number, settings: Values) {
   return entry.weather?.(time, settings) ?? {
     hour: Number(settings.hour),
-    rain: entry.id === 'biome' ? Number(settings.rain) / 100 : entry.landscape ? Number(settings.rain) : 0,
+    rain: entry.id === 'biome' ? Number(settings.rain) / percentScale : entry.landscape ? Number(settings.rain) : 0,
   }
 }
 
 function applyStageLighting(sceneLighting: ReturnType<typeof createIslandLighting>, preset: LightingPreset, crew: boolean) {
   const { ambient, sun, color, direction } = lightingPresets[preset]
   const { sky, sunlight, shadows } = sceneLighting
-  sky.intensity = crew && preset === 'daylight' ? 0.84 : ambient
+  sky.intensity = crew && preset === 'daylight' ? studioCrewLighting.ambientDaylight : ambient
   sunlight.intensity = sun
   sunlight.diffuse = Color3.FromHexString(color)
-  const key = crew ? new Vector3(direction.x, direction.y, -1.3) : direction
+  const key = crew ? new Vector3(direction.x, direction.y, studioCrewLighting.keyDirectionZ) : direction
   sunlight.direction.copyFrom(key.normalizeToNew())
-  if (crew) shadows.setDarkness(0.50)
+  if (crew) shadows.setDarkness(studioCrewLighting.shadows)
 }
 
 function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Entry, values: Values, subject: AbstractMesh[], field?: FieldSite) {
@@ -69,41 +75,42 @@ function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Ent
     max = Vector3.Maximize(max, boundingBox.maximumWorld)
     if (mesh.isVisible) {
       meshCount++
-      triangles += mesh.getTotalIndices() / 3
+      triangles += mesh.getTotalIndices() / indicesPerTriangle
     }
   }
 
   max.y += entry.headroom ?? 0
   const span = max.subtract(min)
   const groundHeight = (entry.ground?.height ?? 0) + (field?.offset.y ?? 0)
-  const smallSample = (entry.cameraRadius ?? Infinity) < 1
-  const subjectHeight = Math.max(smallSample ? 0.01 : 0.4, max.y - Math.max(min.y, groundHeight))
+  const smallSample = (entry.cameraRadius ?? Infinity) < studioCamera.smallSampleRadius
+  const subjectHeight = Math.max(smallSample ? studioCamera.smallSampleMinimumHeight : studioCamera.minimumSubjectHeight, max.y - Math.max(min.y, groundHeight))
   const center = Vector3.FromArray(entry.cameraFocus ?? [
-    (min.x + max.x) / 2,
-    Math.max(min.y, groundHeight) + subjectHeight * 0.43,
-    (min.z + max.z) / 2,
+    (min.x + max.x) / halves,
+    Math.max(min.y, groundHeight) + subjectHeight * studioCamera.aimHeightRatio,
+    (min.z + max.z) / halves,
   ])
   if (field?.surface) center.set(field.offset.x, field.offset.y, field.offset.z)
-  const size = field?.surface?.radius ?? (entry.landscape ? 24 : Math.max(span.x, span.z, subjectHeight))
-  const focusHeight = Number(values.focusHeight ?? 0.25)
+  const size = field?.surface?.radius ?? (entry.landscape ? studioCamera.landscapeRadius : Math.max(span.x, span.z, subjectHeight))
+  const focusHeight = Number(values.focusHeight ?? studioCamera.landscapeFocusHeight)
   if (entry.landscape) {
     const point = { x: Number(values.x), z: Number(values.z) }
     center.set(point.x, Math.max(waterLevel, terrainHeight(point)) + focusHeight, point.z)
   }
-  const groundSize = Math.max(14, size * 2.25)
-  const step = size > 45 ? 5 : size > 12 ? 2 : 1
+  const groundSize = Math.max(studioGrid.minimumSpan, size * studioGrid.spanScale)
+  const step = size > studioGrid.coarseThreshold ? studioGrid.coarseSpacing : size > studioGrid.mediumThreshold ? studioGrid.mediumSpacing : 1
+  const { subjectRadius, zoom, orbit, clipping } = studioCamera
   const radius = field?.surface?.radius ?? entry.cameraRadius
-    ?? (entry.landscape ? 24 : biome ? size * 1.15 : Math.max(3, size * 1.55 + subjectHeight * 0.6))
+    ?? (entry.landscape ? studioCamera.landscapeRadius : biome ? size * studioCamera.biomeRadiusScale : Math.max(subjectRadius.min, size * subjectRadius.spanScale + subjectHeight * subjectRadius.heightScale))
   const closeFraming = smallSample || Boolean(field?.surface)
-  const camera = new ArcRotateCamera('Workbench camera', entry.angle ?? 0.88, 1.1, radius, center.clone(), scene)
-  camera.lowerRadiusLimit = closeFraming ? Math.max(0.02, Math.min(0.55, radius * 0.15)) : entry.landscape ? 0.55 : Math.max(0.55, size * 0.12)
-  camera.upperRadiusLimit = entry.landscape || field?.surface ? 450 : radius * 5
-  camera.lowerBetaLimit = 0.035
-  camera.upperBetaLimit = Math.PI - 0.06
-  camera.minZ = Math.max(closeFraming ? 0.004 : 0.025, size / 2000)
-  camera.maxZ = entry.landscape ? 950 : Math.max(600, radius * 8)
-  camera.wheelDeltaPercentage = 0.045
-  camera.panningSensibility = 840 / Math.max(1, size / 5)
+  const camera = new ArcRotateCamera('Workbench camera', entry.angle ?? studioCamera.alpha, studioCamera.beta, radius, center.clone(), scene)
+  camera.lowerRadiusLimit = closeFraming ? Math.max(zoom.closeMin, Math.min(zoom.minRadius, radius * zoom.closeScale)) : entry.landscape ? zoom.minRadius : Math.max(zoom.minRadius, size * zoom.minSpanScale)
+  camera.upperRadiusLimit = entry.landscape || field?.surface ? zoom.range : radius * zoom.rangeScale
+  camera.lowerBetaLimit = orbit.minBeta
+  camera.upperBetaLimit = Math.PI - orbit.nadirInset
+  camera.minZ = Math.max(closeFraming ? clipping.closeNear : clipping.near, size / clipping.nearSpanDivisor)
+  camera.maxZ = entry.landscape ? clipping.landscapeFar : Math.max(clipping.far, radius * clipping.farRadiusScale)
+  camera.wheelDeltaPercentage = zoom.wheelStep
+  camera.panningSensibility = orbit.panSensitivity / Math.max(1, size / orbit.panSpan)
   camera.attachControl(canvas, false)
   scene.activeCamera = camera
   return { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount }
@@ -139,7 +146,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     const subject = surroundings?.surfaceMeshes ?? scene.meshes.slice(firstSubjectMesh)
     const { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount }
       = createPreviewCamera(scene, canvas, entry, values, subject, field)
-    let focusHeight = Number(values.focusHeight ?? 0.25)
+    let focusHeight = Number(values.focusHeight ?? studioCamera.landscapeFocusHeight)
     const layout = entry.landscape
       ? createLandscapeLayout(meshes, canvas, draft, () => ({
           x: camera.target.x,
@@ -148,27 +155,27 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         }))
       : undefined
 
-    const directions = Array.from({ length: Math.floor(groundSize / step) + 1 }, (_, i) => (i * step) - groundSize / 2)
+    const directions = Array.from({ length: Math.floor(groundSize / step) + 1 }, (_, i) => (i * step) - groundSize / halves)
     if (!entry.landscape && !field) {
       const floor = createIslandMaterial(scene, 'Workbench floor', entry.ground?.color ?? '#374a48')
-      const ground = meshes.box(center.x, groundHeight - 0.19, center.z, groundSize, 0.36, groundSize, floor, undefined, false)
+      const ground = meshes.box(center.x, groundHeight - studioGrid.ground.drop, center.z, groundSize, studioGrid.ground.thickness, groundSize, floor, undefined, false)
       ground.receiveShadows = true
     }
-    const gridY = (entry.landscape ? Math.max(waterLevel, terrainHeight(center)) : groundHeight) + 0.005
+    const gridY = (entry.landscape ? Math.max(waterLevel, terrainHeight(center)) : groundHeight) + studioGrid.lift
     const gridOrigin = new Vector3(center.x, gridY, center.z)
-    const half = groundSize / 2
+    const half = groundSize / halves
     const lines = directions.flatMap((offset) => [
       [new Vector3(center.x + offset, gridY, center.z - half), new Vector3(center.x + offset, gridY, center.z + half)],
       [new Vector3(center.x - half, gridY, center.z + offset), new Vector3(center.x + half, gridY, center.z + offset)],
     ])
     const grid = CreateLineSystem('Preview grid', { lines }, scene)
-    grid.color = Color3.FromHexString('#758d86')
-    grid.alpha = 0.21
+    grid.color = Color3.FromHexString(studioGrid.color)
+    grid.alpha = studioGrid.opacity
     grid.isPickable = false
 
     const studioCrew = entry.id === 'crew' && !field
-    sunlight.position.set(center.x - 14, Math.max(21, size), center.z + (studioCrew ? 16 : -16))
-    sunlight.shadowMaxZ = Math.max(biome ? 160 : 55, size * 4)
+    sunlight.position.set(center.x + studioSunlight.x, Math.max(studioSunlight.minimumHeight, size), center.z + (studioCrew ? studioCrewLighting.lightZ : studioSunlight.z))
+    sunlight.shadowMaxZ = Math.max(biome ? studioSunlight.biomeShadowRange : studioSunlight.shadowRange, size * studioSunlight.shadowSpanScale)
     let lighting: LightingPreset = 'daylight'
     let wireframe = false
     function applyWireframe(mesh: AbstractMesh) {
@@ -176,10 +183,10 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     }
 
     const pointOfView = {
-      perspective: [field?.surface?.alpha ?? entry.angle ?? 0.88, field?.surface?.beta ?? entry.cameraBeta ?? 1.1],
-      front: [entry.angle && entry.angle < 0 ? -Math.PI / 2 : Math.PI / 2, Math.PI / 2],
-      side: [0, Math.PI / 2],
-      top: [Math.PI / 2, 0.04],
+      perspective: [field?.surface?.alpha ?? entry.angle ?? studioCamera.alpha, field?.surface?.beta ?? entry.cameraBeta ?? studioCamera.beta],
+      front: [entry.angle && entry.angle < 0 ? -quarterTurn : quarterTurn, quarterTurn],
+      side: [0, quarterTurn],
+      top: [quarterTurn, studioCamera.topBeta],
     }
 
     function setCamera(saved: CameraState, settings?: Values) {
@@ -188,7 +195,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       camera.alpha = saved.alpha
       camera.beta = saved.beta
       camera.radius = saved.radius
-      camera.fov = saved.fov ?? 0.8
+      camera.fov = saved.fov ?? studioCamera.fov
       camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0
       camera.inertialPanningX = camera.inertialPanningY = 0
     }
@@ -197,17 +204,17 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       if (entry.landscape && settings) updateLandscapeFocus(settings)
       const [alpha, beta] = pointOfView[angle]
       const aspect = engine.getAspectRatio(camera)
-      setCamera({ alpha, beta, radius: radius * Math.max(1, 0.92 / Math.max(0.3, aspect)), target: center.asArray() })
+      setCamera({ alpha, beta, radius: radius * Math.max(1, studioCamera.fit.aspect / Math.max(studioCamera.fit.minAspect, aspect)), target: center.asArray() })
     }
 
     function updateLandscapeFocus(settings: Values) {
       const point = { x: Number(settings.x), z: Number(settings.z) }
-      const height = Number(settings.focusHeight ?? 0.25)
+      const height = Number(settings.focusHeight ?? studioCamera.landscapeFocusHeight)
       if (center.x === point.x && center.z === point.z && focusHeight === height) return
       focusHeight = height
       const ground = Math.max(waterLevel, terrainHeight(point))
       center.set(point.x, ground + height, point.z)
-      grid.position.set(point.x - gridOrigin.x, ground + 0.005 - gridOrigin.y, point.z - gridOrigin.z)
+      grid.position.set(point.x - gridOrigin.x, ground + studioGrid.lift - gridOrigin.y, point.z - gridOrigin.z)
       camera.setTarget(center.clone(), false, false, true)
     }
     setView()
@@ -224,16 +231,16 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       selectDraft: (id: number) => layout?.select(id),
       checkZFighting: () => findZFightCandidates(layout ? [...subject, ...layout.meshes()] : subject, entry.landscape ? camera.target : undefined),
       draw(time: number, rate: number, seek: boolean, settings: Values, turntable: boolean, delta: number) {
-        if (turntable) camera.alpha += delta * 0.38
+        if (turntable) camera.alpha += delta * studioCamera.orbit.turntableRate
         if (entry.landscape) updateLandscapeFocus(settings)
-        if (field?.surface) camera.minZ = Math.max(0.04, camera.radius / 360)
+        if (field?.surface) camera.minZ = Math.max(studioCamera.clipping.fieldNear, camera.radius / studioCamera.clipping.fieldNearDivisor)
         const weather = stageWeather(entry, time, settings)
-        const shaftIntensity = settings.sunShafts === false ? 0 : Number(settings.shaftIntensity ?? 100) / 100
+        const shaftIntensity = settings.sunShafts === false ? 0 : Number(settings.shaftIntensity ?? percentScale) / percentScale
         camera.getViewMatrix()
         const position = camera.globalPosition
-        const light = atmosphere?.update(time, weather, position, true, { shaftIntensity, fogScale: field?.saltwindSubject ? 7 : 1 }) ?? 1
+        const light = atmosphere?.update(time, weather, position, true, { shaftIntensity, fogScale: field?.saltwindSubject ? studioFieldAtmosphere.saltwindFogScale : 1 }) ?? 1
         update?.({ time, rate, seek, lighting, camera: position, light, rain: weather.rain, delta }, settings)
-        surroundings?.update({ time, delta: rate * delta, seek, weather: { hour: entry.weather ? weather.hour : 13, rain: weather.rain }, camera: position, threats: [] }, light)
+        surroundings?.update({ time, delta: rate * delta, seek, weather: { hour: entry.weather ? weather.hour : studioFieldAtmosphere.defaultHour, rain: weather.rain }, camera: position, threats: [] }, light)
         layout?.update(delta, time)
         subject.forEach(applyWireframe)
         layout?.meshes().forEach(applyWireframe)

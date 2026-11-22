@@ -44,3 +44,14 @@ export const ridgeGliderTrim = {
   controlBar: [0, 1.19, 0.39, 0.68, 0.045, 0.045],
   harnessSeat: [0, 0.95, -0.14, 0.43, 0.12, 0.26],
 } as const
+
+export const ridgeSurveyClue = {
+  markerHeight: 3.8,
+  markerColor: '#ffb16f',
+  signColor: '#ee713d',
+  signPosition: [0, 0.98, -1.6],
+  signSize: [0.72, 0.54, 0.11],
+  signHeading: -0.65,
+  rackWingY: -0.58,
+  pilotRigClearance: 0.035,
+} as const

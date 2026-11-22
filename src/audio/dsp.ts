@@ -1,3 +1,12 @@
+import { fullTurnRadians } from '../math/angles.ts'
+
+const bipolarNoiseSpan = 2
+const toneTailTimeConstants = 7
+const chirpFrequencyDecayRatio = 0.6
+const defaultEdgeFadeSeconds = 0.004
+const defaultPeakLimit = 0.9
+const fadeEnds = 2
+
 // Small offline signal helpers for recipe buffers. Everything here is pure and deterministic.
 
 // Recipes render at a modest rate: their content sits well below 12 kHz and buffers stay small.
@@ -10,11 +19,11 @@ export function samples(seconds: number, rate = recipeRate) {
 
 export function whiteNoise(length: number, random: () => number) {
   const out = new Float32Array(length)
-  for (let i = 0; i < length; i++) out[i] = random() * 2 - 1
+  for (let i = 0; i < length; i++) out[i] = random() * bipolarNoiseSpan - 1
   return out
 }
 
-const coefficient = (cutoff: number, rate: number) => 1 - Math.exp(-2 * Math.PI * Math.max(1, cutoff) / rate)
+const coefficient = (cutoff: number, rate: number) => 1 - Math.exp(-fullTurnRadians * Math.max(1, cutoff) / rate)
 // A moving cutoff is resampled every few samples; the sweep is far slower than that.
 const sweepBlock = 16
 
@@ -59,20 +68,20 @@ export const strike = (attack: number, decay: number, start = 0) => (t: number) 
 // Add a damped sine mode, the core of a woody knock.
 export function addMode(out: Float32Array, frequency: number, decay: number, amplitude: number, start = 0, rate = recipeRate) {
   const first = Math.max(0, Math.round(start * rate))
-  const last = Math.min(out.length, first + Math.round(decay * 7 * rate))
+  const last = Math.min(out.length, first + Math.round(decay * toneTailTimeConstants * rate))
   for (let i = first; i < last; i++) {
     const t = (i - first) / rate
-    out[i] += Math.sin(2 * Math.PI * frequency * t) * Math.exp(-t / decay) * amplitude
+    out[i] += Math.sin(fullTurnRadians * frequency * t) * Math.exp(-t / decay) * amplitude
   }
 }
 
 // Add a falling-pitch sine, used for a body thump.
 export function addThump(out: Float32Array, from: number, to: number, decay: number, amplitude: number, rate = recipeRate) {
   let phase = 0
-  const last = Math.min(out.length, Math.round(decay * 7 * rate))
+  const last = Math.min(out.length, Math.round(decay * toneTailTimeConstants * rate))
   for (let i = 0; i < last; i++) {
     const t = i / rate
-    phase += 2 * Math.PI * (to + (from - to) * Math.exp(-t / (decay * 0.6))) / rate
+    phase += fullTurnRadians * (to + (from - to) * Math.exp(-t / (decay * chirpFrequencyDecayRatio))) / rate
     out[i] += Math.sin(phase) * Math.exp(-t / decay) * amplitude
   }
 }
@@ -85,8 +94,8 @@ export function mixInto(out: Float32Array, input: Float32Array, gain = 1, offset
 }
 
 // Fade the ends so a buffer never starts or stops with a click, then normalise its peak.
-export function finish(out: Float32Array, rate = recipeRate, fadeSeconds = 0.004, peak = 0.9) {
-  const fade = Math.min(Math.floor(out.length / 2), Math.round(fadeSeconds * rate))
+export function finish(out: Float32Array, rate = recipeRate, fadeSeconds = defaultEdgeFadeSeconds, peak = defaultPeakLimit) {
+  const fade = Math.min(Math.floor(out.length / fadeEnds), Math.round(fadeSeconds * rate))
   for (let i = 0; i < fade; i++) {
     out[i] *= i / fade
     out[out.length - 1 - i] *= i / fade

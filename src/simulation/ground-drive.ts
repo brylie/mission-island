@@ -5,6 +5,13 @@ import type { Truck, TruckPose } from '../truck-pose.ts'
 import type { GroundDrive } from '../vehicles/ground-drive.ts'
 import { offset, type Point, type Pose } from '../world.ts'
 
+const forwardAxis = 2
+const minimumShoreRoadHeightM = -0.27
+const maximumUprightTiltRad = 1.35
+const sleepingSpeedSquared = 0.075
+const sleepingTurnSpeedSquared = 0.04
+const minimumPlantedWheels = 3
+
 type DriveInput = Pick<Input, 'x' | 'z' | 'brake' | 'careful'>
 
 export function createGroundDrive(
@@ -17,7 +24,7 @@ export function createGroundDrive(
   const { brakes, engine, steering: steeringSpec, parkedClearance, shoreProbeDistance } = drive
   const { radius, halfTrack, axles } = drive.wheels
   const { mountHeight, ...suspension } = drive.suspension
-  const vehicle = new RaycastVehicle({ chassisBody: body, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2 })
+  const vehicle = new RaycastVehicle({ chassisBody: body, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: forwardAxis })
   for (const side of [-1, 1]) {
     for (const [axle, z] of axles.entries()) {
       vehicle.addWheel({
@@ -102,13 +109,13 @@ export function createGroundDrive(
     const leading = offset(after, 0, direction * shoreProbeDistance)
     const wasLeading = offset(before, 0, direction * shoreProbeDistance)
     const leadingHeight = heightAt(leading)
-    if ((leadingHeight < -0.27 && leadingHeight < heightAt(wasLeading))
-      || Math.abs(after.roll) > 1.35 || Math.abs(after.pitch) > 1.35) {
+    if ((leadingHeight < minimumShoreRoadHeightM && leadingHeight < heightAt(wasLeading))
+      || Math.abs(after.roll) > maximumUprightTiltRad || Math.abs(after.pitch) > maximumUprightTiltRad) {
       place(before)
       return read()
     }
-    if (holding && body.sleepState !== Body.SLEEPING && body.velocity.lengthSquared() < 0.075
-      && body.angularVelocity.lengthSquared() < 0.04 && vehicle.numWheelsOnGround >= 3) {
+    if (holding && body.sleepState !== Body.SLEEPING && body.velocity.lengthSquared() < sleepingSpeedSquared
+      && body.angularVelocity.lengthSquared() < sleepingTurnSpeedSquared && vehicle.numWheelsOnGround >= minimumPlantedWheels) {
       body.sleep()
       after.speed = 0
     }

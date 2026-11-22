@@ -4,12 +4,17 @@ import { blankRecord } from '../../src/residents/trust.ts'
 import { sampleTray } from '../../src/worlds/starter/materials.ts'
 import { standAt, type Scenario } from './scenario.ts'
 
+const materialsTrialSeconds = 84
+const firstCrewTraySetbackM = 1.3
+const trayCrewSpacingM = 0.85
+const crewTrayForwardM = 0.35
+
 export const materialsScenario: Scenario = {
   id: 'materials-checkout',
   title: 'Wren · Materials checkout',
   island: 'Starter Island',
   prepareWorld(state) {
-    state.islandTime = 84
+    state.islandTime = materialsTrialSeconds
     state.mission = 'complete'
     state.fire = 0
     state.gateRepair = { stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: 0 }
@@ -19,7 +24,7 @@ export const materialsScenario: Scenario = {
     state.lastFavorPay = { resident: 'wren', favor: gateFavor, coins: favorCoins }
   },
   placePlayer(player) {
-    standAt(player, { x: sampleTray.x - 1.3 + player.id * 0.85, z: sampleTray.z + 0.35 })
+    standAt(player, { x: sampleTray.x - firstCrewTraySetbackM + player.id * trayCrewSpacingM, z: sampleTray.z + crewTrayForwardM })
     delete player.materials
   },
 }

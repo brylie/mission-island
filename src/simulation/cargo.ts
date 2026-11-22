@@ -15,6 +15,7 @@ import { createTruckPhysics } from './truck.ts'
 import { watchCrateImpacts } from './cargo-impacts.ts'
 
 const half = 0.5
+export const crateHalfSize = crateSize * half
 const heightfieldMarginMetres = 2
 
 const cargoGravity = -9.82
@@ -174,7 +175,6 @@ export function createCargoPhysics() {
   // The flatbed's shore check reads the restored deck as solid ground, so it can drive out to the berth.
   const truck = createTruckPhysics(world, (point) => ferry.isOpen() ? Math.max(groundHeight(point), deckTop(point)) : groundHeight(point))
 
-  const crateHalfSize = crateSize * half
   const crates = crateStarts.map(() => new Body({
     mass: crateMass,
     shape: new Box(new Vec3(crateHalfSize, crateHalfSize, crateHalfSize)),

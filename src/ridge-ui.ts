@@ -5,6 +5,16 @@ import { activeLift, aerialReceipt, bearingWord, sightingText, soaringDetail } f
 import { ridgeMeadow, ridgeRack } from './worlds/starter/ridge-scout'
 import { mirrorPoolWillow } from './worlds/starter/sites'
 
+const rackMarkerRadius = 4.5
+const thermalMarkerRadius = 3.5
+const surveyMarkerRadius = 2.5
+const markedMeadowRadius = 6
+const meadowRadius = 3.5
+const willowMarkerRadius = 4.5
+const checkpointReceiptMs = 4200
+const markedFlightReceiptMs = 9000
+const standardFlightReceiptMs = 6800
+
 const resultText: Record<FlightResult, string> = {
   qualified: 'Crew aviation qualification earned. The Mirror Pool survey is open to either player.',
   surveyed: 'Mirror Pool survey complete. The willow observation is saved for the crew.',
@@ -24,15 +34,15 @@ export function flightInput(turn: number, pitch: number): Input {
 
 export function drawRidgeMap(state: Snapshot, dot: (x: number, z: number, color: string, radius: number) => void) {
   const { marked, flight } = state.aviation
-  dot(ridgeRack.x, ridgeRack.z, '#f4b371', 4.5)
-  for (const site of activeLift(state)) dot(site.x, site.z, '#d4c2ff', 3.5)
+  dot(ridgeRack.x, ridgeRack.z, '#f4b371', rackMarkerRadius)
+  for (const site of activeLift(state)) dot(site.x, site.z, '#d4c2ff', thermalMarkerRadius)
   if (state.aviation.qualified) {
     const { recorded } = aerialProgress(state)
-    for (const { id, site } of aerialSurveys) if (!recorded.has(id)) dot(site.x, site.z, '#ffd58a', 2.5)
+    for (const { id, site } of aerialSurveys) if (!recorded.has(id)) dot(site.x, site.z, '#ffd58a', surveyMarkerRadius)
   }
-  if (marked) dot(ridgeMeadow.x, ridgeMeadow.z, '#a1ffec', 6)
-  else if (flight) dot(ridgeMeadow.x, ridgeMeadow.z, '#fff1bb', 3.5)
-  if (flight?.outing === 'survey' && !flight.observed) dot(mirrorPoolWillow.x, mirrorPoolWillow.z, '#ffc08b', 4.5)
+  if (marked) dot(ridgeMeadow.x, ridgeMeadow.z, '#a1ffec', markedMeadowRadius)
+  else if (flight) dot(ridgeMeadow.x, ridgeMeadow.z, '#fff1bb', meadowRadius)
+  if (flight?.outing === 'survey' && !flight.observed) dot(mirrorPoolWillow.x, mirrorPoolWillow.z, '#ffc08b', willowMarkerRadius)
 }
 
 function pilotDetail(player: Player, state: Snapshot) {
@@ -70,12 +80,12 @@ export function createRidgeHud(panel: HTMLElement) {
   return {
     receive(notice: Extract<ServerMessage, { type: 'flight-result' | 'aerial-sighting' }>) {
       if (notice.type === 'aerial-sighting') {
-        receiptUntil = performance.now() + 4200
+        receiptUntil = performance.now() + checkpointReceiptMs
         set(receipt, sightingText(notice.id))
         return
       }
       const { result, aerial = [], recorded = 0 } = notice
-      receiptUntil = performance.now() + (aerial.length ? 9000 : 6800)
+      receiptUntil = performance.now() + (aerial.length ? markedFlightReceiptMs : standardFlightReceiptMs)
       const survey = aerial.length ? ' ' + aerialReceipt(aerial, recorded) : ''
       set(receipt, result === 'blocked' ? resultText[result] : resultText[result] + survey + ' Wing returned to Windstone Ridge.')
     },

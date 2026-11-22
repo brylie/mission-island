@@ -1,6 +1,11 @@
 // Each fallen twig records its world anchor, length, and heading.
 export const lookoutCharredTwigs = [[4.77, 28.58, 0.67, 0.69], [4.38, 28.94, 0.31, -0.48], [5.38, 29.74, 0.51, 1.41], [7.25, 31.23, 0.56, -0.21]] as const
 
+export const lookoutRecoveryBeds = [
+  { x: 3.85, z: 28.75, rx: 1.55, rz: 1.66 },
+  { x: 7.23, z: 31.4, rx: 1.26, rz: 0.65 },
+] as const
+
 export const northernScatter = {
   seed: 41132,
   regions: {
@@ -37,4 +42,11 @@ export const starterScatter = {
     // Embedded stones flank the spring outlet, ledges and plunge pool.
     placements: [[9.7, 80.7, 1.65, 0.8], [9.2, 82.6, 1.45, -0.5], [12.55, 83.8, 1.9, 0.3], [10.63, 85.2, 1.25, 1.5], [14.06, 86.6, 1.7, 0.75], [12.16, 88.3, 1.15, -0.8], [16.8, 90.2, 1.06, 0.8]],
   },
+} as const
+
+export const strandedPatchDressing = { count: 14, width: 2.4, depth: 1.3 } as const
+
+export const driftwoodDressing = {
+  foxglove: { firstSeed: 173, seedStep: 37, scaleStep: 0.075 },
+  wrack: { count: 19, middle: 7, spacingX: 0.12, spacingZ: 0.22, ripple: 2.7, rippleWidth: 0.13 },
 } as const

@@ -1,3 +1,4 @@
+import { landscapeFurnishingControls } from '../assets/recipes/workbench-place-studies'
 import { starterFeatures } from '../worlds/starter/sites'
 import { createSiteFeature, poseSiteFeature } from '../assets/site-props'
 import { walkingHeight } from '../terrain'
@@ -12,13 +13,13 @@ export const furnishingStudies = starterFeatures.map((feature): Entry => ({
   source: 'src/worlds/starter/sites.ts',
   description: 'Adjust the placement and finish, then check clearances on the island.',
   controls: [
-    range('east', 'East offset (m)', 0, -6, 6, 0.1),
-    range('north', 'North offset (m)', 0, -6, 6, 0.1),
-    range('heading', 'Heading (°)', defaultPlacement(feature).heading, -180, 180, 1),
-    range('scale', 'Scale', 'scale' in feature ? feature.scale : 1, 0.25, 3, 0.01),
+    range('east', 'East offset (m)', 0, ...landscapeFurnishingControls.offset),
+    range('north', 'North offset (m)', 0, ...landscapeFurnishingControls.offset),
+    range('heading', 'Heading (°)', defaultPlacement(feature).heading, ...landscapeFurnishingControls.heading),
+    range('scale', 'Scale', 'scale' in feature ? feature.scale : 1, ...landscapeFurnishingControls.scale),
     { type: 'color', key: 'color', label: 'Accent color', value: feature.color, rebuild: true },
   ],
-  angle: -(('heading' in feature ? feature.heading : 0)) - 1.1,
+  angle: -(('heading' in feature ? feature.heading : 0)) - landscapeFurnishingControls.stageAngleOffset,
   fieldSite: () => ({ name: 'Starter Island', offset: { x: feature.x, z: feature.z, y: walkingHeight(feature) }, replaceFeature: feature }),
   create(meshes, values) {
     const root = createSiteFeature(meshes, { ...feature, color: String(values.color) })

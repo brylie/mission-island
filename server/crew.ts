@@ -9,6 +9,10 @@ import { recoverSceneryOverlap } from '../src/simulation/movement.ts'
 import { gateBlockers, solidTop } from '../src/gate-repair.ts'
 import { ferrySolids } from '../src/ferry-repair.ts'
 import type { IslandSave } from './save.ts'
+import { itemGroundClearance } from './items.ts'
+
+const disconnectedSkiffReservationMs = 120_000
+const disconnectedCrewReservationMs = 12_000
 
 export const stopped: Input = { x: 0, z: 0, spray: false, careful: false, sprint: false }
 
@@ -140,13 +144,13 @@ export function createCrewRoster(
 
   function expireCrew(now: number) {
     for (const [token, member] of crew) {
-      const reserveFor = inSkiff(member.player.seat) ? 120_000 : 12_000
+      const reserveFor = inSkiff(member.player.seat) ? disconnectedSkiffReservationMs : disconnectedCrewReservationMs
       if (member.player.connected || now - member.disconnectedAt < reserveFor) continue
       const item = heldItem(state, member.player)
       if (item) {
         item.holder = null
         if (item.kind === 'crate') physics.release(item, item)
-        else item.y = groundHeight(item) + 0.04
+        else item.y = groundHeight(item) + itemGroundClearance
       }
       member.player.seat = null
       member.player.onBed = false

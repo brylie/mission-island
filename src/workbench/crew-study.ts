@@ -1,5 +1,6 @@
 import { crewSwing, strideCycleMetres } from '../island-render-pose'
 import { createCrew, createSkiffGear, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats } from '../assets/crew'
+import { crewStudyStage } from '../assets/recipes/workbench-crew-study'
 import { createSupply } from '../assets/props'
 import { createHarborBoat } from '../assets/waterfront'
 import { chargePower } from '../charged-actions'
@@ -10,8 +11,8 @@ import { crewCarrySpeed, crewSprintMultiplier, crewWalkSpeed, jumpGravity, jumpS
 import { control, range, type Entry } from './subject'
 import { crewClothingSlots, relatedCrewOptions, shownCrewChoice } from './crew-outfit'
 
-const duration = 2.4
-const skiffPreviewHeight = 0.44
+const { duration, skiff, seabrook, crate: crateMount, extinguisher, jump, paddle } = crewStudyStage
+const halves = 2
 
 function describeOutfit(appearance: CrewAppearance) {
   const everyday = isEveryday(appearance.uniform)
@@ -36,10 +37,10 @@ export const crewStudy: Entry = {
   group: 'Wardrobe',
   source: 'src/assets/crew.ts',
   duration,
-  headroom: 1.45,
+  headroom: crewStudyStage.headroom,
   fieldSite: ({ state }) => state === 'paddle'
-    ? { name: 'Harbor', offset: { x: skiffStart.x - 6, z: skiffStart.z, y: waterLevel - skiffPreviewHeight } }
-    : { name: 'Seabrook', offset: { x: 39, z: 16, y: walkingHeight({ x: 39, z: 16 }) } },
+    ? { name: 'Harbor', offset: { x: skiffStart.x + skiff.harborOffsetX, z: skiffStart.z, y: waterLevel - skiff.y } }
+    : { name: 'Seabrook', offset: { ...seabrook, y: walkingHeight(seabrook) } },
   readout: 'Wardrobe',
   description: 'Preview a full work uniform or select individual items to switch to everyday clothes.',
   relatedOptions: relatedCrewOptions,
@@ -56,7 +57,7 @@ export const crewStudy: Entry = {
     { type: 'checkbox', key: 'cap', label: 'Show cap', value: true },
     { type: 'checkbox', key: 'dyed', label: 'Use custom shirt and cap dye', value: false },
     { type: 'color', key: 'dye', label: 'Fabric dye', value: '#488a73' },
-    range('stride', 'Stride length', 1, 0.2, 1.4, 0.05),
+    range('stride', 'Stride length', ...crewStudyStage.stride),
   ],
   create(meshes, initial, _error, observe) {
     const crew = createCrew(meshes, 0)
@@ -65,7 +66,7 @@ export const crewStudy: Entry = {
     let alignPaddle: (() => void) | undefined
     if (initial.state === 'paddle') {
       const boat = createHarborBoat(meshes)
-      boat.position.set(0, skiffPreviewHeight, 0)
+      boat.position.set(0, skiff.y, 0)
       boat.rotation.y = 0
       crew.root.parent = boat
       crew.root.position.copyFrom(skiffCrewSeats[0])
@@ -76,21 +77,21 @@ export const crewStudy: Entry = {
     }
     const crate = createSupply(meshes, 'crate')
     crate.parent = crew.root
-    crate.position.set(0, 1.13, 0.89)
+    crate.position.set(crateMount.x, crateMount.y, crateMount.z)
     const tool = createSupply(meshes, 'extinguisher')
     tool.parent = crew.root
-    tool.position.set(-0.49, 0.24, 0.59)
+    tool.position.set(...extinguisher.position)
     return ({ time }, values) => {
       const sprinting = values.state === 'sprint'
       const walking = values.state === 'walk' || values.state === 'carry'
       const jumping = values.state === 'jump'
-      const windup = values.state === 'throw' && time < 1.12
-      const throwing = values.state === 'throw' && time >= 1.12 && time < 1.39
+      const windup = values.state === 'throw' && time < crewStudyStage.throw.release
+      const throwing = values.state === 'throw' && time >= crewStudyStage.throw.release && time < crewStudyStage.throw.followThrough
       const carrying = values.state === 'carry' || windup
       const spraying = values.state === 'spray'
-      const reach = values.state === 'reach' ? 1 : spraying ? 0.8 + 0.2 * Math.sin(time * 4) : 0
-      const jumpTime = Math.max(0, time - 0.6)
-      const elevation = jumping ? Math.max(0, jumpSpeed * jumpTime - jumpGravity / 2 * jumpTime * jumpTime) : 0
+      const reach = values.state === 'reach' ? 1 : spraying ? extinguisher.reach + extinguisher.reachChange * Math.sin(time * extinguisher.reachRate) : 0
+      const jumpTime = Math.max(0, time - jump.launch)
+      const elevation = jumping ? Math.max(0, jumpSpeed * jumpTime - jumpGravity / halves * jumpTime * jumpTime) : 0
       const paddling = values.state === 'paddle'
       if (!paddling) crew.root.position.y = elevation
       // Travel speeds and swing from the game, so the preview steps as the crew do.
@@ -103,12 +104,12 @@ export const crewStudy: Entry = {
       crew.blink(time)
       const power = windup ? chargePower('throw', time) : 0
       crew.root.rotation.x = 0
-      if (paddling) poseSkiffCrew(crew, Math.sin(time * 4 * Math.PI / duration), -1, false, 1)
+      if (paddling) poseSkiffCrew(crew, Math.sin(time * paddle.beatsPerLoop * Math.PI / duration), -1, false, 1)
       else if (values.state === 'swim' || values.state === 'tread') poseSwimming(crew, time, Number(values.state === 'swim'))
-      else poseCrew(crew, time * pace / strideCycleMetres(stride), stride, elevation > 0.08, carrying ? 'crate' : spraying ? 'extinguisher' : undefined, reach, 1, power, throwing, values.state === 'raise')
+      else poseCrew(crew, time * pace / strideCycleMetres(stride), stride, elevation > jump.airborneHeight, carrying ? 'crate' : spraying ? 'extinguisher' : undefined, reach, 1, power, throwing, values.state === 'raise')
       alignPaddle?.()
       crate.setEnabled(carrying)
-      crate.position.y = 1.13 + power * 0.41
+      crate.position.y = crateMount.y + power * crateMount.windupLift
       tool.setEnabled(spraying)
     }
   },

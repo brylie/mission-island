@@ -5,6 +5,10 @@ import { groundHeight } from './terrain.ts'
 import { waypointsAlongPath } from './wayfinding.ts'
 import { distance, harbor, town, type Point } from './world.ts'
 
+const deliveryOrbHeight = 0.85
+const deliveryOrbSpacing = 5
+const deliveryEndGap = 2.5
+
 function routeUntil(path: Point[], end: Point) {
   let nearest = Infinity
   let segment = 0
@@ -36,11 +40,11 @@ export const deliveryWaypoints = {
 }
 
 function makeWaypoints(path: Point[]) {
-  const surface = path.map((point) => ({ ...point, y: groundHeight(point) + 0.85 }))
-  const points = waypointsAlongPath(surface, 5)
+  const surface = path.map((point) => ({ ...point, y: groundHeight(point) + deliveryOrbHeight }))
+  const points = waypointsAlongPath(surface, deliveryOrbSpacing)
   const end = surface.at(-1)
   const last = points.at(-1)
-  if (end && last && distance(end, last) > 2.5) points.push(end)
+  if (end && last && distance(end, last) > deliveryEndGap) points.push(end)
   return points
 }
 

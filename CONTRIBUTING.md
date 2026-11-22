@@ -93,7 +93,7 @@ Keep the approved production modules to constants and types. ESLint rejects func
 
 Name shared colors for their role in the palette. Share a constant when several assets are meant to use the same paint or material. Keep a model’s individual finishes with its geometry.
 
-The `eslint-suppressions.json` baseline counts legacy `no-magic-numbers` reports per file. Lint fails when a file exceeds its count. After removing legacy literals, run `npm run lint:full -- --prune-suppressions` and commit the smaller baseline. Keep new literals out of the baseline.
+ESLint reports numeric-literal violations directly and disables inline overrides.
 
 The correctness rules check callback returns, loop control, imports, parameter reassignment, and other common errors. Switches over typed unions in the host and shared gameplay modules must handle every declared case.
 

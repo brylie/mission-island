@@ -1,12 +1,17 @@
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import type { Mesh } from '@babylonjs/core/Meshes/mesh'
 
+const positionStride = 3
+const textureStride = 2
+const zOffset = 2
+const capFacingThreshold = 0.99
+
 export function boxSurfaceUVs(mesh: Mesh, alongX = false, phase = 0) {
   const positions = mesh.getVerticesData(VertexBuffer.PositionKind)!
   const normals = mesh.getVerticesData(VertexBuffer.NormalKind)!
   const uvs = []
-  for (let i = 0; i < positions.length; i += 3) {
-    const [x, y, z] = [positions[i], positions[i + 1], positions[i + 2]]
+  for (let i = 0; i < positions.length; i += positionStride) {
+    const [x, y, z] = [positions[i], positions[i + 1], positions[i + zOffset]]
     if (normals[i + 1]) {
       uvs.push(alongX ? z : x, (alongX ? x : z) + phase)
     }
@@ -27,8 +32,8 @@ export function cylinderSurfaceUVs(mesh: Mesh, diameter: number, height: number,
   // Fit whole repeats around the circumference so the wrap has no open seam.
   const circumference = Math.max(1, Math.round(Math.PI * diameter / repeat)) * repeat
   const uvs = []
-  for (let i = 0, uv = 0; i < positions.length; i += 3, uv += 2) {
-    if (Math.abs(normals[i + 1]) > 0.99) uvs.push(positions[i] * mesh.scaling.x, positions[i + 2] * mesh.scaling.z)
+  for (let i = 0, uv = 0; i < positions.length; i += positionStride, uv += textureStride) {
+    if (Math.abs(normals[i + 1]) > capFacingThreshold) uvs.push(positions[i] * mesh.scaling.x, positions[i + zOffset] * mesh.scaling.z)
     else uvs.push(baseUVs[uv] * circumference, baseUVs[uv + 1] * height)
   }
   mesh.setVerticesData(VertexBuffer.UVKind, uvs)

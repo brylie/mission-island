@@ -8,12 +8,56 @@ import { buildings, houseRoofRise } from './world'
 import type { LookSettings } from './look-options-ui'
 import { ridgeHeading } from './worlds/starter/ridge-scout'
 
+const halfWidthDivisor = 2
+const wallOrbitPadding = 0.39
+const buildingFloor = -0.2
+const roofOrbitPadding = 0.2
+const rayParallelTolerance = 0.0001
+const terrainSampleCount = 16
+const rayTerrainClearance = 0.25
+const reticleReach = 18
+const overviewMinimumHalfHeight = 106
+const overviewHalfWidth = 125
+const overviewMinimumAspect = 0.3
+const followRadius = 5.92
+const vehicleRadiusIncrease = 3.38
+const followPitch = 0.32
+const vehiclePitchDrop = 0.025
+const shoulderOffset = 0.38
+const vehiclePivotHeight = 1.55
+const standingPivotLift = 0.5
+const overviewHeight = 174
+const overviewZ = -120
+const overviewFocusZ = 58
+const overviewFarPlane = 680
+const followFieldOfView = 0.94
+const followNearPlane = 0.12
+const followFarPlane = 620
+const skyRed = 0.725
+const skyGreen = 0.875
+const skyBlue = 0.89
+const lookYawSensitivity = 0.0034
+const lookMinimumPitch = -0.79
+const lookMaximumPitch = 0.92
+const lookPitchSensitivity = 0.0028
+const overviewFogStart = 400
+const overviewFogEnd = 500
+const ridgePitch = 0.14
+const trackingSnapDistanceSquared = 196
+const trackingBlendPerSecond = 8
+const followTerrainClearance = 0.35
+const aimFallbackLengthSquared = 0.0025
+const aimDepth = 6
+const vehicleAimDepthIncrease = 3
+const followFogStart = 55
+const followFogEnd = 155
+
 type RidgeView = 'preflight' | 'flight'
 
 // Include each roof overhang so the camera retracts before it reaches a wall or roof.
 const cameraObstacles = buildings.map(({ x, z, w, h, d }) => ({
-  min: [x - w / 2 - 0.39, -0.2, z - d / 2 - 0.39],
-  max: [x + w / 2 + 0.39, h + houseRoofRise + 0.2, z + d / 2 + 0.39],
+  min: [x - w / halfWidthDivisor - wallOrbitPadding, buildingFloor, z - d / halfWidthDivisor - wallOrbitPadding],
+  max: [x + w / halfWidthDivisor + wallOrbitPadding, h + houseRoofRise + roofOrbitPadding, z + d / halfWidthDivisor + wallOrbitPadding],
 }))
 
 function visibleArm(origin: Vector3, destination: Vector3) {
@@ -24,7 +68,7 @@ function visibleArm(origin: Vector3, destination: Vector3) {
     let entry = 0
     let exit = fraction
     for (const [axis, step] of direction.entries()) {
-      if (Math.abs(step) < 0.0001) {
+      if (Math.abs(step) < rayParallelTolerance) {
         if (start[axis] < min[axis] || start[axis] > max[axis]) {
           exit = -1
           break
@@ -44,12 +88,12 @@ function visibleArm(origin: Vector3, destination: Vector3) {
 
 function terrainClearance(origin: Vector3, destination: Vector3, maximum: number) {
   let clear = 0
-  for (let i = 1; i <= 16; i++) {
-    const along = maximum * i / 16
+  for (let i = 1; i <= terrainSampleCount; i++) {
+    const along = maximum * i / terrainSampleCount
     const x = origin.x + (destination.x - origin.x) * along
     const z = origin.z + (destination.z - origin.z) * along
     const y = origin.y + (destination.y - origin.y) * along
-    if (y < Math.max(waterLevel, groundHeight({ x, z })) + 0.25) break
+    if (y < Math.max(waterLevel, groundHeight({ x, z })) + rayTerrainClearance) break
     clear = along
   }
   return clear
@@ -57,11 +101,11 @@ function terrainClearance(origin: Vector3, destination: Vector3, maximum: number
 
 function reticleRay(origin: Vector3, target: Vector3) {
   const direction = target.subtract(origin).normalize()
-  return { origin: origin.clone(), direction, reach: 18 * visibleArm(origin, origin.add(direction.scale(18))) }
+  return { origin: origin.clone(), direction, reach: reticleReach * visibleArm(origin, origin.add(direction.scale(reticleReach))) }
 }
 
 function frameOverview(camera: FreeCamera, aspect: number) {
-  const halfHeight = Math.max(106, 125 / Math.max(0.3, aspect))
+  const halfHeight = Math.max(overviewMinimumHalfHeight, overviewHalfWidth / Math.max(overviewMinimumAspect, aspect))
   camera.orthoLeft = -halfHeight * aspect
   camera.orthoRight = halfHeight * aspect
   camera.orthoTop = halfHeight
@@ -72,21 +116,21 @@ function frameOverview(camera: FreeCamera, aspect: number) {
 // and always looks through it, so the reticle sits over the shoulder rather than on the character.
 // Looking down tips the aim ray onto the ground just ahead. A vehicle keeps a lower, centred pivot.
 function shoulderRig(vehicleBlend: number, pitch: number) {
-  return { radius: 5.92 + vehicleBlend * 3.38, elevation: 0.32 - vehicleBlend * 0.025 + pitch, shoulder: 0.38 * (1 - vehicleBlend), pivotHeight: 1.55 + 0.5 * (1 - vehicleBlend) }
+  return { radius: followRadius + vehicleBlend * vehicleRadiusIncrease, elevation: followPitch - vehicleBlend * vehiclePitchDrop + pitch, shoulder: shoulderOffset * (1 - vehicleBlend), pivotHeight: vehiclePivotHeight + standingPivotLift * (1 - vehicleBlend) }
 }
 
 export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
-  const overview = new FreeCamera('Island overview', new Vector3(0, 174, -120), scene)
+  const overview = new FreeCamera('Island overview', new Vector3(0, overviewHeight, overviewZ), scene)
   overview.mode = Camera.ORTHOGRAPHIC_CAMERA
-  overview.setTarget(new Vector3(0, 0, 58))
-  overview.maxZ = 680
+  overview.setTarget(new Vector3(0, 0, overviewFocusZ))
+  overview.maxZ = overviewFarPlane
 
   const follow = new FreeCamera('Third-person follow', Vector3.Zero(), scene)
-  follow.fov = 0.94
-  follow.minZ = 0.12
-  follow.maxZ = 620
+  follow.fov = followFieldOfView
+  follow.minZ = followNearPlane
+  follow.maxZ = followFarPlane
 
-  scene.clearColor.set(0.725, 0.875, 0.89, 1)
+  scene.clearColor.set(skyRed, skyGreen, skyBlue, 1)
   scene.fogColor.copyFromFloats(scene.clearColor.r, scene.clearColor.g, scene.clearColor.b)
   scene.fogMode = Scene.FOGMODE_LINEAR
 
@@ -167,8 +211,8 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
     previousMouse = { x: event.clientX, y: event.clientY }
     // Standard look turns right with the mouse and looks down as it moves down. The invert options flip
     // each axis. A gentler base rate than before; the Options slider scales it.
-    orbitYaw += dx * 0.0034 * look.speed * (look.invertHorizontal ? -1 : 1)
-    orbitPitch = Math.max(-0.79, Math.min(0.92, orbitPitch + dy * 0.0028 * look.speed * (look.invertVertical ? -1 : 1)))
+    orbitYaw += dx * lookYawSensitivity * look.speed * (look.invertHorizontal ? -1 : 1)
+    orbitPitch = Math.max(lookMinimumPitch, Math.min(lookMaximumPitch, orbitPitch + dy * lookPitchSensitivity * look.speed * (look.invertVertical ? -1 : 1)))
   }, options)
 
   function aimHeading() {
@@ -184,15 +228,15 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
         }
         ridgeView = undefined
         scene.activeCamera = overview
-        scene.fogStart = 400
-        scene.fogEnd = 500
+        scene.fogStart = overviewFogStart
+        scene.fogEnd = overviewFogEnd
         frameOverview(overview, aspect)
         return overview
       }
 
-      if (ridge && ridge !== ridgeView) orbitPitch = 0.14
-      const snap = !tracking || Vector3.DistanceSquared(anchor, subject.position) > 196
-      const blend = snap ? 1 : 1 - Math.exp(-delta * 8)
+      if (ridge && ridge !== ridgeView) orbitPitch = ridgePitch
+      const snap = !tracking || Vector3.DistanceSquared(anchor, subject.position) > trackingSnapDistanceSquared
+      const blend = snap ? 1 : 1 - Math.exp(-delta * trackingBlendPerSecond)
       const seated = aboardVehicle || ridge === 'flight'
       if (seated !== wasSeated) {
         orbitYaw = seated ? 0 : heading
@@ -215,19 +259,19 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       const clear = terrainClearance(pivot, desired, visibleArm(pivot, desired))
       arm = snap ? clear : Math.min(clear, arm + (clear - arm) * blend)
       Vector3.LerpToRef(pivot, desired, arm, follow.position)
-      follow.position.y = Math.max(Math.max(groundHeight(follow.position), waterLevel) + 0.35, follow.position.y)
+      follow.position.y = Math.max(Math.max(groundHeight(follow.position), waterLevel) + followTerrainClearance, follow.position.y)
       // Aim through the pivot from wherever the camera ended up, even when the ground lifted it.
       pivot.subtractToRef(follow.position, target)
-      if (target.lengthSquared() < 0.0025) target.set(forwardX, 0, forwardZ)
-      target.normalize().scaleInPlace(6 + vehicleBlend * 3).addInPlace(pivot)
+      if (target.lengthSquared() < aimFallbackLengthSquared) target.set(forwardX, 0, forwardZ)
+      target.normalize().scaleInPlace(aimDepth + vehicleBlend * vehicleAimDepthIncrease).addInPlace(pivot)
       follow.setTarget(target)
       if (!tracking) {
         tracking = true
         syncMouseLook()
       }
       scene.activeCamera = follow
-      scene.fogStart = 55
-      scene.fogEnd = 155
+      scene.fogStart = followFogStart
+      scene.fogEnd = followFogEnd
       return follow
     },
     inspectionCamera() {

@@ -5,6 +5,8 @@ import type { HoneyOrder } from './long-acre'
 import { createHoneyGear } from './long-acre-art'
 import type { MapPoint } from './sites'
 
+const apiaryOfferRange = 17
+
 const messages: Record<HoneyOrder, string> = {
   kit: `Borrow a veil and jar at the gate shelf. The Farmers Market offers ${honeyReward} coins for one jar.`,
   empty: 'Follow the stepping stones around the rail to the covered extractor. Fill the jar at the tap.',
@@ -27,7 +29,7 @@ export function createHoneyDelivery(meshes: MeshFactory, crew: ReturnType<typeof
   function update(point: Walker, canInteract: boolean) {
     player = point
     available = canInteract
-    panel.hidden = !available || (order === 'kit' && Math.hypot(point.x - apiary.x, point.z - apiary.z) > 17)
+    panel.hidden = !available || (order === 'kit' && Math.hypot(point.x - apiary.x, point.z - apiary.z) > apiaryOfferRange)
     if (panel.hidden) return
     if (status.textContent !== messages[order]) status.textContent = messages[order]
     const action = point.grounded ? honeyAction(order, point) : undefined

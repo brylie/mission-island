@@ -1,8 +1,10 @@
 import { dryMarketRainAge } from './market-runoff.ts'
+import { maximumOrbitArm, maximumOrbitPitch, minimumOrbitArm, minimumOrbitPitch } from './second-island/view-settings.ts'
 
 // Versioned, inspection-only state. Build a new URL so a live session's query
 // parameters and credentials never travel with a scenery bookmark.
 export const landscapeDuration = 96
+const coordinateDecimals = 6
 
 // Keep the scrubber bounded while restoring the exact island time for ambient wildlife and effects.
 export function landscapeWindow(clock: number) {
@@ -43,7 +45,7 @@ function encode(base: string, path: string, groups: Record<string, string | numb
   url.password = ''
   url.searchParams.set('view', '1')
   for (const [key, value] of Object.entries(groups)) {
-    url.searchParams.set(key, typeof value === 'string' ? value : value.map((n) => Number(n.toFixed(6))).join(','))
+    url.searchParams.set(key, typeof value === 'string' ? value : value.map((n) => Number(n.toFixed(coordinateDecimals))).join(','))
   }
   return url.href
 }
@@ -59,7 +61,34 @@ export function saltwindLink(base: string, v: SaltwindView) {
 }
 
 type Limit = readonly [number, number]
-const coordinate: Limit = [-2000, 2000], angle: Limit = [-1e8, 1e8], flag: Limit = [0, 1]
+const positionBound = 2000
+const angleBound = 1e8
+const maximumTime = 1e9
+const coordinate: Limit = [-positionBound, positionBound]
+const angle: Limit = [-angleBound, angleBound]
+const flag: Limit = [0, 1]
+const clock: Limit = [0, maximumTime]
+
+const landscapeFocusBound = 500
+const landscapeFocus: Limit = [-landscapeFocusBound, landscapeFocusBound]
+const landscapeMinimumTilt = 0.034
+const landscapeTopClearance = 0.059
+const landscapeMinimumRadius = 0.55
+const landscapeMaximumRadius = 450
+const landscapeMinimumFov = 0.1
+const landscapeMaximumFov = 2
+const hoursPerDay = 24
+
+const saltwindEastWestBound = 560
+const saltwindNorthSouthBound = 430
+const saltwindVelocityBound = 100
+const saltwindMaximumCycle = 1e9
+const saltwindMaximumSpeed = 12
+const saltwindMaximumTourIndex = 100
+const saltwindMaximumTourProgress = 1e6
+const saltwindOrbitPitch: Limit = [minimumOrbitPitch, maximumOrbitPitch]
+const saltwindOrbitRadius: Limit = [minimumOrbitArm, maximumOrbitArm]
+
 function tuple(params: URLSearchParams, key: string, ...limits: Limit[]) {
   const parts = params.get(key)?.split(',')
   if (!parts || parts.length !== limits.length) return
@@ -69,10 +98,10 @@ function tuple(params: URLSearchParams, key: string, ...limits: Limit[]) {
 }
 
 export function readLandscapeView(params: URLSearchParams): LandscapeView | undefined {
-  const focus = tuple(params, 'focus', [-500, 500], [-500, 500])
+  const focus = tuple(params, 'focus', landscapeFocus, landscapeFocus)
   const target = tuple(params, 'target', coordinate, coordinate, coordinate)
-  const orbit = tuple(params, 'orbit', angle, [0.034, Math.PI - 0.059], [0.55, 450], [0.1, 2])
-  const sky = tuple(params, 'sky', [0, 24], [0, 1], [0, 1e9])
+  const orbit = tuple(params, 'orbit', angle, [landscapeMinimumTilt, Math.PI - landscapeTopClearance], [landscapeMinimumRadius, landscapeMaximumRadius], [landscapeMinimumFov, landscapeMaximumFov])
+  const sky = tuple(params, 'sky', [0, hoursPerDay], [0, 1], clock)
   const display = tuple(params, 'display', flag, flag)
   const runoff = tuple(params, 'runoff', [0, dryMarketRainAge])
   if (params.get('view') !== '1' || !focus || !target || !orbit || !sky || !display || (params.has('runoff') && !runoff)) return
@@ -81,18 +110,18 @@ export function readLandscapeView(params: URLSearchParams): LandscapeView | unde
 }
 
 export function readSaltwindView(params: URLSearchParams): SaltwindView | undefined {
-  const at = tuple(params, 'at', [-560, 560], coordinate, [-430, 430])
+  const at = tuple(params, 'at', [-saltwindEastWestBound, saltwindEastWestBound], coordinate, [-saltwindNorthSouthBound, saltwindNorthSouthBound])
   const eye = tuple(params, 'eye', coordinate, coordinate, coordinate)
-  const pose = tuple(params, 'pose', angle, [-100, 100], flag, flag, [0, 1e9], [0, 12])
-  const orbit = tuple(params, 'orbit', angle, [0.08, 1.22], [3.4, 38], flag)
-  const tour = tuple(params, 'tour', [0, 100], [0, 100], [0, 1e6], flag)
-  const clock = tuple(params, 'time', [0, 1e9])
+  const pose = tuple(params, 'pose', angle, [-saltwindVelocityBound, saltwindVelocityBound], flag, flag, [0, saltwindMaximumCycle], [0, saltwindMaximumSpeed])
+  const orbit = tuple(params, 'orbit', angle, saltwindOrbitPitch, saltwindOrbitRadius, flag)
+  const tour = tuple(params, 'tour', [0, saltwindMaximumTourIndex], [0, saltwindMaximumTourIndex], [0, saltwindMaximumTourProgress], flag)
+  const time = tuple(params, 'time', clock)
   const weather = params.get('weather'), site = params.get('site') ?? ''
-  if (params.get('view') !== '1' || !tour || !Number.isInteger(tour[0]) || !Number.isInteger(tour[1]) || !at || !eye || !pose || !orbit || !clock || !weather
+  if (params.get('view') !== '1' || !tour || !Number.isInteger(tour[0]) || !Number.isInteger(tour[1]) || !at || !eye || !pose || !orbit || !time || !weather
     || !['live', 'morning', 'daylight', 'rain', 'dusk', 'night'].includes(weather) || !/^[a-z-]{0,40}$/.test(site)) return
   const [x, y, z] = at
   const [yaw, velocity, grounded, swimming, cycle, speed] = pose
-  return { point: { x, y, z, velocity, grounded: Boolean(grounded), swimming: Boolean(swimming) }, eye, yaw, cycle, speed, orbit: orbit[0], pitch: orbit[1], arm: orbit[2], overview: Boolean(orbit[3]), time: clock[0], site, weather, tour: { stop: tour[0], leg: tour[1], progress: tour[2], playing: Boolean(tour[3]) } }
+  return { point: { x, y, z, velocity, grounded: Boolean(grounded), swimming: Boolean(swimming) }, eye, yaw, cycle, speed, orbit: orbit[0], pitch: orbit[1], arm: orbit[2], overview: Boolean(orbit[3]), time: time[0], site, weather, tour: { stop: tour[0], leg: tour[1], progress: tour[2], playing: Boolean(tour[3]) } }
 }
 
 export function bindPlaytestCopy(makeLink: () => string | undefined) {

@@ -2,6 +2,9 @@ import { gateStepText } from './gate-repair.ts'
 import type { ServerMessage } from './protocol.ts'
 import { starterResident } from './worlds/starter/residents.ts'
 
+const gateNoticeDurationMs = 3200
+const favorNoticeDurationMs = 4200
+
 type Notice<T> = Extract<ServerMessage, { type: T }>
 
 function names(resident: string, favor: string) {
@@ -42,7 +45,7 @@ export function favorFeedback(notice: Notice<'favor-pay' | 'favor-accepted' | 'f
 // Every neighborly notice, timed for the HUD: a gate step briefly, a favor long enough to read.
 // Any other message returns nothing, so the client can offer every message here first.
 export function neighborFeedback(notice: ServerMessage, localId: number, now: number) {
-  if (notice.type === 'gate-step') return { key: '', label: gateStepText[notice.step], until: now + 3200 }
+  if (notice.type === 'gate-step') return { key: '', label: gateStepText[notice.step], until: now + gateNoticeDurationMs }
   if (notice.type !== 'favor-pay' && notice.type !== 'favor-accepted' && notice.type !== 'favor-report') return undefined
-  return { ...favorFeedback(notice, localId), until: now + 4200 }
+  return { ...favorFeedback(notice, localId), until: now + favorNoticeDurationMs }
 }

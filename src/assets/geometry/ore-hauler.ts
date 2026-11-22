@@ -11,6 +11,9 @@ export const haulerSpec = {
   cargo: { width: 2.17, length: 5.28, height: 1.36, floor: 1.25, z: -1.29 },
 } as const
 
+// The walking volume covers the body below the forward cab roof.
+export const oreHaulerWalkingVolume = { bottom: 0.25, top: 2.65, width: haulerSpec.width, depth: haulerSpec.length } as const
+
 export type HaulerBox = {
   center: readonly [x: number, y: number, z: number]
   size: readonly [width: number, height: number, depth: number]

@@ -12,6 +12,7 @@ import { barrowWalk } from '../src/barrow-gait.ts'
 import { barrowTop } from '../src/barrow.ts'
 import { canPushBarrow } from './barrow-motion.ts'
 import { stepPlayer } from '../src/simulation/movement.ts'
+import { millisecondsPerSecond } from './host-time.ts'
 
 const fireExtinguishSeconds = 5
 
@@ -22,7 +23,7 @@ export function prepareCrewMotion(member: CrewMember, active: boolean, now: numb
   player.throwing = now < member.throwUntil
   if (!active) stopPrimary(member)
   if (player.charge && member.primary) {
-    player.charge.power = chargePower(player.charge.kind, (now - member.primary.since) / 1000)
+    player.charge.power = chargePower(player.charge.kind, (now - member.primary.since) / millisecondsPerSecond)
   }
 }
 

@@ -1,6 +1,13 @@
 import { crateStarts, dockEndZ, harborDock } from '../../src/world.ts'
 import { standAt, type Scenario } from './scenario.ts'
 
+const firstCrewCrateLateralM = -0.8
+const secondCrewCrateLateralM = 0.8
+const crewCrateSetbackM = 1.5
+const firstCrewDockLateralM = -0.65
+const secondCrewDockLateralM = 0.65
+const crewDockEndOffsetM = 0.2
+
 export const harborScenarios: Scenario[] = [
   {
     id: 'harbor-delivery',
@@ -8,7 +15,7 @@ export const harborScenarios: Scenario[] = [
     island: 'Starter Island',
     placePlayer(player) {
       const crate = crateStarts[0]
-      standAt(player, { x: crate.x + (player.id === 0 ? -0.8 : 0.8), z: crate.z - 1.5 })
+      standAt(player, { x: crate.x + (player.id === 0 ? firstCrewCrateLateralM : secondCrewCrateLateralM), z: crate.z - crewCrateSetbackM })
     },
   },
   {
@@ -16,7 +23,7 @@ export const harborScenarios: Scenario[] = [
     title: 'Fishing · Cast from the dock',
     island: 'Starter Island',
     placePlayer(player) {
-      standAt(player, { x: harborDock.x + (player.id === 0 ? -0.65 : 0.65), z: dockEndZ + 0.2 }, Math.PI)
+      standAt(player, { x: harborDock.x + (player.id === 0 ? firstCrewDockLateralM : secondCrewDockLateralM), z: dockEndZ + crewDockEndOffsetM }, Math.PI)
       player.inventory = ['fishing-rod']
       player.equipped = 'fishing-rod'
     },
