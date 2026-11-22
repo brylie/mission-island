@@ -36,3 +36,17 @@ Use these cases to check that the skill catches what it should. Each comes from 
 **Input.** A tutorial stamped **verified** because its author ran the steps and the tests passed.
 
 **Should catch:** under the framework, a tutorial is verified only when someone else completes it. The stamp should say who ran it, when and at which commit. It should also ask for an expected result at each step.
+
+## Results
+
+**2026-11-22, case 2 extended to all six habitat Life lines.** 25 claims checked from 17 opened pages. Results:
+- 18 claims sourced.
+- 4 claims partial or contested.
+- 3 claims left unsourced.
+
+It caught three claims we had overstated or got wrong:
+- Whinchats nest in tussocks, not in bracken.
+- Woodland edges are "valuable", not "the richest" part of a wood.
+- Juniper's decline is partly from browsing, not only a lack of lightly grazed ground.
+
+It used no search snippets and cited nothing it hadn't opened. The rules it found unclear (PDFs, charity tiers, partial support, fetcher quotes, habitat mismatch) are now covered in [sources](references/sources.md#awkward-cases).

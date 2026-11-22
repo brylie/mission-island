@@ -69,3 +69,276 @@
   supports:
     - claim: Muirburn licensing in practice for the 2026–27 season.
       used-in: explainers/wildfire.md#sources
+
+# Added 2026-11-22 by the Knowledge Keeper's first sourcing run. Quotes came back through a summarising
+# fetcher (quote-via: fetcher), so a person should check each against its page before marking claims verified.
+
+- id: wt-caledonian-forest
+  title: "Caledonian forest"
+  publisher: The Wildlife Trusts
+  url: https://www.wildlifetrusts.org/node/3162
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: Scotland
+  supports:
+    - claim: "Red squirrel, crossbill (including the Scottish crossbill), crested tit, wood ants and capercaillie live in Caledonian pinewood."
+      quote: "check the deep crowns for crossbills (including the endemic Scottish crossbill"
+      used-in: field-guide/highwood-habitats.md#pinewood-interior
+    - claim: "Crested tits use holes in standing deadwood."
+      quote: "Crested tits like holes in standing deadwood"
+      used-in: field-guide/highwood-habitats.md#pinewood-interior
+
+- id: woodtrust-caledonian
+  title: "Caledonian forest and native conifer woods"
+  publisher: Woodland Trust
+  url: https://woodlandtrust.org.uk/trees-woods-and-wildlife/habitats/caledonian-forest-and-native-conifer-woods/
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: Scotland
+  supports:
+    - claim: "Crested tit in Caledonian pinewood."
+      quote: "(quote to add)"
+      used-in: field-guide/highwood-habitats.md#pinewood-interior
+
+- id: fc-rides-edges
+  title: "Nature's hidden havens: rides, edges and glades"
+  publisher: Forestry Commission
+  url: https://forestrycommission.blog.gov.uk/2025/07/28/natures-hidden-havens-rides-edges-and-glades
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: England
+  supports:
+    - claim: "Woodland edges and glades are valuable habitats, for songbirds and for butterflies in sunny clearings."
+      quote: "Open glades allow sunlight to reach the ground and create warm patches for butterflies"
+      used-in: field-guide/highwood-habitats.md#edges-and-gaps
+
+- id: fls-deer-management
+  title: "Deer management"
+  publisher: Forestry and Land Scotland
+  url: https://forestryandland.gov.scot/what-we-do/about-us/corporate-information/deer-management
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: Scotland
+  supports:
+    - claim: "Deer browse young trees."
+      quote: "Deer will also eat young trees, killing or deforming them"
+      used-in: field-guide/highwood-habitats.md#edges-and-gaps
+
+- id: woodtrust-juniper
+  title: "Juniper"
+  publisher: Woodland Trust
+  url: https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/juniper/
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: United Kingdom
+  supports:
+    - claim: "Juniper has declined across the UK."
+      quote: "has been declining throughout the UK in range and abundance"
+      used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
+    - claim: "Browsing by deer and rabbits is partly to blame for juniper's decline."
+      quote: "partially attributed to browsing of foliage by deer and rabbits"
+      used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
+
+- id: plantlife-lowland-juniper
+  title: "Saving England's lowland juniper"
+  publisher: Plantlife
+  url: https://www.plantlife.org.uk/our-work/saving-englands-lowland-juniper/
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 2
+  region: England
+  supports:
+    - claim: "Juniper regeneration needs early-successional, open ground."
+      quote: "Early successional habitat suitable for Juniper regeneration has been created"
+      used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
+
+- id: wt-heather
+  title: "Heather"
+  publisher: The Wildlife Trusts
+  url: https://www.wildlifetrusts.org/wildlife-explorer/wildflowers/heather
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: United Kingdom
+  supports:
+    - claim: "Heather attracts nectar-feeding insects."
+      quote: "attract all kinds of nectar-loving insects"
+      used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
+
+- id: woodtrust-heathland
+  title: "Heathland and moorland"
+  publisher: Woodland Trust
+  url: https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/habitats/heathland-and-moorland/
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: United Kingdom
+  supports:
+    - claim: "Heath supports ground-nesting birds."
+      quote: "home to specialist insects and ground-nesting birds"
+      used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
+
+- id: rspb-heathland
+  title: "Heathland"
+  publisher: RSPB
+  url: https://www.rspb.org.uk/birds-and-wildlife/habitats/heathland
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: United Kingdom
+  supports:
+    - claim: "Heath supports common lizards."
+      quote: "basking reptiles, such as Common lizards"
+      used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
+
+- id: jncc-h4060
+  title: "Alpine and Boreal heaths (H4060)"
+  publisher: JNCC
+  url: https://sac.jncc.gov.uk/habitat/H4060
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: United Kingdom
+  supports:
+    - claim: "Exposed heath holds low, wind-pruned plants, with lichens. Describes montane heath, higher than the island's ridge."
+      quote: "low-growing or prostrate owing to exposure to high winds"
+      used-in: field-guide/highwood-habitats.md#exposed-ridge-toward-windstone-ridge
+
+- id: wt-meadow-pipit
+  title: "Meadow pipit"
+  publisher: The Wildlife Trusts
+  url: https://wildlifetrusts.org/node/102
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: United Kingdom
+  supports:
+    - claim: "Meadow pipits nest on moorland, heath and rough grassland."
+      quote: "a common nesting bird of moorland, heathland and rough grassland"
+      used-in: field-guide/highwood-habitats.md#exposed-ridge-toward-windstone-ridge
+
+- id: woodtrust-alder
+  title: "Alder"
+  publisher: Woodland Trust
+  url: https://woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/alder
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: United Kingdom
+  supports:
+    - claim: "Alder roots have nitrogen-fixing nodules that condition the soil."
+      quote: "The roots have nitrogen-fixing nodules, conditioning the soil"
+      used-in: field-guide/highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks
+    - claim: "Siskin, redpoll and goldfinch eat alder seeds."
+      quote: "the seeds are eaten by the siskin, redpoll and goldfinch"
+      used-in: field-guide/highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks
+    - claim: "Otters nest among alder roots."
+      quote: "Alder roots make the perfect nest sites for otters."
+      used-in: field-guide/highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks
+
+- id: wt-wet-woodland
+  title: "Wet woodland"
+  publisher: The Wildlife Trusts
+  url: https://www.wildlifetrusts.org/node/3168
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: United Kingdom
+  supports:
+    - claim: "Wet, decaying wood is good habitat for invertebrates."
+      quote: "Wet, decaying wood and seepages make good habitat for invertebrates"
+      used-in: field-guide/highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks
+
+- id: tfl-bracken
+  title: "Bracken species profile"
+  publisher: Trees for Life
+  url: https://treesforlife.org.uk/forest/species-profiles/bracken/
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 2
+  region: Scotland
+  supports:
+    - claim: "Bracken fronds contain toxic compounds."
+      quote: "fronds contain toxic compounds"
+      used-in: field-guide/highwood-habitats.md#bracken-slopes
+    - claim: "Bracken with violets is important habitat for the pearl-bordered fritillary."
+      quote: "(quote to add)"
+      used-in: field-guide/highwood-habitats.md#bracken-slopes
+
+- id: scotgov-bracken-2025
+  title: "Bracken presence and management practices on Scottish grassland farms, 2025"
+  publisher: Scottish Government
+  url: https://www.gov.scot/publications/bracken-presence-management-practices-scottish-grassland-farms-2025/pages/2/
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: Scotland
+  supports:
+    - claim: "Bracken is directly toxic to livestock."
+      quote: "direct toxicity from bracken"
+      used-in: field-guide/highwood-habitats.md#bracken-slopes
+
+- id: lakedistrict-lyme
+  title: "Lyme disease"
+  publisher: Lake District National Park
+  url: https://lakedistrict.gov.uk/?p=12647
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: England
+  supports:
+    - claim: "People are most at risk of picking up ticks brushing through tall vegetation, especially bracken."
+      quote: "most at risk of picking up ticks when brushing through tall vegetation, especially bracken"
+      used-in: field-guide/highwood-habitats.md#bracken-slopes
+
+- id: bto-whinchat
+  title: "Whinchat BirdFacts"
+  publisher: British Trust for Ornithology
+  url: https://bto.org/understanding-birds/birdfacts/whinchat
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: United Kingdom
+  supports:
+    - claim: "Whinchats nest in grass tussocks and use bracken as perches."
+      quote: "tussocks for nest sites"
+      used-in: field-guide/highwood-habitats.md#bracken-slopes, explainers/bracken-slopes.md#how-bracken-changes-a-place

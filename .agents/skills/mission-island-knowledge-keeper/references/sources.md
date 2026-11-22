@@ -28,8 +28,8 @@ Language models invent believable citations and misremember real ones, and do so
 
 ## Tiers
 
-1. A recognised body (a government agency, national conservation body or professional council) or peer-reviewed work.
-2. Another primary source, such as an official dataset, a statute or an organisation's own account of its practice.
+1. A recognised body or peer-reviewed work. Recognised bodies include government agencies, statutory conservation bodies such as NatureScot and JNCC, professional councils, and national conservation charities with scientific staff, such as the Woodland Trust, the Wildlife Trusts, RSPB, BTO and Butterfly Conservation, when they describe general natural history.
+2. Another primary source, such as an official dataset, a statute, or an organisation's account of its own project, practice or campaign. For example, a charity's species profile written to support its own restoration work is tier 2.
 3. A reputable secondary source, such as an encyclopedia, a quality newspaper or a textbook.
 4. A community report, a forum or an unattributed page.
 
@@ -62,3 +62,13 @@ Add one entry per source to [`docs/sources.yaml`](../../../../docs/sources.yaml)
 ## Status of a claim
 
 `unsourced` → `sourced` (you may set this) → `verified` (only a person who checked the quote against the source).
+
+Two more statuses sit beside these:
+- **`partial`** means a source supports part of the claim. Reword the claim to what's supported, and list the remainder as unsourced.
+- **`contested`** means good sources disagree. Cite both.
+
+## Awkward cases
+
+- **Found but unreadable.** A PDF you can't extract, or a site that blocks automated reading. Record it with `opened: false` and a `note` saying why, and add the claim to the open questions index. Don't cite it.
+- **Quotes from a fetcher.** When a tool returns page text through a summarising model, its "quotes" may be paraphrases. Record `quote-via: fetcher`, and treat the claim as needing a person to check the quote against the page.
+- **Right region, different habitat.** A source about montane heath supporting a claim about a low coastal ridge, for example. Cite it, and say in the entry and on the page what it actually describes, so the mismatch shows.
