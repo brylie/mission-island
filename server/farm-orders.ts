@@ -4,20 +4,29 @@ import { pushedBarrowPose } from '../src/barrow.ts'
 import { canPushBarrow } from './barrow-motion.ts'
 import { distance } from '../src/world.ts'
 import { barrowPickup } from '../src/worlds/starter/farm-order-sites.ts'
-import { stopPrimary, stowTool, type CrewNotice } from './crew.ts'
+import { stopPrimary, stowTool, type CrewBroadcast } from './crew.ts'
+import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
 import type { InteractionHandlers } from './interactions.ts'
 
 const barrowPackingGestureMs = 420
 const barrowFacingMinDistance = 0.1
 
-export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotice) => void, clock: () => number, checkpoint?: () => void) {
+export function createFarmOrders(state: Snapshot, notifyCrew: CrewBroadcast, clock: () => number, checkpoint?: () => void, metrics?: Pick<GameplayPlaytestMetrics, 'emit'>) {
   const work = state.farmWork
   const { progress } = work
 
-  function deliver(id: FarmOrderId, quantity: number) {
+  function accept(id: FarmOrderId, slot: number) {
+    progress.stage = id
+    const job = `produce:${id}` as const
+    metrics?.emit(state, { event: 'job-choice', slot, job, choices: [job], result: 'accepted' })
+  }
+
+  function deliver(id: FarmOrderId, quantity: number, slot: number) {
     progress.delivered += quantity
     const order = farmOrders[id]
-    if (progress.delivered < order.quantity) return
+    const complete = progress.delivered >= order.quantity
+    metrics?.emit(state, { event: 'job-progress', job: `produce:${id}`, slot, progress: progress.delivered, target: order.quantity, complete })
+    if (!complete) return
     progress.stage = id === 'starter' ? 'qualified' : 'complete'
     progress.delivered = 0
     if (id === 'starter') work.barrow = restoreFarmWork(progress).barrow
@@ -30,7 +39,7 @@ export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotic
     if (!barrow || barrow.handler !== handler) return
     Object.assign(barrow, { ...barrowPickup, handler: null })
     checkpoint?.()
-    notifyCrew({ type: 'barrow-returned' })
+    notifyCrew({ type: 'barrow-returned' }, handler)
   }
 
   function tick(player: Player) {
@@ -53,16 +62,12 @@ export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotic
   }
 
   const interactions = {
-    'accept-produce'() {
-      progress.stage = 'starter'
-    },
-    'accept-barrow-order'() {
-      progress.stage = 'harvest'
-    },
+    'accept-produce': ({ player }) => accept('starter', player.id),
+    'accept-barrow-order': ({ player }) => accept('harvest', player.id),
     'deliver-produce'({ player }) {
       const quantity = Math.min(player.goods.carrots, farmOrders.starter.quantity - progress.delivered)
       player.goods.carrots -= quantity
-      deliver('starter', quantity)
+      deliver('starter', quantity, player.id)
     },
     'pack-barrow'(member) {
       const { player } = member
@@ -71,10 +76,10 @@ export function createFarmOrders(state: Snapshot, notifyCrew: (notice: CrewNotic
       progress.load += quantity
       if (work.barrow?.handler !== player.id) member.reachUntil = clock() + barrowPackingGestureMs
     },
-    'unload-barrow'() {
+    'unload-barrow'({ player }) {
       const quantity = progress.load
       progress.load = 0
-      deliver('harvest', quantity)
+      deliver('harvest', quantity, player.id)
     },
     'grip-barrow'(member) {
       const { barrow } = work

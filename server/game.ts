@@ -69,6 +69,14 @@ function stepVehicles(
   return { before, still }
 }
 
+function stepWildlife(state: Snapshot, driftwood: ReturnType<typeof createDriftwoodSchool>, juniper: ReturnType<typeof createJuniperHabitat>, tick: number) {
+  state.driftwood = driftwood.step(state.players, state.skiff)
+  // Animal motion follows real simulation ticks, even when the crew sleeps through the night.
+  if (tick % juniperUpdateIntervalTicks === 0) {
+    state.juniper = juniper(tick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping))
+  }
+}
+
 // A checkpoint can arrange the ferry stage, the truck and loose crates, so physics follows the arranged world.
 function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>, trial: T) {
   physics.placeFerry(state)
@@ -93,12 +101,12 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
   const freight = createFreight(crew, state, clock, checkpoint)
-  const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
-  const journal = createJournal(state, checkpoint)
-  const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint)
+  const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint, metrics?.gameplay)
+  const journal = createJournal(state, checkpoint, metrics?.gameplay)
+  const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint, metrics?.gameplay)
   const { interactions, gate, residents, farm }
-    = createGameInteractions({ state, growth }, physics, { notifyCrew: observeCrewNotices(state, crew.notifyAll, metrics), orders, freight, journal, clock, checkpoint })
-  const aviation = createAviation(state, crew.notifyAll, checkpoint)
+    = createGameInteractions({ state, growth }, physics, { notifyCrew: observeCrewNotices(state, crew.notifyAll, metrics), orders, freight, journal, clock, checkpoint, metrics: metrics?.gameplay })
+  const aviation = createAviation(state, crew.notifyAll, checkpoint, metrics?.gameplay)
 
   function tick(): Readonly<Snapshot> {
     const now = clock()
@@ -130,12 +138,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       farm.tick(player)
     }
     updateHeldItems(state)
-    state.driftwood = driftwood.step(state.players, state.skiff)
-    // Animal motion follows real simulation ticks, even when the crew sleeps through the night.
-    if (++wildlifeTick % juniperUpdateIntervalTicks === 0) {
-      state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping))
-    }
-    metrics?.sample(state, skippedFrom)
+    stepWildlife(state, driftwood, juniper, ++wildlifeTick)
+    metrics?.sample(state, skippedFrom, { members, now })
     return state
   }
 
@@ -220,6 +224,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         gate.releasePin(member.player.id)
         farm.recover(member.player.id)
         aviation.interrupt(member)
+        if (!trial || state.playtest?.started) metrics?.sample(state)
       },
     }
   }
