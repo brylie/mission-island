@@ -1,5 +1,6 @@
 import type { Material } from '@babylonjs/core/Materials/material'
 import { createFieldOutingScenery } from './assets/field-outing'
+import { mirrorPoolMist } from './assets/recipes/starter-phenomena'
 import { createBuoy, createDock, createHarborBoat } from './assets/waterfront'
 import { createClothingCounter, createHomeChest, createRock, createTree, createUmbrella, createWardrobe, umbrellaColors } from './assets/props'
 import { createHouse } from './assets/buildings'
@@ -122,7 +123,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const ferns = createUnderstory(meshes)
   const wildlife = createStarterWildlife(meshes)
   const phenomena = createPhenomena(meshes.scene, [
-    { ...pool, name: 'Mirror Pool dawn mist', kind: 'mist', y: waterLevel, extent: 22, seed: 5182, scatter: true },
+    { ...mirrorPoolMist, ...pool, y: waterLevel },
     ...(substitutions.liveParticles
       ? []
       : [

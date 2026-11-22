@@ -174,11 +174,6 @@
       "count": 33
     }
   },
-  "src/assets/flatbed.ts": {
-    "no-magic-numbers": {
-      "count": 101
-    }
-  },
   "src/assets/foxglove.ts": {
     "no-magic-numbers": {
       "count": 76
@@ -197,16 +192,6 @@
   "src/assets/net-shed.ts": {
     "no-magic-numbers": {
       "count": 56
-    }
-  },
-  "src/assets/oystercatcher.ts": {
-    "no-magic-numbers": {
-      "count": 150
-    }
-  },
-  "src/assets/particle-texture.ts": {
-    "no-magic-numbers": {
-      "count": 162
     }
   },
   "src/assets/ridge-flight-orbs.ts": {
@@ -269,19 +254,9 @@
       "count": 113
     }
   },
-  "src/assets/waterfront.ts": {
-    "no-magic-numbers": {
-      "count": 142
-    }
-  },
   "src/assets/wayfinding-sign.ts": {
     "no-magic-numbers": {
       "count": 28
-    }
-  },
-  "src/assets/wren-gate.ts": {
-    "no-magic-numbers": {
-      "count": 138
     }
   },
   "src/audio/dsp.ts": {
@@ -511,7 +486,7 @@
   },
   "src/island-world.ts": {
     "no-magic-numbers": {
-      "count": 61
+      "count": 59
     }
   },
   "src/jobs.ts": {
@@ -844,11 +819,6 @@
       "count": 23
     }
   },
-  "src/simulation/truck.ts": {
-    "no-magic-numbers": {
-      "count": 24
-    }
-  },
   "src/soaring-guide.ts": {
     "no-magic-numbers": {
       "count": 3
@@ -882,11 +852,6 @@
   "src/truck-pose.ts": {
     "no-magic-numbers": {
       "count": 3
-    }
-  },
-  "src/vehicles/flatbed.ts": {
-    "no-magic-numbers": {
-      "count": 30
     }
   },
   "src/wardrobe-preview.ts": {
@@ -1029,11 +994,6 @@
       "count": 9
     }
   },
-  "src/workbench/island-shader-studies.ts": {
-    "no-magic-numbers": {
-      "count": 168
-    }
-  },
   "src/workbench/landscape-layout.ts": {
     "no-magic-numbers": {
       "count": 30
@@ -1154,11 +1114,6 @@
       "count": 21
     }
   },
-  "src/workbench/shader-studies.ts": {
-    "no-magic-numbers": {
-      "count": 127
-    }
-  },
   "src/workbench/site-drafts.ts": {
     "no-magic-numbers": {
       "count": 10
@@ -1202,11 +1157,6 @@
   "src/world-particles.ts": {
     "no-magic-numbers": {
       "count": 9
-    }
-  },
-  "src/world.ts": {
-    "no-magic-numbers": {
-      "count": 139
     }
   },
   "src/worlds/starter/island-remarks.ts": {

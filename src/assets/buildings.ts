@@ -11,7 +11,7 @@ export function createHouse(meshes: MeshFactory, building: typeof buildings[numb
   const root = new TransformNode('House', scene)
   const { x, z, w, d, h, wall } = building
   root.position.set(x, 0, z)
-  root.rotation.y = 'heading' in building ? building.heading ?? 0 : 0
+  root.rotation.y = building.heading ?? 0
 
   const { roof, foundation, door, windows, chimney } = starterHouseModel
   const { frame, glazing, mullion } = windows

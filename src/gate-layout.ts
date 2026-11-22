@@ -1,6 +1,7 @@
+import { gardenFenceModel, wrenGateGeometry } from './assets/geometry/wren-gate.ts'
 import type { Snapshot } from './protocol.ts'
 import { dawnsBetween } from './weather.ts'
-import { wrenCottage } from './world.ts'
+import { mendingBench, wrenCottage } from './world.ts'
 import type { Point } from './world.ts'
 
 // Wren's front garden. The fence is taller than a jump, so the gate is the only way in.
@@ -8,19 +9,16 @@ const fenceSetback = 2.35
 const gardenHalfWidth = 2.6
 const sideFenceOverlap = 0.7
 const postClearance = 0.06
-const leafLength = 1.06
-const leafHeight = 1.5
-const leafThickness = 0.08
 const gatewayHalfWidth = 0.55
 const half = 0.5
 
 export const front = wrenCottage.z - wrenCottage.d * half
 export const fenceZ = front - fenceSetback
-export const fenceHeight = 1.55
+export const fenceHeight = gardenFenceModel.height
 export const gateway: Point = { x: wrenCottage.x, z: fenceZ }
 export const hingePost: Point = { x: gateway.x - gatewayHalfWidth, z: fenceZ }
-export const gateLeaf = { length: leafLength, height: leafHeight, thickness: leafThickness }
-export const mendingPinHeight = 0.95
+export const gateLeaf = wrenGateGeometry.leaf
+export const mendingPinHeight = mendingBench.geometry.pin.y
 
 const west = wrenCottage.x - gardenHalfWidth
 const east = wrenCottage.x + gardenHalfWidth

@@ -20,8 +20,11 @@ const calf = [
   [-0.174, lowerLegX, 0.009, 0.104, 0.111],
 ] as const satisfies readonly Contour[]
 
+// Height of the hip joint above the soles.
+export const crewHipHeight = 0.68
+
 export const crewLegClothing = {
-  pivot: { x: 0.18, z: 0.02 },
+  pivot: { x: 0.18, y: crewHipHeight, z: 0.02 },
   trouserLeg: {
     contour: [
       [-0.465, lowerLegX, 0, 0.108, 0.111],

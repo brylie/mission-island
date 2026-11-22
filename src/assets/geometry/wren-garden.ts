@@ -36,8 +36,15 @@ export const sawhorseGeometry = {
 } as const
 
 const mendingBenchSurface = { width: 1.6, depth: 0.7, top: 0.86, centreY: 0.82, thickness: 0.08 } as const
+const benchTray = { x: 0.35, y: 0.89, z: 0.1, size: [0.4, 0.06, 0.26], color: '#3f5d5a' } as const
+const benchWood = '#7a5a3f'
 export const mendingBenchGeometry = {
   surface: mendingBenchSurface,
+  surfaceColor: '#a77a52',
+  legs: { x: [-0.7, 0.7], y: 0.4, z: [-0.27, 0.27], size: [0.09, 0.8, 0.09], color: benchWood },
+  shelf: { y: 0.2, size: [1.4, 0.05, 0.55], color: benchWood },
+  tray: benchTray,
+  pin: { x: benchTray.x, y: 0.95, z: benchTray.z },
   supportBoxes: [[mendingBenchSurface.width, mendingBenchSurface.depth, mendingBenchSurface.top]],
 } as const
 

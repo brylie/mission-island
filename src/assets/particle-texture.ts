@@ -1,96 +1,138 @@
 import { RawTexture } from '@babylonjs/core/Materials/Textures/rawTexture'
 import type { Scene } from '@babylonjs/core/scene'
+import { fiberShapes, particleShapes, soleShape, textureWobble, wetShapes, wingedShapes } from './effects/particle-shapes'
 
 export type ParticleShape = 'mist' | 'flame' | 'smoke' | 'drop' | 'streak' | 'leaf' | 'mote'
   | 'foam' | 'ring' | 'crescent' | 'bubble' | 'bead' | 'parachute' | 'clod' | 'feather' | 'sole' | 'moth' | 'bee' | 'petal'
 export const particleTextureSize = 48
 
+type Texel = readonly [opacity: number, luminance: number]
+
+const pixelCenterOffset = 0.5
+const half = 0.5
+const channelsPerPixel = 4
+const maxByte = 255
+const squarePower = 2
 const clamp = (value: number) => Math.min(1, Math.max(0, value))
 
-function fiber(shape: 'parachute' | 'feather', u: number, v: number) {
+function fiber(shape: 'parachute' | 'feather', u: number, v: number): Texel {
   if (shape === 'parachute') {
-    const crown = Math.abs(v + 0.47 - u * u * 0.5)
-    const spokes = Math.cos(Math.atan2(u, -v + 0.48) * 27) ** 6
-    const tuft = clamp((0.85 - Math.abs(u)) * 17) * clamp(1 - crown * 7) * (0.32 + spokes * 0.68)
-    const stem = clamp(1 - Math.abs(u) * 15) * (v > -0.43 && v < 0.62 ? 0.73 : 0)
-    const seed = clamp(1 - Math.hypot(u * 10, (v - 0.65) * 5.8))
-    return [Math.max(tuft, stem, seed), v > 0.46 ? 185 : 248]
+    const { crown, spokes, tuft, stem, seed, shade } = fiberShapes.parachute
+    const fromCrown = Math.abs(v + crown.rise - u * u * crown.curvature)
+    const spokesMask = Math.cos(Math.atan2(u, -v + spokes.originV) * spokes.count) ** spokes.sharpness
+    const tuftMask = clamp((tuft.halfWidth - Math.abs(u)) * tuft.edgeFalloff)
+      * clamp(1 - fromCrown * crown.falloff) * (spokes.baseOpacity + spokesMask * spokes.opacityVariation)
+    const stemMask = clamp(1 - Math.abs(u) * stem.edgeFalloff) * (v > stem.startV && v < stem.endV ? stem.opacity : 0)
+    const seedMask = clamp(1 - Math.hypot(u * seed.uScale, (v - seed.centerV) * seed.vScale))
+    return [Math.max(tuftMask, stemMask, seedMask), v > seed.darkensAtV ? seed.shade : shade]
   }
-  const bend = u + 0.22 * Math.sin((v + 0.5) * 2.5)
-  const width = 0.54 * Math.max(0, 1 - v * v) ** 1.55 * (1 - v * 0.28)
-  const rim = clamp((width - Math.abs(bend)) * 13)
-  const breaks = 0.63 + 0.37 * Math.abs(Math.sin(v * 31 - Math.abs(bend) * 13))
-  const shaft = clamp(1 - Math.abs(bend) * 18) * clamp((0.95 - Math.abs(v)) * 10)
-  return [Math.max(rim * breaks, shaft), Math.abs(bend) < 0.05 ? 181 : 247]
+  const { bend, vane, barbs, quill, shade } = fiberShapes.feather
+  const bentU = u + bend.amount * Math.sin((v + bend.offsetV) * bend.frequency)
+  const width = vane.halfWidth * Math.max(0, 1 - v * v) ** vane.taperPower * (1 - v * vane.tipTaper)
+  const rim = clamp((width - Math.abs(bentU)) * vane.edgeFalloff)
+  const breaks = barbs.baseOpacity + barbs.opacityVariation * Math.abs(Math.sin(v * barbs.frequencyV - Math.abs(bentU) * barbs.slant))
+  const shaft = clamp(1 - Math.abs(bentU) * quill.lateralFalloff) * clamp((quill.halfLength - Math.abs(v)) * quill.endFalloff)
+  return [Math.max(rim * breaks, shaft), Math.abs(bentU) < quill.stripeHalfWidth ? quill.shade : shade]
 }
 
-function wetShape(shape: 'foam' | 'ring' | 'crescent' | 'bubble' | 'bead', u: number, v: number, radius: number, wobble: number) {
+function radialBand(radius: number, band: { radius: number, falloff: number }) {
+  return clamp(1 - Math.abs(radius - band.radius) * band.falloff)
+}
+
+function wetShape(shape: keyof typeof wetShapes, u: number, v: number, radius: number, wobble: number): Texel {
   switch (shape) {
-    case 'foam':
-      return [clamp((0.88 - radius + 0.15 * wobble) * 6) * (0.48 + 0.49 * Math.abs(wobble)), 251]
-    case 'ring':
-      return [clamp(1 - Math.abs(radius - 0.73) * 13) * (0.76 + 0.24 * wobble), 255]
+    case 'foam': {
+      const foam = wetShapes.foam
+      const edge = clamp((foam.radius - radius + foam.edgeWobble * wobble) * foam.edgeFalloff)
+      return [edge * (foam.baseOpacity + foam.opacityVariation * Math.abs(wobble)), foam.shade]
+    }
+    case 'ring': {
+      const ring = wetShapes.ring
+      return [radialBand(radius, ring.band) * (ring.baseOpacity + ring.opacityVariation * wobble), maxByte]
+    }
     case 'crescent': {
-      const outer = clamp(1 - Math.abs(radius - 0.71) * 14)
-      return [outer * clamp((v + 0.11) * 2.45), 251]
+      const crescent = wetShapes.crescent
+      return [radialBand(radius, crescent.band) * clamp((v + crescent.maskOffsetV) * crescent.maskFalloff), crescent.shade]
     }
     case 'bubble': {
-      const rim = clamp(1 - Math.abs(radius - 0.72) * 11) * 0.74
-      const glint = clamp(1 - Math.hypot(u + 0.33, v + 0.44) * 5.2)
-      return [Math.max(rim, glint), 254]
+      const { band, rimOpacity, glint, shade } = wetShapes.bubble
+      const rim = radialBand(radius, band) * rimOpacity
+      const highlight = clamp(1 - Math.hypot(u - glint.centerU, v - glint.centerV) * glint.falloff)
+      return [Math.max(rim, highlight), shade]
     }
     case 'bead': {
-      const rim = clamp(1 - Math.abs(radius - 0.65) * 10) * 0.56
-      const glint = clamp(1 - Math.hypot(u + 0.24, v + 0.35) * 4.2)
-      return [Math.max(rim, glint, clamp(0.68 - radius) * 0.43), 252]
+      const { band, rimOpacity, glint, core, shade } = wetShapes.bead
+      const rim = radialBand(radius, band) * rimOpacity
+      const highlight = clamp(1 - Math.hypot(u - glint.centerU, v - glint.centerV) * glint.falloff)
+      return [Math.max(rim, highlight, clamp(core.radius - radius) * core.opacity), shade]
     }
   }
 }
 
-function wingedShape(shape: 'bee' | 'moth', u: number, v: number) {
+function wingedShape(shape: 'bee' | 'moth', u: number, v: number): Texel {
+  const { body, wing, bee, moth } = wingedShapes
   const side = Math.abs(u)
-  const body = clamp(1 - Math.hypot(u * 4.4, v * 1.46) ** 2)
-  const wing = clamp(1 - Math.hypot((side - 0.47) * 2.38, (v + side * 0.33) * 2.38) ** 1.3)
-  const stripe = shape === 'bee' ? 142 + 106 * Math.abs(Math.sin(v * 8)) : 224
-  return [Math.max(body, wing * (shape === 'bee' ? 0.64 : 0.91)), body > 0.38 ? stripe : 252]
+  const bodyMask = clamp(1 - Math.hypot(u * body.uScale, v * body.vScale) ** squarePower)
+  const wingMask = clamp(1 - Math.hypot((side - wing.centerU) * wing.scale, (v + side * wing.slant) * wing.scale) ** wing.featherPower)
+  const stripe = shape === 'bee' ? bee.stripeBaseShade + bee.stripeShadeVariation * Math.abs(Math.sin(v * bee.stripeFrequency)) : moth.bodyShade
+  return [Math.max(bodyMask, wingMask * wingedShapes[shape].wingOpacity), bodyMask > body.shadeThreshold ? stripe : wing.shade]
 }
 
-function footprintShape(u: number, v: number) {
-  const toe = clamp((0.89 - Math.hypot(u * 1.07, (v - 0.27) * 1.45)) * 5)
-  const heel = clamp((0.57 - Math.hypot(u * 1.44, (v + 0.49) * 1.56)) * 6)
-  const tread = Math.abs(Math.sin(v * 24 + Math.abs(u) * 4))
-  return [Math.max(toe, heel) * (0.62 + 0.38 * tread), 255]
+function footprintShape(u: number, v: number): Texel {
+  const { toe, heel, tread } = soleShape
+  const toeMask = clamp((toe.radius - Math.hypot(u * toe.uScale, (v - toe.centerV) * toe.vScale)) * toe.falloff)
+  const heelMask = clamp((heel.radius - Math.hypot(u * heel.uScale, (v - heel.centerV) * heel.vScale)) * heel.falloff)
+  const grooves = Math.abs(Math.sin(v * tread.frequencyV + Math.abs(u) * tread.curveU))
+  return [Math.max(toeMask, heelMask) * (tread.baseOpacity + tread.opacityVariation * grooves), maxByte]
 }
 
-function shadeParticle(shape: ParticleShape, u: number, v: number) {
+function shadeParticle(shape: ParticleShape, u: number, v: number): Texel {
   const radius = Math.hypot(u, v)
-  const wobble = Math.sin(u * 14 + v * 7) * Math.cos(u * 9 - v * 13)
+  const { sineU, sineV, cosineU, cosineV } = textureWobble
+  const wobble = Math.sin(u * sineU + v * sineV) * Math.cos(u * cosineU - v * cosineV)
   switch (shape) {
     case 'flame': {
-      const bend = Math.hypot((u + 0.11 * Math.sin(v * 5)) * (1.3 - v * 0.45), v)
-      return [Math.max(0, 1 - bend * bend + wobble * 0.085) ** 2, 255]
+      const flame = particleShapes.flame
+      const bentRadius = Math.hypot((u + flame.bend * Math.sin(v * flame.bendFrequency)) * (flame.width - v * flame.tipTaper), v)
+      return [Math.max(0, 1 - bentRadius * bentRadius + wobble * flame.edgeWobble) ** squarePower, maxByte]
     }
     case 'smoke':
-      return [Math.max(0, 1 - radius * radius + wobble * 0.16) ** 2, 255]
-    case 'leaf':
-      return [clamp((0.88 - Math.abs(u) - Math.abs(v) ** 1.35) * 16), Math.abs(u) < 0.065 ? 165 : 218 + 33 * Math.sin(u * 3 + v * 8) ** 2]
-    case 'drop':
-      return [clamp((0.91 - Math.hypot(u * (1 + v * 0.36), v)) * 6), 215 + 40 * Math.max(0, 1 - Math.hypot(u + 0.25, v - 0.18) * 2)]
+      return [Math.max(0, 1 - radius * radius + wobble * particleShapes.smoke.edgeWobble) ** squarePower, maxByte]
+    case 'leaf': {
+      const { radius: spread, tipPower, edgeFalloff, vein, blade } = particleShapes.leaf
+      const mask = clamp((spread - Math.abs(u) - Math.abs(v) ** tipPower) * edgeFalloff)
+      const shade = Math.abs(u) < vein.halfWidth
+        ? vein.shade
+        : blade.baseShade + blade.shadeVariation * Math.sin(u * blade.frequencyU + v * blade.frequencyV) ** squarePower
+      return [mask, shade]
+    }
+    case 'drop': {
+      const { radius: spread, taper, edgeFalloff, baseShade, glint } = particleShapes.drop
+      const mask = clamp((spread - Math.hypot(u * (1 + v * taper), v)) * edgeFalloff)
+      const highlight = Math.max(0, 1 - Math.hypot(u - glint.centerU, v - glint.centerV) * glint.falloff)
+      return [mask, baseShade + glint.shadeVariation * highlight]
+    }
     case 'streak':
-      return [Math.max(0, 1 - Math.abs(u)) * Math.max(0, 1 - Math.abs(v)) ** 0.65, 255]
+      return [Math.max(0, 1 - Math.abs(u)) * Math.max(0, 1 - Math.abs(v)) ** particleShapes.streak.lengthFalloffPower, maxByte]
     case 'mote':
-      return [Math.max(0, 1 - radius) ** 0.8, 255]
+      return [Math.max(0, 1 - radius) ** particleShapes.mote.radialFalloffPower, maxByte]
     case 'moth':
     case 'bee':
       return wingedShape(shape, u, v)
     case 'sole':
       return footprintShape(u, v)
     case 'petal': {
-      const curl = u + 0.18 * Math.sin(v * 4)
-      return [clamp((0.79 - Math.hypot(curl * (1.4 - v * 0.37), v)) * 12), 229 + 26 * (1 - v * v)]
+      const petal = particleShapes.petal
+      const curl = u + petal.curl * Math.sin(v * petal.curlFrequency)
+      const mask = clamp((petal.radius - Math.hypot(curl * (petal.width - v * petal.tipTaper), v)) * petal.edgeFalloff)
+      return [mask, petal.baseShade + petal.shadeVariation * (1 - v * v)]
     }
-    case 'clod':
-      return [clamp((0.8 - Math.max(Math.abs(u), Math.abs(v) * 1.21, Math.abs(u + v) * 0.82) + wobble * 0.1) * 11), 220 + 31 * wobble]
+    case 'clod': {
+      const clod = particleShapes.clod
+      const distance = Math.max(Math.abs(u), Math.abs(v) * clod.vScale, Math.abs(u + v) * clod.diagonalScale)
+      const mask = clamp((clod.radius - distance + wobble * clod.edgeWobble) * clod.edgeFalloff)
+      return [mask, clod.baseShade + clod.shadeVariation * wobble]
+    }
     case 'parachute':
     case 'feather':
       return fiber(shape, u, v)
@@ -101,19 +143,20 @@ function shadeParticle(shape: ParticleShape, u: number, v: number) {
     case 'bead':
       return wetShape(shape, u, v, radius, wobble)
     case 'mist':
-      return [Math.max(0, 1 - radius * radius) ** 2, 255]
+      return [Math.max(0, 1 - radius * radius) ** squarePower, maxByte]
   }
 }
 
 export function createParticleTexture(scene: Scene, shape: ParticleShape) {
   const size = particleTextureSize
-  const pixels = new Uint8Array(size * size * 4)
+  const halfSize = size * half
+  const pixels = new Uint8Array(size * size * channelsPerPixel)
   for (let y = 0; y < size; y++) {
+    const v = (y + pixelCenterOffset - halfSize) / halfSize
     for (let x = 0; x < size; x++) {
-      const u = (x + 0.5 - size / 2) / (size / 2)
-      const v = (y + 0.5 - size / 2) / (size / 2)
+      const u = (x + pixelCenterOffset - halfSize) / halfSize
       const [alpha, shade] = shadeParticle(shape, u, v)
-      pixels.set([shade, shade, shade, Math.round(255 * Math.min(1, alpha))], (y * size + x) * 4)
+      pixels.set([shade, shade, shade, Math.round(maxByte * Math.min(1, alpha))], (y * size + x) * channelsPerPixel)
     }
   }
   return RawTexture.CreateRGBATexture(pixels, size, size, scene, false)
