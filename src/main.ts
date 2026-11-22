@@ -10,27 +10,24 @@ import { cleanCrewName } from './crew-appearance'
 import { bindJoinName, openJoinName } from './join-name-ui'
 import { bindSoundOptions } from './sound-options-ui'
 import { createCrewGuide } from './crew-guide-ui'
-import { farmFeedback } from './farm-order-ui'
 import { createMissionHud } from './mission-ui'
-import { materialsFeedback, repairMaterials } from './materials-work'
+import { repairMaterials } from './materials-work'
 import { bindControlsToggle } from './controls-toggle-ui'
 import { bindLookOptions } from './look-options-ui'
 import { createReticleFocus } from './reticle-ui'
-import { neighborFeedback } from './resident-notices'
-import { ferryFeedback } from './ferry-repair-ui'
 import { createJobBoard } from './job-board-ui'
-import { catchLabel, createJournalPage } from './journal-ui'
-import { shellglassTideAt } from './shellglass-tide'
-import { atJobBoard, jobs } from './jobs'
+import { createJournalPage } from './journal-ui'
+import { atJobBoard } from './jobs'
 import { starterTools, toolNames } from './inventory'
 import type { InventoryItem } from './inventory'
-import type { ClientMessage, FishingResult, Input, Player, ServerMessage, Snapshot } from './protocol'
+import type { ClientMessage, Input, Player, ServerMessage, Snapshot } from './protocol'
 import { createRenderer } from './scene'
 import { bindLanInvite } from './lan-invite'
 import { bindPlaytestCopy } from './playtest-link'
+import { createIslandConnection } from './island-connection'
+import { starterNoticeFeedback } from './starter-notice-feedback'
 import { isNight } from './weather'
 import { createClothingCounter, createWardrobe } from './wardrobe-ui'
-import { starterPay } from './world'
 
 const clientTokenBytes = 16
 const tokenHexRadix = 16
@@ -42,15 +39,6 @@ const clockDigits = 2
 const hudRainThreshold = 0.3
 const dawnNoticeMinHourJump = 2
 const dawnNoticeDurationMs = 2400
-const fishingFeedbackDurationMs = 1900
-const farmFeedbackDurationMs = 4200
-const marketSaleDurationMs = 2100
-const jobPaymentDurationMs = 3200
-const tideFeedbackDurationMs = 3900
-const retryObservationDurationMs = 1900
-const materialsFeedbackDurationMs = 4800
-const seedPurchaseDurationMs = 3200
-const reconnectDelayMs = 1200
 const secondaryMouseButton = 2
 const inputHeartbeatMs = 60
 
@@ -113,7 +101,6 @@ const ridgeHud = createRidgeHud(element('ridge-hud'))
 const map = element<HTMLCanvasElement>('map')
 
 let renderer: ReturnType<typeof createRenderer> | undefined
-let socket: WebSocket | undefined
 let id = -1
 let live = false
 let message = ''
@@ -131,20 +118,12 @@ writeStorage('sessionStorage', crewKey, token)
 if (!savedToken) writeStorage('localStorage', crewKey, token)
 const leadKey = () => `mission-island-fisher-lead-${token}`
 let leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
+const connection = createIslandConnection(() => token, receive, disconnected)
 const skipNameKey = () => `mission-island-skip-name-${token}`
 const checkpointControls = bindCheckpointControls(optionsDialog, () => token)
 let offerJoinName = false
 let editingName: { id: number, token: string, name: string } | undefined
 let actionFeedback: { key: string, label: string, until: number } | undefined
-const feedbackText: Record<FishingResult, [string, string]> = {
-  'caught': ['+1 fish', 'Caught a fish'],
-  'no-bite': ['', 'No bite'],
-  'dry-cast': ['', 'Aim at open water'],
-  'escaped': ['', 'The fish escaped'],
-  'line-snapped': ['', 'The line snapped'],
-  'boat-moving': ['', 'Let the skiff settle before casting'],
-}
-
 const toolButtons = starterTools.map((item, index) => {
   const button = document.createElement('button')
   const key = document.createElement('kbd')
@@ -297,128 +276,90 @@ function hearNotice(message: ServerMessage) {
   else if (message.type === 'crate-impact') renderer?.hearImpact(message)
 }
 
-function connect() {
-  const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:'
-  socket = new WebSocket(`${scheme}//${location.host}/play`)
-  socket.addEventListener('open', () => send({ type: 'join', token }))
-  socket.addEventListener('message', (event: MessageEvent<string>) => {
-    const incoming = JSON.parse(event.data) as ServerMessage
-    hearNotice(incoming)
-    const neighborly = neighborFeedback(incoming, id, performance.now())
-    if (neighborly) actionFeedback = neighborly
-    switch (incoming.type) {
-      case 'welcome':
-        if (incoming.scenarios) checkpointControls.setCatalog(incoming.scenarios)
-        offerJoinName = readStorage('localStorage', skipNameKey()) !== 'yes'
-        id = incoming.id
-        live = true
-        respawn.disabled = false
-        if (renderer) bootMessage.textContent = 'Restoring your crew and map…'
-        status.textContent = 'LAN connected'
-        light.dataset.online = 'true'
-        message = ''
-        showNotice()
-        break
-      case 'state':
-        update(incoming)
-        if (renderer && document.body.hasAttribute('data-booting')) {
-          document.body.removeAttribute('data-booting')
-          bootStatus.hidden = true
-          writeStorage('sessionStorage', reloadKey, null)
-        }
-        break
-      case 'full':
-        message = 'Both crew slots are occupied. Waiting for a slot…'
-        bootMessage.textContent = message
-        showNotice()
-        break
-      case 'duplicate':
-        token = newToken()
-        writeStorage('sessionStorage', crewKey, token)
-        leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
-        break
-      case 'fishing-result': {
-        const [key, label] = feedbackText[incoming.result]
-        actionFeedback = { key, label: catchLabel(incoming.fish) ?? label, until: performance.now() + fishingFeedbackDurationMs }
-        break
+function receive(incoming: ServerMessage) {
+  hearNotice(incoming)
+  const feedback = starterNoticeFeedback(incoming, id, snapshot)
+  if (feedback) actionFeedback = feedback
+  switch (incoming.type) {
+    case 'welcome':
+      if (incoming.scenarios) checkpointControls.setCatalog(incoming.scenarios)
+      offerJoinName = readStorage('localStorage', skipNameKey()) !== 'yes'
+      id = incoming.id
+      live = true
+      respawn.disabled = false
+      if (renderer) bootMessage.textContent = 'Restoring your crew and map…'
+      status.textContent = 'LAN connected'
+      light.dataset.online = 'true'
+      message = ''
+      showNotice()
+      break
+    case 'state':
+      update(incoming)
+      if (renderer && document.body.hasAttribute('data-booting')) {
+        document.body.removeAttribute('data-booting')
+        bootStatus.hidden = true
+        writeStorage('sessionStorage', reloadKey, null)
       }
-      case 'farm-pay': case 'barrow-returned':
-        actionFeedback = { ...farmFeedback(incoming), until: performance.now() + farmFeedbackDurationMs }
-        break
-      case 'market-sale':
-        actionFeedback = { key: `+${incoming.coins} coins`, label: 'Market sale · Crew bank', until: performance.now() + marketSaleDurationMs }
-        break
-      case 'job-pay': {
-        actionFeedback = { key: `+${incoming.coins} coins`, label: `${starterPay[incoming.job].label} · Crew bank`, until: performance.now() + jobPaymentDurationMs }
-        break
-      }
-      case 'crew-note':
-        openGuide()
-        break
-      case 'resident-chat':
-      case 'ferry-tally':
-        openGuide('resident' in incoming ? incoming.resident : 'tally')
-        break
-      case 'tide-staff':
-        actionFeedback = { key: '', label: `Shellglass Tide Pool · ${shellglassTideAt(incoming.time).phase}`, until: performance.now() + tideFeedbackDurationMs }
-        break
-      case 'field-unavailable':
-        actionFeedback = { key: '', label: 'Find a clear view of the subject and try again', until: performance.now() + retryObservationDurationMs }
-        break
-      case 'ferry-progress': case 'ferry-order': case 'ferry-stage': actionFeedback = ferryFeedback(incoming, snapshot)
-        break
-      case 'materials-step':
-        actionFeedback = { key: '', label: materialsFeedback(incoming), until: performance.now() + materialsFeedbackDurationMs }
-        break
-      case 'open-wardrobe':
-      case 'open-clothing-counter':
-        openClothing(incoming.type === 'open-wardrobe')
-        break
-      case 'clothing-purchase':
-        if (counterDialog.open) counter.result(incoming.item, incoming.result)
-        break
-      case 'order-pay':
-        actionFeedback = { key: `+${incoming.coins} coins`, label: `${jobs[incoming.id].title} complete · Crew bank`, until: performance.now() + jobPaymentDurationMs }
-        break
-      case 'starter-seed':
-        actionFeedback = { key: '+1 seed', label: 'Plant it at Island Farm', until: performance.now() + seedPurchaseDurationMs }
-        break
-      case 'flight-result': case 'aerial-sighting':
-        ridgeHud.receive(incoming)
-        break
-      case 'order-unavailable':
-        board.reject()
-        if (snapshot) updateBoard(snapshot)
-        break
-    }
-  })
-  socket.addEventListener('close', () => {
-    live = false
-    offerJoinName = false
-    if (joinNameDialog.open) joinNameDialog.close()
-    if (wardrobeDialog.open) wardrobeDialog.close()
-    if (counterDialog.open) counterDialog.close()
-    respawn.disabled = true
-    writeStorage('sessionStorage', reloadKey, 'yes')
-    actionFeedback = undefined
-    chargeMeter.hidden = true
-    openWardrobe.disabled = true
-    keys.clear()
-    primary = false
-    rightButtonHeld = false
-    light.dataset.online = 'false'
-    status.textContent = 'Reconnecting'
-    message ||= 'Reconnecting to the host. The island may reload when it is ready.'
-    bootMessage.textContent = message
-    showNotice()
-    board.reject()
-    if (snapshot) updateBoard(snapshot)
-    setTimeout(connect, reconnectDelayMs)
-  })
+      break
+    case 'full':
+      message = 'Both crew slots are occupied. Waiting for a slot…'
+      bootMessage.textContent = message
+      showNotice()
+      break
+    case 'duplicate':
+      token = newToken()
+      writeStorage('sessionStorage', crewKey, token)
+      leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
+      break
+    case 'crew-note':
+      openGuide()
+      break
+    case 'resident-chat':
+    case 'ferry-tally':
+      openGuide('resident' in incoming ? incoming.resident : 'tally')
+      break
+    case 'open-wardrobe':
+    case 'open-clothing-counter':
+      openClothing(incoming.type === 'open-wardrobe')
+      break
+    case 'clothing-purchase':
+      if (counterDialog.open) counter.result(incoming.item, incoming.result)
+      break
+    case 'flight-result': case 'aerial-sighting':
+      ridgeHud.receive(incoming)
+      break
+    case 'order-unavailable':
+      board.reject()
+      if (snapshot) updateBoard(snapshot)
+      break
+  }
+}
+
+function disconnected() {
+  live = false
+  offerJoinName = false
+  if (joinNameDialog.open) joinNameDialog.close()
+  if (wardrobeDialog.open) wardrobeDialog.close()
+  if (counterDialog.open) counterDialog.close()
+  respawn.disabled = true
+  writeStorage('sessionStorage', reloadKey, 'yes')
+  actionFeedback = undefined
+  chargeMeter.hidden = true
+  openWardrobe.disabled = true
+  keys.clear()
+  primary = false
+  rightButtonHeld = false
+  light.dataset.online = 'false'
+  status.textContent = 'Reconnecting'
+  message ||= 'Reconnecting to the host. The island may reload when it is ready.'
+  bootMessage.textContent = message
+  showNotice()
+  board.reject()
+  if (snapshot) updateBoard(snapshot)
 }
 
 function send(message: ClientMessage) {
-  if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message))
+  connection.send(message)
 }
 
 const keyBindings = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'KeyB', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyF', 'KeyC', 'KeyR', 'Space', 'Digit1', 'Digit2', 'Digit3'])
@@ -629,7 +570,7 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('blur', () => {
   pauseControls()
 })
-window.addEventListener('pagehide', () => socket?.close())
+window.addEventListener('pagehide', () => connection.close())
 cameraButton.addEventListener('click', () => {
   toggleCamera()
   cameraButton.blur()
@@ -662,7 +603,7 @@ respawn.addEventListener('click', () => {
   send({ type: 'respawn' })
   optionsDialog.close()
 })
-if (renderer) connect()
+if (renderer) connection.connect()
 setInterval(sendInput, inputHeartbeatMs)
 
 if (import.meta.hot) {
@@ -682,9 +623,9 @@ if (import.meta.hot) {
       renderer.setSound(soundSettings())
       if (modalOpen()) renderer.releaseMouse()
       if (snapshot) renderer.update(snapshot, id, follow)
-      if (!socket) {
+      if (!connection.started) {
         bootMessage.textContent = 'Connecting to the host…'
-        connect()
+        connection.connect()
       }
     }
     catch (error) {

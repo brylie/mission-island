@@ -89,21 +89,17 @@ const executableDataSyntax = [
 const crewBuilderFunctionLineLimit = 165
 const biomeModelFunctionLineLimit = 199
 const islandCameraFunctionLineLimit = 169
-const starterEntryModuleLineLimit = 731
+const starterEntryModuleLineLimit = 602
 const starterEntryComplexityLimit = 38
-const particleShelfModuleLineLimit = 463
-const starterSceneModuleLineLimit = 339
-const starterSceneFunctionLineLimit = 295
-const starterSceneComplexityLimit = 43
+const starterSceneFunctionLineLimit = 248
 const saltwindEntryModuleLineLimit = 446
 const saltwindEntryFunctionLineLimit = 412
 const saltwindEntryComplexityLimit = 25
 const oreHaulingFunctionLineLimit = 162
 const landscapeLayoutFunctionLineLimit = 193
-const landscapeMapModuleLineLimit = 459
-const landscapeMapFunctionLineLimit = 379
+const landscapeMapFunctionLineLimit = 271
 const landscapeStudiesFunctionLineLimit = 207
-const workbenchEntryModuleLineLimit = 696
+const workbenchEntryModuleLineLimit = 582
 const workbenchReferenceFunctionLineLimit = 142
 const workbenchStageFunctionLineLimit = 180
 const workbenchStageComplexityLimit = 40
@@ -116,11 +112,8 @@ const existingLimits = {
     'max-lines': lineLimit(starterEntryModuleLineLimit),
     'complexity': complexity(starterEntryComplexityLimit),
   },
-  'src/assets/recipes/particle-shelf-recipes.ts': { 'max-lines': lineLimit(particleShelfModuleLineLimit) },
   'src/scene.ts': {
-    'max-lines': lineLimit(starterSceneModuleLineLimit),
     'max-lines-per-function': lineLimit(starterSceneFunctionLineLimit),
-    'complexity': complexity(starterSceneComplexityLimit),
   },
   'src/second-island/main.ts': {
     'max-lines': lineLimit(saltwindEntryModuleLineLimit),
@@ -130,7 +123,6 @@ const existingLimits = {
   'src/second-island/ore-hauling.ts': { 'max-lines-per-function': lineLimit(oreHaulingFunctionLineLimit) },
   'src/workbench/landscape-layout.ts': { 'max-lines-per-function': lineLimit(landscapeLayoutFunctionLineLimit) },
   'src/workbench/landscape-map.ts': {
-    'max-lines': lineLimit(landscapeMapModuleLineLimit),
     'max-lines-per-function': lineLimit(landscapeMapFunctionLineLimit),
   },
   'src/workbench/landscape-studies.ts': { 'max-lines-per-function': lineLimit(landscapeStudiesFunctionLineLimit) },

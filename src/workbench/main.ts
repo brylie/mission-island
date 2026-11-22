@@ -1,4 +1,5 @@
 import './style.css'
+import { createAssetInspector } from './asset-inspector'
 import { createReferencePane } from './reference-pane'
 import { createVariationLibrary } from './variations'
 import { readSubjectLink, subjectLink } from './subject-link'
@@ -11,14 +12,14 @@ import { studioCamera, studioPlayback } from '../assets/recipes/workbench-stage'
 import { workspaceOf } from './library'
 import { createLibraryPanel } from './library-panel'
 import { bindBiomeRecipes } from './biome-files'
-import { biomeLink, habitatCodex, readRecipe, recipeFromLink } from '../biome-recipe'
+import { biomeLink, readRecipe, recipeFromLink } from '../biome-recipe'
 import { dryMarketRainAge } from '../market-runoff'
 import { bindPlaytestCopy, landscapeLink, landscapeWindow, readLandscapeView } from '../playtest-link'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { readStorage, writeStorage } from '../browser-storage'
 import { entries as initialEntries } from './catalog'
-import { applyRelatedOptions, createInspectorSelect, restoreOptions, type Control, type Values } from './subject'
+import { restoreOptions, type Control, type Values } from './subject'
 import type { FieldSite } from './field-site'
 import { createStage } from './stage'
 import type { Angle, CameraState } from './stage'
@@ -41,7 +42,15 @@ element('launch-checkpoint').hidden = import.meta.env.MODE !== 'playtest'
 const canvas = element<HTMLCanvasElement>('stage')
 const library = createLibraryPanel()
 const reference = createReferencePane()
-const inspector = element('asset-controls')
+const inspector = createAssetInspector(element('asset-controls'), element('subject-actions'), {
+  current: () => ({ asset, values, onIsland, supportsSunShafts: Boolean(stage?.supportsSunShafts) }),
+  change: setOption,
+  remember,
+  restart() {
+    seekTo(0)
+    rebuild(stage?.getCamera())
+  },
+})
 const playback = element('playback')
 const play = element<HTMLButtonElement>('play')
 const slider = element<HTMLInputElement>('time')
@@ -162,130 +171,6 @@ function showFieldSwitch() {
   }
 }
 
-function renderAssetControls() {
-  refreshActions()
-  inspector.replaceChildren()
-  let group = ''
-  for (const control of asset.controls ?? []) {
-    if (onIsland && control.key === 'shape') continue
-    const organism = asset.id === 'biome' ? habitatCodex.find((item) => item.key === control.key) : undefined
-    const heading = organism?.group ?? 'Conditions'
-    if (asset.id === 'biome' && heading !== group) {
-      group = heading
-      const title = document.createElement('h3')
-      title.className = 'codex-group'
-      title.textContent = group
-      inspector.append(title)
-    }
-    const row = document.createElement('label')
-    const name = document.createElement('span')
-    name.textContent = control.label
-    name.id = `asset-setting-${control.key}`
-
-    if (control.type === 'select') {
-      row.className = 'row'
-      const select = createInspectorSelect(control, values, name.id)
-      select.addEventListener('change', () => setOption(control, select.value))
-      row.append(name, select)
-    }
-    else {
-      const input = document.createElement('input')
-      input.type = control.type
-      input.setAttribute('aria-labelledby', name.id)
-      if ((control.key === 'sunShafts' || control.key === 'shaftIntensity') && !stage?.supportsSunShafts) {
-        input.disabled = true
-        row.title = 'Volumetric sunlight requires WebGL 2 with shadow map filtering.'
-      }
-      if (control.type === 'checkbox') {
-        row.className = 'checkbox-row'
-        input.checked = Boolean(values[control.key])
-        input.addEventListener('change', () => setOption(control, input.checked))
-        row.append(input, name)
-      }
-      else {
-        if (control.type === 'number') {
-          row.className = 'row'
-          input.min = String(control.min)
-          input.max = String(control.max)
-          input.step = String(control.step)
-          input.value = String(values[control.key])
-          input.addEventListener('input', () => {
-            const next = input.valueAsNumber
-            if (!control.rebuild && Number.isFinite(next) && next >= control.min && next <= control.max) setOption(control, next, false)
-          })
-          input.addEventListener('change', () => {
-            const next = control.step === 1 ? Math.round(input.valueAsNumber) : input.valueAsNumber
-            input.value = String(Number.isFinite(next) ? Math.max(control.min, Math.min(control.max, next)) : values[control.key])
-            setOption(control, input.valueAsNumber)
-          })
-          row.append(name, input)
-        }
-        else if (control.type === 'range') {
-          row.className = 'range-row'
-          input.min = String(control.min)
-          input.max = String(control.max)
-          input.step = String(control.step)
-          input.value = String(values[control.key])
-          const value = document.createElement('output')
-          value.textContent = input.value
-          input.addEventListener('input', () => {
-            value.textContent = input.value
-            if (!control.rebuild) setOption(control, input.valueAsNumber, false)
-          })
-          if (control.rebuild) {
-            input.addEventListener('change', () => setOption(control, input.valueAsNumber))
-          }
-          else {
-            input.addEventListener('change', remember)
-          }
-          row.append(name, value, input)
-        }
-        else {
-          row.className = 'row'
-          input.value = String(values[control.key])
-          if (control.rebuild) input.addEventListener('change', () => setOption(control, input.value))
-          else {
-            input.addEventListener('input', () => setOption(control, input.value, false))
-            input.addEventListener('change', remember)
-          }
-          row.append(name, input)
-        }
-      }
-    }
-    inspector.append(row)
-    if (organism) {
-      const note = document.createElement('p')
-      note.className = 'codex-note'
-      note.id = 'note-' + organism.key
-      note.textContent = organism.note
-      row.querySelector('input')?.setAttribute('aria-describedby', note.id)
-      inspector.append(note)
-    }
-  }
-}
-
-function refreshActions() {
-  const panel = element('subject-actions')
-  panel.replaceChildren()
-  for (const action of asset.actions ?? []) {
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.textContent = action.label
-    button.disabled = !action.enabled(values)
-    button.addEventListener('click', () => {
-      action.run(values)
-      if (action.restart) {
-        seekTo(0)
-        rebuild(stage?.getCamera())
-      }
-      renderAssetControls()
-      remember()
-      panel.querySelector<HTMLButtonElement>('button:enabled')?.focus()
-    })
-    panel.append(button)
-  }
-}
-
 function fieldSite() {
   return onIsland ? asset.fieldSite?.(values) : undefined
 }
@@ -300,8 +185,7 @@ function cameraAtSameSite(previous?: FieldSite) {
 function setOption(control: Control, value: Values[string], save = true) {
   const oldSite = fieldSite()
   values[control.key] = value
-  if (asset.relatedOptions) applyRelatedOptions(inspector, asset, values, control.key)
-  if (asset.actions) refreshActions()
+  inspector.optionChanged(control.key)
   zFightingResult.replaceChildren()
   seek = true
   if (control.rebuild) {
@@ -390,7 +274,7 @@ function loadAsset(camera?: CameraState) {
   library.show(entries, asset)
   renderPlayback()
   rebuild(camera)
-  renderAssetControls()
+  inspector.render()
 }
 
 function seekTo(value: number) {
@@ -415,7 +299,7 @@ function restoreStudy(shot: LandscapeShot, framingOnly = false) {
   values.clockStart = timeline.start
   seekTo(timeline.time)
   stage?.setCamera(shot.camera, values)
-  renderAssetControls()
+  inspector.render()
   applyDisplay()
   remember()
 }
@@ -448,7 +332,7 @@ const landscapeMap = createLandscapeMap({
     studies.hideComparison()
     stage?.setView('perspective', values)
     zFightingResult.replaceChildren()
-    renderAssetControls()
+    inspector.render()
     remember()
   },
 })
@@ -504,7 +388,7 @@ function openLandscapeView(id: string) {
   grid.checked = wireframe.checked = turntable.checked = false
   playing = false
   seekTo(timeline.time)
-  renderAssetControls()
+  inspector.render()
   applyDisplay()
   remember()
 }
@@ -536,7 +420,7 @@ function openFurnishingLocation() {
   const draft = readSiteDrafts()[feature.site]
   Object.assign(values, { x: feature.x + (draft?.east ?? 0), z: feature.z + (draft?.north ?? 0), focusHeight: landscapeFurnishingControls.location.height })
   stage?.setLandscapeView(landscapeFurnishingControls.location.camera)
-  renderAssetControls()
+  inspector.render()
 }
 
 scenicView.addEventListener('change', () => {
@@ -629,7 +513,7 @@ element('reset').addEventListener('click', () => {
   optionsByAsset[asset.id] = values
   rebuild(asset.landscape ? undefined : cameraAtSameSite(oldSite))
   showFieldSwitch()
-  renderAssetControls()
+  inspector.render()
   remember()
 })
 
