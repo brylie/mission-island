@@ -16,7 +16,7 @@ const zComponent = 2
 // Each vertex's colour alpha also carries its sway weight, from 0 at the ground to 1 at the top.
 export interface SwayHooks { trunkBase: Vec3, crownCenter: Vec3, height: number }
 
-interface TreeGeometry {
+export interface TreeGeometry {
   bark: MeshData
   foliage: MeshData
   foliageRecipe: FoliageRecipe

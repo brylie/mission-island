@@ -121,14 +121,28 @@ export function addTube(mesh: MeshData, spine: readonly SpinePoint[], style: Tub
 
 function addCap(mesh: MeshData, spine: readonly SpinePoint[], basis: ReturnType<typeof frames>, ring: number, sides: number, cap: NonNullable<TubeStyle['cap']>) {
   const end = spine[spine.length - 1]
-  const { tangent } = basis[basis.length - 1]
+  const { tangent, normal, binormal } = basis[basis.length - 1]
   const center = vertex(mesh, add(end.point, scale(tangent, cap.rise(sides) * end.radius)), tangent, 0, 0, cap.color)
   const rim: number[] = []
   for (let side = 0; side < sides; side++) {
     const at = ring + side
     const p: Vec3 = [mesh.positions[at * vertexStride], mesh.positions[at * vertexStride + 1], mesh.positions[at * vertexStride + zComponent]]
-    const lifted = add(p, scale(tangent, cap.rise(side) * end.radius))
-    rim.push(vertex(mesh, lifted, tangent, sub(lifted, end.point)[0], sub(lifted, end.point)[2], cap.color))
+    const lift = cap.rise(side) * end.radius
+    const lifted = add(p, scale(tangent, lift))
+    // The tube's last ring rises with the ragged rim, so the bark meets the cap without a gap,
+    // and its bark runs on by the same distance rather than stretching up the tooth.
+    for (const index of side ? [at] : [at, ring + sides]) {
+      mesh.positions.splice(index * vertexStride, zComponent + 1, ...lifted)
+      mesh.uvs[index * uvStride + 1] += lift
+    }
+    // Map the cap across the end in the tube's own frame, so bowed logs and upright snags texture alike.
+    // Each rim point sits as far out as its slope from the centre runs, so tall teeth do not streak.
+    const offset = sub(lifted, end.point)
+    const across: [number, number] = [dot(offset, normal), dot(offset, binormal)]
+    const flat = Math.hypot(...across)
+    const slope = Math.hypot(flat, lift - cap.rise(sides) * end.radius)
+    const unwrap = flat ? slope / flat : 1
+    rim.push(vertex(mesh, lifted, tangent, across[0] * unwrap, across[1] * unwrap, cap.color))
   }
   for (let side = 0; side < sides; side++) mesh.indices.push(rim[side], center, rim[(side + 1) % sides])
 }
