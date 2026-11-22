@@ -52,7 +52,7 @@ Add one entry per source to [`docs/sources.yaml`](../../../../docs/sources.yaml)
   supports:
     - claim: A single lookout's fire finder gives a bearing; crossing bearings from two or more towers fixes the fire's position.
       quote: <short supporting passage>
-      used-in: explainers/wildfire.md#fighting-a-fire
+      used-in: field-guide/processes/wildfire.md#fighting-a-fire
 ```
 
 - **Keep quotes short.** That respects copyright and makes the claim quick to check.

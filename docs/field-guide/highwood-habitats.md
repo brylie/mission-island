@@ -2,7 +2,7 @@
 
 **Status: planned. Last tended 2026-11-22.** The Highwood isn't on the island yet. These cards describe the habitats the placement work will build.
 
-**New here?** Read the pinewood interior and the exposed ridge first: they're the Highwood's two extremes, and every other habitat sits between them. For processes that cross every habitat, see the explainers on [wildfire](../explainers/wildfire.md), [bracken slopes](../explainers/bracken-slopes.md) and [wet woodland](../explainers/wet-woodland.md).
+**New here?** Read the pinewood interior and the exposed ridge first: they're the Highwood's two extremes, and every other habitat sits between them. For processes that cross every habitat, see the explainers on [wildfire](processes/wildfire.md), [bracken slopes](places/bracken-slopes.md) and [wet woodland](places/wet-woodland.md).
 
 The Highwood is the planned north-west backcountry of Starter Island: a mosaic of native pinewood, heath, wet woodland and an exposed ridge, with a fire access road and the Fire Watch on a summit. Its real-world models are the native pinewoods of the Scottish Highlands, such as Glen Affric and Abernethy. In places like those, soil, water, slope and wind decide what grows where, and one habitat grades into the next.
 
@@ -57,7 +57,7 @@ Plants are described in [Highwood plants](highwood-plants.md), and terms in *ita
 ## Wet woodland (Mirror Pool and stream banks)
 
 - **What you see.** Alder and grey willow along water and in soggy hollows, with mosses, sedges and rushes beneath.
-- **Why here.** Waterlogged soil, which pines can't tolerate. See the [wet woodland explainer](../explainers/wet-woodland.md).
+- **Why here.** Waterlogged soil, which pines can't tolerate. See the [wet woodland explainer](places/wet-woodland.md).
 - **What changes it.** The water level. Wet woodland on permanently waterlogged ground is called *carr*.
 - **Life (real).** Alder roots carry nitrogen-fixing nodules that enrich the soil. Siskins, redpolls and goldfinches eat its seeds, otters make nests among its roots, and wet, decaying wood is good habitat for invertebrates. *Sources: woodtrust-alder, wt-wet-woodland.*
 - **In the game.** Alder and grey willow by the water, with no pine.
@@ -66,7 +66,7 @@ Plants are described in [Highwood plants](highwood-plants.md), and terms in *ita
 ## Bracken slopes
 
 - **What you see.** Dense bracken on deeper, well-drained hillsides: green in summer, bronze in autumn, and flattened brown in winter.
-- **Why here.** Deep soil and light. Bracken spreads underground by *rhizomes* and shades out smaller plants. See the [bracken slopes explainer](../explainers/bracken-slopes.md).
+- **Why here.** Deep soil and light. Bracken spreads underground by *rhizomes* and shades out smaller plants. See the [bracken slopes explainer](places/bracken-slopes.md).
 - **What changes it.** Grazing, cutting and fire. Bracken spreads where management eases off.
 - **Life (real).** Bracken is poisonous to livestock, and brushing through it is when people are most at risk of picking up ticks. Whinchats breed where bracken mixes with grassland, nesting in tussocks and perching on the fronds. Pearl-bordered fritillary butterflies breed where violets grow among bracken. *Sources: tfl-bracken, scotgov-bracken-2025, lakedistrict-lyme (England), bto-whinchat.*
 - **In the game.** Bracken patches on gentle slopes and in clearings. You can walk through them.
@@ -74,7 +74,7 @@ Plants are described in [Highwood plants](highwood-plants.md), and terms in *ita
 
 ## Fire
 
-Fire is a process that crosses every habitat, not a habitat itself. See the [wildfire explainer](../explainers/wildfire.md) for:
+Fire is a process that crosses every habitat, not a habitat itself. See the [wildfire explainer](processes/wildfire.md) for:
 - how it behaves;
 - why heather is sometimes burned on purpose;
 - how ground recovers;

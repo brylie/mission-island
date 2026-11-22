@@ -13,6 +13,8 @@ These pages are for anyone who wants to make something similar, learn from it or
 
 | Topic | Page | Status |
 | --- | --- | --- |
+| A guided first build: grow your first tree species | [Tutorial](first-tree-species.md) | Run by its author |
+| Add or change a tree species, as a checklist | [How-to](add-tree-species.md) | Steps run |
 | Growing trees, shrubs and groundcover from rules and seeds | [Procedural flora](procedural-flora.md) | Written |
 | Distance, level of detail, draw calls and triangle budgets | [Rendering, distance and level of detail](rendering-and-detail.md) | Written |
 | Generated surfaces and texture recipes | [Surface catalog](../surface-catalog.md) and [gameplay surfaces](../gameplay-surfaces.md) | Existing reference |

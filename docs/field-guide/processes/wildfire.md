@@ -1,6 +1,6 @@
 # Wildfire
 
-**Real world: draft. On the island: playable**, see [Fire watch](../mechanics/fire-watch.md). Last tended 2026-11-22. Model purpose: **illustrate** fire as a crew job, not predict spread.
+**Real world: draft. On the island: playable**, see [Fire watch](../../mechanics/fire-watch.md). Last tended 2026-11-22. Model purpose: **illustrate** fire as a crew job, not predict spread.
 
 Wildfire is fire burning through vegetation outside anyone's control. On a cool, wet island it can seem unlikely, yet moorland and woodland fires are a familiar spring hazard in places like the Scottish Highlands. This explainer covers why fires start and spread, how people fight them, why land is sometimes burned on purpose, and how ground recovers. It then compares the island's fires with the real thing.
 
@@ -62,7 +62,7 @@ A small, patchy fire can increase variety. A large, hot or repeated fire can str
 
 ## On the island
 
-The island's fires are a crew job: spot the smoke, fix the position, bring the right equipment, put it out together. See [Fire watch](../mechanics/fire-watch.md) for the rules.
+The island's fires are a crew job: spot the smoke, fix the position, bring the right equipment, put it out together. See [Fire watch](../../mechanics/fire-watch.md) for the rules.
 
 - **Where.** Fires start only in six dry, grassy places, in daylight, and only a while after the last rain. After more than 12 dry hours a fire comes sooner.
 - **Fire finder.** The crew finds a fire with the brass fire finder in the Fire Watch tower, which gives a place name, a bearing and a rough distance, or by smoke seen from high ground.
@@ -80,7 +80,7 @@ The island's fires are a crew job: spot the smoke, fix the position, bring the r
 | Fire spreads continuously through fuel, faster uphill and with wind. | Fire jumps between a few fixed hotspots, downwind; slope has no effect. | A handful of hotspots gives a readable job for two players and costs little to simulate and share over the network. | That slope doesn't matter. In reality, uphill runs are among the most dangerous. |
 | Fuel type and dryness vary across a site. | Every fire site is dry grass, scrub or hedgerow, treated alike. Rain is the only fuel-moisture rule. | Keeps fire sites few and predictable while the mechanic is new. | That heather, bracken and woodland burn alike. |
 | Crews use beaters, firebreaks and water, working from an anchor point. | Crews use extinguishers on each hotspot. | Spraying is easy to learn and works with the island's existing tools. | That extinguishers are the main tool for wildfires. In reality, beaters and firebreaks matter more on moorland. |
-| Recovery takes seasons to decades. | Scars recover over three dawns. | Players see the change within a play session. | How fast land really recovers. The game compresses time on purpose, as the [learning brief](../design/learning-and-careers.md) allows, but should say so. |
+| Recovery takes seasons to decades. | Scars recover over three dawns. | Players see the change within a play session. | How fast land really recovers. The game compresses time on purpose, as the [learning brief](../../design/learning-and-careers.md) allows, but should say so. |
 | Crown and peat fires exist. | Only surface fires on grass and scrub. | Out of scope for now. | That a fire is always out once the flames stop. |
 | Fires start from lightning or, far more often in Britain, people. Weather makes ignition and spread more or less likely. | A host schedule starts a fire about once an island week. Weather only gates and hastens the start. | Spaces fires out as crew jobs, rather than random disasters. | That a dry spell itself starts a fire. Something has to ignite it. |
 | One tower gives a bearing; crossing bearings from two or more towers fixes the position. | One fire finder gives a place name, bearing and distance. | One tower, and a quick answer for a new crew. | That one sighting is enough to locate a fire. |

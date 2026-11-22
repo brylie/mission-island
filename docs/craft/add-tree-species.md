@@ -2,7 +2,7 @@
 
 **Status: steps run on 2026-11-22 at commit `bad36da`.**
 
-A checklist for adding a species to the Highwood generator, or changing how an existing one looks. For a guided first attempt, follow the [tutorial](../tutorials/first-tree-species.md) instead. [Procedural flora](../craft/procedural-flora.md) explains the techniques behind each field.
+A checklist for adding a species to the Highwood generator, or changing how an existing one looks. For a guided first attempt, follow the [tutorial](first-tree-species.md) instead. [Procedural flora](procedural-flora.md) explains the techniques behind each field.
 
 ## Add a species
 

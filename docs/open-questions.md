@@ -6,9 +6,9 @@ One list of everything we know we don't know: research to do, sources to find, a
 
 ## Sources to find
 
-- **Wildfire.** A fire-behaviour source for fuel, weather, topography and fighting tactics. UK spring fire timing and human ignition. Scots pine bark and fire, and recovery after burning. The US Forest Service notes behind the fire-finder claim. See [wildfire](explainers/wildfire.md#sources).
-- **Bracken.** Rhizome spread, soil and frost preferences, toxicity, wildlife and ticks. See [bracken slopes](explainers/bracken-slopes.md#sources).
-- **Wet woodland.** Waterlogging, alder's *Frankia* nodules, the hydrosere, wildlife, and flood and water roles. See [wet woodland](explainers/wet-woodland.md#sources).
+- **Wildfire.** A fire-behaviour source for fuel, weather, topography and fighting tactics. UK spring fire timing and human ignition. Scots pine bark and fire, and recovery after burning. The US Forest Service notes behind the fire-finder claim. See [wildfire](field-guide/processes/wildfire.md#sources).
+- **Bracken.** Rhizome spread, soil and frost preferences, toxicity, wildlife and ticks. See [bracken slopes](field-guide/places/bracken-slopes.md#sources).
+- **Wet woodland.** Waterlogging, alder's *Frankia* nodules, the hydrosere, wildlife, and flood and water roles. See [wet woodland](field-guide/places/wet-woodland.md#sources).
 - **Highwood habitats.** Every *Life* line. See [Highwood habitats](field-guide/highwood-habitats.md).
 - **Species figures.** Lifespans, flowering months and the heather life cycle, before any reaches game text. See [Highwood plants](field-guide/highwood-plants.md#sources).
 - **Unopened sources.** Every `opened: false` entry in [`sources.yaml`](sources.yaml).

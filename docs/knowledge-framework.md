@@ -16,10 +16,10 @@ We use [Diátaxis](https://diataxis.fr/), which sorts documents by the reader's 
 
 | Type | The reader wants to… | Mission Island examples | Folder |
 | --- | --- | --- | --- |
-| **Tutorial** | learn by doing, guided step by step | [Grow your first tree species](tutorials/first-tree-species.md) | `docs/tutorials/` |
-| **How-to guide** | get a task done they already understand | [Add a tree species or variation](how-to/add-tree-species.md) | `docs/how-to/` |
+| **Tutorial** | learn by doing, guided step by step | [Grow your first tree species](craft/first-tree-species.md) | `docs/tutorials/` |
+| **How-to guide** | get a task done they already understand | [Add a tree species or variation](craft/add-tree-species.md) | `docs/how-to/` |
 | **Reference** | look something up | [Field guide](field-guide/README.md) entries, [glossary](field-guide/glossary.md), budgets and data tables, [Workbench guide](workbench.md) | `docs/field-guide/`, and pages beside the code they describe |
-| **Explanation** | understand why | [Explainers](explainers/README.md) on deep topics, and the [craft pages](craft/README.md) on techniques | `docs/explainers/`, `docs/craft/` |
+| **Explanation** | understand why | Field guide [process and place pages](field-guide/README.md) on deep topics, and the [craft pages](craft/README.md) on techniques | `docs/field-guide/processes/`, `docs/field-guide/places/`, `docs/craft/` |
 
 The game design documents sit alongside these four:
 - [product and game design](game-design.md) and the [design pages](design/);

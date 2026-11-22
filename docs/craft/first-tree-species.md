@@ -2,7 +2,7 @@
 
 **Status: run by its author on 2026-11-22, at commit `bad36da`.** Not yet completed by someone who didn't write it. That's what makes a tutorial verified, under the [knowledge framework](../knowledge-framework.md). If you're the first, note anything that tripped you up and update this line.
 
-In this tutorial you'll add **hazel**, a multi-stemmed shrubby tree of woodland edges, to the Highwood species generator. You'll watch it grow in the Workbench, check that it reads as its own species, and write its field guide entry. It takes about an hour. You don't need to know how the generator works inside; [Procedural flora](../craft/procedural-flora.md) explains that when you're curious.
+In this tutorial you'll add **hazel**, a multi-stemmed shrubby tree of woodland edges, to the Highwood species generator. You'll watch it grow in the Workbench, check that it reads as its own species, and write its field guide entry. It takes about an hour. You don't need to know how the generator works inside; [Procedural flora](procedural-flora.md) explains that when you're curious.
 
 **You'll need:** the project running locally (see [CONTRIBUTING](../../CONTRIBUTING.md#set-up-a-development-host)) and a text editor. Start the game's dev server with `npm run dev`.
 
@@ -96,10 +96,10 @@ Reload the Workbench and choose **Species: Hazel**.
    - young hazel, small with two or three stems;
    - mature and old hazel, larger and rounder, and never with a broken top;
    - each exposed version leaning to the same side.
-3. **Look: Silhouette**, then **Front**. **You should see** broad, lumpy black mounds on short stems. Switch **Species** to Grey willow and compare. The two are close, because both are many-stemmed and broad. That's a real difficulty in telling them apart at a distance, and the [how-to guide](../how-to/add-tree-species.md#change-how-a-species-looks) shows how to push them further apart.
+3. **Look: Silhouette**, then **Front**. **You should see** broad, lumpy black mounds on short stems. Switch **Species** to Grey willow and compare. The two are close, because both are many-stemmed and broad. That's a real difficulty in telling them apart at a distance, and the [how-to guide](add-tree-species.md#change-how-a-species-looks) shows how to push them further apart.
 4. **Compare: Near beside far.** **You should see** each far tree keep the same height, width and lean as its near partner, with fewer, blockier clumps.
 
-Your hazel is finished when all four look like this. Tuning its shape further is in the [how-to guide](../how-to/add-tree-species.md#change-how-a-species-looks).
+Your hazel is finished when all four look like this. Tuning its shape further is in the [how-to guide](add-tree-species.md#change-how-a-species-looks).
 
 ## 6. Compare with the real hazel
 
@@ -121,4 +121,4 @@ Check facts like these against a source and cite it. Add the photo to [Highwood 
 
 You described a species as data instead of code. The tests confirmed it fits the game's limits. You checked it the way the Art Director does: several seeds, a silhouette, the far version and a photo. And you recorded what you learned, which is part of the job.
 
-Next: [Add a tree species or variation](../how-to/add-tree-species.md) is the short checklist for when you've done this before. [Procedural flora](../craft/procedural-flora.md) explains what every number does inside the generator.
+Next: [Add a tree species or variation](add-tree-species.md) is the short checklist for when you've done this before. [Procedural flora](procedural-flora.md) explains what every number does inside the generator.

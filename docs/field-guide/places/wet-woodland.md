@@ -36,7 +36,7 @@ These woods are often small, scattered and easily drained for farming, so many h
 
 ## On the island
 
-The Highwood's wet ground, around Mirror Pool and along the stream, is planned for alder and grey willow, with no pine. See the [Highwood habitats](../field-guide/highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks) and the alder and willow entries in [Highwood plants](../field-guide/highwood-plants.md). A downy birch for wet ground is planned. Today's island birch is silver birch, which belongs on drier ground.
+The Highwood's wet ground, around Mirror Pool and along the stream, is planned for alder and grey willow, with no pine. See the [Highwood habitats](../highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks) and the alder and willow entries in [Highwood plants](../highwood-plants.md). A downy birch for wet ground is planned. Today's island birch is silver birch, which belongs on drier ground.
 
 ## Where the island differs
 

@@ -26,7 +26,7 @@ So on a hillside, bracken often marks the deeper, drier soils, with heather on t
 - **Shade and litter.** Dense fronds shade out smaller plants in summer. The dead fronds then lie as a thick, slow-rotting mat, which smothers seedlings.
 - **Spread.** Where grazing or management eases off, bracken can creep into grassland and heath and replace it.
 - **Wildlife.** Bracken isn't a desert:
-  - Whinchats breed where bracken mixes with grassland, nesting in tussocks and perching on the fronds. The British Trust for Ornithology's whinchat account (`bto-whinchat` in the [sources register](../sources.yaml)) describes tussock nests and bracken perches. An earlier draft said whinchats nest *in* bracken, which the source doesn't support.
+  - Whinchats breed where bracken mixes with grassland, nesting in tussocks and perching on the fronds. The British Trust for Ornithology's whinchat account (`bto-whinchat` in the [sources register](../../sources.yaml)) describes tussock nests and bracken perches. An earlier draft said whinchats nest *in* bracken, which the source doesn't support.
   - Some butterflies of woodland edges and hillsides breed where bracken litter shelters violets, their caterpillars' food plant.
   - The mix of bracken with open patches matters more than bracken alone.
 
@@ -38,7 +38,7 @@ So on a hillside, bracken often marks the deeper, drier soils, with heather on t
 
 ## On the island
 
-Bracken is one of the [Highwood plants](../field-guide/highwood-plants.md#bracken-pteridium-aquilinum). Each patch is a few fronds rising from separate points, as from a rhizome, with tips turning from rust-green toward bronze. Placement is planned to put bracken in woodland gaps and on gentle, deeper-soiled slopes, never on the exposed ridge or in wet ground. Players can walk through it: it is soft cover, not an obstacle.
+Bracken is one of the [Highwood plants](../highwood-plants.md#bracken-pteridium-aquilinum). Each patch is a few fronds rising from separate points, as from a rhizome, with tips turning from rust-green toward bronze. Placement is planned to put bracken in woodland gaps and on gentle, deeper-soiled slopes, never on the exposed ridge or in wet ground. Players can walk through it: it is soft cover, not an obstacle.
 
 ## Where the island differs
 

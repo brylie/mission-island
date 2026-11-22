@@ -16,7 +16,7 @@
   supports:
     - claim: A single lookout's fire finder gives a bearing; the fire's position is normally fixed by crossing bearings from two or more towers, with a single-tower distance estimate as a rough fallback.
       quote: To add on the next read; the agent's summary is not a quote.
-      used-in: explainers/wildfire.md#fighting-a-fire
+      used-in: field-guide/processes/wildfire.md#fighting-a-fire
 
 - id: naturescot-caledonian-pinewood
   title: Caledonian pinewood
@@ -29,7 +29,7 @@
   region: Scotland
   supports:
     - claim: General pinewood structure, Scots pine ecology, and pinewood wildlife.
-      used-in: field-guide/highwood-plants.md#sources, explainers/wildfire.md#sources
+      used-in: field-guide/highwood-plants.md#sources, field-guide/processes/wildfire.md#sources
 
 - id: woodland-trust-a-z
   title: A–Z of British trees
@@ -42,7 +42,7 @@
   region: United Kingdom
   supports:
     - claim: General species background for the Highwood trees and shrubs; its individual species pages are the sources to cite.
-      used-in: field-guide/highwood-plants.md#sources, explainers/bracken-slopes.md#sources, explainers/wet-woodland.md#sources
+      used-in: field-guide/highwood-plants.md#sources, field-guide/places/bracken-slopes.md#sources, field-guide/places/wet-woodland.md#sources
 
 - id: naturescot-muirburn-licensing
   title: Muirburn licensing
@@ -55,7 +55,7 @@
   region: Scotland
   supports:
     - claim: Muirburn in Scotland is licensed by NatureScot under the Wildlife Management and Muirburn (Scotland) Act 2024, with stricter rules on peat 40 cm or deeper, and allowed only in a defined season.
-      used-in: explainers/wildfire.md#burning-on-purpose-muirburn
+      used-in: field-guide/processes/wildfire.md#burning-on-purpose-muirburn
 
 - id: gwct-muirburn-2026
   title: "Muirburn: 2026/27 season and licences"
@@ -68,7 +68,7 @@
   region: Scotland
   supports:
     - claim: Muirburn licensing in practice for the 2026–27 season.
-      used-in: explainers/wildfire.md#sources
+      used-in: field-guide/processes/wildfire.md#sources
 
 # Added 2026-11-22 by the Knowledge Keeper's first sourcing run. Quotes came back through a summarising
 # fetcher (quote-via: fetcher), so a person should check each against its page before marking claims verified.
@@ -341,4 +341,4 @@
   supports:
     - claim: "Whinchats nest in grass tussocks and use bracken as perches."
       quote: "tussocks for nest sites"
-      used-in: field-guide/highwood-habitats.md#bracken-slopes, explainers/bracken-slopes.md#how-bracken-changes-a-place
+      used-in: field-guide/highwood-habitats.md#bracken-slopes, field-guide/places/bracken-slopes.md#how-bracken-changes-a-place
