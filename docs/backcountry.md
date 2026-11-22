@@ -22,6 +22,18 @@ Capture these at every phase with the same camera, hour, weather and quality. Th
 | Birch Flats | Evening, low sun | Beauty: pale trunks glowing amber, long shadows |
 | Ridge crest looking back south | Late afternoon | Belonging: Harbor, Seabrook and the farm small in the distance |
 
+The views are defined in `src/worlds/starter/layout/hero-views.ts` and open as Workbench landscape views, for example `workbench.html?view=hero-tower-north#landscape`. A test keeps every view's line of sight clear of terrain and within the Workbench's orbit range.
+
+To capture all five at a fixed window size, start the game (`npm run dev` or `npm run playtest`), then run:
+
+```sh
+npm run capture:heroes -- --base http://localhost:5173
+```
+
+PNGs land in `.mission-island/captures/<time>/`. Add `--view hero-creek-ford` to capture a single view, or `--out DIR` to choose the folder. The script drives a headless Chrome or Chromium over the DevTools protocol, so it needs no extra packages: it finds Google Chrome, Chrome for Testing from a Playwright install, or the path in `CHROME_PATH` or `--browser`. The Workbench's `?capture` mode shows only the 3D view and marks the page ready once the scene has settled.
+
+To stand at a hero view's spot in a live playtest, press **O**, then use **Playtest events → Go to**. It lists the hero views, the Fire Watch deck and Highwood's named places.
+
 ### What makes it work
 
 1. **Land shaped with a reason.** Drainage comes first: the creek carves the valleys, side gullies feed it, and slopes steepen toward the water and flatten into benches where the meadows sit. Rock bands run along the ridge crest and summit, with scree fans below and boulders seated in the soil. Bench edges and terraces have sharp breaks in slope. Ridge silhouettes read clearly from the tower: a notch, a lone crest pine, a rocky tooth.

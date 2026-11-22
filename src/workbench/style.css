@@ -431,3 +431,9 @@ input[type="color"] { width: 34px; height: 25px; padding: 2px; background: #2636
 #reference-editor[open] summary, #photo-controls[open] summary { margin-bottom: 8px; }
 #turnaround-angles a { padding: 4px 8px; }
 #asset-reference:not(.crew-comparison) :is(#reference-editor, #photo-controls) > summary { display: none; }
+
+/* Scripted captures show only the 3D view, filling the window. */
+body.workbench-capture { overflow: hidden; }
+body.workbench-capture .viewport { position: fixed; inset: 0; z-index: 100; width: 100vw; height: 100vh; border-radius: 0; }
+body.workbench-capture .viewport > :not(canvas) { display: none; }
+body.workbench-capture #stage { width: 100%; height: 100%; }

@@ -159,14 +159,15 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
     if (req.method !== 'POST') return stop(httpMethodNotAllowed, 'Use POST.')
     const seats = sessions.seats()
     if (!seats.some((seat) => req.headers.authorization === 'Bearer ' + seat.token)) return stop(httpForbidden, 'Join the crew first.')
-    return { stop, seats, args: new URL(req.url ?? '/', 'http://localhost').searchParams }
+    const token = seats.find((seat) => req.headers.authorization === 'Bearer ' + seat.token)?.token
+    return { stop, seats, token, args: new URL(req.url ?? '/', 'http://localhost').searchParams }
   }
   if (trialMode) middlewares.use('/api/playtest-event', (req, res) => {
     const request = crewRequest(req, res)
     if (!request) return
     const event = readPlaytestEvent(request.args)
     if (!event) return request.stop(httpBadRequest, 'Unknown event or choice.')
-    const result = game.playtestEvent(event)
+    const result = game.playtestEvent(event, request.token)
     request.stop(result.ok ? httpOk : httpConflict, result.text)
   })
   if (trialMode) middlewares.use('/api/live-checkpoint', (req, res) => {

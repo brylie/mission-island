@@ -9,6 +9,8 @@ import { createGame } from '../server/game.ts'
 import { multiplayer } from '../server/multiplayer.ts'
 import { playtestEventQuery, readPlaytestEvent } from '../src/playtest-events.ts'
 import { wildfireSizes } from '../src/wildfire.ts'
+import { playtestPlaces } from '../src/playtest-places.ts'
+import { walkingHeight } from '../src/terrain.ts'
 import { tokens } from './support/game-harness.mjs'
 
 const read = (query) => readPlaytestEvent(new URLSearchParams(query))
@@ -85,4 +87,21 @@ test('the playtest event endpoint answers only a joined crewmate', (t) => {
     assert.deepEqual(call('POST', 'Bearer ' + tokens[0]), { code: 403, text: 'Join the crew first.' })
   }
   finally { httpServer.emit('close') }
+})
+
+test('a playtest crewmate can go to a named place, standing on its ground', () => {
+  assert.deepEqual(readPlaytestEvent(playtestEventQuery({ type: 'go-to', place: 'cairn-summit' })), { type: 'go-to', place: 'cairn-summit' })
+  assert.equal(read('type=go-to&place=moon'), undefined)
+  assert.equal(read('type=go-to'), undefined)
+  const game = createGame({ playtest: { checkpoint: 'fire-watch', seats: 1, revision: 1 } })
+  game.join(tokens[0], () => {})
+  game.tick()
+  assert.equal(game.playtestEvent({ type: 'go-to', place: 'cairn-summit' }, 'unknown').ok, false)
+  assert.deepEqual(game.playtestEvent({ type: 'go-to', place: 'cairn-summit' }, tokens[0]), { ok: true, text: 'Sent to Cairn Summit.' })
+  const player = game.tick().players[0]
+  const summit = playtestPlaces.find(({ id }) => id === 'cairn-summit').point
+  assert.ok(Math.hypot(player.x - summit.x, player.z - summit.z) < 1, `${player.x}, ${player.z}`)
+  assert.ok(Math.abs(player.y - walkingHeight(player)) < 0.5)
+  game.playtestEvent({ type: 'go-to', place: 'fire-watch-deck' }, tokens[0])
+  assert.ok(game.tick().players[0].y > walkingHeight({ x: 10000, z: 10000 }) + 5, 'the deck is up the tower')
 })

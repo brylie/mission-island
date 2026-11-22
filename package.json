@@ -9,6 +9,7 @@
     "workbench:reference": "node --experimental-strip-types scripts/workbench-reference.mjs",
     "dyes:generate": "node --experimental-strip-types scripts/dye-swatches.mjs",
     "island:generate": "node --experimental-strip-types scripts/generate-island.mjs",
+    "capture:heroes": "node --experimental-strip-types scripts/capture-hero-views.mjs",
     "check": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0 --cache --cache-location node_modules/.cache/eslint/",
     "lint:full": "eslint . --max-warnings 0",

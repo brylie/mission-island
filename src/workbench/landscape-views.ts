@@ -7,6 +7,7 @@ import { driftwoodShallows } from '../simulation/driftwood-school'
 import { falls, groundHeight } from '../terrain'
 import type { Point } from '../world'
 import { liftSites } from '../worlds/starter/lift'
+import { highwoodHeroViews } from '../worlds/starter/layout/hero-views'
 
 interface LandscapeView {
   label: string
@@ -16,6 +17,16 @@ interface LandscapeView {
   radius: number
   hour: number
   time: number
+  rain?: number
+}
+
+// A hero view's eye and target become the orbit camera's angles and radius.
+function heroView({ label, eye, target, hour, rain }: typeof highwoodHeroViews[number]): LandscapeView {
+  // The focus height is metres above the ground, like the other landscape views.
+  const focus = { x: target.x, z: target.z, height: target.above }
+  const dx = eye.x - focus.x, dy = groundHeight(eye) + eye.above - groundHeight(target) - target.above, dz = eye.z - focus.z
+  const radius = Math.hypot(dx, dy, dz)
+  return { label, focus, alpha: Math.atan2(dz, dx), beta: Math.acos(dy / radius), radius, hour, time: 0, rain }
 }
 
 const farmThermal = liftSites.find(({ id }) => id === 'farm-fields') ?? liftSites[0]
@@ -42,6 +53,7 @@ export const landscapeViews: Readonly<Record<string, LandscapeView>> = {
   'shellglass-night': shellglassShot(shellglassShots.night),
   'farm-thermal-gulls': { ...farm, focus: { x: farmThermal.x, z: farmThermal.z, height: groundHeight(farmThermal) + farmHeight } },
   'fernfall-overlook': { ...fernfall, focus: { ...falls, height: fernfallHeight } },
+  ...Object.fromEntries(highwoodHeroViews.map((view) => [view.id, heroView(view)])),
 }
 
 export const scenicChoices = [...Object.entries(landscapeViews).map(([id, view]) => [id, view.label]), [longAcreSubject, 'Long Acre Fields pollinators'], [brinewickMarketSubject, 'Brinewick Fish Market routine'], [lookoutRecoverySubject, 'Forest Lookout recovery']]

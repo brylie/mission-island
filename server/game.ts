@@ -26,6 +26,8 @@ import { stepSkiff } from './skiff.ts'
 import { crewInputTimeoutMs } from './host-time.ts'
 import type { PlaytestMetricsRun } from './playtest-metrics.ts'
 import type { PlaytestEvent } from '../src/playtest-events.ts'
+import { playtestPlaces } from '../src/playtest-places.ts'
+import { walkingHeight } from '../src/terrain.ts'
 
 const hostTicksPerSecond = 30
 const juniperUpdateIntervalTicks = 3
@@ -92,10 +94,23 @@ function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoP
   return trial
 }
 
+// Moves the crewmate who asked to a named place, standing on its walking surface.
+function sendCrewmate(state: Snapshot, crew: ReturnType<typeof createCrewRoster>, token: string | undefined, placeId: string) {
+  const player = token === undefined ? undefined : crew.profile(token)
+  const place = playtestPlaces.find(({ id }) => id === placeId)
+  if (!player?.connected || !place) return { ok: false, text: 'Join the crew first.' }
+  if (player.seat || state.aviation.flight?.pilotId === player.id) return { ok: false, text: 'Leave your seat or land first.' }
+  Object.assign(player, { x: place.point.x, z: place.point.z, y: walkingHeight(place.point), swimming: false, grounded: true })
+  const member = crew.members().find((each) => each.player === player)
+  if (member) member.verticalSpeed = 0
+  return { ok: true, text: `Sent to ${place.label}.` }
+}
+
 // Live playtests can start an island event on demand. Ordinary games refuse.
-function runPlaytestEvent(state: Snapshot, wildfire: ReturnType<typeof createGameInteractions>['wildfire'], event: PlaytestEvent) {
+function runPlaytestEvent(state: Snapshot, { wildfire, crew }: { wildfire: ReturnType<typeof createGameInteractions>['wildfire'], crew: ReturnType<typeof createCrewRoster> }, event: PlaytestEvent, token?: string) {
   if (!state.playtest) return { ok: false, text: 'Island events start on demand only in a live playtest.' }
   if (!state.playtest.started) return { ok: false, text: 'Start the checkpoint before starting an event.' }
+  if (event.type === 'go-to') return sendCrewmate(state, crew, token, event.place)
   return event.type === 'wildfire' ? wildfire.start(event) : wildfire.end()
 }
 
@@ -248,7 +263,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     tick,
     join,
     freight,
-    playtestEvent: (event: PlaytestEvent) => runPlaytestEvent(state, wildfire, event),
+    playtestEvent: (event: PlaytestEvent, token?: string) => runPlaytestEvent(state, { wildfire, crew }, event, token),
     snapshotForSave: () => saveIsland(state, growth, aviation.groundSavedPilot(crew.savedProfiles())),
     get crewCoins() { return state.crewCoins },
   }
