@@ -27,6 +27,8 @@ export const studioCamera = {
   orbit: { minBeta: 0.035, nadirInset: 0.06, panSensitivity: 840, panSpan: 5, turntableRate: 0.38 },
   clipping: { closeNear: 0.004, near: 0.025, nearSpanDivisor: 2000, landscapeFar: 950, far: 600, farRadiusScale: 8, fieldNear: 0.04, fieldNearDivisor: 360 },
   fit: { aspect: 0.92, minAspect: 0.3 },
+  // A rebuild that changes the default orbit radius by more than this factor reframes the subject.
+  reframeRatio: 1.35,
 } as const
 
 export const studioGrid = {

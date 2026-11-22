@@ -19,7 +19,7 @@ See the [Effects shelf and field checks](effects-workbench.md) for the preview s
 
 Open **Construction → Site furnishings → Seabrook village bench**. Select **On island** and move the bench using east and north offsets in metres. Its inspector, camera controls and geometry check stay available. **Save to landscape draft** applies the edit to Starter Island in this browser’s Workbench. **Inspect this location** returns to the landscape camera at the bench. To undo a published draft placement, reset the subject’s settings and save again. **Export placement JSON** produces coordinates, heading, size and finish suitable for review against the matching entry in `src/worlds/starter/sites.ts`. Collision geometry and the multiplayer map are authored separately.
 
-Use **Saved variations** to build a named, browser-local collection for a subject. Each variation restores its controls, viewport and clock. Use **Copy setup link** to share a specific model, context, parameter set, camera, lighting and paused time. Use a LAN address when sharing between computers. Landscape studies and biome recipes retain their specialized formats. The map’s **Save layout** and **Export JSON** manage additional placed objects. Scene drafts and setups run separately from multiplayer saves.
+Changing a setting keeps your orbit and zoom while the subject stays about the same size, as with a new seed. When a setting makes the subject much larger or smaller than the view was framed for, such as another species or a wider comparison, the camera frames the new subject from the same angle. Several small steps in one direction count together. Use **Saved variations** to build a named, browser-local collection for a subject. Each variation restores its controls, viewport and clock. Use **Copy setup link** to share a specific model, context, parameter set, camera, lighting and paused time. Use a LAN address when sharing between computers. Landscape studies and biome recipes retain their specialized formats. The map’s **Save layout** and **Export JSON** manage additional placed objects. Scene drafts and setups run separately from multiplayer saves.
 
 ## Procedural surfaces
 
@@ -84,7 +84,24 @@ Recipe tuning lives in `src/assets/audio/`, one file per family.
 
 The cargo trial steps the actual Cannon simulation at the server’s fixed rate. The fishing trial uses the server’s cast validation, bite probability and fight rules. It guarantees a bite after a valid cast so reeling strategies can be compared. The farm preview exposes crop states. The **Resident routines** study reads each resident's real schedule and conversation. Choose a resident and an hour, then set the crew's trust, the resident's standing, the favor's state and the rain to hear what they would say. Change the remark seed to hear other small talk that fits the same moment. On the island, the stage moves to where that resident is at that hour.
 
-Further work can add named plant species backed by shared generators, collision updates for edited scenery, and a versioned catalog of approved material and building recipes. Each can use the existing subject, field site and setup-link conventions.
+Further work can add collision updates for edited scenery and a versioned catalog of approved material and building recipes. Each can use the existing subject, field site and setup-link conventions.
+
+## Compare Highwood tree species
+
+Open **Ecology → Plants → Highwood species** to review the procedural trees, shrubs and deadwood planned for the Highwood backcountry. Choose a **Species**, an **Age** (young, mature or old), an **Exposure** and a **Detail tier**. Exposed forms lean and stream toward +x, as though the wind blows from −x. **First seed** and **Seeds side by side** set the seeds the study shows.
+
+**Compare** changes what stands in the row:
+
+- **Several seeds** checks that seeds look like one species without looking like copies.
+- **Several seeds, young and mature** shows the same seeds at two ages.
+- **Every age, sheltered and exposed** shows one seed at all three ages, each sheltered and exposed.
+- **Near beside far** pairs each seed's near model with its distant silhouette.
+- **Tier switch by camera distance** stands both tiers on one spot and shows whichever **Tier switch distance** calls for. Zoom out past the switch to judge the change.
+- **Every species** shows every species in one row.
+
+**Look** switches between colour, a greyscale value check and flat black silhouettes against a pale sky. Use **Front** for silhouettes, and **Overcast** to check that the crowns still read without direct sun. The observations line lists the triangles in each tier against the budget, and the first template's trunk radius and height.
+
+[Highwood species references](highwood-species.md) opens each species beside a licensed reference photograph. The generator lives in `src/assets/trees/`. Its species tables are in `src/assets/geometry/tree-species.ts` and `shrub-species.ts`. `buildTreeTemplate` bakes one species, age, exposure and seed into a trunk mesh and a crown mesh, ready for thin instancing.
 
 ## Walk the coastal meadow
 

@@ -25,6 +25,7 @@ import { routeStudies } from './route-studies'
 import { saltwindAssets } from './saltwind-studies'
 import { houseStudy } from './starter-building-study'
 import { starterSceneryStudies, homeChestStudy, dockStudy, buoyStudy } from './starter-prop-studies'
+import { treeSpeciesEntry } from './tree-species-study'
 import type { Entry } from './subject'
 import { compactTractorStudy, flatbedStudy, harborBoatStudy, responsePickupStudy } from './vehicle-studies'
 
@@ -49,6 +50,7 @@ export const entries: Entry[] = [
   crewStudy,
   dyeLineupStudy,
   ...starterSceneryStudies,
+  treeSpeciesEntry,
   houseStudy,
   homeChestStudy,
   farmStudy,
