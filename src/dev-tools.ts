@@ -56,6 +56,14 @@ export function createDevTools(scene: Scene, canvas: HTMLCanvasElement, params =
   let moded = false
   // A handle for agents driving the page: toggle overlays or read the scene from the console or Playwright.
   Object.assign(window, { missionDev: { overlays, scene, view } })
+  const dispose = () => {
+    overlays.dispose()
+    stopPerf?.()
+    panel?.remove()
+    camera?.dispose()
+  }
+  // Disposing the scene removes the panel and readout too, so hosts need no extra cleanup.
+  scene.onDisposeObservable.addOnce(dispose)
   return {
     camera,
     weather: sky,
@@ -68,11 +76,6 @@ export function createDevTools(scene: Scene, canvas: HTMLCanvasElement, params =
         moded = true
       }
     },
-    dispose() {
-      overlays.dispose()
-      stopPerf?.()
-      panel?.remove()
-      camera?.dispose()
-    },
+    dispose,
   }
 }

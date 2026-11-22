@@ -121,6 +121,12 @@ function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Ent
   return { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount, shown }
 }
 
+// Dev overlays read the study's island clock, then the scene renders.
+function renderWithDev(scene: Scene, dev: ReturnType<typeof createDevTools>, islandTime: number, time: number) {
+  dev?.frame({ islandTime }, time)
+  scene.render()
+}
+
 export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values, reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>, field?: FieldSite, showFigure = false) {
   const scene = new Scene(engine)
   const dev = createDevTools(scene, canvas)
@@ -264,8 +270,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         layout?.update(delta, time)
         subject.forEach(applyWireframe)
         layout?.meshes().forEach(applyWireframe)
-        dev?.frame({ islandTime: Number(settings.clockStart ?? 0) + time }, time)
-        scene.render()
+        renderWithDev(scene, dev, Number(settings.clockStart ?? 0) + time, time)
         // Measured after the render, which brings every parent's world matrix up to date.
         if (subjectSize?.refresh(settings, rate && entry.duration ? undefined : time)) {
           if (figureFrame) figureFrame = fitFigure(true)
@@ -305,7 +310,6 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         else frame(saved.alpha, saved.beta, saved.fov)
       },
       dispose() {
-        dev?.dispose()
         layout?.dispose()
         camera.detachControl()
         scene.dispose()
