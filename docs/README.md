@@ -28,6 +28,8 @@ Mission Island is a third-person co-op game about two people making a home on a 
 | --- | --- |
 | Choose what to build after the first payday | [Second-shift brief and acceptance playtest](design/second-shift.md) |
 | Compare hauling with farming and fishing before pricing a repair | [Starter Island economy and pacing sheet](design/starter-economy.md) |
+| What everyday services should Seabrook add? | [Village services and residents](design/seabrook-village-services.md) |
+| Plan a village route, sample week, or starter career | [Starter Island play plan](design/starter-island-play-plan.md) |
 | Give a resident a routine, a memorable workplace and a reason to return | [Resident and destination briefs](design/residents-and-destinations.md) |
 | Review a mechanic from a new player’s viewpoint | [Playtest and Accessibility Reviewer skill](../.agents/skills/mission-island-playtest-accessibility/SKILL.md) |
 | Set up a repeatable review and share the evidence | [Shared Workbench and playtest workflow](playtests/review-workflow.md) |

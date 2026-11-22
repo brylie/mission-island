@@ -52,6 +52,8 @@ Either player could return to put the gate right. Wren might thank them and stil
 
 **Walk it.** Drive to the yard while a partner follows the foot route. From the cab, check the sightline to the waiting player and the loading bay. From ground level, ask the walker to point to the ferry works and then lead the driver to the fishing dock. Record the clue that helped them distinguish the two.
 
+The [Seabrook village services brief](seabrook-village-services.md) proposes a village hall and reading room, a mending shed, and a clinic with a response cupboard.
+
 ## Before handing off a resident
 
 Choose a home, a walkable commute, a workplace, a favor, and one later response that either player can recognize. Check the paths at walking height, including benches, doors, vehicle clearance and places an NPC can stop. Compare daylight, rain and night. Save a Workbench view for each troublesome approach. For the planned trust system, have one player do the favor and the other greet the resident after a host restart. Check that the right resident remembers and that repeated greetings give no duplicate credit. [Villagers #3](https://github.com/brylie/mission-island/issues/3) · [Destination survey](../living-world-qa.md) · [Workbench guide](../workbench.md)
