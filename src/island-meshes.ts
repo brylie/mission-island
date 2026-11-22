@@ -110,14 +110,15 @@ export function createMeshFactory(scene: Scene, shadows: ShadowGenerator) {
     return place(mesh, x, y, z, color, root, casts)
   }
 
-  function surface(name: string, positions: number[], indices: number[], color: string | Material, root?: TransformNode, uvs?: number[]) {
+  function surface(name: string, positions: number[], indices: number[], color: string | Material, root?: TransformNode, uvs?: number[], normals?: number[]) {
     const mesh = new Mesh(name, scene)
     const data = new VertexData()
     data.positions = positions
     data.indices = indices
     data.uvs = uvs ?? null
-    data.normals = []
-    VertexData.ComputeNormals(positions, indices, data.normals)
+    // Callers with authored normals, such as faceted trees, skip the smoothing pass.
+    data.normals = normals ?? []
+    if (!normals) VertexData.ComputeNormals(positions, indices, data.normals)
     data.applyToMesh(mesh)
     mesh.material = typeof color === 'string' ? paint(color) : color
     mesh.isPickable = false
