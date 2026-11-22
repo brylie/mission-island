@@ -80,7 +80,8 @@ export function actionHint(state: Snapshot, player: Player, focus?: Interaction)
   if (player.casting) return ['', 'Watching the bobber']
   if (player.seat) return ridingHint(state, player)
   const option = chosenInteraction(state, player, focus)
-  return option ? [option.key, option.label] : fallbackHint(state, player)
+  if (!option) return fallbackHint(state, player)
+  return [option.key, option.action === 'record' ? `${option.label} · ${option.name}` : option.label]
 }
 
 // What E sends: the interaction the player chose, so the host can refuse one that is no longer open.

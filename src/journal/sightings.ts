@@ -45,12 +45,12 @@ const gullBehavior: Partial<Record<ReturnType<typeof gullAt>['phase'], string>> 
 function instances(state: World, subject: SubjectId): Instance[] {
   switch (subject) {
     case 'sight:school': {
-      // Aim at the leader, or at the middle of the school while nobody leads.
-      const { fish, leader } = state.driftwood
+      // Keep the target centered on the school as it selects a new leader.
+      const { fish, regrouping } = state.driftwood
       if (!fish.length) return []
-      const middle = { x: fish.reduce((sum, one) => sum + one.x, 0) / fish.length, z: fish.reduce((sum, one) => sum + one.z, 0) / fish.length }
-      const { x, z } = fish[leader] ?? middle
-      return [{ at: { x, y: waterLevel, z }, radius: schoolAimRadiusM, behavior: fish.some((one) => one.startled) ? 'regrouping' : undefined }]
+      const x = fish.reduce((sum, one) => sum + one.x, 0) / fish.length
+      const z = fish.reduce((sum, one) => sum + one.z, 0) / fish.length
+      return [{ at: { x, y: waterLevel, z }, radius: schoolAimRadiusM, behavior: regrouping ? 'regrouping' : undefined }]
     }
     case 'sight:hare':
     case 'sight:fox':
@@ -87,7 +87,7 @@ export function sightingEntries(state: World, player: Point, choice: number) {
   return { ids: newEntries(state, kind, instance), at: instance.at }
 }
 
-// "Record in journal" for everything in range that would add a line. The reticle picks one by aiming at it.
+// Offer a note for everything in range that would add a line. The reticle picks one by aiming at it.
 export function journalInteractions(state: World, player: Player): InteractionOption<SightingAction>[] {
   const options: InteractionOption<SightingAction>[] = []
   for (const [kind, subject] of journalSubjects.entries()) {
@@ -104,7 +104,7 @@ export function journalInteractions(state: World, player: Player): InteractionOp
         at: instance.at,
         radius: instance.radius,
         name: doing ? `${subject.name} · ${doing.toLowerCase()}` : subject.name,
-        label: ids[0] === subject.id ? 'Record in journal' : 'Add this behavior to the journal',
+        label: ids[0] === subject.id ? 'Jot a note' : 'Jot a behavior note',
       })
     }
   }

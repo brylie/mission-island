@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { interactions } from '../src/interaction-options.ts'
 import { createDriftwoodSchool, driftwoodShallows } from '../src/simulation/driftwood-school.ts'
 import { waterDepth } from '../src/terrain.ts'
 import { previewDriftwood } from '../src/workbench/driftwood-preview.ts'
@@ -22,7 +23,7 @@ for (const pass of ['wade', 'paddle']) {
     })
     const observer = game.join(tokens[0])
     let active = game.join(tokens[1])
-    let partial = false, regrouped = false, rejoined = false
+    let partial = false, regrouped = false, rejoined = false, quietAgain = false
     let firstStartle, wading = false
     for (let tick = 0; tick < 750; tick++) {
       if (tick % 6 === 0) {
@@ -34,6 +35,7 @@ for (const pass of ['wade', 'paddle']) {
       assert.deepEqual(school, active.state.driftwood)
       const startled = school.fish.filter((f) => f.startled)
       if (startled.length && !firstStartle) firstStartle = school
+      if (startled.length) assert.equal(school.regrouping, false)
       if (startled.length && startled.length < 6) partial = true
       if (startled.length && !active.player.swimming && waterDepth(active.player) > 0.04) wading = true
       if (firstStartle && !rejoined) {
@@ -43,14 +45,25 @@ for (const pass of ['wade', 'paddle']) {
         assert.deepEqual(active.state.driftwood, observer.state.driftwood)
         rejoined = true
       }
-      if (rejoined && school.leader >= 0 && !regrouped) {
+      if (rejoined && school.regrouping && !regrouped) {
         const lateObserver = game.join(tokens[2])
-        assert.equal(lateObserver.state.driftwood.leader, school.leader)
+        assert.equal(lateObserver.state.driftwood.regrouping, true)
         assert.deepEqual(lateObserver.state.driftwood, observer.state.driftwood)
+        const choice = { action: 'record', subject: 0 }
+        for (const watcher of [observer, lateObserver]) {
+          assert.ok(interactions(watcher.state, watcher.player)
+            .some((option) => option.action === choice.action && option.subject === choice.subject))
+          watcher.request('interact', { choice })
+        }
+        game.advance()
+        assert.deepEqual(observer.state.journal, active.state.journal)
+        assert.ok(observer.state.journal.entries['sight:school']?.first)
+        assert.equal(observer.state.journal.entries['sight:school/regrouping']?.first.by, 0)
         regrouped = true
       }
+      if (regrouped && school.leader >= 0 && !school.regrouping) quietAgain = true
     }
-    assert.ok(partial && regrouped && rejoined)
+    assert.ok(partial && regrouped && rejoined && quietAgain)
     if (!boating) assert.ok(wading)
     assert.ok(waterDepth(observer.player) < 0.01)
     assert.ok(observer.state.driftwood.fish.some((f, i) => Math.hypot(f.x - firstStartle.fish[i].x, f.z - firstStartle.fish[i].z) > 1))

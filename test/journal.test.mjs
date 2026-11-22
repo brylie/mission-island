@@ -24,7 +24,7 @@ function island(overrides = {}) {
     weather: weatherAt(day),
     journal: emptyJournal(),
     juniper: { hares: [{ x: 0, z: 0, heading: 0, behavior: 'fleeing' }], foxes: [{ x: 4, z: 0, heading: 0, behavior: 'chasing' }], clover: [] },
-    driftwood: { leader: -1, fish: [{ x: 30, z: -52, heading: 0, startled: false }, { x: 32, z: -52, heading: 0, startled: false }] },
+    driftwood: { leader: -1, regrouping: false, fish: [{ x: 30, z: -52, heading: 0, startled: false }, { x: 32, z: -52, heading: 0, startled: false }] },
     ...overrides,
   }
 }
@@ -116,8 +116,8 @@ test('the reticle offers each subject in range once, then only a behavior the cr
   const state = island()
   const options = journalInteractions(state, watcher)
   assert.deepEqual(options.slice(0, 2).map(({ name, label, subject }) => [name, label, subject]), [
-    ['Brown hare · fleeing', 'Record in journal', 16],
-    ['Juniper fox', 'Record in journal', 32],
+    ['Brown hare · fleeing', 'Jot a note', 16],
+    ['Juniper fox', 'Jot a note', 32],
   ])
   assert.ok(options.slice(2).some(({ name, subject }) =>
     name === 'White clover' && sightingEntries(state, watcher, subject).ids.includes('sight:clover')))
@@ -127,7 +127,7 @@ test('the reticle offers each subject in range once, then only a behavior the cr
 
   recordEntry(state.journal, 'sight:hare', { t: 0, by: 1 })
   recordEntry(state.journal, 'sight:fox', { t: 0, by: 1 })
-  assert.deepEqual(journalInteractions(state, watcher).filter(({ subject }) => subject < 48).map(({ label }) => label), ['Add this behavior to the journal'])
+  assert.deepEqual(journalInteractions(state, watcher).filter(({ subject }) => subject < 48).map(({ label }) => label), ['Jot a behavior note'])
   recordEntry(state.journal, 'sight:hare/fleeing', { t: 0, by: 1 })
   assert.deepEqual(journalInteractions(state, watcher).filter(({ subject }) => subject < 48), [])
   assert.deepEqual(sightingEntries(state, watcher, 16).ids, [])
@@ -149,29 +149,33 @@ test('general hare records include grazing and sheltering in dry weather', () =>
   assert.ok(!fieldInteractions(state, watcher).some(({ record }) => record === 'sight:hare/sheltering'))
 })
 
-test('a startled school is noted as regrouping, and an empty one offers nothing', () => {
+test('the school offers a behavior note while regrouping after the scare', () => {
   const shore = player(0, { x: 31, z: -46 })
   const calm = island()
   assert.deepEqual(sightingEntries(calm, shore, 0).ids, ['sight:school'])
   assert.equal(sightingEntries(calm, shore, 0).at.x, 31)
-  const scared = island({ driftwood: { leader: 1, fish: [{ x: 30, z: -52, heading: 0, startled: true }, { x: 32, z: -52, heading: 0, startled: false }] } })
-  assert.deepEqual(sightingEntries(scared, shore, 0).ids, ['sight:school', 'sight:school/regrouping'])
-  assert.equal(sightingEntries(scared, shore, 0).at.x, 32)
-  assert.deepEqual(sightingEntries(island({ driftwood: { leader: -1, fish: [] } }), shore, 0).ids, [])
+  const scared = island()
+  scared.driftwood.fish[0].startled = true
+  assert.deepEqual(sightingEntries(scared, shore, 0).ids, ['sight:school'])
+  const regrouping = island()
+  Object.assign(regrouping.driftwood, { leader: 1, regrouping: true })
+  assert.deepEqual(sightingEntries(regrouping, shore, 0).ids, ['sight:school', 'sight:school/regrouping'])
+  assert.deepEqual(sightingEntries(regrouping, shore, 0).at, sightingEntries(scared, shore, 0).at)
+  assert.deepEqual(sightingEntries(island({ driftwood: { leader: -1, regrouping: false, fish: [] } }), shore, 0).ids, [])
 })
 
 test('a subject within arm’s reach can be recorded without an aim, unless another key has a use there', () => {
   const state = island()
   const beside = player(0, { x: mirrorPoolWillow.x + 2, z: mirrorPoolWillow.z })
   state.players = [beside]
-  assert.deepEqual(actionHint(state, beside), ['E', 'Record in journal'])
+  assert.deepEqual(actionHint(state, beside), ['E', 'Jot a note · Fallen willow'])
   assert.deepEqual(interactRequest(state, beside), { type: 'interact', choice: { action: 'record', subject: 64 } })
   // From across the bank it takes the reticle.
   const across = player(0, { x: mirrorPoolWillow.x + 8, z: mirrorPoolWillow.z })
   assert.deepEqual(actionHint(state, across), ['', ''])
   assert.deepEqual(interactRequest(state, across), { type: 'interact' })
   const focus = journalInteractions(state, across)[0]
-  assert.deepEqual(actionHint(state, across, focus), ['E', 'Record in journal'])
+  assert.deepEqual(actionHint(state, across, focus), ['E', 'Jot a note · Fallen willow'])
   // With a rod in hand the cast prompt keeps the prompt line, and E is left alone.
   const angler = { ...beside, equipped: 'fishing-rod' }
   assert.equal(actionHint(state, angler)[1], 'Hold and release to cast')

@@ -37,7 +37,7 @@ export function createJournal(state: Pick<Snapshot, 'journal' | 'islandTime' | '
     return added
   }
 
-  // The reticle's "Record in journal". The interaction list has already checked the subject is open to this player.
+  // The reticle's note prompt. The interaction list has already checked the subject is open to this player.
   function record(player: Player, choice: number) {
     const { ids, at } = sightingEntries(state, player, choice)
     if (at) add(ids, player, at)
