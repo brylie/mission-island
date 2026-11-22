@@ -69,7 +69,8 @@ function buildLayerMeshes(scene: Scene, id: string, primitives: readonly Overlay
 export function createDebugOverlayView(scene: Scene) {
   const shown = new Map<string, { sample: (context: OverlayContext) => OverlayPrimitive[], live: boolean, meshes: Mesh[], sampledAt: number }>()
   const clear = (meshes: Mesh[]) => meshes.forEach((mesh) => void mesh.dispose(false, true))
-  scene.setRenderingAutoClearDepthStencil(overlayRenderingGroup, false)
+  // The overlay group clears depth, so lines draw over trees and terrain instead of hiding in them.
+  scene.setRenderingAutoClearDepthStencil(overlayRenderingGroup, true)
 
   function set(ids: readonly string[]) {
     for (const [id, layer] of shown) {

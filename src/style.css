@@ -544,8 +544,9 @@ kbd {
   border-radius: 6px;
 }
 
+/* display: none, because labels set their own visibility inline and the header would keep its space. */
 body.dev-capture header,
 body.dev-capture #playfield > :not(#island),
 body.dev-capture .debug-overlay-panel {
-  visibility: hidden;
+  display: none;
 }

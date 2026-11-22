@@ -29,9 +29,11 @@ function overlayPanel(view: ReturnType<typeof createDebugOverlayView>) {
 
 // Fixed camera, sky, overlays, render mode and perf readout from the page query.
 export function createDevTools(scene: Scene, canvas: HTMLCanvasElement, params = new URLSearchParams(location.search)) {
+  // First statement, so a production build can drop everything below.
+  if (!devToolsAvailable) return
   let view: DevView | undefined
   try {
-    view = devToolsAvailable ? readDevView(params) : undefined
+    view = readDevView(params)
   }
   catch (error) {
     document.body.dataset.devViewError = (error as Error).message

@@ -18,6 +18,7 @@ interface SeedSummary {
   burnedOut: number
   rainedOut: number
   hoursToLocate: number[]
+  hoursToFirstSpread: number[]
   hoursBetweenSpreads: number[]
   fireHours: number[]
   regrowthStages: Record<string, number>
@@ -30,7 +31,8 @@ interface SeedSummary {
 export function summarizeSeed(result: SimResult, events: readonly SimEvent[]): SeedSummary {
   const count = (type: string) => events.filter((event) => event.type === type).length
   const started = new Map<unknown, number>()
-  const hoursToLocate: number[] = [], fireHours: number[] = [], hoursBetweenSpreads: number[] = []
+  const hoursToLocate: number[] = [], fireHours: number[] = [], hoursBetweenSpreads: number[] = [], hoursToFirstSpread: number[] = []
+  const spreads = new Map<unknown, number>()
   const lastCatch = new Map<unknown, number>()
   const regrowthStages: Record<string, number> = {}
   for (const event of events) {
@@ -38,7 +40,12 @@ export function summarizeSeed(result: SimResult, events: readonly SimEvent[]): S
     const from = started.get(event.fire)
     if (event.type === 'fire-started') lastCatch.set(event.fire, event.tick)
     if (event.type === 'fire-spread' && lastCatch.has(event.fire)) {
-      hoursBetweenSpreads.push((event.tick - lastCatch.get(event.fire)!) / ticksPerHour)
+      // The first spread waits on heat build-up; later ones follow the fixed spread countdown.
+      const gap = (event.tick - lastCatch.get(event.fire)!) / ticksPerHour
+      const first = !spreads.has(event.fire)
+      spreads.set(event.fire, 1)
+      if (first) hoursToFirstSpread.push(gap)
+      else hoursBetweenSpreads.push(gap)
       lastCatch.set(event.fire, event.tick)
     }
     if (event.type === 'fire-located' && from !== undefined) hoursToLocate.push((event.tick - from) / ticksPerHour)
@@ -54,6 +61,7 @@ export function summarizeSeed(result: SimResult, events: readonly SimEvent[]): S
     burnedOut: count('fire-burned-out'),
     rainedOut: count('fire-rained-out'),
     hoursToLocate,
+    hoursToFirstSpread,
     hoursBetweenSpreads,
     fireHours,
     regrowthStages,
@@ -94,6 +102,7 @@ export function summarizeSweep(seeds: readonly SeedSummary[], ticks: number) {
     perSeed: Object.fromEntries(perSeedTotals.map((key) => [key, distribution(seeds.map((seed) => seed[key]))])),
     perFire: {
       hoursToLocate: distribution(seeds.flatMap((seed) => seed.hoursToLocate)),
+      hoursToFirstSpread: distribution(seeds.flatMap((seed) => seed.hoursToFirstSpread)),
       hoursBetweenSpreads: distribution(seeds.flatMap((seed) => seed.hoursBetweenSpreads)),
       fireHours: distribution(seeds.flatMap((seed) => seed.fireHours)),
     },

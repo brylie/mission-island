@@ -24,7 +24,7 @@ function arrow(from: Point, heading: number, length: number, color: string): Ove
 export const wildfireLayer: OverlayLayer = {
   id: 'wildfire',
   label: 'Wildfire state',
-  description: 'Hotspot heat from pale to red, the wind vector, and the unburnt hotspot the wind favours next (violet).',
+  description: 'Unburnt hotspots orange, burning ones orange to red by heat, burnt-out ones grey, the wind vector, and the unburnt hotspot the wind favours next (violet).',
   live: true,
   create: () => ({ islandTime, state }: OverlayContext) => {
     const wind = windAt(islandTime)
@@ -38,7 +38,7 @@ export const wildfireLayer: OverlayLayer = {
     const candidates = spreadCandidates(fire, wind)
     const next = candidates.reduce<typeof candidates[number] | undefined>((best, candidate) => !best || candidate.score > best.score ? candidate : best, undefined)
     return [
-      ...fire.hotspots.map((spot): OverlayPrimitive => ({ kind: 'ring', x: spot.x, z: spot.z, radius: wildfireOverlay.hotspotRadiusM, color: spot.caught ? mixHex(wildfireOverlay.cold, wildfireOverlay.hot, spot.heat) : wildfireOverlay.cold })),
+      ...fire.hotspots.map((spot): OverlayPrimitive => ({ kind: 'ring', x: spot.x, z: spot.z, radius: wildfireOverlay.hotspotRadiusM, color: !spot.caught ? wildfireOverlay.cold : spot.heat > 0 ? mixHex(wildfireOverlay.cold, wildfireOverlay.hot, spot.heat) : wildfireOverlay.burnt })),
       ...(next ? [{ kind: 'ring', x: next.spot.x, z: next.spot.z, radius: wildfireOverlay.nextRingM, color: wildfireOverlay.next } satisfies OverlayPrimitive] : []),
       ...arrow(fireCentre(fire), wind.heading, wildfireOverlay.windArrowM * wind.strength, wildfireOverlay.wind),
     ]
@@ -60,8 +60,8 @@ export function fireWatchSees(target: Point) {
 
 export const sightlineLayer: OverlayLayer = {
   id: 'sightlines',
-  label: 'Fire Watch sightlines',
-  description: 'Lines from the Fire Watch deck to each fire site: green where terrain leaves it in view, red where a rise hides it.',
+  label: 'Fire Watch sightlines (design preview)',
+  description: 'Terrain line of sight from the Fire Watch deck to each fire site: green in view, red hidden. A design preview: the fire finder in play locates any fire regardless of terrain.',
   live: false,
   create: () => () => starterFireSites.map((site): OverlayPrimitive => ({
     kind: 'line',

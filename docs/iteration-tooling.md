@@ -50,7 +50,7 @@ Presets are declarative data in [`src/assets/recipes/capture-presets.ts`](../src
 | --- | --- |
 | `tower-dawn-north` | From the Fire Watch deck north over the meadow at dawn, in mist. |
 | `forest-edge-threshold` | From the open meadow into the Pinewoods edge. |
-| `fernfall-crossing` | The Fernfall crossing below the falls, overcast. |
+| `fernfall-crossing` | The Fernfall crossing below the falls, under a light overcast. |
 | `pale-grove-evening` | Into the Juniper grove trunks at evening. |
 | `ridge-to-harbor` | From the Windstone survey scope back to the harbor. |
 | `fire-watch-overview` | High view of the tower and fire sites with sightline, wildfire and protected-area overlays. |
@@ -64,7 +64,7 @@ These are the current island's equivalents of the Highwood hero views. When the 
 npm run capture -- --compare main,HEAD --preset ridge-to-harbor,tower-dawn-north
 ```
 
-Each side is captured if it is not already a folder. Both revisions render the presets and camera from the current checkout, so the sheet shows what the code changed for the same view. To compare a preset change, capture both versions into folders and compare the folders. Revision captures leave detached worktrees in `captures/.revisions/`; remove that folder and run `git worktree prune` to clean up. Revisions older than this tooling have no perf readout or render modes, so their sidecars record `perf: null`. The command writes `captures/compare/<before>-vs-<after>/<preset>-<mode>.png`: before, after and a heatmap in which changed pixels glow red over a dimmed copy of the after image. `compare.json` lists the share of pixels that changed by more than 8 of 255 and the mean difference for each sheet.
+Each side is captured if it is not already a folder. Both revisions render the presets and camera from the current checkout, so the sheet shows what the code changed for the same view. To compare a preset change, capture both versions into folders and compare the folders. Revision captures leave detached worktrees in `captures/.revisions/`; remove that folder and run `git worktree prune` to clean up. Revisions older than this tooling have no perf readout or render modes, so their sidecars record `perf: null`. The command writes `captures/compare/<before>-vs-<after>/<preset>-<mode>.png`: before, after and a heatmap in which changed pixels glow red over a dimmed copy of the after image. `compare.json` lists the share of pixels that changed by more than 24 of 255 and the mean difference for each sheet.
 
 ## The dev view URL
 
@@ -101,8 +101,8 @@ With `dev=1`, a **Debug overlays** panel lists every layer. Hover a name for its
 | `solids` | Walking solids (blue) and cargo-only ferry colliders (pink). |
 | `corridors` | Road shoulders, footpath edges and centrelines. |
 | `protected` | Windstone launch clearance, landing approach and circle, and the walk back. |
-| `wildfire` | Hotspot heat from pale to red, the `windAt` vector, and in violet the hotspot the wind favours next. Without a fire, each site shows the current wind. |
-| `sightlines` | Fire Watch deck to each fire site: green when terrain leaves it visible, red when hidden. |
+| `wildfire` | Unburnt hotspots in orange, burning ones orange to red by heat, burnt-out ones in grey, the `windAt` vector, and in violet the hotspot the wind favours next. Without a fire, each site shows the current wind. |
+| `sightlines` | Terrain line of sight from the Fire Watch deck to each fire site: green when visible, red when hidden. This is a design preview: in play, the fire finder locates any fire regardless of terrain. |
 | `animals` | Hares and foxes coloured by intent, with heading and recent path. |
 
 The violet marker shows the best score from [`spreadCandidates`](../src/wildfire.ts) without the host's seeded jitter, so a close call can still go to another hotspot.
@@ -139,19 +139,21 @@ The runner starts the host game from a live checkpoint with one seat, a virtual 
 | --- | --- |
 | `--scenario` | A checkpoint ID from the [scenario table](../CONTRIBUTING.md#run-a-live-playtest-scenario). |
 | `--days N` | Island days to run (a day is 480 s). Fractions work. |
-| `--seeds 1..100` or `--seeds 1,4,9` | Seeds. Each seeds the host's randomness and the island-event seed, and re-lights a checkpoint's opening fire at the same site and size so its heat and spread vary. Juniper wildlife runs from its own recipe seed, so animal rows match across seeds. |
+| `--seeds 1..100` or `--seeds 1,4,9` | Seeds. Each seeds the host's randomness and the island-event seed, and re-lights a checkpoint's opening fire at the same site and size so its heat and spread vary. The re-lit fire starts unlocated with one hotspot burning. Juniper wildlife, the driftwood school and the weather do not follow the run seed, so their rows match across seeds. |
 | `--crew idle\|scripted` | `idle` stands at the checkpoint spawn. `scripted` walks straight at the nearest burning hotspot and sprays when it arrives. It ignores terrain and paths, so treat it as a fast responder rather than a player. |
 | `--out dir` | Output folder. Defaults to `sims/<scenario>/`. |
 | `--replay file` | Replay a recording and check that every run reproduces its events. |
 
 It writes three files:
 
-- `events.jsonl`, one event per line, in seed order. Every row has `seed`, `tick`, `day`, `hour` and `type`. Types are `fire-started`, `fire-spread`, `fire-located`, `fire-out`, `fire-burned-out`, `fire-rained-out`, `regrowth` (with a stage of `ash`, `shoots` or `established`), `animal` (a hare or fox changing behaviour) and `weather` (a shower starting or stopping).
-- `summary.json` with the run settings, the commit, wall time, per-seed totals and their distribution across seeds (count, min, p10, median, mean, p90, max), pooled per-fire timings (`hoursToLocate`, `hoursBetweenSpreads`, `fireHours`), and a digest of each seed's events.
+- `events.jsonl`, one event per line, in seed order. Every row has `seed`, `tick`, `day`, `hour` and `type`. Types are `fire-started`, `fire-spread`, `fire-located`, `fire-out`, `fire-burned-out`, `fire-rained-out`, `regrowth` (with a stage of `ash`, `shoots` or `established`), `animal` (a hare or fox changing behaviour) and `weather` (a change between `dry`, `shower` and `dousing`, the level that douses hotspots and stops spread).
+- `summary.json` with the run settings, the commit, wall time, per-seed totals and their distribution across seeds (count, min, p10, median, mean, p90, max), pooled per-fire timings (`hoursToLocate`, `hoursToFirstSpread` while heat builds, `hoursBetweenSpreads` on the fixed spread countdown, and `fireHours` for fires that ended; `burningAtEnd` counts fires still alight when the run stopped), and a digest of each seed's events.
 - `recording.json` with each run's settings, the crew inputs it sent by tick, and its event digest.
 
 ```sh
 npm run sim -- --replay sims/fire-watch/recording.json
 ```
+
+A one-day idle sweep only shows how fast an unattended fire spreads: a fire burns out after 1.5 days and an idle crew never finds it. For outcomes, run at least three days, or use `--crew scripted`.
 
 A replay feeds the recorded inputs back at the same ticks and exits nonzero if any seed's events differ. Use it after a refactor that should not change behaviour, and record again when the change is intended.

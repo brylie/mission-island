@@ -36,7 +36,8 @@ export const protectedOverlay = {
 } as const
 
 export const wildfireOverlay = {
-  cold: '#ffe8cc',
+  cold: '#ff922b',
+  burnt: '#868e96',
   hot: '#e03131',
   next: '#7048e8',
   wind: '#74c0fc',

@@ -2,7 +2,7 @@ import { createGame, tickSeconds } from '../game.ts'
 import type { CrewCommand } from '../commands.ts'
 import type { CrewNotice } from '../crew.ts'
 import { scenarioFor } from '../scenarios/catalog.ts'
-import { igniteFire } from '../wildfire.ts'
+import { dousingRain, igniteFire } from '../wildfire.ts'
 import { recoveryStage } from '../../src/lookout-recovery.ts'
 import type { Snapshot } from '../../src/protocol.ts'
 import { seededRandom } from '../../src/seeded-random.ts'
@@ -17,7 +17,7 @@ const virtualEpochMs = 1_000_000
 // Island events draw from their own seed. Mixing the run seed in keeps scenario seeds distinct per run.
 const eventSeedMix = 2654435761
 const eventSeedRange = 2147483648
-// Weather rows report the rain state, not every change in intensity.
+// Weather rows report the rain state: dry, a shower, or rain heavy enough to douse fires and stop spread.
 const showerThreshold = 0.05
 const tokenLength = 32
 const hourDecimals = 2
@@ -59,6 +59,7 @@ function eventSeed(seed: number) {
 
 // Checkpoints use fixed event seeds so live playtests repeat. A sweep mixes in the run seed instead, and
 // re-lights a checkpoint's opening fire at the same site and size so its hotspot heat varies per seed.
+// The re-lit fire starts fresh: unlocated, with only its first hotspot burning.
 function reseedEvents(state: Snapshot, seed: number) {
   state.events.seed = eventSeed(seed)
   const fire = state.events.fire
@@ -69,7 +70,7 @@ function reseedEvents(state: Snapshot, seed: number) {
 function createObserver(run: SimRun, emit: Emit) {
   let tick = 0
   let fireId: number | undefined
-  let raining: boolean | undefined
+  let rain: string | undefined
   let stage: string | undefined
   const behaviors = new Map<string, string>()
   const row = (state: Readonly<Snapshot>, type: string, fields: Record<string, unknown> = {}) => emit({
@@ -91,9 +92,11 @@ function createObserver(run: SimRun, emit: Emit) {
     const fire = state.events.fire
     if (fire && fire.id !== fireId) row(state, 'fire-started', { fire: fire.id, site: fire.site, size: fire.size, hotspots: fire.hotspots.length })
     fireId = fire?.id
-    const wet = state.weather.rain > showerThreshold
-    if (wet !== raining) row(state, 'weather', { rain: wet ? 'shower' : 'dry' })
-    raining = wet
+    const level = state.weather.rain
+    const nextRain = level > dousingRain ? 'dousing' : level > showerThreshold ? 'shower' : 'dry'
+    // The first frame sets the baseline; only real changes become rows.
+    if (rain !== undefined && nextRain !== rain) row(state, 'weather', { rain: nextRain, from: rain })
+    rain = nextRain
     const last = state.events.lastFire
     const nextStage = last && `${last.id}:${recoveryStage(last.endedAt, state.islandTime)}`
     if (last && nextStage !== stage) row(state, 'regrowth', { fire: last.id, site: last.site, stage: nextStage?.split(':')[1], burned: last.burned?.length ?? 0 })
@@ -119,7 +122,7 @@ export interface SimResult {
 export function runSimulation(run: SimRun, emit: Emit, replay?: readonly RecordedInput[]): SimResult {
   const scenario = scenarioFor(run.scenario)
   let now = virtualEpochMs
-  const game = createGame({ clock: () => now, random: seededRandom(run.seed), playtest: { checkpoint: scenario.id, seats: 1, revision: 1 } })
+  const game = createGame({ clock: () => now, random: seededRandom(run.seed), playtest: { checkpoint: scenario.id, seats: 1, revision: 1 }, prepare: (world) => reseedEvents(world, run.seed) })
   const observer = createObserver(run, emit)
   let state: Readonly<Snapshot> | undefined
   const seat = game.join(crewToken(0), (message) => {
@@ -132,7 +135,6 @@ export function runSimulation(run: SimRun, emit: Emit, replay?: readonly Recorde
   for (let tick = 0; tick < totalTicks; tick++) {
     now += tickMs
     state = game.tick()
-    if (tick === 0) reseedEvents(state, run.seed)
     observer.frame(state, tick)
     const commands = replay
       ? takeQueued(queued, tick)

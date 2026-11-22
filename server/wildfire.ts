@@ -49,7 +49,7 @@ const spreadSeconds = 20
 // Embers carry a little randomly, so close calls between downwind hotspots vary.
 const spreadJitter = 0.25
 // Rain slowly douses a fire and stops it spreading.
-const dousingRain = 0.35
+export const dousingRain = 0.35
 const rainDouseSeconds = 80
 // One crewmate's spray takes a hotspot from full heat to out in this time.
 const sprayKnockdownSeconds = 6
