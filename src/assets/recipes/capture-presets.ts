@@ -67,7 +67,7 @@ export const capturePresets = {
     eye: { x: 36.5, z: 134, height: 2.2 },
     look: { x: -40, z: -14, height: 0 },
     fov: 0.75,
-    hour: 15.5,
+    hour: 17.2,
     weather: 'clear',
   },
   'fire-watch-overview': {
