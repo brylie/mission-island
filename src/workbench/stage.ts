@@ -264,7 +264,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         layout?.meshes().forEach(applyWireframe)
         scene.render()
         // Measured after the render, which brings every parent's world matrix up to date.
-        if (subjectSize?.refresh(settings)) {
+        if (subjectSize?.refresh(settings, rate ? undefined : time)) {
           if (figureFrame) figureFrame = fitFigure(true)
           writeBounds(subjectSize.dimensions(), figureFrame && scaleFigure?.show(true)?.height)
         }

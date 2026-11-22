@@ -73,9 +73,10 @@ export function measureShown(subject: readonly AbstractMesh[]): Bounds | undefin
   return min.x <= max.x ? { min, max } : undefined
 }
 
-// Live controls such as a growth slider rescale the subject without a rebuild. After each update, the
-// bounds are measured again whenever the settings changed (including the first frame), and the
-// figure follows them. Animation alone never triggers a measurement.
+// Live controls such as a growth slider rescale the subject without a rebuild, and playback can move
+// parts of it, such as a crate in a cargo trial. The bounds are measured again whenever the settings
+// change (including the first frame) and whenever playback rests on a new pose, paused or scrubbed,
+// and the figure follows them. While playback runs they hold still, so the figure never shuffles.
 export function trackSubjectSize(subject: readonly AbstractMesh[], start: Bounds, figure?: ReturnType<typeof createScaleFigure>) {
   let bounds = start
   let measuredFor = ''
@@ -86,8 +87,9 @@ export function trackSubjectSize(subject: readonly AbstractMesh[], start: Bounds
       const extent = bounds.max.subtract(bounds.min)
       return [extent.x, extent.z, extent.y] as const
     },
-    refresh(settings: Values) {
-      const key = JSON.stringify(settings)
+    // `pose` is the clock time while playback is paused, and undefined while it runs.
+    refresh(settings: Values, pose?: number) {
+      const key = JSON.stringify(settings) + (pose === undefined ? '' : `@${pose}`)
       if (key === measuredFor) return false
       measuredFor = key
       const next = measureShown(subject)
