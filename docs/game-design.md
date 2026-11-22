@@ -54,6 +54,8 @@ Use the [Natural Systems Reviewer skill](../.agents/skills/mission-island-natura
 
 The [roadmap](roadmap.md) records the playtest ideas and future jobs.
 
+The proposed [island activity scheduler](design/island-activity-scheduler.md) would give jobs, favors and incidents room across the shared calendar. Ordinary play can fill a day even when the scheduler leaves it quiet.
+
 ## Mechanics
 
 - [Inventory and starter chests](mechanics/inventory.md)
