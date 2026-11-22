@@ -29,6 +29,7 @@ Arguments are optional. A PR number, branch or commit range sets the target. Tex
 | [Co-op Gameplay](../mission-island-coop-gameplay/SKILL.md) | changes jobs, rewards, missions, residents, interactions or roles (`server/`, `src/interactions/`, `jobs`, `*-repair`, `farm*`, `orders`, `src/residents/`). |
 | [Playtest and Accessibility](../mission-island-playtest-accessibility/SKILL.md) | changes controls, camera, prompts, onboarding, feedback text, menus or anything a new player must notice. |
 | [Procedural Audio](../mission-island-procedural-audio/SKILL.md) | touches `src/audio/` or adds a cause players should hear. |
+| [Knowledge Keeper](../mission-island-knowledge-keeper/SKILL.md) | always runs, after the other reviewers so it can read their notes. It checks that design decisions, mechanics, architecture, tools, and the real-world knowledge behind the change (species, habitats, weather, first aid, practical skills) reached the knowledge base. For a copy-only change, it can report "nothing new" in one line. |
 
 ## 2. Run the static checks
 
@@ -56,14 +57,20 @@ Start one subagent per chosen reviewer in a single message so they run at the sa
 - what the user asked to focus on, if anything
 - that the review is read-only: report findings, do not edit files
 
-Ask each reviewer to return a verdict of **ready**, **revise** or **rethink**, findings ranked by severity with a file and line or a reproducible view, and a list of what it checked in the running game versus only read in code. A reviewer that cannot observe its claim should name the control, seed or readout that would let it.
+Ask each reviewer to return:
+
+- a verdict of **ready**, **revise** or **rethink**;
+- findings ranked by severity, with a file and line or a reproducible view;
+- a list of what it checked in the running game versus only read in code. A reviewer that cannot observe its claim should name the control, seed or readout that would let it;
+- a short **knowledge handover**: the techniques, real-world facts, design reasons and lessons its review used or discovered. Write it as tagged claims, one per line: *claim · register (real, island, build, rationale) · source, or "from the code at `<commit>`" · suggested page*. Each reviewer is an expert, and this is how its expertise reaches the [craft pages](../../../docs/craft/README.md), the [field guide](../../../docs/field-guide/README.md) and the design docs. Pass every handover to the Knowledge Keeper.
 
 ## 5. Apply findings and repeat
 
 1. Merge the findings. When reviewers disagree, such as an art request that costs the architecture, stop and ask the user to choose rather than picking silently.
 2. Fix **revise** items. Treat a **rethink** as a design question for the user before rewriting.
 3. Re-run the static checks and the harness from step 3. Send each change back to the reviewers who asked for it and to any other reviewer whose scope it touches. A fix that changes what players see always goes back to the Art Director, even if it approved the earlier version.
-4. Stop after the reviewers return **ready**, or after three rounds. At three rounds, report what is still open.
+4. Treat a Knowledge Keeper **revise** like any other reviewer's: write the missing pages before handoff. The docs may outgrow the code, and that is expected.
+5. Stop after the reviewers return **ready**, or after three rounds. At three rounds, report what is still open.
 
 Record tool friction as the review workflow asks. Keep a harness or tooling improvement separate from the change under review.
 
@@ -74,6 +81,7 @@ Finish with a short report:
 - static checks run and their results
 - what was exercised, and where (test name, scenario ID and crew size, Workbench link), with captures
 - each reviewer's final verdict and what changed because of it
+- the knowledge base pages added or updated, and any knowledge filed as a follow-up
 - what remains unverified, such as a two-machine LAN run or a fresh human player
 
 Put findings that belong outside this change in the relevant issue or the [playtest log](../../../docs/playtests/findings.md), or offer them as follow-up issues.

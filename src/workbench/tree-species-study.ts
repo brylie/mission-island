@@ -2,6 +2,7 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color'
 import { BlackAndWhitePostProcess } from '@babylonjs/core/PostProcesses/blackAndWhitePostProcess'
 import { treeSpeciesStudy } from '../assets/recipes/workbench-tree-species'
+import { treeReferences } from '../assets/geometry/tree-references'
 import type { MeshFactory } from '../island-meshes'
 import { surfaces } from '../materials'
 import { buildTreeTemplate, type TreeTemplate } from '../assets/trees/tree-template'
@@ -17,6 +18,8 @@ import {
   type TreeTemplateOptions,
   type TreeTier,
 } from '../assets/trees/tree-catalog'
+import { fitCrop } from './reference-crop'
+import { withReference } from './reference-link'
 import { control, range, type Entry, type Values } from './subject'
 
 const half = 0.5
@@ -86,6 +89,12 @@ function describe(placed: Placed[]) {
   return `${tiers} triangles per template · ${placed.length} templates · first: ${size}`
 }
 
+// The photo a species was shaped from, preferring one taken at the chosen exposure.
+function referenceFor(values: Values) {
+  const photos = treeReferences[String(values.species)] ?? []
+  return photos.find(({ exposure }) => exposure === values.exposure) ?? photos.find(({ exposure }) => !exposure) ?? photos[0]
+}
+
 function applyLook(meshes: MeshFactory, placed: Placed[], look: Look) {
   if (look !== 'silhouette') return
   // Unlit and untinted, so every species reads as the same flat shape.
@@ -106,6 +115,15 @@ export const treeSpeciesEntry: Entry = {
   source: 'src/assets/trees/tree-template.ts',
   description: 'Procedural Scots pine, birch, aspen, rowan, alder, willow, deadwood, juniper, heather, bilberry, bracken and saplings. Compare seeds, ages, wind exposure, silhouettes and the distant tier. Exposed forms lean toward +x, downwind.',
   readout: 'Template triangles',
+  actions: [{
+    label: 'Show reference photo',
+    enabled: (values) => Boolean(referenceFor(values)),
+    // The reference pane reloads from the address, so adding the photo there opens it.
+    run: (values) => {
+      const photo = referenceFor(values)
+      if (photo) location.hash = new URL(withReference(location.href, photo.photo, fitCrop, photo.shows)).hash
+    },
+  }],
   ground: { height: 0, color: surfaces.grass.color },
   controls: [
     control('species', 'Species', 'scots-pine', speciesChoices, true),

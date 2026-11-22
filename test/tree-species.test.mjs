@@ -4,6 +4,7 @@ import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData.js'
 import { generateTreeGeometry, templateBudget } from '../src/assets/trees/tree-geometry.ts'
 import { addFrond, addPad, addTube, emptyMesh } from '../src/assets/trees/tree-mesh.ts'
 import { treeCollision } from '../src/assets/trees/tree-collision.ts'
+import { treeReferences } from '../src/assets/geometry/tree-references.ts'
 import { treeAges, treeExposures, treeSpecies, treeSpeciesIds, treeTiers } from '../src/assets/trees/tree-catalog.ts'
 
 const seeds = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -225,4 +226,16 @@ test('frond collision covers the whole grown patch', () => {
       assert.ok(top <= collision.height + 1e-6, `${JSON.stringify(options)} top ${top} above ${collision.height}`)
     }
   }
+})
+
+test('every species keeps a licensed reference photo beside its data', () => {
+  for (const species of treeSpeciesIds) {
+    const photos = treeReferences[species]
+    assert.ok(photos?.length, `${species} has a reference photo`)
+    for (const { photo, licence, author, shows } of photos) {
+      assert.match(photo, /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/, species)
+      assert.ok(licence && author && shows, `${species} photo has licence, author and a description`)
+    }
+  }
+  assert.deepEqual(Object.keys(treeReferences).filter((id) => !treeSpeciesIds.includes(id)), [], 'no references for unknown species')
 })

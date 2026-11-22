@@ -1,6 +1,6 @@
 # Highwood species references
 
-Each **Compare** link opens **Ecology → Plants → Highwood species** at the default development port. It shows four mature seeds of the species, with a Wikimedia Commons photograph in the reference pane. The link's photo description says what to compare. On another host or port, change the address before `workbench.html`. To review age or exposure, change them in the inspector and the photo stays in place. Check credit and licence on the file page before reusing a photo outside the Workbench.
+The photos are stored with the models in `src/assets/geometry/tree-references.ts`, which is the source of truth. In the study, **Show reference photo** opens the photo for the chosen species and exposure. Each **Compare** link opens **Ecology → Plants → Highwood species** at the default development port. It shows four mature seeds of the species, with a Wikimedia Commons photograph in the reference pane. The link's photo description says what to compare. On another host or port, change the address before `workbench.html`. To review age or exposure, change them in the inspector and the photo stays in place. Check credit and licence on the file page before reusing a photo outside the Workbench.
 
 | Species | Workbench | Photograph, licence, author |
 | --- | --- | --- |
@@ -30,3 +30,27 @@ Where a photo falls short, compare the gesture rather than the details:
 Open-grown alternatives with clearer orange upper bark include [Glen Affric Scots Pine](https://commons.wikimedia.org/wiki/File:Glen_Affric_Scots_Pine.jpg) and [a Scots pine near the Water of Gairney](https://commons.wikimedia.org/wiki/File:A_Scots_pine_near_the_Water_of_Gairney_-_geograph.org.uk_-_2629213.jpg).
 
 The [Workbench guide](workbench.md#compare-highwood-tree-species) describes the study's controls, and the [art direction notes](design/creative-direction.md#give-forms-a-reason-to-look-the-way-they-do) describe what the trees should carry.
+
+## How the generator is built
+
+- **Shape.** Each crown is 3 to 9 faceted, lobed clumps on weighted branch arcs. Value is baked into vertex colour: lighter on top, darker underneath and inside. The far tier merges limb groups into masses that keep the crown's extent, and the study switches tiers at 100 m.
+- **Tints.** Vertex colour multiplies the shared `bark`, `needles` or `broadleaf` recipe texture. Each tint is the wanted colour divided by that texture's baked mean, so the texture keeps its detail.
+- **Seeds.** Species salts come from a hash of the species id, so adding or reordering species never rerolls a placed tree. Seeds are whole numbers, and a pinned test catches accidental changes.
+- **Collision.** `treeCollision(options)` sizes a template from the same draws the mesh uses, without growing it or loading texture code. Trees, snags and logs are solid; shrubs and bracken are soft cover.
+- **Sway.** Vertex alpha holds a sway weight from 0 at the ground to 1 at the top, and each mesh is tagged as trunk or crown. Nothing drives motion yet; a sway shader should get its own tree material rather than change the shared ones.
+- **Placement.** Habitat rules for each species are in [Highwood habitats](field-guide/highwood-habitats.md). Exposed forms lean toward +x, so turn each instance to point downwind.
+
+**Triangle budgets** per template:
+
+| Habit | Near | Far |
+| --- | --- | --- |
+| Trees | 600–1,500 | 60–160 |
+| Shrubs | 100–800 | 24–120 |
+| Deadwood | 150–800 | 24–120 |
+
+**Planned**
+
+- Seasonal change: [#211](https://github.com/brylie/mission-island/issues/211)
+- Downy birch for wet ground: [#212](https://github.com/brylie/mission-island/issues/212)
+- Graded exposure: [#213](https://github.com/brylie/mission-island/issues/213)
+- Old forms for shrubs and deadwood: [#214](https://github.com/brylie/mission-island/issues/214)
