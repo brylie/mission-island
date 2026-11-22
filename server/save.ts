@@ -19,6 +19,8 @@ import { readJournal } from './journal-save.ts'
 import { crateStarts, itemStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
 import { currentSaveVersion, saveVersions } from './save-version.ts'
+import type { LearnerVehicleId } from '../src/learner-vehicles.ts'
+import { isSavedGear, isSavedLearnerFleet, isSavedLearnerPlayer, migrateRescueGear } from './learner-save.ts'
 
 const privateDirectoryMode = 0o700
 const privateSaveFileMode = 0o600
@@ -30,7 +32,7 @@ export type IslandSave = {
   islandTime: number
   growth: number[]
   world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'events' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay' | 'ferryRepair'>
-    & { truck: Pose, jobs?: JobBoardState, aviation?: AviationProgress, journal?: Journal, produce?: FarmProgress, materialsWork?: Snapshot['materialsWork'] }
+    & { truck: Pose, vehicles?: Partial<Record<LearnerVehicleId, Pose>>, practice?: Partial<Snapshot['practice']>, jobs?: JobBoardState, aviation?: AviationProgress, journal?: Journal, produce?: FarmProgress, materialsWork?: Snapshot['materialsWork'] }
   crew: { token: string, player: Player, reserved: boolean }[]
 }
 
@@ -84,7 +86,7 @@ function migrateFerry(value: unknown): unknown {
 }
 
 function migrateSave(value: unknown) {
-  return migrateFireWatch(migrateTrust(migrateFerry(migrateResidents(migrateGate(migrateWallets(value))))))
+  return migrateRescueGear(migrateFireWatch(migrateTrust(migrateFerry(migrateResidents(migrateGate(migrateWallets(value)))))))
 }
 
 function isGateRepair(world: Record<string, unknown>, islandTime: number) {
@@ -116,6 +118,7 @@ function isJobBoard(value: unknown, mission: unknown) {
 
 function validDrivingRecord(player: Record<string, unknown>) {
   return (player.deliveryXp === undefined || isCoinBalance(player.deliveryXp))
+    && isSavedLearnerPlayer(player)
     && (player.freightTicket === undefined || isFreightTicket(player.freightTicket))
     && (player.drivenCrates === undefined || (Array.isArray(player.drivenCrates) && player.drivenCrates.length === crateStarts.length
       && player.drivenCrates.every((metres) => isNumber(metres) && metres >= 0)))
@@ -148,6 +151,7 @@ function hasValidProgress(world: Record<string, unknown>) {
   return (world.jobs === undefined || isJobBoard(world.jobs, world.mission))
     && (world.aviation === undefined || isSavedAviation(world.aviation))
     && (world.produce === undefined || isSavedFarmWork(world.produce))
+    && isSavedLearnerFleet(world)
 }
 
 function isSavedMaterials(world: Record<string, unknown>, islandTime: number) {
@@ -212,6 +216,7 @@ function isSave(value: unknown): value is SaveFields {
     && Array.isArray(world.items) && world.items.length === itemStarts.length
     && world.items.every((item: unknown, id) => isPose(item) && item.id === id && isNumber(item.y)
       && (item.holder === null || (isNumber(item.holder) && reservedIds.has(item.holder)))
+      && isSavedGear(item, id)
       && item.kind === itemStarts[id].kind && isSavedExtinguisher(item, id))
 }
 

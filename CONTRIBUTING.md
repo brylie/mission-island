@@ -35,6 +35,8 @@ Press **O → Live playtest** or open **Live checkpoints** in the Workbench on t
 | `ferry-restored` | The ferry ramp is open. The flatbed waits on Harbor Depot road, facing the terminal. |
 | `ferry-yard` | The flatbed is parked in the ferry freight yard with two timber crates behind it. Stack them by the yard pallet. |
 | `harbor-delivery` | The crew starts beside the supply crates with the Harbor Depot delivery active. |
+| `learner-pickup` | The starter shift is done. The first player stands at the driver's door of the Fire and Rescue pickup by Fire Supplies, the second at the passenger door. Press **F** to board and drive to the ringed practice stop. |
+| `learner-tractor` | The starter shift is done. The first player stands beside the Island Farm tractor's seat. Press **F** to drive it to the first practice stop at Seabrook Market. |
 | `wren-fit` (default) | One player has the toolbox and the other has the pin. In solo play the toolbox rests by the gate. Press **E** to fit the pin and **E** again to test the swing. |
 | `wren-discover` | The crew arrives outside the unrepaired garden. |
 | `wren-morning` | The repair is paid and Wren is about to leave home. |

@@ -26,10 +26,12 @@ import { saltwindAssets } from './saltwind-studies'
 import { houseStudy } from './starter-building-study'
 import { starterSceneryStudies, homeChestStudy, dockStudy, buoyStudy } from './starter-prop-studies'
 import type { Entry } from './subject'
-import { flatbedStudy, harborBoatStudy } from './vehicle-studies'
+import { compactTractorStudy, flatbedStudy, harborBoatStudy, responsePickupStudy } from './vehicle-studies'
 
 export const entries: Entry[] = [
   flatbedStudy,
+  responsePickupStudy,
+  compactTractorStudy,
   biomeEntry,
   schoolStudy,
   ...natureEntries,

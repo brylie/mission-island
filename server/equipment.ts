@@ -18,6 +18,7 @@ import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
 import { crewInputTimeoutMs, millisecondsPerSecond } from './host-time.ts'
 import { heldCrateForwardM } from './items.ts'
+import type { createRescueGearUse } from './rescue-gear.ts'
 
 const toolReachDurationMs = 220
 const crateLaunchHeightM = 1.76
@@ -47,6 +48,7 @@ export function createEquipment(
   landed: (player: Player, bobber: Point) => FishId,
   checkpoint?: () => void,
   metrics?: Pick<GameplayPlaytestMetrics, 'use' | 'result'>,
+  gear?: ReturnType<typeof createRescueGearUse>,
 ) {
   function fishResult(member: CrewMember, result: FishingResult, fish?: FishId) {
     member.notify?.({ type: 'fishing-result', result, ...(fish && { fish }) })
@@ -63,6 +65,7 @@ export function createEquipment(
     const { player } = member
     if (member.primary || player.sleeping) return
     const item = heldItem(state, player)
+    if (item && gear?.start(member, item, now)) return
     if (item?.kind === 'crate' && !player.seat) {
       member.primary = { kind: 'throw', since: now, itemId: item.id }
       player.charge = { kind: 'throw', power: 0 }
@@ -108,6 +111,7 @@ export function createEquipment(
     }
     if (primary.kind !== 'throw' || player.seat) return
     const item = heldItem(state, player)
+    if (item && item.id === primary.itemId && gear?.release(member, item, heading, power, now)) return
     if (!item || item.id !== primary.itemId || item.kind !== 'crate') return
     player.heading = heading
     item.heading = heading

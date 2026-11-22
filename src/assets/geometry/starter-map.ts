@@ -25,6 +25,10 @@ export const starterMapLook = {
   jobBoard: { color: '#ffd379', radius: 5.5 },
   supplies: { color: '#efac5b', radius: 5.5 },
   truck: { color: '#38433a', width: 10, height: 8 },
+  // Learner vehicles draw in their body paint, smaller than the flatbed.
+  learners: { pickup: '#c64f41', tractor: '#5b8c45', width: 11, height: 9, letters: { pickup: 'P', tractor: 'T' }, letterColor: '#fff6e4', font: 'bold 8px sans-serif' },
+  // A hollow ring with a dot, unlike the solid job and chest dots.
+  practiceStop: { color: '#ffd27a', outline: '#3b2f1c', radius: 7, lineWidth: 2.5, dot: 2 },
   skiff: { color: '#fff0ca', radius: locationRadius },
   farm: { color: '#e3ba77', radius: locationRadius },
   ferry: { color: '#d7a07d', radius: locationRadius },

@@ -1,4 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { isRescueGear, type ItemKind } from '../rescue-gear'
+import { createRescueGear } from './rescue-gear'
 import type { MeshFactory } from '../island-meshes'
 import { surfaces } from '../materials'
 import type { Point } from '../world'
@@ -53,7 +55,9 @@ export function createClothingCounter({ box, paintSurface }: MeshFactory, { x, z
   }
 }
 
-export function createSupply({ scene, box, cylinder }: MeshFactory, kind: 'crate' | 'extinguisher' | 'toolbox') {
+export function createSupply(meshes: MeshFactory, kind: ItemKind) {
+  if (isRescueGear(kind)) return createRescueGear(meshes, kind)
+  const { scene, box, cylinder } = meshes
   const node = new TransformNode('Supply', scene)
   if (kind === 'toolbox') {
     const { body, lid, handleSupports, handle, latch } = loanToolboxModel

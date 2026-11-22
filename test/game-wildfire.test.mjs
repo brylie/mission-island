@@ -19,7 +19,9 @@ import { player, setup, tokens } from './support/game-harness.mjs'
 
 // 10:00 on a dry morning.
 const dryMorning = daySeconds + 80
-const stationItem = (id) => itemStarts.length - extinguisherStations.length + extinguisherStations.findIndex((station) => station.id === id)
+// Station extinguishers follow the toolbox; later items (such as vehicle gear) come after them.
+const firstStationItem = itemStarts.findIndex((start) => start.kind === 'extinguisher' && 'lift' in start)
+const stationItem = (id) => firstStationItem + extinguisherStations.findIndex((station) => station.id === id)
 const deck = { ...fireFinder, x: fireFinder.x + 0.9 }
 const onDeck = () => player(0, deck, { y: fireWatchBaseHeight() + fireWatchGeometry.deck.top })
 
@@ -183,10 +185,10 @@ test('a burning fire and a part-used extinguisher survive a restart, and older s
   const older = createGame().snapshotForSave()
   older.version = 6
   delete older.world.events
-  older.world.items = older.world.items.slice(0, itemStarts.length - extinguisherStations.length)
+  older.world.items = older.world.items.slice(0, firstStationItem)
   file.write(older)
   const migrated = file.load()
-  assert.equal(migrated.version, 7)
+  assert.equal(migrated.version, 8)
   assert.equal(migrated.world.items.length, itemStarts.length)
   assert.deepEqual(migrated.world.events, { seed: 0, nextFireAt: null, fire: null, firesOut: 0 })
 

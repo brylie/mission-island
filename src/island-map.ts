@@ -6,6 +6,7 @@ import { drawFarmMap } from './farm-order-ui'
 import { activeJob, deliveryDrop, jobBoard } from './jobs'
 import { materialsWaypoint } from './materials-work'
 import type { Player, Snapshot } from './protocol'
+import { learnerVehicleIds, practiceStop } from './learner-vehicles'
 import { drawRidgeMap } from './ridge-ui'
 import { footpaths, roads, walkways } from './routes'
 import { northernRegions, starterDiscoveries } from './scenery'
@@ -61,6 +62,35 @@ function drawIslandPaths(drawRoute: (points: readonly { x: number, z: number }[]
   const { pavement, road } = look.paths
   for (const { points } of walkways) drawRoute(points, pavement.width, pavement.color)
   for (const path of roads) drawRoute(path, road.width, road.color)
+}
+
+// Learner vehicles carry a letter as well as their paint, and the stop for
+// anyone aboard draws as a hollow ring.
+function drawLearners(ink: CanvasRenderingContext2D, state: Snapshot, local: Player | undefined, mx: (x: number) => number, mz: (z: number) => number) {
+  const { learners, practiceStop: ring } = look
+  ink.textAlign = 'center'
+  ink.textBaseline = 'middle'
+  ink.font = learners.font
+  for (const vehicleId of learnerVehicleIds) {
+    const { x, z } = state.vehicles[vehicleId]
+    ink.fillStyle = learners[vehicleId]
+    ink.fillRect(mx(x) - learners.width * half, mz(z) - learners.height * half, learners.width, learners.height)
+    ink.fillStyle = learners.letterColor
+    ink.fillText(learners.letters[vehicleId], mx(x), mz(z))
+  }
+  if (!local?.seat || !local.vehicle) return
+  const stop = practiceStop(local.vehicle, state.practice[local.vehicle])
+  ink.lineWidth = ring.lineWidth
+  for (const [color, grow] of [[ring.outline, ring.lineWidth], [ring.color, 0]] as const) {
+    ink.strokeStyle = color
+    ink.beginPath()
+    ink.arc(mx(stop.x), mz(stop.z), ring.radius + grow * half, 0, fullTurn)
+    ink.stroke()
+  }
+  ink.fillStyle = ring.color
+  ink.beginPath()
+  ink.arc(mx(stop.x), mz(stop.z), ring.dot, 0, fullTurn)
+  ink.fill()
 }
 
 export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapshot) {
@@ -136,6 +166,7 @@ export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapsh
   drawShift(state, dot, ring)
   ink.fillStyle = look.truck.color
   ink.fillRect(mx(state.truck.x) - look.truck.width * half, mz(state.truck.z) - look.truck.height * half, look.truck.width, look.truck.height)
+  drawLearners(ink, state, local, mx, mz)
   if (state.skiff) dot(state.skiff.x, state.skiff.z, look.skiff.color, look.skiff.radius)
   dot(farm.x, farm.z, look.farm.color, look.farm.radius)
   dot(ferryTerminal.x, ferryTerminal.z, look.ferry.color, look.ferry.radius)

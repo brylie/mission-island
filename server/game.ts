@@ -7,6 +7,7 @@ import { createJuniperHabitat } from '../src/juniper-habitat.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewCommand } from './commands.ts'
+import { createLearnerFleet } from './learner-fleet.ts'
 import { createCrewRoster, disconnect, stopped, type CrewBroadcast, type CrewMember, type CrewNotice } from './crew.ts'
 import { jump, prepareCrewMotion, walkCrew } from './crew-motion.ts'
 import { createEquipment, setAppearance } from './equipment.ts'
@@ -53,12 +54,15 @@ function stepVehicles(
   active: (member: CrewMember) => boolean,
   physics: ReturnType<typeof createCargoPhysics>,
   freight: ReturnType<typeof createFreight>,
+  fleet: ReturnType<typeof createLearnerFleet>,
   notifyAll: (notice: CrewNotice) => void,
 ) {
-  const driver = members.find((member) => member.player.seat === 'driver')
+  // A truck seat without a learner vehicle is the flatbed's.
+  const driver = members.find((member) => member.player.seat === 'driver' && !member.player.vehicle)
   const before = state.truck
   physics.placeBarrow(state.farmWork.barrow)
-  state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds)
+  state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds, fleet.fleetStep(members, active))
+  fleet.afterStep()
   for (const impact of physics.drainImpacts()) notifyAll({ type: 'crate-impact', id: `${impactSession}:${++impactCount}`, ...impact })
   if (driver && active(driver)) freight.recordDrive(driver.player, state.items, Math.hypot(state.truck.x - before.x, state.truck.z - before.z))
   const rowers = members.filter((member) => inSkiff(member.player.seat) && active(member))
@@ -80,9 +84,10 @@ function stepWildlife(state: Snapshot, driftwood: ReturnType<typeof createDriftw
 }
 
 // A checkpoint can arrange the ferry stage, the truck and loose crates, so physics follows the arranged world.
-function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>, trial: T) {
+function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>, fleet: ReturnType<typeof createLearnerFleet>, trial: T) {
   physics.placeFerry(state)
   state.truck = physics.parkTruck(state.truck)
+  fleet.park()
   for (const item of state.items) physics.restore(item)
   return trial
 }
@@ -103,16 +108,16 @@ function observeCrewNotices(state: Snapshot, notifyCrew: CrewBroadcast, metrics?
 }
 
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest, metrics }: GameOptions = {}) {
-  const physics = createCargoPhysics()
-  const juniper = createJuniperHabitat(), driftwood = createDriftwoodSchool(clock() >>> 0)
+  const physics = createCargoPhysics(), juniper = createJuniperHabitat(), driftwood = createDriftwoodSchool(clock() >>> 0)
   const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save, random)
-  const trial = playtest && settleTrial(state, physics, prepareTrial(state, playtest))
+  const fleet = createLearnerFleet(state, physics, (notice) => crew.notifyAll(notice), checkpoint)
+  const trial = playtest && settleTrial(state, physics, fleet, prepareTrial(state, playtest))
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
   const freight = createFreight(crew, state, clock, checkpoint)
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint, metrics?.gameplay)
   const journal = createJournal(state, checkpoint, metrics?.gameplay)
-  const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint, metrics?.gameplay)
+  const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint, metrics?.gameplay, fleet.gear)
   const { interactions, gate, residents, farm, wildfire }
     = createGameInteractions({ state, growth }, physics, { notifyCrew: observeCrewNotices(state, crew.notifyAll, metrics), orders, freight, journal, clock, checkpoint, metrics: metrics?.gameplay })
   const aviation = createAviation(state, crew.notifyAll, checkpoint, metrics?.gameplay)
@@ -130,7 +135,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     for (const place of [physics.placeGateLeaf, physics.placeFerry]) place(state)
     const members = crew.members()
     const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - crewInputTimeoutMs
-    const { before, still } = stepVehicles(state, members, active, physics, freight, crew.notifyAll)
+    const { before, still } = stepVehicles(state, members, active, physics, freight, fleet, crew.notifyAll)
     for (const item of state.items) item.spraying = false
     for (const member of members) {
       const { player } = member

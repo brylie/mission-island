@@ -44,16 +44,17 @@ A trait is a capability or characteristic described by a small, typed piece of d
 | Instance state | Give placed entities stable IDs when gameplay needs to refer to them. Keep changing values, such as speed or remaining forage, with the instance. Send or save the values that clients need to render or that a restart must restore. |
 | Appearance and placement | Keep models and visual effects in the asset and presentation layers. Keep each island's spawn points, habitats, and placements with its world data. Share physical attachment points between simulation and rendering when they need to line up. |
 
-### Flatbed and future fire truck
+### Flatbed, learner vehicles and future fire truck
 
-The [flatbed's ground-drive definition](../src/vehicles/flatbed.ts) holds its wheel layout, suspension, throttle, steering, and brake tuning. The [driving system](../src/simulation/ground-drive.ts) uses that definition with a chassis body and a terrain height query. The [flatbed model](../src/assets/flatbed.ts) uses the same wheel dimensions to build and animate its wheels. The current system steers the front axle and drives the rear axle.
+The [flatbed's ground-drive definition](../src/vehicles/flatbed.ts) holds its wheel layout, suspension, throttle, steering, and brake tuning. The [driving system](../src/simulation/ground-drive.ts) uses that definition with a chassis body and a terrain height query. The [flatbed model](../src/assets/flatbed.ts) uses the same wheel dimensions to build and animate its wheels. The current system steers the front axle and drives the rear axle. Road vehicle models take their wheels, profile bodywork, part merging and fleet trim paint (chassis, glass, lamps, bumpers) from the [shared vehicle kit](../src/assets/vehicle-kit.ts). Its paint roles and wheel proportions live in [its data module](../src/assets/geometry/vehicle-kit.ts). Each model still places its own glass and lamps. Each vehicle keeps its own body paint, silhouette and gameplay dimensions, so a new vehicle, such as the fire truck, joins the same fleet by using the kit.
 
 | Vehicle | Shared traits | Equipment |
 | --- | --- | --- |
 | Flatbed | Ground drive and seats with the flatbed's current wheel layout, suspension, braking, and seat positions | A cargo bed with load slots and support surfaces |
+| Learner vehicles | The [Fire and Rescue pickup and Island Farm tractor](../src/learner-vehicles.ts) share the ground drive with their own [tuning](../src/vehicles/learner-drives.ts), colliders, seats and exits | Practice stops that pay career driving XP |
 | Future fire truck | The same throttle, steering, brake, and boarding rules with its own chassis dimensions, suspension, and seat positions | A pump and hose station so one crewmate can drive while the other operates the hose |
 
-Keep the two models in the asset layer. Let island data choose where each vehicle spawns. When the host supports multiple vehicles, identify the occupied vehicle and seat together so driving and equipment commands reach the right instance. Verify the flatbed's suspension, braking, and cargo behavior before adding the fire truck's equipment.
+Keep the models in the asset layer. Let island data choose where each vehicle spawns: the learner vehicles park and practice at the places in the [Starter Island layout](../src/worlds/starter/layout/places.ts). The flatbed stays the snapshot's `truck`, because cargo, riding the bed and the ferry repair depend on it. The learner vehicles live in `vehicles`, keyed by ID, and a seated player's `vehicle` names the one they occupy; a truck seat without it is the flatbed. They step in the same physics world as the flatbed and crates, so they collide with both, and walking crew treat them as solid boxes. A new vehicle that needs cargo or equipment should follow the same pattern: an ID, a seat on that ID, and its own state beside the pose. Verify the flatbed's suspension, braking, and cargo behavior before adding the fire truck's equipment.
 
 ### Interactions
 

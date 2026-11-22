@@ -1,4 +1,5 @@
 import { crateDriverXp, haulerUnlockXp } from './ore-contracts'
+import { careerProgressText } from './learner-vehicles'
 import { tallyLines } from './ferry-repair'
 import { jobs } from './jobs'
 import type { Player, Snapshot } from './protocol'
@@ -87,7 +88,7 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
       [home, crewHomes[player.id].name],
       [workTitle, heading],
       [work, direction],
-      [pay, `${balance}. ${receipt}${favorPay} ${xp} driver XP. ${certification}`],
+      [pay, `${balance}. ${receipt}${favorPay} ${xp} driver XP. ${certification} ${careerProgressText(player.drivingXp)}`],
     ] as const) {
       if (element.textContent !== value) element.textContent = value
     }

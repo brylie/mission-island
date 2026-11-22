@@ -13,6 +13,8 @@ import { islandRocks, islandTrees, northernProps } from '../scenery.ts'
 import { coastBounds, fireWatchBaseHeight, groundHeight, maxWadeDepth, shoreProfile, walkingHeight, waterDepth, waterLevel } from '../terrain.ts'
 import { fireWatchColumns } from '../fire-watch.ts'
 import { createTruckPhysics } from './truck.ts'
+import { createLearnerPhysics } from './learner-vehicle.ts'
+import { learnerVehicleIds, learnerVehicles, type LearnerVehicleId } from '../learner-vehicles.ts'
 import { watchCrateImpacts } from './cargo-impacts.ts'
 
 const half = 0.5
@@ -173,6 +175,12 @@ function addIslandColliders(world: World) {
   }
 }
 
+const parkedInput = { x: 0, z: 0, careful: false }
+export interface LearnerFleet {
+  vehicles: Record<LearnerVehicleId, Truck>
+  inputs: Partial<Record<LearnerVehicleId, Input>>
+}
+
 export function createCargoPhysics() {
   const world = new World({ gravity: new Vec3(0, cargoGravity, 0) })
   world.broadphase = new SAPBroadphase(world)
@@ -183,7 +191,11 @@ export function createCargoPhysics() {
 
   const ferry = ferryBodies(world)
   // The flatbed's shore check reads the restored deck as solid ground, so it can drive out to the berth.
-  const truck = createTruckPhysics(world, (point) => ferry.isOpen() ? Math.max(groundHeight(point), deckTop(point)) : groundHeight(point))
+  const driveHeight = (point: Point) => ferry.isOpen() ? Math.max(groundHeight(point), deckTop(point)) : groundHeight(point)
+  const truck = createTruckPhysics(world, driveHeight)
+  const learners = Object.fromEntries(learnerVehicleIds.map((id) => [id, createLearnerPhysics(world, id, driveHeight)])) as Record<LearnerVehicleId, ReturnType<typeof createLearnerPhysics>>
+  // The last pose of each learner vehicle, for callers that step without a fleet.
+  const parkedLearners = Object.fromEntries(learnerVehicleIds.map((id) => [id, learners[id].park(learnerVehicles[id].park)])) as Record<LearnerVehicleId, Truck>
 
   const crates = crateStarts.map(() => new Body({
     mass: crateMass,
@@ -252,11 +264,19 @@ export function createCargoPhysics() {
     impacts.quiet(item.id)
   }
 
-  function step(items: Item[], before: Truck, input: Input, dt: number) {
+  // Learner vehicles, when given, step in the same world and are updated in place.
+  function step(items: Item[], before: Truck, input: Input, dt: number, fleet?: LearnerFleet) {
     truck.applyInput(input, dt)
+    // Without a fleet the learner vehicles hold still and settle so they can sleep.
+    for (const id of learnerVehicleIds) learners[id].applyInput(fleet?.inputs[id] ?? parkedInput, dt)
     const substep = dt / cargoSubsteps
     for (let step = 0; step < cargoSubsteps; step++) world.step(substep)
     const after = truck.finishStep(before)
+    for (const id of learnerVehicleIds) {
+      const settled = learners[id].finishStep(fleet?.vehicles[id] ?? parkedLearners[id])
+      if (fleet) fleet.vehicles[id] = settled
+      else parkedLearners[id] = settled
+    }
 
     for (const item of items) {
       if (item.kind !== 'crate' || item.holder !== null || item.delivered) continue
@@ -278,5 +298,5 @@ export function createCargoPhysics() {
     return after
   }
 
-  return { release, relocate, launch, load, remove, restore, step, drainImpacts: () => impacts.drain(world.time), placeBarrow: barrowBody(world), placeGateLeaf: gateLeafBody(world), placeFerry: ferry.place, parkTruck: truck.park }
+  return { release, relocate, launch, load, remove, restore, step, drainImpacts: () => impacts.drain(world.time), placeBarrow: barrowBody(world), placeGateLeaf: gateLeafBody(world), placeFerry: ferry.place, parkTruck: truck.park, parkLearner: (id: LearnerVehicleId, pose: Pose) => (parkedLearners[id] = learners[id].park(pose)) }
 }

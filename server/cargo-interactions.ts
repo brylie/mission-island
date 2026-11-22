@@ -4,13 +4,13 @@ import { deliveryDrop, deliveryRadius } from '../src/jobs.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
 import { crateHalfSize, type createCargoPhysics } from '../src/simulation/cargo.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
-import { walkingHeight } from '../src/terrain.ts'
 import { atExtinguisherHome } from '../src/wildfire.ts'
 import { distance, type Point } from '../src/world.ts'
 import { stopPrimary, stowTool, type CrewMember } from './crew.ts'
 import type { InteractionHandlers } from './interactions.ts'
-import { itemGroundClearance } from './items.ts'
+import { restingHeight, updateStowedItems } from './items.ts'
 import { returnToStand } from './extinguishers.ts'
+import { canStow } from '../src/rescue-gear.ts'
 
 const crateDropMinimumY = -0.10
 
@@ -30,7 +30,11 @@ export function cargoInteractions(
     stopPrimary(member)
     item.holder = null
     const dropoff = deliveryDrop(state)
-    if (ferryDrop(state, player, item)) {
+    if (canStow(state, player, item)) {
+      item.stowed = true
+      updateStowedItems(state)
+    }
+    else if (ferryDrop(state, player, item)) {
       destinations.ferry(item, player.id)
     }
     else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
@@ -53,7 +57,7 @@ export function cargoInteractions(
       returnToStand(item)
     }
     else {
-      item.y = walkingHeight(item) + itemGroundClearance
+      item.y = restingHeight(item)
     }
   }
 
@@ -62,6 +66,7 @@ export function cargoInteractions(
     stowTool(member)
     item.holder = member.player.id
     item.rotation = null
+    item.stowed = undefined
     physics.remove(item)
   }
 

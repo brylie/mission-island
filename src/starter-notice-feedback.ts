@@ -1,4 +1,5 @@
 import { farmFeedback } from './farm-order-ui'
+import { learnerFeedback } from './learner-feedback'
 import { ferryFeedback } from './ferry-repair-ui'
 import { catchLabel } from './journal-ui'
 import { jobs } from './jobs'
@@ -52,6 +53,8 @@ export function starterNoticeFeedback(incoming: ServerMessage, localId: number, 
       return { key: `+${incoming.coins} coins`, label: `${jobs[incoming.id].title} complete · Crew bank`, until: performance.now() + jobPaymentDurationMs }
     case 'wildfire':
       return wildfireFeedback(incoming, localId)
+    case 'crew-signal': case 'first-aid-check': case 'practice-run':
+      return learnerFeedback(incoming, localId, snapshot)
     case 'starter-seed':
       return { key: '+1 seed', label: 'Plant it at Island Farm', until: performance.now() + seedPurchaseDurationMs }
     default: return neighborly

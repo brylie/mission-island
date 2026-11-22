@@ -4,11 +4,12 @@ import { heldItem } from '../src/interactions/cargo.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { crateHalfSize, type createCargoPhysics } from '../src/simulation/cargo.ts'
 import { canOccupyGround } from '../src/simulation/movement.ts'
-import { groundHeight, maxWadeDepth, walkingHeight, waterDepth } from '../src/terrain.ts'
+import { groundHeight, maxWadeDepth, waterDepth } from '../src/terrain.ts'
 import { itemStarts, spawns } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
 import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
-import { itemGroundClearance, restingY, updateHeldItems } from './items.ts'
+import { restingHeight, restingY, updateHeldItems, updateStowedItems } from './items.ts'
+import { isVehicleGear } from '../src/rescue-gear.ts'
 
 export type InteractionHandlers<Action extends InteractionAction = InteractionAction>
   = Record<Action, (member: CrewMember, subject: number) => void>
@@ -53,13 +54,19 @@ export function createInteractions(
       // A crate carried into danger returns to its start quietly; one set down where the crewmate stands is a real drop.
       if (item.kind === 'crate' && safe) physics.release(item, player)
       else if (item.kind === 'crate') physics.relocate(item, itemStarts[item.id].start)
+      // Vehicle gear carried into danger goes back into its slot, wherever the vehicle is now.
+      else if (!safe && isVehicleGear(item)) {
+        Object.assign(item, { stowed: true, spraying: false })
+        updateStowedItems(state)
+      }
       else {
         const point = safe ? player : itemStarts[item.id].start
-        Object.assign(item, { x: point.x, z: point.z, y: safe ? walkingHeight(point) + itemGroundClearance : restingY(item.id), spraying: false })
+        Object.assign(item, { x: point.x, z: point.z, spraying: false })
+        item.y = safe ? restingHeight(item) : restingY(item.id)
       }
     }
     const home = spawns[player.id]
-    Object.assign(player, { ...home, y: groundHeight(home), heading: 0, seat: null, grounded: true, onBed: false, truckSurface: undefined, swimming: false, sleeping: false, casting: null, reaching: false, rightHandRaised: false, throwing: false, rowing: false })
+    Object.assign(player, { ...home, y: groundHeight(home), heading: 0, seat: null, vehicle: undefined, grounded: true, onBed: false, truckSurface: undefined, swimming: false, sleeping: false, casting: null, reaching: false, rightHandRaised: false, throwing: false, rowing: false })
     stopPrimary(member)
     member.input = stopped
     member.verticalSpeed = 0

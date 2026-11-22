@@ -3,7 +3,7 @@ import { ferryActions, ferryInteractions } from './ferry-repair.ts'
 import { fieldActions, fieldInteractions } from './field-interactions.ts'
 import { gateActions, gateInteractions } from './gate-repair.ts'
 import { swellActions, swellInteractions } from './gate-swell.ts'
-import { cargoActions, heldItem, pickupOptions, putDownOption } from './interactions/cargo.ts'
+import { cargoActions, heldItem, floatingPickupOptions, pickupOptions, putDownOption } from './interactions/cargo.ts'
 import { mergeDisjoint } from './interactions/definition.ts'
 import { fireWatchActions, fireWatchInteractions } from './interactions/fire-watch.ts'
 import type { InteractionChoice as Choice, InteractionOption } from './interactions/definition.ts'
@@ -50,7 +50,9 @@ export function rechecksInHandler(action: InteractionAction) {
 
 // The prompt, reticle and host use this order. When targets tie, the earlier option wins.
 export function interactions(state: Snapshot, player: Player): Interaction[] {
-  if (player.sleeping || player.seat || player.swimming) return []
+  if (player.sleeping || player.seat) return []
+  // A swimmer can only grab floating gear, such as a thrown ring buoy.
+  if (player.swimming) return heldItem(state, player) ? [] : floatingPickupOptions(state, player)
   const held = heldItem(state, player)
   const farm = farmInteractions(state.farmWork, player, Boolean(held))
   if (state.farmWork.barrow?.handler === player.id) return farm

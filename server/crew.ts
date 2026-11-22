@@ -3,14 +3,15 @@ import { heldItem } from '../src/interactions/cargo.ts'
 import type { ChargeKind } from '../src/charged-actions.ts'
 import { cleanCrewName } from '../src/crew-appearance.ts'
 import type { Input, Player, ServerMessage, Snapshot } from '../src/protocol.ts'
-import { groundHeight, walkingHeight, withinSkiffBoundary } from '../src/terrain.ts'
+import { groundHeight, withinSkiffBoundary } from '../src/terrain.ts'
 import { spawns } from '../src/world.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { recoverSceneryOverlap } from '../src/simulation/movement.ts'
 import { gateBlockers, solidTop } from '../src/gate-repair.ts'
+import { learnerSolids } from '../src/learner-vehicles.ts'
 import { ferrySolids } from '../src/ferry-repair.ts'
 import type { IslandSave } from './save.ts'
-import { itemGroundClearance } from './items.ts'
+import { restingHeight } from './items.ts'
 
 const disconnectedSkiffReservationMs = 120_000
 const disconnectedCrewReservationMs = 12_000
@@ -60,7 +61,7 @@ function restingPlayer(player: Player) {
 }
 
 export function createCrewRoster(
-  state: Pick<Snapshot, 'items' | 'players' | 'gate' | 'gateRepair' | 'ferryRepair'>,
+  state: Pick<Snapshot, 'items' | 'players' | 'gate' | 'gateRepair' | 'ferryRepair' | 'vehicles'>,
   savedCrew: IslandSave['crew'],
   clock: () => number,
   physics: Pick<ReturnType<typeof createCargoPhysics>, 'release'>,
@@ -92,7 +93,7 @@ export function createCrewRoster(
       const spawn = spawns[restored.id]
       Object.assign(restored, spawn, { y: groundHeight(spawn), grounded: true, swimming: false })
     }
-    const solids = [...gateBlockers(state), ...ferrySolids(state)]
+    const solids = [...gateBlockers(state), ...ferrySolids(state), ...learnerSolids(state.vehicles)]
     recoverSceneryOverlap(restored, (point, padding) => solidTop(solids, point, padding))
     profiles.set(token, restored)
     if (reserved) {
@@ -152,9 +153,10 @@ export function createCrewRoster(
       if (item) {
         item.holder = null
         if (item.kind === 'crate') physics.release(item, item)
-        else item.y = walkingHeight(item) + itemGroundClearance
+        else item.y = restingHeight(item)
       }
       member.player.seat = null
+      member.player.vehicle = undefined
       member.player.onBed = false
       member.player.truckSurface = undefined
       state.players = state.players.filter((player) => player !== member.player)

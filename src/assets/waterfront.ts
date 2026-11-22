@@ -13,6 +13,7 @@ const sides = [-1, 1] as const
 const verticesPerPair = 2
 const fullTurn = Math.PI + Math.PI
 const firstFanTriangleEnd = 2
+const diameterPerRadius = 2
 
 export function createDockDeck(meshes: MeshFactory, x: number, firstZ: number, top: number, planks: number, deck: Material = meshes.paintRecipe('weathered-board')) {
   const { box, paintSurface } = meshes
@@ -72,6 +73,27 @@ export function createDock(meshes: MeshFactory, shaderPile?: Point, deck: Materi
 }
 
 const rimHeight = (z: number) => harborSkiff.rim.baseY + Math.max(0, z) * harborSkiff.rim.bowRise
+
+// The hull outline's half-width at a station along the keel.
+function outlineHalfWidth(z: number) {
+  const starboard = harborSkiff.outline.filter(([x]) => x >= 0).sort((a, b) => a[1] - b[1])
+  for (let i = 1; i < starboard.length; i++) {
+    const [x0, z0] = starboard[i - 1], [x1, z1] = starboard[i]
+    if (z <= z1) return x0 + (x1 - x0) * Math.max(0, (z - z0) / (z1 - z0))
+  }
+  return 0
+}
+
+// A bench's width where it meets the inner lining. The lining runs from the
+// cockpit floor up to just below the rim, narrowing and shortening toward the floor.
+function thwartWidth(z: number) {
+  const { floor, inner, thwart } = harborSkiff
+  const top = thwart.y + thwart.height * half
+  const t = (top - floor.y) / (rimHeight(z) - inner.rimDrop - floor.y)
+  const widthRatio = floor.widthRatio + (inner.widthRatio - floor.widthRatio) * t
+  const lengthRatio = floor.lengthRatio + (inner.lengthRatio - floor.lengthRatio) * t
+  return (outlineHalfWidth(z / lengthRatio) * widthRatio - thwart.clearance) * diameterPerRadius
+}
 
 function buildGunwale(meshes: MeshFactory, boat: TransformNode, wood: Material) {
   const { outline, gunwale: { section } } = harborSkiff
@@ -145,7 +167,11 @@ export function createHarborBoat(meshes: MeshFactory) {
   surface('Cockpit floor', decking, triangles, floor.color, boat)
   const wood = paintSurface('wood', gunwale.color)
   buildGunwale(meshes, boat, wood)
-  for (const { z, width } of thwart.stations) box(0, thwart.y, z, width, thwart.height, thwart.depth, wood, boat)
+  for (const z of thwart.stations) {
+    // The hull narrows toward the ends, so the bench fits its narrower edge.
+    const width = Math.min(thwartWidth(z - thwart.depth * half), thwartWidth(z + thwart.depth * half))
+    box(0, thwart.y, z, width, thwart.height, thwart.depth, wood, boat)
+  }
   box(0, outboard.leg.y, outboard.leg.z, ...outboard.leg.size, outboard.leg.color, boat)
   box(0, outboard.cowl.y, outboard.cowl.z, ...outboard.cowl.size, outboard.cowl.color, boat)
   return boat

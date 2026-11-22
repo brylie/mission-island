@@ -7,6 +7,7 @@ import { truckPoint } from '../truck-pose.ts'
 import { cargoSlots, crateSize, distance, lookout, truckBed } from '../world.ts'
 import { starterResidents } from '../worlds/starter/residents.ts'
 import type { InteractionOption, InteractionPolicies } from './definition.ts'
+import { canStow, canTakeStowed, floats, isRescueGear, isVehicleGear, itemName, rescueGear } from '../rescue-gear.ts'
 import { atExtinguisherHome, extinguisherCharge, nearWildfire } from '../wildfire.ts'
 
 const half = 2
@@ -19,6 +20,7 @@ const itemPickupVerticalReach = 2.1
 const toolTargetLift = 0.25
 const crateTargetRadius = 0.6
 const toolTargetRadius = 0.4
+const stowedTargetRadius = 0.2
 
 export const cargoActions = {
   'put-down': 'default',
@@ -41,9 +43,22 @@ export function byTruckBed(state: Snapshot, player: Player) {
   return distance(truckPoint(state.truck, 0, truckBed.top, truckBed.center), player) < truckBedReach
 }
 
+// Held rescue gear: stow it at the pickup, or say what left click does with it.
+function gearPutDownOption(state: Snapshot, player: Player, item: Item, option: { action: 'put-down', name: string, key: string }) {
+  const name = itemName(item.kind).toLowerCase()
+  if (canStow(state, player, item)) return { ...option, name: 'Fire and Rescue pickup', label: `Stow ${name} in the pickup` }
+  if (item.kind === 'extinguisher') return { ...option, key: 'Left click', label: 'Hold to spray · E to set down' }
+  if (!isRescueGear(item.kind)) return
+  const { hint, use } = rescueGear[item.kind]
+  // The flashlight shines while held, so it needs no click.
+  if (use === 'light') return { ...option, label: `${hint} · Set flashlight down` }
+  return { ...option, key: 'Left click', label: `${hint} · E to set down` }
+}
+
 export function putDownOption(state: Snapshot, player: Player, item: Item): InteractionOption<CargoAction> {
   const option = { action: 'put-down' as const, name: 'Ground', key: 'E' }
   if (item.kind === 'toolbox') return { ...option, label: 'Set toolbox down' }
+  if (isVehicleGear(item)) return gearPutDownOption(state, player, item, option)!
   if (item.kind === 'extinguisher') {
     if (extinguisherCharge(item) > 0 && ((state.mission === 'fire' && distance(player, lookout) < lookoutSprayReach) || nearWildfire(state, player))) {
       return { ...option, key: 'Left click', label: `Hold to spray · ${Math.round(extinguisherCharge(item) * percentScale)}% left` }
@@ -61,19 +76,27 @@ export function putDownOption(state: Snapshot, player: Player, item: Item): Inte
 }
 
 // Crates are cargo while a delivery is open, a resident has asked the crew to move one, or ferry timber is on the way.
-// Extinguishers are always free to take.
-function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 'residents' | 'ferryRepair'>, item: Item, player: Player, cargoWanted: boolean) {
-  const eligible = item.kind === 'crate'
-    ? deliveryDrop(state) !== undefined || cargoWanted || state.ferryRepair.haul > 0
-    : item.kind === 'toolbox' ? toolboxPickable(state, item) : true
+// Extinguishers are always free to take. Vehicle gear only leaves its bed while the vehicle is stopped.
+function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 'residents' | 'ferryRepair' | 'vehicles'>, item: Item, player: Player, cargoWanted: boolean) {
+  const eligible = isVehicleGear(item)
+    ? !item.stowed || canTakeStowed(state, item, player)
+    : item.kind === 'crate'
+      ? deliveryDrop(state) !== undefined || cargoWanted || state.ferryRepair.haul > 0
+      : item.kind === 'toolbox' ? toolboxPickable(state, item) : true
   return eligible && !item.delivered && item.holder === null && distance(item, player) < itemPickupReach && Math.abs(item.y - player.y) < itemPickupVerticalReach
 }
 
 function pickupLabel(state: Snapshot, item: Item, name: string) {
+  if (item.stowed) return `Take ${name.toLowerCase()} from the pickup`
   if (item.onBed) return 'Unload crate'
   if (item.kind !== 'toolbox') return `Pick up ${name.toLowerCase()}`
   if (onBench(item) && toolboxLoanForSwollenGate(state) && !wrenLendsToolbox(state)) return 'Borrow the toolbox for the gate'
   return 'Pick up the toolbox'
+}
+
+// What a swimmer can reach: gear that floats.
+export function floatingPickupOptions(state: Snapshot, player: Player) {
+  return pickupOptions(state, player).filter(({ subject }) => subject !== undefined && floats(state.items[subject].kind))
 }
 
 export function pickupOptions(state: Snapshot, player: Player): InteractionOption<CargoAction>[] {
@@ -81,8 +104,10 @@ export function pickupOptions(state: Snapshot, player: Player): InteractionOptio
   return state.items.filter((item) => canPickUp(state, item, player, cargoWanted))
     .sort((a, b) => distance(a, player) - distance(b, player))
     .map((item) => {
-      const name = item.kind === 'toolbox' ? 'Toolbox' : item.kind === 'crate' ? 'Crate' : 'Extinguisher'
+      const name = itemName(item.kind)
       const label = pickupLabel(state, item, name)
-      return { action: 'pick-up' as const, subject: item.id, key: 'E', label, name, at: { x: item.x, y: item.y + (item.kind === 'crate' ? 0 : toolTargetLift), z: item.z }, radius: item.kind === 'crate' ? crateTargetRadius : toolTargetRadius }
+      // Gear packed close together in a vehicle bed gets smaller aim targets.
+      const radius = item.kind === 'crate' ? crateTargetRadius : item.stowed ? stowedTargetRadius : toolTargetRadius
+      return { action: 'pick-up' as const, subject: item.id, key: 'E', label, name, at: { x: item.x, y: item.y + (item.kind === 'crate' ? 0 : toolTargetLift), z: item.z }, radius }
     })
 }

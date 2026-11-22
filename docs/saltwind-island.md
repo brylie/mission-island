@@ -8,6 +8,8 @@ Walking or inspecting a landmark pauses the guided tour. Starting or continuing 
 
 Earn your Slatecliff ore truck certification by hauling ten crates on Starter Island. Drive each crate at least eight metres on the flatbed. When the crew delivers it, each qualifying driver earns 10 personal driver XP. At 100 XP you can board the ore truck and accept freight contracts. After the starter missions, take repeat delivery orders at the Harbor Job Board to finish your practice.
 
+The Starter Island learner vehicles build toward the other Saltwind fleets in the same way. Practice runs in the Fire and Rescue pickup earn Emergency driving XP toward the ambulance, fire engine and patrol car, and runs in the Island Farm tractor earn Farm machinery XP toward a farm tractor. At 100 XP the crew guide shows the driver as qualified. Those Saltwind vehicles are not drivable yet, so the qualification is recorded and waits for their driving jobs. [Learning to drive](player-guide.md#learning-to-drive)
+
 On Saltwind, use **Site map → Slatecliff Mine → Inspect site** and walk to the ochre truck on the turnaround. Press **F** to board. Pick a contract at the dispatch bay, then steer to the cones beside the hopper. Use **W/S** to drive or reverse, **A/D** to steer and **Space** to brake. Choose the ticketed ore and press **Load selected ore**. The orange diamond on the chart follows the current objective. Stop between the buyer’s cones and unload to credit the crew bank. Drive back to dispatch for another ticket.
 
 | At Slatecliff dispatch | Honey calcite loaded at the hopper |

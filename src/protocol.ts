@@ -10,6 +10,8 @@ import type { ChargeKind } from './charged-actions'
 import type { InventoryItem } from './inventory'
 import type { Goods, PlotStage } from './farm'
 import type { Truck } from './truck-pose'
+import type { DrivingXp, LearnerNotice, LearnerVehicleId } from './learner-vehicles'
+import type { ItemKind } from './rescue-gear'
 import type { JobBoardState, JobId } from './jobs'
 import type { GardenGate, GateRepair, GateStep } from './gate-repair'
 import type { FavorReceipt, ResidentRecords } from './residents/trust'
@@ -42,6 +44,8 @@ export interface Input {
 
 export interface Player extends Pose {
   deliveryXp?: number
+  // Career XP from Starter Island learner vehicles, personal to the driver.
+  drivingXp?: DrivingXp
   drivenCrates?: number[]
   freightTicket?: FreightTicket
   id: number
@@ -59,6 +63,8 @@ export interface Player extends Pose {
   sleeping: boolean
   swimming: boolean
   seat: 'driver' | 'passenger' | 'port' | 'starboard' | null
+  // Set while seated in a learner vehicle; a truck seat without it is the flatbed.
+  vehicle?: LearnerVehicleId
   inventory: InventoryItem[]
   equipped: InventoryItem | null
   goods: Goods
@@ -79,8 +85,10 @@ export interface Skiff extends Pose {
 
 export interface Item extends Pose {
   id: number
-  kind: 'crate' | 'extinguisher' | 'toolbox'
+  kind: ItemKind
   holder: number | null
+  // Set while the item rides in its slot on a learner vehicle.
+  stowed?: boolean
   onBed: boolean
   y: number
   rotation: { x: number, y: number, z: number, w: number } | null
@@ -108,6 +116,9 @@ export interface Snapshot {
   lastStarterPay?: keyof typeof starterPay
   players: Player[]
   truck: Truck
+  vehicles: Record<LearnerVehicleId, Truck>
+  // Each learner vehicle's next practice stop, shared by the crew.
+  practice: Record<LearnerVehicleId, number>
   skiff: Skiff
   items: Item[]
   mission: Mission
@@ -157,6 +168,7 @@ export type ServerMessage =
   | { type: 'flight-result', result: FlightResult, pilotId: number, aerial?: string[], recorded?: number }
   | { type: 'aerial-sighting', id: string }
   | WildfireNotice
+  | LearnerNotice
   // A transient sound cue from host physics. Never saved; clients drop repeated or late IDs.
   | { type: 'crate-impact', id: string, item: number, x: number, y: number, z: number, strength: number, surface: 'ground' | 'bed' }
   | { type: 'full' | 'duplicate' }

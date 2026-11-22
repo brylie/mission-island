@@ -1,4 +1,5 @@
 import { bindCheckpointControls } from './live-checkpoint-ui'
+import { careerXpLabels } from './learner-vehicles'
 import './style.css'
 import { drawIslandMap } from './island-map'
 import { actionHint, inSkiff, interactRequest } from './actions'
@@ -18,8 +19,7 @@ import { createReticleFocus } from './reticle-ui'
 import { createJobBoard } from './job-board-ui'
 import { createJournalPage } from './journal-ui'
 import { atJobBoard } from './jobs'
-import { starterTools, toolNames } from './inventory'
-import type { InventoryItem } from './inventory'
+import { starterTools, toolNames, type InventoryItem } from './inventory'
 import type { ClientMessage, Input, Player, ServerMessage, Snapshot } from './protocol'
 import { createRenderer } from './scene'
 import { bindLanInvite } from './lan-invite'
@@ -176,7 +176,7 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
     const quantity = player.materials?.[material]
     return quantity ? [`${quantity} ${material}`] : []
   })
-  const contents = [balance, player.deliveryXp ? player.deliveryXp + ' driver XP' : '', `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`, fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '', ...materials]
+  const contents = [balance, player.deliveryXp ? player.deliveryXp + ' driver XP' : '', ...careerXpLabels(player.drivingXp), `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`, fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '', ...materials]
     .filter(Boolean).join(' · ')
   if (fishingWallet.textContent !== contents) fishingWallet.textContent = contents
   fishingWallet.hidden = false

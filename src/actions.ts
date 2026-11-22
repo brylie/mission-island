@@ -6,6 +6,7 @@ import { heldItem } from './interactions/cargo.ts'
 import { interactionChoice } from './interactions/definition.ts'
 import { besideSubject, defaultInteraction } from './interaction-options.ts'
 import type { Interaction, InteractionChoice } from './interaction-options.ts'
+import { flatbedHasSeat, learnerVehicles, nearestBoardableLearner, practiceStatus, practiceStop } from './learner-vehicles.ts'
 
 const skiffBoardSpeed = 0.65
 const skiffBoardReach = 3.3
@@ -36,6 +37,17 @@ export function canCast(state: Snapshot, player: Player) {
   return !player.seat && player.grounded && !player.onBed && !player.swimming
 }
 
+// Board whichever road vehicle is closest, as the host does.
+function roadBoardingHint(state: Snapshot, player: Player): [string, string] | undefined {
+  if (!player.grounded || player.onBed || player.truckSurface) return
+  const learner = nearestBoardableLearner(state.vehicles, state.players, player)
+  const truckNear = distance(player, state.truck) < truckBoardReach && Math.abs(state.truck.speed) <= truckSeatSpeed && flatbedHasSeat(state.players)
+  if (learner && (!truckNear || distance(state.vehicles[learner], player) < distance(state.truck, player))) {
+    return ['F', `${learner === 'tractor' ? 'Drive' : 'Board'} ${learnerVehicles[learner].noun}`]
+  }
+  if (truckNear) return ['F', 'Board truck']
+}
+
 // Hints for keys other than E, shown when nothing is in reach for E.
 function fallbackHint(state: Snapshot, player: Player): [string, string] {
   if (player.grounded && !player.onBed && distance(player, market) < marketTradeReach) {
@@ -48,14 +60,27 @@ function fallbackHint(state: Snapshot, player: Player): [string, string] {
   if (plot === 'watered') return ['', state.weather.hour > daylightGrowthStartsHour && state.weather.hour < daylightGrowthEndsHour
     ? 'Carrots are growing'
     : 'Watered · growth resumes at sunrise']
-  if (player.grounded && !player.onBed && !player.truckSurface && distance(player, state.truck) < truckBoardReach
-    && Math.abs(state.truck.speed) <= truckSeatSpeed) return ['F', 'Board truck']
+  const boarding = roadBoardingHint(state, player)
+  if (boarding) return boarding
   if (canBoardSkiff(state, player)) return ['F', 'Board skiff']
   if (canCast(state, player)) return ['Left click', 'Hold and release to cast']
   return ['', '']
 }
 
+function learnerHint(state: Snapshot, player: Player): [string, string] {
+  const id = player.vehicle!
+  const { noun } = learnerVehicles[id]
+  const stopped = Math.abs(state.vehicles[id].speed) <= truckSeatSpeed
+  const stop = practiceStop(id, state.practice[id])
+  if (player.seat !== 'driver') return stopped ? ['F', `Exit ${noun} · heading for ${stop.name}`] : ['', `Riding to ${stop.name}`]
+  const status = practiceStatus(state.vehicles[id], stop)
+  if (status === 'rolling') return ['Space', `Brake to a full stop in the ring at ${stop.name}`]
+  if (status === 'close' && stopped) return ['WASD', `Pull forward into the ring at ${stop.name}`]
+  return stopped ? ['F', `Exit ${noun} · or drive to ${stop.name}`] : ['WASD', `Drive to ${stop.name} · Space to stop in the ring`]
+}
+
 function ridingHint(state: Snapshot, player: Player): [string, string] {
+  if (player.vehicle) return learnerHint(state, player)
   if (inSkiff(player.seat)) {
     if (canCast(state, player)) return ['Left click', 'Hold and release to cast']
     return player.inventory.includes('fishing-rod') && !player.equipped

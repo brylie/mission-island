@@ -163,7 +163,7 @@ test('older saves start the repair untouched, and progress that does not add up 
   delete legacy.world.ferryRepair
   file.write(legacy)
   const migrated = file.load()
-  assert.equal(migrated.version, 7)
+  assert.equal(migrated.version, 8)
   assert.deepEqual(migrated.world.ferryRepair, initialFerryRepair().ferryRepair)
   for (const ferryRepair of [
     { stage: 1, ledger: [full(0)], haul: 0 },
