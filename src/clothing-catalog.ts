@@ -1,18 +1,23 @@
 import { anglerCost, appearanceParts, uniforms } from './crew-appearance.ts'
 import { stockedPieces, type PieceSlot, type StockId } from './wardrobe-stock.ts'
 
+const lagoonSwimsuitPrice = 2
+
 function slotItems<Slot extends PieceSlot>(slot: Slot) {
-  const group: Readonly<Record<string, { name: string; price: number }>> = stockedPieces[slot]
+  const group: Readonly<Record<string, { name: string, price: number }>> = stockedPieces[slot]
   return Object.fromEntries(Object.entries(group).map(([id, piece]) =>
     [id, { name: piece.name, price: piece.price, slot, choice: id }])) as Record<StockId<Slot>, {
-    name: string; price: number; slot: Slot; choice: StockId<Slot>
+    name: string
+    price: number
+    slot: Slot
+    choice: StockId<Slot>
   }>
 }
 
 export const clothingCatalog = {
-  angler: { name: uniforms.angler.name, price: anglerCost, slot: 'uniform', choice: 'angler' },
+  'angler': { name: uniforms.angler.name, price: anglerCost, slot: 'uniform', choice: 'angler' },
   'coral-shirt': { name: appearanceParts.shirt.choices.coral, price: 1, slot: 'shirt', choice: 'coral' },
-  'lagoon-swimsuit': { name: appearanceParts.shirt.choices.lagoon, price: 2, slot: 'shirt', choice: 'lagoon' },
+  'lagoon-swimsuit': { name: appearanceParts.shirt.choices.lagoon, price: lagoonSwimsuitPrice, slot: 'shirt', choice: 'lagoon' },
   ...slotItems('hat'),
   ...slotItems('shirt'),
   ...slotItems('trousers'),

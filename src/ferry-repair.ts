@@ -5,21 +5,24 @@ import type { Item, Player, Snapshot } from './protocol.ts'
 import { walkingHeight } from './terrain.ts'
 import { crewHomes, distance, ferryTerminal, spawns } from './world.ts'
 import type { Point } from './world.ts'
-import { rampDeck, tallyBoard, timberStack, yardDrop } from './worlds/starter/ferry-terminal.ts'
+import { ferryBarrier, rampDeck, tallyBoard, tallyControlOffsetX, timberPickups, timberSlipHeight, timberStack, yardDrop } from './worlds/starter/ferry-terminal.ts'
 
 // The ferry terminal is the crew's first community project. Each stage asks for coins from the crew bank and
 // timber hauled from Seabrook. The amounts are trial values for the balance playtest (#52), not settled prices.
+const coinsPerStage = 12
+const cratesPerStage = 2
 export const ferryStages = [
-  { id: 'brace', title: 'Brace the landing', coins: 12, crates: 2 },
-  { id: 'deck', title: 'Lay the new deck', coins: 12, crates: 2 },
-  { id: 'open', title: 'Open the ramp', coins: 12, crates: 2 },
+  { id: 'brace', title: 'Brace the landing', coins: coinsPerStage, crates: cratesPerStage },
+  { id: 'deck', title: 'Lay the new deck', coins: coinsPerStage, crates: cratesPerStage },
+  { id: 'open', title: 'Open the ramp', coins: coinsPerStage, crates: cratesPerStage },
 ] as const
 const donationStep = 5
 const tallyRadius = 2.6
+const timberStackRadius = 8
 
 // One ledger per started stage. Each array is indexed by crew slot, so the tally can name who gave what.
-export interface FerryLedger { coins: number[]; crates: number[] }
-export interface FerryRepair { stage: number; ledger: FerryLedger[]; haul: number; restoredAt?: number }
+export interface FerryLedger { coins: number[], crates: number[] }
+export interface FerryRepair { stage: number, ledger: FerryLedger[], haul: number, restoredAt?: number }
 
 export const ferryActions = {
   'ferry-order': 'explicit',
@@ -46,12 +49,15 @@ export function ferryServiceRestored({ ferryRepair }: Pick<Snapshot, 'ferryRepai
 // Until service is restored the striped barrier closes the lane. Afterwards the barrier arm is raised and the new
 // deck carries the crew and the flatbed out to the berth.
 const { x: laneX, z: barrierZ, width: laneWidth } = ferryTerminal
-export const barrierSolids = [plank({ x: laneX - laneWidth / 2, z: barrierZ }, { x: laneX + laneWidth / 2, z: barrierZ }, .24, 1.12)]
+const half = 0.5
+const halfLaneWidth = laneWidth * half
+const deckThickness = 0.3
+export const barrierSolids = [plank({ x: laneX - halfLaneWidth, z: barrierZ }, { x: laneX + halfLaneWidth, z: barrierZ }, ferryBarrier.thickness, ferryBarrier.height)]
 const deckStep = (rampDeck.near - rampDeck.far) / rampDeck.segments
 export const deckSolids = Array.from({ length: rampDeck.segments }, (_, i) => {
   const from = { x: laneX, z: rampDeck.near - i * deckStep }
-  const top = rampDeck.nearTop + (rampDeck.farTop - rampDeck.nearTop) * (i + .5) / rampDeck.segments
-  return { ...plank(from, { x: laneX, z: from.z - deckStep }, laneWidth, 0), floor: top - .3, top }
+  const top = rampDeck.nearTop + (rampDeck.farTop - rampDeck.nearTop) * (i + half) / rampDeck.segments
+  return { ...plank(from, { x: laneX, z: from.z - deckStep }, laneWidth, 0), floor: top - deckThickness, top }
 })
 
 export function ferrySolids(state: Pick<Snapshot, 'ferryRepair'>) {
@@ -60,7 +66,7 @@ export function ferrySolids(state: Pick<Snapshot, 'ferryRepair'>) {
 
 // The restored deck's surface, for anything that reads height directly rather than through the solids.
 export function deckTop({ x, z }: Point) {
-  if (Math.abs(x - laneX) > laneWidth / 2 || z > rampDeck.near || z < rampDeck.far) return -Infinity
+  if (Math.abs(x - laneX) > halfLaneWidth || z > rampDeck.near || z < rampDeck.far) return -Infinity
   const segment = Math.min(rampDeck.segments - 1, Math.floor((rampDeck.near - z) / deckStep))
   return deckSolids[segment].top
 }
@@ -75,8 +81,7 @@ export function stageNeeds({ ferryRepair }: Pick<Snapshot, 'ferryRepair'>) {
   const ledger = ferryRepair.ledger[ferryRepair.stage]
   if (!stage || !ledger) return undefined
   const coinsGiven = sum(ledger.coins), cratesGiven = sum(ledger.crates)
-  return { ...stage, number: ferryRepair.stage + 1, coinsGiven, cratesGiven,
-    coinsLeft: stage.coins - coinsGiven, cratesLeft: stage.crates - cratesGiven }
+  return { ...stage, number: ferryRepair.stage + 1, coinsGiven, cratesGiven, coinsLeft: stage.coins - coinsGiven, cratesLeft: stage.crates - cratesGiven }
 }
 
 export function donationAmount(state: ProjectState & Pick<Snapshot, 'crewCoins'>) {
@@ -87,8 +92,8 @@ export function donationAmount(state: ProjectState & Pick<Snapshot, 'crewCoins'>
 // Timber rides in the depot crates, so an order waits until no delivery uses them and none is in anyone's hands.
 export function canOrderTimber(state: ProjectState & Pick<Snapshot, 'items'>) {
   const needs = ferryProjectOpen(state) ? stageNeeds(state) : undefined
-  return Boolean(needs && needs.cratesLeft > 0) && state.ferryRepair.haul === 0 && deliveryDrop(state) === undefined &&
-    state.items.every((item) => item.kind !== 'crate' || (item.delivered && item.holder === null))
+  return Boolean(needs && needs.cratesLeft > 0) && state.ferryRepair.haul === 0 && deliveryDrop(state) === undefined
+    && state.items.every((item) => item.kind !== 'crate' || (item.delivered && item.holder === null))
 }
 
 function timberCrates(state: Pick<Snapshot, 'ferryRepair' | 'items'>) {
@@ -116,21 +121,23 @@ function boardPoint(dx: number, height: number) {
 }
 
 // The tally board has three things to aim at: the board itself, the coin box and the order slip.
+const controlAimRadius = 0.35
+const coinBoxAimHeight = 1.05
+const boardAimHeight = 1.55
+const boardAimRadius = 0.7
+
 export function ferryInteractions(state: ProjectState & Pick<Snapshot, 'crewCoins' | 'items'>, player: Player): InteractionOption<FerryAction>[] {
   if (!standing(player) || distance(player, tallyBoard) >= tallyRadius) return []
   const options: InteractionOption<FerryAction>[] = []
   const needs = stageNeeds(state)
   if (needs && canOrderTimber(state)) {
-    options.push({ action: 'ferry-order', key: 'E', label: `Order ${plural(needs.cratesLeft, 'timber crate')} from Seabrook`,
-      name: 'Timber order slip', at: boardPoint(.85, 1.15), radius: .35 })
+    options.push({ action: 'ferry-order', key: 'E', label: `Order ${plural(needs.cratesLeft, 'timber crate')} from Seabrook`, name: 'Timber order slip', at: boardPoint(tallyControlOffsetX, timberSlipHeight), radius: controlAimRadius })
   }
   const coins = donationAmount(state)
   if (needs && coins > 0) {
-    options.push({ action: 'ferry-donate', key: 'E', label: `Donate ${plural(coins, 'coin')} from the crew bank (${needs.coinsGiven}/${needs.coins})`,
-      name: 'Repair coin box', at: boardPoint(-.85, 1.05), radius: .35 })
+    options.push({ action: 'ferry-donate', key: 'E', label: `Donate ${plural(coins, 'coin')} from the crew bank (${needs.coinsGiven}/${needs.coins})`, name: 'Repair coin box', at: boardPoint(-tallyControlOffsetX, coinBoxAimHeight), radius: controlAimRadius })
   }
-  options.push({ action: 'ferry-tally', key: 'E', label: 'Read the ferry tally board', name: 'Ferry tally board',
-    at: boardPoint(0, 1.55), radius: .7 })
+  options.push({ action: 'ferry-tally', key: 'E', label: 'Read the ferry tally board', name: 'Ferry tally board', at: boardPoint(0, boardAimHeight), radius: boardAimRadius })
   return options
 }
 
@@ -152,19 +159,21 @@ export function ferryNextStep(state: ProjectState & Pick<Snapshot, 'items' | 'cr
   if (haul > 0) {
     const timber = timberCrates(state)
     if (timber.some((item) => item.onBed)) return `Drive the timber to the ferry yard and stack ${plural(haul, 'crate')} by the tally board`
-    return timber.some((item) => distance(item, timberStack) < 8)
+    return timber.some((item) => distance(item, timberStack) < timberStackRadius)
       ? `Collect ${plural(haul, 'timber crate')} from the ${timberStack.name} and haul them to the ferry yard`
       : `Stack ${plural(haul, 'timber crate')} on the ferry yard pallet by the tally board`
   }
   if (needs.cratesLeft > 0 && canOrderTimber(state)) return 'Order timber at the ferry tally board'
   if (needs.cratesLeft > 0) return 'Finish the current delivery, then order timber at the ferry tally board'
-  return state.crewCoins > 0 ? `Donate ${plural(needs.coinsLeft, 'more coin')} at the ferry tally board`
+  return state.crewCoins > 0
+    ? `Donate ${plural(needs.coinsLeft, 'more coin')} at the ferry tally board`
     : `Earn ${plural(needs.coinsLeft, 'coin')} for the repair, then donate at the ferry tally board`
 }
 
 export function ferryProgress(state: Pick<Snapshot, 'ferryRepair'>) {
   const needs = stageNeeds(state)
-  return needs ? `Stage ${needs.number}/${ferryStages.length} · ${needs.coinsGiven}/${needs.coins} coins · ${needs.cratesGiven}/${needs.crates} timber`
+  return needs
+    ? `Stage ${needs.number}/${ferryStages.length} · ${needs.coinsGiven}/${needs.coins} coins · ${needs.cratesGiven}/${needs.crates} timber`
     : 'Ferry service restored'
 }
 
@@ -183,7 +192,9 @@ export function tallyLines(state: ProjectState & Pick<Snapshot, 'players' | 'ite
   const ledger = ferryRepair.ledger[ferryRepair.stage]
   return { title: `Ferry repair · Stage ${needs.number} of ${ferryStages.length}: ${needs.title}`, lines: [
     `Coins ${needs.coinsGiven}/${needs.coins} · Timber ${needs.cratesGiven}/${needs.crates}${ferryRepair.haul ? ` · ${ferryRepair.haul} on the way` : ''}`,
-    contributors(state, ledger), `Next: ${ferryNextStep(state)}`, ...done,
+    contributors(state, ledger),
+    `Next: ${ferryNextStep(state)}`,
+    ...done,
   ] }
 }
 
@@ -201,7 +212,7 @@ function isLedger(value: unknown): value is FerryLedger {
 export function isFerryRepair(value: unknown, islandTime: number): value is FerryRepair {
   if (typeof value !== 'object' || value === null) return false
   const { stage, ledger, haul, restoredAt } = value as Record<string, unknown>
-  if (!isCount(stage, ferryStages.length) || !isCount(haul, 3) || !Array.isArray(ledger) || !ledger.every(isLedger)) return false
+  if (!isCount(stage, ferryStages.length) || !isCount(haul, timberPickups.length) || !Array.isArray(ledger) || !ledger.every(isLedger)) return false
   const restored = stage === ferryStages.length
   if (ledger.length !== (restored ? stage : stage + 1)) return false
   const met = ledger.every((entry, i) => {

@@ -5,10 +5,16 @@ import { Axis, Space } from '@babylonjs/core/Maths/math.axis.js'
 import { Matrix } from '@babylonjs/core/Maths/math.vector.js'
 import { Mesh } from '@babylonjs/core/Meshes/mesh.js'
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode.js'
+import { smoothstep } from '../math/smoothstep.ts'
 
 // All leg garments are authored in the hip's local space. The same knee bends
 // bare calves and trouser cloth, while shoes below the joint remain rigid.
-const height = -.305
+const height = -0.305
+const blendHalfSpan = 0.078
+const blendSpan = 0.156
+const verticesStride = 3
+const bendTolerance = 0.00001
+const legBoneInfluences = 2
 
 export function rigCrewKnee(hip: TransformNode) {
   const skeleton = new Skeleton('Leg', `crew-leg-${hip.uniqueId}`, hip.getScene())
@@ -21,7 +27,7 @@ export function rigCrewKnee(hip: TransformNode) {
   let angle = 0
   function bend(target: number, blend: number) {
     const next = angle + (target - angle) * blend
-    if (Math.abs(next - angle) < .00001) return
+    if (Math.abs(next - angle) < bendTolerance) return
     angle = next
     shin.setAxisAngle(Axis.X, angle, Space.LOCAL)
   }
@@ -31,14 +37,13 @@ export function rigCrewKnee(hip: TransformNode) {
 export function bindLegMesh(mesh: Mesh, skeleton: Skeleton) {
   const positions = mesh.getVerticesData(VertexBuffer.PositionKind)!
   const indices: number[] = [], weights: number[] = []
-  for (let i = 1; i < positions.length; i += 3) {
-    const t = Math.max(0, Math.min(1, (height + .078 - positions[i]) / .156))
-    const flex = t * t * (3 - 2 * t)
+  for (let i = 1; i < positions.length; i += verticesStride) {
+    const flex = smoothstep((height + blendHalfSpan - positions[i]) / blendSpan)
     indices.push(0, 1, 0, 0)
     weights.push(1 - flex, flex, 0, 0)
   }
   mesh.setVerticesData(VertexBuffer.MatricesIndicesKind, indices)
   mesh.setVerticesData(VertexBuffer.MatricesWeightsKind, weights)
-  mesh.numBoneInfluencers = 2
+  mesh.numBoneInfluencers = legBoneInfluences
   mesh.skeleton = skeleton
 }

@@ -9,7 +9,7 @@ import type { Point } from '../world.ts'
 // resident's record of trust and favors; the world layer places them. Adding a villager or a
 // visitor means one definition file and one registry entry.
 export interface Stop extends Point { heading: number }
-export interface Leg { point: Point; indoors?: boolean }
+export interface Leg { point: Point, indoors?: boolean }
 
 // The part of the shared snapshot a resident's day can depend on. Wren's route changes once the gate is mended.
 export type ResidentWorld = Pick<Snapshot, 'islandTime' | 'gateRepair'>
@@ -46,13 +46,13 @@ export interface ConversationTrait {
 }
 
 export type FavorKind =
-  | { goods: keyof Goods; quantity: number }
-  | { cargo: 'crate'; drop: Point; radius: number; place: string }
+  | { goods: keyof Goods, quantity: number }
+  | { cargo: 'crate', drop: Point, radius: number, place: string }
   // Work done in the world and checked by the crew, then finished by reporting back.
   | { check: true }
   | { custom: true }
 
-export interface FavorGuide { title: string; detail: string; next: string }
+export interface FavorGuide { title: string, detail: string, next: string }
 
 export interface FavorDefinition {
   id: string
@@ -73,7 +73,7 @@ export interface FavorDefinition {
   listed?(state: Snapshot): boolean
   // A favor finished by reporting back. The crew checks the work in the world, and the resident takes
   // the crew's word for the result. Saying it is sound after seeing a fault breaks the promise.
-  report?: { question: string; sound: string; fault: string; found: { sound: string; fault: string } }
+  report?: { question: string, sound: string, fault: string, found: { sound: string, fault: string } }
 }
 
 export type Whereabouts = 'home' | 'work' | 'walking'
@@ -101,8 +101,8 @@ export interface Remark {
 
 export interface ResidentDefinition {
   id: string
-  identity: { name: string; role: string }
-  appearance: { look: CrewAppearance; dye?: string }
+  identity: { name: string, role: string }
+  appearance: { look: CrewAppearance, dye?: string }
   schedule: ScheduleTrait
   conversation: ConversationTrait
   // Offered one at a time, in order.

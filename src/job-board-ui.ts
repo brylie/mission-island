@@ -2,7 +2,8 @@ import { jobs, secondIslandGoal } from './jobs'
 import type { JobBoardState, JobId } from './jobs'
 
 export function secondIslandProgress(completed: number) {
-  return completed >= secondIslandGoal ? 'Crew ready · the ferry repair is open at the tally board by the barrier'
+  return completed >= secondIslandGoal
+    ? 'Crew ready · the ferry repair is open at the tally board by the barrier'
     : `Ferry repair · ${completed} / ${secondIslandGoal} orders complete`
 }
 
@@ -40,10 +41,16 @@ export function createJobBoard(dialog: HTMLDialogElement, request: (id: JobId) =
     return { id, row, button }
   })
 
-  dialog.addEventListener('close', () => { blocked = false; pending = undefined })
+  dialog.addEventListener('close', () => {
+    blocked = false
+    pending = undefined
+  })
 
   return {
-    reject() { pending = undefined; blocked = true },
+    reject() {
+      pending = undefined
+      blocked = true
+    },
     update(state: JobBoardState, canAccept: boolean, online: boolean) {
       if (!dialog.open) return
       const { active, completed } = state
@@ -51,8 +58,11 @@ export function createJobBoard(dialog: HTMLDialogElement, request: (id: JobId) =
         dialog.close()
         return
       }
-      const where = !online ? 'Reconnect to take an order.' : active ? `${jobs[active.id].title} is in progress.`
-        : canAccept ? 'Choose an order for the crew.' : 'Visit the board at Harbor Depot to take an order.'
+      const where = !online
+        ? 'Reconnect to take an order.'
+        : active
+          ? `${jobs[active.id].title} is in progress.`
+          : canAccept ? 'Choose an order for the crew.' : 'Visit the board at Harbor Depot to take an order.'
       const message = blocked && !active && online ? 'The order could not be started. Check that your hands are free and try again.' : where
       const milestone = secondIslandProgress(completed)
       if (note.textContent !== message) note.textContent = message

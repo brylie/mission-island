@@ -78,7 +78,24 @@ The pre-push hook runs ESLint without the cache, Knip for unused code and depend
 
 The coverage gate runs only in CI, because it takes a few minutes. It fails the build when lines, functions, or branches drop below 81% across the host and shared mechanics. Run it locally with `npm run coverage`.
 
-Run `npm run lint:fix` to apply ESLint layout fixes, including trailing commas in interaction files. The shared interaction registries use one entry per line for multiline lists.
+Run `npm run lint:fix` to apply ESLint layout fixes. First-party JavaScript and TypeScript follow the ESLint Stylistic recommended preset with LF line endings and parentheses around all arrow function parameters. Multiline interaction registries use one entry per line.
+
+Name gameplay thresholds, timeouts, and other numeric settings in the module that owns the rule. Include units in the name when they matter. `no-magic-numbers` checks first-party JavaScript and TypeScript, including object fields, model builders, and Workbench code. The rule accepts `-1`, `0`, `1`, array indexes, and numeric literals in named enum members and types.
+
+**Approved locations for authored numeric data**
+
+- `src/assets/geometry/*.ts` for dimensions, support volumes, and vertex or placement tuples in local model coordinates.
+- `src/assets/audio/*.ts`, `src/assets/effects/*.ts`, and `src/assets/recipes/*.ts` for authored sound, particle, shader, and lighting data.
+- The island layout files listed in `eslint.config.mjs` for authored terrain profiles, scenery locations, and routes.
+- `test/` for test inputs and expected values.
+
+Keep the approved production modules to constants and types. ESLint rejects functions, calls, and mutations there. Geometry, audio, effects, and world layouts have no imports. Recipe modules can import types and compose values from neighboring recipe files. Runtime code imports the data and names its own settings. ESLint uses the repository configuration for all source files, including exceptions.
+
+Name shared colors for their role in the palette. Share a constant when several assets are meant to use the same paint or material. Keep a model’s individual finishes with its geometry.
+
+ESLint reports numeric-literal violations directly and disables inline overrides.
+
+The correctness rules check callback returns, loop control, imports, parameter reassignment, and other common errors. Switches over typed unions in the host and shared gameplay modules must handle every declared case.
 
 On pull requests into `main` and pushes to `main`, GitHub Actions runs the pre-commit and pre-push checks and the coverage gate. Open **CI → Quality and tests** to inspect coverage, the build, and the dependency audit.
 

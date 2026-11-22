@@ -8,7 +8,7 @@ import { stopped } from './crew.ts'
 
 export type CrewCommand =
   | Exclude<ClientMessage, { type: 'join' | 'take-job' }>
-  | { type: 'take-job'; id: JobId | undefined }
+  | { type: 'take-job', id: JobId | undefined }
 
 function readHeading(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.atan2(Math.sin(value), Math.cos(value)) : undefined
@@ -18,7 +18,8 @@ function readInput(raw: unknown): Input {
   if (!raw || typeof raw !== 'object') return stopped
   const { x, z, spray, aim, careful, sprint, brake, raiseRightHand, flightTurn, flightPitch } = raw as Record<string, unknown>
   const axis = (value: unknown) => typeof value === 'number' && Number.isFinite(value)
-    ? Math.max(-1, Math.min(1, value)) : 0
+    ? Math.max(-1, Math.min(1, value))
+    : 0
   return {
     x: axis(x),
     z: axis(z),

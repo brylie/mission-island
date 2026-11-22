@@ -32,7 +32,7 @@ test('add and remove a reference without losing a subject setup, field stage or 
 test('a shared crop survives a setup link round trip and clears on fit or removal', () => {
   const base = 'https://island.test/workbench.html#clover?stage=island'
   const photo = 'https://images.example.org/clover.jpg'
-  const crop = { zoom: 3, x: .35, y: .62 }
+  const crop = { zoom: 3, x: 0.35, y: 0.62 }
   const link = withReference(base, photo, crop)
   const params = new URLSearchParams(new URL(link).hash.split('?')[1])
   assert.deepEqual(readCrop(params.get('crop')), crop)
@@ -56,7 +56,7 @@ test('wheel and pinch retain the image pixel under the pointer while panning sto
   const frame = photoFrame(size, edge)
   assert.equal(frame.left, 0)
   assert.equal(frame.top + frame.height, size.height)
-  assert.deepEqual(moveCrop(size, edge, .5, end, start), fitCrop)
+  assert.deepEqual(moveCrop(size, edge, 0.5, end, start), fitCrop)
 })
 
 test('descriptions round trip as plain text and are removed with the reference', () => {
@@ -64,7 +64,7 @@ test('descriptions round trip as plain text and are removed with the reference',
   const image = 'https://images.example.org/clover.jpg'
   const description = 'Pale flowers & three <leaflets> #clover'
   const link = withReference(base, image, fitCrop, '  ' + description + '  ')
-  const getAlt = href => new URLSearchParams(new URL(href).hash.split('?')[1]).get('refAlt')
+  const getAlt = (href) => new URLSearchParams(new URL(href).hash.split('?')[1]).get('refAlt')
   assert.equal(getAlt(link), description)
   assert.equal(getAlt(withReference(link, image, fitCrop, 'a'.repeat(500))).length, 300)
   assert.equal(getAlt(withReference(link, image)), null)

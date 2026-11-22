@@ -13,7 +13,7 @@ const ray = (origin, toward, reach = 18) => {
 }
 
 test('the reticle picks the nearest target its ray passes through, before any wall', () => {
-  const near = { action: 'pick-up', subject: 0, key: 'E', label: 'Pick up crate', name: 'Crate', at: { x: 0, y: 1, z: 3 }, radius: .6 }
+  const near = { action: 'pick-up', subject: 0, key: 'E', label: 'Pick up crate', name: 'Crate', at: { x: 0, y: 1, z: 3 }, radius: 0.6 }
   const far = { ...near, subject: 1, at: { x: 0, y: 1, z: 6 } }
   const aside = { ...near, subject: 2, at: { x: 2, y: 1, z: 4 } }
   const unplaced = { action: 'put-down', key: 'E', label: 'Set crate down', name: 'Ground' }
@@ -24,7 +24,7 @@ test('the reticle picks the nearest target its ray passes through, before any wa
   assert.equal(aimedInteraction([near], ray(eye, { x: 0, y: 1, z: -1 })), undefined, 'nothing behind the camera')
   assert.equal(aimedInteraction([unplaced], ray(eye, { x: 0, y: 1, z: 1 })), undefined)
   assert.equal(aimedInteraction([near], undefined), undefined, 'no reticle, no focus')
-  const edge = ray(eye, { x: .68, y: 1, z: 3 })
+  const edge = ray(eye, { x: 0.68, y: 1, z: 3 })
   assert.equal(aimedInteraction([near], edge), undefined)
   assert.equal(aimedInteraction([near], edge, near), near, 'a held focus is a little sticky')
 })

@@ -1,18 +1,39 @@
 import type { Item, Snapshot } from '../src/protocol.ts'
 import type { Point } from '../src/world.ts'
 import { groundHeight } from '../src/terrain.ts'
-import { crateSize, itemStarts, localPoint, offset } from '../src/world.ts'
+import { crateHalfSize } from '../src/simulation/cargo.ts'
+import { itemStarts, localPoint, offset } from '../src/world.ts'
+
+export const heldCrateForwardM = 0.89
+const heldCrateLiftM = 1.13
+const crateWindupLiftM = 0.41
+const heldToolboxLateralM = -0.43
+const heldToolboxForwardM = 0.08
+const heldToolboxLiftM = 0.36
+const heldExtinguisherLateralM = -0.49
+const heldExtinguisherForwardM = 0.59
+const heldExtinguisherLiftM = 0.24
+
+export const itemGroundClearance = 0.04
 
 // Where an item rests at its home: on the ground, or on top of a bench for the toolbox.
 export function restingY(id: number) {
   const entry = itemStarts[id]
-  return 'lift' in entry ? groundHeight(entry.start) + entry.lift : 0.04
+  return 'lift' in entry ? groundHeight(entry.start) + entry.lift : itemGroundClearance
 }
 
 export function makeItems(): Item[] {
   return itemStarts.map(({ kind, start }, id) => ({
-    ...start, id, heading: 0, kind,
-    holder: null, onBed: false, delivered: false, spraying: false, y: restingY(id), rotation: null,
+    ...start,
+    id,
+    heading: 0,
+    kind,
+    holder: null,
+    onBed: false,
+    delivered: false,
+    spraying: false,
+    y: restingY(id),
+    rotation: null,
   }))
 }
 
@@ -24,7 +45,7 @@ export function updateHeldItems(state: Pick<Snapshot, 'items' | 'players'>) {
       const crate = item.kind === 'crate'
       const winding = crate && holder.charge?.kind === 'throw' ? holder.charge.power : 0
       // A toolbox hangs from the relaxed left hand; an extinguisher is held out front.
-      const [lateral, forward, lift] = crate ? [0, 0.89, 1.13 + winding * 0.41] : item.kind === 'toolbox' ? [-0.43, 0.08, 0.36] : [-0.49, 0.59, 0.24]
+      const [lateral, forward, lift] = crate ? [0, heldCrateForwardM, heldCrateLiftM + winding * crateWindupLiftM] : item.kind === 'toolbox' ? [heldToolboxLateralM, heldToolboxForwardM, heldToolboxLiftM] : [heldExtinguisherLateralM, heldExtinguisherForwardM, heldExtinguisherLiftM]
       Object.assign(item, offset(holder, lateral, forward))
       item.heading = holder.heading
       item.y = holder.y + lift
@@ -37,8 +58,8 @@ export function looseCargoTop(items: Item[], point: Point, margin: number) {
   for (const item of items) {
     if (item.kind !== 'crate' || item.holder !== null || item.delivered || item.onBed) continue
     const local = localPoint(item, point)
-    const size = crateSize / 2 + margin
-    if (Math.abs(local.x) < size && Math.abs(local.z) < size) top = Math.max(top, item.y + crateSize / 2)
+    const size = crateHalfSize + margin
+    if (Math.abs(local.x) < size && Math.abs(local.z) < size) top = Math.max(top, item.y + crateHalfSize)
   }
   return top
 }

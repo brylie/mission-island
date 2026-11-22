@@ -4,12 +4,16 @@ import type { ServerMessage } from '../src/protocol.ts'
 import { readCrewCommand } from './commands.ts'
 import type { createGame } from './game.ts'
 
+const joinTimeoutMs = 3_000
+const snapshotBackpressureBytes = 65_536
+
 function readMessage(data: RawData): Record<string, unknown> | undefined {
   try {
     const buffer = Array.isArray(data) ? Buffer.concat(data) : Buffer.isBuffer(data) ? data : Buffer.from(new Uint8Array(data))
     const parsed: unknown = JSON.parse(buffer.toString('utf8'))
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : undefined
-  } catch {
+  }
+  catch {
     return undefined
   }
 }
@@ -18,11 +22,11 @@ type Simulation = Pick<ReturnType<typeof createGame>, 'join' | 'tick'>
 type JoinedCrew = Extract<ReturnType<Simulation['join']>, { type: 'joined' }>
 
 export function createSocketSessions(game: Simulation, scenarios?: readonly ScenarioSummary[]) {
-  const joinedSockets = new Map<WebSocket, { token: string; id: number }>()
+  const joinedSockets = new Map<WebSocket, { token: string, id: number }>()
 
   function connect(socket: WebSocket) {
     let crew: JoinedCrew | undefined
-    const joinTimeout = setTimeout(() => socket.close(), 3_000)
+    const joinTimeout = setTimeout(() => socket.close(), joinTimeoutMs)
     const reply = (message: ServerMessage) => socket.send(JSON.stringify(message))
     socket.on('error', () => socket.terminate())
     socket.on('message', (data, binary) => {
@@ -60,7 +64,7 @@ export function createSocketSessions(game: Simulation, scenarios?: readonly Scen
   function tick() {
     const snapshot = JSON.stringify(game.tick())
     for (const socket of joinedSockets.keys()) {
-      if (socket.readyState === WebSocket.OPEN && socket.bufferedAmount < 65_536) socket.send(snapshot)
+      if (socket.readyState === WebSocket.OPEN && socket.bufferedAmount < snapshotBackpressureBytes) socket.send(snapshot)
     }
   }
 

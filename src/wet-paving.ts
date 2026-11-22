@@ -4,6 +4,7 @@ import type { UniformBuffer } from '@babylonjs/core/Materials/uniformBuffer'
 import type { AbstractEngine } from '@babylonjs/core/Engines/abstractEngine'
 import type { Scene } from '@babylonjs/core/scene'
 import type { SubMesh } from '@babylonjs/core/Meshes/subMesh'
+import { environmentalMaterialPriority } from './assets/recipes/island-shader-presets'
 import { patchNoise } from './shader-studies'
 
 class WetPaving extends MaterialPluginBase {
@@ -11,7 +12,7 @@ class WetPaving extends MaterialPluginBase {
   reflection = 0
 
   constructor(material: Material) {
-    super(material, 'Wet paving', 180)
+    super(material, 'Wet paving', environmentalMaterialPriority)
     this.registerForExtraEvents = true
     this._enable(true)
   }
@@ -19,8 +20,7 @@ class WetPaving extends MaterialPluginBase {
   override getClassName() { return 'WetPaving' }
 
   override getUniforms() {
-    return { fragment: 'uniform vec2 pavingControls; uniform vec3 pavingSky;',
-      externalUniforms: ['pavingControls', 'pavingSky'] }
+    return { fragment: 'uniform vec2 pavingControls; uniform vec3 pavingSky;', externalUniforms: ['pavingControls', 'pavingSky'] }
   }
 
   override hardBindForSubMesh(_buffer: UniformBuffer, scene: Scene, _engine: AbstractEngine, subMesh: SubMesh) {

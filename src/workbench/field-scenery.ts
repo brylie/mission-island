@@ -29,11 +29,13 @@ export function createFieldScenery(meshes: MeshFactory, site: FieldSite) {
     ...site,
     features: draftFeatures(),
     surfaceStudy: surface && material && {
-      target: surface.target, material, wear: surface.settings.wear ?? surface.recipe.wear.amount,
+      target: surface.target,
+      material,
+      wear: surface.settings.wear ?? surface.recipe.wear.amount,
     },
   })
   return {
-    surfaceMeshes: material ? meshes.scene.meshes.filter(mesh => mesh.material === material) : undefined,
+    surfaceMeshes: material ? meshes.scene.meshes.filter((mesh) => mesh.material === material) : undefined,
     update(frame: WildlifeFrame, light: number) {
       const runoff = marketRunoffPreview(frame.weather.rain, dryMarketRainAge)
       world.updateEnvironment(frame, light, true, runoff, { driftwood: school(frame.time) })

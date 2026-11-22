@@ -11,7 +11,7 @@ import { player, setup, tokens } from './support/game-harness.mjs'
 
 const at = (hour, day = 0) => day * daySeconds + ((hour - 6 + 24) % 24) * daySeconds / 24
 const toolboxId = itemStarts.findIndex(({ kind }) => kind === 'toolbox')
-const atTheGate = { x: gateway.x, z: fenceZ - .9 }
+const atTheGate = { x: gateway.x, z: fenceZ - 0.9 }
 const offered = (client) => interactions(client.state, client.player).map(({ action, label }) => ({ action, label }))
 const act = (h, client, action, subject) => {
   client.request('interact', { choice: { action, ...subject !== undefined && { subject } } })
@@ -20,8 +20,14 @@ const act = (h, client, action, subject) => {
 
 test('a feature cannot reuse another feature\'s interaction action', () => {
   assert.deepEqual(mergeDisjoint({ open: 1 }, { plane: 2 }), { open: 1, plane: 2 })
-  assert.throws(() => mergeDisjoint({ open: 'explicit' }, { plane: 'explicit' }, { open: 'default' }),
-    /"open" is defined by more than one feature/)
+  assert.throws(() => mergeDisjoint({ open: 'explicit' }, { plane: 'explicit' }, { open: 'default' }), /"open" is defined by more than one feature/)
+})
+
+test('the merge treats special property names as ordinary action IDs', () => {
+  const feature = { ['__proto__']: 'explicit' }
+  const merged = mergeDisjoint(feature)
+  assert.deepEqual(merged, feature)
+  assert.throws(() => mergeDisjoint(feature, feature), /"__proto__" is defined by more than one feature/)
 })
 
 test('holding the toolbox at a caught gate offers planing before setting the toolbox down', (t) => {
@@ -32,7 +38,7 @@ test('holding the toolbox at a caught gate offers planing before setting the too
       Object.assign(save.world, { mission: 'complete', fire: 0 })
       Object.assign(save.world.gateRepair, { stage: 'mended', acceptedAt: 0, mendedAt: at(9), swelling: 'swollen' })
       save.world.residents.wren = { ...blankRecord(), trust: 1, kept: ['wren-gate'], active: 'wren-swell' }
-      Object.assign(save.world.items[toolboxId], { x: gateway.x + .6, z: fenceZ - 1.1, holder: null })
+      Object.assign(save.world.items[toolboxId], { x: gateway.x + 0.6, z: fenceZ - 1.1, holder: null })
     },
   })
   const a = h.join(tokens[0])

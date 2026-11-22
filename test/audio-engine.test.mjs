@@ -42,14 +42,16 @@ class FakeContext {
       buffer: null,
       addEventListener: (_type, listener) => ended.push(listener),
       start(at) { context.started.push({ at, duration: this.buffer.duration }) },
-      stop() { ended.forEach((listener) => listener()) },
+      stop() { ended.forEach((listener) => void listener()) },
     })
   }
+
   setState(state) {
     this.state = state
     this.onstatechange?.()
     return Promise.resolve()
   }
+
   resume() { return this.setState('running') }
   suspend() { return this.setState('suspended') }
   close() { return this.setState('closed') }
@@ -63,8 +65,16 @@ function heldRenderer() {
   const held = []
   return {
     held,
-    renderer: () => ({ render: (rendered) => new Promise((resolve) => held.push(() => resolve(inlineRenderer().render(rendered)))), dispose() {} }),
-    release: async () => { held.splice(0).forEach((finish) => finish()); await settle() },
+    renderer: () => ({
+      render: (rendered) => new Promise((resolve) => {
+        held.push(() => resolve(inlineRenderer().render(rendered)))
+      }),
+      dispose() {},
+    }),
+    release: async () => {
+      held.splice(0).forEach((finish) => void finish())
+      await settle()
+    },
   }
 }
 

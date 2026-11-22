@@ -4,6 +4,10 @@ import { createVariationLibrary } from './variations'
 import { readSubjectLink, subjectLink } from './subject-link'
 import { starterFeatures } from '../worlds/starter/sites'
 import { editedFeature, readSiteDrafts, saveSiteDraft } from './site-drafts'
+import { exportDraftJson } from './file-download'
+import { landscapeControls } from '../assets/recipes/workbench-landscape-views'
+import { landscapeFurnishingControls } from '../assets/recipes/workbench-place-studies'
+import { studioCamera, studioPlayback } from '../assets/recipes/workbench-stage'
 import { workspaceOf } from './library'
 import { createLibraryPanel } from './library-panel'
 import { bindBiomeRecipes } from './biome-files'
@@ -52,6 +56,7 @@ const status = element('stage-error')
 const checkZFighting = element<HTMLButtonElement>('check-z-fighting')
 const zFightingResult = element('z-fighting-result')
 const storeKey = 'mission-island-workbench'
+const readoutDecimals = 2
 
 interface SavedView {
   id: string
@@ -70,7 +75,8 @@ interface SavedView {
 function readSavedView(): Partial<SavedView> {
   try {
     return JSON.parse(readStorage('sessionStorage', storeKey) ?? '{}') as Partial<SavedView>
-  } catch {
+  }
+  catch {
     return {}
   }
 }
@@ -87,8 +93,12 @@ if (shared) {
   saved.id = 'landscape'
   saved.camera = shared.camera
   saved.options = { ...saved.options, landscape: {
-    x: shared.focus[0], z: shared.focus[1], hour: shared.hour, rain: shared.rain,
-    marketRainAge: shared.marketRainAge ?? dryMarketRainAge, clockStart: timeline.start,
+    x: shared.focus[0],
+    z: shared.focus[1],
+    hour: shared.hour,
+    rain: shared.rain,
+    marketRainAge: shared.marketRainAge ?? dryMarketRainAge,
+    clockStart: timeline.start,
   } }
   Object.assign(saved, { time: timeline.time, playing: false, grid: shared.grid, wireframe: shared.wireframe, turntable: false })
 }
@@ -121,9 +131,17 @@ function reportError(text: string) {
 
 function remember() {
   const view: SavedView = {
-    id: asset.id, field: onIsland, options: optionsByAsset, camera: stage?.getCamera(), time, playing,
-    speed: Number(rateSelect.value), lighting: lightSelect.value as LightingPreset,
-    grid: grid.checked, wireframe: wireframe.checked, turntable: turntable.checked,
+    id: asset.id,
+    field: onIsland,
+    options: optionsByAsset,
+    camera: stage?.getCamera(),
+    time,
+    playing,
+    speed: Number(rateSelect.value),
+    lighting: lightSelect.value as LightingPreset,
+    grid: grid.checked,
+    wireframe: wireframe.checked,
+    turntable: turntable.checked,
   }
   writeStorage('sessionStorage', storeKey, JSON.stringify(view))
   if (asset.id === 'biome' && new URLSearchParams(location.search).has('recipe')) {
@@ -150,7 +168,7 @@ function renderAssetControls() {
   let group = ''
   for (const control of asset.controls ?? []) {
     if (onIsland && control.key === 'shape') continue
-    const organism = asset.id === 'biome' ? habitatCodex.find(item => item.key === control.key) : undefined
+    const organism = asset.id === 'biome' ? habitatCodex.find((item) => item.key === control.key) : undefined
     const heading = organism?.group ?? 'Conditions'
     if (asset.id === 'biome' && heading !== group) {
       group = heading
@@ -169,7 +187,8 @@ function renderAssetControls() {
       const select = createInspectorSelect(control, values, name.id)
       select.addEventListener('change', () => setOption(control, select.value))
       row.append(name, select)
-    } else {
+    }
+    else {
       const input = document.createElement('input')
       input.type = control.type
       input.setAttribute('aria-labelledby', name.id)
@@ -182,7 +201,8 @@ function renderAssetControls() {
         input.checked = Boolean(values[control.key])
         input.addEventListener('change', () => setOption(control, input.checked))
         row.append(input, name)
-      } else {
+      }
+      else {
         if (control.type === 'number') {
           row.className = 'row'
           input.min = String(control.min)
@@ -199,7 +219,8 @@ function renderAssetControls() {
             setOption(control, input.valueAsNumber)
           })
           row.append(name, input)
-        } else if (control.type === 'range') {
+        }
+        else if (control.type === 'range') {
           row.className = 'range-row'
           input.min = String(control.min)
           input.max = String(control.max)
@@ -213,11 +234,13 @@ function renderAssetControls() {
           })
           if (control.rebuild) {
             input.addEventListener('change', () => setOption(control, input.valueAsNumber))
-          } else {
+          }
+          else {
             input.addEventListener('change', remember)
           }
           row.append(name, value, input)
-        } else {
+        }
+        else {
           row.className = 'row'
           input.value = String(values[control.key])
           if (control.rebuild) input.addEventListener('change', () => setOption(control, input.value))
@@ -290,7 +313,7 @@ function setOption(control: Control, value: Values[string], save = true) {
 
 function renderPlayback() {
   slider.value = String(time)
-  timecode.value = `${time.toFixed(2)} s`
+  timecode.value = `${time.toFixed(readoutDecimals)} s`
   const buttonText = playing ? 'Pause' : 'Play'
   if (play.textContent !== buttonText) play.textContent = buttonText
 }
@@ -319,7 +342,8 @@ function rebuild(camera?: CameraState) {
     if (camera) stage.setCamera(camera)
     applyDisplay()
     element('geometry').textContent = `${stage.meshCount} ${stage.meshCount === 1 ? 'mesh' : 'meshes'} · ${stage.triangles.toLocaleString()} triangles`
-  } catch (error) {
+  }
+  catch (error) {
     reportError(error instanceof Error ? error.message : 'Could not open the selected preview.')
     element('geometry').textContent = ''
   }
@@ -329,7 +353,7 @@ function rebuild(camera?: CameraState) {
 }
 
 function loadAsset(camera?: CameraState) {
-  const furnishing = starterFeatures.find(f => 'site-' + f.site === asset.id)
+  const furnishing = starterFeatures.find((f) => 'site-' + f.site === asset.id)
   const previous = optionsByAsset[asset.id] ?? (furnishing && readSiteDrafts()[furnishing.site])
   element('furnishing-draft').hidden = !furnishing
   element('furnishing-status').textContent = ''
@@ -420,7 +444,7 @@ const landscapeMap = createLandscapeMap({
   openShot: studies.openShot,
   place: (point) => stage?.placeDraftAt(point) ?? false,
   jump(point) {
-    Object.assign(values, point, { focusHeight: 0.25 })
+    Object.assign(values, point, { focusHeight: studioCamera.landscapeFocusHeight })
     studies.hideComparison()
     stage?.setView('perspective', values)
     zFightingResult.replaceChildren()
@@ -466,8 +490,15 @@ function openLandscapeView(id: string) {
   const view = landscapeViews[id]
   const timeline = landscapeWindow(view.time)
   Object.assign(values, {
-    x: view.focus.x, z: view.focus.z, focusHeight: view.focus.height,
-    hour: view.hour, rain: 0, marketRainAge: dryMarketRainAge, clockStart: timeline.start, sunShafts: true, shaftIntensity: 100,
+    x: view.focus.x,
+    z: view.focus.z,
+    focusHeight: view.focus.height,
+    hour: view.hour,
+    rain: 0,
+    marketRainAge: dryMarketRainAge,
+    clockStart: timeline.start,
+    sunShafts: true,
+    shaftIntensity: landscapeControls.shaftIntensity[0],
   })
   stage?.setLandscapeView(view)
   grid.checked = wireframe.checked = turntable.checked = false
@@ -479,37 +510,32 @@ function openLandscapeView(id: string) {
 }
 
 const furnishSelect = element<HTMLSelectElement>('edit-furnishing')
-furnishSelect.append(...starterFeatures.map(f => new Option(f.name, f.site)))
+furnishSelect.append(...starterFeatures.map((f) => new Option(f.name, f.site)))
 furnishSelect.addEventListener('change', () => {
   if (furnishSelect.value) location.hash = 'site-' + furnishSelect.value + '?stage=island'
   furnishSelect.value = ''
 })
 element('save-furnishing').addEventListener('click', () => {
-  const site = starterFeatures.find(f => 'site-' + f.site === asset.id)
+  const site = starterFeatures.find((f) => 'site-' + f.site === asset.id)
   if (site) element('furnishing-status').textContent = saveSiteDraft(site.site, values)
-    ? 'Saved in this browser. The Landscape Workbench now uses this placement.' : 'Could not save this draft.'
+    ? 'Saved in this browser. The Landscape Workbench now uses this placement.'
+    : 'Could not save this draft.'
 })
 
 element('export-furnishing').addEventListener('click', () => {
-  const site = starterFeatures.find(f => 'site-' + f.site === asset.id)
+  const site = starterFeatures.find((f) => 'site-' + f.site === asset.id)
   if (!site) return
-  const json = JSON.stringify(editedFeature(site, values), null, 2)
-  const url = URL.createObjectURL(new Blob([json + '\n'], { type: 'application/json' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = site.site + '-placement.json'
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  exportDraftJson(site.site + '-placement.json', editedFeature(site, values))
 })
 
 function openFurnishingLocation() {
   if (!asset.landscape) return
   const id = new URLSearchParams(location.hash.split('?')[1]).get('site')
-  const feature = starterFeatures.find(f => f.site === id)
+  const feature = starterFeatures.find((f) => f.site === id)
   if (!feature) return
   const draft = readSiteDrafts()[feature.site]
-  Object.assign(values, { x: feature.x + (draft?.east ?? 0), z: feature.z + (draft?.north ?? 0), focusHeight: .65 })
-  stage?.setLandscapeView({ alpha: -.95, beta: 1.18, radius: 8 })
+  Object.assign(values, { x: feature.x + (draft?.east ?? 0), z: feature.z + (draft?.north ?? 0), focusHeight: landscapeFurnishingControls.location.height })
+  stage?.setLandscapeView(landscapeFurnishingControls.location.camera)
   renderAssetControls()
 }
 
@@ -531,7 +557,8 @@ window.addEventListener('hashchange', () => {
     asset = next
     onIsland = field
     if (!openSubjectSetup()) loadAsset()
-  } else openSubjectSetup()
+  }
+  else openSubjectSetup()
   openLinkedStudy()
   openFurnishingLocation()
   remember()
@@ -553,7 +580,7 @@ play.addEventListener('click', () => {
 element('restart').addEventListener('click', () => seekTo(0))
 element('step').addEventListener('click', () => {
   playing = false
-  seekTo(time + 1 / 60)
+  seekTo(time + 1 / studioPlayback.stepHz)
 })
 slider.addEventListener('input', () => {
   playing = false
@@ -577,7 +604,7 @@ checkZFighting.addEventListener('click', () => {
   const list = document.createElement('ul')
   for (const { first, second, at } of candidates) {
     const item = document.createElement('li')
-    item.textContent = `${first} and ${second} near (${at.asArray().map((value) => value.toFixed(2)).join(', ')})`
+    item.textContent = `${first} and ${second} near (${at.asArray().map((value) => value.toFixed(readoutDecimals)).join(', ')})`
     list.append(item)
   }
   zFightingResult.append(list)
@@ -606,7 +633,7 @@ element('reset').addEventListener('click', () => {
   remember()
 })
 
-bindBiomeRecipes(() => readRecipe(values), recipe => {
+bindBiomeRecipes(() => readRecipe(values), (recipe) => {
   if (asset.id !== 'biome') return
   optionsByAsset.biome = { ...recipe, walk: Boolean(recipe.foxgloves || recipe.oystercatchers) }
   time = 0
@@ -619,11 +646,15 @@ function currentSetupLink() {
   const camera = stage?.getCamera()
   if (!camera) return
   if (!asset.landscape) return subjectLink(location.href, asset.id, onIsland, {
-    version: 1, name: asset.name, camera, time, options: values, grid: grid.checked, wireframe: wireframe.checked,
+    version: 1,
+    name: asset.name,
+    camera,
+    time,
+    options: values,
+    grid: grid.checked,
+    wireframe: wireframe.checked,
   }, lightSelect.value as LightingPreset)
-  return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? .8 },
-    hour: Number(values.hour), rain: Number(values.rain), marketRainAge: Number(values.marketRainAge),
-    time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
+  return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? studioCamera.fov }, hour: Number(values.hour), rain: Number(values.rain), marketRainAge: Number(values.marketRainAge), time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
 }
 const shareSetup = () => {
   const link = currentSetupLink()
@@ -637,7 +668,8 @@ try {
   engine = new Engine(canvas, true, { stencil: true })
   resize = new ResizeObserver(() => engine?.resize())
   resize.observe(element('viewport'))
-} catch (error) {
+}
+catch (error) {
   reportError(error instanceof Error ? error.message : 'This browser could not start the 3D preview.')
 }
 reference.select(asset.id, asset.name)
@@ -656,7 +688,7 @@ engine?.runRenderLoop(() => {
     engine.clear(Color4.FromHexString('#1b292aff'), true, true, true)
     return
   }
-  const delta = Math.min(0.08, engine.getDeltaTime() / 1000)
+  const delta = Math.min(studioPlayback.maximumFrameSeconds, engine.getDeltaTime() / studioPlayback.millisecondsPerSecond)
   const rate = playing ? Number(rateSelect.value) : 0
   if (rate > 0 && asset.duration && !seek) {
     time += delta * rate

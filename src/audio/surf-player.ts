@@ -4,16 +4,30 @@ import type { AudioEngine, AudioState, Lane } from './engine.ts'
 import { swellCue, swellSeconds } from './recipes.ts'
 import { createShoreFollower, surfVoices } from './shore.ts'
 
-type SurfSettings = { strength: number; spacing: number }
+const resumeLeadSeconds = 0.15
+const voiceStaggerSeconds = 0.9
+const resumeJitterSeconds = 0.8
+const restartMuteRampSeconds = 0.01
+const voiceSeedStride = 31
+const voiceSeedOffset = 7
+const surfGainRampSeconds = 1.2
+const minimumSwellGain = 0.8
+const swellGainVariation = 0.4
+const silenceThreshold = 0.005
+const minimumIntervalRatio = 0.75
+const intervalRatioVariation = 0.5
+export const maximumSwellIntervalRatio = 1.4
+
+type SurfSettings = { strength: number, spacing: number }
 
 // Average seconds between breakers on one voice before seeded variation.
-const baseSpacing = 5.2
+export const baseSwellSpacingSeconds = 5.2
 const lookahead = 0.6
 export const swellVariants = 3
 
 export const swellSeed = (count: number, voice: number) => count % swellVariants + voice * swellVariants
 
-type Voice = { lane: Lane; next: number; random: () => number; count: number }
+type Voice = { lane: Lane, next: number, random: () => number, count: number }
 
 // Schedules overlapping swells on each persistent surf voice in audio time.
 export function createSurfPlayer(engine: AudioEngine, seed = 1) {
@@ -24,8 +38,8 @@ export function createSurfPlayer(engine: AudioEngine, seed = 1) {
   function restart() {
     const now = engine.now()
     voices.forEach((voice, i) => {
-      voice.next = now + 0.15 + i * 0.9 + voice.random() * 0.8
-      voice.lane.setGain(0, 0.01)
+      voice.next = now + resumeLeadSeconds + i * voiceStaggerSeconds + voice.random() * resumeJitterSeconds
+      voice.lane.setGain(0, restartMuteRampSeconds)
     })
   }
   const unwatch = engine.onState((state: AudioState) => {
@@ -36,7 +50,7 @@ export function createSurfPlayer(engine: AudioEngine, seed = 1) {
     if (voices.length) return true
     const lanes = Array.from({ length: surfVoices }, () => engine.lane('ambience', true))
     if (lanes.some((lane) => !lane)) return false
-    voices = lanes.map((lane, i) => ({ lane: lane!, next: 0, random: seededRandom(seed * 31 + i * 7 + 1), count: 0 }))
+    voices = lanes.map((lane, i) => ({ lane: lane!, next: 0, random: seededRandom(seed * voiceSeedStride + i * voiceSeedOffset + 1), count: 0 }))
     restart()
     return true
   }
@@ -49,23 +63,23 @@ export function createSurfPlayer(engine: AudioEngine, seed = 1) {
       for (const [i, voice] of voices.entries()) {
         const { gain, ...position } = placed[i]
         voice.lane.setPosition(position)
-        voice.lane.setGain(gain, 1.2)
+        voice.lane.setGain(gain, surfGainRampSeconds)
         // Silent voices keep their rhythm, so walking back to the shore finds the same breakers.
         while (voice.next < now + lookahead) {
           // The weather sets each breaker's shape; individual breakers vary only in loudness,
           // so the few cached variants cover the whole shore.
-          const loudness = 0.8 + voice.random() * 0.4
-          if (gain > 0.005) {
+          const loudness = minimumSwellGain + voice.random() * swellGainVariation
+          if (gain > silenceThreshold) {
             engine.play(swellCue({ strength: settings.strength }, swellSeed(voice.count++, i)), { bus: 'ambience', lane: voice.lane, at: voice.next, gain: loudness })
           }
-          const spacing = baseSpacing * settings.spacing * (0.75 + voice.random() * 0.5)
-          voice.next = Math.max(voice.next + Math.min(spacing, swellSeconds(settings.strength) * 1.4), now)
+          const spacing = baseSwellSpacingSeconds * settings.spacing * (minimumIntervalRatio + voice.random() * intervalRatioVariation)
+          voice.next = Math.max(voice.next + Math.min(spacing, swellSeconds(settings.strength) * maximumSwellIntervalRatio), now)
         }
       }
     },
     dispose() {
       unwatch()
-      voices.forEach((voice) => voice.lane.dispose())
+      voices.forEach((voice) => void voice.lane.dispose())
       voices = []
     },
   }

@@ -16,7 +16,7 @@ const routes = {
   shellglass: ['windstone-shoulder', 'fernfall-ledges', 'lookout-clearing', 'seabrook-roofs'],
   splitstone: ['windstone-shoulder', 'fernfall-ledges', 'lookout-clearing', 'seabrook-roofs'],
 }
-const ridgeOnly = id => routes[id].every(lift => liftSites.find(site => site.id === lift).kind === 'ridge')
+const ridgeOnly = (id) => routes[id].every((lift) => liftSites.find((site) => site.id === lift).kind === 'ridge')
 
 test('every place found on foot has an aerial survey and a soaring route from the rack', () => {
   assert.deepEqual(Object.keys(routes).sort(), aerialSurveys.map(({ id }) => id).sort())
@@ -31,8 +31,8 @@ test('every place found on foot has an aerial survey and a soaring route from th
 test('thermals rise only in daylight and weaken in rain, while ridge lift needs only the wind', () => {
   assert.equal(thermalStrength(3, 0), 0)
   assert.equal(thermalStrength(21, 0), 0)
-  assert.ok(thermalStrength(13, 0) > .95)
-  assert.ok(thermalStrength(13, 1) < .25)
+  assert.ok(thermalStrength(13, 0) > 0.95)
+  assert.ok(thermalStrength(13, 1) < 0.25)
   for (const site of liftSites) {
     const inside = { x: site.x, z: site.z, y: groundHeight(site) + 6 }
     const night = liftAt(inside, { hour: 23, rain: 0 })

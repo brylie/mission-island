@@ -9,6 +9,20 @@ import { distance, ferryTerminal, lookout, type Point } from '../world.ts'
 import { mirrorPoolWillow } from '../worlds/starter/sites.ts'
 import { behaviorId, journalSubjects, type SubjectId } from './catalog.ts'
 
+const schoolAimRadiusM = 1.3
+const hollowAnimalAimHeightM = 0.3
+const hollowAnimalAimRadiusM = 0.7
+const gullAimHeightM = 0.15
+const gullAimRadiusM = 0.7
+const willowAimHeightM = 0.5
+const willowAimRadiusM = 1.6
+const cloverAimHeightM = 0.1
+const cloverAimRadiusM = 0.55
+const lookoutAimHeightM = 2.4
+const lookoutAimRadiusM = 2.6
+const ferryAimHeightM = 1.2
+const ferryAimRadiusM = 3
+
 export const sightingActions = {
   record: 'explicit',
 } as const satisfies InteractionPolicies
@@ -16,7 +30,7 @@ export type SightingAction = keyof typeof sightingActions
 
 type World = Pick<Snapshot, 'driftwood' | 'juniper' | 'islandTime' | 'weather' | 'journal'>
 // Where one animal, plant or landmark is right now, and what it is visibly doing.
-interface Instance { at: Point & { y: number }; radius: number; behavior?: string }
+interface Instance { at: Point & { y: number }, radius: number, behavior?: string }
 
 // How far a walker can be from something and still record it. Closer than `besideRange`, no aim is needed.
 export const sightingRange = 14
@@ -36,21 +50,21 @@ function instances(state: World, subject: SubjectId): Instance[] {
       if (!fish.length) return []
       const middle = { x: fish.reduce((sum, one) => sum + one.x, 0) / fish.length, z: fish.reduce((sum, one) => sum + one.z, 0) / fish.length }
       const { x, z } = fish[leader] ?? middle
-      return [{ at: { x, y: waterLevel, z }, radius: 1.3, behavior: fish.some((one) => one.startled) ? 'regrouping' : undefined }]
+      return [{ at: { x, y: waterLevel, z }, radius: schoolAimRadiusM, behavior: fish.some((one) => one.startled) ? 'regrouping' : undefined }]
     }
     case 'sight:hare':
     case 'sight:fox':
       return state.juniper[subject === 'sight:hare' ? 'hares' : 'foxes']
-        .map((animal) => ({ at: raised(inHollow(animal), .3), radius: .7, behavior: animal.behavior }))
+        .map((animal) => ({ at: raised(inHollow(animal), hollowAnimalAimHeightM), radius: hollowAnimalAimRadiusM, behavior: animal.behavior }))
     case 'sight:gull':
       return starterGullPerches.map((perch, index) => {
         const { x, y, z, phase } = gullAt(state.islandTime, index, perch, state.weather, weatherAt)
-        return { at: { x, y: y + .15, z }, radius: .7, behavior: gullBehavior[phase] }
+        return { at: { x, y: y + gullAimHeightM, z }, radius: gullAimRadiusM, behavior: gullBehavior[phase] }
       })
-    case 'sight:willow': return [{ at: raised(mirrorPoolWillow, .5), radius: 1.6 }]
-    case 'sight:clover': return cloverPatches.map(patch => ({ at: raised(patch, .1), radius: .55 }))
-    case 'sight:lookout': return [{ at: raised(lookout, 2.4), radius: 2.6 }]
-    case 'sight:ferry': return [{ at: raised(ferryTerminal, 1.2), radius: 3 }]
+    case 'sight:willow': return [{ at: raised(mirrorPoolWillow, willowAimHeightM), radius: willowAimRadiusM }]
+    case 'sight:clover': return cloverPatches.map((patch) => ({ at: raised(patch, cloverAimHeightM), radius: cloverAimRadiusM }))
+    case 'sight:lookout': return [{ at: raised(lookout, lookoutAimHeightM), radius: lookoutAimRadiusM }]
+    case 'sight:ferry': return [{ at: raised(ferryTerminal, ferryAimHeightM), radius: ferryAimRadiusM }]
   }
 }
 
@@ -84,7 +98,11 @@ export function journalInteractions(state: World, player: Player): InteractionOp
       const behaviors: Record<string, string> = subject.behaviors
       const doing = instance.behavior ? behaviors[instance.behavior] : undefined
       options.push({
-        action: 'record', subject: kind * instanceSlots + slot, key: 'E', at: instance.at, radius: instance.radius,
+        action: 'record',
+        subject: kind * instanceSlots + slot,
+        key: 'E',
+        at: instance.at,
+        radius: instance.radius,
         name: doing ? `${subject.name} · ${doing.toLowerCase()}` : subject.name,
         label: ids[0] === subject.id ? 'Record in journal' : 'Add this behavior to the journal',
       })

@@ -1,6 +1,15 @@
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import {
+  brinewickMarketBasket,
+  brinewickMarketCatchBoard,
+  brinewickMarketFinish,
+  brinewickMarketNet,
+  brinewickMarketRack,
+  brinewickMarketTable,
+  brinewickMarketTray,
+} from '../assets/geometry/brinewick-market'
 import type { MeshFactory } from '../island-meshes'
 import type { Weather } from '../protocol'
 import { brinewickMarketAt, brinewickMarketStops } from './brinewick-market'
@@ -8,13 +17,27 @@ import { buildings, streetCanopy } from './lots'
 import { groundHeight, surfaceHeight } from './terrain'
 import type { ScenerySolids } from './walking'
 
-const timber = '#a48058', endGrain = '#735740', cream = '#f3deb7', coral = '#b86351', teal = '#3f6768'
-const rackTop = 1.94, counterTop = 1.02
-const fishHall = buildings.find(building => building.site === 'fish-market')!
+const { timber, endGrain, cream, coral, teal } = brinewickMarketFinish
+const sides = [-1, 1] as const
+const half = 0.5
+const quarterTurn = Math.PI * half
+const coordinatesPerVertex = 3
+const alternatingPeriod = 2
+const rainRoofInset = 0.15
+const netSwingFrequency = 2.1
+const outdoorNetPitch = 0.14
+const shelteredNetPitch = 0.035
+const boardSwingFrequency = 2.7
+const boardSwingPitch = 0.06
+const raisedCoverPitch = -0.56
+
+const fishHall = buildings.find((building) => building.site === 'fish-market')!
 export const brinewickRainRoof = {
-  x: fishHall.x, y: groundHeight(fishHall.x, fishHall.z) + streetCanopy.height - .15,
-  z: fishHall.z + (fishHall.depth + streetCanopy.depth) / 2,
-  width: fishHall.width * streetCanopy.widthRatio, depth: streetCanopy.depth,
+  x: fishHall.x,
+  y: groundHeight(fishHall.x, fishHall.z) + streetCanopy.height - rainRoofInset,
+  z: fishHall.z + (fishHall.depth + streetCanopy.depth) * half,
+  width: fishHall.width * streetCanopy.widthRatio,
+  depth: streetCanopy.depth,
 }
 
 function fixture(meshes: MeshFactory, stop: typeof brinewickMarketStops[keyof typeof brinewickMarketStops]) {
@@ -23,110 +46,127 @@ function fixture(meshes: MeshFactory, stop: typeof brinewickMarketStops[keyof ty
   return root
 }
 
-function dryingRack(meshes: MeshFactory, root: TransformNode, shelf: boolean) {
-  const { width, depth } = brinewickMarketStops.outdoorRack
-  const upright = width / 2 - .08
-  for (const side of [-1, 1]) {
-    meshes.box(side * upright, rackTop / 2, 0, .14, rackTop, .14, timber, root)
-    meshes.box(side * upright, .09, 0, .16, .18, depth - .01, endGrain, root)
-    meshes.box(side * upright, .28, .15, .09, .41, .10, timber, root).rotation.x = -.69
+function dryingRack(meshes: MeshFactory, root: TransformNode, hasShelf: boolean) {
+  const { footprint: { width, depth }, top, upright, foot, brace, crossbar, shelf } = brinewickMarketRack
+  const postX = width * half - upright.endInset
+  for (const side of sides) {
+    const x = side * postX
+    meshes.box(x, top * half, 0, upright.width, top, upright.depth, timber, root)
+    meshes.box(x, foot.height * half, 0, foot.width, foot.height, depth - foot.depthInset, endGrain, root)
+    meshes.box(x, brace.y, brace.z, ...brace.size, timber, root).rotation.x = brace.rake
   }
-  meshes.box(0, rackTop, 0, width - .06, .10, .12, endGrain, root)
-  if (shelf) meshes.box(0, .28, 0, width - .28, .09, depth - .06, timber, root)
+  meshes.box(0, top, 0, width - crossbar.widthInset, crossbar.height, crossbar.depth, endGrain, root)
+  if (hasShelf) meshes.box(0, shelf.y, 0, width - shelf.widthInset, shelf.height, depth - shelf.depthInset, timber, root)
 }
 
 function createNet(meshes: MeshFactory) {
+  const { weave, corks, ties } = brinewickMarketNet
   const root = new TransformNode('Cork-float drying net', meshes.scene)
   const positions: number[] = [], indices: number[] = []
-  function strand(a: number[], b: number[]) {
-    const angle = Math.atan2(b[1] - a[1], b[0] - a[0])
-    const dx = Math.sin(angle) * .012, dy = Math.cos(angle) * .012, i = positions.length / 3
-    positions.push(a[0] - dx, a[1] + dy, a[2], a[0] + dx, a[1] - dy, a[2],
-      b[0] - dx, b[1] + dy, b[2], b[0] + dx, b[1] - dy, b[2])
-    indices.push(i, i + 1, i + 2, i + 1, i + 3, i + 2)
+  type Knot = [x: number, y: number, z: number]
+  function strand([ax, ay, az]: Knot, [bx, by, bz]: Knot) {
+    const angle = Math.atan2(by - ay, bx - ax)
+    const dx = Math.sin(angle) * weave.halfStrandWidth, dy = Math.cos(angle) * weave.halfStrandWidth
+    const startLeft = positions.length / coordinatesPerVertex
+    const startRight = startLeft + 1, endLeft = startRight + 1, endRight = endLeft + 1
+    positions.push(ax - dx, ay + dy, az, ax + dx, ay - dy, az, bx - dx, by + dy, bz, bx + dx, by - dy, bz)
+    indices.push(startLeft, startRight, endLeft, startRight, endRight, endLeft)
   }
-  const point = (column: number, row: number) => {
-    const x = (column - 8) * (.178 - row * .004)
-    return [x, -.048 - row * (.165 + .012 * Math.cos(x * 1.08)), .06 + Math.sin(row * .44) * .13]
+
+  const middle = (weave.columns - 1) * half
+  const { crosswiseSag, forwardBow } = weave
+  const point = (column: number, row: number): Knot => {
+    const x = (column - middle) * (weave.columnSpacing - row * weave.taperPerRow)
+    const y = -weave.belowCrossbar - row * (weave.rowSpacing + crosswiseSag.amplitude * Math.cos(x * crosswiseSag.frequency))
+    const z = forwardBow.offset + Math.sin(row * forwardBow.frequency) * forwardBow.amplitude
+    return [x, y, z]
   }
-  for (let row = 0; row < 7; row++) for (let col = 0; col < 17; col++) {
-    if (col > 0) strand(point(col, row), point(col - 1, row))
-    if (row > 0) strand(point(col, row), point(col, row - 1))
+  for (let row = 0; row < weave.rows; row++) for (let column = 0; column < weave.columns; column++) {
+    if (column > 0) strand(point(column, row), point(column - 1, row))
+    if (row > 0) strand(point(column, row), point(column, row - 1))
   }
-  const twine = meshes.paint('#6f8174')
+  const twine = meshes.paint(weave.finish)
   twine.backFaceCulling = false
   meshes.surface('Knotted net', positions, indices, twine, root)
-  for (let i = 0; i < 7; i++) {
-    const x = (i - 3) * .455
-    meshes.cylinder(x, -.075, .061, .118, .118, .21, 9, i % 2 ? cream : coral, root, false).rotation.z = Math.PI / 2
+  for (let i = 0; i < corks.count; i++) {
+    const x = (i - (corks.count - 1) * half) * corks.spacing
+    const paint = i % alternatingPeriod ? cream : coral
+    meshes.cylinder(x, corks.y, corks.z, corks.diameter, corks.diameter, corks.length, corks.segments, paint, root, false).rotation.z = quarterTurn
   }
-  for (const x of [-1.36, 0, 1.36]) meshes.box(x, -.019, .046, .024, .11, .042, endGrain, root, false)
+  for (const x of ties.x) meshes.box(x, ties.y, ties.z, ...ties.size, endGrain, root, false)
   return root
 }
 
 function workbench(meshes: MeshFactory, table: TransformNode) {
-  const { width, depth } = brinewickMarketStops.worktable
-  meshes.box(0, counterTop - .058, 0, width, .116, depth, timber, table)
-  for (const x of [-1.51, 1.51]) for (const z of [-.41, .41]) {
-    meshes.box(x, .46, z, .13, .96, .13, endGrain, table)
+  const { footprint: { width, depth }, top, slabThickness, leg, stretcher, signPost, signRail } = brinewickMarketTable
+  meshes.box(0, top - slabThickness * half, 0, width, slabThickness, depth, timber, table)
+  for (const side of sides) for (const end of sides) {
+    meshes.box(side * leg.x, leg.y, end * leg.z, ...leg.size, endGrain, table)
   }
-  meshes.box(0, .31, 0, 3.10, .11, .27, endGrain, table)
-  meshes.box(1.56, 1.52, -.35, .075, 1.00, .075, endGrain, table)
-  meshes.box(1.12, 2.02, -.35, .95, .064, .075, timber, table)
+  meshes.box(...stretcher.center, ...stretcher.size, endGrain, table)
+  meshes.box(...signPost.center, ...signPost.size, endGrain, table)
+  meshes.box(...signRail.center, ...signRail.size, timber, table)
+}
+
+function createTrayCover(meshes: MeshFactory, table: TransformNode, x: number, z: number) {
+  const { hinge, canvas, bindingFinish, frontBinding, sideBinding, strap } = brinewickMarketTray.cover
+  const cover = new TransformNode('Canvas tray cover', meshes.scene)
+  cover.parent = table
+  cover.position.set(x, hinge.y, z - hinge.rearward)
+  meshes.box(...canvas.center, ...canvas.size, canvas.finish, cover)
+  meshes.box(...frontBinding.center, ...frontBinding.size, bindingFinish, cover).rotation.x = frontBinding.rake
+  for (const side of sides) {
+    meshes.box(side * sideBinding.x, sideBinding.y, sideBinding.z, ...sideBinding.size, bindingFinish, cover)
+    meshes.box(side * strap.x, strap.y, strap.z, ...strap.size, cream, cover, false)
+  }
+  return cover
 }
 
 function fillTray(meshes: MeshFactory, table: TransformNode, x: number) {
-  const z = .04
-  meshes.box(x, counterTop + .025, z, 1.32, .05, .74, '#d4e7da', table)
-  for (const side of [-1, 1]) {
-    meshes.box(x, 1.09, z + side * .349, 1.32, .09, .04, teal, table)
-    meshes.box(x + side * .64, 1.09, z, .04, .09, .66, teal, table)
+  const { z, base, longRim, endRim, fish } = brinewickMarketTray
+  meshes.box(x, brinewickMarketTable.top + base.rise, z, ...base.size, base.finish, table)
+  for (const side of sides) {
+    meshes.box(x, longRim.y, z + side * longRim.z, ...longRim.size, teal, table)
+    meshes.box(x + side * endRim.x, endRim.y, z, ...endRim.size, teal, table)
   }
   const catchRoot = new TransformNode('Fish on the display tray', meshes.scene)
   catchRoot.parent = table
-  for (const [index, offset] of [-.43, -.14, .15, .44].entries()) {
-    const direction = index % 2 ? 1 : -1
-    const body = meshes.sphere(x + offset, 1.118, z + direction * .03, .19, .088, .41, index % 2 ? '#8babb2' : '#608a92', catchRoot, false)
-    body.rotation.y = .22 * direction
-    meshes.sphere(x + offset - .035, 1.084, z - direction * .19, .19, .05, .17, '#597b80', catchRoot, false, 4)
-    meshes.sphere(x + offset + .043, 1.14, z + direction * .17, .039, .036, .038, '#243c3f', catchRoot, false, 5)
+  const { body, tail, eye } = fish
+  for (const [index, offset] of fish.x.entries()) {
+    const alternate = index % alternatingPeriod
+    const direction = alternate ? 1 : -1
+    const fishX = x + offset
+    meshes.sphere(fishX, body.y, z + direction * body.z, ...body.size, body.finishes[alternate], catchRoot, false).rotation.y = body.yaw * direction
+    meshes.sphere(fishX + tail.x, tail.y, z - direction * tail.z, ...tail.size, tail.finish, catchRoot, false, tail.segments)
+    meshes.sphere(fishX + eye.x, eye.y, z + direction * eye.z, ...eye.size, eye.finish, catchRoot, false, eye.segments)
   }
-  const cover = new TransformNode('Canvas tray cover', meshes.scene)
-  cover.parent = table
-  cover.position.set(x, 1.183, z - .38)
-  meshes.box(0, .009, .38, 1.39, .05, .77, '#d6b487', cover)
-  meshes.box(0, -.027, .753, 1.38, .10, .027, '#b8825d', cover).rotation.x = -.12
-  for (const side of [-1, 1]) {
-    meshes.box(side * .688, -.024, .38, .03, .095, .73, '#b8825d', cover)
-    meshes.box(side * .46, .039, .378, .031, .012, .75, cream, cover, false)
-  }
-  return { catchRoot, cover }
+  return { catchRoot, cover: createTrayCover(meshes, table, x, z) }
 }
 
 function catchBoard(meshes: MeshFactory, table: TransformNode) {
+  const { pivot, hook, plank, lettering } = brinewickMarketCatchBoard
   const anchor = new TransformNode('Catch board hook', meshes.scene)
   anchor.parent = table
-  anchor.position.set(.76, 1.99, -.35)
-  meshes.box(0, -.017, 0, .046, .075, .047, endGrain, anchor)
-  meshes.box(0, -.20, 0, 1.47, .40, .08, endGrain, anchor)
-  const label = new DynamicTexture('Brinewick daily catch lettering', { width: 384, height: 96 }, meshes.scene, true)
-  label.drawText('TODAY’S CATCH', null, 64, 'bold 46px Georgia', cream, teal, true)
+  anchor.position.set(...pivot)
+  meshes.box(...hook.center, ...hook.size, endGrain, anchor)
+  meshes.box(...plank.center, ...plank.size, endGrain, anchor)
+  const label = new DynamicTexture('Brinewick daily catch lettering', lettering.canvasSize, meshes.scene, true)
+  label.drawText(lettering.text, null, lettering.baseline, lettering.font, cream, teal, true)
   const print = new StandardMaterial('Catch board face', meshes.scene)
   print.diffuseTexture = label
   print.backFaceCulling = false
-  meshes.surface('Daily catch lettering', [.70, -.37, .043, -.70, -.37, .043, -.70, -.03, .043, .70, -.03, .043],
-    [0, 1, 2, 0, 2, 3], print, anchor, [0, 0, 1, 0, 1, 1, 0, 1])
+  meshes.surface('Daily catch lettering', lettering.corners.flat(), [...lettering.indices], print, anchor, [...lettering.uv])
   return anchor
 }
 
-function marketBasket(meshes: MeshFactory, rack: TransformNode, index: number) {
+function marketBasket(meshes: MeshFactory, rack: TransformNode, finish: string) {
+  const { bowl, rim, inset, handle, segments } = brinewickMarketBasket
   const root = new TransformNode('Wicker fish basket', meshes.scene)
   root.parent = rack
-  const color = index === 1 ? '#b58555' : '#ca9f6c'
-  meshes.cylinder(0, .14, 0, .48, .34, .28, 10, color, root, false)
-  meshes.cylinder(0, .275, 0, .50, .48, .05, 10, cream, root, false)
-  meshes.cylinder(0, .302, 0, .39, .39, .009, 10, endGrain, root, false)
-  for (const x of [-.24, .24]) meshes.box(x, .265, 0, .065, .052, .18, color, root, false)
+  meshes.cylinder(0, bowl.y, 0, ...bowl.diameters, bowl.height, segments, finish, root, false)
+  meshes.cylinder(0, rim.y, 0, ...rim.diameters, rim.height, segments, cream, root, false)
+  meshes.cylinder(0, inset.y, 0, ...inset.diameters, inset.height, segments, endGrain, root, false)
+  for (const side of sides) meshes.box(side * handle.x, handle.y, 0, ...handle.size, finish, root, false)
   return root
 }
 
@@ -143,27 +183,32 @@ export function createBrinewickMarket(meshes: MeshFactory, solids?: ScenerySolid
   for (const root of [outdoorRack, shelteredRack, table]) meshes.batchModel(root)
 
   const net = createNet(meshes)
+  const { top: rackTop } = brinewickMarketRack
   net.position.set(outdoorRack.position.x, outdoorRack.position.y + rackTop, outdoorRack.position.z)
-  const trays = [-.76, .76].map(x => fillTray(meshes, table, x))
+  const trays = brinewickMarketTray.x.map((x) => fillTray(meshes, table, x))
   const board = catchBoard(meshes, table)
-  const baskets = [0, 1, 2].map(i => marketBasket(meshes, outdoorRack, i))
+  const { finishes, display } = brinewickMarketBasket
+  const baskets = finishes.map((finish) => marketBasket(meshes, outdoorRack, finish))
+  const middleBasket = (baskets.length - 1) * half
   return (time: number, weather: Weather, overview = false) => {
     const state = brinewickMarketAt(weather)
     net.setEnabled(Boolean(state.net) && !overview)
     if (state.net) {
-      const rack = state.net === 'outdoorRack' ? outdoorRack : shelteredRack
+      const outdoor = state.net === 'outdoorRack'
+      const rack = outdoor ? outdoorRack : shelteredRack
       net.position.set(rack.position.x, rack.position.y + rackTop, rack.position.z)
-      net.rotation.x = Math.sin(time * 2.1) * (state.net === 'outdoorRack' ? .14 : .035)
+      net.rotation.x = Math.sin(time * netSwingFrequency) * (outdoor ? outdoorNetPitch : shelteredNetPitch)
     }
     board.setEnabled(state.phase === 'trading')
-    board.rotation.x = .06 * Math.sin(time * 2.7)
+    board.rotation.x = boardSwingPitch * Math.sin(time * boardSwingFrequency)
+    const closing = state.phase === 'closing'
     for (const { catchRoot, cover } of trays) {
       catchRoot.setEnabled(state.phase !== 'setup' && !overview)
-      cover.setEnabled(state.phase === 'closing')
-      cover.rotation.x = -.56 * (1 - state.cover)
+      cover.setEnabled(closing)
+      cover.rotation.x = raisedCoverPitch * (1 - state.cover)
     }
     for (const [i, basket] of baskets.entries()) {
-      basket.position.set(state.phase === 'closing' ? -.54 : (i - 1) * .95, .325 + (state.phase === 'closing' ? i * .20 : 0), .015)
+      basket.position.set(closing ? display.stackX : (i - middleBasket) * display.spacing, display.y + (closing ? i * display.stackStep : 0), display.z)
     }
     return state
   }

@@ -25,8 +25,7 @@ test('workspace browsing stays scoped and multiword search crosses subject group
 })
 
 test('subject setups round-trip isolated and field views, including large orbit radii', () => {
-  const shot = { version: 1, name: 'Bench', camera: { target: [39, 1, 17], alpha: .75, beta: 1.12, radius: 510, fov: .63 },
-    time: 2.5, options: { scale: 1.25, color: '#da9841' }, grid: true, wireframe: false }
+  const shot = { version: 1, name: 'Bench', camera: { target: [39, 1, 17], alpha: 0.75, beta: 1.12, radius: 510, fov: 0.63 }, time: 2.5, options: { scale: 1.25, color: '#da9841' }, grid: true, wireframe: false }
   for (const field of [false, true]) {
     const link = new URL(subjectLink('http://user:pass@localhost:5173/workbench.html?old=1', 'site-town', field, shot, 'golden'))
     assert.equal(link.username + link.password + link.search, '')
@@ -39,16 +38,19 @@ test('subject setups round-trip isolated and field views, including large orbit 
 test('furnishing drafts survive reopening and preserve the canonical island placement', (t) => {
   const data = new Map()
   Object.defineProperty(globalThis, 'window', { configurable: true, value: { localStorage: {
-    getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v),
+    getItem: (k) => data.get(k) ?? null,
+    setItem: (k, v) => data.set(k, v),
   } } })
-  t.after(() => { delete globalThis.window })
-  const original = starterFeatures.find(f => f.site === 'town')
-  const saved = { ...defaultPlacement(original), east: 1.4, north: -.7, heading: 45 }
+  t.after(() => {
+    delete globalThis.window
+  })
+  const original = starterFeatures.find((f) => f.site === 'town')
+  const saved = { ...defaultPlacement(original), east: 1.4, north: -0.7, heading: 45 }
   assert.equal(saveSiteDraft('town', saved), true)
   assert.deepEqual(readSiteDrafts().town, saved)
-  const edited = draftFeatures().find(f => f.site === 'town')
+  const edited = draftFeatures().find((f) => f.site === 'town')
   assert.equal(edited.x, original.x + 1.4)
-  assert.equal(edited.z, original.z - .7)
+  assert.equal(edited.z, original.z - 0.7)
   assert.equal(edited.heading, Math.PI / 4)
   assert.equal(edited.model, original.model)
   assert.equal(saveSiteDraft('town', { ...saved, scale: -2 }), false)

@@ -1,8 +1,13 @@
 import type { Body, ContactEquation, Shape, World } from 'cannon-es'
 
+const impactStrengthSpan = 0.9
+const minimumAudibleStrength = 0.1
+const defaultQuietSteps = 8
+const impactStrengthPrecision = 1000
+
 type ImpactSurface = 'ground' | 'bed'
 
-type CrateImpact = { item: number; x: number; y: number; z: number; strength: number; surface: ImpactSurface }
+type CrateImpact = { item: number, x: number, y: number, z: number, strength: number, surface: ImpactSurface }
 
 // Approach speed (m/s) below which a touch is a resting contact, and the speed of a hard drop.
 export const minImpactSpeed = 0.45
@@ -11,10 +16,10 @@ export const impactDebounceSeconds = 0.18
 
 export function impactStrength(speed: number) {
   if (!Number.isFinite(speed) || speed < minImpactSpeed) return 0
-  return Math.min(1, (speed - minImpactSpeed) / (hardImpactSpeed - minImpactSpeed) * 0.9 + 0.1)
+  return Math.min(1, (speed - minImpactSpeed) / (hardImpactSpeed - minImpactSpeed) * impactStrengthSpan + minimumAudibleStrength)
 }
 
-type Candidate = { speed: number; surface: ImpactSurface; x: number; y: number; z: number }
+type Candidate = { speed: number, surface: ImpactSurface, x: number, y: number, z: number }
 
 // Keep the strongest contact per crate across substeps, then apply the per-crate debounce.
 export function createImpactFilter(crates: number) {
@@ -28,7 +33,7 @@ export function createImpactFilter(crates: number) {
       if (!current || candidate.speed > current.speed) pending.set(item, candidate)
     },
     // Teleports such as a restore or a water respawn are not impacts.
-    quiet(item: number, steps = 8) {
+    quiet(item: number, steps = defaultQuietSteps) {
       quietSteps[item] = Math.max(quietSteps[item], steps)
       pending.delete(item)
     },
@@ -38,7 +43,7 @@ export function createImpactFilter(crates: number) {
         const strength = impactStrength(speed)
         if (!strength || time - lastAt[item] < impactDebounceSeconds) continue
         lastAt[item] = time
-        impacts.push({ item, x, y, z, strength: Math.round(strength * 1000) / 1000, surface })
+        impacts.push({ item, x, y, z, strength: Math.round(strength * impactStrengthPrecision) / impactStrengthPrecision, surface })
       }
       pending.clear()
       for (let i = 0; i < quietSteps.length; i++) quietSteps[i] = Math.max(0, quietSteps[i] - 1)
@@ -47,8 +52,8 @@ export function createImpactFilter(crates: number) {
   }
 }
 
-type BodyContact = { bodyA: Body | null; bodyB: Body | null }
-type ShapeContact = { shapeA: Shape | null; shapeB: Shape | null }
+type BodyContact = { bodyA: Body | null, bodyB: Body | null }
+type ShapeContact = { shapeA: Shape | null, shapeB: Shape | null }
 
 function approachSpeed(contacts: readonly ContactEquation[], matches: (contact: ContactEquation) => boolean) {
   let speed = 0

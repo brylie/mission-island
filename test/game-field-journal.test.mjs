@@ -23,25 +23,27 @@ function choose(client, { action, subject }) {
 }
 
 function option(client, record) {
-  return fieldInteractions(client.state, client.player).find(choice => choice.record === record)
+  return fieldInteractions(client.state, client.player).find((choice) => choice.record === record)
 }
 
 test('Mara shares both clues before the carrot favor and recognizes a partner’s earlier observation', (t) => {
   const { work } = mara.schedule
   const dock = { x: work.x, z: work.z + 1.55 }
-  const h = setup(t, { players: [player(0, dock), player(1, rim)], arrange: save => { save.islandTime = 30 } })
+  const h = setup(t, { players: [player(0, dock), player(1, rim)], arrange: (save) => {
+    save.islandTime = 30
+  } })
   const a = h.join(tokens[0]), b = h.join(tokens[1])
   h.input(b)
   h.advance()
   assert.ok(b.state.journal.entries['place:shellglass'].first)
-  choose(a, interactions(a.state, a.player).find(choice => choice.action === 'talk'))
+  choose(a, interactions(a.state, a.player).find((choice) => choice.action === 'talk'))
   h.advance()
   assert.equal(b.state.journal.heardMara, true)
   assert.equal(mara.conversation.fieldNotes(b.state).length, 2)
   assert.equal(b.state.residents.mara.active, null)
   choose(b, option(b, 'place:shellglass'))
   h.advance()
-  choose(a, interactions(a.state, a.player).find(choice => choice.action === 'talk'))
+  choose(a, interactions(a.state, a.player).find((choice) => choice.action === 'talk'))
   h.advance()
   assert.match(mara.conversation.fieldNotes(a.state)[0], /made a record at Shellglass/)
   assert.match(mara.conversation.fieldNotes(a.state).at(-1), /hard rain/)
@@ -52,14 +54,16 @@ test('racing observations credit the crew once and survive reconnect and a disk 
   const root = mkdtempSync(join(tmpdir(), 'mission-field-journal-'))
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const file = islandSaveFile(root, 5173)
-  const h = setup(t, { players: [player(0, rim), player(1, rim)], arrange: save => { save.islandTime = 900 } })
+  const h = setup(t, { players: [player(0, rim), player(1, rim)], arrange: (save) => {
+    save.islandTime = 900
+  } })
   const a = h.join(tokens[0]), b = h.join(tokens[1])
   const staff = option(a, 'place:shellglass')
   a.request('interact')
   choose(a, { action: staff.action, subject: 800 })
   h.advance()
   assert.equal(outingCount(a.state.journal), 0)
-  assert.ok(a.messages.some(message => message.type === 'field-unavailable'))
+  assert.ok(a.messages.some((message) => message.type === 'field-unavailable'))
   h.input(a)
   h.advance()
   const first = a.state.journal.entries['place:shellglass'].first
@@ -85,12 +89,14 @@ test('racing observations credit the crew once and survive reconnect and a disk 
   assert.deepEqual(partner.state.journal, journal)
   choose(partner, staff)
   resumed.advance()
-  assert.ok(partner.messages.some(message => message.type === 'tide-staff' && message.time > journal.entries['place:shellglass'].outing.t))
+  assert.ok(partner.messages.some((message) => message.type === 'tide-staff' && message.time > journal.entries['place:shellglass'].outing.t))
   assert.deepEqual(partner.state.journal, journal)
 })
 
 test('the Juniper lookout records distinct live hare behavior, with stale and long-range requests refused', (t) => {
-  const dry = setup(t, { players: [player(0, lookout), player(1)], arrange: save => { save.islandTime = 30 } })
+  const dry = setup(t, { players: [player(0, lookout), player(1)], arrange: (save) => {
+    save.islandTime = 30
+  } })
   const a = dry.join(tokens[0]), b = dry.join(tokens[1])
   const grazing = 'sight:hare/grazing', sheltering = 'sight:hare/sheltering'
   const clover = option(a, 'sight:clover')
@@ -102,7 +108,7 @@ test('the Juniper lookout records distinct live hare behavior, with stale and lo
   choose(b, grazed)
   dry.advance()
   assert.equal(outingCount(b.state.journal), 0)
-  dry.advanceUntil(() => !fieldInteractions(a.state, a.player).some(choice => choice.subject === grazed.subject), 500)
+  dry.advanceUntil(() => !fieldInteractions(a.state, a.player).some((choice) => choice.subject === grazed.subject), 500)
   choose(a, grazed)
   dry.advance()
   assert.equal(outingCount(a.state.journal), 0)
@@ -119,7 +125,7 @@ test('the Juniper lookout records distinct live hare behavior, with stale and lo
   choose(observer, option(observer, sheltering))
   wet.advance()
   assert.equal(outingCount(partner.state.journal), 2)
-  assert.ok(partner.state.journal.entries[sheltering].outing.rain >= .65)
+  assert.ok(partner.state.journal.entries[sheltering].outing.rain >= 0.65)
 })
 
 test('older saves contribute distinct known places and keep each player’s map discoveries', (t) => {
@@ -146,7 +152,7 @@ test('the worn Juniper approach clears scenery from the road to the clover looko
     for (let step = 0; step <= count; step++) {
       const t = step / count
       const point = { x: from.x + (to.x - from.x) * t, z: from.z + (to.z - from.z) * t }
-      assert.ok(canWalkAt(point, .38, waterLevel), JSON.stringify(point))
+      assert.ok(canWalkAt(point, 0.38, waterLevel), JSON.stringify(point))
     }
   }
 })

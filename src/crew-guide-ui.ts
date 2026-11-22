@@ -11,8 +11,7 @@ function favorTitle(receipt: Snapshot['lastFavorPay']) {
   return receipt && starterResident(receipt.resident)?.favors.find((favor) => favor.id === receipt.favor)?.title
 }
 
-export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismissed: boolean) => void,
-  act: Parameters<typeof createResidentConversation>[1]) {
+export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismissed: boolean) => void, act: Parameters<typeof createResidentConversation>[1]) {
   const title = dialog.querySelector<HTMLElement>('#guide-title')!
   const note = dialog.querySelector<HTMLElement>('#guide-note')!
   const conversation = dialog.querySelector<HTMLElement>('#resident-conversation')!
@@ -36,7 +35,6 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
     showLead(lead.hidden)
     setDismissed(lead.hidden)
   })
-
 
   function showFavors(state: Snapshot, player: Player) {
     const entries = favorGuides(starterResidents, state, player)
@@ -73,12 +71,15 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
       ? `Last starter payout · ${latest.label} · +${latest.coins} coins.`
       : `Starter pay goes straight into the shared crew bank. Earn ${jobPay.crate} coins per crate, ${jobPay.delivery} extra for finishing the delivery, and ${jobPay.fire} for clearing the lookout fire.`
     const xp = player.deliveryXp ?? 0
-    const certification = xp >= haulerUnlockXp ? 'Certified to drive the Slatecliff ore truck.' :
-      `Slatecliff ore truck certification takes ${haulerUnlockXp} driver XP. Earn ${crateDriverXp} XP for each crate you haul by truck and your crew delivers.`
+    const certification = xp >= haulerUnlockXp
+      ? 'Certified to drive the Slatecliff ore truck.'
+      : `Slatecliff ore truck certification takes ${haulerUnlockXp} driver XP. Earn ${crateDriverXp} XP for each crate you haul by truck and your crew delivers.`
     const kept = favorTitle(state.lastFavorPay)
     const favorPay = kept ? ` Last favor · ${kept} · +${state.lastFavorPay!.coins} coins.` : ''
     for (const [element, value] of [
-      [home, crewHomes[player.id].name], [workTitle, heading], [work, direction],
+      [home, crewHomes[player.id].name],
+      [workTitle, heading],
+      [work, direction],
       [pay, `${balance}. ${receipt}${favorPay} ${xp} driver XP. ${certification}`],
     ] as const) {
       if (element.textContent !== value) element.textContent = value

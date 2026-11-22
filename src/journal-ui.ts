@@ -7,7 +7,7 @@ import { shellglassTideAt } from './shellglass-tide'
 
 type Page = JournalPage | 'outing'
 const crewName = (state: Snapshot, id: number | undefined) =>
-  id === undefined ? undefined : state.players.find(player => player.id === id)?.name || `Crew ${id + 1}`
+  id === undefined ? undefined : state.players.find((player) => player.id === id)?.name || `Crew ${id + 1}`
 
 export function catchLabel(fish: string | undefined) {
   const name = fish && journalEntry(fish)?.name
@@ -36,8 +36,10 @@ function row(state: Snapshot, entry: JournalEntry, outing: boolean) {
   if (recorded) {
     const detail = document.createElement('small')
     const phase = outing && entry.id === 'place:shellglass' && note ? shellglassTideAt(note.t).phase : undefined
-    detail.textContent = note ? [noteConditions(note), placeName(note.at), phase, crewName(state, note.by)]
-      .filter(Boolean).join(' · ') : 'Earlier discovery'
+    detail.textContent = note
+      ? [noteConditions(note), placeName(note.at), phase, crewName(state, note.by)]
+          .filter(Boolean).join(' · ')
+      : 'Earlier discovery'
     text.append(detail)
     if (subject) {
       const description = document.createElement('small')
@@ -73,7 +75,8 @@ export function createJournalPage(dialog: HTMLDialogElement, button: HTMLButtonE
       const name = tab.dataset.page as Page
       tab.setAttribute('aria-pressed', String(name === page))
       tab.querySelector('span')!.textContent = name === 'outing'
-        ? `${completed} of ${outingIds.length}` : `${pages[name].recorded} of ${pages[name].total}`
+        ? `${completed} of ${outingIds.length}`
+        : `${pages[name].recorded} of ${pages[name].total}`
     }
     const outing = page === 'outing'
     clues.hidden = !outing
@@ -81,15 +84,17 @@ export function createJournalPage(dialog: HTMLDialogElement, button: HTMLButtonE
       const leads = state.journal.heardMara
         ? [...fieldLeads, ...(completed ? [rainLead] : [])]
         : ['Find Mara at the small fishing dock during the day, or at her porch by the depot trail in the evening.']
-      clues.replaceChildren(...leads.map(line => {
+      clues.replaceChildren(...leads.map((line) => {
         const item = document.createElement('li')
         item.textContent = line
         return item
       }))
     }
-    const entries = outing ? outingIds.map(id => journalEntry(id)!) : journalCatalog.filter(entry =>
-      entry.page === page && (!entry.parent || state.journal.entries[entry.parent] || state.journal.entries[entry.id]))
-    list.replaceChildren(...entries.map(entry => row(state, entry, outing)))
+    const entries = outing
+      ? outingIds.map((id) => journalEntry(id)!)
+      : journalCatalog.filter((entry) =>
+          entry.page === page && (!entry.parent || state.journal.entries[entry.parent] || state.journal.entries[entry.id]))
+    list.replaceChildren(...entries.map((entry) => row(state, entry, outing)))
   }
 
   function open() {
@@ -125,13 +130,13 @@ export function createJournalPage(dialog: HTMLDialogElement, button: HTMLButtonE
       render()
       const found = earlier && starterDiscoveries.find(({ id }) => player.discoveries.includes(id) && !earlier.discoveries?.includes(id))
       if (found) return `Discovered ${found.name}`
-      const confirmed = before && outingIds.find(key => state.journal.entries[key]?.outing && !before.entries[key]?.outing)
+      const confirmed = before && outingIds.find((key) => state.journal.entries[key]?.outing && !before.entries[key]?.outing)
       if (confirmed) {
         const { outing } = state.journal.entries[confirmed]
         const name = outingSubjects[confirmed].name
         return confirmed === 'place:shellglass' && outing ? `${name} · ${shellglassTideAt(outing.t).phase}` : `Outing · ${name} recorded`
       }
-      const added = before && Object.keys(state.journal.entries).find(id => !before.entries[id])
+      const added = before && Object.keys(state.journal.entries).find((id) => !before.entries[id])
       const entry = added ? journalEntry(added) : undefined
       if (!added || !entry) return undefined
       const subject = entry.parent ? `${journalEntry(entry.parent)?.name} · ${entry.name.toLowerCase()}` : entry.name

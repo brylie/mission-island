@@ -16,12 +16,12 @@ import { door, player, setup, tokens } from './support/game-harness.mjs'
 
 function walkTo(game, client, ...targets) {
   for (const target of targets) {
-    for (let tick = 0; tick < 190 && distance(client.player, target) > .17; tick++) {
+    for (let tick = 0; tick < 190 && distance(client.player, target) > 0.17; tick++) {
       const d = distance(client.player, target)
       game.input(client, { x: (target.x - client.player.x) / d, z: (target.z - client.player.z) / d })
       game.advance()
     }
-    assert.ok(distance(client.player, target) <= .17)
+    assert.ok(distance(client.player, target) <= 0.17)
   }
 }
 
@@ -30,8 +30,8 @@ test('lookout recovery follows the dawns crossed and uses the current incident',
   assert.equal(recovery('delivery', 100), 'undisturbed')
   assert.equal(recovery('fire', daySeconds * 7, 0), 'undisturbed')
   assert.equal(recovery('complete', 100), 'established') // Pre-recovery save.
-  assert.equal(recovery('complete', daySeconds - .001, daySeconds - 1), 'ash')
-  assert.equal(recovery('complete', daySeconds + .01, daySeconds - 1), 'shoots')
+  assert.equal(recovery('complete', daySeconds - 0.001, daySeconds - 1), 'ash')
+  assert.equal(recovery('complete', daySeconds + 0.01, daySeconds - 1), 'shoots')
   assert.equal(recovery('complete', daySeconds * 2, daySeconds - 1), 'shoots')
   assert.equal(recovery('complete', daySeconds * 3, daySeconds - 1), 'established')
 })
@@ -40,7 +40,7 @@ test('both crew see extinguishing, retain the ash after loading, and see shoots 
   const h = setup(t, {
     players: [player(0, { x: 21.35, z: 22.03 }), player(1, { x: 7.7, z: 30 })],
     arrange(save) {
-      save.islandTime = daySeconds * .73
+      save.islandTime = daySeconds * 0.73
       save.world.mission = 'fire'
       save.world.lookoutFireClearedAt = 0 // A previous incident never controls an active fire's appearance.
     },
@@ -50,7 +50,7 @@ test('both crew see extinguishing, retain the ash after loading, and see shoots 
   assert.match(actionHint(a.state, a.player)[1], /extinguisher/i)
   a.request('interact')
   h.advance()
-  assert.ok(a.state.items.some(item => item.kind === 'extinguisher' && item.holder === a.player.id))
+  assert.ok(a.state.items.some((item) => item.kind === 'extinguisher' && item.holder === a.player.id))
 
   // Walk from the stock position to spraying range on the lookout approach.
   walkTo(h, a, { x: 17.5, z: 23.3 }, { x: 13.4, z: 25.6 }, { x: 9.35, z: 27.65 })
@@ -61,7 +61,7 @@ test('both crew see extinguishing, retain the ash after loading, and see shoots 
   assert.equal(lookoutRecoveryAt(a.state), 'ash')
   assert.equal(lookoutRecoveryAt(b.state), 'ash')
   const cleared = a.state.lookoutFireClearedAt
-  assert.ok(cleared > daySeconds * .73)
+  assert.ok(cleared > daySeconds * 0.73)
   assert.equal(b.state.lookoutFireClearedAt, cleared)
   assert.equal(h.checkpoint.mock.calls.at(-1).result.world.lookoutFireClearedAt, cleared)
   walkTo(h, b, { x: 6.17, z: 32.22 })
@@ -108,17 +108,17 @@ test('both crew see extinguishing, retain the ash after loading, and see shoots 
 })
 
 test('the recovery beds leave the lookout trail, scope, and supplies approach accessible', () => {
-  const { points, width } = footpaths.find(path => path.name === 'Lookout trail')
-  const scope = starterFeatures.find(feature => feature.site === 'lookout')
+  const { points, width } = footpaths.find((path) => path.name === 'Lookout trail')
+  const scope = starterFeatures.find((feature) => feature.site === 'lookout')
   for (const { x, z, rx, rz } of recoveryBeds) {
     for (let i = 0; i < 32; i++) {
       const a = i * Math.PI / 16
       const p = { x: x + rx * Math.cos(a), z: z + rz * Math.sin(a) }
-      assert.ok(distanceToRoute(p, points) > width / 2 - .15)
-      assert.ok(distance(p, scope) > .65)
+      assert.ok(distanceToRoute(p, points) > width / 2 - 0.15)
+      assert.ok(distance(p, scope) > 0.65)
     }
   }
-  for (const p of [...extinguisherStarts, ...points, lookout, { x: scope.x + .75, z: scope.z - .38 }]) {
-    assert.ok(canWalkAt(p, .35, waterLevel))
+  for (const p of [...extinguisherStarts, ...points, lookout, { x: scope.x + 0.75, z: scope.z - 0.38 }]) {
+    assert.ok(canWalkAt(p, 0.35, waterLevel))
   }
 })

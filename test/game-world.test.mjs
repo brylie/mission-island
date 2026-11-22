@@ -12,9 +12,11 @@ import { tokens, player, setup } from './support/game-harness.mjs'
 test('a player who resumes in deep water can swim or respawn without losing progress', (t) => {
   const deep = { x: -47, z: -38 }
   const h = setup(t, {
-    players: [player(0, deep, { y: groundHeight(deep), seeds: 1, inventory: ['fishing-rod'],
-      equipped: 'fishing-rod', goods: { carrots: 1, fish: 2 } })],
-    arrange: (save) => { save.world.items[0].holder = 0; save.crewCoins = 3 },
+    players: [player(0, deep, { y: groundHeight(deep), seeds: 1, inventory: ['fishing-rod'], equipped: 'fishing-rod', goods: { carrots: 1, fish: 2 } })],
+    arrange: (save) => {
+      save.world.items[0].holder = 0
+      save.crewCoins = 3
+    },
   })
   const a = h.join(tokens[0])
   assert.ok(waterDepth(deep) > maxWadeDepth)
@@ -41,8 +43,7 @@ test('pre-coastline crew and skiff positions recover through normal save and rec
   assert.ok(waterDepth(oldShore) > maxWadeDepth && withinSkiffBoundary(oldShore))
   assert.equal(withinSkiffBoundary(oldLimit), false)
   const host = setup(t, {
-    players: [player(0, oldShore, { y: -.065, goods: { fish: 2, carrots: 1 } }),
-      player(1, oldLimit, { y: waterLevel - .52, swimming: true, discoveries: ['shellglass'] })],
+    players: [player(0, oldShore, { y: -0.065, goods: { fish: 2, carrots: 1 } }), player(1, oldLimit, { y: waterLevel - 0.52, swimming: true, discoveries: ['shellglass'] })],
     arrange(save) {
       save.crewCoins = 11
       save.world.skiff = { x: 6, z: -47, heading: Math.PI / 2, speed: 0 }
@@ -99,14 +100,14 @@ test('discovering Shellglass Tide Pool uses the existing per-crew save path', (t
   assert.deepEqual(resumed.join(tokens[0]).player.discoveries, ['shellglass'])
 })
 
-test('a second player disturbs the shared Juniper habitat and reconnects to its current state', t => {
+test('a second player disturbs the shared Juniper habitat and reconnects to its current state', (t) => {
   const fox = juniperLayout.foxes[0]
-  const nearby = { x: juniperCenter.x + fox.x, z: juniperCenter.z + fox.z + .55 }
+  const nearby = { x: juniperCenter.x + fox.x, z: juniperCenter.z + fox.z + 0.55 }
   const { join, advance } = setup(t, { players: [player(0), player(1, nearby)] })
   const observer = join(tokens[0]), walker = join(tokens[1])
   advance(4)
   assert.equal(observer.state.juniper.foxes[0].behavior, 'fleeing')
-  assert.ok(observer.state.juniper.hares.some(h => h.behavior === 'fleeing'))
+  assert.ok(observer.state.juniper.hares.some((h) => h.behavior === 'fleeing'))
   assert.deepEqual(observer.state.juniper, walker.state.juniper)
   walker.close()
   advance(150)
@@ -115,12 +116,12 @@ test('a second player disturbs the shared Juniper habitat and reconnects to its 
   assert.deepEqual(returned.state.juniper, observer.state.juniper)
 })
 
-test('a save made mid-jump inside the relocated market restores to walkable ground', t => {
+test('a save made mid-jump inside the relocated market restores to walkable ground', (t) => {
   const wall = { x: 39, z: 1.7 }
-  assert.equal(canWalkAt(wall, .4, waterLevel), false)
+  assert.equal(canWalkAt(wall, 0.4, waterLevel), false)
   const h = setup(t, { players: [player(0, wall, { grounded: false, y: 1.2 })] })
   const restored = h.join(tokens[0]).player
-  assert.ok(canWalkAt(restored, .4, waterLevel))
+  assert.ok(canWalkAt(restored, 0.4, waterLevel))
   assert.equal(restored.grounded, true)
   assert.equal(restored.y, groundHeight(restored))
 })

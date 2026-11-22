@@ -66,9 +66,9 @@ Open **Effects → Sound → Starter Island sound**. Choose a **Sound layer**, t
 ## Adding a subject
 
 1. Register an `Entry` from `src/workbench/subject.ts` in an appropriate study module. Give it a stable ID, a library group and the path to its source. Group membership determines its workspace.
-2. Instantiate the production mesh factory or mechanic. Supply controls in the author’s terms and units. Use live controls for pose and placement and commit geometry changes when the control is released.
+2. Use the same model factory, shader, recipe, and attachment data that the game uses. Let the study supply its own camera, initial state, and replay timing. Identify any stand-ins for scenery or interactions that the game has yet to implement. Use live controls for pose and placement and commit geometry changes when the control is released.
 3. For a timed subject, implement scrubbing and paused frames. For interactive trials, expose actions with their availability and use the observation panel for quantities or outcomes a designer would otherwise have to guess.
-4. Supply a field site when the subject has a meaningful setting. Transform the subject into island coordinates and omit the original instance when replacing a fixture. Check the pose and clearances in both settings.
+4. Supply a field site when the subject has a meaningful setting. Render the subject at its production placement and omit the original instance if the study supplies a controlled version. Check contact points, poses, and clearances in both settings.
 5. Exercise a shared setup in a fresh browser tab. Verify that settings, time, camera and site survive, and that the trial leaves live saves untouched.
 
 ## Scope of the trials

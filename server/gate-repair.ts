@@ -1,4 +1,4 @@
-import { atGate, gateFavor, gateMendedStage, gateway, gatewayClear, onBench, toolboxItem, wrenAt } from '../src/gate-repair.ts'
+import { atGate, gateFavor, gateMendedStage, gateway, gatewayClear, onBench, toolboxItem, wrenAt, wrenGatewayRadius } from '../src/gate-repair.ts'
 import type { GateAction, GateStep } from '../src/gate-repair.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { distance, toolboxHome } from '../src/world.ts'
@@ -40,7 +40,8 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
     if (current.stage === 'sagging') {
       Object.assign(current, { stage: 'accepted', acceptedAt: state.islandTime })
       state.residents.wren = { ...state.residents.wren, active: gateFavor }
-    } else if (recallToolbox()) step(member, 'recalled')
+    }
+    else if (recallToolbox()) step(member, 'recalled')
   }
 
   const interactions = {
@@ -77,7 +78,7 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
   // Wren opens a mended gate on the shortcut and closes it behind, once nobody stands in the opening.
   function tick() {
     const wren = wrenAt(state)
-    const passing = gateMendedStage(state) === 'settled' && !wren.indoors && distance(wren, gateway) < 1.5
+    const passing = gateMendedStage(state) === 'settled' && !wren.indoors && distance(wren, gateway) < wrenGatewayRadius
     if (passing && !state.gate.open) state.gate = { open: true, closePending: true }
     if (state.gate.open && state.gate.closePending && gatewayClear(state)) state.gate = { open: false, closePending: false }
   }

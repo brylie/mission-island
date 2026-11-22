@@ -1,25 +1,30 @@
 import { encodeCrop, fitCrop } from './reference-crop.ts'
 
+const commonsPathPrefix = '/wiki/'
+const commonsFilePrefix = 'File:'
+const maxDescriptionLength = 300
+
 export function readReference(raw: string) {
   try {
     const url = new URL(raw)
     if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) return
     if (url.hostname === 'commons.wikimedia.org') {
       const path = decodeURIComponent(url.pathname)
-      const title = path.startsWith('/wiki/') ? path.slice(6) : url.searchParams.get('title')
-      if (!title?.startsWith('File:') || !title.slice(5).trim()) return
-      const filename = encodeURIComponent(title.slice(5).replaceAll(' ', '_'))
+      const title = path.startsWith(commonsPathPrefix) ? path.slice(commonsPathPrefix.length) : url.searchParams.get('title')
+      if (!title?.startsWith(commonsFilePrefix) || !title.slice(commonsFilePrefix.length).trim()) return
+      const filename = encodeURIComponent(title.slice(commonsFilePrefix.length).replaceAll(' ', '_'))
       const source = 'https://commons.wikimedia.org/wiki/File:' + filename
       return { source, image: 'https://commons.wikimedia.org/wiki/Special:FilePath/' + filename + '?width=960', commons: true }
     }
     return { source: url.href, image: url.href, commons: false }
-  } catch {
+  }
+  catch {
     return
   }
 }
 
 export function referenceDescription(value: unknown) {
-  return typeof value === 'string' ? value.trim().slice(0, 300) : ''
+  return typeof value === 'string' ? value.trim().slice(0, maxDescriptionLength) : ''
 }
 
 export function withReference(link: string, reference: string | null, crop = fitCrop, description = '') {

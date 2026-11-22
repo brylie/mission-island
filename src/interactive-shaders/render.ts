@@ -5,9 +5,13 @@ import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { CreatePlane } from '@babylonjs/core/Meshes/Builders/planeBuilder'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
+import { solarAngle } from '../weather'
+import { islandAtmosphere } from '../assets/recipes/island-atmosphere'
 import type { Weather } from '../protocol'
 import { patchNoise } from '../shader-studies'
 import type { Point, Pose } from '../world'
+
+export { boundaryFade } from '../assets/effects/light-and-water-studies'
 
 export interface EffectFrame {
   time: number
@@ -34,8 +38,11 @@ export interface Effect {
 
 export type Builder = (meshes: MeshFactory, origin: Place, studio: boolean) => Effect
 
-const uniforms = ['world', 'worldViewProjection', 'clock', 'response', 'detail', 'eye',
-  'sunDirection', 'daylight', 'rain', 'fogTint', 'fogNear', 'fogFar', 'lamp', 'beam']
+const gridAlphaLayer = 4
+const cardAlphaLayer = 6
+const half = 0.5
+
+const uniforms = ['world', 'worldViewProjection', 'clock', 'response', 'detail', 'eye', 'sunDirection', 'daylight', 'rain', 'fogTint', 'fogNear', 'fogFar', 'lamp', 'beam']
 
 const environment = `
 uniform float clock;
@@ -118,8 +125,8 @@ export function createEffect(meshes: MeshFactory, name: string, origin: Place, p
     root,
     material,
     pose({ time, camera, weather, light, lamp }: EffectFrame, response: number, detail = 0) {
-      const angle = (weather.hour - 6) * Math.PI / 12
-      sun.set(-Math.cos(angle), Math.sin(angle), -.24).normalize()
+      const angle = solarAngle(weather.hour)
+      sun.set(-Math.cos(angle), Math.sin(angle), islandAtmosphere.sun.azimuthOffset).normalize()
       material.setVector3('sunDirection', sun)
       material.setVector3('eye', view.set(camera.x, camera.y, camera.z))
       material.setFloat('clock', time)
@@ -140,14 +147,13 @@ export function createEffect(meshes: MeshFactory, name: string, origin: Place, p
 
 type DrawEffect = ReturnType<typeof createEffect>
 
-export function grid(meshes: MeshFactory, effect: DrawEffect, name: string, width: number, depth: number, divisions = 1,
-  height: (x: number, z: number) => number = () => 0, layer = 4) {
+export function grid(meshes: MeshFactory, effect: DrawEffect, name: string, width: number, depth: number, divisions = 1, height: (x: number, z: number) => number = () => 0, layer = gridAlphaLayer) {
   const vertices: number[] = [], uv: number[] = [], indices: number[] = []
   const stride = divisions + 1
   for (let j = 0; j <= divisions; j++) {
     for (let i = 0; i <= divisions; i++) {
       const u = i / divisions, v = j / divisions
-      const x = width * (u - .5), z = depth * (v - .5)
+      const x = width * (u - half), z = depth * (v - half)
       vertices.push(x, height(x, z), z)
       uv.push(u, v)
       if (i && j) {
@@ -166,12 +172,7 @@ export function card(meshes: MeshFactory, effect: DrawEffect, name: string, widt
   mesh.parent = effect.root
   mesh.material = effect.material
   mesh.isPickable = false
-  mesh.alphaIndex = 6
+  mesh.alphaIndex = cardAlphaLayer
   if (billboards) mesh.billboardMode = Mesh.BILLBOARDMODE_ALL
   return mesh
 }
-
-export const boundaryFade = `
-vec2 edge = min(texCoord, 1. - texCoord);
-float border = smoothstep(0., .15, min(edge.x, edge.y));
-`

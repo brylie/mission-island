@@ -1,39 +1,43 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
-import { createFarmTools, poseCrew } from '../assets/crew'
+import { createFarmTools, poseCrew, wateringRoseOffset } from '../assets/crew'
 import { createTimberSaw } from '../assets/effect-props'
+import { ashStage, crateGritStage, ferrySparksStage, sawdustStage, wateringStage } from '../assets/geometry/workbench-effect-fixtures'
 import { createSupply } from '../assets/props'
+import { ashMotion, crateGritMotion, ferrySparksMotion, sawdustMotion, wateringMotion } from '../assets/recipes/workbench-effect-fixtures'
+import { plotSurfaceOffset } from '../farm'
+import { createFarm } from '../island-farm'
 import type { MeshFactory } from '../island-meshes'
-import { crateSize } from '../world'
-import { contactAge, crewAt, fireBed, type Fixture } from './effect-fixtures'
+import { createLookoutAsh } from '../lookout-recovery-art'
+import { lookoutSteamCue } from '../starter-effect-cues'
+import { groundHeight } from '../terrain'
+import { crateSize, lookout } from '../world'
+import { contactAge, crewAt, type Fixture } from './effect-fixtures'
+
+const halves = 2
+const wateringRose = new Vector3(...wateringRoseOffset)
 
 export function wateringFixture(meshes: MeshFactory): Fixture {
-  const crew = crewAt(meshes, .48, -.92, 1)
+  const { crew: actor, plot } = wateringStage
+  const { can: motion, armReach, splash } = wateringMotion
+  const crew = crewAt(meshes, actor.x, actor.z, actor.id)
   const { can } = createFarmTools(meshes, crew)
   can.setEnabled(true)
-  const rose = new Vector3(0, -.13, .54)
-  const soil = meshes.paintSurface('gravel', '#745540')
-  meshes.box(0, .046, .98, 2.3, .092, 2.57, soil).receiveShadows = true
-  for (const x of [-.88, .51, .92]) {
-    for (const z of [.25, .89, 1.53, 2.08]) {
-      const leaf = meshes.sphere(x, .18, z, .19, .2, .175, '#7d9c59')
-      leaf.rotation.z = .32
-    }
-  }
+  createFarm(meshes, [plot], () => 0)(['watered'])
   function pose(time: number) {
-    poseCrew(crew, 0, 0, false, 'tool', .43)
-    can.rotation.x = .44 + Math.sin(time * 3) * .16
-    can.rotation.y = Math.sin(time * 2.65) * .24
+    poseCrew(crew, 0, 0, false, 'tool', armReach)
+    can.rotation.x = motion.pitch + Math.sin(time * motion.pitchRate) * motion.pitchReach
+    can.rotation.y = Math.sin(time * motion.yawRate) * motion.yawReach
   }
   return {
     sourceAt(time) {
       pose(time)
       const matrix = can.computeWorldMatrix(true)
-      const { x, y, z } = Vector3.TransformCoordinates(rose, matrix)
+      const { x, y, z } = Vector3.TransformCoordinates(wateringRose, matrix)
       const aim = Vector3.TransformNormal(Vector3.Forward(), matrix)
-      return { x, y, z, yaw: Math.atan2(aim.x, aim.z), floor: .1 }
+      return { x, y, z, yaw: Math.atan2(aim.x, aim.z), floor: plotSurfaceOffset }
     },
-    accents: [{ id: 'garden-splashes', sourceAt: time => {
-      if (time >= .61) return { x: .09 + Math.sin((time - .3) * 2.65) * .33, y: .109, z: 1.03 }
+    accents: [{ id: 'garden-splashes', sourceAt: (time) => {
+      if (time >= splash.start) return { x: splash.x + Math.sin((time - splash.phase) * splash.rate) * splash.spread, y: splash.y, z: splash.z }
     } }],
     pose,
   }
@@ -41,9 +45,11 @@ export function wateringFixture(meshes: MeshFactory): Fixture {
 
 export function sawdustFixture(meshes: MeshFactory): Fixture {
   const saw = createTimberSaw(meshes)
-  crewAt(meshes, -1.12, -.69)
-  const source = { x: .1, y: 1.12, z: .025, floor: .035 }
-  const sourceAt = (time: number) => contactAge(time, .3, 1.03, .56) === undefined ? undefined : source
+  const { crew } = sawdustStage
+  const { cut, floor } = sawdustMotion
+  crewAt(meshes, crew.x, crew.z)
+  const source = { ...saw.dustOffset, floor }
+  const sourceAt = (time: number) => contactAge(time, ...cut) === undefined ? undefined : source
   return {
     sourceAt,
     accents: [{ id: 'mill-dust', sourceAt }],
@@ -52,72 +58,86 @@ export function sawdustFixture(meshes: MeshFactory): Fixture {
 }
 
 export function crateGritFixture(meshes: MeshFactory): Fixture {
-  const crew = crewAt(meshes, -.8, -.86)
-  crew.root.rotation.y = -.11
+  const { crew: actor, crate: cratePlacement, pad } = crateGritStage
+  const { contact, drop, landings } = crateGritMotion
+  const crew = crewAt(meshes, actor.x, actor.z)
+  crew.root.rotation.y = actor.heading
   poseCrew(crew, 0, 0, false, 'crate')
   const crate = createSupply(meshes, 'crate')
-  crate.position.x = -.76
-  crate.position.z = -.04
-  meshes.box(0, -.083, 0, 4.5, .166, 2.65, meshes.paintSurface('gravel', '#a48a66')).receiveShadows = true
-  const at = [.47, 1.52, 2.59]
+  crate.position.x = cratePlacement.x
+  crate.position.z = cratePlacement.z
+  meshes.box(0, pad.y, 0, ...pad.size, meshes.paintSurface('gravel', pad.color)).receiveShadows = true
   function sourceAt(time: number, index: number) {
-    const contact = at.findIndex(start => time >= start && time < start + .13)
-    if (contact < 0) return
-    const x = index % 2 ? 1 : -1, z = index % 4 < 2 ? 1 : -1
-    return { x: crate.position.x + .43 * x, y: .044, z: crate.position.z + .41 * z,
-      yaw: Math.atan2(x, z), speed: [.59, 1, 1.23][contact], floor: .024 }
+    const landing = landings.find(({ time: start }) => time >= start && time < start + contact.duration)
+    if (!landing) return
+    const x = index % halves ? 1 : -1
+    const z = index % contact.directions < halves ? 1 : -1
+    return {
+      x: crate.position.x + contact.xOffset * x,
+      y: contact.y,
+      z: crate.position.z + contact.zOffset * z,
+      yaw: Math.atan2(x, z),
+      speed: landing.speed,
+      floor: contact.floor,
+    }
   }
   return {
     sourceAt,
     accents: [{ id: 'crate-grains', sourceAt }],
     pose(time) {
-      const landing = at.find(t => time <= t + .19)
-      const rest = crateSize / 2 + .022
-      const offset = landing === undefined ? 0 : time < landing
-        ? Math.min(.67, (landing - time) * 1.15)
-        : Math.sin((time - landing) / .19 * Math.PI) * .079
+      const landing = landings.find(({ time: start }) => time <= start + drop.reboundDuration)?.time
+      const rest = crateSize / halves + drop.clearance
+      const offset = landing === undefined
+        ? 0
+        : time < landing
+          ? Math.min(drop.height, (landing - time) * drop.approachSpeed)
+          : Math.sin((time - landing) / drop.reboundDuration * Math.PI) * drop.reboundHeight
       crate.position.y = rest + offset
     },
   }
 }
 
 export function ashFixture(meshes: MeshFactory): Fixture {
-  fireBed(meshes)
-  const soot = meshes.cylinder(0, .019, 0, 1.52, 1.52, .039, 14, '#484846', undefined, false)
-  soot.scaling.z = .67
-  const crew = crewAt(meshes, .47, -1.68, 1)
+  const base = { ...lookout, y: groundHeight(lookout) }
+  const { source } = lookoutSteamCue()
+  const height = source.y - base.y
+  createLookoutAsh(meshes, base)
+  const { crew: actor, tool: toolPlacement } = ashStage
+  const { embers, steam } = ashMotion
+  const crew = crewAt(meshes, actor.x, actor.z, actor.id)
   poseCrew(crew, 0, 0, false, 'extinguisher', 1)
   const tool = createSupply(meshes, 'extinguisher')
-  tool.position.set(0, .24, -1.14)
+  tool.position.set(0, toolPlacement.y, toolPlacement.z)
   return {
-    accents: [{ id: 'fading-embers', sourceAt: time => {
-      if (time < .6) return { x: 0, y: .27, z: 0, floor: .08 }
+    accents: [{ id: 'fading-embers', sourceAt: (time) => {
+      if (time < embers.end) return { x: 0, y: height, z: 0, floor: embers.floor }
     } }],
     sourceAt(time) {
-      if (time < .59) return
-      const patch = Math.sin(time * 3.5)
-      return { x: patch * .39, y: .27, z: Math.sin(time * 2.1) * .2,
-        speed: 1.12 - Math.min(time, 3) * .17 }
+      if (time < steam.start) return
+      const patch = Math.sin(time * steam.xRate)
+      return { x: patch * steam.xReach, y: height, z: Math.sin(time * steam.zRate) * steam.zReach, speed: steam.speed - Math.min(time, steam.fadeDuration) * steam.fadeRate }
     },
   }
 }
 
 export function ferrySparksFixture(meshes: MeshFactory): Fixture {
-  const wood = meshes.paintSurface('wood', '#776353')
-  const steel = meshes.paintSurface('metal', '#5b7578')
-  for (let index = 0; index < 10; index++) {
-    meshes.box(0, -.042, (index - 4) * .32, 4.85, .08, .306, wood).receiveShadows = true
+  const { deck, barrier, hinge, weld, crew: actor } = ferrySparksStage
+  const wood = meshes.paintSurface('wood', deck.color)
+  const steel = meshes.paintSurface('metal', barrier.color)
+  for (let index = 0; index < deck.count; index++) {
+    meshes.box(0, deck.y, (index - deck.centreIndex) * deck.spacing, ...deck.size, wood).receiveShadows = true
   }
-  meshes.box(-.64, .47, -.5, 2.33, .94, .14, steel)
-  meshes.box(-.08, .56, -.416, .116, .81, .09, '#7a8b82')
-  meshes.box(-.08, .56, -.354, .039, .2, .037, '#b0b8a1', undefined, false)
-  const crew = crewAt(meshes, -.87, .17)
-  crew.root.rotation.y = .83
+  meshes.box(...barrier.position, ...barrier.size, steel)
+  meshes.box(...hinge.position, ...hinge.size, hinge.color)
+  meshes.box(...weld.position, ...weld.size, weld.color, undefined, false)
+  const crew = crewAt(meshes, actor.x, actor.z)
+  crew.root.rotation.y = actor.heading
   poseCrew(crew, 0, 0, false, 'tool', 1)
   return {
     sourceAt(time) {
-      const weld = contactAge(time, .33, .69, .21)
-      if (weld !== undefined) return { x: -.078, y: .66 - weld * .25, z: -.323, floor: .012 }
+      const { weld, source } = ferrySparksMotion
+      const age = contactAge(time, ...weld)
+      if (age !== undefined) return { x: source.x, y: source.y - age * source.downwardSpeed, z: source.z, floor: source.floor }
     },
   }
 }

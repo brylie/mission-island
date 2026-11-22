@@ -2,8 +2,7 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import type { Waypoint } from '../wayfinding'
 
-export function createWayfindingOrbs({ scene, sphere, paint }: MeshFactory, name: string,
-  color: string, diameter: number) {
+export function createWayfindingOrbs({ scene, sphere, paint }: MeshFactory, name: string, color: string, diameter: number) {
   const root = new TransformNode(name, scene)
   const material = paint(color, true)
   const orbs: ReturnType<typeof sphere>[] = []

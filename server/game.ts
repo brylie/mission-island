@@ -21,8 +21,12 @@ import { toggleSeat, updateRiders } from './riders.ts'
 import type { IslandSave } from './save.ts'
 import { farmingQualified } from '../src/farm-orders.ts'
 import { stepSkiff } from './skiff.ts'
+import { crewInputTimeoutMs } from './host-time.ts'
 
-export const tickSeconds = 1 / 30
+const hostTicksPerSecond = 30
+const juniperUpdateIntervalTicks = 3
+
+export const tickSeconds = 1 / hostTicksPerSecond
 const barrowBlockedCommands = new Set<CrewCommand['type']>(['primary', 'equip', 'jump', 'seat', 'buy-seed', 'take-job'])
 
 type GameOptions = {
@@ -35,12 +39,16 @@ type GameOptions = {
 
 // The truck carries its driver's input and records driven distance; the skiff moves with its rowers.
 // Crate sound cues carry IDs that stay unique for the life of the host process.
-const impactSession = Date.now().toString(36)
+const impactIdRadix = 36
+const impactSession = Date.now().toString(impactIdRadix)
 let impactCount = 0
 
 function stepVehicles(
-  state: Snapshot, members: CrewMember[], active: (member: CrewMember) => boolean,
-  physics: ReturnType<typeof createCargoPhysics>, freight: ReturnType<typeof createFreight>,
+  state: Snapshot,
+  members: CrewMember[],
+  active: (member: CrewMember) => boolean,
+  physics: ReturnType<typeof createCargoPhysics>,
+  freight: ReturnType<typeof createFreight>,
   notifyAll: (notice: CrewNotice) => void,
 ) {
   const driver = members.find((member) => member.player.seat === 'driver')
@@ -79,8 +87,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const journal = createJournal(state, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint)
-  const { interactions, gate, residents, farm } =
-    createGameInteractions(world, physics, { crew, orders, freight, journal, clock, checkpoint })
+  const { interactions, gate, residents, farm }
+    = createGameInteractions(world, physics, { crew, orders, freight, journal, clock, checkpoint })
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
@@ -95,7 +103,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     residents.tick()
     for (const place of [physics.placeGateLeaf, physics.placeFerry]) place(state)
     const members = crew.members()
-    const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - 400
+    const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - crewInputTimeoutMs
     const { before, still } = stepVehicles(state, members, active, physics, freight, crew.notifyAll)
     for (const item of state.items) item.spraying = false
     for (const member of members) {
@@ -115,8 +123,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     updateHeldItems(state)
     state.driftwood = driftwood.step(state.players, state.skiff)
     // Animal motion follows real simulation ticks, even when the crew sleeps through the night.
-    if (++wildlifeTick % 3 === 0) {
-      state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter(p => p.connected && !p.sleeping))
+    if (++wildlifeTick % juniperUpdateIntervalTicks === 0) {
+      state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping))
     }
     return state
   }
@@ -180,7 +188,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     if (aviation.hasFlight(member)) {
       if (message.type === 'respawn') aviation.interrupt(member)
       if (message.type !== 'input' && message.type !== 'appearance' && message.type !== 'crew-name') return
-    } else if (message.type === 'interact' && !pushing && aviation.interact(member)) return
+    }
+    else if (message.type === 'interact' && !pushing && aviation.interact(member)) return
     handleAction(member, message)
   }
 

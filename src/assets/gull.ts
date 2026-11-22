@@ -1,62 +1,80 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { gullAt } from '../gull-flight'
 import type { MeshFactory } from '../island-meshes'
+import { gullGeometry } from './geometry/gull'
+
+const mirroredSides = [-1, 1] as const
+const half = 0.5
+const quarterTurn = Math.PI * half
+const tuckedLegLiftM = 0.132
+const tuckedLegPitchRad = -0.66
+const shoulderFoldSweepRad = 1.32
+const shoulderFoldDropRad = 0.16
+const shoulderFoldShortening = 0.31
+const wingtipRestSweepRad = 0.085
+const wingtipFoldSweepRad = 0.92
+const wingtipCounterFlap = 0.41
+const wingtipFoldDropRad = 0.04
 
 export function createGull(meshes: MeshFactory, index: number) {
+  const { paint, body: anatomy, featherFaces, shoulder: upperWing, wingtip, feet } = gullGeometry
   const root = new TransformNode('Harbor gull ' + (index + 1), meshes.scene)
   const body = new TransformNode('Gull body', meshes.scene)
   body.parent = root
-  const ivory = '#f4e9d4', pale = '#b8c1bd', tips = '#4b5558', gold = '#deaa57'
-  meshes.sphere(0, 0, 0, .26, .21, .52, ivory, body, false, 8)
-  meshes.sphere(0, .118, .207, .176, .185, .197, ivory, body, false, 7)
-  meshes.sphere(0, .056, .159, .173, .21, .20, ivory, body, false, 7)
-  const beak = meshes.cylinder(0, .096, .337, .026, .079, .119, 6, gold, body, false)
-  beak.rotation.x = Math.PI / 2
-  for (const side of [-1, 1]) {
-    meshes.sphere(side * .079, .144, .254, .028, .029, .032, '#353b38', body, false, 6)
+  for (const part of [anatomy.torso, anatomy.head, anatomy.throat]) {
+    const [x, y, z, width, height, depth] = part.ellipsoid
+    meshes.sphere(x, y, z, width, height, depth, paint.belly, body, false, part.segments)
   }
-  const feathers = (name: string, vertices: number[], color: string, parent: TransformNode) => {
-    const paint = meshes.paint(color)
-    paint.backFaceCulling = false
-    return meshes.surface(name, vertices, [0, 1, 2, 0, 2, 3, 0, 3, 4], paint, parent)
+  const beak = meshes.cylinder(...anatomy.bill, paint.skin, body, false)
+  beak.rotation.x = quarterTurn
+  const { eye } = anatomy
+  for (const side of mirroredSides) {
+    meshes.sphere(side * eye.x, eye.y, eye.z, ...eye.size, paint.eye, body, false, eye.segments)
   }
-  feathers('Gull tail', [-.064, .012, -.179, .063, .014, -.181, .089, .012, -.354, 0, .032, -.397, -.089, .01, -.354],
-    ivory, body)
-  const wings = [-1, 1].map(side => {
+  function feathers(name: string, points: readonly (readonly [number, number, number])[], color: string, parent: TransformNode, side = 1) {
+    const material = meshes.paint(color)
+    material.backFaceCulling = false
+    const vertices = points.flatMap(([x, y, z]) => [x === 0 ? x : side * x, y, z])
+    return meshes.surface(name, vertices, [...featherFaces], material, parent)
+  }
+  feathers('Gull tail', anatomy.tail, paint.belly, body)
+  const wings = mirroredSides.map((side) => {
     const shoulder = new TransformNode('Gull shoulder', meshes.scene)
     shoulder.parent = body
-    shoulder.position.set(side * .082, .057, .065)
-    feathers('Gull inner wing', [0, 0, .131, side * .29, .035, .106, side * .425, .02, .014,
-      side * .307, -.021, -.15, 0, -.038, -.166], pale, shoulder)
+    const [shoulderX, shoulderY, shoulderZ] = upperWing.pivot
+    shoulder.position.set(side * shoulderX, shoulderY, shoulderZ)
+    feathers('Gull inner wing', upperWing.feathers, paint.secondaryFeathers, shoulder, side)
     const primary = new TransformNode('Gull wingtip hinge', meshes.scene)
     primary.parent = shoulder
-    primary.position.set(side * .318, .02, .026)
-    feathers('Tapered primary feathers', [0, .017, .081, side * .232, .018, .049, side * .391, 0, -.076,
-      side * .245, -.015, -.106, 0, -.039, -.151], tips, primary)
-    meshes.sphere(side * .237, .024, -.018, .107, .012, .054, ivory, primary, false, 5)
+    const [tipX, tipY, tipZ] = wingtip.pivot
+    primary.position.set(side * tipX, tipY, tipZ)
+    feathers('Tapered primary feathers', wingtip.feathers, paint.primaryFeathers, primary, side)
+    const { whitePatch } = wingtip
+    meshes.sphere(side * whitePatch.x, whitePatch.y, whitePatch.z, ...whitePatch.size, paint.belly, primary, false, whitePatch.segments)
     return { side, shoulder, primary }
   })
   const legs = new TransformNode('Gull legs and webbed toes', meshes.scene)
   legs.parent = root
-  for (const x of [-.064, .064]) {
-    meshes.cylinder(x, .071, -.019, .023, .025, .137, 6, gold, legs, false)
-    meshes.sphere(x, .0155, .023, .079, .031, .117, gold, legs, false, 6)
+  const { leg, toes } = feet
+  for (const x of feet.x) {
+    meshes.cylinder(x, leg.y, leg.z, leg.topDiameter, leg.bottomDiameter, leg.height, leg.sides, paint.skin, legs, false)
+    meshes.sphere(x, toes.y, toes.z, ...toes.size, paint.skin, legs, false, toes.segments)
   }
   return {
     root,
     pose(sample: ReturnType<typeof gullAt>) {
       root.position.set(sample.x, sample.y, sample.z)
       root.rotation.y = sample.heading
-      body.position.y = .205 - sample.crouch
+      body.position.y = anatomy.restingPivotY - sample.crouch
       body.rotation.set(sample.pitch, 0, sample.bank)
-      legs.position.y = sample.tuck * .132
-      legs.rotation.x = -.66 * sample.tuck
+      legs.position.y = sample.tuck * tuckedLegLiftM
+      legs.rotation.x = tuckedLegPitchRad * sample.tuck
       for (const { side, shoulder, primary } of wings) {
-        shoulder.rotation.y = side * (sample.sweep + sample.fold * 1.32)
-        shoulder.rotation.z = side * (sample.flap - sample.fold * .16)
-        shoulder.scaling.x = 1 - sample.fold * .31
-        primary.rotation.y = side * (.085 + sample.fold * .92)
-        primary.rotation.z = side * (-sample.flap * .41 - sample.fold * .04)
+        shoulder.rotation.y = side * (sample.sweep + sample.fold * shoulderFoldSweepRad)
+        shoulder.rotation.z = side * (sample.flap - sample.fold * shoulderFoldDropRad)
+        shoulder.scaling.x = 1 - sample.fold * shoulderFoldShortening
+        primary.rotation.y = side * (wingtipRestSweepRad + sample.fold * wingtipFoldSweepRad)
+        primary.rotation.z = side * (-sample.flap * wingtipCounterFlap - sample.fold * wingtipFoldDropRad)
       }
     },
   }

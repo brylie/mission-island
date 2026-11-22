@@ -5,21 +5,35 @@ import type { Truck, TruckPose } from '../truck-pose.ts'
 import type { GroundDrive } from '../vehicles/ground-drive.ts'
 import { offset, type Point, type Pose } from '../world.ts'
 
+const forwardAxis = 2
+const minimumShoreRoadHeightM = -0.27
+const maximumUprightTiltRad = 1.35
+const sleepingSpeedSquared = 0.075
+const sleepingTurnSpeedSquared = 0.04
+const minimumPlantedWheels = 3
+
 type DriveInput = Pick<Input, 'x' | 'z' | 'brake' | 'careful'>
 
 export function createGroundDrive(
-  world: World, body: Body, drive: GroundDrive, centreOfMass: number, heightAt: (point: Point) => number,
+  world: World,
+  body: Body,
+  drive: GroundDrive,
+  centreOfMass: number,
+  heightAt: (point: Point) => number,
 ) {
   const { brakes, engine, steering: steeringSpec, parkedClearance, shoreProbeDistance } = drive
   const { radius, halfTrack, axles } = drive.wheels
   const { mountHeight, ...suspension } = drive.suspension
-  const vehicle = new RaycastVehicle({ chassisBody: body, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2 })
+  const vehicle = new RaycastVehicle({ chassisBody: body, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: forwardAxis })
   for (const side of [-1, 1]) {
     for (const [axle, z] of axles.entries()) {
       vehicle.addWheel({
         chassisConnectionPointLocal: new Vec3(side * halfTrack, mountHeight - centreOfMass, z),
-        directionLocal: new Vec3(0, -1, 0), axleLocal: new Vec3(-1, 0, 0), isFrontWheel: axle === 1,
-        radius, ...suspension,
+        directionLocal: new Vec3(0, -1, 0),
+        axleLocal: new Vec3(-1, 0, 0),
+        isFrontWheel: axle === 1,
+        radius,
+        ...suspension,
       })
     }
   }
@@ -44,9 +58,7 @@ export function createGroundDrive(
     body.vectorToWorldFrame(Vec3.UNIT_X, right)
     body.vectorToWorldFrame(Vec3.UNIT_Y, up)
     const speed = longitudinalSpeed()
-    return { x: origin.x, y: origin.y, z: origin.z, heading: Math.atan2(forward.x, forward.z),
-      pitch: Math.atan2(-forward.y, Math.hypot(forward.x, forward.z)), roll: Math.atan2(right.y, up.y), speed,
-      steering, braking, suspension: vehicle.wheelInfos.map((wheel) => mountHeight - wheel.suspensionLength) }
+    return { x: origin.x, y: origin.y, z: origin.z, heading: Math.atan2(forward.x, forward.z), pitch: Math.atan2(-forward.y, Math.hypot(forward.x, forward.z)), roll: Math.atan2(right.y, up.y), speed, steering, braking, suspension: vehicle.wheelInfos.map((wheel) => mountHeight - wheel.suspensionLength) }
   }
 
   function place(pose: TruckPose) {
@@ -76,9 +88,11 @@ export function createGroundDrive(
     const limit = input.z < 0 ? engine.reverseSpeed : input.careful ? engine.carefulSpeed : engine.forwardSpeed
     const power = Math.min(1, Math.max(0, (limit - speedMagnitude) / engine.powerFadeRange))
     const engineForce = braking ? 0 : -input.z * engine.force * power
-    const drag = braking ? Math.min(brakes.maxForce, brakes.baseForce + speedMagnitude * brakes.forcePerSpeed)
+    const drag = braking
+      ? Math.min(brakes.maxForce, brakes.baseForce + speedMagnitude * brakes.forcePerSpeed)
       : input.z ? brakes.poweredDrag : brakes.idleDrag
-    const angle = input.careful ? steeringSpec.carefulAngle
+    const angle = input.careful
+      ? steeringSpec.carefulAngle
       : steeringSpec.lowSpeedAngle - steeringSpec.speedReduction * Math.min(1, speedMagnitude / engine.forwardSpeed)
     const target = input.x * angle
     steering += (target - steering) * Math.min(1, dt * steeringSpec.response)
@@ -95,13 +109,13 @@ export function createGroundDrive(
     const leading = offset(after, 0, direction * shoreProbeDistance)
     const wasLeading = offset(before, 0, direction * shoreProbeDistance)
     const leadingHeight = heightAt(leading)
-    if ((leadingHeight < -0.27 && leadingHeight < heightAt(wasLeading)) ||
-      Math.abs(after.roll) > 1.35 || Math.abs(after.pitch) > 1.35) {
+    if ((leadingHeight < minimumShoreRoadHeightM && leadingHeight < heightAt(wasLeading))
+      || Math.abs(after.roll) > maximumUprightTiltRad || Math.abs(after.pitch) > maximumUprightTiltRad) {
       place(before)
       return read()
     }
-    if (holding && body.sleepState !== Body.SLEEPING && body.velocity.lengthSquared() < 0.075 &&
-      body.angularVelocity.lengthSquared() < 0.04 && vehicle.numWheelsOnGround >= 3) {
+    if (holding && body.sleepState !== Body.SLEEPING && body.velocity.lengthSquared() < sleepingSpeedSquared
+      && body.angularVelocity.lengthSquared() < sleepingTurnSpeedSquared && vehicle.numWheelsOnGround >= minimumPlantedWheels) {
       body.sleep()
       after.speed = 0
     }

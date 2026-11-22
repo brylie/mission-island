@@ -30,7 +30,7 @@ const count = (client, type) => client.messages.filter((message) => message.type
 // Two crewmates standing a step from a resident at work, mid-morning after the starter shift.
 function beside(id, hour = 10) {
   const spot = residentAt(byId(id).schedule, { islandTime: at(hour), gateRepair: sagging })
-  return [-.9, .9].map((side, index) => player(index, { x: spot.x + side, z: spot.z + .6 }, { y: walkingHeight(spot) }))
+  return [-0.9, 0.9].map((side, index) => player(index, { x: spot.x + side, z: spot.z + 0.6 }, { y: walkingHeight(spot) }))
 }
 
 function startAfterShift(t, id, { hour = 10, arrange, goods = [] } = {}) {
@@ -51,18 +51,17 @@ test('every resident walks a clear route, works through the day and is home at n
     for (const gateRepair of [sagging, settled]) {
       for (let quarter = 0; quarter < 96; quarter++) {
         const spot = residentAt(resident.schedule, { islandTime: at(quarter / 4, 2), gateRepair })
-        if (!spot.indoors) assert.ok(canWalkAt(spot, .25, waterLevel - maxWadeDepth), `${resident.id} at ${quarter / 4}h`)
+        if (!spot.indoors) assert.ok(canWalkAt(spot, 0.25, waterLevel - maxWadeDepth), `${resident.id} at ${quarter / 4}h`)
       }
     }
     const { home, work } = resident.schedule
     const world = (hour, day = 0) => ({ islandTime: at(hour, day), gateRepair: sagging })
     assert.equal(residentAt(resident.schedule, world(12)).stop, 'work', `${resident.id} works at noon`)
-    assert.ok(distance(residentAt(resident.schedule, world(12)), work) < .01)
+    assert.ok(distance(residentAt(resident.schedule, world(12)), work) < 0.01)
     assert.equal(residentAt(resident.schedule, world(23)).stop, 'home')
-    assert.ok(distance(residentAt(resident.schedule, world(3)), home) < .01)
+    assert.ok(distance(residentAt(resident.schedule, world(3)), home) < 0.01)
     // Sleeping through the night lands everyone on the 06:00 point of their schedule, the same on every client.
-    assert.deepEqual(residentAt(resident.schedule, { islandTime: daySeconds * 3, gateRepair: sagging }),
-      residentAt(resident.schedule, world(6, 3)))
+    assert.deepEqual(residentAt(resident.schedule, { islandTime: daySeconds * 3, gateRepair: sagging }), residentAt(resident.schedule, world(6, 3)))
   }
   assert.equal(new Set(starterResidents.map(({ id }) => id)).size, starterResidents.length)
 })
@@ -106,8 +105,7 @@ test('a resident asks, either crewmate agrees in the conversation, and the partn
     assert.equal(b.state.crewCoins, coins + 5)
     assert.deepEqual(b.state.residents[id], { ...blankRecord(), trust: 1, kept: [resident.favors[0].id], active: null })
     for (const client of [a, b]) {
-      assert.deepEqual(client.messages.filter(({ type }) => type === 'favor-pay'),
-        [{ type: 'favor-pay', resident: id, favor: resident.favors[0].id, coins: 5, trust: 1, restored: false }])
+      assert.deepEqual(client.messages.filter(({ type }) => type === 'favor-pay'), [{ type: 'favor-pay', resident: id, favor: resident.favors[0].id, coins: 5, trust: 1, restored: false }])
     }
     assert.match(favorFeedback(a.messages.find(({ type }) => type === 'favor-pay'), 0).label, new RegExp(`${resident.identity.name} trust \\+1`))
     assert.equal(openOffer(resident, b.state), undefined, 'a kept favor is not asked again')
@@ -128,7 +126,9 @@ test('walking away declines without penalty, and a resident out of reach cannot 
   assert.ok(openOffer(byId('ines'), a.state), 'the offer waits for the next visit')
 })
 
-const allCratesDelivered = (save) => { for (const item of save.world.items) if (item.kind === 'crate') item.delivered = true }
+const allCratesDelivered = (save) => {
+  for (const item of save.world.items) if (item.kind === 'crate') item.delivered = true
+}
 
 test('Bram’s staged crate completes his favor, and during a delivery order the bay takes nothing', (t) => {
   const bram = byId('bram')
@@ -139,14 +139,14 @@ test('Bram’s staged crate completes his favor, and during a delivery order the
   h.advance()
   const crate = a.state.items[0]
   assert.equal(crate.delivered, false, 'a crate comes back to the yard for the favor')
-  assert.ok(distance(crate, crateStarts[0]) < .5)
+  assert.ok(distance(crate, crateStarts[0]) < 0.5)
 
   // A crewmate carrying that crate sets it down in the bay.
   const carrying = (save) => {
     allCratesDelivered(save)
     save.world.residents.bram = { ...blankRecord(), trust: 0, kept: [], active: 'bram-staging' }
     Object.assign(save.world.items[0], { holder: 1, delivered: false })
-    Object.assign(save.crew[1].player, { x: stagingBay.x + .4, z: stagingBay.z, y: walkingHeight(stagingBay) })
+    Object.assign(save.crew[1].player, { x: stagingBay.x + 0.4, z: stagingBay.z, y: walkingHeight(stagingBay) })
   }
   const staged = startAfterShift(t, 'bram', { arrange: carrying })
   const { b } = staged
@@ -221,9 +221,7 @@ test('version 3 saves carry Wren’s trust into the resident records, and malfor
   file.write({ ...current, world: { ...current.world, residents: older } })
   assert.deepEqual(createGame({ save: file.load() }).tick().residents.ines, { ...blankRecord(), trust: 0, kept: [], active: null })
 
-  for (const residents of [{ stranger: { ...blankRecord(), trust: 0, kept: [], active: null } }, { mara: { ...blankRecord(), trust: 1, kept: ['ines-display'], active: null } },
-    { mara: { ...blankRecord(), trust: 2, kept: ['mara-supper', 'mara-supper'], active: null } }, { mara: { ...blankRecord(), trust: 1, kept: ['mara-supper'], active: 'mara-supper' } },
-    { mara: { ...blankRecord(), trust: .5, kept: [], active: null } }]) {
+  for (const residents of [{ stranger: { ...blankRecord(), trust: 0, kept: [], active: null } }, { mara: { ...blankRecord(), trust: 1, kept: ['ines-display'], active: null } }, { mara: { ...blankRecord(), trust: 2, kept: ['mara-supper', 'mara-supper'], active: null } }, { mara: { ...blankRecord(), trust: 1, kept: ['mara-supper'], active: 'mara-supper' } }, { mara: { ...blankRecord(), trust: 0.5, kept: [], active: null } }]) {
     file.write({ ...current, world: { ...current.world, residents: { ...current.world.residents, ...residents } } })
     assert.throws(() => file.load(), /Could not load island save/)
   }

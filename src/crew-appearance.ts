@@ -1,5 +1,7 @@
 import { isStockPiece, shopBottoms, shopHats, shopShoes, shopTops, stockChoices } from './wardrobe-stock.ts'
 
+const maxCrewNameCharacters = 24
+
 export const uniforms = {
   amber: { name: 'Harbor amber', color: '#ffb54d', trim: '#fff3d0', unlock: '' },
   blue: { name: 'Coastal blue', color: '#77dffc', trim: '#e4faff', unlock: '' },
@@ -25,7 +27,9 @@ export const everydayColors = {
 } as const
 
 export const hairColors = {
-  chestnut: '#4c352e', black: '#252729', blond: '#b17c41',
+  chestnut: '#4c352e',
+  black: '#252729',
+  blond: '#b17c41',
 } as const
 
 export const appearanceParts = {
@@ -36,7 +40,7 @@ export const appearanceParts = {
   mouth: { label: 'Mouth', choices: { soft: 'Soft smile', wide: 'Wide smile' } },
   shirt: { label: 'Shirt or swimsuit', choices: { amber: 'Harbor amber', blue: 'Coastal blue', coral: 'Coral shirt', lagoon: 'Lagoon swimsuit', ...stockChoices(shopTops) } },
   hat: { label: 'Hat', choices: { none: 'Bareheaded', amber: 'Amber cap', blue: 'Blue cap', ...stockChoices(shopHats) } },
-  trousers: { label: 'Bottoms', choices: { slate: 'Slate blue trousers', sand: 'Sand trousers', 'slate-shorts': 'Slate shorts', 'sand-shorts': 'Sand shorts', ...stockChoices(shopBottoms) } },
+  trousers: { label: 'Bottoms', choices: { 'slate': 'Slate blue trousers', 'sand': 'Sand trousers', 'slate-shorts': 'Slate shorts', 'sand-shorts': 'Sand shorts', ...stockChoices(shopBottoms) } },
   shoes: { label: 'Shoes', choices: { dark: 'Dark deck shoes', brown: 'Brown deck shoes', bare: 'Bare feet', ...stockChoices(shopShoes) } },
 } as const
 
@@ -78,14 +82,14 @@ export function outfitRequirement(uniform: Uniform, mission: 'delivery' | 'fire'
 export function cleanCrewName(input: unknown) {
   if (typeof input !== 'string') return ''
   const cleaned = input.replace(/\p{White_Space}+/gu, ' ').replace(/[\p{Cc}\p{Cf}]/gu, '').replace(/ +/g, ' ').trim()
-  return Array.from(cleaned).slice(0, 24).join('').trim()
+  return Array.from(cleaned).slice(0, maxCrewNameCharacters).join('').trim()
 }
 
 export function readAppearance(raw: unknown): CrewAppearance {
   if (!raw || typeof raw !== 'object') return defaultAppearance
   const { uniform, skin } = raw as Partial<CrewAppearance>
   const parts = raw as Record<string, unknown>
-  const choices = appearancePartKeys.flatMap<[AppearancePart, string]>(key => {
+  const choices = appearancePartKeys.flatMap<[AppearancePart, string]>((key) => {
     const value = parts[key]
     return typeof value === 'string' && Object.hasOwn(appearanceParts[key].choices, value) ? [[key, value]] : []
   })

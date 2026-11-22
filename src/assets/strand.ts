@@ -2,59 +2,68 @@ import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import type { MeshFactory } from '../island-meshes'
 import { seededRandom } from '../seeded-random'
 import type { Point } from '../world'
+import { Color3 } from '@babylonjs/core/Maths/math.color'
+import { scallop, strandPebble } from './geometry/strand'
+import { strandedPatchDressing } from '../worlds/starter/layout/scenery'
 
 export const poolSand = '#80afa1'
-const pebbleColors = ['#789997', '#899d8b']
-const shellColors = ['#f4ddbc', '#dba69b', '#f4e5cf']
+const coordinatesPerVertex = 3
+const half = 0.5
+const fullTurn = Math.PI + Math.PI
+const sizeBiasExponent = 2
 
-export function roundedPebble(meshes: MeshFactory, x: number, y: number, z: number,
-  width: number, height: number, depth: number, heading: number, colorIndex: number) {
-  const pebble = meshes.sphere(x, y, z, width, height, depth, pebbleColors[colorIndex % 2], undefined, false, 4)
+export function roundedPebble(meshes: MeshFactory, x: number, y: number, z: number, width: number, height: number, depth: number, heading: number, colorIndex: number) {
+  const pebble = meshes.sphere(x, y, z, width, height, depth, strandPebble.colors[colorIndex % strandPebble.colors.length], undefined, false, strandPebble.segments)
   pebble.rotation.y = heading
 }
 
 // Each fan opens from a narrow hinge. Alternating ribs continue over the domed crown to the lip.
-function appendScallop(positions: number[], indices: number[], colors: number[], at: Point, size: number,
-  heading: number, tint: string, bed: (point: Point) => number) {
-  const start = positions.length / 3
-  const rgb = [1, 3, 5].map(i => Number.parseInt(tint.slice(i, i + 2), 16) / 255)
+function appendScallop(positions: number[], indices: number[], colors: number[], at: Point, size: number, heading: number, tint: string, bed: (point: Point) => number) {
+  const start = positions.length / coordinatesPerVertex
+  const { r: red, g: green, b: blue } = Color3.FromHexString(tint)
+  const { ribs, rows, hinge, baseClearance } = scallop
+  const spokeStride = ribs.spokeCount + 1
   function vertex(u: number, v: number, h: number, light: number) {
     const x = at.x + size * (u * Math.cos(heading) - v * Math.sin(heading))
     const z = at.z + size * (u * Math.sin(heading) + v * Math.cos(heading))
-    positions.push(x, bed({ x, z }) + .008 + h * size, z)
-    colors.push(rgb[0] * light, rgb[1] * light, rgb[2] * light, 1)
+    positions.push(x, bed({ x, z }) + baseClearance + h * size, z)
+    colors.push(red * light, green * light, blue * light, 1)
   }
-  vertex(0, 0, .03, .75)
-  for (let row = 0; row < 2; row++) {
-    for (let spoke = 0; spoke <= 18; spoke++) {
-      const angle = (spoke / 18 - .5) * 2.4
-      const ridge = spoke % 2
-      const r = row === 0 ? .48 : .90 + .07 * ridge
-      vertex(Math.sin(angle) * r, Math.cos(angle) * r, (row === 0 ? .17 : .025) + .06 * ridge, .83 + .17 * ridge)
+  vertex(0, 0, hinge.height, hinge.shade)
+  for (const [row, shape] of rows.entries()) {
+    for (let spoke = 0; spoke <= ribs.spokeCount; spoke++) {
+      const angle = (spoke / ribs.spokeCount - half) * ribs.arc
+      const ridge = spoke % ribs.interval
+      const r = row === 0 ? shape.radius : shape.radius + shape.ridge * ridge
+      vertex(Math.sin(angle) * r, Math.cos(angle) * r, shape.rise + ribs.rise * ridge, ribs.shade + ribs.shadeVariation * ridge)
       if (!spoke) continue
-      const v = start + 1 + row * 19 + spoke
+      const v = start + 1 + row * spokeStride + spoke
       if (!row) indices.push(start, v, v - 1)
-      else indices.push(v - 20, v - 19, v, v - 20, v, v - 1)
+      else {
+        const above = v - spokeStride
+        indices.push(above - 1, above, v, above - 1, v, v - 1)
+      }
     }
   }
 }
 
-export function dressStrand(meshes: MeshFactory, name: string, banks: readonly Point[], seed: number,
-  bed: (point: Point) => number, allowed: (point: Point, y: number) => boolean) {
+export function dressStrand(meshes: MeshFactory, name: string, banks: readonly Point[], seed: number, bed: (point: Point) => number, allowed: (point: Point, y: number) => boolean) {
   const random = seededRandom(seed)
   const positions: number[] = [], indices: number[] = [], colors: number[] = []
+  const { count, width, depth } = strandedPatchDressing
   for (const bank of banks) {
-    for (let i = 0; i < 14; i++) {
-      const angle = random() * Math.PI * 2, r = Math.sqrt(random())
-      const point = { x: bank.x + 2.4 * r * Math.cos(angle), z: bank.z + 1.3 * r * Math.sin(angle) }
+    for (let i = 0; i < count; i++) {
+      const angle = random() * fullTurn, r = Math.sqrt(random())
+      const point = { x: bank.x + width * r * Math.cos(angle), z: bank.z + depth * r * Math.sin(angle) }
       const y = bed(point)
       if (!allowed(point, y)) continue
-      const heading = random() * Math.PI * 2
-      if (random() < .56) {
-        const size = .12 + random() ** 2 * .46
-        roundedPebble(meshes, point.x, y, point.z, size, size * .45, size * (.52 + .3 * random()), heading, i)
-      } else {
-        appendScallop(positions, indices, colors, point, .11 + .10 * random(), heading, shellColors[i % 3], bed)
+      const heading = random() * fullTurn
+      if (random() < strandPebble.frequency) {
+        const size = strandPebble.size + random() ** sizeBiasExponent * strandPebble.sizeVariation
+        roundedPebble(meshes, point.x, y, point.z, size, size * strandPebble.heightScale, size * (strandPebble.depthScale + strandPebble.depthVariation * random()), heading, i)
+      }
+      else {
+        appendScallop(positions, indices, colors, point, scallop.size + scallop.sizeVariation * random(), heading, scallop.colors[i % scallop.colors.length], bed)
       }
     }
   }

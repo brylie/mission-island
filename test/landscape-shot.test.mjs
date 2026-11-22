@@ -6,7 +6,7 @@ import { landscapeShotLink, parseLandscapeShot } from '../src/workbench/landscap
 const shot = {
   version: 1,
   name: 'Pinewoods · dawn & mist',
-  camera: { alpha: 0.43, beta: 1.59, radius: 14, fov: .64, target: [-39.7, 4.05, 19.2] },
+  camera: { alpha: 0.43, beta: 1.59, radius: 14, fov: 0.64, target: [-39.7, 4.05, 19.2] },
   time: 11.25,
   options: { clockStart: 192, x: -39.7, z: 19.2, focusHeight: 4.05, hour: 6.4, rain: 0, sunShafts: true, shaftIntensity: 125 },
   grid: false,

@@ -2,12 +2,15 @@ import { ferryDrop } from '../src/ferry-repair.ts'
 import { byTruckBed, freeBed, heldItem, type CargoAction } from '../src/interactions/cargo.ts'
 import { deliveryDrop, deliveryRadius } from '../src/jobs.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
-import type { createCargoPhysics } from '../src/simulation/cargo.ts'
+import { crateHalfSize, type createCargoPhysics } from '../src/simulation/cargo.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import { groundHeight } from '../src/terrain.ts'
-import { crateSize, distance, type Point } from '../src/world.ts'
+import { distance, type Point } from '../src/world.ts'
 import { stopPrimary, stowTool, type CrewMember } from './crew.ts'
 import type { InteractionHandlers } from './interactions.ts'
+import { itemGroundClearance } from './items.ts'
+
+const crateDropMinimumY = -0.10
 
 type CargoDestinations = {
   ferry: (item: Item, playerId: number) => void
@@ -27,20 +30,25 @@ export function cargoInteractions(
     const dropoff = deliveryDrop(state)
     if (ferryDrop(state, player, item)) {
       destinations.ferry(item, player.id)
-    } else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
+    }
+    else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
       destinations.delivery(item)
-    } else if (destinations.resident(item, player)) {
+    }
+    else if (destinations.resident(item, player)) {
       return
-    } else if (item.kind === 'crate') {
+    }
+    else if (item.kind === 'crate') {
       const slot = byTruckBed(state, player) ? freeBed(state) : undefined
       if (slot === undefined) {
-        const drop = canOccupyGround(item, crateSize / 2, -0.10) && !isInsideTruck(state.truck, item) ? item : player
+        const drop = canOccupyGround(item, crateHalfSize, crateDropMinimumY) && !isInsideTruck(state.truck, item) ? item : player
         physics.release(item, drop, item.y)
-      } else {
+      }
+      else {
         physics.load(item, state.truck, slot)
       }
-    } else {
-      item.y = groundHeight(item) + 0.04
+    }
+    else {
+      item.y = groundHeight(item) + itemGroundClearance
     }
   }
 

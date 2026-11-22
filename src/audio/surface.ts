@@ -4,11 +4,14 @@ import { coastRadius, shoreProfile } from '../terrain.ts'
 import { onDock, type Point } from '../world.ts'
 import type { FootSurface } from './recipes.ts'
 
+const halfWidthDivisor = 2
+const roadSurfaceHalfWidthMetres = 3.3
+
 // The rendered beach band begins where the meadow blend ends.
 export const sandRadius = shoreProfile[2].radius
 
 const onPath = (point: Point, surface: string) =>
-  footpaths.some((path) => path.surface === surface && distanceToRoute(point, path.points) < path.width / 2)
+  footpaths.some((path) => path.surface === surface && distanceToRoute(point, path.points) < path.width / halfWidthDivisor)
 
 // The surface a grounded crewmate is standing on, or null when no footstep should sound.
 export function footSurface(point: Point, player: Pick<Player, 'seat' | 'grounded' | 'swimming' | 'truckSurface'>): FootSurface | null {
@@ -16,7 +19,7 @@ export function footSurface(point: Point, player: Pick<Player, 'seat' | 'grounde
   // Supporting boards win over the terrain beneath them.
   if (onDock(point) || player.truckSurface) return 'boards'
   if (onPath(point, 'gravel')) return 'gravel'
-  if (onPath(point, 'pavement') || distanceToRoads(point) < 3.3) return 'fallback'
+  if (onPath(point, 'pavement') || distanceToRoads(point) < roadSurfaceHalfWidthMetres) return 'fallback'
   if (coastRadius(point) >= sandRadius) return 'sand'
   return 'fallback'
 }

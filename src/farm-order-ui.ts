@@ -2,6 +2,10 @@ import { farmOrders, farmOrderStatus, type FarmWork } from './farm-orders'
 import type { ServerMessage, Snapshot } from './protocol'
 import { barrowPickupName, produceCounter } from './worlds/starter/farm-order-sites'
 
+const counterMarkerRadius = 5
+const barrowMarkerBorderRadius = 5.5
+const barrowMarkerFillRadius = 3.4
+
 export function updateFarmHud(element: HTMLElement, orders: FarmWork) {
   const text = farmOrderStatus(orders)
   if (element.textContent !== text) element.textContent = text
@@ -18,9 +22,9 @@ export function farmFeedback(message: Extract<ServerMessage, { type: 'farm-pay' 
 
 export function drawFarmMap({ farmWork }: Snapshot, dot: (x: number, z: number, color: string, radius: number) => void) {
   const { progress, barrow } = farmWork
-  if (progress.stage === 'starter' || progress.stage === 'harvest') dot(produceCounter.x, produceCounter.z, '#f3bd78', 5)
+  if (progress.stage === 'starter' || progress.stage === 'harvest') dot(produceCounter.x, produceCounter.z, '#f3bd78', counterMarkerRadius)
   if (barrow) {
-    dot(barrow.x, barrow.z, '#234244', 5.5)
-    dot(barrow.x, barrow.z, '#f3bd78', 3.4)
+    dot(barrow.x, barrow.z, '#234244', barrowMarkerBorderRadius)
+    dot(barrow.x, barrow.z, '#f3bd78', barrowMarkerFillRadius)
   }
 }

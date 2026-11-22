@@ -1,0 +1,25 @@
+// Surf is low, broadband noise, so it renders at half the rate of the sharper cues.
+export const surfRecipe = {
+  sampleRate: 12_000,
+  durationSeconds: 3.2,
+  strengthDurationSeconds: 1.4,
+  crestPhase: 0.34,
+  crestVariation: 0.06,
+  body: { cutoffHz: 300, strengthCutoffHz: 120, secondCutoffHz: 520, crestCurve: 2, decayFraction: 0.32, gain: 1.3 },
+  wash: {
+    startBeforeCrest: 0.9,
+    bandHz: [260, 5500],
+    cutoffHz: 1900,
+    strengthCutoffHz: 1900,
+    minimumCutoffHz: 420,
+    brightnessDecayFraction: 0.25,
+    lengthFraction: 0.38,
+    strengthLengthFraction: 0.22,
+    attackSeconds: 0.18,
+    decayCurve: 1.6,
+    baseGain: 0.35,
+    strengthGain: 0.5,
+  },
+  edgeFadeSeconds: 0.05,
+  playback: { baseGain: 0.35, strengthGain: 0.65 },
+} as const

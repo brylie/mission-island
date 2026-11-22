@@ -10,7 +10,7 @@ import { standing } from './residents/schedule.ts'
 export const swellFavor = 'wren-swell'
 export const swellActions = {
   'check-swing': 'explicit',
-  plane: 'explicit',
+  'plane': 'explicit',
 } as const satisfies InteractionPolicies
 export type SwellAction = keyof typeof swellActions
 
@@ -44,16 +44,20 @@ export function swellGuide(state: Pick<Snapshot, 'gateRepair' | 'residents' | 'i
   const detail = 'After the wet spell the gate leaf has swollen and catches halfway.'
   const finding = checked(state)
   const toolbox = toolboxItem(state)
-  const holding = toolbox?.holder === player.id ? 'You have the toolbox.'
-    : toolbox?.holder !== null && toolbox?.holder !== undefined ? 'Your crewmate has the toolbox.'
-      : toolbox && atGate(toolbox) ? 'The toolbox is set down by the gate.'
-        : toolbox && onBench(toolbox) ? 'The toolbox is on Wren’s mending bench.'
+  const holding = toolbox?.holder === player.id
+    ? 'You have the toolbox.'
+    : toolbox?.holder !== null && toolbox?.holder !== undefined
+      ? 'Your crewmate has the toolbox.'
+      : toolbox && atGate(toolbox)
+        ? 'The toolbox is set down by the gate.'
+        : toolbox && onBench(toolbox)
+          ? 'The toolbox is on Wren’s mending bench.'
           : 'The toolbox was left away from the gate. Talk to Wren to have it put back on the mending bench.'
   if (finding === 'sound') return { title, detail: 'Your crew’s last swing went clear.', next: 'Tell Wren the gate is fixed.' }
   if (finding === 'fault') {
-    return { title, detail: 'Your crew’s last swing caught on the swollen edge.',
-      next: `${holding} Plane the edge at the gate, then swing it again. You can also tell Wren it still catches.` }
+    return { title, detail: 'Your crew’s last swing caught on the swollen edge.', next: `${holding} Plane the edge at the gate, then swing it again. You can also tell Wren it still catches.` }
   }
-  return { title, detail, next: state.gateRepair.swelling === 'planed' ? 'Swing the gate to check the planed edge.'
+  return { title, detail, next: state.gateRepair.swelling === 'planed'
+    ? 'Swing the gate to check the planed edge.'
     : `${holding} Swing the gate to see where it catches.` }
 }

@@ -24,7 +24,10 @@ function dye(values: Values, side: 'left' | 'right') {
 // Two crewmates in plain dyed shirts and caps under the island's real light,
 // for checking that partners stay recognizable at follow-camera and island distance.
 export const dyeLineupStudy: Entry = {
-  id: 'dye-lineup', name: 'Dye lineup', group: 'Wardrobe', source: 'src/assets/recipes/dye-swatches.ts',
+  id: 'dye-lineup',
+  name: 'Dye lineup',
+  group: 'Wardrobe',
+  source: 'src/assets/recipes/dye-swatches.ts',
   description: 'Put two crewmates side by side in dye swatches under the island hour, then let them walk away to judge them from behind.',
   readout: 'Dye lineup',
   duration: walkAway / crewWalkSpeed,

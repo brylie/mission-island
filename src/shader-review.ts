@@ -4,18 +4,29 @@ import type { Engine } from '@babylonjs/core/Engines/engine'
 import '@babylonjs/core/Engines/Extensions/engine.query'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { Scene } from '@babylonjs/core/scene'
+import { fieldReviewCamera, fieldReviewViews } from './assets/recipes/shader-field-review'
 import { fieldStudyControls } from './interactive-shaders/field-controls'
 import { objectiveLayer } from './objective-marker'
 import { shellglassCycle, shellglassTideAt } from './shellglass-tide'
 import type { ShaderQuality } from './shader-studies'
 import { groundHeight, meadowFoot, meadowHill, pool, tidePool, waterLevel } from './terrain'
 
+const { mist, ...reviewViews } = fieldReviewViews
 const sites = {
-  shore: { point: tidePool, height: .20, alpha: -1.97, beta: 1.08, radius: 7.5, hour: 11.5, rain: 0 },
-  meadow: { point: meadowFoot, height: .66, alpha: -1.72, beta: 1.35, radius: 6.5, hour: 15, rain: 0 },
-  paving: { point: { x: 40, z: 8.24 }, height: .12, alpha: -.19, beta: 1.47, radius: 10, hour: 12, rain: .65 },
-  mist: { point: { x: pool.x, z: pool.z - 2 }, height: .84, alpha: .09, beta: 1.46, radius: 17, hour: 6.6, rain: 0 },
+  shore: { point: tidePool, ...reviewViews.shore },
+  meadow: { point: meadowFoot, ...reviewViews.meadow },
+  paving: reviewViews.paving,
+  mist: { point: { x: pool.x, z: pool.z + mist.zOffset }, ...mist },
 }
+
+const median = 0.5
+const upperPercentile = 0.95
+const displayedDecimalPlaces = 2
+const percentScale = 100
+const warmupFrames = 45
+const sampleFrames = 120
+const nanosecondsPerMillisecond = 1e6
+const frozenShaderTime = 7
 
 interface Measurement {
   warmup: number
@@ -28,13 +39,13 @@ interface Measurement {
 function describe(samples: number[]) {
   if (!samples.length) return 'unavailable'
   samples.sort((a, b) => a - b)
-  return [0.5, 0.95].map(p => samples[Math.ceil(p * samples.length) - 1].toFixed(2)).join(' / ') + ' ms'
+  return [median, upperPercentile].map((p) => samples[Math.ceil(p * samples.length) - 1].toFixed(displayedDecimalPlaces)).join(' / ') + ' ms'
 }
 
 function keepCameraAboveTerrain(camera: ArcRotateCamera) {
   camera.getViewMatrix()
   const eye = camera.position
-  const floor = Math.max(waterLevel, groundHeight(eye)) + .28
+  const floor = Math.max(waterLevel, groundHeight(eye)) + fieldReviewCamera.terrainClearance
   if (eye.y < floor) {
     camera.beta = Math.max(camera.lowerBetaLimit ?? 0, Math.acos(Math.min(1, (floor - camera.target.y) / camera.radius)))
     camera.getViewMatrix()
@@ -42,14 +53,14 @@ function keepCameraAboveTerrain(camera: ArcRotateCamera) {
 }
 
 function createFieldCamera(scene: Scene) {
-  const camera = new ArcRotateCamera('Shader field camera', 0, 1.1, 9, Vector3.Zero(), scene)
-  camera.minZ = .065
-  camera.maxZ = 620
-  camera.lowerRadiusLimit = 1.5
+  const camera = new ArcRotateCamera('Shader field camera', 0, fieldReviewCamera.initialBeta, fieldReviewCamera.radius, Vector3.Zero(), scene)
+  camera.minZ = fieldReviewCamera.nearClip
+  camera.maxZ = fieldReviewCamera.farClip
+  camera.lowerRadiusLimit = fieldReviewCamera.minRadius
   camera.layerMask &= ~objectiveLayer
-  camera.lowerBetaLimit = .12
-  camera.upperBetaLimit = Math.PI * .49
-  camera.wheelDeltaPercentage = .06
+  camera.lowerBetaLimit = fieldReviewCamera.minBeta
+  camera.upperBetaLimit = Math.PI * fieldReviewCamera.maxBetaHalfTurns
+  camera.wheelDeltaPercentage = fieldReviewCamera.wheelDelta
   camera.panningSensibility = 0
   camera.inputs.removeByType('ArcRotateCameraKeyboardMoveInput')
   return camera
@@ -87,15 +98,15 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
 
   function setMeadowTarget() {
     const start = sites.meadow.point
-    const fraction = meadowWalk.valueAsNumber / 100
+    const fraction = meadowWalk.valueAsNumber / percentScale
     const x = start.x + (meadowHill.x - start.x) * fraction
     const z = start.z + (meadowHill.z - start.z) * fraction
     camera.target.set(x, groundHeight({ x, z }) + sites.meadow.height, z)
     // Gain a little altitude as the viewpoint climbs the slope.
-    camera.beta = sites.meadow.beta - fraction * .2
+    camera.beta = sites.meadow.beta - fraction * fieldReviewCamera.meadowWalkTilt
   }
 
-  const tideClock = () => tidePhase.valueAsNumber / 100 * shellglassCycle
+  const tideClock = () => tidePhase.valueAsNumber / percentScale * shellglassCycle
   function labelTide() {
     tidePhase.setAttribute('aria-valuetext', `${shellglassTideAt(tideClock()).phase}, ${tidePhase.value}% of cycle`)
   }
@@ -119,13 +130,13 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
     camera.alpha = alpha
     camera.beta = beta
     camera.radius = radius
-    camera.upperRadiusLimit = site === 'meadow' ? 42 : radius * 4
+    camera.upperRadiusLimit = site === 'meadow' ? fieldReviewCamera.meadowMaxRadius : radius * fieldReviewCamera.maxRadiusMultiplier
     camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0
     meadowWalk.value = '0'
     camera.attachControl(canvas, false)
   }
 
-  siteSelect.value = [...siteSelect.options].some(option => option.value === initialSite) ? initialSite : 'shore'
+  siteSelect.value = [...siteSelect.options].some((option) => option.value === initialSite) ? initialSite : 'shore'
   frameSite()
   labelTide()
   panel.hidden = false
@@ -150,9 +161,9 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
   document.addEventListener('visibilitychange', cancelMeasurement, events)
   measure.addEventListener('click', () => {
     if (gpuSupported) engine.captureGPUFrameTime(true)
-    stats = { warmup: 45, intervals: [], render: [], gpu: [], lastGpuSample: gpuCounter.count }
+    stats = { warmup: warmupFrames, intervals: [], render: [], gpu: [], lastGpuSample: gpuCounter.count }
     lastFrameAt = 0
-    output.value = 'Warming up, then sampling 120 frames…'
+    output.value = `Warming up, then sampling ${sampleFrames} frames…`
   }, events)
 
   return {
@@ -164,8 +175,7 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
       const { hour, rain } = view
       scene.activeCamera = camera
       keepCameraAboveTerrain(camera)
-      return { camera, time: freeze.checked || stats ? 7 : time, weather: { hour, rain },
-        tideTime: site === 'shore' ? tideClock() : undefined, inspection: studies.inspection() }
+      return { camera, time: freeze.checked || stats ? frozenShaderTime : time, weather: { hour, rain }, tideTime: site === 'shore' ? tideClock() : undefined, inspection: studies.inspection() }
     },
     render() {
       const start = stats ? performance.now() : 0
@@ -178,12 +188,12 @@ export function createShaderReview(scene: Scene, canvas: HTMLCanvasElement, engi
       stats.intervals.push(interval)
       stats.render.push(renderMs)
       if (gpuSupported && gpuCounter.count > stats.lastGpuSample) {
-        stats.gpu.push(gpuCounter.current / 1e6)
+        stats.gpu.push(gpuCounter.current / nanosecondsPerMillisecond)
         stats.lastGpuSample = gpuCounter.count
       }
-      if (stats.intervals.length < 120) return
+      if (stats.intervals.length < sampleFrames) return
       const frame = describe(stats.intervals), cpu = describe(stats.render), gpu = describe(stats.gpu)
-      output.value = `${qualitySelect.selectedOptions[0].text} · ${engine.getRenderWidth()} × ${engine.getRenderHeight()} · 120 frames\n`
+      output.value = `${qualitySelect.selectedOptions[0].text} · ${engine.getRenderWidth()} × ${engine.getRenderHeight()} · ${sampleFrames} frames\n`
         + `p50 / p95 · Frame ${frame} · CPU render ${cpu} · GPU ${gpu}`
       stats = undefined
       if (gpuSupported) engine.captureGPUFrameTime(false)

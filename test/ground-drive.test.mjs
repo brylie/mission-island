@@ -21,13 +21,15 @@ test('ground drive uses the supplied wheel layout and steering tuning', () => {
   const drive = createGroundDrive(world, chassis, specification, 0.75, heightAt)
   const parked = drive.park({ x: 0, z: 0, heading: 0 })
   assert.deepEqual(terrainSamples, [
-    { x: -1.6, z: 2.1 }, { x: 1.6, z: 2.1 },
-    { x: -1.6, z: -2.4 }, { x: 1.6, z: -2.4 },
+    { x: -1.6, z: 2.1 },
+    { x: 1.6, z: 2.1 },
+    { x: -1.6, z: -2.4 },
+    { x: 1.6, z: -2.4 },
   ])
   assert.equal(parked.y, specification.parkedClearance)
   assert.equal(parked.suspension.length, 4)
   const wheelHeight = specification.wheels.radius - specification.parkedClearance
-  assert.ok(parked.suspension.every(height => Math.abs(height - wheelHeight) < 1e-12))
+  assert.ok(parked.suspension.every((height) => Math.abs(height - wheelHeight) < 1e-12))
 
   drive.applyInput({ x: 0.5, z: 0, careful: true }, 0.125)
   assert.equal(drive.finishStep(parked).steering, 0.06)

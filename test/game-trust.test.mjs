@@ -21,8 +21,8 @@ import { player, setup, tokens } from './support/game-harness.mjs'
 const at = (hour, day = 0) => day * daySeconds + ((hour - 6 + 24) % 24) * daySeconds / 24
 const WREN = starterResidents.indexOf(wren)
 const toolboxId = itemStarts.findIndex(({ kind }) => kind === 'toolbox')
-const byWren = { x: mendingBench.x - 2.1, z: mendingBench.z + .8 }
-const atTheGate = { x: gateway.x, z: fenceZ - .9 }
+const byWren = { x: mendingBench.x - 2.1, z: mendingBench.z + 0.8 }
+const atTheGate = { x: gateway.x, z: fenceZ - 0.9 }
 const choose = (client, action, subject) => client.request('interact', { choice: { action, ...subject !== undefined && { subject } } })
 const has = (client, action) => interactions(client.state, client.player).some((option) => option.action === action)
 const notices = (client, type) => client.messages.filter((message) => message.type === type)
@@ -202,7 +202,7 @@ test('the swollen-gate guide says where the toolbox really is, and how to get it
   const { a } = crew(t, { record: { active: 'wren-swell' }, swelling: 'swollen' })
   const where = (toolbox) => swellGuide({ ...a.state, items: a.state.items.map((item, id) => id === toolboxId ? { ...item, ...toolbox } : item) }, a.player).next
   assert.match(where({}), /set down by the gate/)
-  assert.match(where({ x: mendingBench.x, z: mendingBench.z + .42 }), /on Wren’s mending bench/)
+  assert.match(where({ x: mendingBench.x, z: mendingBench.z + 0.42 }), /on Wren’s mending bench/)
   assert.match(where({ x: 0, z: 0 }), /left away from the gate\. Talk to Wren/)
   assert.match(where({ holder: 1 }), /Your crewmate has the toolbox/)
 })

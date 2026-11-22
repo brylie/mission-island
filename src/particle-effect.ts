@@ -1,11 +1,14 @@
 import { Sprite } from '@babylonjs/core/Sprites/sprite'
 import { SpriteManager } from '@babylonjs/core/Sprites/spriteManager'
 import type { Scene } from '@babylonjs/core/scene'
-import { launchParticle, particleAppearance, particleDensity, particleHeight } from './particle-motion'
+import { launchParticle, maxParticleStrength, particleAppearance, particleDensity, particleHeight } from './particle-motion'
 import type { Particle, ParticleSource, ParticleTuning } from './particle-motion'
-import { particleTextureSize, createParticleTexture } from './particle-texture'
+import { particleTextureSize, createParticleTexture } from './assets/particle-texture'
 import { createSurfaceParticles } from './particle-surface'
-import type { ParticleRecipe } from './particle-recipes'
+import type { ParticleRecipe } from './assets/recipes/particle-recipes'
+
+const spareParticles = 2
+const maxStreamDeltaSeconds = 0.08
 
 function createBillboards(scene: Scene, name: string, recipe: ParticleRecipe, capacity: number) {
   const manager = new SpriteManager(name, '', capacity, particleTextureSize, scene)
@@ -31,7 +34,7 @@ function createBillboards(scene: Scene, name: string, recipe: ParticleRecipe, ca
 }
 
 export function createParticleEffect(scene: Scene, name: string, recipe: ParticleRecipe, seed: number) {
-  const capacity = Math.ceil(recipe.rate * 2 * recipe.life[1]) + 2
+  const capacity = Math.ceil(recipe.rate * maxParticleStrength * recipe.life[1]) + spareParticles
   const pool = recipe.surface ? createSurfaceParticles(scene, name, recipe, capacity) : createBillboards(scene, name, recipe, capacity)
   const [r, g, b] = recipe.color
   const [fadeR, fadeG, fadeB] = recipe.fadeTo ?? recipe.color
@@ -67,7 +70,7 @@ export function createParticleEffect(scene: Scene, name: string, recipe: Particl
       let first = 0
       while (first < live.length && live[first].birth + recipe.life[1] <= time) first++
       if (first) live.splice(0, first)
-      const delta = Math.min(.08, Math.max(0, time - previous))
+      const delta = Math.min(maxStreamDeltaSeconds, Math.max(0, time - previous))
       previous = time
       if (source && tuning.strength > 0) {
         const density = particleDensity(recipe, tuning)
@@ -77,7 +80,8 @@ export function createParticleEffect(scene: Scene, name: string, recipe: Particl
           live.push(launchParticle(recipe, seed, sequence++, birth, source, tuning))
         }
         carry = emitted % 1
-      } else carry = 0
+      }
+      else carry = 0
       return draw(time, live)
     },
   }

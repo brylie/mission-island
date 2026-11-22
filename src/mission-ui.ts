@@ -2,6 +2,9 @@ import { updateFarmHud } from './farm-order-ui'
 import { missionCard } from './mission-card'
 import type { Snapshot } from './protocol'
 
+const percentProgressMax = 100
+const percentProgressSegments = 3
+
 export function createMissionHud(element: (id: string) => HTMLElement, boardButton: HTMLElement, spray: HTMLElement) {
   const missionLabel = element('mission-label')
   const missionTitle = element('mission-title')
@@ -21,7 +24,7 @@ export function createMissionHud(element: (id: string) => HTMLElement, boardButt
     progress.setAttribute('aria-valuemax', String(card.max))
     progress.setAttribute('aria-valuenow', String(card.value))
     progressLabel.textContent = card.text
-    const count = card.max === 100 ? 3 : card.max
+    const count = card.max === percentProgressMax ? percentProgressSegments : card.max
     segments.forEach((segment, index) => {
       segment.toggleAttribute('hidden', index >= count)
       segment.classList.toggle('active', card.value >= (index + 1) * card.max / count)

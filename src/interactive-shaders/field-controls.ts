@@ -21,11 +21,13 @@ export function fieldStudyControls(panel: HTMLElement, siteSelect: HTMLSelectEle
 
   input.addEventListener('input', changed, events)
   baseline.addEventListener('click', () => setValue(0), events)
-  preset.addEventListener('click', () => { if (selected) setValue(selected.value) }, events)
+  preset.addEventListener('click', () => {
+    if (selected) setValue(selected.value)
+  }, events)
 
   return {
     select(id: string) {
-      selected = interactiveStudies.find(study => study.id === id)
+      selected = interactiveStudies.find((study) => study.id === id)
       controls.hidden = !selected
       if (!selected) return
       heading.textContent = selected.control

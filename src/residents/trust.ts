@@ -26,11 +26,12 @@ export interface ResidentRecord {
 
 export type ResidentRecords = Record<string, ResidentRecord>
 
-export interface FavorReceipt { resident: string; favor: string; coins: number }
+export interface FavorReceipt { resident: string, favor: string, coins: number }
 
 // One breach costs the confidence of two kept favors, and two later favors win it back.
 const breachCost = 2
 export const rebuildFavors = 2
+const trustedThreshold = 3
 
 export function blankRecord(): ResidentRecord {
   return { trust: 0, kept: [], active: null, checked: null, breach: null, forgiven: 0 }
@@ -41,7 +42,7 @@ export function initialResidents(registry: readonly ResidentDefinition[]): Resid
 }
 
 export function trustTier(trust: number): TrustTier {
-  return trust >= 3 ? 'trusted' : trust >= 1 ? 'familiar' : 'stranger'
+  return trust >= trustedThreshold ? 'trusted' : trust >= 1 ? 'familiar' : 'stranger'
 }
 
 export function standingOf(record: Pick<ResidentRecord, 'breach'>): Standing {
@@ -64,7 +65,8 @@ export function keepFavor(state: Ledger, resident: ResidentDefinition, favor: Fa
   if (breach && !breach.amended && breach.favor === favor.id) {
     breach.amended = true
     trust = 0
-  } else if (breach?.amended && ++breach.rebuilt >= rebuildFavors) {
+  }
+  else if (breach?.amended && ++breach.rebuilt >= rebuildFavors) {
     record.breach = null
     record.forgiven++
     trust += 1

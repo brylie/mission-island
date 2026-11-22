@@ -1,4 +1,5 @@
-import type { ParticleRecipe } from './particle-recipes.ts'
+import { particleMotionStyle } from './assets/effects/particle-motion.ts'
+import type { ParticleRecipe } from './assets/recipes/particle-recipes.ts'
 import { seededRandom } from './seeded-random.ts'
 
 export interface ParticleSource {
@@ -10,7 +11,7 @@ export interface ParticleSource {
   floor?: number
   ceiling?: number
   speed?: number
-  orbit?: { x: number; z: number; angularSpeed: number; peelAfter: number }
+  orbit?: { x: number, z: number, angularSpeed: number, peelAfter: number }
 }
 
 export interface ParticleTuning {
@@ -22,17 +23,21 @@ export interface ParticleTuning {
 export type ParticleOrigin = (birth: number, index: number) => ParticleSource | undefined
 
 const between = (a: number, b: number, t: number) => a + (b - a) * t
+const half = 0.5
+const signedRandomSpan = 2
+const particleSeedStride = 0x9e3779b9
+const fullTurn = Math.PI + Math.PI
+export const maxParticleStrength = 2
 
 function floorBounce(floor: number | undefined, restitution: number | undefined, y: number, vy: number, ay: number) {
   if (floor === undefined || !restitution || ay >= 0) return
-  const incoming = Math.sqrt(vy * vy - 2 * ay * Math.max(0, y - floor))
+  const incoming = Math.sqrt(vy * vy - (ay + ay) * Math.max(0, y - floor))
   return { time: (vy + incoming) / -ay, speed: incoming * restitution, floor }
 }
 
-export function launchParticle(recipe: ParticleRecipe, seed: number, index: number,
-  birth: number, source: ParticleSource, tuning: ParticleTuning) {
-  const random = seededRandom(seed ^ Math.imul(index + 1, 0x9e3779b9))
-  const signed = () => 2 * random() - 1
+export function launchParticle(recipe: ParticleRecipe, seed: number, index: number, birth: number, source: ParticleSource, tuning: ParticleTuning) {
+  const random = seededRandom(seed ^ Math.imul(index + 1, particleSeedStride))
+  const signed = () => signedRandomSpan * random() - 1
   const { spread, velocity, variation, acceleration } = recipe
   const { footprint, wind = 0 } = tuning
   const yaw = source.yaw ?? 0
@@ -50,14 +55,27 @@ export function launchParticle(recipe: ParticleRecipe, seed: number, index: numb
   const vy = up * forward + vz * rise
   const y = source.y + oy
   return {
-    birth, life: between(...recipe.life, random()), floor: source.floor ?? -Infinity, ceiling: source.ceiling ?? Infinity,
-    x: source.x + ox * cos + oz * sin, y, z: source.z - ox * sin + oz * cos,
-    vx: vx * cos + along * sin, vy, vz: -vx * sin + along * cos,
-    yaw, orbit: source.orbit, adhesion: recipe.adhesion ?? 0,
+    birth,
+    life: between(...recipe.life, random()),
+    floor: source.floor ?? -Infinity,
+    ceiling: source.ceiling ?? Infinity,
+    x: source.x + ox * cos + oz * sin,
+    y,
+    z: source.z - ox * sin + oz * cos,
+    vx: vx * cos + along * sin,
+    vy,
+    vz: -vx * sin + along * cos,
+    yaw,
+    orbit: source.orbit,
+    adhesion: recipe.adhesion ?? 0,
     bounce: floorBounce(source.floor, recipe.bounce, y, vy, acceleration[1]),
-    ax: acceleration[0] * cos + acceleration[2] * sin, ay: acceleration[1], az: -acceleration[0] * sin + acceleration[2] * cos,
-    size: between(...recipe.size, random()) * (recipe.surface === 'ground' ? footprint : 1), phase: random() * Math.PI * 2, spin: signed() * (recipe.spin ?? 0),
-    tilt: (recipe.tilt ?? 0) + (recipe.wind ?? 0) * wind * .08,
+    ax: acceleration[0] * cos + acceleration[2] * sin,
+    ay: acceleration[1],
+    az: -acceleration[0] * sin + acceleration[2] * cos,
+    size: between(...recipe.size, random()) * (recipe.surface === 'ground' ? footprint : 1),
+    phase: random() * fullTurn,
+    spin: signed() * (recipe.spin ?? 0),
+    tilt: (recipe.tilt ?? 0) + (recipe.wind ?? 0) * wind * particleMotionStyle.windTilt,
   }
 }
 
@@ -68,21 +86,20 @@ export function particleHeight(particle: Particle, age: number) {
   const bounce = particle.bounce
   if (bounce && moving >= bounce.time) {
     const rebound = moving - bounce.time
-    return bounce.floor + rebound * (bounce.speed + rebound * particle.ay / 2)
+    return bounce.floor + rebound * (bounce.speed + rebound * particle.ay * half)
   }
-  return particle.y + moving * (particle.vy + moving * particle.ay / 2)
+  return particle.y + moving * (particle.vy + moving * particle.ay * half)
 }
 
 export function particleDensity(recipe: ParticleRecipe, tuning: ParticleTuning) {
-  return recipe.rate * Math.max(0, Math.min(2, tuning.strength))
+  return recipe.rate * Math.max(0, Math.min(maxParticleStrength, tuning.strength))
 }
 
-export function particleBurst(recipe: ParticleRecipe, seed: number, start: number, stop: number, tuning: ParticleTuning,
-  sourceAt: ParticleOrigin) {
+export function particleBurst(recipe: ParticleRecipe, seed: number, start: number, stop: number, tuning: ParticleTuning, sourceAt: ParticleOrigin) {
   const density = particleDensity(recipe, tuning)
   const particles: Particle[] = []
   for (let index = 0; index < (stop - start) * density; index++) {
-    const birth = start + (index + .5) / density
+    const birth = start + (index + half) / density
     if (birth >= stop) break
     const source = sourceAt(birth, index)
     if (source) particles.push(launchParticle(recipe, seed, index, birth, source, tuning))
@@ -92,8 +109,8 @@ export function particleBurst(recipe: ParticleRecipe, seed: number, start: numbe
 
 export function particleLoop(recipe: ParticleRecipe, seed: number, duration: number, source: ParticleSource) {
   const cycle = particleBurst(recipe, seed, 0, duration, { strength: 1, footprint: 1 }, () => source)
-  const carryover = cycle.filter(particle => particle.birth + particle.life > duration)
-    .map(particle => ({ ...particle, birth: particle.birth - duration }))
+  const carryover = cycle.filter((particle) => particle.birth + particle.life > duration)
+    .map((particle) => ({ ...particle, birth: particle.birth - duration }))
   return [...carryover, ...cycle]
 }
 
@@ -103,23 +120,24 @@ function orbitPosition(particle: Particle, orbit: NonNullable<ParticleSource['or
   const dx = particle.x - x, dz = particle.z - z
   const across = Math.cos(arc) * dx - Math.sin(arc) * dz
   const downstream = Math.sin(arc) * dx + Math.cos(arc) * dz
-  const peel = Math.max(0, age - orbit.peelAfter) * orbit.angularSpeed * .73
+  const peel = Math.max(0, age - orbit.peelAfter) * orbit.angularSpeed * particleMotionStyle.orbitPeel
   return { x: x + across - downstream * peel, z: z + downstream + across * peel }
 }
 
 export function particleAppearance(recipe: ParticleRecipe, particle: Particle, age: number, y: number) {
   const progress = age / particle.life
-  const flutter = (recipe.flutter ?? 0) * Math.sin(age * 7 + particle.phase) * Math.min(1, age * 4)
+  const { flutter: sway, wingbeat, reboundTravel, stretchStartsAt } = particleMotionStyle
+  const flutter = (recipe.flutter ?? 0) * Math.sin(age * sway.frequency + particle.phase) * Math.min(1, age * sway.ramp)
   const start = particle.orbit ? orbitPosition(particle, particle.orbit, age) : particle
   const bounce = particle.bounce
-  const travel = bounce ? Math.min(age, bounce.time) + Math.max(0, age - bounce.time) * .6 : age
+  const travel = bounce ? Math.min(age, bounce.time) + Math.max(0, age - bounce.time) * reboundTravel : age
   return {
-    x: start.x + travel * (particle.vx + age * particle.ax / 2) + flutter,
+    x: start.x + travel * (particle.vx + age * particle.ax * half) + flutter,
     y,
-    z: start.z + travel * (particle.vz + age * particle.az / 2) + flutter * .42,
+    z: start.z + travel * (particle.vz + age * particle.az * half) + flutter * sway.crossAxis,
     size: particle.size * between(1, recipe.growth, progress),
-    stretch: 1 + (recipe.stretch ?? 0) * Math.max(0, progress - .24),
-    widthScale: recipe.wingbeat ? .31 + .69 * Math.abs(Math.cos(age * recipe.wingbeat + particle.phase)) : 1,
+    stretch: 1 + (recipe.stretch ?? 0) * Math.max(0, progress - stretchStartsAt),
+    widthScale: recipe.wingbeat ? wingbeat.minimumWidth + wingbeat.widthVariation * Math.abs(Math.cos(age * recipe.wingbeat + particle.phase)) : 1,
     yaw: particle.yaw,
     angle: particle.tilt + (recipe.spin ? particle.phase + particle.spin * age : 0),
     alpha: recipe.opacity * Math.min(1, progress / recipe.fadeIn) * (1 - progress),

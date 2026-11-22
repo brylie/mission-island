@@ -12,7 +12,7 @@ import { flatbedGroundDrive } from '../src/vehicles/flatbed.ts'
 import { buildings, distance, ferryTerminal, harborDock, mendingBench, offset, truckStart, wrenCottage } from '../src/world.ts'
 import { ferryYard, inFerryYard, rampDeck, tallyBoard, yardDrop } from '../src/worlds/starter/ferry-terminal.ts'
 
-const roadEdge = 3 + .7 // half the asphalt plus the gravel shoulder
+const roadEdge = 3 + 0.7 // half the asphalt plus the gravel shoulder
 const grass = shoreProfile[1].radius
 
 test('Harbor Depot road straightens before the yard and runs onto the ferry ramp on one alignment', () => {
@@ -20,12 +20,12 @@ test('Harbor Depot road straightens before the yard and runs onto the ferry ramp
   assert.equal(harborRoad[1].x, ferryTerminal.x, 'the ramp lane is one straight segment on the terminal centreline')
   assert.ok(harborRoad[1].z >= ferryYard.maxZ, 'the straight begins before the yard entrance')
   assert.ok(harborRoad.at(-1).x > 50, 'the road still reaches Seabrook')
-  assert.ok(distanceToRoute(depotJunction, harborRoad) < .01, 'the depot lane meets Harbor Depot road')
+  assert.ok(distanceToRoute(depotJunction, harborRoad) < 0.01, 'the depot lane meets Harbor Depot road')
   assert.equal(depotLane.at(-1), depotJunction)
 })
 
 test('the freight yard sits beside the lane, clear of buildings, scenery and the fishing dock', () => {
-  assert.ok(ferryYard.minX >= ferryTerminal.x + roadEdge - .01, 'the yard leaves the ramp lane clear')
+  assert.ok(ferryYard.minX >= ferryTerminal.x + roadEdge - 0.01, 'the yard leaves the ramp lane clear')
   for (const x of [ferryYard.minX, ferryYard.maxX]) for (const z of [ferryYard.minZ, ferryYard.maxZ]) {
     assert.ok(coastRadius({ x, z }) <= grass, `yard corner on grass: ${x}, ${z}`)
   }
@@ -40,14 +40,13 @@ test('the freight yard sits beside the lane, clear of buildings, scenery and the
 })
 
 test('the tally board and Wren’s bench stand beside the road, not in it', () => {
-  assert.ok(Math.abs(tallyBoard.x - ferryTerminal.x) > ferryTerminal.width / 2 + .7, 'the tally board is outside the barrier span')
+  assert.ok(Math.abs(tallyBoard.x - ferryTerminal.x) > ferryTerminal.width / 2 + 0.7, 'the tally board is outside the barrier span')
   assert.ok(distanceToRoads(tallyBoard) > roadEdge, 'the tally board stands on the verge')
-  assert.ok(distanceToRoads(mendingBench) > roadEdge + .8, 'Wren’s bench stands back from the shoulder')
+  assert.ok(distanceToRoads(mendingBench) > roadEdge + 0.8, 'Wren’s bench stands back from the shoulder')
   assert.ok(!inFerryYard(mendingBench), 'Wren’s bench is outside the turning space')
   for (const site of [tallyBoard, mendingBench]) assert.ok(coastRadius(site) <= grass, `on grass: ${site.x}, ${site.z}`)
   const { x, z, w, d } = wrenCottage
-  assert.ok(harborRoad.every((point) => Math.abs(point.x - x) > w / 2 + roadEdge + 2 || Math.abs(point.z - z) > d / 2 + roadEdge + 2),
-    'the curve to Seabrook passes clear of Wren’s garden')
+  assert.ok(harborRoad.every((point) => Math.abs(point.x - x) > w / 2 + roadEdge + 2 || Math.abs(point.z - z) > d / 2 + roadEdge + 2), 'the curve to Seabrook passes clear of Wren’s garden')
 })
 
 test('the barrier stops the flatbed before restoration; afterwards it drives straight onto the ramp and stops dry', () => {
@@ -61,10 +60,10 @@ test('the barrier stops the flatbed before restoration; afterwards it drives str
     return truck
   }
   const blocked = drive(closed)
-  assert.ok(blocked.z > ferryTerminal.z && Math.abs(blocked.x - ferryTerminal.x) < .5, `stopped before the barrier at ${blocked.z}`)
+  assert.ok(blocked.z > ferryTerminal.z && Math.abs(blocked.x - ferryTerminal.x) < 0.5, `stopped before the barrier at ${blocked.z}`)
   const ramp = drive(restored)
   assert.ok(ramp.z < rampDeck.near - 5, `drove onto the deck to ${ramp.z}`)
-  assert.ok(ramp.y > waterLevel && Math.abs(ramp.x - ferryTerminal.x) < .5 && Math.abs(ramp.speed) < .2)
+  assert.ok(ramp.y > waterLevel && Math.abs(ramp.x - ferryTerminal.x) < 0.5 && Math.abs(ramp.speed) < 0.2)
   assert.ok(deckTop(offset(ramp, 0, 1.9)) > -Infinity || deckTop(ramp) > -Infinity, 'the shore check stops it on the deck')
 })
 
@@ -79,6 +78,6 @@ test('the crew walks the restored deck without wading, and the barrier blocks th
   }
   assert.ok(walker({ ferryRepair: { stage: 2, ledger: [], haul: 0 } }, ferryTerminal.z + 2).z > ferryTerminal.z)
   const out = walker({ ferryRepair: { stage: 3, ledger: [], haul: 0 } }, rampDeck.near + 1, 38)
-  assert.ok(out.z < rampDeck.far + 4 && groundHeight(out) < waterLevel - .5, 'out over deep water')
-  assert.ok(!out.swimming && Math.abs(out.y - deckTop(out)) < .01, JSON.stringify(out))
+  assert.ok(out.z < rampDeck.far + 4 && groundHeight(out) < waterLevel - 0.5, 'out over deep water')
+  assert.ok(!out.swimming && Math.abs(out.y - deckTop(out)) < 0.01, JSON.stringify(out))
 })

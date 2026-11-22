@@ -7,15 +7,23 @@ import { footSurface } from './surface.ts'
 import { createSurfPlayer, swellSeed, swellVariants } from './surf-player.ts'
 import { surfVoices } from './shore.ts'
 
+const softFootstepStrength = 0.15
+const mediumFootstepStrength = 0.5
+const firmFootstepStrength = 0.85
+const clearWeatherSurfStrength = 0.42
+const rainSurfStrengthGain = 0.4
+const footfallEmitterLiftMetres = 0.1
+const localFootstepGain = 0.7
+
 export type CrateImpactNotice = Extract<ServerMessage, { type: 'crate-impact' }>
 
 const variants = 4
 // Walking pace in metres per second, where footsteps reach full strength.
 const brisk = 12
 // One level inside each strength tier, used to render every variant ahead of need.
-const tierLevels = [0.15, 0.5, 0.85]
+const tierLevels = [softFootstepStrength, mediumFootstepStrength, firmFootstepStrength]
 
-const surfStrength = (rain: number) => 0.42 + Math.min(1, Math.max(0, rain)) * 0.4
+const surfStrength = (rain: number) => clearWeatherSurfStrength + Math.min(1, Math.max(0, rain)) * rainSurfStrengthGain
 
 // Every footstep, crate and current surf variant, rendered in the background once audio starts,
 // so no cue in play waits on a buffer.
@@ -82,7 +90,7 @@ export function createIslandAudio(target: Window = window) {
       const count = (steps.get(player.id) ?? 0) + 1
       steps.set(player.id, count)
       const cue = footstepCue({ surface, strength: Math.min(1, speed / brisk) }, count % variants)
-      engine.play(cue, { position: { x: point.x, y: point.y + 0.1, z: point.z }, gain: own ? 0.7 : 1 })
+      engine.play(cue, { position: { x: point.x, y: point.y + footfallEmitterLiftMetres, z: point.z }, gain: own ? localFootstepGain : 1 })
     },
     // Per frame: the listener follows the camera, and rain raises the surf.
     frame(position: Point3, forward: Point3, weatherRain: number, delta: number) {

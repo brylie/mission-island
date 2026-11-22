@@ -3,17 +3,21 @@ import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import { createFoxglove } from '../assets/foxglove'
 import { createOystercatcher } from '../assets/oystercatcher'
+import { coastalFlowerPatch, coastalForagers } from '../assets/recipes/workbench-coastal-patch'
 import { seededRandom } from '../seeded-random'
 import type { BiomeRecipe } from '../biome-recipe'
 import type { Point } from '../world'
+
+const minimumMergeParts = 2
+const halves = 2
 
 // Batch only pieces with a common pivot and material. The spike can still sway independently.
 function batchFlowers(meshes: MeshFactory, root: TransformNode) {
   for (const pivot of [root, ...root.getChildTransformNodes(true)]) {
     const parts = pivot.getChildMeshes(true).filter((m): m is Mesh => m instanceof Mesh)
-    for (const material of new Set(parts.map(m => m.material))) {
-      const group = parts.filter(m => m.material === material)
-      if (group.length < 2) continue
+    for (const material of new Set(parts.map((m) => m.material))) {
+      const group = parts.filter((m) => m.material === material)
+      if (group.length < minimumMergeParts) continue
       const merged = Mesh.MergeMeshes(group, false)
       if (!merged) continue
       for (const part of group) {
@@ -28,21 +32,23 @@ function batchFlowers(meshes: MeshFactory, root: TransformNode) {
 }
 
 export function createCoastalPatch(meshes: MeshFactory, recipe: BiomeRecipe) {
-  const flowers = seededRandom(recipe.seed + 76123)
+  const patch = coastalFlowerPatch
+  const { seedOffset, home: habitat, separation: spacing, roaming, limits, walker: visitor, gait } = coastalForagers
+  const flowers = seededRandom(recipe.seed + patch.seedOffset)
   const plants = Array.from({ length: recipe.foxgloves }, (_, i) => {
-    const plant = createFoxglove(meshes, recipe.seed * 37 + i)
+    const plant = createFoxglove(meshes, recipe.seed * patch.seedStride + i)
     batchFlowers(meshes, plant.root)
-    const theta = flowers() * Math.PI * 2, r = Math.sqrt(flowers()) * 1.75
-    plant.root.position.set((i % 2 ? -2.3 : 2.3) + Math.cos(theta) * r, 0, Math.sin(theta) * r - 1 + i % 2 * 2)
+    const theta = flowers() * Math.PI * halves, r = Math.sqrt(flowers()) * patch.radius
+    plant.root.position.set((i % halves ? -patch.sideOffset : patch.sideOffset) + Math.cos(theta) * r, 0, Math.sin(theta) * r + patch.z + i % halves * patch.rowSpacing)
     return plant
   })
-  const random = seededRandom(recipe.seed + 83271)
+  const random = seededRandom(recipe.seed + seedOffset)
   const flock = Array.from({ length: recipe.oystercatchers }, () => {
     const bird = createOystercatcher(meshes)
-    const theta = random() * Math.PI * 2, r = Math.sqrt(random()) * 2.25
-    const home = { x: Math.cos(theta) * r, z: 2.4 + Math.sin(theta) * r }
+    const theta = random() * Math.PI * halves, r = Math.sqrt(random()) * habitat.radius
+    const home = { x: Math.cos(theta) * r, z: habitat.z + Math.sin(theta) * r }
     bird.root.position.set(home.x, 0, home.z)
-    const phase = random() * 7
+    const phase = random() * habitat.phaseRange
     bird.root.rotation.y = phase
     return { ...bird, home, phase, stride: 0 }
   })
@@ -52,8 +58,8 @@ export function createCoastalPatch(meshes: MeshFactory, recipe: BiomeRecipe) {
     for (const other of flock) {
       const sx = position.x - other.root.position.x, sz = position.z - other.root.position.z
       const apart = Math.hypot(sx, sz)
-      if (apart > .48 || apart < .001) continue
-      const push = (.48 - apart) / apart * 3
+      if (apart > spacing.range || apart < spacing.minimumDistance) continue
+      const push = (spacing.range - apart) / apart * spacing.gain
       x += sx * push
       z += sz * push
       crowded = true
@@ -65,17 +71,17 @@ export function createCoastalPatch(meshes: MeshFactory, recipe: BiomeRecipe) {
     for (const plant of plants) plant.sway(time)
     const elapsed = time - lastTime
     lastTime = time
-    const dt = Math.min(.12, Math.max(0, elapsed))
+    const dt = Math.min(limits.maxStepSeconds, Math.max(0, elapsed))
     let alert = 0
     for (const bird of flock) {
       const { position, rotation } = bird.root
-      const angle = time * .18 + bird.phase
-      const x = bird.home.x + .55 * Math.sin(time * .24) + .38 * Math.cos(angle)
-      const z = bird.home.z + .36 * Math.cos(time * .20) + .29 * Math.sin(angle)
-      if (elapsed < 0 || elapsed > .5) position.set(x, 0, z)
-      const dx = position.x - (walker?.x ?? 20), dz = position.z - (walker?.z ?? 20)
+      const angle = time * roaming.turnRate + bird.phase
+      const x = bird.home.x + roaming.xDrift * Math.sin(time * roaming.xDriftRate) + roaming.xOrbit * Math.cos(angle)
+      const z = bird.home.z + roaming.zDrift * Math.cos(time * roaming.zDriftRate) + roaming.zOrbit * Math.sin(angle)
+      if (elapsed < 0 || elapsed > limits.seekGapSeconds) position.set(x, 0, z)
+      const dx = position.x - (walker?.x ?? visitor.offstage), dz = position.z - (walker?.z ?? visitor.offstage)
       const distance = Math.hypot(dx, dz)
-      const wary = distance < 2.15
+      const wary = distance < visitor.alertRange
       if (wary) alert++
       let vx = wary ? dx / (distance || 1) : x - position.x
       let vz = wary ? dz / (distance || 1) : z - position.z
@@ -83,17 +89,17 @@ export function createCoastalPatch(meshes: MeshFactory, recipe: BiomeRecipe) {
       vx += separation.x
       vz += separation.z
       const gap = Math.hypot(vx, vz)
-      const stepping = separation.crowded || wary || (gap > .17 && Math.sin(time + bird.phase) > .15)
+      const stepping = separation.crowded || wary || (gap > gait.minimumGap && Math.sin(time + bird.phase) > gait.stepThreshold)
       if (stepping && dt > 0) {
         const target = Math.atan2(vx, vz)
         const turn = Math.atan2(Math.sin(target - rotation.y), Math.cos(target - rotation.y))
-        rotation.y += Math.sign(turn) * Math.min(Math.abs(turn), dt * 4)
-        const step = dt * (wary ? .94 : .34) * Math.max(0, Math.cos(turn))
+        rotation.y += Math.sign(turn) * Math.min(Math.abs(turn), dt * gait.turnSpeed)
+        const step = dt * (wary ? gait.fleeSpeed : gait.walkSpeed) * Math.max(0, Math.cos(turn))
         position.x += step * Math.sin(rotation.y)
         position.z += step * Math.cos(rotation.y)
         const radius = Math.hypot(position.x, position.z)
-        if (radius > 7.55) position.scaleInPlace(7.55 / radius)
-        bird.stride += step * 2.6
+        if (radius > limits.stageRadius) position.scaleInPlace(limits.stageRadius / radius)
+        bird.stride += step * gait.phasePerMetre
       }
       bird.pose(stepping ? bird.stride : time + bird.phase, !stepping, stepping ? 1 : 0)
     }

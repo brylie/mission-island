@@ -15,7 +15,8 @@ function useHomeChest(member: CrewMember) {
   if (!player.inventory.length) {
     player.inventory = [...starterTools]
     player.equipped = 'fishing-rod'
-  } else if (!firstVisit) {
+  }
+  else if (!firstVisit) {
     player.inventory = []
     stowTool(member)
   }
@@ -31,7 +32,7 @@ function turnIn(member: CrewMember) {
 export const homeInteractions: InteractionHandlers<HomeAction> = {
   'open-wardrobe': (member) => member.notify?.({ type: 'open-wardrobe' }),
   'open-clothing-counter': (member) => member.notify?.({ type: 'open-clothing-counter' }),
-  sleep: turnIn,
-  chest: useHomeChest,
+  'sleep': turnIn,
+  'chest': useHomeChest,
   'welcome-note': (member) => member.notify?.({ type: 'crew-note' }),
 }

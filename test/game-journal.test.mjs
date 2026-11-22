@@ -14,7 +14,7 @@ import { player, setup, tokens } from './support/game-harness.mjs'
 const willow = 64, gull = 48
 const bank = { x: mirrorPoolWillow.x + 4, z: mirrorPoolWillow.z }
 const pile = { x: -44, z: -34 }
-const journalWith = notes => ({ ...emptyJournal(), entries: Object.fromEntries(Object.entries(notes).map(([id, first]) => [id, { first }])) })
+const journalWith = (notes) => ({ ...emptyJournal(), entries: Object.fromEntries(Object.entries(notes).map(([id, first]) => [id, { first }])) })
 const record = (client, subject) => client.request('interact', { choice: { action: 'record', subject } })
 
 function saveFile(t) {
@@ -80,7 +80,9 @@ test('walking into a place notes it and its country for the crew, while each map
 })
 
 test('recording by reticle needs the subject in reach, and two records on one tick make one entry', (t) => {
-  const h = setup(t, { players: [player(0, bank), player(1, bank)], arrange: (save) => { save.world.journal = journalWith({ 'biome:pool': { t: 0, by: 0 }, 'place:pool': { t: 0, by: 0 } }) } })
+  const h = setup(t, { players: [player(0, bank), player(1, bank)], arrange: (save) => {
+    save.world.journal = journalWith({ 'biome:pool': { t: 0, by: 0 }, 'place:pool': { t: 0, by: 0 } })
+  } })
   const a = h.join(tokens[0])
   const b = h.join(tokens[1])
   assert.ok(interactions(a.state, a.player).some(({ action, subject }) => action === 'record' && subject === willow))
@@ -110,7 +112,9 @@ test('a resting gull is noted with what it was doing, and a later watcher adds o
   assert.deepEqual(Object.keys(a.state.journal.entries), ['sight:gull', 'sight:gull/resting'])
   assert.equal(a.state.journal.entries['sight:gull/resting']?.first.at, 'dock')
 
-  const seen = setup(t, { players: [player(0, pile)], arrange: (save) => { save.world.journal = journalWith({ 'sight:gull': { t: 0, by: 1 } }) } })
+  const seen = setup(t, { players: [player(0, pile)], arrange: (save) => {
+    save.world.journal = journalWith({ 'sight:gull': { t: 0, by: 1 } })
+  } })
   const c = seen.join(tokens[0])
   assert.ok(interactions(c.state, c.player).some(({ label }) => label === 'Add this behavior to the journal'))
   record(c, gull)
@@ -145,15 +149,12 @@ test('an older save starts its journal from the places its crew found, and a mal
     { token: tokens[2], reserved: false, player: player(0) },
   ]
   file.write(older)
-  assert.deepEqual(createGame({ save: file.load() }).tick().journal,
-    { ...emptyJournal(), entries: { 'place:juniper': {}, 'place:shellglass': {} } })
+  assert.deepEqual(createGame({ save: file.load() }).tick().journal, { ...emptyJournal(), entries: { 'place:juniper': {}, 'place:shellglass': {} } })
 
   const withJournal = (journal) => ({ ...current, islandTime: 100, world: { ...current.world, journal } })
   file.write(withJournal({ 'fish:sand-dab': { t: 100, by: 1, at: 'driftwood' }, 'sight:hare/grazing': { t: 0, by: 0 } }))
   assert.equal(Object.keys(file.load().world.journal.entries).length, 2)
-  for (const journal of [{ 'fish:kraken': { t: 1, by: 0 } }, { 'fish:sand-dab': { t: 101, by: 0 } }, { 'fish:sand-dab': { t: 1.5, by: 0 } },
-    { 'fish:sand-dab': { t: -1, by: 0 } }, { 'fish:sand-dab': { t: 1, by: 2 } }, { 'fish:sand-dab': { t: 1, by: .5 } },
-    { 'fish:sand-dab': { t: 1, by: 0, at: 'atlantis' } }, { 'fish:sand-dab': { t: 1, by: 0, at: 4 } }, { 'fish:sand-dab': 'caught' }, ['fish:sand-dab']]) {
+  for (const journal of [{ 'fish:kraken': { t: 1, by: 0 } }, { 'fish:sand-dab': { t: 101, by: 0 } }, { 'fish:sand-dab': { t: 1.5, by: 0 } }, { 'fish:sand-dab': { t: -1, by: 0 } }, { 'fish:sand-dab': { t: 1, by: 2 } }, { 'fish:sand-dab': { t: 1, by: 0.5 } }, { 'fish:sand-dab': { t: 1, by: 0, at: 'atlantis' } }, { 'fish:sand-dab': { t: 1, by: 0, at: 4 } }, { 'fish:sand-dab': 'caught' }, ['fish:sand-dab']]) {
     file.write(withJournal(journal))
     assert.throws(() => file.load(), /Could not load island save/)
   }
@@ -181,13 +182,13 @@ test('both PR save formats load and rewrite as the same journal version', (t) =>
         { id: 'place:juniper' },
         { id: 'place:shellglass', seen: { time: 63.45, rain: 0 } },
         { id: 'clover', seen: { time: 66.25, rain: 0 } },
-        { id: 'hare-sheltering', seen: { time: 94.25, rain: .9 } },
+        { id: 'hare-sheltering', seen: { time: 94.25, rain: 0.9 } },
       ] },
       expected: { ...emptyJournal(), heardMara: true, entries: {
         'place:juniper': {},
         'place:shellglass': { outing: { t: 63.45, at: 'shellglass', rain: 0 } },
         'sight:clover': { outing: { t: 66.25, at: 'juniper', rain: 0 } },
-        'sight:hare/sheltering': { outing: { t: 94.25, at: 'juniper', rain: .9 } },
+        'sight:hare/sheltering': { outing: { t: 94.25, at: 'juniper', rain: 0.9 } },
       } },
     },
   ]

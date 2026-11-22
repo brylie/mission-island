@@ -2,9 +2,13 @@ import { growthSeconds } from '../src/farm.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { daylight, isNight, nextDawn, weatherAt } from '../src/weather.ts'
 
+const plantingRainThreshold = 0.35
+
 export function advanceIsland(
   state: Pick<Snapshot, 'farm' | 'islandTime' | 'players' | 'weather'>,
-  growth: number[], tickSeconds: number, checkpoint?: () => void,
+  growth: number[],
+  tickSeconds: number,
+  checkpoint?: () => void,
 ) {
   state.islandTime += tickSeconds
   state.weather = weatherAt(state.islandTime)
@@ -19,7 +23,7 @@ export function advanceIsland(
   }
   const sun = daylight(state.weather.hour)
   for (const [plot, stage] of state.farm.entries()) {
-    if (stage === 'planted' && state.weather.rain > 0.35) state.farm[plot] = 'watered'
+    if (stage === 'planted' && state.weather.rain > plantingRainThreshold) state.farm[plot] = 'watered'
     if (state.farm[plot] === 'watered') {
       growth[plot] += tickSeconds * sun
       if (growth[plot] >= growthSeconds) state.farm[plot] = 'ripe'

@@ -8,6 +8,10 @@ import { activeFavor } from './residents/favors'
 import { residentAt } from './residents/schedule'
 import { walkingHeight } from './terrain'
 
+const radiusToDiameter = 2
+const residentWalkCyclesPerSecond = 1.8
+const residentStride = 0.65
+
 // One crew rig per resident, dressed from the appearance trait and moved by the shared schedule.
 // Rig ids follow the crew's, so each resident keeps a stable base palette.
 export function createResidentFigures(meshes: MeshFactory, registry: readonly ResidentDefinition[], firstId: number) {
@@ -17,7 +21,8 @@ export function createResidentFigures(meshes: MeshFactory, registry: readonly Re
     rig.root.setEnabled(false)
     // A cargo favor marks where the crate goes while the favor is under way.
     const bays = resident.favors.flatMap((favor) => 'cargo' in favor.kind
-      ? [{ favor: favor.id, marker: createObjectiveMarker(meshes, favor.kind.drop, favor.kind.radius * 2, '#ffd166') }] : [])
+      ? [{ favor: favor.id, marker: createObjectiveMarker(meshes, favor.kind.drop, favor.kind.radius * radiusToDiameter, '#ffd166') }]
+      : [])
     for (const { marker } of bays) marker.setEnabled(false)
     return { resident, rig, cycle: 0, bays }
   })
@@ -30,8 +35,8 @@ export function createResidentFigures(meshes: MeshFactory, registry: readonly Re
         const spot = residentAt(figure.resident.schedule, state)
         moveTo(figure.rig.root, spot, walkingHeight(spot), factor)
         figure.rig.root.setEnabled(!spot.indoors)
-        if (spot.walking) figure.cycle += delta * 1.8
-        poseCrew(figure.rig, figure.cycle, spot.walking ? .65 : 0, false, undefined, 0, factor)
+        if (spot.walking) figure.cycle += delta * residentWalkCyclesPerSecond
+        poseCrew(figure.rig, figure.cycle, spot.walking ? residentStride : 0, false, undefined, 0, factor)
         figure.rig.blink(time)
       }
     },

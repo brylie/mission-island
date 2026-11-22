@@ -10,29 +10,30 @@ import { harborDockPiles } from '../src/world.ts'
 const clear = { hour: 12, rain: 0 }
 const wet = { hour: 12, rain: 1 }
 const dusk = { hour: 18, rain: 0 }
-const perch = { x: 0, y: .705, z: 0, heading: 0 }
+const perch = { x: 0, y: 0.705, z: 0, heading: 0 }
 
 test('gulls point along their flight and plant their feet before folding in clear weather, rain and dusk', () => {
   for (const weather of [clear, wet, dusk]) {
     const phases = new Set()
     let previous
-    for (let t = 0; t <= 49; t += .025) {
+    for (let t = 0; t <= 49; t += 0.025) {
       const bird = gullAt(t, 0, perch, weather)
       phases.add(bird.phase)
       if (bird.grounded) {
         assert.deepEqual([bird.x, bird.y, bird.z], [perch.x, perch.y, perch.z])
         assert.equal(bird.tuck, 0)
-        if (bird.phase === 'Settling') assert.equal(previous?.grounded ? true : bird.fold < .02, true)
-      } else {
+        if (bird.phase === 'Settling') assert.equal(previous?.grounded ? true : bird.fold < 0.02, true)
+      }
+      else {
         assert.equal(bird.fold, 0)
         assert.ok(bird.y >= perch.y)
       }
       if (previous) {
         const dx = bird.x - previous.x, dz = bird.z - previous.z
         const travel = Math.hypot(dx, dz)
-        assert.ok(travel < .20)
+        assert.ok(travel < 0.20)
         if (!bird.grounded && !previous.grounded && travel > 1e-5) {
-          assert.ok((Math.sin(bird.heading) * dx + Math.cos(bird.heading) * dz) / travel > .98)
+          assert.ok((Math.sin(bird.heading) * dx + Math.cos(bird.heading) * dz) / travel > 0.98)
         }
       }
       previous = bird
@@ -44,7 +45,7 @@ test('gulls point along their flight and plant their feet before folding in clea
 })
 
 test('live weather changes wait until the next circuit and seeking reproduces the same pose', () => {
-  const weatherAt = time => time < 18 ? clear : wet
+  const weatherAt = (time) => time < 18 ? clear : wet
   const landing = gullAt(36, 0, perch, wet, weatherAt)
   assert.equal(landing.phase, 'Flare')
   assert.deepEqual(landing, gullAt(36, 0, perch, clear))
@@ -59,19 +60,19 @@ test('live weather changes wait until the next circuit and seeking reproduces th
 
 test('the two flocks use distinct physical supports and stagger departures', () => {
   const quay = pavedYards.find(({ id }) => id === 'quay')
-  const saltwind = saltwindGullStops.map(stop => ({ ...stop, y: surfaceHeight(stop.x, stop.z) }))
-  assert.equal(new Set(starterGullPerches.map(p => p.x + ',' + p.z)).size, starterGullPerches.length)
+  const saltwind = saltwindGullStops.map((stop) => ({ ...stop, y: surfaceHeight(stop.x, stop.z) }))
+  assert.equal(new Set(starterGullPerches.map((p) => p.x + ',' + p.z)).size, starterGullPerches.length)
   for (const p of starterGullPerches) {
-    assert.ok(harborDockPiles.some(pile => pile.x === p.x && pile.z === p.z && pile.top === p.y && pile.diameter > .22))
+    assert.ok(harborDockPiles.some((pile) => pile.x === p.x && pile.z === p.z && pile.top === p.y && pile.diameter > 0.22))
   }
   for (const p of saltwind) {
     assert.ok(Math.abs(p.x - quay.x) < quay.width / 2 && Math.abs(p.z - quay.z) < quay.depth / 2)
     assert.equal(p.y, quay.y)
   }
-  for (const [perches, ground] of [[starterGullPerches, groundHeight], [saltwind, p => surfaceHeight(p.x, p.z)]]) {
+  for (const [perches, ground] of [[starterGullPerches, groundHeight], [saltwind, (p) => surfaceHeight(p.x, p.z)]]) {
     const departures = perches.map((p, i) => {
       let first
-      for (let t = 0; t <= 52; t += .05) {
+      for (let t = 0; t <= 52; t += 0.05) {
         const bird = gullAt(t, i, p, wet)
         if (bird.phase === 'Push-off' && first === undefined) first = t
         assert.ok(bird.y >= ground(bird) - 1e-6)

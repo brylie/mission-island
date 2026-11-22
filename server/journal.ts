@@ -12,6 +12,8 @@ import type { IslandSave } from './save.ts'
 import type { CrewMember } from './crew.ts'
 import type { InteractionHandlers } from './interactions.ts'
 
+const discoveryApproachRangeM = 8
+
 // A crew that found places before the journal existed keeps them as its first entries.
 export function restoreJournal(save: IslandSave | undefined): Journal {
   if (save?.world.journal) return structuredClone(save.world.journal)
@@ -42,11 +44,14 @@ export function createJournal(state: Pick<Snapshot, 'journal' | 'islandTime' | '
   }
 
   function inspect(member: CrewMember, subject: number) {
-    const option = fieldInteractions(state, member.player).find(choice => choice.subject === subject)
+    const option = fieldInteractions(state, member.player).find((choice) => choice.subject === subject)
     if (!option) return member.notify?.({ type: 'field-unavailable' })
     const { record: id } = option
     const note: JournalNote = {
-      t: state.islandTime, by: member.player.id, at: outingSubjects[id].at, rain: state.weather.rain,
+      t: state.islandTime,
+      by: member.player.id,
+      at: outingSubjects[id].at,
+      rain: state.weather.rain,
     }
     if (recordEntry(state.journal, id, note, 'outing')) {
       const parent = journalEntry(id)?.parent
@@ -72,7 +77,7 @@ export function createJournal(state: Pick<Snapshot, 'journal' | 'islandTime' | '
   // Walking into a region notes its kind of country.
   function explore(player: Player) {
     for (const place of starterDiscoveries) {
-      if (player.discoveries.includes(place.id) || distance(player, place.site) >= 8) continue
+      if (player.discoveries.includes(place.id) || distance(player, place.site) >= discoveryApproachRangeM) continue
       player.discoveries.push(place.id)
       if (!add([`place:${place.id}`], player, place.site).length) checkpoint?.()
     }
@@ -84,7 +89,7 @@ export function createJournal(state: Pick<Snapshot, 'journal' | 'islandTime' | '
   }
 
   const interactions = {
-    record: ({ player }, subject) => record(player, subject),
+    'record': ({ player }, subject) => record(player, subject),
     'inspect-field': inspect,
   } satisfies InteractionHandlers<FieldAction | SightingAction>
   return { interactions, hearMara, landed, explore }

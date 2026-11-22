@@ -8,11 +8,11 @@ import type { Point } from '../world'
 type Value = string | number | boolean
 export type Values = Record<string, Value>
 
-export type Control = { key: string; label: string; rebuild?: boolean } & (
-  | { type: 'select'; value: string; choices: Record<string, string>; displayValue?: (values: Values) => string }
-  | { type: 'range' | 'number'; value: number; min: number; max: number; step: number }
-  | { type: 'checkbox'; value: boolean }
-  | { type: 'color'; value: string }
+export type Control = { key: string, label: string, rebuild?: boolean } & (
+  | { type: 'select', value: string, choices: Record<string, string>, displayValue?: (values: Values) => string }
+  | { type: 'range' | 'number', value: number, min: number, max: number, step: number }
+  | { type: 'checkbox', value: boolean }
+  | { type: 'color', value: string }
 )
 
 interface Playback {
@@ -44,8 +44,8 @@ export interface Entry {
   headroom?: number
   topView?: boolean
   landscape?: boolean
-  ground?: { color: string; height: number }
-  actions?: { label: string; restart?: boolean; enabled(values: Values): boolean; run(values: Values): void }[]
+  ground?: { color: string, height: number }
+  actions?: { label: string, restart?: boolean, enabled(values: Values): boolean, run(values: Values): void }[]
   controls?: Control[]
   relatedOptions?: (key: string, values: Values) => Values | undefined
   create(meshes: MeshFactory, values: Values, reportError: (error: string) => void, observe: (text: string) => void, field?: FieldSite):

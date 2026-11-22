@@ -4,22 +4,44 @@ import { wadeDepth, waterBounds } from './sites.ts'
 import type { MapPoint } from './sites.ts'
 import { groundHeight, surfaceHeight, waterHeight } from './terrain.ts'
 
+const halfWidthDivisor = 2
+const solidCellSize = 8
+const minimumColliderHeight = 0.055
+const swimmingDepth = 1.01
+const movementSubstepsPerSecond = 90
+const groundStepAllowance = 0.31
+const airStepAllowance = 0.055
+const walkingBodyRadius = 0.28
+const walkerHeight = 1.78
+const supportBodyRadius = 0.21
+const waterEntryTolerance = 0.05
+const cameraSamplingStep = 0.24
+const eyeHeight = 1.6
+const cameraGroundGap = 0.15
+const cameraSolidSampleRadius = 0.17
+const cameraSolidGap = 0.12
+const minimumCameraArmFraction = 0.02
+
 interface Block extends MapPoint {
-  bottom: number; top: number; width: number; depth: number; heading: number
+  bottom: number
+  top: number
+  width: number
+  depth: number
+  heading: number
 }
 
 // Index the unmerged, metre-scale model parts. This keeps the spaces between
 // shelter posts, beneath rotors and through gates open after graphics batching.
 export class ScenerySolids {
   parkedVehicle?: Block
-  private cells = new Map<string, Block[]>()
+  private readonly cells = new Map<string, Block[]>()
 
   add(block: Block) {
     const c = Math.abs(Math.cos(block.heading)), s = Math.abs(Math.sin(block.heading))
-    const reachX = (c * block.width + s * block.depth) / 2
-    const reachZ = (s * block.width + c * block.depth) / 2
-    for (let x = Math.floor((block.x - reachX) / 8); x <= Math.floor((block.x + reachX) / 8); x++) {
-      for (let z = Math.floor((block.z - reachZ) / 8); z <= Math.floor((block.z + reachZ) / 8); z++) {
+    const reachX = (c * block.width + s * block.depth) / halfWidthDivisor
+    const reachZ = (s * block.width + c * block.depth) / halfWidthDivisor
+    for (let x = Math.floor((block.x - reachX) / solidCellSize); x <= Math.floor((block.x + reachX) / solidCellSize); x++) {
+      for (let z = Math.floor((block.z - reachZ) / solidCellSize); z <= Math.floor((block.z + reachZ) / solidCellSize); z++) {
         const key = x + ',' + z
         const cell = this.cells.get(key)
         if (cell) cell.push(block)
@@ -32,7 +54,7 @@ export class ScenerySolids {
     for (const mesh of meshes) {
       const m = mesh.computeWorldMatrix(true).m
       const box = mesh.getBoundingInfo().boundingBox
-      if (box.maximumWorld.y - box.minimumWorld.y < .055) continue
+      if (box.maximumWorld.y - box.minimumWorld.y < minimumColliderHeight) continue
       const heading = Math.atan2(-m[2], m[0])
       const c = Math.cos(heading), s = Math.sin(heading)
       const { x, z } = box.centerWorld
@@ -41,64 +63,71 @@ export class ScenerySolids {
         halfWidth = Math.max(halfWidth, Math.abs((p.x - x) * c - (p.z - z) * s))
         halfDepth = Math.max(halfDepth, Math.abs((p.x - x) * s + (p.z - z) * c))
       }
-      this.add({ x, z, heading, width: 2 * halfWidth, depth: 2 * halfDepth,
-        bottom: box.minimumWorld.y, top: box.maximumWorld.y })
+      this.add({ x, z, heading, width: halfWidthDivisor * halfWidth, depth: halfWidthDivisor * halfDepth, bottom: box.minimumWorld.y, top: box.maximumWorld.y })
     }
   }
 
   at(x: number, z: number, radius: number) {
     const candidates = new Set<Block>()
-    for (let ix = Math.floor((x - radius) / 8); ix <= Math.floor((x + radius) / 8); ix++) {
-      for (let iz = Math.floor((z - radius) / 8); iz <= Math.floor((z + radius) / 8); iz++) {
+    for (let ix = Math.floor((x - radius) / solidCellSize); ix <= Math.floor((x + radius) / solidCellSize); ix++) {
+      for (let iz = Math.floor((z - radius) / solidCellSize); iz <= Math.floor((z + radius) / solidCellSize); iz++) {
         for (const block of this.cells.get(ix + ',' + iz) ?? []) candidates.add(block)
       }
     }
     if (this.parkedVehicle) candidates.add(this.parkedVehicle)
     return [...candidates].filter((b) => {
       const dx = x - b.x, dz = z - b.z, c = Math.cos(b.heading), s = Math.sin(b.heading)
-      const ex = Math.max(0, Math.abs(dx * c - dz * s) - b.width / 2)
-      const ez = Math.max(0, Math.abs(dx * s + dz * c) - b.depth / 2)
+      const ex = Math.max(0, Math.abs(dx * c - dz * s) - b.width / halfWidthDivisor)
+      const ez = Math.max(0, Math.abs(dx * s + dz * c) - b.depth / halfWidthDivisor)
       return ex * ex + ez * ez <= radius * radius
     })
   }
 }
 
-interface Walker extends MapPoint { y: number; velocity: number; swimming: boolean; grounded: boolean }
+interface Walker extends MapPoint { y: number, velocity: number, swimming: boolean, grounded: boolean }
 export function placeWalker(p: MapPoint): Walker {
   const floor = surfaceHeight(p.x, p.z), water = waterHeight(p.x, p.z)
   const swimming = water - floor > wadeDepth
-  return { x: p.x, z: p.z, y: swimming ? water - 1.01 : floor, velocity: 0, grounded: !swimming, swimming }
+  return { x: p.x, z: p.z, y: swimming ? water - swimmingDepth : floor, velocity: 0, grounded: !swimming, swimming }
 }
 
 export function walkSaltwind(p: Walker, solids: ScenerySolids, vx: number, vz: number, jump: boolean, dt: number) {
-  if (jump && p.grounded) { p.velocity = jumpSpeed; p.grounded = false }
+  if (jump && p.grounded) {
+    p.velocity = jumpSpeed
+    p.grounded = false
+  }
   const beforeX = p.x, beforeZ = p.z
-  const steps = Math.max(1, Math.ceil(dt * 90)), step = dt / steps
+  const steps = Math.max(1, Math.ceil(dt * movementSubstepsPerSecond)), step = dt / steps
   for (let i = 0; i < steps; i++) {
     const feet = p.y
-    const allowance = p.grounded || p.swimming ? .31 : .055
+    const allowance = p.grounded || p.swimming ? groundStepAllowance : airStepAllowance
     const move = (x: number, z: number) => {
       if (x < waterBounds.minX || x > waterBounds.maxX || z < waterBounds.minZ || z > waterBounds.maxZ) return
       const surface = surfaceHeight(x, z, feet + allowance)
-      if (surface > feet + allowance || solids.at(x, z, .28).some((b) =>
-        b.top > feet + allowance && b.bottom < feet + 1.78)) return
-      p.x = x; p.z = z
+      if (surface > feet + allowance || solids.at(x, z, walkingBodyRadius).some((b) =>
+        b.top > feet + allowance && b.bottom < feet + walkerHeight)) return
+      p.x = x
+      p.z = z
     }
     if (vx) move(p.x + vx * step, p.z)
     if (vz) move(p.x, p.z + vz * step)
     let floor = surfaceHeight(p.x, p.z, feet + allowance)
     let ceiling = Infinity
-    for (const b of solids.at(p.x, p.z, .21)) {
+    for (const b of solids.at(p.x, p.z, supportBodyRadius)) {
       if (b.top <= feet + allowance) floor = Math.max(floor, b.top)
-      if (b.bottom >= feet + 1.78) ceiling = Math.min(ceiling, b.bottom)
+      if (b.bottom >= feet + walkerHeight) ceiling = Math.min(ceiling, b.bottom)
     }
     const water = waterHeight(p.x, p.z)
-    if (water - floor > wadeDepth && feet <= water + .05 && p.velocity <= 0) {
-      p.swimming = true; p.grounded = false; p.velocity = 0; p.y = water - 1.01
-    } else {
+    if (water - floor > wadeDepth && feet <= water + waterEntryTolerance && p.velocity <= 0) {
+      p.swimming = true
+      p.grounded = false
+      p.velocity = 0
+      p.y = water - swimmingDepth
+    }
+    else {
       p.swimming = false
       p.velocity -= jumpGravity * step
-      if (feet + p.velocity * step + 1.78 >= ceiling) p.velocity = Math.min(p.velocity, 0)
+      if (feet + p.velocity * step + walkerHeight >= ceiling) p.velocity = Math.min(p.velocity, 0)
       p.y = Math.max(floor, feet + p.velocity * step)
       p.grounded = p.y === floor
       if (p.grounded) p.velocity = 0
@@ -109,11 +138,11 @@ export function walkSaltwind(p: Walker, solids: ScenerySolids, vx: number, vz: n
 
 export function clearCameraDistance(p: Walker, solids: ScenerySolids, dx: number, dy: number, dz: number) {
   const length = Math.hypot(dx, dy, dz)
-  const samples = Math.ceil(length / .24)
+  const samples = Math.ceil(length / cameraSamplingStep)
   for (let i = 1; i <= samples; i++) {
-    const t = i / samples, x = p.x + dx * t, z = p.z + dz * t, y = p.y + 1.6 + dy * t
-    if (groundHeight(x, z) > y - .15 || solids.at(x, z, .17).some((b) => b.bottom - .12 < y && b.top + .12 > y)) {
-      return Math.max(.02, (i - 1) / samples)
+    const t = i / samples, x = p.x + dx * t, z = p.z + dz * t, y = p.y + eyeHeight + dy * t
+    if (groundHeight(x, z) > y - cameraGroundGap || solids.at(x, z, cameraSolidSampleRadius).some((b) => b.bottom - cameraSolidGap < y && b.top + cameraSolidGap > y)) {
+      return Math.max(minimumCameraArmFraction, (i - 1) / samples)
     }
   }
   return 1

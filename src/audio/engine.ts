@@ -2,8 +2,18 @@ import { busGains, defaultSound, voiceBudget, type SoundSettings } from './mix.t
 import { workerRenderer, type RecipeRenderer } from './recipe-renderer.ts'
 import type { Rendered } from './recipes.ts'
 
+const spatialSmoothingSeconds = 0.03
+const pannerReferenceMetres = 3
+const pannerRolloff = 1.1
+const pannerMaximumMetres = 90
+const rampTimeConstants = 3
+const releaseStopMultiplier = 2
+const defaultLaneRampSeconds = 0.4
+const defaultBufferCacheEntries = 160
+const busRampTimeConstantSeconds = 0.05
+
 export type AudioState = 'locked' | 'running' | 'suspended' | 'closed'
-export type Point3 = { x: number; y: number; z: number }
+export type Point3 = { x: number, y: number, z: number }
 type Bus = 'effects' | 'ambience'
 
 // A lane is a persistent gain and optional panner that several one-shots play through,
@@ -16,27 +26,27 @@ export type Lane = {
 }
 
 // lateness: how long after its start time a cue may still begin if its buffer was not ready.
-type PlayOptions = { bus?: Bus; position?: Point3; lane?: Lane; at?: number; gain?: number; lateness?: number }
+type PlayOptions = { bus?: Bus, position?: Point3, lane?: Lane, at?: number, gain?: number, lateness?: number }
 
-type Voice = { source: AudioBufferSourceNode; gain: GainNode; bus: Bus }
+type Voice = { source: AudioBufferSourceNode, gain: GainNode, bus: Bus }
 
 const fadeSeconds = 0.03
 const lateSeconds = 0.15
 
 // Babylon uses a left-handed frame and Web Audio a right-handed one; mirror z so left stays left.
 function place(panner: PannerNode, { x, y, z }: Point3, at: number) {
-  panner.positionX.setTargetAtTime(x, at, 0.03)
-  panner.positionY.setTargetAtTime(y, at, 0.03)
-  panner.positionZ.setTargetAtTime(-z, at, 0.03)
+  panner.positionX.setTargetAtTime(x, at, spatialSmoothingSeconds)
+  panner.positionY.setTargetAtTime(y, at, spatialSmoothingSeconds)
+  panner.positionZ.setTargetAtTime(-z, at, spatialSmoothingSeconds)
 }
 
 function spatial(context: BaseAudioContext) {
   const panner = context.createPanner()
   panner.panningModel = 'equalpower'
   panner.distanceModel = 'inverse'
-  panner.refDistance = 3
-  panner.rolloffFactor = 1.1
-  panner.maxDistance = 90
+  panner.refDistance = pannerReferenceMetres
+  panner.rolloffFactor = pannerRolloff
+  panner.maxDistance = pannerMaximumMetres
   return panner
 }
 
@@ -80,10 +90,11 @@ function createVoicePool() {
   const voices: Voice[] = []
   function release(voice: Voice, at: number) {
     voice.gain.gain.cancelScheduledValues(at)
-    voice.gain.gain.setTargetAtTime(0, at, fadeSeconds / 3)
+    voice.gain.gain.setTargetAtTime(0, at, fadeSeconds / rampTimeConstants)
     try {
-      voice.source.stop(at + fadeSeconds * 2)
-    } catch {
+      voice.source.stop(at + fadeSeconds * releaseStopMultiplier)
+    }
+    catch {
       // A source that never started or already stopped needs no stop.
     }
   }
@@ -94,8 +105,7 @@ function createVoicePool() {
     voice.gain.disconnect()
   }
   return {
-    start(context: BaseAudioContext, output: AudioNode, bus: Bus, buffer: AudioBuffer, level: number,
-      { position, lane, at }: Pick<PlayOptions, 'position' | 'lane' | 'at'>) {
+    start(context: BaseAudioContext, output: AudioNode, bus: Bus, buffer: AudioBuffer, level: number, { position, lane, at }: Pick<PlayOptions, 'position' | 'lane' | 'at'>) {
       const playing = voices.filter((voice) => voice.bus === bus)
       if (playing.length >= voiceBudget[bus]) {
         release(playing[0], context.currentTime)
@@ -113,7 +123,8 @@ function createVoicePool() {
         gain.connect(panner)
         panner.connect(output)
         source.addEventListener('ended', () => panner.disconnect())
-      } else gain.connect(output)
+      }
+      else gain.connect(output)
       const voice = { source, gain, bus }
       voices.push(voice)
       source.addEventListener('ended', () => forget(voice))
@@ -135,8 +146,8 @@ function createLane(context: BaseAudioContext, bus: AudioNode, positioned: boole
   panner?.connect(bus)
   return {
     input: level,
-    setGain(value, seconds = 0.4) {
-      level.gain.setTargetAtTime(Math.max(0, value), context.currentTime, seconds / 3)
+    setGain(value, seconds = defaultLaneRampSeconds) {
+      level.gain.setTargetAtTime(Math.max(0, value), context.currentTime, seconds / rampTimeConstants)
     },
     setPosition(point) {
       if (panner) place(panner, point, context.currentTime)
@@ -156,18 +167,17 @@ function placeListener(context: BaseAudioContext, point: Point3, forward: Point3
     listener.setOrientation(forward.x, forward.y, -forward.z, 0, 1, 0)
     return
   }
-  listener.positionX.setTargetAtTime(point.x, at, 0.03)
-  listener.positionY.setTargetAtTime(point.y, at, 0.03)
-  listener.positionZ.setTargetAtTime(-point.z, at, 0.03)
-  listener.forwardX.setTargetAtTime(forward.x, at, 0.03)
-  listener.forwardY.setTargetAtTime(forward.y, at, 0.03)
-  listener.forwardZ.setTargetAtTime(-forward.z, at, 0.03)
+  listener.positionX.setTargetAtTime(point.x, at, spatialSmoothingSeconds)
+  listener.positionY.setTargetAtTime(point.y, at, spatialSmoothingSeconds)
+  listener.positionZ.setTargetAtTime(-point.z, at, spatialSmoothingSeconds)
+  listener.forwardX.setTargetAtTime(forward.x, at, spatialSmoothingSeconds)
+  listener.forwardY.setTargetAtTime(forward.y, at, spatialSmoothingSeconds)
+  listener.forwardZ.setTargetAtTime(-forward.z, at, spatialSmoothingSeconds)
 }
 
-type EngineOptions = { cacheSize?: number; makeRenderer?: () => RecipeRenderer }
+type EngineOptions = { cacheSize?: number, makeRenderer?: () => RecipeRenderer }
 
-export function createAudioEngine(makeContext: () => AudioContext = () => new AudioContext(),
-  { cacheSize = 160, makeRenderer = workerRenderer }: EngineOptions = {}) {
+export function createAudioEngine(makeContext: () => AudioContext = () => new AudioContext(), { cacheSize = defaultBufferCacheEntries, makeRenderer = workerRenderer }: EngineOptions = {}) {
   let context: AudioContext | null = null
   let renderer: RecipeRenderer | null = null
   // Stopping or hiding starts a new generation, so a buffer that finishes later cannot start an old cue.
@@ -197,7 +207,7 @@ export function createAudioEngine(makeContext: () => AudioContext = () => new Au
   function applySettings() {
     if (!context || !buses) return
     const gains = busGains(settings)
-    for (const bus of ['master', 'ambience', 'effects'] as const) buses[bus].gain.setTargetAtTime(gains[bus], context.currentTime, 0.05)
+    for (const bus of ['master', 'ambience', 'effects'] as const) buses[bus].gain.setTargetAtTime(gains[bus], context.currentTime, busRampTimeConstantSeconds)
   }
 
   function build() {
@@ -263,7 +273,8 @@ export function createAudioEngine(makeContext: () => AudioContext = () => new Au
         stopAll()
         void context.suspend().then(report, report)
         report()
-      } else void wake()
+      }
+      else void wake()
     },
     onState(watch: (state: AudioState) => void) {
       watchers.add(watch)

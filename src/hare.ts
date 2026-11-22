@@ -1,15 +1,17 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { hareGeometry } from './assets/geometry/biome-fauna'
 import type { MeshFactory } from './island-meshes'
 
 export function createHare(meshes: MeshFactory, name: string, color: string) {
   const root = new TransformNode(name, meshes.scene)
-  const part = (x: number, y: number, z: number, w: number, h: number, d: number) =>
-    meshes.sphere(x, y, z, w, h, d, color, root, false, 6)
-  part(0, .05, 0, .33, .25, .78)
-  part(0, .18, .23, .29, .35, .35)
+  const { torso, head, ears, segments } = hareGeometry
+  meshes.sphere(...torso, color, root, false, segments)
+  meshes.sphere(...head, color, root, false, segments)
+  const { base, tip } = ears
   for (const side of [-1, 1]) {
-    part(side * .071, .39, .19, .08, .28, .095).rotation.x = -.24
-    meshes.sphere(side * .071, .484, .167, .061, .095, .071, '#494039', root, false, 6).rotation.x = -.24
+    const x = side * ears.x
+    meshes.sphere(x, base.y, base.z, ...base.size, color, root, false, segments).rotation.x = ears.pitchRad
+    meshes.sphere(x, tip.y, tip.z, ...tip.size, tip.color, root, false, segments).rotation.x = ears.pitchRad
   }
   return root
 }

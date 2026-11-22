@@ -12,7 +12,7 @@ export const fishKinds = [
 
 export type FishId = typeof fishKinds[number]['id']
 
-const showerRain = .5
+const showerRain = 0.5
 const driftwoodWater = 24
 
 // Which fish takes a bait that lands here and now. There is no dice roll: the same cast lands the same fish.

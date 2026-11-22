@@ -1,3 +1,5 @@
+import { laneMarkingModel } from './assets/geometry/route-profiles.ts'
+import { depotLaneStart, harborRoadLayout, seabrookWalkLayout, starterTrailLayout } from './worlds/starter/layout/routes.ts'
 import { beach, distance, ferryTerminal, harbor, lookout } from './world.ts'
 import { meadowFoot, meadowHill } from './terrain.ts'
 import type { Point } from './world.ts'
@@ -6,17 +8,20 @@ function lerp(a: Point, b: Point, t: number): Point {
   return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t }
 }
 
+const maxCornerInsetRatio = 0.45
+const cornerSegments = 12
+
 function roundCorners(points: readonly Point[], trim: number): Point[] {
   const path = [points[0]]
   for (let i = 1; i < points.length - 1; i++) {
-    const [before, corner, after] = points.slice(i - 1, i + 2)
+    const before = points[i - 1], corner = points[i], after = points[i + 1]
     const incoming = distance(corner, before)
     const outgoing = distance(corner, after)
-    const inset = Math.min(trim, incoming * 0.45, outgoing * 0.45)
+    const inset = Math.min(trim, incoming * maxCornerInsetRatio, outgoing * maxCornerInsetRatio)
     const start = lerp(corner, before, inset / incoming)
     const end = lerp(corner, after, inset / outgoing)
-    for (let step = 0; step <= 12; step++) {
-      const t = step / 12
+    for (let step = 0; step <= cornerSegments; step++) {
+      const t = step / cornerSegments
       path.push(lerp(lerp(start, corner, t), lerp(corner, end, t), t))
     }
   }
@@ -27,8 +32,10 @@ function roundCorners(points: readonly Point[], trim: number): Point[] {
 // Harbor Depot road runs from the ferry ramp, straight north past the freight yard, then curves away to Seabrook.
 // Its points run from the ramp end so the ramp lane stays one straight segment on the terminal's centreline.
 export const harborRoad = roundCorners([
-  { x: ferryTerminal.x, z: ferryTerminal.z }, { x: ferryTerminal.x, z: -10 }, { x: 10, z: 12 }, { x: 51, z: 12 },
-], 9.5)
+  { x: ferryTerminal.x, z: ferryTerminal.z },
+  { x: ferryTerminal.x, z: harborRoadLayout.rampStemZ },
+  ...harborRoadLayout.inland,
+], harborRoadLayout.trim)
 
 function crossingAt(path: readonly Point[], z: number): Point {
   const i = path.findIndex((point) => point.z >= z)
@@ -37,56 +44,34 @@ function crossingAt(path: readonly Point[], z: number): Point {
 }
 
 // The depot lane leaves Harbor Depot road at the fork and runs west past the depot to the cottages.
-const depotLaneZ = -11
-export const depotJunction = crossingAt(harborRoad, depotLaneZ)
-export const depotLane: Point[] = [{ x: -55, z: depotLaneZ }, depotJunction]
+export const depotJunction = crossingAt(harborRoad, depotLaneStart.z)
+export const depotLane: Point[] = [depotLaneStart, depotJunction]
 export const roads = [harborRoad, depotLane]
 
 export function distanceToRoads(point: Point) {
   return Math.min(...roads.map((path) => distanceToRoute(point, path)))
 }
 
-export const shellglassPoint = { x: 43.2, z: -31.4 }
-
-export const splitstone = { x: 53.5, z: -20.8 }
-
-export const roadSurface = { width: 6, shoulderWidth: 1.4, shoulder: .056, asphalt: .084 }
-export const sidewalkLift = .065
-export const trailLift = .039
+export { shellglassPoint, splitstone } from './worlds/starter/layout/routes.ts'
 
 export type PathSurface = 'gravel' | 'pavement' | 'desire'
-interface Footpath { name: string; width: number; surface: PathSurface; points: Point[] }
+interface Footpath { name: string, width: number, surface: PathSurface, points: Point[] }
 
-export const meadowPath: Footpath = {
-  name: 'Meadow slope path', width: 1.35, surface: 'desire',
-  points: roundCorners([{ x: -27, z: 8 }, meadowFoot, { x: -26.6, z: 17 }, meadowHill], 1.8),
+function footpath({ name, surface, width, trim }: Omit<Footpath, 'points'> & { trim: number }, points: readonly Point[]): Footpath {
+  return { name, surface, width, points: roundCorners(points, trim) }
 }
 
-export const beachTrail: Footpath = {
-  name: 'Beach trail', surface: 'pavement', width: 2.6,
-  points: roundCorners([{ x: 35, z: 12 }, { x: 33.1, z: 4 }, { x: 29.6, z: -24.7 }, beach], 4),
-}
-
-export const juniperTrail: Footpath = {
-  name: 'Juniper trail', surface: 'desire', width: 1.2,
-  points: roundCorners([
-    { x: -48.55, z: -10.9 }, { x: -48.55, z: -.8 }, { x: -49, z: 9 },
-    { x: -52, z: 21 }, { x: -54, z: 33 }, { x: -54.5, z: 52 },
-    { x: -54.5, z: 65.9 }, { x: -53.45, z: 68 }, { x: -54.5, z: 70 },
-    { x: -54.8, z: 73 }, { x: -54.65, z: 75.9 },
-  ], 2),
-}
+const { meadow, beach: shore, juniper, lookout: hill, harbor: depot, splitstone, driftwood } = starterTrailLayout
+export const meadowPath = footpath(meadow, [meadow.start, meadowFoot, meadow.rise, meadowHill])
+export const beachTrail = footpath(shore, [...shore.approach, beach])
+export const juniperTrail = footpath(juniper, juniper.points)
 
 export const footpaths: Footpath[] = [
-  { name: 'Lookout trail', surface: 'gravel', width: 3.2, points: roundCorners([{ x: 17, z: 12 }, { x: 20, z: 22 }, lookout], 4) },
+  footpath(hill, [...hill.approach, lookout]),
   beachTrail,
-  { name: 'Harbor trail', surface: 'gravel', width: 3.1, points: roundCorners([{ x: -46, z: -11 }, harbor, { x: -44, z: -30 }], 3) },
-  { name: 'Splitstone strand', surface: 'desire', width: .85, points: roundCorners([
-    { x: 41.7, z: -30.2 }, { x: 44.1, z: -29.05 }, { x: 45.85, z: -28.25 },
-  ], 1) },
-  { name: 'Driftwood shore walk', surface: 'desire', width: 1.1, points: roundCorners([
-    { x: 30.1, z: -24.7 }, { x: 34.7, z: -26.3 }, { x: 39, z: -29.2 }, { x: 42.6, z: -30.68 },
-  ], 1.1) },
+  footpath(depot, [depot.start, harbor, depot.end]),
+  footpath(splitstone, splitstone.points),
+  footpath(driftwood, driftwood.points),
   meadowPath,
   juniperTrail,
 ]
@@ -114,8 +99,9 @@ export function laneMarkings(path: readonly Point[]) {
   }
 
   const markings: Point[][] = []
-  for (let start = 2; start + 2 < lengths[lengths.length - 1]; start += 4.2) {
-    const end = start + 1.65
+  const { lead, endClearance, spacing, length } = laneMarkingModel.dashes
+  for (let start = lead; start + endClearance < lengths[lengths.length - 1]; start += spacing) {
+    const end = start + length
     markings.push([
       pointAt(start),
       ...path.filter((_, i) => lengths[i] > start && lengths[i] < end),
@@ -125,38 +111,12 @@ export function laneMarkings(path: readonly Point[]) {
   return markings
 }
 
-export function ribbonGeometry(strips: ReadonlyArray<readonly Point[]>, width: number, y: number) {
-  const positions: number[] = []
-  const indices: number[] = []
-  for (const points of strips) {
-    const base = positions.length / 3
-    for (const [i, point] of points.entries()) {
-      const before = points[Math.max(0, i - 1)]
-      const after = points[Math.min(i + 1, points.length - 1)]
-      const halfWidth = width / (2 * distance(before, after))
-      const x = (before.z - after.z) * halfWidth
-      const z = (after.x - before.x) * halfWidth
-      positions.push(point.x + x, y, point.z + z, point.x - x, y, point.z - z)
-      if (i > 0) {
-        const a = base + (i - 1) * 2
-        indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2)
-      }
-    }
-  }
-  return { positions, indices }
-}
-
-const sidewalkWidth = 1.55
-const southSidewalkZ = 8.24
-const southSidewalkEdge = southSidewalkZ - sidewalkWidth / 2
-
+const { fixed, northHouses } = seabrookWalkLayout
 export const walkways = [
-  { name: 'North Seabrook pavement', width: sidewalkWidth, points: [{ x: 30, z: 15.76 }, { x: 51, z: 15.76 }] },
-  { name: 'South Seabrook pavement', width: sidewalkWidth, points: [{ x: 31, z: southSidewalkZ }, { x: 51, z: southSidewalkZ }] },
-  { name: 'South house walk', width: 1.5, points: [{ x: 39, z: southSidewalkEdge }, { x: 39, z: 5.28 }] },
-  { name: 'East house walk', width: 1.4, points: [{ x: 48, z: southSidewalkEdge }, { x: 48, z: 5.28 }] },
-  ...[35, 43, 50].map((x) => ({
-    name: 'Seabrook front walk ' + x, width: 1.1,
-    points: [{ x, z: 15.76 + sidewalkWidth / 2 }, { x, z: x === 50 ? 19.22 : 19.32 }],
+  ...fixed,
+  ...northHouses.doors.map(({ x, z }) => ({
+    name: 'Seabrook front walk ' + x,
+    width: northHouses.width,
+    points: [{ x, z: northHouses.firstZ }, { x, z }],
   })),
 ]

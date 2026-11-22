@@ -11,8 +11,18 @@ export function createSurfaceShader(scene: Scene, pattern: number, onError: (mes
   const shader = new ShaderMaterial('Surface shader', scene, { vertexSource, fragmentSource }, {
     attributes: ['position', 'normal'],
     uniforms: [
-      'world', 'worldViewProjection', 'baseColor', 'lightDirection', 'lightColor', 'eyePosition',
-      'ambient', 'sunlight', 'detailScale', 'detailStrength', 'time', 'pattern',
+      'world',
+      'worldViewProjection',
+      'baseColor',
+      'lightDirection',
+      'lightColor',
+      'eyePosition',
+      'ambient',
+      'sunlight',
+      'detailScale',
+      'detailStrength',
+      'time',
+      'pattern',
     ],
   })
   shader.setInt('pattern', pattern)

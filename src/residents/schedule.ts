@@ -4,6 +4,8 @@ import { weatherAt } from '../weather.ts'
 import { distance } from '../world.ts'
 import type { Leg, ResidentDefinition, ResidentWorld, ScheduleTrait } from './definition.ts'
 
+const defaultConversationReachM = 2.4
+
 function along(route: readonly Leg[], metres: number) {
   let left = metres
   for (let i = 1; i < route.length; i++) {
@@ -11,8 +13,7 @@ function along(route: readonly Leg[], metres: number) {
     const length = distance(start, end)
     if (left <= length) {
       const fraction = length ? left / length : 1
-      return { x: start.x + (end.x - start.x) * fraction, z: start.z + (end.z - start.z) * fraction,
-        heading: Math.atan2(end.x - start.x, end.z - start.z), indoors: route[i].indoors === true, done: false }
+      return { x: start.x + (end.x - start.x) * fraction, z: start.z + (end.z - start.z) * fraction, heading: Math.atan2(end.x - start.x, end.z - start.z), indoors: route[i].indoors === true, done: false }
     }
     left -= length
   }
@@ -44,6 +45,6 @@ export function standing(player: Player) {
 // Close enough to talk: standing, within reach on the same level, and the resident is outdoors.
 export function atResident(resident: ResidentDefinition, state: ResidentWorld, player: Player) {
   const spot = residentAt(resident.schedule, state)
-  return standing(player) && !spot.indoors && distance(player, spot) < (resident.reach ?? 2.4) &&
-    Math.abs(player.y - walkingHeight(spot)) < 1
+  return standing(player) && !spot.indoors && distance(player, spot) < (resident.reach ?? defaultConversationReachM)
+    && Math.abs(player.y - walkingHeight(spot)) < 1
 }

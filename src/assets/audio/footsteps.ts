@@ -1,0 +1,42 @@
+export const footstepRecipe = {
+  gravel: {
+    level: 0.55,
+    body: { cutoffHz: 320, envelopeSeconds: [0.004, 0.022], gain: 0.6 },
+    grains: {
+      baseCount: 4,
+      countVariation: 3,
+      strengthCount: 3,
+      startSeconds: 0.004,
+      startVariationSeconds: 0.07,
+      durationSeconds: 0.012,
+      lowHz: 1800,
+      lowVariationHz: 1600,
+      highHz: 6500,
+      envelopeSeconds: [0.0005, 0.0025],
+      baseGain: 0.25,
+      gainVariation: 0.6,
+      strengthBase: 0.6,
+      strengthGain: 0.5,
+    },
+  },
+  sand: {
+    level: 0.42,
+    scrape: { cutoffHz: 950, strengthCutoffHz: 400, cutoffDropHzPerSecond: 2600, attackSeconds: 0.018, decaySeconds: 0.06, strengthDecaySeconds: 0.03 },
+    body: { cutoffHz: 180, envelopeSeconds: [0.006, 0.03], gain: 0.5 },
+  },
+  boards: {
+    level: 0.6,
+    durationSeconds: 0.26,
+    body: { cutoffHz: 700, envelopeSeconds: [0.002, 0.012], gain: 0.55 },
+    modes: [
+      { frequencyHz: 188, decaySeconds: 0.06, gain: 0.6, startSeconds: 0 },
+      { frequencyHz: 337, decaySeconds: 0.035, gain: 0.32, startSeconds: 0.001 },
+    ],
+    pitchJitter: 0.08,
+    modeStrengthGain: 0.2,
+    grain: { bandHz: [2200, 6000], envelopeSeconds: [0.0006, 0.003], baseGain: 0.1, strengthGain: 0.2 },
+  },
+  fallback: { level: 0.22, cutoffHz: 480, envelopeSeconds: [0.005, 0.03] },
+  durationSeconds: 0.2,
+  playback: { baseGain: 0.55, strengthGain: 0.45 },
+} as const

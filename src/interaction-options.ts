@@ -56,7 +56,7 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
   const residents = residentInteractions(starterResidents, state, player)
   const field = fieldInteractions(state, player)
   const sightings = journalInteractions(state, player).filter(({ at }) =>
-    !field.some(inspection => inspection.at.x === at?.x && inspection.at.z === at?.z))
+    !field.some((inspection) => inspection.at.x === at?.x && inspection.at.z === at?.z))
   return [
     ...swellInteractions(state, player),
     ...gate.primary,

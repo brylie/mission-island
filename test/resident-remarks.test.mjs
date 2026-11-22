@@ -14,7 +14,7 @@ function world(hour, rain = 0, extra = {}) {
   return { ...JSON.parse(JSON.stringify(base)), islandTime: ((hour - 6 + 24) % 24) * daySeconds / 24 + daySeconds, weather: { hour, rain }, ...extra }
 }
 
-const moments = [[7, 0], [10, 0], [13, 1], [16, .5], [19, 0], [23, 0], [2, 1]]
+const moments = [[7, 0], [10, 0], [13, 1], [16, 0.5], [19, 0], [23, 0], [2, 1]]
 
 test('every resident has something fitting to say at every hour and in any weather, and every token fills', () => {
   for (const resident of starterResidents) {
@@ -62,12 +62,9 @@ test('the same seed gives the same remark, talking again avoids a repeat, and th
 })
 
 test('word gets around: neighbors mention kept favors and a broken promise, but not their own', () => {
-  const residents = { ...base.residents,
-    mara: { ...blankRecord(), trust: 1, kept: ['mara-supper'] },
-    wren: { ...blankRecord(), kept: ['wren-gate'], active: 'wren-swell', breach: { favor: 'wren-swell', at: 0, amended: false, rebuilt: 0 } } }
+  const residents = { ...base.residents, mara: { ...blankRecord(), trust: 1, kept: ['mara-supper'] }, wren: { ...blankRecord(), kept: ['wren-gate'], active: 'wren-swell', breach: { favor: 'wren-swell', at: 0, amended: false, rebuilt: 0 } } }
   const state = world(10, 0, { residents })
-  const gossip = (id, start) => fits(islandRemarks.find(({ text }) => text.startsWith(start)),
-    remarkContext(starterResidents.find((resident) => resident.id === id), state, listener))
+  const gossip = (id, start) => fits(islandRemarks.find(({ text }) => text.startsWith(start)), remarkContext(starterResidents.find((resident) => resident.id === id), state, listener))
   assert.ok(gossip('ines', 'Mara says you brought her carrots'))
   assert.ok(!gossip('mara', 'Mara says you brought her carrots'), 'Mara thanks the crew herself')
   assert.ok(gossip('bram', 'Wren seemed upset'))

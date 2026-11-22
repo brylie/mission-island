@@ -115,8 +115,7 @@ test('the truck rear lip is jumpable and its side rail blocks an attempted entry
       player: { ...offset(truckStart, lateral, forward), y: 0, heading: 0, grounded: false, onBed: false },
       verticalSpeed: jumpSpeed,
     }
-    for (let i = 0; i < 30; i++) stepPlayer(motion, pose, pose,
-      i < 15 ? direction : { x: 0, z: 0 }, false, dt)
+    for (let i = 0; i < 30; i++) stepPlayer(motion, pose, pose, i < 15 ? direction : { x: 0, z: 0 }, false, dt)
     return motion.player
   }
   assert.equal(jump(0, -3.26, { x: 1, z: 0 }).onBed, true)
@@ -127,8 +126,7 @@ test('a second jump reaches the truck roof and stays on it as the truck moves', 
   const dt = 1 / 30
   const pose = parkedGroundPose(truckStart, flatbedGroundDrive.wheels, groundHeight)
   const motion = {
-    player: { ...offset(truckStart, 0, -0.55), y: truckBed.top, heading: truckStart.heading,
-      grounded: false, onBed: false, swimming: false },
+    player: { ...offset(truckStart, 0, -0.55), y: truckBed.top, heading: truckStart.heading, grounded: false, onBed: false, swimming: false },
     verticalSpeed: jumpSpeed,
   }
   for (let i = 0; i < 36; i++) {
@@ -148,8 +146,10 @@ test('a second jump reaches the truck roof and stays on it as the truck moves', 
 test('a crate blocks a walking player and supports a player landing from a jump', () => {
   const dt = 1 / 30
   const pose = parkedGroundPose(truckStart, flatbedGroundDrive.wheels, groundHeight)
-  const top = (point, margin) => Math.abs(point.x - 20.9) < crateSize / 2 + margin &&
-    Math.abs(point.z + 18) < crateSize / 2 + margin ? crateSize : -Infinity
+  const top = (point, margin) => Math.abs(point.x - 20.9) < crateSize / 2 + margin
+    && Math.abs(point.z + 18) < crateSize / 2 + margin
+    ? crateSize
+    : -Infinity
   const motion = { player: { x: 19.5, z: -18, y: 0, heading: 0, grounded: true, onBed: false, swimming: false }, verticalSpeed: 0 }
   for (let i = 0; i < 12; i++) stepPlayer(motion, pose, pose, { x: 1, z: 0 }, false, dt, top)
   assert.ok(motion.player.x < 20.45)
@@ -190,7 +190,12 @@ test('named save slots are separate, validated and replaced with full snapshots'
   first.write(save)
   assert.deepEqual(first.load(), save)
   const crew = [{ token: 'a'.repeat(32), reserved: true, player: {
-    ...truckStart, id: 0, y: 0, seeds: 0, inventory: [], goods: { fish: 0, carrots: 0 },
+    ...truckStart,
+    id: 0,
+    y: 0,
+    seeds: 0,
+    inventory: [],
+    goods: { fish: 0, carrots: 0 },
   } }]
   const held = { ...save, crew, world: { ...save.world, items: save.world.items.map((item) => ({ ...item })) } }
   held.world.items[0].holder = 0

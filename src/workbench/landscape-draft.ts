@@ -6,8 +6,8 @@ const maxObjects = 60
 
 type Placement = Point & { kind: keyof typeof draftLabels }
 type DraftObject = Placement & { id: number }
-type Edit = { type: 'place' | 'remove'; index: number; object: DraftObject } |
-  { type: 'move'; index: number; before: Point; after: Point }
+type Edit = { type: 'place' | 'remove', index: number, object: DraftObject }
+  | { type: 'move', index: number, before: Point, after: Point }
 
 function loadPlacements(saved: string | null): Placement[] {
   try {
@@ -16,10 +16,11 @@ function loadPlacements(saved: string | null): Placement[] {
     return parsed.slice(0, maxObjects).filter((item: unknown): item is Placement => {
       if (typeof item !== 'object' || item === null) return false
       const point = item as Partial<Placement>
-      return typeof point.kind === 'string' && Object.hasOwn(draftLabels, point.kind) &&
-        typeof point.x === 'number' && Number.isFinite(point.x) && typeof point.z === 'number' && Number.isFinite(point.z)
+      return typeof point.kind === 'string' && Object.hasOwn(draftLabels, point.kind)
+        && typeof point.x === 'number' && Number.isFinite(point.x) && typeof point.z === 'number' && Number.isFinite(point.z)
     })
-  } catch {
+  }
+  catch {
     return []
   }
 }

@@ -28,7 +28,7 @@ interface Options {
 }
 
 export function createGameInteractions(
-  { state, growth }: { state: Snapshot; growth: number[] },
+  { state, growth }: { state: Snapshot, growth: number[] },
   physics: ReturnType<typeof createCargoPhysics>,
   { crew, orders, freight, journal, clock, checkpoint }: Options,
 ) {

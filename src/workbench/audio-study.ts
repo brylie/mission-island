@@ -1,4 +1,7 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { audioStage } from '../assets/geometry/workbench-audio-stage'
+import { auditionControls } from '../assets/recipes/workbench-audio-study'
+import { baseSwellSpacingSeconds, maximumSwellIntervalRatio } from '../audio/surf-player'
 import { createAudioEngine, type AudioEngine, type Point3 } from '../audio/engine'
 import { crewSwing, strideCycleMetres } from '../island-render-pose'
 import { crateCue, footstepCue, swellCue, swellSeconds, type CrateSurface, type FootSurface, type Rendered } from '../audio/recipes'
@@ -10,33 +13,46 @@ const sharedAudio = () => shared ??= createAudioEngine()
 
 type Layer = 'surf' | 'footsteps' | 'crate'
 const layers: Layer[] = ['surf', 'footsteps', 'crate']
-const listener = { x: 0, y: 1.6, z: 0 }
+const listener = { x: 0, y: audioStage.listener.y, z: 0 }
+const auditionDuration = 8
+const cueVariants = 4
+const minimumStepPace = 0.5
+const stepsPerStride = 2
+const repeatCrateSeconds = 1.6
+const swellJitterStart = 0.85
+const swellJitterRange = 0.3
+const auditionLateness = 2
+const scheduleAheadSeconds = 0.25
+const gainDisplayDigits = 2
 const forward = { x: 0, y: 0, z: 1 }
 
 // Sources sit ahead and slightly to the right, so a spatial audition is audibly placed.
-const source = (distance: number): Point3 => ({ x: distance * 0.5, y: 0.4, z: Math.max(0.5, distance * 0.87) })
+function source(distance: number): Point3 {
+  const { xRatio, height, minimumZ, zRatio } = audioStage.source
+  return { x: distance * xRatio, y: height, z: Math.max(minimumZ, distance * zRatio) }
+}
 
 const number = (values: Values, key: string, fallback: number) => typeof values[key] === 'number' ? values[key] : fallback
 
 function cue(layer: Layer, values: Values, variant: number): Rendered {
-  const seed = number(values, 'seed', 1) * 4 + variant % 4
-  if (layer === 'surf') return swellCue({ strength: number(values, 'breaker', 0.5) }, seed)
+  const seed = number(values, 'seed', auditionControls.seed.value) * cueVariants + variant % cueVariants
+  if (layer === 'surf') return swellCue({ strength: number(values, 'breaker', auditionControls.breaker[0]) }, seed)
   if (layer === 'footsteps') {
-    const strength = Math.min(1, number(values, 'pace', 8) / 12)
+    const strength = Math.min(1, number(values, 'pace', auditionControls.pace[0]) / auditionControls.pace[2])
     return footstepCue({ surface: String(values.surface) as FootSurface, strength }, seed)
   }
-  return crateCue({ strength: number(values, 'impact', 0.6), surface: String(values.receiving) as CrateSurface }, seed)
+  return crateCue({ strength: number(values, 'impact', auditionControls.impact[0]), surface: String(values.receiving) as CrateSurface }, seed)
 }
 
 // Seconds between repeated cues for each layer, from the same pacing the island uses.
 function interval(layer: Layer, values: Values) {
-  if (layer === 'surf') return 5.2 * number(values, 'spacing', 1) * (0.85 + Math.random() * 0.3)
+  if (layer === 'surf') return baseSwellSpacingSeconds * number(values, 'spacing', auditionControls.spacing[0]) * (swellJitterStart + Math.random() * swellJitterRange)
   if (layer === 'footsteps') {
     // Half a walk cycle at this pace, matching the legs in the game.
-    const pace = Math.max(0.5, number(values, 'pace', 8))
-    return strideCycleMetres(crewSwing(pace)) / 2 / pace
+    const pace = Math.max(minimumStepPace, number(values, 'pace', auditionControls.pace[0]))
+    return strideCycleMetres(crewSwing(pace)) / stepsPerStride / pace
   }
-  return 1.6
+  return repeatCrateSeconds
 }
 
 function createAudition() {
@@ -51,10 +67,12 @@ function createAudition() {
     const spatial = values.spatial !== false
     const placed = engine.play(rendered, {
       // An audition waits for a buffer rendered on demand rather than skipping the cue.
-      bus: layer === 'surf' ? 'ambience' : 'effects', at, lateness: 2,
-      position: spatial ? source(number(values, 'distance', 6)) : undefined,
+      bus: layer === 'surf' ? 'ambience' : 'effects',
+      at,
+      lateness: auditionLateness,
+      position: spatial ? source(number(values, 'distance', auditionControls.distance[0])) : undefined,
     })
-    if (placed) last = `${layer} · ${rendered.key} · gain ${rendered.gain.toFixed(2)}`
+    if (placed) last = `${layer} · ${rendered.key} · gain ${rendered.gain.toFixed(gainDisplayDigits)}`
   }
 
   function playing(values: Values) {
@@ -83,14 +101,14 @@ function createAudition() {
       if (!repeating || engine.state() !== 'running') return
       const now = engine.now()
       for (const layer of playing(values)) {
-        if (next[layer] - now > 0.25) continue
+        if (next[layer] - now > scheduleAheadSeconds) continue
         const at = Math.max(now, next[layer])
         play(layer, values, at)
-        next[layer] = at + (layer === 'surf' ? Math.min(interval(layer, values), swellSeconds(number(values, 'breaker', 0.5)) * 1.4) : interval(layer, values))
+        next[layer] = at + (layer === 'surf' ? Math.min(interval(layer, values), swellSeconds(number(values, 'breaker', auditionControls.breaker[0])) * maximumSwellIntervalRatio) : interval(layer, values))
       }
     },
     describe(values: Values) {
-      const mode = values.spatial !== false ? `${number(values, 'distance', 6)} m spatial` : 'unspatialised baseline'
+      const mode = values.spatial !== false ? `${number(values, 'distance', auditionControls.distance[0])} m spatial` : 'unspatialised baseline'
       const muted = values.mute === true ? ' · muted' : ''
       return `Audio ${engine.state()}${muted} · ${repeating ? 'repeating' : 'single'} · ${mode} · voices ${engine.voices()} · ${last}`
     },
@@ -101,23 +119,26 @@ let audition: ReturnType<typeof createAudition> | undefined
 const activeAudition = () => audition ??= createAudition()
 
 export const audioStudy: Entry = {
-  id: 'starter-audio', name: 'Starter Island sound', group: 'Sound', source: 'src/audio/recipes.ts',
+  id: 'starter-audio',
+  name: 'Starter Island sound',
+  group: 'Sound',
+  source: 'src/audio/recipes.ts',
   description: 'Audition the surf, footstep and crate recipes used on Starter Island at a chosen seed and listening distance.',
   readout: 'Audition',
-  duration: 8,
-  angle: .9,
+  duration: auditionDuration,
+  angle: audioStage.angle,
   ground: { height: 0, color: '#8e9b84' },
   controls: [
     control('layer', 'Sound layer', 'crate', { surf: 'Surf', footsteps: 'Footsteps', crate: 'Crate impact' }),
     { type: 'checkbox', key: 'solo', label: 'Solo layer', value: true },
-    { type: 'number', key: 'seed', label: 'Seed', value: 1, min: 1, max: 9999, step: 1 },
-    range('distance', 'Listener distance (m)', 6, 0, 60, 1),
+    { type: 'number', key: 'seed', label: 'Seed', ...auditionControls.seed },
+    range('distance', 'Listener distance (m)', ...auditionControls.distance),
     { type: 'checkbox', key: 'spatial', label: 'Spatial audition', value: true },
-    range('breaker', 'Breaker strength', .5, 0, 1, .05),
-    range('spacing', 'Breaker spacing (×)', 1, .6, 1.6, .05),
+    range('breaker', 'Breaker strength', ...auditionControls.breaker),
+    range('spacing', 'Breaker spacing (×)', ...auditionControls.spacing),
     control('surface', 'Footstep surface', 'gravel', { gravel: 'Gravel', sand: 'Sand', boards: 'Dock boards', fallback: 'Soft ground' }),
-    range('pace', 'Walking pace (m/s)', 8, 2, 12, .5),
-    range('impact', 'Drop strength', .6, 0, 1, .05),
+    range('pace', 'Walking pace (m/s)', ...auditionControls.pace),
+    range('impact', 'Drop strength', ...auditionControls.impact),
     control('receiving', 'Receiving surface', 'ground', { ground: 'Ground', bed: 'Truck bed' }),
     { type: 'checkbox', key: 'mute', label: 'Mute', value: false },
   ],
@@ -128,8 +149,9 @@ export const audioStudy: Entry = {
   ],
   create(meshes, values, _reportError, observe) {
     const stage = new TransformNode('Audio study', meshes.scene)
-    meshes.box(listener.x, 0.8, listener.z, 0.5, 1.6, 0.35, '#3b6f8f', stage)
-    const emitter = meshes.sphere(0, 0, 0, 0.6, 0.6, 0.6, '#e2a648', stage)
+    const { listener: listenerMarker, source: emitterMarker } = audioStage
+    meshes.box(listener.x, listenerMarker.boxY, listener.z, ...listenerMarker.boxSize, listenerMarker.color, stage)
+    const emitter = meshes.sphere(0, 0, 0, ...emitterMarker.size, emitterMarker.color, stage)
     const current = activeAudition()
     meshes.scene.onDisposeObservable.addOnce(() => {
       current.stop()
