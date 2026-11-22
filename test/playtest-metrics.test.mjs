@@ -59,6 +59,7 @@ test('a two-seat sleep skip logs the observed night and dawn in a private host f
   b.close()
   h.advance()
   assert.equal(statSync(path).mode & 0o777, 0o600)
+  rejoined.close()
 })
 
 test('checkpoint metrics start when the crew is ready and restart from a fresh baseline', (t) => {

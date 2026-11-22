@@ -12,6 +12,7 @@ import { createGateRepair } from './gate-repair.ts'
 import { createGateSwell } from './gate-swell.ts'
 import { homeInteractions } from './home-interactions.ts'
 import { createInteractions } from './interactions.ts'
+import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
 import type { createJournal } from './journal.ts'
 import { createMaterialsWork } from './materials-work.ts'
 import type { createOrders } from './orders.ts'
@@ -25,12 +26,13 @@ interface Options {
   journal: Pick<ReturnType<typeof createJournal>, 'hearMara' | 'interactions'>
   clock: () => number
   checkpoint?: () => void
+  metrics?: GameplayPlaytestMetrics
 }
 
 export function createGameInteractions(
   { state, growth }: { state: Snapshot, growth: number[] },
   physics: ReturnType<typeof createCargoPhysics>,
-  { notifyCrew, orders, freight, journal, clock, checkpoint }: Options,
+  { notifyCrew, orders, freight, journal, clock, checkpoint, metrics }: Options,
 ) {
   const gate = createGateRepair(state, notifyCrew, () => residents.keep(wren, wren.favors[0]))
   const swell = createGateSwell(state, notifyCrew)
@@ -38,7 +40,7 @@ export function createGameInteractions(
     talk: { wren: gate.talk, mara: journal.hearMara },
     ...swell.hooks,
   }, checkpoint)
-  const farm = createFarmOrders(state, notifyCrew, clock, checkpoint)
+  const farm = createFarmOrders(state, notifyCrew, clock, checkpoint, metrics)
   const materials = createMaterialsWork(state, notifyCrew, () => residents.keep(wren, repairSupplyFavor))
   const ferry = createFerryRepair(state, physics, notifyCrew, freight.creditCrate)
   const cargo = cargoInteractions(state, physics, {
@@ -58,6 +60,6 @@ export function createGameInteractions(
     orders.interactions,
     plotInteractions(state, growth),
     journal.interactions,
-  ), physics, checkpoint)
+  ), physics, checkpoint, metrics)
   return { interactions, gate, residents, farm }
 }

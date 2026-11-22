@@ -4,7 +4,8 @@ import type { Snapshot } from '../src/protocol.ts'
 import { residentAt } from '../src/residents/schedule.ts'
 import { standingOf } from '../src/residents/trust.ts'
 import { starterResident, starterResidents } from '../src/worlds/starter/residents.ts'
-import type { CrewNotice } from './crew.ts'
+import type { CrewMember, CrewNotice } from './crew.ts'
+import { createGameplayPlaytestMetrics, type GameplayMetricEvent } from './gameplay-playtest-metrics.ts'
 
 type HouseholdState = Pick<ReturnType<typeof residentAt>, 'stop' | 'indoors' | 'windowLit'>
 type WrenState = {
@@ -15,7 +16,7 @@ type WrenState = {
   toolboxHolder: number | null
 }
 
-type MetricEvent =
+type MetricEvent = GameplayMetricEvent
   | { event: 'run-start', checkpoint: string | null, seats: number | null }
   | { event: 'crew', connectedSlots: number[] }
   | { event: 'sleep-skip', fromIslandTime: number }
@@ -54,16 +55,27 @@ export function createPlaytestMetrics(write: (metric: Metric) => void, clock = (
       write({ ...event, run, elapsedMs: Math.round(clock() - startedAt), islandTime: state.islandTime, islandHour: state.weather.hour })
     }
 
-    function sample(state: Snapshot, skippedFrom?: number) {
+    const gameplay = createGameplayPlaytestMetrics(emit, clock)
+
+    function startRun(state: Snapshot) {
+      startedAt = clock()
+      emit(state, { event: 'run-start', checkpoint: trial?.checkpoint ?? null, seats: trial?.seats ?? null })
+      const order = state.jobs.active
+      if (order) emit(state, { event: 'job-resumed', job: order.id, progress: order.progress })
+      const { stage, delivered } = state.farmWork.progress
+      if (stage === 'starter' || stage === 'harvest') emit(state, { event: 'job-resumed', job: `produce:${stage}`, progress: delivered })
+    }
+
+    function sample(state: Snapshot, skippedFrom?: number, crew?: { members: CrewMember[], now: number }) {
       const slots = state.players.filter(({ connected }) => connected).map(({ id }) => id).sort((a, b) => a - b)
       if (startedAt === undefined) {
         if (!slots.length) return
-        startedAt = clock()
-        emit(state, { event: 'run-start', checkpoint: trial?.checkpoint ?? null, seats: trial?.seats ?? null })
+        startRun(state)
       }
       if (slots.length !== connectedSlots.length || slots.some((slot, index) => slot !== connectedSlots[index])) {
         connectedSlots = slots
         emit(state, { event: 'crew', connectedSlots })
+        gameplay.roster(state)
       }
       if (!slots.length) {
         // On return, record a fresh baseline for the crew. No one observed the intervening routines.
@@ -72,6 +84,7 @@ export function createPlaytestMetrics(write: (metric: Metric) => void, clock = (
         return
       }
       if (skippedFrom !== undefined) emit(state, { event: 'sleep-skip', fromIslandTime: skippedFrom })
+      if (crew) gameplay.tick(state, crew.members, crew.now)
 
       for (const { id, schedule } of starterResidents) {
         const { stop, indoors, windowLit } = residentAt(schedule, state)
@@ -92,6 +105,7 @@ export function createPlaytestMetrics(write: (metric: Metric) => void, clock = (
 
     function notice(state: Snapshot, notice: CrewNotice, slot?: number) {
       if (startedAt === undefined) sample(state)
+      gameplay.notice(state, notice, slot)
       if (notice.type === 'gate-step' && (notice.step === 'caught' || notice.step === 'clear' || notice.step === 'planed')) {
         emit(state, { event: notice.type, step: notice.step, slot: slot ?? null })
       }
@@ -124,7 +138,7 @@ export function createPlaytestMetrics(write: (metric: Metric) => void, clock = (
       }
     }
 
-    return { sample, notice }
+    return { sample, notice, gameplay }
   }
 }
 
