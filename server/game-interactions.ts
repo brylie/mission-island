@@ -1,5 +1,6 @@
 import type { Snapshot } from '../src/protocol.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
+import { mergeDisjoint } from '../src/interactions/definition.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { repairSupplyFavor, wren } from '../src/worlds/starter/residents/wren.ts'
 import { cargoInteractions } from './cargo-interactions.ts'
@@ -46,18 +47,18 @@ export function createGameInteractions(
     delivery: orders.deliverCrate,
     resident: residents.stageCrate,
   })
-  const interactions = createInteractions(state, {
-    ...gate.interactions,
-    ...swell.interactions,
-    ...ferry.interactions,
-    ...residents.interactions,
-    ...farm.interactions,
-    ...materials.interactions,
-    ...cargo,
-    ...homeInteractions,
-    ...orders.interactions,
-    ...plotInteractions(state, growth),
-    ...journal.interactions,
-  }, physics, checkpoint)
+  const interactions = createInteractions(state, mergeDisjoint(
+    gate.interactions,
+    swell.interactions,
+    ferry.interactions,
+    residents.interactions,
+    farm.interactions,
+    materials.interactions,
+    cargo,
+    homeInteractions,
+    orders.interactions,
+    plotInteractions(state, growth),
+    journal.interactions,
+  ), physics, checkpoint)
   return { interactions, gate, residents, farm }
 }

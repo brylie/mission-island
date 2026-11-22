@@ -5,8 +5,6 @@ import { heldItem } from './interactions/cargo.ts'
 import { besideSubject, defaultInteraction } from './interaction-options.ts'
 import type { Interaction, InteractionChoice } from './interaction-options.ts'
 
-export { heldItem }
-export { atClothingCounter, atHomeDoor } from './interactions/home.ts'
 
 export function canSpray(state: Snapshot, player: Player, item?: Item) {
   return state.mission === 'fire' && !player.seat &&

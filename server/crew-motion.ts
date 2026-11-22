@@ -1,5 +1,6 @@
 import { chargePower } from '../src/charged-actions.ts'
-import { canSpray, heldItem } from '../src/actions.ts'
+import { canSpray } from '../src/actions.ts'
+import { heldItem } from '../src/interactions/cargo.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
 import type { TruckPose } from '../src/truck-pose.ts'
 import { distance, jumpSpeed, lookout, type Point } from '../src/world.ts'

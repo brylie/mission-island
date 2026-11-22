@@ -1,4 +1,5 @@
-import { canBoardSkiff, heldItem, inSkiff } from '../src/actions.ts'
+import { canBoardSkiff, inSkiff } from '../src/actions.ts'
+import { heldItem } from '../src/interactions/cargo.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { walkingHeight } from '../src/terrain.ts'
 import { truckPoint } from '../src/truck-pose.ts'
