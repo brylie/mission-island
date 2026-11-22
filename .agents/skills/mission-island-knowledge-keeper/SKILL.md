@@ -9,7 +9,7 @@ Mission Island's docs are a knowledge base, not only a manual. Students, teacher
 
 The documentation may be larger than the code, and that is fine. Code gets rewritten; the knowledge behind it lasts longer and is the project's most lasting contribution beyond the game. That includes why we chose a design, how a habitat works, and what a first-aid step is for. Never trim an accurate, useful explanation just to keep a change small. Do split long material into well-linked pages.
 
-Start from the [design handbook](../../../docs/README.md), which maps the docs by question and by audience. Read the [field guide README](../../../docs/field-guide/README.md) for real-world entries, and the [learning brief](../../../docs/design/learning-and-careers.md) for how knowledge reaches players.
+Start from the [knowledge framework](../../../docs/knowledge-framework.md). It sets out the document types (game design pages, tutorials, how-to guides, reference and explanation), the registers (real, island, build, rationale), status with last-tended dates, model purpose and entry shapes. Then read the [design handbook](../../../docs/README.md), which maps the docs by question and by audience. Read the [field guide README](../../../docs/field-guide/README.md) for real-world entries, and the [learning brief](../../../docs/design/learning-and-careers.md) for how knowledge reaches players.
 
 ## What to look for
 
@@ -35,6 +35,15 @@ Reviews are rich sources. When the Art Director explains why a silhouette reads,
 - **Useful to more than one audience.** A field guide entry gives a teacher something to point at, a player something to notice, and a developer the data field that models it.
 - **Findable.** Linked from the handbook map, the related design page and the code or data that implements it. Use the project's existing headings and terminology.
 - **Current.** It matches what the code does now. It records playable, preview or planned status as the handbook defines them.
+
+## Framework checks
+
+- **One field, one register.** An *In the game* field holding tuning numbers or issue links should split. Tuning belongs in craft or build reference, and links in a status footer.
+- **Divergence.** Every simplification of a real subject has a divergence note, including what a player might wrongly learn and the real patterns the model misses.
+- **Model purpose.** Every modelled system says whether it is meant to illustrate, explain or predict.
+- **Status and freshness.** Each new or edited page has a status and a last-tended date.
+- **Shapes and types.** Each page keeps one document type and uses the entry shape for its subject.
+- **Reachable.** Each topic is linked from the handbook.
 
 ## Report
 

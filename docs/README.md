@@ -34,13 +34,17 @@ Mission Island is a third-person co-op game about two people making a home on a 
 
 These docs are also a knowledge base. Every mechanic, design choice and piece of the natural world we build is written down with its reasoning, so the project is useful beyond the game itself.
 
+The [knowledge framework](knowledge-framework.md) explains how it's organised:
+- game design documents, plus [tutorials](tutorials/first-tree-species.md), [how-to guides](how-to/add-tree-species.md), reference such as the [field guide](field-guide/README.md), and explanation such as [explainers](explainers/README.md) and [craft](craft/README.md);
+- every statement marked as true of the real world, the island, our build, or our reasoning.
+
 | If you are… | Start with |
 | --- | --- |
-| A student or curious player | The [field guide](field-guide/README.md) for species, habitats and terms, then the [player guide](player-guide.md) and the [field journal](mechanics/field-journal.md) |
+| A student or curious player | [Explainers](explainers/README.md) on topics such as [wildfire](explainers/wildfire.md) and [wet woodland](explainers/wet-woodland.md), the [field guide](field-guide/README.md) for species, habitats and terms, then the [player guide](player-guide.md) and the [field journal](mechanics/field-journal.md) |
 | A teacher or parent | [Learning through island work](design/learning-and-careers.md) for the skills play can teach, and the field guide's *Notice this* prompts for observation activities |
 | A researcher or scientist | The field guide's *In the game* notes, which say what each system models and simplifies, then the [Natural Systems Reviewer skill](../.agents/skills/mission-island-natural-systems/SKILL.md) and the [climate and seasons](design/climate-and-seasons.md) page |
 | A game designer | [Product and game design](game-design.md), the [mechanic pages](#from-a-playtest-to-a-design-change), and [design decisions](design/decisions.md) with the reasons behind them |
-| A developer, artist or student of graphics, audio or simulation | [Craft](craft/README.md) for how we build things and why the techniques work, then [Architecture](architecture.md), the [contributing guide](../CONTRIBUTING.md), the [Workbench guide](workbench.md), and [creative direction](design/creative-direction.md) |
+| A developer, artist or student of graphics, audio or simulation | The [first tree species tutorial](tutorials/first-tree-species.md), then [Craft](craft/README.md) for how we build things and why the techniques work, then [Architecture](architecture.md), the [contributing guide](../CONTRIBUTING.md), the [Workbench guide](workbench.md), and [creative direction](design/creative-direction.md) |
 
 Each change updates the pages it touches, and the [Knowledge Keeper](../.agents/skills/mission-island-knowledge-keeper/SKILL.md) checks this in every review. If you learned something here that isn't written down, add it, or open an issue.
 

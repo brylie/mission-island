@@ -1,5 +1,7 @@
 # Rendering, distance and level of detail
 
+**Status: preview.** **Last tended 2026-11-22.**
+
 How to draw thousands of trees, rocks and plants without the game slowing down, and why detail should follow distance. The examples come from the Highwood species work. The ideas apply to any scenery that repeats: shrubs, rocks, fences or crowds. For how the trees themselves are grown, see [Procedural flora](procedural-flora.md).
 
 ## Detail follows what the eye can see

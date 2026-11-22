@@ -1,5 +1,7 @@
 # Procedural flora
 
+**Status: preview** (Workbench). **Last tended 2026-11-22.** Model purpose: **illustrate** recognisable species and their growth, not predict real tree architecture.
+
 How Mission Island grows trees, shrubs and groundcover from rules and seeds. It also covers why each technique was chosen, what it stands in for in a real plant, and what we learned building the Highwood species generator. Code lives in `src/assets/trees/`, and the species tables are in `src/assets/geometry/tree-species.ts` and `shrub-species.ts`. You can watch everything here in **Ecology → Plants → Highwood species** in the [Workbench](../workbench.md#compare-highwood-tree-species). For the real species, see the [field guide](../field-guide/highwood-plants.md).
 
 ## The goal: read the species, not the leaves

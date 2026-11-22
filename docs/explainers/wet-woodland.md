@@ -1,0 +1,55 @@
+# Wet woodland
+
+**Real world: draft. On the island: planned**, as the Highwood's Mirror Pool and stream-bank woods. Last tended 2026-11-22. Model purpose: **illustrate** a habitat as scenery.
+
+Most trees die if their roots sit in water for long: the soil runs out of air, and roots need oxygen. Yet along rivers, around lochs and in boggy hollows there are woods that live with wet feet all year. In the UK and Ireland they are mostly alder, willow and downy birch. This explainer covers how those trees cope, how a wet wood forms, and why these small, tangled woods are so rich in life.
+
+## Living without air in the soil
+
+Waterlogged soil quickly runs out of oxygen: water fills the spaces where air would be, and microbes use up what's left. Wet-woodland trees have ways around this.
+
+- **Alder** can grow roots near the surface and through water. Its bark and roots have pores and air-filled tissues that let some air reach roots in wet ground.
+- **Willows** grow new roots readily from their stems when flooded. A fallen willow branch stuck in mud will often take root.
+- **Downy birch** tolerates wetter, more acid ground than its cousin silver birch.
+
+Alder has another trick. Swellings on its roots, called *nodules*, hold bacteria (*Frankia*) that take nitrogen from the air and turn it into a form the tree can use. Waterlogged soils are often short of usable nitrogen, so alder can thrive where other trees starve. Its fallen leaves then enrich the ground for everything else.
+
+## How a wet wood forms
+
+Open water tends to fill in over time, a sequence ecologists call a *hydrosere*:
+
+1. **Open water.** Plants grow around the edges.
+2. **Reeds and sedges.** These trap silt and build up dead plant matter.
+3. **Swamp and fen.** The ground rises toward the water level.
+4. **Willow and alder seedlings** take hold on the firmer ground, forming wet woodland, also called *carr*.
+5. **Drier woodland**, very slowly, where the ground eventually rises above the water.
+
+Many wet woods stay as carr for a very long time, held by a high water table, regular flooding or springs.
+
+## Why wet woods matter
+
+- **Life.** Deadwood stays damp and rots slowly, which suits many beetles, flies, mosses and fungi. Otters make their dens among alder roots on riverbanks. In winter, siskins and redpolls feed on alder seeds.
+- **Water.** Wet woods slow floodwater, trap silt and filter water flowing into streams and lochs.
+- **Banks.** Alder roots bind riverbanks against erosion.
+
+These woods are often small, scattered and easily drained for farming, so many have been lost.
+
+## On the island
+
+The Highwood's wet ground, around Mirror Pool and along the stream, is planned for alder and grey willow, with no pine. See the [Highwood habitats](../field-guide/highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks) and the alder and willow entries in [Highwood plants](../field-guide/highwood-plants.md). A downy birch for wet ground is planned. Today's island birch is silver birch, which belongs on drier ground.
+
+## Where the island differs
+
+| Real | On the island | Why | What a player might wrongly learn |
+| --- | --- | --- | --- |
+| Wet woods follow the water table and change as ground floods or dries. | Placement is fixed scenery from a habitat map. | Water-table simulation isn't planned yet. | That woods don't move. Seasonal water levels could later show the link. |
+| Downy birch is a common wet-woodland tree. | Not yet built ([#212](https://github.com/brylie/mission-island/issues/212)). | One birch was built first, to the art brief's weeping form. | That silver birch grows in bogs. |
+| Alder fixes nitrogen and enriches the soil. | Not modelled. | Soil nutrients aren't simulated. | Nothing, as long as the field guide tells the story. |
+
+## Sources
+
+- Woodland Trust, [A–Z of British trees](https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/), for alder and willow.
+
+To add:
+- a habitat source on wet woodland and carr, such as a national conservation body's habitat description;
+- a source for alder root adaptations and *Frankia* nodules.
