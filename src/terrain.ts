@@ -1,5 +1,6 @@
 import { harborDock, island, onDock } from './world.ts'
 import type { Point } from './world.ts'
+import { duneRelief, sampleBeach } from './worlds/starter/beach-landforms.ts'
 import { createStarterCoast, starterCoastSeed } from './worlds/starter/coastline.ts'
 import { falls, fernfallChannel, fernfallProfile, landRelief, shellglassBasin, shoreProfile, shoreStations, tidePool, waterLevel } from './worlds/starter/layout/terrain.ts'
 
@@ -15,6 +16,9 @@ const smoothstepCubicWeight = 2
 const buoyCount = 24
 const buoyAngleDivisor = 12
 const firstSandStation = shoreProfile.indexOf(shoreStations.sandEdge)
+
+const slopeSampleRadius = 0.08
+const slopeSampleReachM = 0.4
 
 const shoreShape = createStarterCoast(starterCoastSeed)
 
@@ -110,8 +114,7 @@ function shellglassHeight(point: Point, shore: number) {
   return shore - depth * basin * basin + rimHeight * rim * rim
 }
 
-export function groundHeight(point: Point) {
-  const radius = coastRadius(point)
+function baseGroundHeight(point: Point, radius: number) {
   if (radius <= shoreStations.meadowEdge.radius) return uplandHeight(point, radius)
   for (let i = firstSandStation; i < shoreProfile.length; i++) {
     const a = shoreProfile[i - 1]
@@ -122,6 +125,27 @@ export function groundHeight(point: Point) {
     }
   }
   return shoreProfile[shoreProfile.length - 1].y
+}
+
+export function groundHeight(point: Point) {
+  return baseGroundHeight(point, coastRadius(point)) + duneRelief(point)
+}
+
+function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {
+  if (Math.abs(radius - shoreStations.sandEdge.radius) > slopeSampleRadius) return 0
+  const radialStep = slopeSampleReachM / rayLengthM
+  const inland = radius - radialStep, seaward = radius + radialStep
+  const near = inland / radius, far = seaward / radius
+  const above = baseGroundHeight({ x: point.x * near, z: point.z * near }, inland)
+  const below = baseGroundHeight({ x: point.x * far, z: point.z * far }, seaward)
+  return Math.abs(above - below) / (slopeSampleReachM + slopeSampleReachM)
+}
+
+export function coastalSurface(point: Point, height?: number) {
+  const radius = coastRadius(point)
+  const rayLengthM = radius > 0 ? Math.hypot(point.x, point.z) / radius : 0
+  const ground = height ?? baseGroundHeight(point, radius) + duneRelief(point)
+  return sampleBeach(point, radius, rayLengthM, ground, crossShoreSlope(point, radius, rayLengthM))
 }
 
 export function waterDepth(point: Point) {

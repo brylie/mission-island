@@ -24,6 +24,20 @@ The [shared noise functions](../src/math/noise.ts) layer periodic, centered valu
 
 The terrain, maps, depth texture and host sample the same contour. The skiff boundary remains 75 m farther out along each ray. The 24 visible buoys and the map boundary both use the same limit as the host's hull checks. A returning player inside the boundary can resume as a swimmer if the shore moved under them. The host moves an on-foot player outside the new boundary to their cottage and returns a stranded skiff to its harbor launch.
 
+## Driftwood dunes and Splitstone
+
+The parasols stand on a broad sandy shelf. Inland of the eastern parasol, sand reaches into a low group of dunes around (39.5, −25.7). Look for narrow blades of marram on the crests and a flock of six sandpipers running and probing on the damp beach below. Sand narrows against the exposed sandstone at Splitstone. The two worn trails fade into sand. Follow the dry landward rim past the Shellglass tide staff and use the southern opening into the Splitstone cleft.
+
+The sandpipers use sanderlings as a reference for their pale body, dark bill and legs, and short foraging runs. Each bird keeps its own space along the wash. Nearby walkers make the birds pause their feeding and give ground along the beach. [Sanderling identification and behavior](https://www.allaboutbirds.org/guide/Sanderling/id/)
+
+The Landscape Workbench runs the same terrain and wildlife as the game. These views share clear 13:00 daylight. Press **Play** in the sandpiper view to watch the run and probe cycle, or place a test crewmate in the dune view and walk over the crest.
+
+- [Coast from above](http://localhost:5173/workbench.html?view=1&focus=40,-28&target=42,0,-28&orbit=-1.50,0.63,50,0.62&sky=13,0,8&display=0,0#landscape)
+- [Driftwood's broad shelf](http://localhost:5173/workbench.html?view=1&focus=31,-36&target=31,0,-36&orbit=1.51,1.22,18,0.67&sky=13,0,8&display=0,0#landscape)
+- [Marram on the inland dune](http://localhost:5173/workbench.html?view=1&focus=39,-27&target=39,0.53,-27&orbit=-2.12,1.40,9.2,0.63&sky=13,0,8&display=0,0#landscape)
+- [Sandpipers below the dunes](http://localhost:5173/workbench.html?view=1&focus=39.8,-36.8&target=39.8,0,-36.8&orbit=1.18,1.31,4.7,0.62&sky=13,0,8&display=0,0#landscape)
+- [Splitstone at shore level](http://localhost:5173/workbench.html?view=1&focus=55,-22&target=55,0.42,-22&orbit=-0.77,1.18,12,0.66&sky=13,0,8&display=0,0#landscape)
+
 ## Repeat the field check
 
 1. Open the game in Island view and look south toward the harbor curve and north toward the Windstone point. Switch to the follow camera and walk Harbor Depot → fishing dock. Check that the plank approach and boarding work and that the skiff can paddle out and turn back from the buoy limit. Walk the road to the closed ferry terminal as a separate approach.

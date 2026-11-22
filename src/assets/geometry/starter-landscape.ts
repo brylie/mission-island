@@ -1,6 +1,7 @@
 export const starterShoreFinish = {
-  uvRepeatsPerTurn: 96,
-  uvRadialScale: 32,
+  sand: { repeatsPerMetre: 1.45 },
+  wetSandTint: { redLoss: 0.33, greenLoss: 0.25, blueGain: 0.05 },
+  rock: { repeatsPerMetre: 0.67, cos: 0.89, sin: 0.456, red: 0.62, green: 0.69, blue: 0.88 },
   shellglass: {
     toneRadiusX: 4.2,
     toneRadiusZ: 3.5,

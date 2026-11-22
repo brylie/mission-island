@@ -16,7 +16,7 @@ Give each destination a detail that helps players infer who uses the place, what
 
 Design the approach as part of the place. Let players glimpse a distinctive shape, follow a worn route, then discover something smaller at walking distance. Leave room for two people to stop and look. Use wear, repairs, local plants and animal routines where they belong. During review, ask what a player could learn by looking around with the labels off and what would draw them back at another hour.
 
-**Desire paths and animal trails** show repeated use. Where people leave a maintained route for a favorite destination, let the tread narrow, bend around obstacles, and fade where visitors spread out. At Driftwood, the pavement reaches the beach and worn tracks branch toward Shellglass Tide Pool and Splitstone Narrows. The worn earth fades at the grass–sand boundary. From there, the tide pool and sandstone fins guide the last few steps across open sand.
+**Desire paths and animal trails** show repeated use. Where people leave a maintained route for a favorite destination, let the tread narrow, bend around obstacles, and fade where visitors spread out. At Driftwood, the narrow track fades into the dunes off the paved approach. The tide staff guides visitors across open sand to Shellglass. Beyond the dry rim, a short tread fades again and the sandstone fins guide the last few steps into Splitstone Narrows.
 
 Animal trails follow a species’ routine. A hare might slip through a hedge between cover and a feeding patch, while ducks might leave a short, flattened run from reeds to water. Match the width, headroom and occasional tracks to the animal. Place those traces where players can also observe the behavior.
 

@@ -40,7 +40,7 @@ export const wornTrailModel = {
   widthRamp: 0.42,
   sway: { amplitude: 0.10, rate: 1.12 },
   lift: 0.018,
-  duneFade: 0.012,
+  sandFade: { start: 0.12, span: 0.45 },
   wear: { base: 0.77, slow: { amplitude: 0.13, rate: 1.84 }, fast: { amplitude: 0.09, rate: 5.52 } },
   color: [0.58, 0.46, 0.29],
   opacityEdgeCurve: 1.6,

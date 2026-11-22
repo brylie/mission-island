@@ -5,7 +5,8 @@ import type { MeshFactory } from '../island-meshes'
 import type { MarketRunoff } from '../market-runoff'
 import type { Player, Snapshot } from '../protocol'
 import type { ShaderQuality } from '../shader-studies'
-import { coastRadius, groundHeight, tidePool, waterDepth, waterLevel } from '../terrain'
+import { coastalSurface, groundHeight, tidePool, waterDepth, waterLevel } from '../terrain'
+import { beachHasSand } from '../worlds/starter/beach-landforms'
 import { onBeachTowel } from '../worlds/starter/sites'
 import { daylight, nightLighting } from '../weather'
 import { harborDock } from '../world'
@@ -101,8 +102,8 @@ function naturalResponses(frame: EffectFrame, { runoff, snapshot }: WorldSignals
 function stampCandidate(player: Player) {
   const beach = starterShaderSites.sand.footprints
   return player.connected && player.grounded && !player.sleeping && !player.seat && !player.truckSurface
-    && !onBeachTowel(player) && coastRadius(player) > beach.minCoastRadius && waterDepth(player) < beach.maxDepth
     && player.x > beach.minX && player.z < beach.maxZ
+    && !onBeachTowel(player) && waterDepth(player) < beach.maxDepth && beachHasSand(coastalSurface(player))
 }
 
 function activeHeadlamp(snapshot: Snapshot | undefined): EffectFrame['lamp'] {

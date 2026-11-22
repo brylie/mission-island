@@ -125,3 +125,16 @@ export const driftwoodStrand = {
     { angle: 5.62, radius: 1.012 },
   ],
 } as const
+
+export const starterBeachLandforms = {
+  // Local footprints are oriented along the shore, in metres.
+  driftwood: { x: 31.5, z: -35.6, alongM: 12, acrossM: 7, heading: 0.35, extraWidthM: 3.6 },
+  splitstone: { x: 55.3, z: -21.5, alongM: 8.3, acrossM: 5.6, heading: 1.13, rockReachM: 6.2 },
+  duneSand: { x: 39.3, z: -27.7, alongM: 6.9, acrossM: 8.3, heading: 0.48 },
+  dunes: [
+    { x: 37.2, z: -27.0, alongM: 4.1, acrossM: 2.0, heading: 0.67, riseM: 0.80 },
+    { x: 39.5, z: -25.7, alongM: 4.7, acrossM: 2.1, heading: 0.54, riseM: 0.91 },
+    { x: 42.3, z: -24.8, alongM: 3.3, acrossM: 1.7, heading: 0.43, riseM: 0.48 },
+  ],
+  edgeNoise: { seed: 1887, broadM: 6.5, fineM: 2.7, broadAmplitudeM: 1.45, fineAmplitudeM: 0.45 },
+} as const
