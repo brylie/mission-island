@@ -29,6 +29,7 @@ Arguments are optional. A PR number, branch or commit range sets the target. Tex
 | [Co-op Gameplay](../mission-island-coop-gameplay/SKILL.md) | changes jobs, rewards, missions, residents, interactions or roles (`server/`, `src/interactions/`, `jobs`, `*-repair`, `farm*`, `orders`, `src/residents/`). |
 | [Playtest and Accessibility](../mission-island-playtest-accessibility/SKILL.md) | changes controls, camera, prompts, onboarding, feedback text, menus or anything a new player must notice. |
 | [Procedural Audio](../mission-island-procedural-audio/SKILL.md) | touches `src/audio/` or adds a cause players should hear. |
+| [Knowledge Keeper](../mission-island-knowledge-keeper/SKILL.md) | always runs, after the other reviewers so it can read their notes. It checks that design decisions, mechanics, architecture, tools, and the real-world knowledge behind the change (species, habitats, weather, first aid, practical skills) reached the knowledge base. For a copy-only change, it can report "nothing new" in one line. |
 
 ## 2. Run the static checks
 
@@ -74,6 +75,7 @@ Finish with a short report:
 - static checks run and their results
 - what was exercised, and where (test name, scenario ID and crew size, Workbench link), with captures
 - each reviewer's final verdict and what changed because of it
+- the knowledge base pages added or updated, and any knowledge filed as a follow-up
 - what remains unverified, such as a two-machine LAN run or a fresh human player
 
 Put findings that belong outside this change in the relevant issue or the [playtest log](../../../docs/playtests/findings.md), or offer them as follow-up issues.
