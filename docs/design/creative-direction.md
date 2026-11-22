@@ -19,7 +19,7 @@ Materials should suggest how something grows, weathers, or is handled. Look at w
 
 For sound, a direction to try is a cue with a recognizable source: boots change tone at the dock, or a saw becomes audible on the approach to a timber yard. Pair important prompts with visible feedback so two players talking across the room can still follow the action. Start by listening for surf, surface footsteps, and crate impacts on the route from Harbor Depot to Driftwood Beach. [Starter Island audio pass #136](https://github.com/brylie/mission-island/issues/136) · [Procedural Audio skill](../../.agents/skills/mission-island-procedural-audio/SKILL.md) · [Timber Works sound proposal](https://github.com/brylie/mission-island/issues/47)
 
-The [crew character turnaround](crew-character-art.md) sets the proportions and finish for character fittings. The [coastal model studies](coastal-model-studies.md) show how to apply that direction to plants, wildlife, buildings and vehicles with the game’s mesh factories.
+The [crew character turnaround](crew-character-art.md) sets the proportions and finish for character fittings. The [coastal model studies](coastal-model-studies.md) show how to apply that direction to plants, wildlife, buildings and vehicles with the game’s mesh factories. The [color direction](color-direction.md) proposes how light, named material families, dyes and signal colors fit together.
 
 ### Give forms a reason to look the way they do
 
