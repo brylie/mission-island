@@ -13,6 +13,11 @@ One list of everything we know we don't know: research to do, sources to find, a
 - **Species figures.** Lifespans, flowering months and the heather life cycle, before any reaches game text. See [Highwood plants](field-guide/highwood-plants.md#sources).
 - **Unopened sources.** Every `opened: false` entry in [`sources.yaml`](sources.yaml).
 
+- **Bracken toxicity.** A search summary suggested the risk to livestock may be low, but its page couldn't be opened. "Bracken is poisonous to livestock" may turn out contested once that source is read.
+- **Field guide species entries.** These still make real claims with no individual sources. Several are now sourced on the habitats page, such as juniper's decline, alder's nodules, siskins and otters. Link those source ids from the species entries.
+- **Quote checks.** A person needs to check each `quote-via: fetcher` quote in the sources register against its page, before those claims can be marked verified.
+- **Archiving.** No source has an archived copy yet. Saving pages to the Wayback Machine sends their URLs to an outside service, so it needs the maintainer's go-ahead.
+
 ## Planned, not built
 
 - Seasonal change for trees and shrubs: [#211](https://github.com/brylie/mission-island/issues/211).

@@ -102,8 +102,8 @@
   tier: 1
   region: Scotland
   supports:
-    - claim: "Crested tit in Caledonian pinewood."
-      quote: "(quote to add)"
+    - claim: "Crested tits flourish in Caledonian pinewood."
+      quote: "crested tits flourish in this habitat"
       used-in: field-guide/highwood-habitats.md#pinewood-interior
 
 - id: fc-rides-edges
@@ -294,8 +294,8 @@
     - claim: "Bracken fronds contain toxic compounds."
       quote: "fronds contain toxic compounds"
       used-in: field-guide/highwood-habitats.md#bracken-slopes
-    - claim: "Bracken with violets is important habitat for the pearl-bordered fritillary."
-      quote: "(quote to add)"
+    - claim: "Bracken and dog violets growing together on sunny hillsides are important habitat for the pearl-bordered fritillary."
+      quote: "The combination of bracken and dog violets growing together"
       used-in: field-guide/highwood-habitats.md#bracken-slopes
 
 - id: scotgov-bracken-2025

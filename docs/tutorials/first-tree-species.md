@@ -1,6 +1,6 @@
 # Grow your first tree species
 
-**Status: run by its author on 2026-11-22, at commit `7ce7b35`.** Not yet completed by someone who didn't write it. That's what makes a tutorial verified, under the [knowledge framework](../knowledge-framework.md). If you're the first, note anything that tripped you up and update this line.
+**Status: run by its author on 2026-11-22, at commit `bad36da`.** Not yet completed by someone who didn't write it. That's what makes a tutorial verified, under the [knowledge framework](../knowledge-framework.md). If you're the first, note anything that tripped you up and update this line.
 
 In this tutorial you'll add **hazel**, a multi-stemmed shrubby tree of woodland edges, to the Highwood species generator. You'll watch it grow in the Workbench, check that it reads as its own species, and write its field guide entry. It takes about an hour. You don't need to know how the generator works inside; [Procedural flora](../craft/procedural-flora.md) explains that when you're curious.
 
@@ -62,7 +62,20 @@ The text in quotes is hazel's **id**. Choose it carefully: the generator mixes t
 node --experimental-strip-types --test test/tree-species.test.mjs
 ```
 
-One test fails: it lists every full-size tree species and checks their budgets, and hazel isn't in the list. Open `test/tree-species.test.mjs`, find the line that lists `'scots-pine', 'birch', 'aspen', 'rowan', 'alder', 'willow'`, and add `'hazel'` at the end. Run the tests again.
+**You should see** two tests fail. Both are expected, and they're how the project makes sure every species is complete:
+
+1. **The budget list.** One test lists every full-size tree species and checks their budgets, and hazel isn't in the list yet. Open `test/tree-species.test.mjs`, find the line that lists `'scots-pine', 'birch', 'aspen', 'rowan', 'alder', 'willow'`, and add `'hazel'` at the end.
+2. **The reference photo.** Every species must keep a licensed photo of the real plant beside its data, so anyone refining the model later can find what it was shaped from. Open `src/assets/geometry/tree-references.ts` and add this before `'pine-snag'`:
+
+   ```ts
+   'hazel': [
+     { photo: `${commons}Corylus_avellana_shrub.jpg`, licence: 'CC BY-SA 3.0', author: 'MPF', shows: 'A hazel shrub with many stems rising from the base.' },
+   ],
+   ```
+
+   This photo is from Wikimedia Commons. Its licence and author were checked on its file page, but the image itself wasn't viewed during that check. Look at it in step 6 before relying on it.
+
+Run the tests again.
 
 **You should see** every test pass: `ℹ fail 0`.
 
@@ -88,11 +101,13 @@ Reload the Workbench and choose **Species: Hazel**.
 
 Your hazel is finished when all four look like this. Tuning its shape further is in the [how-to guide](../how-to/add-tree-species.md#change-how-a-species-looks).
 
-## 6. Optional: compare with a real hazel
+## 6. Compare with the real hazel
 
-This step is open-ended. Skip it if you just want the finished tree.
+With **Species: Hazel** selected, choose **Show reference photo**.
 
-Find a whole-tree hazel photo on [Wikimedia Commons](https://commons.wikimedia.org/) with a CC licence. Open **Reference image**, paste the photo's File page, and compare stems, crown and colour side by side. The how-to guide's table says which field to change for each difference you notice.
+**You should see** the hazel photo from step 4 open beside your trees, with its licence link above it. Compare the stems, crown and colour.
+
+Refining the model to match the photo is open-ended, so it isn't part of this tutorial. The how-to guide's table says which field changes each difference you notice.
 
 ## 7. Write it down
 

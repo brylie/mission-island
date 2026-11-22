@@ -1,6 +1,6 @@
 # Add a tree species or variation
 
-**Status: verified on 2026-11-22.**
+**Status: steps run on 2026-11-22 at commit `bad36da`.**
 
 A checklist for adding a species to the Highwood generator, or changing how an existing one looks. For a guided first attempt, follow the [tutorial](../tutorials/first-tree-species.md) instead. [Procedural flora](../craft/procedural-flora.md) explains the techniques behind each field.
 
@@ -13,24 +13,24 @@ A checklist for adding a species to the Highwood generator, or changing how an e
    - a snag or log, in `shrub-species.ts`.
 2. **Write the form.** Export a new constant that spreads the parent (`...rowan`) and overrides what differs. Data files hold constants only: no function calls.
 3. **Register it.** Add it to `treeSpecies` in `src/assets/trees/tree-catalog.ts`. The id string salts every random number, so **never rename an id once trees are placed**.
-4. **Update the test list.** If it's a full-size tree (`budget: 'tree'`), add its id to the species list in `test/tree-species.test.mjs`, in the test named "trees keep their budgets…".
-5. **Run the checks:**
+4. **Add a reference photo.** Put at least one licensed Wikimedia Commons photo in `src/assets/geometry/tree-references.ts`, with licence, author and what to compare. Open the file page and check the licence; don't pick from memory. A test fails until every species has one.
+5. **Update the test list.** If it's a full-size tree (`budget: 'tree'`), add its id to the species list in `test/tree-species.test.mjs`, in the test named "trees keep their budgets…".
+6. **Run the checks:**
    ```sh
    node --experimental-strip-types --test test/tree-species.test.mjs
    npm run quality:commit
    ```
-6. **Review in the Workbench** under **Ecology → Plants → Highwood species**:
+7. **Review in the Workbench** under **Ecology → Plants → Highwood species**:
    - several seeds;
    - every age and exposure;
    - the silhouette from the front, beside its nearest look-alike species;
    - near beside far;
    - a licensed reference photo.
-7. **Document it:**
+8. **Document it:**
    - a [field guide](../field-guide/highwood-plants.md) entry, with a divergence note for anything simplified;
-   - its reference photos in `src/assets/geometry/tree-references.ts`, with licence, author and what to compare. A test requires at least one per species, and **Show reference photo** in the Workbench opens it;
    - a [references](../highwood-species.md) row;
    - placement rules in [Highwood habitats](../field-guide/highwood-habitats.md).
-8. **Verify.** Run the [verify skill](../../.agents/skills/verify/SKILL.md), which includes the Art Director, Natural Systems and Knowledge Keeper reviews.
+9. **Verify.** Run the [verify skill](../../.agents/skills/verify/SKILL.md), which includes the Art Director, Natural Systems and Knowledge Keeper reviews.
 
 ## Change how a species looks
 
