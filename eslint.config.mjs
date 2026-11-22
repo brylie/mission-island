@@ -92,9 +92,7 @@ const islandCameraFunctionLineLimit = 169
 const starterEntryModuleLineLimit = 602
 const starterEntryComplexityLimit = 38
 const particleShelfModuleLineLimit = 463
-const starterSceneModuleLineLimit = 339
-const starterSceneFunctionLineLimit = 295
-const starterSceneComplexityLimit = 43
+const starterSceneFunctionLineLimit = 248
 const saltwindEntryModuleLineLimit = 446
 const saltwindEntryFunctionLineLimit = 412
 const saltwindEntryComplexityLimit = 25
@@ -118,9 +116,7 @@ const existingLimits = {
   },
   'src/assets/recipes/particle-shelf-recipes.ts': { 'max-lines': lineLimit(particleShelfModuleLineLimit) },
   'src/scene.ts': {
-    'max-lines': lineLimit(starterSceneModuleLineLimit),
     'max-lines-per-function': lineLimit(starterSceneFunctionLineLimit),
-    'complexity': complexity(starterSceneComplexityLimit),
   },
   'src/second-island/main.ts': {
     'max-lines': lineLimit(saltwindEntryModuleLineLimit),

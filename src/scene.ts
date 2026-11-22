@@ -1,3 +1,4 @@
+import type { Camera } from '@babylonjs/core/Cameras/camera'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { Viewport } from '@babylonjs/core/Maths/math.viewport'
@@ -5,23 +6,21 @@ import { Scene } from '@babylonjs/core/scene'
 import { createAtmosphere, sceneWeather } from './island-atmosphere'
 import { landscapeLink } from './playtest-link'
 import { inSkiff } from './actions'
-import { routeContactHeight } from './route-contact'
 import { createFarmOrderView } from './farm-order-view'
 import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutIncident } from './lookout-recovery-art'
-import { moveTo, waterActors, walkGait } from './island-render-pose'
+import { moveTo, waterActors } from './island-render-pose'
+import { createCrewPresentation } from './crew-presentation'
 import { createIslandCamera } from './island-camera'
-import { aimFishingRod, createFishingGear, updateFishingLine } from './fishing-line-view'
 import { createIslandAudio, type CrateImpactNotice } from './audio/island-audio'
-import { carrierShift, countFootfalls, groundTravel } from './audio/gait'
 import type { SoundSettings } from './audio/mix'
 import { createPlaceLabels } from './place-labels'
 import type { LookSettings } from './look-options-ui'
 import { createRidgeAviationView, ridgeCameraMode } from './ridge-aviation-view'
 import { createDeliveryWayfindingView } from './delivery-wayfinding-view'
 import { createMaterialsWorkView } from './assets/materials-work'
-import { createCrew, createFarmTools, playerColors, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight } from './assets/crew'
+import { createCrew, playerColors } from './assets/crew'
 import { createFlatbed, poseFlatbed } from './assets/flatbed'
 import { createSupply } from './assets/props'
 import { cargoTag as cargoTagShape, objectiveMarkerLook, starterObjectiveDiameters } from './assets/geometry/starter-cues'
@@ -30,8 +29,8 @@ import { createIslandLighting, createMeshFactory } from './island-meshes'
 import { createIslandWorld } from './island-world'
 import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'
 import { createObjectiveMarker } from './objective-marker'
-import type { Snapshot } from './protocol'
-import { groundHeight, walkingHeight, waterLevel } from './terrain'
+import type { Player, Snapshot } from './protocol'
+import { groundHeight, waterLevel } from './terrain'
 import { flatbedGroundDrive } from './vehicles/flatbed'
 import { createStarterActionEffects } from './starter-action-effects'
 import { createStarterPlaces } from './starter-place-effects'
@@ -75,13 +74,11 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     character.root.setEnabled(false)
     return character
   })
-  const cycles = crew.map(() => 0)
   const truckStep = { x: 0, z: 0 }
   const aviation = createRidgeAviationView(meshes, crew)
   const showDeliveryRoute = createDeliveryWayfindingView(meshes)
   const showFarmOrder = createFarmOrderView(meshes, crew.map((character) => character.root))
-  const farmTools = crew.map((character) => createFarmTools(meshes, character))
-  const skiffGear = createFishingGear(scene, meshes, crew)
+  const { farmTools, skiffGear, update: updateCrew } = createCrewPresentation(meshes, crew, boat, (...args) => aviation.pose(...args), (...args) => audio.footsteps(...args))
   // One mesh per host item, built from the same table the host uses.
   const items = itemStarts.map(({ kind }) => {
     const node = createSupply(meshes, kind)
@@ -139,66 +136,6 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     poseFlatbed(flatbed, wheelRotation, pose.steering, pose.suspension, blend)
   }
 
-  function updateCharacters(state: Snapshot, factor: number, delta: number) {
-    for (const [id, character] of crew.entries()) {
-      const node = character.root
-      const player = state.players.find((entry) => entry.id === id)
-      const { gear, bobber, line } = skiffGear[id]
-      const boating = player?.connected && inSkiff(player.seat)
-      bobber.isVisible = line.isVisible = Boolean(player?.connected && player.casting)
-      if (!player?.connected || (player.seat && !boating)) {
-        node.setEnabled(false)
-        continue
-      }
-      const seatIndex = player.seat === 'port' ? 0 : 1
-      const rod = player.equipped === 'fishing-rod' && !player.rowing
-      const gripIndex = boating ? seatIndex : rod ? 0 : -1
-      gear.forEach((tool, index) => {
-        tool.grip.setEnabled(gripIndex === index)
-        tool.rod.setEnabled(rod)
-        tool.paddle.setEnabled(!rod)
-      })
-      const { hoe, can } = farmTools[id]
-      hoe.setEnabled(!boating && player.equipped === 'hoe')
-      can.setEnabled(!boating && player.equipped === 'watering-can')
-      const wasVisible = node.isEnabled()
-      character.setAppearance(player.appearance, { base: player.appearanceBase })
-      character.blink(time)
-      if (aviation.pose(state, player, character, factor)) continue
-      if (boating) {
-        const side = seatIndex === 0 ? -1 : 1
-        Vector3.TransformCoordinatesToRef(skiffCrewSeats[seatIndex], boat.computeWorldMatrix(true), node.position)
-        node.rotation.copyFrom(boat.rotation)
-        node.setEnabled(true)
-        const stroke = player.rowing ? Math.sin(time * rendering.rowingCadence + id * rendering.crewStrokePhase) : 0
-        poseSkiffCrew(character, stroke, side, rod, wasVisible ? factor : 1)
-        if (!rod) gear[seatIndex].alignPaddle()
-      }
-      else {
-        node.rotation.x = 0
-        node.rotation.z = 0
-        const pushing = state.farmWork.barrow?.handler === id
-        const { x, z } = node.position
-        moveTo(node, player, player.swimming ? swimmingHeight(time + id) : player.y + rendering.crewGroundClearance, factor)
-        if (player.grounded && !player.onBed && !player.swimming) {
-          const floor = pushing ? routeContactHeight(node.position) : walkingHeight(node.position)
-          node.position.y = Math.max(node.position.y, floor + rendering.crewGroundClearance)
-        }
-        // Riding the truck bed moves the crew without walking.
-        const step = wasVisible ? groundTravel({ x, z }, node.position, carrierShift(player, truckStep)) : 0
-        const held = state.items.find((item) => item.holder === id)
-        const gait = walkGait(step, delta, pushing)
-        const footfalls = countFootfalls(cycles[id], cycles[id] += gait.cycles)
-        audio.footsteps(footfalls, player, node.position, step / Math.max(delta, rendering.minimumSpeedSampleSeconds), id === viewer)
-        const winding = player.charge?.kind === 'throw' ? player.charge.power : 0
-        if (player.swimming) poseSwimming(character, time + id, Math.min(1, step / Math.max(rendering.minimumSpeedSampleSeconds, delta * rendering.swimStrokeSpeed)), factor)
-        else poseCrew(character, cycles[id], gait.stride, !player.grounded, held?.kind ?? (pushing ? 'barrow' : player.equipped ? 'tool' : undefined), Number(Boolean(player.reaching || held?.spraying || player.casting)), wasVisible ? 1 - Math.exp(-delta * rendering.crewPoseResponse) : 1, winding, player.throwing, player.rightHandRaised)
-      }
-      if (rod) aimFishingRod(player, skiffGear[id], gripIndex)
-      updateFishingLine(player, skiffGear[id], gripIndex, time)
-    }
-  }
-
   function updateEquipment(state: Snapshot, factor: number) {
     const job = activeJob(state)
     for (const item of state.items) {
@@ -249,27 +186,17 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     }
   }
 
-  engine.runRenderLoop(() => {
-    const delta = Math.min(engine.getDeltaTime() / rendering.millisecondsPerSecond, rendering.maxFrameSeconds)
-    const factor = 1 - Math.exp(-delta * rendering.worldPoseResponse)
-    time += delta
-    if (last?.skiff) moveTo(boat, last.skiff, waterLevel, factor)
-    poseFloating(boat, time, rendering.skiffBobPhase, rendering.skiffBobHeight)
-    buoys.forEach((buoy, index) => void poseFloating(buoy, time, index * rendering.buoyPhaseStep))
-    showDeliveryRoute(last)
-    if (last) {
-      updateScenery(last, factor, delta)
-      updateCharacters(last, factor, delta)
-      updateEquipment(last, factor)
-      const drop = deliveryDrop(last)
+  function updateObjectives(state: Snapshot | undefined) {
+    if (state) {
+      const drop = deliveryDrop(state)
       pickupPad.setEnabled(Boolean(drop))
       dropPad.setEnabled(Boolean(drop))
       if (drop) dropPad.position.set(drop.x, groundHeight(drop) + objectiveMarkerLook.groundOffset, drop.z)
-      marketPad.setEnabled(activeJob(last)?.kind === 'market')
-      boardPad.setEnabled(last.mission === 'complete' && !last.jobs.active)
-      firePad.setEnabled(last.mission === 'fire')
-      equipmentPad.setEnabled(last.mission === 'fire')
-      showLookout(last, time)
+      marketPad.setEnabled(activeJob(state)?.kind === 'market')
+      boardPad.setEnabled(state.mission === 'complete' && !state.jobs.active)
+      firePad.setEnabled(state.mission === 'fire')
+      equipmentPad.setEnabled(state.mission === 'fire')
+      showLookout(state, time)
     }
     else {
       marketPad.setEnabled(false)
@@ -277,15 +204,16 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       firePad.setEnabled(false)
       equipmentPad.setEnabled(false)
     }
-    showFarmOrder(last, factor)
-    aviation.update(last, time)
-    const local = last?.players.find((player) => player.id === viewer && player.connected)
-    const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? truck : crew[local.id].root) : undefined
-    const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
-    const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta, ridgeCameraMode(last, local))
-    const field = review?.view(time)
-    const camera = field?.camera ?? normalCamera
-    const close = Boolean(field || subject)
+  }
+
+  interface EnvironmentView {
+    camera: Camera
+    close: boolean
+    field: ReturnType<NonNullable<typeof review>['view']>
+    livePlayer?: Player
+  }
+
+  function drawEnvironment(delta: number, factor: number, { camera, close, field, livePlayer }: EnvironmentView) {
     const climate = sceneWeather(field?.weather, last?.weather)
     const { weather } = climate
     const clock = last?.islandTime ?? time
@@ -296,7 +224,6 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const frame = { time: field?.time ?? ambientTime, delta, ...climate, camera: camera.position, threats, seek: Boolean(field) }
     if (last?.juniper) juniper(last.juniper, time, factor)
     const runoff = field ? marketRunoffPreview(weather.rain, dryMarketRainAge) : marketRunoffAt(clock)
-    const livePlayer = !field && subject ? local : undefined
     placesFx(frame, !livePlayer, runoff)
     actionFx.draw(time, camera.position, livePlayer, last)
     const strength = nightLighting(weather.hour)
@@ -309,6 +236,32 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       tideTime: field ? field.tideTime : clock,
       actors: { snapshot: last, waterCrew: crewInWater, inspection: field?.inspection, skiffPose: { x: boat.position.x, z: boat.position.z, heading: boat.rotation.y } },
     })
+  }
+
+  engine.runRenderLoop(() => {
+    const delta = Math.min(engine.getDeltaTime() / rendering.millisecondsPerSecond, rendering.maxFrameSeconds)
+    const factor = 1 - Math.exp(-delta * rendering.worldPoseResponse)
+    time += delta
+    if (last?.skiff) moveTo(boat, last.skiff, waterLevel, factor)
+    poseFloating(boat, time, rendering.skiffBobPhase, rendering.skiffBobHeight)
+    buoys.forEach((buoy, index) => void poseFloating(buoy, time, index * rendering.buoyPhaseStep))
+    showDeliveryRoute(last)
+    if (last) {
+      updateScenery(last, factor, delta)
+      updateCrew(last, { time, factor, delta, viewer, truckStep })
+      updateEquipment(last, factor)
+    }
+    updateObjectives(last)
+    showFarmOrder(last, factor)
+    aviation.update(last, time)
+    const local = last?.players.find((player) => player.id === viewer && player.connected)
+    const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? truck : crew[local.id].root) : undefined
+    const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
+    const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta, ridgeCameraMode(last, local))
+    const field = review?.view(time)
+    const camera = field?.camera ?? normalCamera
+    const close = Boolean(field || subject)
+    drawEnvironment(delta, factor, { camera, close, field, livePlayer: !field && subject ? local : undefined })
     if (review) review.render()
     else scene.render()
     const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
