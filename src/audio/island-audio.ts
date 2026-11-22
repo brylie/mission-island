@@ -31,7 +31,7 @@ export type CrateImpactNotice = Extract<ServerMessage, { type: 'crate-impact' }>
 
 // What the renderer hands the mix each frame. Time is the smoothed island clock the visible effects use,
 // so wind and wildlife sounds stay in step with what players see.
-export type AudioFrame = {
+type AudioFrame = {
   listener: Point3
   forward: Point3
   weather: Weather

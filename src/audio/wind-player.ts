@@ -8,7 +8,7 @@ import { windCue, type WindLayer } from './wind-recipes.ts'
 import { canopyGain, nearestCanopies, windExposure, type CanopyTree } from './wind-model.ts'
 
 // A Workbench audition can fix the gust, the exposure and the crowns instead of reading them from the island.
-export type WindScene = { gust?: number, exposure?: number, canopies?: CanopyTree[] }
+type WindScene = { gust?: number, exposure?: number, canopies?: CanopyTree[] }
 
 type CanopySlot = { lane: Lane | null, voices: Partial<Record<WindLayer, LoopVoice | null>>, tree: CanopyTree | null, pending: CanopyTree | null, fading: number }
 

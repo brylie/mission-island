@@ -11,7 +11,7 @@ export type EngineInputs = {
   crates: number
 }
 
-export type EngineTarget = { effort: number, rate: number, idleLevel: number, loadLevel: number }
+type EngineTarget = { effort: number, rate: number, idleLevel: number, loadLevel: number }
 
 // What the client can see of the engine: a driver in the seat keeps it running, and the bed shows the load.
 export function engineInputs(state: Snapshot, acceleration: number): EngineInputs {

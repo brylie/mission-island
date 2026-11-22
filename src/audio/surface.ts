@@ -13,7 +13,7 @@ const halfWidthDivisor = 2
 export const sandRadius = shoreProfile[2].radius
 const wetSandRadius = shoreStations.wetSand.radius
 
-export type Ground = { surface: FootSurface, damp: boolean }
+type Ground = { surface: FootSurface, damp: boolean }
 
 const within = (point: Point, path: { width: number, points: readonly Point[] }) =>
   distanceToRoute(point, path.points) < path.width / halfWidthDivisor

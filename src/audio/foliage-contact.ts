@@ -5,7 +5,7 @@ import type { Point } from '../world.ts'
 import type { FoliageKind } from './foliage-recipes.ts'
 import { clamp01, half } from './recipe-kit.ts'
 
-export type Brush = Point & { kind: FoliageKind, strength: number }
+type Brush = Point & { kind: FoliageKind, strength: number }
 
 type Walker = { plants: Set<number>, trunks: Set<number>, lastBrush: number }
 
