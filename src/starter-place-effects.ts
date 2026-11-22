@@ -9,6 +9,7 @@ import { juniperCenter } from './juniper-habitat'
 import type { MarketRunoff } from './market-runoff'
 import { coastPoint, fernfallSection, groundHeight, pool, streamX, waterLevel } from './terrain'
 import { daylight, nightLighting } from './weather'
+import { gustAt } from './wind'
 import type { WildlifeFrame } from './wildlife'
 import { phenomenonStrength, smoothRange } from './wildlife-motion'
 import { createLocalEffects, type LocalEffect } from './world-particles'
@@ -19,13 +20,7 @@ import { lampPosts } from './worlds/starter/sites'
 
 const at = ({ x, z }: Point, lift: number) => ({ x, z, y: groundHeight({ x, z }) + lift })
 const dryDay = ({ weather }: WildlifeFrame) => daylight(weather.hour) * (1 - weather.rain)
-const gustFloor = 0.25
-const gustSwing = 0.75
-const gustRate = 0.62
-const gustSharpness = 2
-const gustRainLoss = 0.62
-const gust = ({ time, weather }: WildlifeFrame) =>
-  (gustFloor + gustSwing * Math.max(0, Math.sin(time * gustRate)) ** gustSharpness) * (1 - weather.rain * gustRainLoss)
+const gust = ({ time, weather }: WildlifeFrame) => gustAt(time, weather.rain)
 
 const beachBreakPeriod = 2.4
 const beachBreakDuration = 0.34

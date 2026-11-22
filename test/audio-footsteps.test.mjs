@@ -2,8 +2,10 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { carrierShift, countFootfalls, groundTravel } from '../src/audio/gait.ts'
 import { walkGait } from '../src/island-render-pose.ts'
-import { footSurface } from '../src/audio/surface.ts'
+import { footGround } from '../src/audio/surface.ts'
 import { coastPoint, coastalSurface } from '../src/terrain.ts'
+
+const footSurface = (point, player) => footGround(point, player)?.surface ?? null
 import { dockEndZ, harbor, harborDock } from '../src/world.ts'
 
 const walker = { seat: null, grounded: true, swimming: false }
@@ -55,7 +57,8 @@ test('footsteps follow the local beach cover through meadow, broad sand, dunes a
   assert.ok(coastalSurface(dune).sand > 0.8)
   assert.ok(coastalSurface(exposed).rock > 0.65)
   for (const point of [broadBeach, dune]) assert.equal(footSurface(point, walker), 'sand')
-  for (const point of [meadow, exposed]) assert.equal(footSurface(point, walker), 'fallback')
+  assert.notEqual(footSurface(meadow, walker), 'sand', 'the meadow behind the beach is not sand')
+  assert.equal(footSurface(exposed, walker), 'fallback', 'exposed shore rock is bare ground')
 })
 
 test('no footstep sounds when airborne, seated or swimming', () => {

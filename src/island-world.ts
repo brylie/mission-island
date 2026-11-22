@@ -141,7 +141,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const northernScenery = createNorthernScenery(meshes)
   const blades = createGrassTufts(meshes)
   createWildflowers(meshes)
-  const ferns = createUnderstory(meshes)
+  const { ferns, plants } = createUnderstory(meshes)
   const wildlife = createStarterWildlife(meshes)
   const phenomena = createPhenomena(meshes.scene, [
     { ...mirrorPoolMist, ...pool, y: waterLevel },
@@ -191,5 +191,5 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     return tide
   }
 
-  return { juniper, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, garden, residents, ferry }
+  return { juniper, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, plants, garden, residents, ferry }
 }

@@ -9,53 +9,7 @@ import { createSurfPlayer, swellSeed, swellVariants } from '../src/audio/surf-pl
 import { surfVoices } from '../src/audio/shore.ts'
 import { coastPoint } from '../src/terrain.ts'
 
-class Param {
-  value = 0
-  setTargetAtTime(value) { this.value = value }
-  cancelScheduledValues() {}
-}
-class Node {
-  connect() {}
-  disconnect() {}
-}
-class Gain extends Node { gain = new Param() }
-class Panner extends Node {
-  positionX = new Param()
-  positionY = new Param()
-  positionZ = new Param()
-}
-
-// A minimal stand-in for an AudioContext that records what was started and when.
-class FakeContext {
-  state = 'suspended'
-  currentTime = 0
-  destination = new Node()
-  listener = Object.fromEntries(['positionX', 'positionY', 'positionZ', 'forwardX', 'forwardY', 'forwardZ'].map((key) => [key, new Param()]))
-  started = []
-  createGain() { return new Gain() }
-  createPanner() { return new Panner() }
-  createBuffer(_channels, length, rate) { return { duration: length / rate, copyToChannel() {} } }
-  createBufferSource() {
-    const context = this
-    const ended = []
-    return Object.assign(new Node(), {
-      buffer: null,
-      addEventListener: (_type, listener) => ended.push(listener),
-      start(at) { context.started.push({ at, duration: this.buffer.duration }) },
-      stop() { ended.forEach((listener) => void listener()) },
-    })
-  }
-
-  setState(state) {
-    this.state = state
-    this.onstatechange?.()
-    return Promise.resolve()
-  }
-
-  resume() { return this.setState('running') }
-  suspend() { return this.setState('suspended') }
-  close() { return this.setState('closed') }
-}
+import { FakeContext } from './support/fake-audio.mjs'
 
 const cue = crateCue({ strength: 0.5, surface: 'ground' }, 1)
 const settle = () => setImmediate()

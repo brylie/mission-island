@@ -1,4 +1,5 @@
 import { audioStudy } from './audio-study'
+import { islandSoundStudy } from './island-sound-study'
 import { coastalModelStudies } from './coastal-model-studies'
 import { islandShaderStudies } from './island-shader-studies'
 import { shaderStudies } from './shader-studies'
@@ -54,6 +55,7 @@ export const entries: Entry[] = [
   buoyStudy,
   ...effectStudies,
   audioStudy,
+  islandSoundStudy,
   ...routeStudies,
   ...materialStudies,
   ...shaderStudies,

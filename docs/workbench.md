@@ -58,10 +58,19 @@ To verify a handoff, open its link in a fresh browser profile. Check the subject
 Open **Effects → Sound → Starter Island sound**. Choose a **Sound layer**, then **Play** for one cue or **Repeat** to keep it going at the chosen pace. **Stop** ends playback. The first click in a fresh tab starts audio. Each layer has its own controls:
 
 - **Surf:** breaker strength and spacing.
-- **Footsteps:** surface and walking pace.
+- **Footsteps:** surface (gravel, sand, dock boards, pavement, grass, leaf litter, shallow water or bare earth), **Soaked ground**, and walking pace.
 - **Crate impact:** drop strength and receiving surface.
 
 **Seed** picks related variations. **Listener distance** places the source ahead and to the right of the listener. Clear **Spatial audition** for an unspatialised baseline at the recipe's own level. Clear **Solo layer** to hear all three layers together. The observations line shows the audio state, the active layer, the last cue and the voice count, so you can inspect a muted session. **Copy setup link** keeps the seed, distance and recipe settings, and the game uses the same recipes from `src/audio/recipes.ts`.
+
+Open **Effects → Sound → Island sound families** for the continuous and wildlife sounds. Choose a **Sound family**, then **Play**, **Repeat** or **Stop**:
+
+- **Flatbed engine:** **Engine running**, **Road speed**, **Engine effort** and **Idle roughness**. Effort is heard as the pull that would produce it, so you can compare a straining engine with plain speed at the same road speed.
+- **Wind and canopy:** **Gust strength**, or **Follow island gusts** to hear the same envelope that lifts the windblown leaves, plus **Exposure** and a broadleaf or conifer **Canopy** at the listening distance.
+- **Plant and bark contact:** the **Plant** (juniper fern, Mirror Pool rushes, Driftwood marram or tree bark) and **Contact speed**.
+- **Gulls and songbirds:** a gull kek, gull mew, gull wings or songbird phrase.
+
+Recipe tuning lives in `src/assets/audio/`, one file per family.
 
 ## Adding a subject
 

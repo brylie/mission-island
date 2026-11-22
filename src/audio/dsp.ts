@@ -100,10 +100,29 @@ export function finish(out: Float32Array, rate = recipeRate, fadeSeconds = defau
     out[i] *= i / fade
     out[out.length - 1 - i] *= i / fade
   }
+  return normalize(out, peak)
+}
+
+// Scale a buffer to a peak without touching its ends. Loops use it, since an edge fade would pulse at the seam.
+export function normalize(out: Float32Array, peak = defaultPeakLimit) {
   let max = 0
   for (const value of out) max = Math.max(max, Math.abs(value))
   if (!Number.isFinite(max) || max === 0) return out.fill(0)
   const gain = peak / max
   for (let i = 0; i < out.length; i++) out[i] *= gain
+  return out
+}
+
+// Filtered noise that loops without a seam: the stretch rendered past the end crossfades into the start,
+// so the last sample flows into the first exactly as the filter would have continued. The blend is equal-power,
+// because the two stretches are uncorrelated and a linear blend would dip in the middle.
+export function seamlessNoise(length: number, random: () => number, filter: (input: Float32Array) => Float32Array, fadeLength: number) {
+  const fade = Math.min(fadeLength, Math.floor(length / fadeEnds))
+  const filtered = filter(whiteNoise(length + fade, random))
+  const out = filtered.slice(0, length)
+  for (let i = 0; i < fade; i++) {
+    const blend = i / fade
+    out[i] = filtered[i] * Math.sqrt(blend) + filtered[length + i] * Math.sqrt(1 - blend)
+  }
   return out
 }

@@ -68,13 +68,18 @@ const pathEdgeClearanceM = 0.68
 const plantMinimumScale = 0.66
 const plantScaleSpread = 0.82
 
+export type PlantKind = 'fern' | 'rushes' | 'marram'
+export type UnderstoryPlant = Point & { kind: PlantKind }
+
+// Builds the understory meshes and returns every plant it placed, so sounds and effects can find them.
 export function createUnderstory(meshes: MeshFactory) {
   const { juniper, mirrorPool, driftwood, samplesPerSite, ring } = starterUnderstorySites
   const ferns: Point[] = []
+  const plants: UnderstoryPlant[] = []
   for (const habitat of [
-    { ...juniperFern, x: grove.x + juniper.groveOffsetX, z: grove.z + juniper.groveOffsetZ, radius: juniper.radiusM, samples: samplesPerSite, ring, dune: false },
-    { ...mirrorPoolRushes, x: pool.x, z: pool.z, radius: mirrorPool.radiusM, samples: samplesPerSite, ring, dune: false },
-    { ...driftwoodMarram, ...driftwood, radius: driftwood.radiusM, ring: { innerRatio: 0, widthRatio: 1 }, dune: true },
+    { ...juniperFern, kind: 'fern', x: grove.x + juniper.groveOffsetX, z: grove.z + juniper.groveOffsetZ, radius: juniper.radiusM, samples: samplesPerSite, ring, dune: false },
+    { ...mirrorPoolRushes, kind: 'rushes', x: pool.x, z: pool.z, radius: mirrorPool.radiusM, samples: samplesPerSite, ring, dune: false },
+    { ...driftwoodMarram, kind: 'marram', ...driftwood, radius: driftwood.radiusM, ring: { innerRatio: 0, widthRatio: 1 }, dune: true },
   ] as const) {
     const random = seededRandom(habitat.seed)
     const positions: number[] = []
@@ -87,6 +92,7 @@ export function createUnderstory(meshes: MeshFactory) {
         || footpaths.some(({ points, width }) => distanceToRoute(point, points) < width * half + pathEdgeClearanceM)) continue
       if (habitat.dune && random() > coastalSurface(point, height).duneGrass * habitat.density) continue
       if (habitat.seed === juniperFern.seed) ferns.push(point)
+      plants.push({ ...point, kind: habitat.kind })
       const origin = { ...point, y: height + understoryGroundOffset }
       const scale = plantMinimumScale + random() * plantScaleSpread
       const blades = habitat.dune ? habitat.blades : understoryBladeCount
@@ -98,7 +104,7 @@ export function createUnderstory(meshes: MeshFactory) {
     paint.backFaceCulling = false
     meshes.surface(habitat.name, positions, Array.from({ length: positions.length / coordinatesPerVertex }, (_, i) => i), paint).freezeWorldMatrix()
   }
-  return ferns
+  return { ferns, plants }
 }
 
 export function createStarterWildlife(meshes: MeshFactory) {
