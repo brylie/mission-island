@@ -98,8 +98,7 @@ const saltwindEntryFunctionLineLimit = 412
 const saltwindEntryComplexityLimit = 25
 const oreHaulingFunctionLineLimit = 162
 const landscapeLayoutFunctionLineLimit = 193
-const landscapeMapModuleLineLimit = 459
-const landscapeMapFunctionLineLimit = 379
+const landscapeMapFunctionLineLimit = 271
 const landscapeStudiesFunctionLineLimit = 207
 const workbenchEntryModuleLineLimit = 582
 const workbenchReferenceFunctionLineLimit = 142
@@ -126,7 +125,6 @@ const existingLimits = {
   'src/second-island/ore-hauling.ts': { 'max-lines-per-function': lineLimit(oreHaulingFunctionLineLimit) },
   'src/workbench/landscape-layout.ts': { 'max-lines-per-function': lineLimit(landscapeLayoutFunctionLineLimit) },
   'src/workbench/landscape-map.ts': {
-    'max-lines': lineLimit(landscapeMapModuleLineLimit),
     'max-lines-per-function': lineLimit(landscapeMapFunctionLineLimit),
   },
   'src/workbench/landscape-studies.ts': { 'max-lines-per-function': lineLimit(landscapeStudiesFunctionLineLimit) },

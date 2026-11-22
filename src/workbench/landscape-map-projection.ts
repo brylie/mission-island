@@ -3,6 +3,7 @@ import type { Point } from '../world.ts'
 import type { CameraState } from './stage'
 
 const margin = 12
+const metresRounding = 10
 const coast = coastBounds()
 const west = coast.west - margin
 const east = coast.east + margin
@@ -63,4 +64,12 @@ export function shotCameraPoint({ alpha, beta, radius, target }: CameraState): P
     x: target[0] + Math.cos(alpha) * horizontalRadius,
     z: target[2] + Math.sin(alpha) * horizontalRadius,
   }
+}
+
+export function onMap({ u, v }: MapPoint) {
+  return u >= 0 && u <= 1 && v >= 0 && v <= 1
+}
+
+export function roundedPoint({ x, z }: Point): Point {
+  return { x: Math.round(x * metresRounding) / metresRounding, z: Math.round(z * metresRounding) / metresRounding }
 }

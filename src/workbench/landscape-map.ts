@@ -3,18 +3,19 @@ import { northernRegions } from '../scenery'
 import { beach, forest, harbor, lookout, town } from '../world'
 import type { Point } from '../world'
 import type { DraftMapObject } from './landscape-layout'
-import { wheelDeltaUnits } from './inspection-input'
-import { paintLandscapeMap, paintMapTracking } from './landscape-map-art'
+import { bindMapGestures } from './landscape-map-gestures'
+import { createLandscapeMapCanvas } from './landscape-map-canvas'
 import {
   clampMapPoint,
   fullMapView,
-  landscapeMapSize,
   mapPointInView,
   maxMapZoom,
+  onMap,
   panMap,
   pointInWorld,
   pointOnMap,
   shotCameraPoint,
+  roundedPoint,
   viewPointOnMap,
   zoomMap,
 } from './landscape-map-projection'
@@ -39,15 +40,9 @@ const directions: Readonly<Record<string, Point>> = {
 }
 const mapMidpoint = 0.5
 const viewCenter = { u: mapMidpoint, v: mapMidpoint }
-const metresRounding = 10
 const percentScale = 100
-const canvasWidth = 640
-const atlasScale = 2
 const fineKeyboardStep = 0.1
 const fastKeyboardPan = 10
-const dragThreshold = 4
-const maxWheelStep = 0.5
-const wheelRate = 0.006
 const zoomInScale = 2
 const zoomOutScale = 0.5
 
@@ -62,27 +57,9 @@ interface MapControls {
   openShot(shot: LandscapeShot): void
 }
 
-interface PointerGesture {
-  id: number
-  x: number
-  y: number
-  view: MapView
-  draft?: DraftMapObject
-  moved: boolean
-  destination?: Point
-}
-
 interface Pin {
   button: HTMLButtonElement
   point: MapPoint
-}
-
-function onMap({ u, v }: MapPoint) {
-  return u >= 0 && u <= 1 && v >= 0 && v <= 1
-}
-
-function roundedPoint({ x, z }: Point): Point {
-  return { x: Math.round(x * metresRounding) / metresRounding, z: Math.round(z * metresRounding) / metresRounding }
 }
 
 function makePin(title: string, kind: 'landmark' | 'shot' | 'draft') {
@@ -125,20 +102,14 @@ export function createLandscapeMap(controls: MapControls) {
   const status = document.getElementById('landscape-map-status')!
   const abort = new AbortController()
   const events = { signal: abort.signal }
-  canvas.width = overlay.width = canvasWidth
-  canvas.height = overlay.height = Math.round(canvas.width * landscapeMapSize.height / landscapeMapSize.width)
-  const base = canvas.getContext('2d')
-  const ink = overlay.getContext('2d')
+  const art = createLandscapeMapCanvas(canvas, overlay)
   const draftButtons = new Map<number, { button: HTMLButtonElement, object: DraftMapObject }>()
   let ready = false
-  let atlas: HTMLCanvasElement | undefined
   let view = fullMapView
   let paintedView: MapView | undefined
   let cursor = pointInWorld(viewCenter.u, viewCenter.v)
-  let lastOverlay = ''
   let listedShots: readonly LandscapeShot[] | undefined
   let savedPins: Pin[] = []
-  let gesture: PointerGesture | undefined
 
   const project = (point: Point) => mapPointInView(pointOnMap(point), view)
   const coordinates = ({ x, z }: Point) => `X ${x.toFixed(1)} m · Z ${z.toFixed(1)} m`
@@ -233,12 +204,9 @@ export function createLandscapeMap(controls: MapControls) {
   let lastDrafts = ''
   function refreshDrafts(viewChanged: boolean) {
     const objects = controls.placements()
-    const dragged = gesture?.draft
-    if (dragged && !objects.some(({ id, x, z }) => id === dragged.id && x === dragged.x && z === dragged.z)) {
-      cancelGesture()
-      return
-    }
-    const draftKey = JSON.stringify([objects, gesture?.draft?.id, gesture?.destination])
+    if (gestures.cancelIfDraftChanged(objects)) return
+    const drag = gestures.drag
+    const draftKey = JSON.stringify([objects, drag?.object.id, drag?.destination])
     if (!viewChanged && lastDrafts === draftKey) return
     lastDrafts = draftKey
 
@@ -257,22 +225,14 @@ export function createLandscapeMap(controls: MapControls) {
       }
       pin.object = object
       draftButtons.set(object.id, pin)
-      const destination = gesture?.draft?.id === object.id ? gesture.destination : undefined
+      const destination = drag?.object.id === object.id ? drag.destination : undefined
       pin.button.classList.toggle('is-dragging', Boolean(destination))
       placePin(pin.button, project(destination ?? object))
     }
   }
 
   function paintView() {
-    if (!base) return
-    if (!atlas) {
-      atlas = document.createElement('canvas')
-      atlas.width = canvas.width * atlasScale
-      atlas.height = canvas.height * atlasScale
-      const art = atlas.getContext('2d')
-      if (art) paintLandscapeMap(art)
-    }
-    base.drawImage(atlas, atlas.width * view.u, atlas.height * view.v, atlas.width / view.zoom, atlas.height / view.zoom, 0, 0, canvas.width, canvas.height)
+    if (!art.paintView(view)) return
     zoomLabel.textContent = `${Number(view.zoom.toFixed(1))}×`
     zoomOut.disabled = resetZoom.disabled = view.zoom === 1
     zoomIn.disabled = view.zoom === maxMapZoom
@@ -281,7 +241,7 @@ export function createLandscapeMap(controls: MapControls) {
   }
 
   function update() {
-    if (panel.hidden || !ink) return
+    if (panel.hidden || !art.hasOverlay) return
     refreshShots()
     const viewChanged = paintedView !== view
     if (viewChanged) {
@@ -290,12 +250,8 @@ export function createLandscapeMap(controls: MapControls) {
     }
     refreshDrafts(viewChanged)
     const focus = controls.focus()
-    const cursorVisible = document.activeElement === canvas && !gesture?.moved
-    const overlayKey = [focus?.x, focus?.z, cursorVisible, cursor.x, cursor.z].join(',')
-    if (viewChanged || lastOverlay !== overlayKey) {
-      paintMapTracking(ink, view.zoom, focus && project(focus), cursorVisible ? project(cursor) : undefined)
-      lastOverlay = overlayKey
-    }
+    const cursorVisible = document.activeElement === canvas && !gestures.moved
+    art.track(view, viewChanged, focus, cursor, cursorVisible)
   }
 
   function setView(next: MapView) {
@@ -306,7 +262,7 @@ export function createLandscapeMap(controls: MapControls) {
   }
 
   function changeZoom(factor: number, anchor = project(cursor)) {
-    if (gesture) return
+    if (gestures.active) return
     setView(zoomMap(view, view.zoom * factor, onMap(anchor) ? anchor : viewCenter))
   }
 
@@ -325,7 +281,7 @@ export function createLandscapeMap(controls: MapControls) {
     panel.hidden = !open
     toggle.setAttribute('aria-expanded', String(open))
     if (!open) {
-      cancelGesture()
+      gestures.cancel()
       return
     }
     const focus = controls.focus()
@@ -341,80 +297,17 @@ export function createLandscapeMap(controls: MapControls) {
     toggle.focus()
   }
 
-  function pointerOnView(event: MouseEvent) {
-    const { left, top, width, height } = canvas.getBoundingClientRect()
-    return { u: (event.clientX - left) / width, v: (event.clientY - top) / height }
-  }
-
-  function cancelGesture() {
-    if (!gesture) return
-    const { id } = gesture
-    gesture = undefined
-    surface.classList.remove('is-dragging')
-    if (surface.hasPointerCapture(id)) surface.releasePointerCapture(id)
-    update()
-  }
-
-  surface.addEventListener('pointerdown', (event) => {
-    if (!ready || gesture || !event.isPrimary || event.button !== 0) return
-    const draftPin = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-draft-id]') : null
-    const draft = draftPin ? draftButtons.get(Number(draftPin.dataset.draftId))?.object : undefined
-    if (event.target !== canvas && !draft) return
-    event.preventDefault()
-    const target = draftPin ?? canvas
-    target.focus({ preventScroll: true })
-    gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, view, draft, moved: false }
-    surface.setPointerCapture(event.pointerId)
-  }, events)
-
-  function updateGesture(event: PointerEvent) {
-    if (!gesture || event.pointerId !== gesture.id) return
-    const dx = event.clientX - gesture.x
-    const dy = event.clientY - gesture.y
-    if (!gesture.moved && Math.hypot(dx, dy) < dragThreshold) return
-    gesture.moved = true
-    surface.classList.add('is-dragging')
-    const { width, height } = canvas.getBoundingClientRect()
-    const delta = { u: dx / width, v: dy / height }
-    if (gesture.draft) {
-      const start = mapPointInView(pointOnMap(gesture.draft), gesture.view)
-      const { u, v } = clampMapPoint(viewPointOnMap({ u: start.u + delta.u, v: start.v + delta.v }, gesture.view))
-      gesture.destination = roundedPoint(pointInWorld(u, v))
-      update()
-    }
-    else {
-      setView(panMap(gesture.view, delta))
-    }
-  }
-
-  surface.addEventListener('pointermove', updateGesture, events)
-  surface.addEventListener('pointerup', (event) => {
-    if (!gesture || event.pointerId !== gesture.id) return
-    updateGesture(event)
-    if (!gesture) return
-    const { draft, moved, destination } = gesture
-    const position = pointerOnView(event)
-    if (draft && !moved) controls.select(draft.id)
-    else if (draft && destination && onMap(position)) moveDraft(draft, destination)
-    else if (!moved && onMap(position)) {
-      const { u, v } = viewPointOnMap(position, view)
-      activate(pointInWorld(u, v))
-    }
-    cancelGesture()
-  }, events)
-  for (const type of ['lostpointercapture', 'pointercancel'] as const) {
-    surface.addEventListener(type, (event) => {
-      if (gesture?.id === event.pointerId) cancelGesture()
-    }, events)
-  }
-
-  surface.addEventListener('wheel', (event) => {
-    if (!event.deltaY) return
-    event.preventDefault()
-    const units = wheelDeltaUnits(event.deltaMode, canvas.clientHeight)
-    const exponent = Math.max(-maxWheelStep, Math.min(maxWheelStep, -event.deltaY * units * wheelRate))
-    changeZoom(Math.exp(exponent), pointerOnView(event))
-  }, { ...events, passive: false })
+  const gestures = bindMapGestures(surface, canvas, events, {
+    ready: () => ready,
+    view: () => view,
+    getDraft: (id) => draftButtons.get(id)?.object,
+    setView,
+    changeZoom,
+    preview: update,
+    selectDraft: (id) => controls.select(id),
+    moveDraft,
+    activate,
+  })
   zoomIn.addEventListener('click', () => changeZoom(zoomInScale), events)
   zoomOut.addEventListener('click', () => changeZoom(zoomOutScale), events)
   resetZoom.addEventListener('click', () => setView(fullMapView), events)
@@ -426,7 +319,7 @@ export function createLandscapeMap(controls: MapControls) {
   closeButton.addEventListener('click', close, events)
   panel.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return
-    if (gesture) cancelGesture()
+    if (gestures.active) gestures.cancel()
     else close()
   }, events)
   for (const mode of [jumpMode, placeMode]) {
@@ -469,7 +362,7 @@ export function createLandscapeMap(controls: MapControls) {
   return {
     update,
     setScene(landscape: boolean, sceneReady: boolean) {
-      ready = landscape && sceneReady && Boolean(ink && base)
+      ready = landscape && sceneReady && art.ready
       toggle.hidden = !landscape
       toggle.disabled = !ready
       if (!ready) show(false)
