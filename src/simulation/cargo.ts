@@ -1,5 +1,5 @@
 import { starterSolids } from '../worlds/starter/colliders.ts'
-import { Body, Box, Heightfield, SAPBroadphase, Sphere, Vec3, World } from 'cannon-es'
+import { Body, Box, Heightfield, ObjectCollisionMatrix, SAPBroadphase, Sphere, Vec3, World } from 'cannon-es'
 import { islandRockGeometry, islandTreeGeometry, northernRockGeometry, northernTreeGeometry } from '../assets/geometry/starter-scenery.ts'
 import type { Input, Item, Snapshot } from '../protocol.ts'
 import { barrierSolids, deckSolids, deckTop, ferryServiceRestored } from '../ferry-repair.ts'
@@ -184,6 +184,8 @@ export interface LearnerFleet {
 export function createCargoPhysics() {
   const world = new World({ gravity: new Vec3(0, cargoGravity, 0) })
   world.broadphase = new SAPBroadphase(world)
+  // The island has hundreds of static colliders. The dense matrix clears n² entries every step; the sparse one only the pairs that touched.
+  Object.assign(world, { collisionMatrix: new ObjectCollisionMatrix(), collisionMatrixPrevious: new ObjectCollisionMatrix() })
   world.defaultContactMaterial.friction = contactFriction
   world.defaultContactMaterial.restitution = contactRestitution
 

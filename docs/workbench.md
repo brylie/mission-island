@@ -13,7 +13,7 @@ Choose a workspace to narrow the library to one job. Search matches words in sub
 | Vehicles | Inspect exteriors and lights. Compare vehicles on a neutral stage and at their parking or landing sites. |
 | Mechanics | Replay a cargo throw, compare fishing strategies, or set the crop stage in the actual field. |
 
-See the [Effects shelf and field checks](effects-workbench.md) for the preview sheet, shared setups, and on/off timing results.
+See the [Effects shelf and field checks](effects-workbench.md) for the preview sheet, shared setups, and on/off timing results. To render Workbench views headlessly, draw debug overlays or compare two revisions, see [Iteration tooling](iteration-tooling.md).
 
 ## An editing session
 
