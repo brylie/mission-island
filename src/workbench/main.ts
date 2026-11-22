@@ -189,7 +189,7 @@ function setOption(control: Control, value: Values[string], save = true) {
   zFightingResult.replaceChildren()
   seek = true
   if (control.rebuild) {
-    rebuild(!onIsland && control.key === 'shape' ? undefined : cameraAtSameSite(oldSite))
+    rebuild(!onIsland && control.key === 'shape' ? undefined : cameraAtSameSite(oldSite), stage?.frameRadius)
     showFieldSwitch()
   }
   if (save) remember()
@@ -209,7 +209,9 @@ function applyDisplay() {
   element('grid-size').textContent = grid.checked && stage ? `Grid ${stage.step} m` : ''
 }
 
-function rebuild(camera?: CameraState) {
+// A kept camera carries the user's orbit and zoom across a rebuild of the same subject.
+// Given the old stage's `frameRadius`, a subject whose bounds grew or shrank a lot is framed afresh.
+function rebuild(camera?: CameraState, previousRadius?: number) {
   if (!engine) {
     studies.setScene(Boolean(asset.landscape), false)
     landscapeMap.setScene(Boolean(asset.landscape), false)
@@ -223,7 +225,7 @@ function rebuild(camera?: CameraState) {
   try {
     stage = createPreviewStage(engine, canvas, asset, values, reportError, draft, fieldSite())
     checkZFighting.disabled = false
-    if (camera) stage.setCamera(camera)
+    if (camera) stage.keepCamera(camera, previousRadius)
     applyDisplay()
     element('geometry').textContent = `${stage.meshCount} ${stage.meshCount === 1 ? 'mesh' : 'meshes'} · ${stage.triangles.toLocaleString()} triangles`
   }
@@ -511,7 +513,7 @@ element('reset').addEventListener('click', () => {
   values = restoreOptions(asset.controls)
   if (asset.landscape && typeof clockStart === 'number') values.clockStart = clockStart
   optionsByAsset[asset.id] = values
-  rebuild(asset.landscape ? undefined : cameraAtSameSite(oldSite))
+  rebuild(asset.landscape ? undefined : cameraAtSameSite(oldSite), stage?.frameRadius)
   showFieldSwitch()
   inspector.render()
   remember()

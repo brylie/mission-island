@@ -222,6 +222,8 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     return {
       meshCount,
       triangles: Math.round(triangles),
+      // The default orbit radius, which grows with the subject's bounds.
+      frameRadius: radius,
       step,
       supportsSunShafts: atmosphere?.supportsSunShafts ?? false,
       mapFocus: () => ({ x: camera.target.x, z: camera.target.z }),
@@ -261,6 +263,10 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         return { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, fov: camera.fov, target: camera.target.asArray() }
       },
       setCamera,
+      // Restores a saved view of the same subject, unless its default radius changed from `previousRadius` by more than the reframe ratio.
+      keepCamera(saved: CameraState, previousRadius?: number) {
+        if (!previousRadius || Math.max(previousRadius, radius) / Math.min(previousRadius, radius) <= studioCamera.reframeRatio) setCamera(saved)
+      },
       dispose() {
         layout?.dispose()
         camera.detachControl()
