@@ -1,20 +1,26 @@
+import { brinewickMarketRack, brinewickMarketTable } from '../assets/geometry/brinewick-market.ts'
 import type { Weather } from '../protocol.ts'
+import { brinewickMarketPlacements } from '../worlds/saltwind/layout/sites.ts'
 
 export const brinewickMarketSubject = 'brinewick-market-routine'
 export const brinewickMarketStops = {
-  worktable: { id: 'fish-market-worktable', x: -243.38, z: -124.75, width: 3.4, depth: 1.02 },
-  outdoorRack: { id: 'fish-market-outdoor-net-rack', x: -252.2, z: -122.2, width: 3.46, depth: 0.76 },
-  shelteredRack: { id: 'fish-market-sheltered-net-rack', x: -250.58, z: -125.32, width: 3.46, depth: 0.76 },
+  worktable: { ...brinewickMarketPlacements.worktable, ...brinewickMarketTable.footprint },
+  outdoorRack: { ...brinewickMarketPlacements.outdoorRack, ...brinewickMarketRack.footprint },
+  shelteredRack: { ...brinewickMarketPlacements.shelteredRack, ...brinewickMarketRack.footprint },
 } as const
 
+const setupHour = 5.5
 export const tradingHour = 11.5
 export const closingHour = 17
+const shelterRainThreshold = 0.32
+const coverSettlingHours = 0.22
+const coverEasingPower = 2
 
 export function brinewickMarketAt({ hour, rain }: Weather) {
-  if (hour >= 5.5 && hour < tradingHour) {
-    return { phase: 'setup', net: rain >= 0.32 ? 'shelteredRack' : 'outdoorRack', cover: 0 } as const
+  if (hour >= setupHour && hour < tradingHour) {
+    return { phase: 'setup', net: rain >= shelterRainThreshold ? 'shelteredRack' : 'outdoorRack', cover: 0 } as const
   }
   if (hour >= tradingHour && hour < closingHour) return { phase: 'trading', net: null, cover: 0 } as const
-  const settling = hour < closingHour ? 1 : Math.min(1, (hour - closingHour) / 0.22)
-  return { phase: 'closing', net: null, cover: 1 - (1 - settling) ** 2 } as const
+  const settling = hour < closingHour ? 1 : Math.min(1, (hour - closingHour) / coverSettlingHours)
+  return { phase: 'closing', net: null, cover: 1 - (1 - settling) ** coverEasingPower } as const
 }

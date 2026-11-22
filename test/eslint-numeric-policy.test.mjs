@@ -31,7 +31,9 @@ test('authored numeric data and test cases have explicit exceptions', async () =
     'src/assets/recipes/new-recipe.ts',
     'src/worlds/saltwind/layout/brinewick-waterfront.ts',
     'src/worlds/saltwind/layout/routes.ts',
+    'src/worlds/saltwind/layout/scenery.ts',
     'src/worlds/saltwind/layout/sites.ts',
+    'src/worlds/saltwind/layout/terrain.ts',
     'test/new-case.test.mjs',
   ]) {
     const config = await eslint.calculateConfigForFile(file)
@@ -46,6 +48,12 @@ test('authored data allows numeric tuples and rejects execution and runtime impo
 
   const operations = await eslint.lintText('export const points = () => [2.5, 4]\n', { filePath: geometry })
   assert.ok(operations[0].messages.some(({ ruleId }) => ruleId === 'no-restricted-syntax'))
+
+  const layoutImports = await eslint.lintText('import { groundHeight } from \'../../../second-island/terrain.ts\'\nexport const elevation = groundHeight(2, 4)\n', {
+    filePath: 'src/worlds/saltwind/layout/terrain.ts',
+  })
+  assert.ok(layoutImports[0].messages.some(({ ruleId }) => ruleId === 'no-restricted-imports'))
+  assert.ok(layoutImports[0].messages.some(({ ruleId }) => ruleId === 'no-restricted-syntax'))
 
   const imports = await eslint.lintText('import { groundHeight } from \'../../terrain.ts\'\nexport const height = groundHeight({ x: 20, z: 30 })\n', {
     filePath: 'src/assets/recipes/island-lighting.ts',

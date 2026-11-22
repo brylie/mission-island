@@ -1,11 +1,13 @@
 import { MultiMaterial } from '@babylonjs/core/Materials/multiMaterial'
 import { SubMesh } from '@babylonjs/core/Meshes/subMesh'
+import { airstripMarkings, saltwindLandscapePalette, saltwindRoads, saltwindWalkFinish, terrainFinish, waterSurface, windsock } from '../assets/geometry/saltwind-landscape'
 import { createTrail } from '../assets/routes'
 import { dressStrand } from '../assets/strand'
 import type { ScenerySolids } from './walking'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import type { MeshFactory } from '../island-meshes'
 import { ribbonGeometry } from '../math/ribbon'
+import { airstripWindsock, reedwater, sandspitBeach, tarnstep } from '../worlds/saltwind/layout/terrain'
 import { villageWalks } from './footways'
 import { habitatColor } from './habitats'
 import { createCascadeMaterial, createLakeMaterial, createSoundMaterial } from './sea'
@@ -14,31 +16,38 @@ import type { Route } from './routes'
 import { lowerLake, pavedYards, runway, seaLevel, sites, tarn, discoveryWalks, picnicLedge, waterBounds } from './sites'
 import { airfieldDistance, bridgeAt, cols, deckPoint, deckSection, fallsWidth, fallsX, fallsY, gridStep, groundHeight, heightGrid, nearestRoad, riverY, riverZ, rows, shoreDistance, siteDistance, surfaceHeight } from './terrain'
 
-export const palette = {
-  sea: [49, 117, 133],
-  shoal: [101, 170, 162],
-  yard: [186, 166, 129],
-} as const
-
+const halves = 2
+const vertexComponents = 3
+const zComponent = 2
+const rgbChannelMax = 255
+const terrainTileCells = 24
+const offshoreRenderReach = 26
 const yardSites = sites.filter((site) => site.id !== 'fields' && site.id !== 'cemetery')
 
 function terrainColor(x: number, y: number, z: number) {
-  const noise = 0.97 + 0.027 * Math.sin(x * 0.09 + z * 0.07) + 0.019 * Math.cos(z * 0.14 - x * 0.12)
+  const { noise, yard, tarnstepBank, picnicShelf, slate } = terrainFinish
+  const { ripple, grain } = noise
+  const variation = noise.base + ripple.amplitude * Math.sin(x * ripple.xFrequency + z * ripple.zFrequency)
+    + grain.amplitude * Math.cos(z * grain.zFrequency - x * grain.xFrequency)
   let edge = Infinity
   for (const site of yardSites) edge = Math.min(edge, siteDistance(x, z, site))
-  const yard = Math.max(0, Math.min(1, (-edge + 1) / 6)) * 0.72
-  const color = habitatColor(x, y, z).map((channel, i) => channel + (palette.yard[i] - channel) * yard)
-  const bank = z > 121 && z < 200
-    ? Math.max(0, Math.min(1, (z - 121) / 5, (200 - z) / 5, (fallsWidth(z) + 10 - Math.abs(x - fallsX(z))) / 6))
-    : 0
-  const ledge = Math.max(0, 1 - Math.hypot((x - picnicLedge.x) / 9, (z - picnicLedge.z + 3) / 5))
-  const strata = 0.93 + 0.07 * Math.sin(y * 2.1 + x * 0.11)
-  const slate = [125, 133, 125]
-  return color.map((channel, i) => (channel + (slate[i] * strata - channel) * Math.max(bank, ledge)) * noise)
+  const yardBlend = Math.max(0, Math.min(1, (-edge + yard.edgeOffset) / yard.blendWidth)) * yard.opacity
+  const color = habitatColor(x, y, z).map((channel, i) => channel + (saltwindLandscapePalette.yard[i] - channel) * yardBlend)
+  const { zBlend, extension, sideBlend, maxZ } = tarnstepBank
+  let bank = 0
+  if (z > tarnstep.cutMinZ && z < maxZ) {
+    const bankWidth = fallsWidth(z) + extension
+    bank = Math.max(0, Math.min(1, (z - tarnstep.cutMinZ) / zBlend, (maxZ - z) / zBlend, (bankWidth - Math.abs(x - fallsX(z))) / sideBlend))
+  }
+  const ledge = Math.max(0, 1 - Math.hypot((x - picnicLedge.x) / picnicShelf.radiusX, (z - picnicLedge.z - picnicShelf.centerOffsetZ) / picnicShelf.radiusZ))
+  const strata = slate.base + slate.amplitude * Math.sin(y * slate.yFrequency + x * slate.xFrequency)
+  return color.map((channel, i) => (channel + (slate.color[i] * strata - channel) * Math.max(bank, ledge)) * variation)
 }
 
 function createTerrain(meshes: MeshFactory) {
-  const height = heightGrid(), tile = 24
+  const height = heightGrid(), tile = terrainTileCells
+  const { sand: beachBounds } = sandspitBeach
+  const { sand: beachFinish } = terrainFinish
   const material = meshes.paint('#ffffff')
   const shore = new MultiMaterial('Sandspit beach and upland', meshes.scene)
   shore.subMaterials = [material, meshes.paintSurface('sand', '#ffffff')]
@@ -53,26 +62,26 @@ function createTerrain(meshes: MeshFactory) {
     for (let z = iz; z <= ez; z++) for (let x = ix; x <= ex; x++) {
       const px = minX + x * gridStep, pz = minZ + z * gridStep, y = height[z * cols + x]
       positions.push(px, y, pz)
-      uvs.push((px - pz) / 3.5, (pz + px * 0.72) / 3.5)
+      uvs.push((px - pz) / beachFinish.uvScale, (pz + px * beachFinish.uvSkew) / beachFinish.uvScale)
       const rgb = terrainColor(px, y, pz)
-      const byPier = px >= -255 && px <= -200 && pz < -250
+      const byPier = px >= beachBounds.minX && px <= beachBounds.maxX && pz < beachBounds.maxZ
       if (byPier && y < 0) {
-        const wet = Math.min(1, -y / 0.65)
-        rgb[0] *= 1 - 0.43 * wet
-        rgb[1] *= 1 - 0.11 * wet
-        rgb[2] *= 1 + 0.24 * wet
+        const wet = Math.min(1, -y / beachFinish.wetDepth)
+        rgb[0] *= 1 - beachFinish.redLoss * wet
+        rgb[1] *= 1 - beachFinish.greenLoss * wet
+        rgb[2] *= 1 + beachFinish.blueGain * wet
       }
-      colors.push(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, 1)
+      colors.push(rgb[0] / rgbChannelMax, rgb[1] / rgbChannelMax, rgb[2] / rgbChannelMax, 1)
       if (x === ex || z === ez) continue
       const a = (z - iz) * stride + x - ix
-      const faces = byPier && y < 1.5 && y > -4 ? sand : indices
+      const faces = byPier && y < beachBounds.maxY && y > beachBounds.minY ? sand : indices
       faces.push(a, a + 1, a + stride, a + 1, a + stride + 1, a + stride)
     }
     const mesh = meshes.surface(`Ground ${ix},${iz}`, positions, indices.concat(sand), sand.length ? shore : material, undefined, sand.length ? uvs : undefined)
     if (sand.length) {
       mesh.releaseSubMeshes()
-      if (indices.length) new SubMesh(0, 0, positions.length / 3, 0, indices.length, mesh)
-      new SubMesh(1, 0, positions.length / 3, indices.length, sand.length, mesh)
+      if (indices.length) new SubMesh(0, 0, positions.length / vertexComponents, 0, indices.length, mesh)
+      new SubMesh(1, 0, positions.length / vertexComponents, indices.length, sand.length, mesh)
     }
     mesh.setVerticesData(VertexBuffer.ColorKind, colors)
     // Identical central differences across tile borders keep lighting continuous.
@@ -80,8 +89,8 @@ function createTerrain(meshes: MeshFactory) {
     for (let z = iz; z <= ez; z++) for (let x = ix; x <= ex; x++) {
       const dx = height[z * cols + Math.min(x + 1, cols - 1)] - height[z * cols + Math.max(x - 1, 0)]
       const dz = height[Math.min(z + 1, rows - 1) * cols + x] - height[Math.max(z - 1, 0) * cols + x]
-      const length = Math.hypot(dx, 2 * gridStep, dz)
-      normals.push(-dx / length, 2 * gridStep / length, -dz / length)
+      const length = Math.hypot(dx, halves * gridStep, dz)
+      normals.push(-dx / length, halves * gridStep / length, -dz / length)
     }
     mesh.setVerticesData(VertexBuffer.NormalKind, normals)
     mesh.freezeWorldMatrix()
@@ -89,28 +98,34 @@ function createTerrain(meshes: MeshFactory) {
 }
 
 function couldSeeTerrain(x: number, z: number, width: number, depth: number) {
-  const halfX = width * gridStep / 2, halfZ = depth * gridStep / 2
-  return shoreDistance(x + halfX, z + halfZ) + Math.hypot(halfX, halfZ) > -26
+  const halfX = width * gridStep / halves, halfZ = depth * gridStep / halves
+  return shoreDistance(x + halfX, z + halfZ) + Math.hypot(halfX, halfZ) > -offshoreRenderReach
 }
 
 function strip(meshes: MeshFactory, name: string, points: readonly number[][], color: string) {
   const indices: number[] = []
-  for (let i = 2; i < points.length; i += 2) indices.push(i - 2, i - 1, i, i - 1, i + 1, i)
+  const verticesPerSection = 2
+  for (let i = verticesPerSection; i < points.length; i += verticesPerSection) indices.push(i - verticesPerSection, i - 1, i, i - 1, i + 1, i)
   const mesh = meshes.surface(name, points.flat(), indices, color)
   mesh.freezeWorldMatrix()
 }
 
+const lakeSegments = 96
+const cascadeRowSpacing = 0.5
+const cascadeColumnsPerSide = 4
+
 function createWater(meshes: MeshFactory) {
-  const minX = -1600, minZ = -1600, maxX = 1600, maxZ = 1600
-  const y = seaLevel - 0.005
+  const { sound, river: riverSurface, tarnstep: cascadeSurface } = waterSurface
+  const min = -sound.halfExtent, max = sound.halfExtent
+  const y = seaLevel - sound.surfaceDrop
   const color = createSoundMaterial(meshes.scene)
-  const sea = meshes.surface('Saltwind Sound', [minX, y, minZ, maxX, y, minZ, maxX, y, maxZ, minX, y, maxZ], [0, 1, 2, 0, 2, 3], color)
+  const sea = meshes.surface('Saltwind Sound', [min, y, min, max, y, min, max, y, max, min, y, max], [...sound.triangles], color)
   sea.freezeWorldMatrix()
   const stillWater = createLakeMaterial(meshes.scene)
   for (const lake of [lowerLake, tarn]) {
     const points = [lake.x, lake.y, lake.z], indices: number[] = [], uv = [0, 0]
-    for (let i = 0; i <= 96; i++) {
-      const angle = i * Math.PI / 48
+    for (let i = 0; i <= lakeSegments; i++) {
+      const angle = i * Math.PI / (lakeSegments / halves)
       uv.push(Math.cos(angle), Math.sin(angle))
       points.push(lake.x + Math.cos(angle) * lake.rx, lake.y, lake.z + Math.sin(angle) * lake.rz)
       if (i) indices.push(0, i, i + 1)
@@ -118,24 +133,27 @@ function createWater(meshes: MeshFactory) {
     meshes.surface(lake === tarn ? 'Alder Tarn' : 'Mirror Lake', points, indices, stillWater, undefined, uv).freezeWorldMatrix()
   }
   const river: number[][] = []
-  for (let x = -444; x <= -87; x++) {
-    const y = riverY(x) - 0.009, z = riverZ(x)
-    river.push([x, y, z + 9], [x, y, z - 9])
+  for (let x = reedwater.visibleStartX; x <= reedwater.lakeEndX; x++) {
+    const y = riverY(x) - riverSurface.surfaceDrop, z = riverZ(x)
+    river.push([x, y, z + reedwater.halfWidth], [x, y, z - reedwater.halfWidth])
   }
-  strip(meshes, 'Reedwater River', river, '#6ba9ad')
+  strip(meshes, 'Reedwater River', river, riverSurface.color)
   const stream: number[] = [], faces: number[] = [], uv: number[] = []
   const current = createCascadeMaterial(meshes.scene)
-  for (let row = 0; row <= 152; row++) {
-    const z = 123 + row * 0.5, y = fallsY(z), width = fallsWidth(z)
-    const slope = Math.min(1, fallsY(z + 0.5) - fallsY(z - 0.5))
-    for (let column = 0; column <= 8; column++) {
-      const lane = column / 4 - 1
+  const cascadeRows = (tarnstep.waterMaxZ - tarnstep.waterMinZ) / cascadeRowSpacing
+  const cascadeColumns = cascadeColumnsPerSide * halves
+  const cascadeStride = cascadeColumns + 1
+  for (let row = 0; row <= cascadeRows; row++) {
+    const z = tarnstep.waterMinZ + row * cascadeRowSpacing, y = fallsY(z), width = fallsWidth(z)
+    const slope = Math.min(1, fallsY(z + cascadeRowSpacing) - fallsY(z - cascadeRowSpacing))
+    for (let column = 0; column <= cascadeColumns; column++) {
+      const lane = column / cascadeColumnsPerSide - 1
       // Extend a little into the cut bank so its terrain trims the water's edge.
-      stream.push(fallsX(z) + lane * (width + 0.85), y, z)
+      stream.push(fallsX(z) + lane * (width + cascadeSurface.cutBankOverlap), y, z)
       uv.push(lane, slope)
       if (row && column) {
-        const d = row * 9 + column
-        faces.push(d - 10, d - 9, d, d - 10, d, d - 1)
+        const d = row * cascadeStride + column
+        faces.push(d - cascadeStride - 1, d - cascadeStride, d, d - cascadeStride - 1, d, d - 1)
       }
     }
   }
@@ -148,29 +166,40 @@ function createWater(meshes: MeshFactory) {
   }
 }
 
+const deckSectionVertices = 3
+const ferryHullOverlapZ = -254
+const firstRoadMarkDistance = 3
+const roadMarkEndGap = 3
+const roadMarkSpacing = 13
+const markedRoadMinWidth = 8
+const roadMarkJunctionClearance = 8
+const fishingPierRailStart = 2
+const ferryDeckRailStart = 16
+
 function createRoad(meshes: MeshFactory, route: Route, solids: ScenerySolids) {
+  const { boardColor, roadColor, centreLine, rails } = saltwindRoads
   const board = route === ferryTrack || route === fishingPier
   const positions: number[] = [], indices: number[] = []
   route.samples.forEach((sample, i) => {
     for (const p of deckSection(sample, route)) positions.push(p.x, p.y, p.z)
-    if (!i || (route === ferryTrack && sample.z <= -254)) return
+    if (!i || (route === ferryTrack && sample.z <= ferryHullOverlapZ)) return
     for (const lane of [0, 1]) {
-      const a = (i - 1) * 3 + lane, b = a + 3
+      const a = (i - 1) * deckSectionVertices + lane, b = a + deckSectionVertices
       indices.push(a, a + 1, b, a + 1, b + 1, b)
     }
   })
-  meshes.surface(route.name, positions, indices, board ? '#ae987b' : '#69716b').freezeWorldMatrix()
+  meshes.surface(route.name, positions, indices, board ? boardColor : roadColor).freezeWorldMatrix()
   const length = route.samples.at(-1)?.distance ?? 0
-  for (let distance = 3; distance < length - 3; distance += 13) {
-    if (board || route.width < 8) break
+  for (let distance = firstRoadMarkDistance; distance < length - roadMarkEndGap; distance += roadMarkSpacing) {
+    if (board || route.width < markedRoadMinWidth) break
     const p = sampleRoute(route, distance)
-    if (nearestRoad(p.x, p.z, false, route).distance >= 8) {
+    if (nearestRoad(p.x, p.z, false, route).distance >= roadMarkJunctionClearance) {
       const y = deckPoint(p, 0, route).y
-      const mark = meshes.box(p.x, y + 0.036, p.z, 0.14, 0.014, 2.35, '#e6d9aa', undefined, false)
+      const mark = meshes.box(p.x, y + centreLine.centreY, p.z, ...centreLine.size, centreLine.color, undefined, false)
       mark.rotation.y = p.yaw
       const a = sampleRoute(route, distance - 1)
       const b = sampleRoute(route, distance + 1)
-      mark.rotation.x = -Math.atan2(deckPoint(b, 0, route).y - deckPoint(a, 0, route).y, 2)
+      mark.rotation.x = -Math.atan2(deckPoint(b, 0, route).y - deckPoint(a, 0, route).y, halves)
     }
   }
   const spans: [number, number][] = []
@@ -184,35 +213,41 @@ function createRoad(meshes: MeshFactory, route: Route, solids: ScenerySolids) {
       start = undefined
     }
   }
-  if (route === fishingPier) spans.push([2, length - 0.24])
-  if (route === ferryTrack) spans.push([16, length - 0.24])
+  if (route === fishingPier) spans.push([fishingPierRailStart, length - rails.endInset])
+  if (route === ferryTrack) spans.push([ferryDeckRailStart, length - rails.endInset])
   const firstRail = meshes.scene.meshes.length
   for (const [from, to] of spans) addRails(meshes, route, from, to)
   solids.capture(meshes.scene.meshes.slice(firstRail))
 }
 
+const railPostSpacing = 5.5
+const railSupportInterval = 2
+const railSupportMinHeight = 0.46
+
 function addRails(meshes: MeshFactory, route: Route, from: number, to: number) {
-  const count = Math.ceil((to - from) / 5.5)
+  const { edgeInset, post, support, beams, beamWidth } = saltwindRoads.rails
+  const count = Math.ceil((to - from) / railPostSpacing)
+  const halfSupportWidth = support.width / halves, halfSupportDepth = support.depth / halves
   for (const side of [-1, 1]) {
-    const offset = side * (route.width / 2 - 0.24)
+    const offset = side * (route.width / halves - edgeInset)
     let previous: ReturnType<typeof deckPoint> | undefined
     for (let i = 0; i <= count; i++) {
       const sample = sampleRoute(route, from + (to - from) * i / count)
       const p = deckPoint(sample, offset, route)
-      meshes.box(p.x, p.y + 0.38, p.z, 0.22, 0.80, 0.22, '#e7d6b2')
-      if (i % 2 === 0 && p.y - groundHeight(p.x, p.z) > 0.46) {
-        const corners = [-0.38, 0.38].flatMap((dx) =>
-          [-0.44, 0.44].map((dz) => groundHeight(p.x + dx, p.z + dz)))
-        const bottom = Math.min(...corners) - 0.28
+      meshes.box(p.x, p.y + post.centreY, p.z, ...post.size, post.color)
+      if (i % railSupportInterval === 0 && p.y - groundHeight(p.x, p.z) > railSupportMinHeight) {
+        const corners = [-halfSupportWidth, halfSupportWidth].flatMap((dx) =>
+          [-halfSupportDepth, halfSupportDepth].map((dz) => groundHeight(p.x + dx, p.z + dz)))
+        const bottom = Math.min(...corners) - support.foundation
         const height = p.y - bottom
-        meshes.box(p.x, bottom + height / 2, p.z, 0.76, height, 0.88, '#93968a')
+        meshes.box(p.x, bottom + height / halves, p.z, support.width, height, support.depth, support.color)
       }
       if (previous) {
         const dx = p.x - previous.x, dy = p.y - previous.y, dz = p.z - previous.z
         const length = Math.hypot(dx, dz)
-        const x = (p.x + previous.x) / 2, y = (p.y + previous.y) / 2, z = (p.z + previous.z) / 2
-        for (const [height, level, color] of [[0.13, 0.65, '#e7d6b2'], [0.36, -0.17, '#878277']] as const) {
-          const beam = meshes.box(x, y + level, z, 0.22, height, Math.hypot(length, dy), color)
+        const x = (p.x + previous.x) / halves, y = (p.y + previous.y) / halves, z = (p.z + previous.z) / halves
+        for (const { height, centreY, color } of beams) {
+          const beam = meshes.box(x, y + centreY, z, beamWidth, height, Math.hypot(length, dy), color)
           beam.rotation.set(-Math.atan2(dy, length), Math.atan2(dx, dz), 0)
         }
       }
@@ -223,43 +258,55 @@ function addRails(meshes: MeshFactory, route: Route, from: number, to: number) {
 
 function createAirstrip(meshes: MeshFactory) {
   const { x, z, width, length, y } = runway
+  const { pavement, edges, threshold, centreLine } = airstripMarkings
   for (const pad of pavedYards.filter(({ id }) => ['runway', 'taxi', 'air-apron'].includes(id))) {
-    meshes.box(pad.x, pad.y - 0.045, pad.z, pad.width, 0.09, pad.depth, pad.id === 'air-apron' ? '#777d72' : '#646b65', undefined, false)
+    const color = pad.id === 'air-apron' ? pavement.apronColor : pavement.runwayColor
+    meshes.box(pad.x, pad.y - pavement.thickness / halves, pad.z, pad.width, pavement.thickness, pad.depth, color, undefined, false)
   }
   for (const side of [-1, 1]) {
-    meshes.box(x, y + 0.077, z + side * (width / 2 - 0.78), length - 4, 0.011, 0.20, '#f7e3bc', undefined, false)
-    for (let i = 0; i < 7; i++) meshes.box(x + side * (length / 2 - 8), y + 0.079, z + (i - 3) * 1.65, 7.6, 0.012, 0.41, '#faf0ce', undefined, false)
+    meshes.box(x, y + edges.centreY, z + side * (width / halves - edges.inset), length - edges.trimLength, edges.height, edges.depth, edges.color, undefined, false)
+    const thresholdX = x + side * (length / halves - threshold.inset)
+    for (const offset of threshold.offsets) {
+      meshes.box(thresholdX, y + threshold.centreY, z + offset * threshold.spacing, ...threshold.size, threshold.color, undefined, false)
+    }
   }
-  for (let i = -7; i <= 7; i++) meshes.box(x + i * 24, y + 0.078, z, 10, 0.013, 0.24, '#fff1c4', undefined, false)
-  const wx = 231, wz = -119
-  meshes.cylinder(wx, y + 3.05, wz, 0.13, 0.19, 6.1, 9, '#805d48')
-  meshes.box(wx + 1.10, y + 5.89, wz, 2.35, 0.51, 0.55, '#dc774f').rotation.z = -0.19
-  for (const dx of [0.53, 1.56]) meshes.box(wx + dx, y + 6.05 - dx * 0.19, wz, 0.29, 0.53, 0.57, '#f1ddae').rotation.z = -0.19
+  for (let i = -centreLine.countPerSide; i <= centreLine.countPerSide; i++) {
+    meshes.box(x + i * centreLine.spacing, y + centreLine.centreY, z, ...centreLine.size, centreLine.color, undefined, false)
+  }
+  const { x: wx, z: wz } = airstripWindsock
+  const { pole, fabric, bands, droop } = windsock
+  meshes.cylinder(wx, y + pole.centreY, wz, pole.topDiameter, pole.bottomDiameter, pole.height, pole.sides, pole.color)
+  meshes.box(wx + fabric.x, y + fabric.y, wz, ...fabric.size, fabric.color).rotation.z = -droop
+  for (const offset of bands.x) meshes.box(wx + offset, y + bands.topY - offset * droop, wz, ...bands.size, bands.color).rotation.z = -droop
 }
 
+const airfieldClearance = 2
+const beachScatterBand = 0.55
+
 export function clearAirfield(x: number, z: number) {
-  return airfieldDistance(x, z) < 2
+  return airfieldDistance(x, z) < airfieldClearance
 }
 
 export function createLandscape(meshes: MeshFactory, solids: ScenerySolids) {
   createTerrain(meshes)
-  const banks = [[-243, -268], [-239, -270], [-235, -276], [-231, -276], [-225, -283], [-218, -286]]
-    .map(([x, z]) => ({ x, z }))
-  dressStrand(meshes, 'Sandspit', banks, 781, (p) => groundHeight(p.x, p.z), (_p, y) => y > -0.55 && y < 0.55)
+  dressStrand(meshes, 'Sandspit', sandspitBeach.edge, sandspitBeach.scatterSeed, ({ x, z }) => groundHeight(x, z), (_p, y) => y > -beachScatterBand && y < beachScatterBand)
   const water = createWater(meshes)
   for (const route of [...routes, ferryTrack, fishingPier]) createRoad(meshes, route, solids)
   for (const walk of discoveryWalks) {
-    createTrail(meshes, walk.name + ' footpath', walk.path, 1.25, 'gravel', ({ x, z }) => surfaceHeight(x, z), meshes.paintRecipe('path-gravel'))
+    createTrail(meshes, walk.name + ' footpath', walk.path, saltwindWalkFinish.trailWidth, 'gravel', ({ x, z }) => surfaceHeight(x, z), meshes.paintRecipe('path-gravel'))
   }
+  const { frontWalk } = saltwindWalkFinish
   for (const walk of villageWalks) {
     if (!walk.points.length) continue
-    const path = ribbonGeometry([walk.points], 1.45, 0)
-    for (let i = 0; i < path.positions.length; i += 3) path.positions[i + 1] = surfaceHeight(path.positions[i], path.positions[i + 2]) + 0.045
+    const path = ribbonGeometry([walk.points], frontWalk.width, 0)
+    for (let i = 0; i < path.positions.length; i += vertexComponents) {
+      path.positions[i + 1] = surfaceHeight(path.positions[i], path.positions[i + zComponent]) + frontWalk.lift
+    }
     const uv = walk.points.flatMap((p) => {
       const d = Math.hypot(p.x - walk.points[0].x, p.z - walk.points[0].z)
-      return [0, d / 1.45, 1, d / 1.45]
+      return [0, d / frontWalk.width, 1, d / frontWalk.width]
     })
-    const paving = walk.name === 'cemetery' ? meshes.paintSurface('gravel') : meshes.paintSurface('concrete', '#c1bbab')
+    const paving = walk.name === 'cemetery' ? meshes.paintSurface('gravel') : meshes.paintSurface('concrete', frontWalk.concrete)
     meshes.surface(walk.name + ' front walk', path.positions, path.indices, paving, undefined, uv).freezeWorldMatrix()
   }
   const firstAirstrip = meshes.scene.meshes.length

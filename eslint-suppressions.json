@@ -1,7 +1,7 @@
 {
   "eslint.config.mjs": {
     "no-magic-numbers": {
-      "count": 31
+      "count": 29
     }
   },
   "scripts/workbench-reference.mjs": {
@@ -734,16 +734,6 @@
       "count": 10
     }
   },
-  "src/second-island/brinewick-market-art.ts": {
-    "no-magic-numbers": {
-      "count": 214
-    }
-  },
-  "src/second-island/brinewick-market.ts": {
-    "no-magic-numbers": {
-      "count": 16
-    }
-  },
   "src/second-island/crew-bank.ts": {
     "no-magic-numbers": {
       "count": 2
@@ -759,11 +749,6 @@
       "count": 2
     }
   },
-  "src/second-island/habitats.ts": {
-    "no-magic-numbers": {
-      "count": 43
-    }
-  },
   "src/second-island/haul-drive.ts": {
     "no-magic-numbers": {
       "count": 14
@@ -772,11 +757,6 @@
   "src/second-island/honey-delivery.ts": {
     "no-magic-numbers": {
       "count": 1
-    }
-  },
-  "src/second-island/landscape.ts": {
-    "no-magic-numbers": {
-      "count": 192
     }
   },
   "src/second-island/long-acre-art.ts": {
@@ -799,11 +779,6 @@
       "count": 78
     }
   },
-  "src/second-island/map.ts": {
-    "no-magic-numbers": {
-      "count": 50
-    }
-  },
   "src/second-island/ore-hauling.ts": {
     "no-magic-numbers": {
       "count": 43
@@ -819,11 +794,6 @@
       "count": 4
     }
   },
-  "src/second-island/scenery.ts": {
-    "no-magic-numbers": {
-      "count": 219
-    }
-  },
   "src/second-island/site-features.ts": {
     "no-magic-numbers": {
       "count": 33
@@ -832,11 +802,6 @@
   "src/second-island/tarnstep-spray.ts": {
     "no-magic-numbers": {
       "count": 4
-    }
-  },
-  "src/second-island/terrain.ts": {
-    "no-magic-numbers": {
-      "count": 227
     }
   },
   "src/second-island/walking.ts": {
@@ -996,7 +961,7 @@
   },
   "src/wildlife-motion.ts": {
     "no-magic-numbers": {
-      "count": 44
+      "count": 42
     }
   },
   "src/wildlife.ts": {
@@ -1102,11 +1067,6 @@
   "src/workbench/gameplay-effect-studies.ts": {
     "no-magic-numbers": {
       "count": 80
-    }
-  },
-  "src/workbench/gameplay-job-fixtures.ts": {
-    "no-magic-numbers": {
-      "count": 215
     }
   },
   "src/workbench/gameplay-land-fixtures.ts": {

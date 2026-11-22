@@ -1,9 +1,9 @@
+import { smoothstep } from './math/smoothstep.ts'
 import type { Point } from './world.ts'
 import type { Weather } from './protocol.ts'
 
 export function smoothRange(start: number, end: number, value: number) {
-  const t = Math.max(0, Math.min(1, (value - start) / (end - start)))
-  return t * t * (3 - 2 * t)
+  return smoothstep((value - start) / (end - start))
 }
 
 export function schoolAvoidance(origin: Point, threats: readonly Point[], escape: Point): Point {

@@ -26,6 +26,12 @@ export const markedVehicleBays: Readonly<Partial<Record<string, { width: number,
   'timber': { ...standardServiceBay, depth: 13 },
 }
 
+export const brinewickMarketPlacements = {
+  worktable: { id: 'fish-market-worktable', x: -243.38, z: -124.75 },
+  outdoorRack: { id: 'fish-market-outdoor-net-rack', x: -252.2, z: -122.2 },
+  shelteredRack: { id: 'fish-market-sheltered-net-rack', x: -250.58, z: -125.32 },
+} as const
+
 export const islandName = 'Saltwind Island'
 export const landBounds = { minX: -505, maxX: 505, minZ: -340, maxZ: 340 }
 export const waterBounds = { minX: -560, maxX: 560, minZ: -430, maxZ: 430 }
