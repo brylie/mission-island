@@ -57,13 +57,13 @@ export function player(id, point = spawns[id], overrides = {}) {
   }
 }
 
-export function setup(t, { saved, players = [], arrange = () => {}, random = () => 0 } = {}) {
+export function setup(t, { saved, players = [], arrange = () => {}, random = () => 0, playtest, metrics } = {}) {
   let time = 10000
   const checkpoint = t.mock.fn(() => game.snapshotForSave())
   const save = saved ?? createGame().snapshotForSave()
   if (!saved) save.crew = players.map((entry, index) => ({ token: tokens[index], player: entry, reserved: true }))
   arrange(save)
-  const game = createGame({ save, clock: () => time, random, checkpoint })
+  const game = createGame({ save, clock: () => time, random, checkpoint, playtest, metrics })
   const sessions = createSocketSessions(game)
   const sockets = []
   t.after(() => sockets.forEach((socket) => void socket.close()))

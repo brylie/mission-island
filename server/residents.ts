@@ -5,7 +5,7 @@ import type { ResidentAction } from '../src/residents/interactions.ts'
 import { breakPromise, keepFavor } from '../src/residents/trust.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { crateStarts, type Point } from '../src/world.ts'
-import type { CrewMember, CrewNotice } from './crew.ts'
+import type { CrewBroadcast, CrewMember } from './crew.ts'
 import type { InteractionHandlers } from './interactions.ts'
 
 // Resident-specific behavior: talking to a resident by id, and a favor's own world changes by favor id.
@@ -17,13 +17,13 @@ interface Hooks {
 
 // Host side of every resident. The interaction layer has already checked the resident is in reach and the
 // choice is still open, so a stale or simultaneous request never reaches here. Favors are crew-wide.
-export function createResidents(state: Snapshot, registry: readonly ResidentDefinition[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'relocate'>, notifyCrew: (message: CrewNotice) => void, hooks: Hooks = {}, checkpoint?: () => void) {
-  function keep(resident: ResidentDefinition, favor: FavorDefinition) {
+export function createResidents(state: Snapshot, registry: readonly ResidentDefinition[], physics: Pick<ReturnType<typeof createCargoPhysics>, 'relocate'>, notifyCrew: CrewBroadcast, hooks: Hooks = {}, checkpoint?: () => void) {
+  function keep(resident: ResidentDefinition, favor: FavorDefinition, slot?: number) {
     const receipt = keepFavor(state, resident, favor)
     if (!receipt) return false
     hooks.kept?.[favor.id]?.()
     checkpoint?.()
-    notifyCrew({ type: 'favor-pay', ...receipt })
+    notifyCrew({ type: 'favor-pay', ...receipt }, slot)
     return true
   }
 
@@ -35,7 +35,7 @@ export function createResidents(state: Snapshot, registry: readonly ResidentDefi
     if (!pending) return
     const base = { type: 'favor-report' as const, resident: resident.id, favor: pending.favor.id, playerId: member.player.id }
     if (claim === 'fault') return notifyCrew({ ...base, result: 'honest', trust: 0 })
-    if (pending.checked === 'sound') return keep(resident, pending.favor)
+    if (pending.checked === 'sound') return keep(resident, pending.favor, member.player.id)
     const lost = breakPromise(state, resident, pending.favor)
     if (lost === null) return
     checkpoint?.()
@@ -65,7 +65,7 @@ export function createResidents(state: Snapshot, registry: readonly ResidentDefi
     const { goods, quantity } = favor.kind
     if (member.player.goods[goods] < quantity) return
     member.player.goods[goods] -= quantity
-    keep(resident, favor)
+    keep(resident, favor, member.player.id)
   }
 
   // A crate set down in a resident's bay completes their cargo favor and leaves the yard like a delivery.

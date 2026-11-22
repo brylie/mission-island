@@ -4,7 +4,7 @@ import { mergeDisjoint } from '../src/interactions/definition.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { repairSupplyFavor, wren } from '../src/worlds/starter/residents/wren.ts'
 import { cargoInteractions } from './cargo-interactions.ts'
-import type { createCrewRoster } from './crew.ts'
+import type { CrewBroadcast } from './crew.ts'
 import { createFarmOrders } from './farm-orders.ts'
 import { createFerryRepair } from './ferry-repair.ts'
 import type { createFreight } from './freight.ts'
@@ -19,7 +19,7 @@ import { plotInteractions } from './plot-interactions.ts'
 import { createResidents } from './residents.ts'
 
 interface Options {
-  crew: Pick<ReturnType<typeof createCrewRoster>, 'notifyAll'>
+  notifyCrew: CrewBroadcast
   orders: Pick<ReturnType<typeof createOrders>, 'deliverCrate' | 'interactions'>
   freight: Pick<ReturnType<typeof createFreight>, 'creditCrate'>
   journal: Pick<ReturnType<typeof createJournal>, 'hearMara' | 'interactions'>
@@ -30,9 +30,8 @@ interface Options {
 export function createGameInteractions(
   { state, growth }: { state: Snapshot, growth: number[] },
   physics: ReturnType<typeof createCargoPhysics>,
-  { crew, orders, freight, journal, clock, checkpoint }: Options,
+  { notifyCrew, orders, freight, journal, clock, checkpoint }: Options,
 ) {
-  const { notifyAll: notifyCrew } = crew
   const gate = createGateRepair(state, notifyCrew, () => residents.keep(wren, wren.favors[0]))
   const swell = createGateSwell(state, notifyCrew)
   const residents = createResidents(state, starterResidents, physics, notifyCrew, {

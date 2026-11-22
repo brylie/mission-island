@@ -1,3 +1,5 @@
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Duplex } from 'node:stream'
 import type { Plugin, ViteDevServer } from 'vite'
@@ -9,6 +11,7 @@ import type { TrialRun } from '../src/live-checkpoints.ts'
 import { checkpointSettings, scenarioCatalog } from './scenarios/catalog.ts'
 import { createGame, tickSeconds } from './game.ts'
 import { islandSaveFile } from './save.ts'
+import { createPlaytestMetrics } from './playtest-metrics.ts'
 import { createSocketSessions } from './socket-sessions.ts'
 import { millisecondsPerSecond } from './host-time.ts'
 
@@ -80,6 +83,34 @@ function freightHandler(freight: ReturnType<typeof createGame>['freight']) {
   }
 }
 
+const privateDirectoryMode = 0o700
+const privateFileMode = 0o600
+
+export function openPlaytestMetrics(root: string, port: number) {
+  const directory = join(root, '.mission-island', 'metrics')
+  const path = join(directory, `host-${port}-${Date.now()}-${process.pid}.jsonl`)
+  try {
+    mkdirSync(directory, { recursive: true, mode: privateDirectoryMode })
+    writeFileSync(path, '', { flag: 'wx', mode: privateFileMode })
+  }
+  catch (error) {
+    console.warn('Could not start Mission Island playtest metrics:', error)
+    return
+  }
+  console.info(`Mission Island playtest metrics: ${path}`)
+  let writable = true
+  return createPlaytestMetrics((metric) => {
+    if (!writable) return
+    try {
+      appendFileSync(path, JSON.stringify(metric) + '\n', { mode: privateFileMode })
+    }
+    catch (error) {
+      writable = false
+      console.warn('Stopped writing Mission Island playtest metrics:', error)
+    }
+  })
+}
+
 function initialTrial(): TrialRun {
   const settings = checkpointSettings(process.env.MISSION_ISLAND_CHECKPOINT ?? scenarioCatalog[0].id, process.env.MISSION_ISLAND_CREW_SIZE ?? '2')
   if (!settings) throw new Error('Unknown MISSION_ISLAND_CHECKPOINT or MISSION_ISLAND_CREW_SIZE. See the live playtest presets in CONTRIBUTING.md.')
@@ -88,6 +119,7 @@ function initialTrial(): TrialRun {
 
 function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middlewares: ViteDevServer['middlewares'], root: string, port: number, trialMode: boolean) {
   const archive = trialMode ? undefined : islandSaveFile(root, port, process.env.MISSION_ISLAND_SAVE)
+  const metrics = process.env.MISSION_ISLAND_PLAYTEST_METRICS === '1' ? openPlaytestMetrics(root, port) : undefined
   let saveFailed = false
   function checkpoint() {
     if (!archive) return
@@ -101,7 +133,7 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
     }
   }
   let playtest = trialMode ? initialTrial() : undefined
-  let game = createGame({ save: archive?.load(), checkpoint, playtest })
+  let game = createGame({ save: archive?.load(), checkpoint, playtest, metrics: metrics?.(playtest) })
   // Saltwind's survey can read the same bank without reserving a Starter Island crew slot.
   middlewares.use('/api/crew-bank', (request, response) => {
     response.setHeader('Cache-Control', 'no-store')
@@ -131,7 +163,7 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
     if (String(playtest!.revision) !== args.get('revision')) return stop(httpConflict, 'Another player already restarted the checkpoint.')
     if (settings.seats === 1 && seats.length > 1) return stop(httpConflict, 'Both seats are occupied. Leave one game before starting solo.')
     playtest = { ...settings, revision: playtest!.revision + 1 }
-    game = createGame({ playtest })
+    game = createGame({ playtest, metrics: metrics?.(playtest) })
     // Reserve the connected players’ roles in their existing order while both browsers reconnect.
     for (const seat of seats) {
       const reserved = game.join(seat.token, () => {})

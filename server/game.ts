@@ -7,7 +7,7 @@ import { createJuniperHabitat } from '../src/juniper-habitat.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewCommand } from './commands.ts'
-import { createCrewRoster, disconnect, stopped, type CrewMember, type CrewNotice } from './crew.ts'
+import { createCrewRoster, disconnect, stopped, type CrewBroadcast, type CrewMember, type CrewNotice } from './crew.ts'
 import { jump, prepareCrewMotion, walkCrew } from './crew-motion.ts'
 import { createEquipment, setAppearance } from './equipment.ts'
 import { advanceIsland } from './island-clock.ts'
@@ -22,6 +22,7 @@ import type { IslandSave } from './save.ts'
 import { farmingQualified } from '../src/farm-orders.ts'
 import { stepSkiff } from './skiff.ts'
 import { crewInputTimeoutMs } from './host-time.ts'
+import type { PlaytestMetricsRun } from './playtest-metrics.ts'
 
 const hostTicksPerSecond = 30
 const juniperUpdateIntervalTicks = 3
@@ -35,6 +36,7 @@ type GameOptions = {
   playtest?: TrialRun
   save?: IslandSave
   checkpoint?: () => void
+  metrics?: PlaytestMetricsRun
 }
 
 // The truck carries its driver's input and records driven distance; the skiff moves with its rowers.
@@ -75,11 +77,18 @@ function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoP
   return trial
 }
 
-export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
+function observeCrewNotices(state: Snapshot, notifyCrew: CrewBroadcast, metrics?: PlaytestMetricsRun): CrewBroadcast {
+  if (!metrics) return notifyCrew
+  return (notice, slot) => {
+    notifyCrew(notice)
+    metrics.notice(state, notice, slot)
+  }
+}
+
+export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest, metrics }: GameOptions = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat(), driftwood = createDriftwoodSchool(clock() >>> 0)
-  const world = restoreIsland(physics, juniper, driftwood.frame(), save)
-  const { state, growth } = world
+  const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
   const trial = playtest && settleTrial(state, physics, prepareTrial(state, playtest))
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
@@ -88,7 +97,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const journal = createJournal(state, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint)
   const { interactions, gate, residents, farm }
-    = createGameInteractions(world, physics, { crew, orders, freight, journal, clock, checkpoint })
+    = createGameInteractions({ state, growth }, physics, { notifyCrew: observeCrewNotices(state, crew.notifyAll, metrics), orders, freight, journal, clock, checkpoint })
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
@@ -97,7 +106,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       crew.expireCrew(now)
       return state
     }
-    advanceIsland(state, growth, tickSeconds, checkpoint)
+    const skippedFrom = advanceIsland(state, growth, tickSeconds, checkpoint)
     crew.expireCrew(now)
     gate.tick()
     residents.tick()
@@ -126,6 +135,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     if (++wildlifeTick % juniperUpdateIntervalTicks === 0) {
       state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping))
     }
+    metrics?.sample(state, skippedFrom)
     return state
   }
 
@@ -197,6 +207,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     const member = crew.join(token, notify)
     if (typeof member === 'string') return { type: member } as const
     if (trial && !state.playtest?.started) trial.place(member.player)
+    else metrics?.sample(state)
     return {
       type: 'joined' as const,
       id: member.player.id,
