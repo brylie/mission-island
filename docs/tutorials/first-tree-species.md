@@ -1,6 +1,6 @@
 # Grow your first tree species
 
-**Status: verified** against the generator on 2026-11-22: the steps were run, and the tests passed.
+**Status: run by its author on 2026-11-22, at commit `7ce7b35`.** Not yet completed by someone who didn't write it. That's what makes a tutorial verified, under the [knowledge framework](../knowledge-framework.md). If you're the first, note anything that tripped you up and update this line.
 
 In this tutorial you'll add **hazel**, a multi-stemmed shrubby tree of woodland edges, to the Highwood species generator. You'll watch it grow in the Workbench, check that it reads as its own species, and write its field guide entry. It takes about an hour. You don't need to know how the generator works inside; [Procedural flora](../craft/procedural-flora.md) explains that when you're curious.
 
@@ -14,6 +14,8 @@ Open the Workbench at `http://localhost:5173/workbench.html#highwood-species`. C
 - the several stems fanning from the base;
 - the wide, soft mound of clumps;
 - how each seed differs while still looking like willow.
+
+**You should see** four low, wide, grey-green willows in a row, each with two to four stems.
 
 ## 2. Describe hazel as data
 
@@ -50,6 +52,8 @@ Open `src/assets/trees/tree-catalog.ts`. Add `hazel` to the import from `tree-sp
   'hazel': hazel,
 ```
 
+**You should see** no errors from your editor. If it underlines `hazel`, check that the import line names it.
+
 The text in quotes is hazel's **id**. Choose it carefully: the generator mixes the id into every random number, so renaming a species later would change every hazel already placed on the island.
 
 ## 4. Run the tests
@@ -58,7 +62,9 @@ The text in quotes is hazel's **id**. Choose it carefully: the generator mixes t
 node --experimental-strip-types --test test/tree-species.test.mjs
 ```
 
-One test fails: it lists every full-size tree species and checks their budgets, and hazel isn't in the list. Open `test/tree-species.test.mjs`, find the line that lists `'scots-pine', 'birch', 'aspen', 'rowan', 'alder', 'willow'`, and add `'hazel'` at the end. Run the tests again. They should all pass.
+One test fails: it lists every full-size tree species and checks their budgets, and hazel isn't in the list. Open `test/tree-species.test.mjs`, find the line that lists `'scots-pine', 'birch', 'aspen', 'rowan', 'alder', 'willow'`, and add `'hazel'` at the end. Run the tests again.
+
+**You should see** every test pass: `ℹ fail 0`.
 
 Those tests just checked a lot for you:
 - **Determinism.** Every age, exposure and twelve seeds build, and the same seed always gives identical geometry.
@@ -66,18 +72,27 @@ Those tests just checked a lot for you:
 - **Clumps.** Every crown has 3 to 9 clumps.
 - **Ground.** The tree stands on the ground.
 
+The exact counts from the author's run, at mature age: about 970–1,060 triangles near and 148–160 far.
+
 ## 5. See it grow
 
 Reload the Workbench and choose **Species: Hazel**.
 
-1. **Compare: Several seeds.** Do they look like one species, but not copies?
-2. **Compare: Every age, sheltered and exposed.** See the young and old forms and the wind-bent ones.
-3. **Look: Silhouette**, then **Front**. Is hazel a different black shape from willow and rowan? If it looks just like willow, widen its crown or make its clumps rounder, and look again.
-4. **Compare: Near beside far.** Does the distant version keep the same outline?
+1. **Compare: Several seeds.** **You should see** four rounded, bushy, mid-green trees about 4–6 m tall. Their stems show only near the base, under a crown of lumpy clumps. They should be alike in kind but different in width, lean and clump layout.
+2. **Compare: Every age, sheltered and exposed.** **You should see** six trees:
+   - young hazel, small with two or three stems;
+   - mature and old hazel, larger and rounder, and never with a broken top;
+   - each exposed version leaning to the same side.
+3. **Look: Silhouette**, then **Front**. **You should see** broad, lumpy black mounds on short stems. Switch **Species** to Grey willow and compare. The two are close, because both are many-stemmed and broad. That's a real difficulty in telling them apart at a distance, and the [how-to guide](../how-to/add-tree-species.md#change-how-a-species-looks) shows how to push them further apart.
+4. **Compare: Near beside far.** **You should see** each far tree keep the same height, width and lean as its near partner, with fewer, blockier clumps.
 
-## 6. Compare with a real hazel
+Your hazel is finished when all four look like this. Tuning its shape further is in the [how-to guide](../how-to/add-tree-species.md#change-how-a-species-looks).
 
-Find a whole-tree hazel photo on [Wikimedia Commons](https://commons.wikimedia.org/) with a CC licence. Open **Reference image**, paste the photo's File page, and compare stems, crown and colour side by side. Adjust the data and reload until you're happy.
+## 6. Optional: compare with a real hazel
+
+This step is open-ended. Skip it if you just want the finished tree.
+
+Find a whole-tree hazel photo on [Wikimedia Commons](https://commons.wikimedia.org/) with a CC licence. Open **Reference image**, paste the photo's File page, and compare stems, crown and colour side by side. The how-to guide's table says which field to change for each difference you notice.
 
 ## 7. Write it down
 

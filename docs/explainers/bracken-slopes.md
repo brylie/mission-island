@@ -52,6 +52,11 @@ Bracken is one of the [Highwood plants](../field-guide/highwood-plants.md#bracke
 
 - Woodland Trust, [A–Z of British trees and plants](https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/), general background.
 
-To add before game text quotes these facts:
-- a bracken-specific source for rhizome spread, soil preferences and toxicity, such as a Scottish agricultural advisory body or a peer-reviewed review;
-- a public-health source for ticks.
+**Unsourced, to add before this page leaves draft:** the Woodland Trust index above gives general background only. These claims each need a specific source:
+- rhizome spread, and resistance to cutting and fire;
+- soil, exposure and frost preferences;
+- shading and litter effects;
+- toxicity to livestock (thiamine-destroying and carcinogenic compounds);
+- whinchat nesting and violet-feeding butterflies;
+- ticks and Lyme disease, from a public-health source;
+- historical uses and control methods.

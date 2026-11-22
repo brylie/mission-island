@@ -50,6 +50,9 @@ The Highwood's wet ground, around Mirror Pool and along the stream, is planned f
 
 - Woodland Trust, [A–Z of British trees](https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/), for alder and willow.
 
-To add:
-- a habitat source on wet woodland and carr, such as a national conservation body's habitat description;
-- a source for alder root adaptations and *Frankia* nodules.
+**Unsourced, to add before this page leaves draft:** the Woodland Trust index above gives general background only. These claims each need a specific source:
+- how waterlogged soil loses oxygen, and how alder, willow and downy birch cope;
+- alder's *Frankia* root nodules and nitrogen fixation;
+- the hydrosere sequence from open water to carr;
+- otters among alder roots, and siskins and redpolls on alder seed;
+- wet woodland's role in flood buffering, water quality and bank stability, and its losses to drainage.

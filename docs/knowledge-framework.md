@@ -66,12 +66,19 @@ A model built to illustrate is judged differently from one built to predict. Div
 
 Use one shape per kind of subject. Don't invent a new one per topic.
 
-- **Entity:** a species, habitat, landform, weather pattern or season. Headings: *Recognise it · Where it lives · How it changes · Life around it · In the game · Notice this · A resident might say · Sources.*
+- **Place:** a habitat, site or landform. Headings: *What you see · Why here · What changes it · Life · In the game · Notice this · Sources.* A place card is shorter than an entity entry, because its plants and animals have their own entries.
+- **Entity:** a species, weather pattern or season. Headings: *Recognise it · Where it lives · How it changes · Life around it · In the game · Notice this · A resident might say · Sources.*
 - **Process:** fire, succession, grazing, windthrow, hydrology, erosion. Headings: *What drives it · Where it shows on the island · Timescale · What it leaves behind · Who deals with it · In the game · Sources.* Processes get explainers, because they cut across habitats.
 - **Practice:** firefighting, farming, first aid, knot-tying, building. Headings: *What the job is · Skills and kit · What goes wrong · How it's organised · In the game · Notice this · Sources.* *How it's organised* covers crews, training, licences and mutual aid. It's where a skill becomes a job.
 - **Social pattern:** trust, reputation, dispute, division of labour. Headings: *The pattern · Why it happens · What you'd observe · In the game · What we flatten · Sources.* Mark claims **uncertain** unless a strong source supports them. Contested social science needs a stricter honesty test than ecology.
 - **Craft:** an algorithm or technique. Headings: *Goal · Technique · Why it works · What failed · Cost and limits · Where it lives · How to check it.*
 - **Decision:** a row in [decisions](design/decisions.md). Columns: *Context and choice · Reason and consequence · What we rejected · Where to follow it.*
+
+**Before game text.** Before a resident line, journal note or prompt quotes a real-world figure, check it against a source specific to that subject, such as a species account for a flowering month or lifespan. Field guide and explainer sources are a starting point, not a check.
+
+**Verifying a tutorial.** A tutorial is **verified** only when someone who didn't write it has completed it from a clean checkout. Until then, stamp it with who ran it, when, and at which commit.
+
+**Older pages.** This framework applies to new pages and to older ones when they're next edited. An older page that still uses a previous shape should say so in its status line.
 
 ## Laws
 

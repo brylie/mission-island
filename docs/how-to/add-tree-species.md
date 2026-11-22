@@ -33,6 +33,8 @@ A checklist for adding a species to the Highwood generator, or changing how an e
 
 ## Change how a species looks
 
+When a new species looks too much like an existing one in the silhouette view, change its crown first: `crown.radius` for width, and `crown.clump` for rounder or flatter clumps. Then compare again from the front.
+
 | To change… | Edit | Watch out for |
 | --- | --- | --- |
 | Height or girth | `height`, `trunk.radius` (per age) | Young trunks should be more slender than mature ones, not stouter. |
