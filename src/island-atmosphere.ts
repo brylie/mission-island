@@ -12,6 +12,7 @@ import type { DirectionalLight } from '@babylonjs/core/Lights/directionalLight'
 import type { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight'
 import type { ShadowGenerator } from '@babylonjs/core/Lights/Shadows/shadowGenerator'
 import type { Weather } from './protocol'
+import { goldenHourLight, goldenHourPreset } from './golden-hour'
 import { createSunShafts } from './island-sun-shafts'
 import { seededRandom } from './scenery'
 import { weatherAt } from './weather'
@@ -152,8 +153,7 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
   const day = Color3.FromHexString('#c0dfe1')
   const night = Color3.FromHexString('#172842')
   const rainTint = Color3.FromHexString('#657c88')
-  const amber = Color3.FromHexString('#ffad7b')
-  const white = Color3.FromHexString('#fff3d7')
+  const haze = Color3.FromArray(goldenHourPreset.haze)
   return {
     supportsSunShafts: Boolean(updateSunShafts),
     update(time: number, weather: Weather, camera: Vector3, close: boolean,
@@ -164,6 +164,9 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
       const twilight = Math.max(0, 1 - Math.abs(sun.y) * 4.5)
       Color3.LerpToRef(night, day, light, horizon)
       Color3.LerpToRef(horizon, dusk, twilight * 0.73 * (1 - weather.rain), horizon)
+      const golden = goldenHourLight(sun.y, weather.rain)
+      // Fog and the horizon take on the warm haze, so distance reads as low sunlight.
+      Color3.LerpToRef(horizon, haze, golden.hazeAmount, horizon)
       Color3.LerpToRef(horizon, rainTint, weather.rain * 0.76, horizon)
       zenith.set(0.035 + light * 0.25, 0.068 + light * 0.46, 0.16 + light * 0.57)
       Color3.LerpToRef(zenith, rainTint, weather.rain * 0.64, zenith)
@@ -184,11 +187,13 @@ export function createAtmosphere(scene: Scene, sky: HemisphericLight, sunlight: 
       material.setFloat('light', light)
       material.setFloat('time', time)
       material.setFloat('physicalSky', Number(drawPhysicalSky))
-      sky.intensity = 0.29 + light * 0.41 - weather.rain * 0.05
+      // A cooler, dimmer sky fill lets the warm key light carry golden hour.
+      sky.intensity = (0.29 + light * 0.41 - weather.rain * 0.05) * golden.fillScale
+      sky.diffuse.set(...golden.fill)
       incidentSunIntensity = Math.PI * (1 - weather.rain * 0.62)
-      Color3.LerpToRef(white, amber, twilight, groundSunColor)
+      groundSunColor.set(...golden.sun)
       sunlight.diffuse.copyFrom(groundSunColor)
-      groundSunIntensity = Math.max(0, sun.y) ** 0.48 * (1 - weather.rain * 0.83)
+      groundSunIntensity = Math.max(0, sun.y) ** 0.48 * (1 - weather.rain * 0.83) * golden.sunScale
       sunlight.intensity = groundSunIntensity
       sunlight.direction.copyFrom(sun).scaleInPlace(-1)
       if (!physical) sunlight.direction.y = -Math.max(0.22, sun.y)

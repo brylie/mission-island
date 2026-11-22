@@ -7,6 +7,7 @@ import { biomeEntry } from './biome-preview'
 import { brinewickMarketStudy } from './brinewick-market-study'
 import { residentRoutinesStudy } from './resident-routines-study'
 import { crewStudy } from './crew-study'
+import { dyeLineupStudy } from './dye-lineup-study'
 import { effectStudies } from './effect-studies'
 import { farmStudy } from './farm-study'
 import { gullStudy } from './gull-study'
@@ -41,6 +42,7 @@ export const entries: Entry[] = [
   ridgeScoutStudy,
   lookoutRecoveryStudy,
   crewStudy,
+  dyeLineupStudy,
   ...starterSceneryStudies,
   houseStudy,
   homeChestStudy,
