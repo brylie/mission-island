@@ -21,8 +21,8 @@ import { readStorage, writeStorage } from '../browser-storage'
 import { entries as initialEntries } from './catalog'
 import { restoreOptions, type Control, type Values } from './subject'
 import type { FieldSite } from './field-site'
-import { createStage, describeSize } from './stage'
-import type { Angle, CameraState } from './stage'
+import { createStage, type Angle, type CameraState } from './stage'
+import { showScaleTools } from './scale-figure'
 import { landscapeViews, openFieldView, scenicChoices } from './landscape-views'
 import { createLandscapeDraft, draftLabels, draftStorageKey } from './landscape-draft'
 import { createLandscapeMap } from './landscape-map'
@@ -210,7 +210,7 @@ function applyDisplay() {
   stage?.setLighting(lightSelect.value as LightingPreset)
   stage?.setGrid(grid.checked)
   stage?.setWireframe(wireframe.checked)
-  stage?.setScaleFigure(scaleFigure.checked)
+  showScaleTools(stage, scaleFigure.checked)
   element('grid-size').textContent = grid.checked && stage ? `Grid ${stage.step} m` : ''
 }
 
@@ -232,11 +232,11 @@ function rebuild(camera?: CameraState, reframeOnResize = false) {
     checkZFighting.disabled = false
     if (camera) stage.keepCamera(camera, reframeOnResize)
     applyDisplay()
-    element('geometry').textContent = `${stage.meshCount} ${stage.meshCount === 1 ? 'mesh' : 'meshes'} · ${stage.triangles.toLocaleString()} triangles${describeSize(stage.dimensions)}`
+    element('geometry').textContent = `${stage.meshCount} ${stage.meshCount === 1 ? 'mesh' : 'meshes'} · ${stage.triangles.toLocaleString()} triangles`
   }
   catch (error) {
     reportError(error instanceof Error ? error.message : 'Could not open the selected preview.')
-    element('geometry').textContent = ''
+    element('geometry').textContent = element('subject-size').textContent = ''
   }
   seek = true
   studies.setScene(Boolean(asset.landscape), Boolean(stage))

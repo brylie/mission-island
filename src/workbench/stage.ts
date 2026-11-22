@@ -35,13 +35,6 @@ export interface CameraState {
 
 export type Angle = 'perspective' | 'front' | 'side' | 'top'
 
-const sizeDecimals = 2
-
-// Width × depth × height for the stage footer, so a generated asset can be checked against its brief.
-export function describeSize(dimensions?: readonly [number, number, number]) {
-  return dimensions ? ` · ${dimensions.map((value) => value.toFixed(sizeDecimals)).join(' × ')} m (w × d × h)` : ''
-}
-
 const halves = 2
 const indicesPerTriangle = 3
 const percentScale = 100
@@ -270,7 +263,8 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       },
       setGrid(visible: boolean) { grid.setEnabled(visible) },
       setWireframe(visible: boolean) { wireframe = visible },
-      setScaleFigure(visible: boolean) { scaleFigure?.(visible) },
+      // Returns the crew member's height while it is shown.
+      setScaleFigure: (visible: boolean) => scaleFigure?.(visible),
       // Width (x), depth (z) and height of the subject's bounds, in metres.
       dimensions: entry.landscape || field ? undefined : [extent.x, extent.z, extent.y] as const,
       setView,
