@@ -10,6 +10,9 @@ export const studioLightingPresets = {
 
 export const studioCrewLighting = { ambientDaylight: 0.84, keyDirectionZ: -1.3, shadows: 0.50, lightZ: 16 } as const
 
+// The crew member who stands beside a subject for scale: metres clear of its bounds.
+export const studioScaleFigure = { clearance: 0.6 } as const
+
 export const studioCamera = {
   alpha: 0.88,
   beta: 1.1,
@@ -27,6 +30,8 @@ export const studioCamera = {
   orbit: { minBeta: 0.035, nadirInset: 0.06, panSensitivity: 840, panSpan: 5, turntableRate: 0.38 },
   clipping: { closeNear: 0.004, near: 0.025, nearSpanDivisor: 2000, landscapeFar: 950, far: 600, farRadiusScale: 8, fieldNear: 0.04, fieldNearDivisor: 360 },
   fit: { aspect: 0.92, minAspect: 0.3 },
+  // A rebuild that changes the default orbit radius by more than this factor reframes the subject.
+  reframeRatio: 1.35,
 } as const
 
 export const studioGrid = {

@@ -80,7 +80,7 @@ To add a villager, write a definition file and append it to the registry. A visi
 ### Animals and plants
 
 - **Animals.** In [Juniper Hollow](../src/juniper-habitat.ts), hares and foxes can share locomotion and [obstacle navigation](../src/biome-navigation.ts) with different speeds and clearances. A hare's threat response can send it toward cover, while a fox can give a nearby player space and then resume its patrol. Position and current behavior belong to each animal.
-- **Plants.** A habitat trait can guide where an island places reeds or clover. A regrowth trait can let clover replenish forage after grazing, with the patch's remaining forage tracked by the [biome simulation](../src/biome-model.ts). Wind sway can stay in presentation when it only affects appearance.
+- **Plants.** A habitat trait can guide where an island places reeds or clover. A regrowth trait can let clover replenish forage after grazing, with the patch's remaining forage tracked by the [biome simulation](../src/biome-model.ts). Wind sway can stay in presentation when it only affects appearance. The [Highwood species generator](highwood-species.md#how-the-generator-is-built) bakes trees and shrubs into templates for thin instancing, with near and far tiers, host-safe collision from `treeCollision`, and a sway weight in vertex alpha.
 
 ## Static checks
 

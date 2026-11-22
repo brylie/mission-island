@@ -23,8 +23,32 @@ Mission Island is a third-person co-op game about two people making a home on a 
 | How do I design or review generated sound and island ambience? | [Procedural Audio skill](../.agents/skills/mission-island-procedural-audio/SKILL.md) |
 | How do we get variation that still makes sense? | [Generativity and the Juniper Hollow habitat](game-design.md#generativity) and [the Biome Composer workflow](../CONTRIBUTING.md#asset-workbench) |
 | How do I review an ecological or procedural simulation? | [Natural Systems Reviewer skill](../.agents/skills/mission-island-natural-systems/SKILL.md) |
+| What is a species, habitat or term in the real world, and what does the game simplify? | [Field guide](field-guide/README.md): [Highwood plants](field-guide/highwood-plants.md), [Highwood habitats](field-guide/highwood-habitats.md) and the [glossary](field-guide/glossary.md) |
+| How are Highwood trees and shrubs generated, and what budgets apply? | [Highwood species](highwood-species.md) and its Workbench study |
+| How do we grow trees, synthesise sound or keep thousands of objects fast, and why do those techniques work? | [Craft](craft/README.md): [procedural flora](craft/procedural-flora.md), [rendering, distance and level of detail](craft/rendering-and-detail.md), and links to surface and shader studies |
+| Which way is +x, how long is an island day, and how do seeds work? | [Conventions](conventions.md) |
+| What might the game wrongly teach, what don't we know yet, and where do our facts come from? | [Misconceptions](misconceptions.md), [open questions](open-questions.md) and the [sources register](sources.yaml) |
+| How do we keep what we learn? | [Knowledge Keeper skill](../.agents/skills/mission-island-knowledge-keeper/SKILL.md) |
 | How can I check the idea with another player? | [Fresh-save playtest through the first shared payout](playtests/starter-island-first-payout.md), [LAN play and saves](../README.md#play-on-your-local-network), [Workbench guide](workbench.md), and [Saltwind traversal and performance checks](saltwind-qa.md) |
 | Why did we choose this, or where should a new idea go? | [Design decisions and open questions](design/decisions.md) |
+
+## Learn from Mission Island
+
+These docs are also a knowledge base. Every mechanic, design choice and piece of the natural world we build is written down with its reasoning, so the project is useful beyond the game itself.
+
+The [knowledge framework](knowledge-framework.md) explains how it's organised:
+- game design documents, beside a knowledge base organised by subject: the [field guide](field-guide/README.md) for the real world, [craft](craft/README.md) for how we build it, with a [tutorial](craft/first-tree-species.md) and a [how-to](craft/add-tree-species.md), and design decisions for why;
+- every statement marked as true of the real world, the island, our build, or our reasoning.
+
+| If you are… | Start with |
+| --- | --- |
+| A student or curious player | Field guide pages on topics such as [wildfire](field-guide/processes/wildfire.md) and [wet woodland](field-guide/places/wet-woodland.md), the [field guide](field-guide/README.md) for species, habitats and terms, then the [player guide](player-guide.md) and the [field journal](mechanics/field-journal.md) |
+| A teacher or parent | [Learning through island work](design/learning-and-careers.md) for the skills play can teach, and the field guide's *Notice this* prompts for observation activities |
+| A researcher or scientist | The field guide's *In the game* notes, which say what each system models and simplifies, then the [Natural Systems Reviewer skill](../.agents/skills/mission-island-natural-systems/SKILL.md) and the [climate and seasons](design/climate-and-seasons.md) page |
+| A game designer | [Product and game design](game-design.md), the [mechanic pages](#from-a-playtest-to-a-design-change), and [design decisions](design/decisions.md) with the reasons behind them |
+| A developer, artist or student of graphics, audio or simulation | The [first tree species tutorial](craft/first-tree-species.md), then [Craft](craft/README.md) for how we build things and why the techniques work, then [Architecture](architecture.md), the [contributing guide](../CONTRIBUTING.md), the [Workbench guide](workbench.md), and [creative direction](design/creative-direction.md) |
+
+Each change updates the pages it touches, and the [Knowledge Keeper](../.agents/skills/mission-island-knowledge-keeper/SKILL.md) checks this in every review. If you learned something here that isn't written down, add it, or open an issue.
 
 ## Plan and test the next shift
 

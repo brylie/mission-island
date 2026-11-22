@@ -280,6 +280,8 @@ h1, h2, p { margin: 0; }
 .timeline input { width: 100%; margin: 0; }
 #timecode, .geometry { white-space: nowrap; font: 10px ui-monospace, monospace; color: var(--muted); }
 .geometry { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; }
+/* Bounds run long on wide rows; let them wrap rather than widen the workspace on a phone. */
+#subject-size { white-space: normal; min-width: 0; }
 
 .inspector { border-left: 1px solid var(--line); padding: 20px 16px; }
 .inspector section:not([hidden]) ~ section { border-top: 1px solid var(--line); margin-top: 19px; padding-top: 17px; }
