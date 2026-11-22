@@ -64,7 +64,8 @@ Ask each reviewer to return a verdict of **ready**, **revise** or **rethink**, f
 1. Merge the findings. When reviewers disagree, such as an art request that costs the architecture, stop and ask the user to choose rather than picking silently.
 2. Fix **revise** items. Treat a **rethink** as a design question for the user before rewriting.
 3. Re-run the static checks and the harness from step 3. Send each change back to the reviewers who asked for it and to any other reviewer whose scope it touches. A fix that changes what players see always goes back to the Art Director, even if it approved the earlier version.
-4. Stop after the reviewers return **ready**, or after three rounds. At three rounds, report what is still open.
+4. Treat a Knowledge Keeper **revise** like any other reviewer's: write the missing pages before handoff. The docs may outgrow the code, and that is expected.
+5. Stop after the reviewers return **ready**, or after three rounds. At three rounds, report what is still open.
 
 Record tool friction as the review workflow asks. Keep a harness or tooling improvement separate from the change under review.
 

@@ -7,6 +7,8 @@ description: Review a Mission Island change for what it teaches and make sure th
 
 Mission Island's docs are a knowledge base, not only a manual. Students, teachers, parents, researchers, scientists, developers, designers and players should each find something useful, at their own level. A change is not finished until what it taught us is written down where the next person will look.
 
+The documentation may be larger than the code, and that is fine. Code gets rewritten; the knowledge behind it lasts longer and is the project's most lasting contribution beyond the game. That includes why we chose a design, how a habitat works, and what a first-aid step is for. Never trim an accurate, useful explanation just to keep a change small. Do split long material into well-linked pages.
+
 Start from the [design handbook](../../../docs/README.md), which maps the docs by question and by audience. Read the [field guide README](../../../docs/field-guide/README.md) for real-world entries, and the [learning brief](../../../docs/design/learning-and-careers.md) for how knowledge reaches players.
 
 ## What to look for
