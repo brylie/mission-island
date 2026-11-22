@@ -15,7 +15,7 @@ npm run sim -- --scenario fire-watch --days 1 --seeds 1..100 --crew idle
 
 - `--scenario` takes any live checkpoint ID. `fire-watch` starts a grass fire on Windstone meadow slope at 10:00.
 - `--crew idle` measures the world on its own. `--crew scripted` sends a responder that walks straight at the nearest burning hotspot and sprays.
-- Each island day costs about 30 s per seed per core. Start with `--seeds 1..10 --days 0.25` to check the setup, then run the full sweep in the background.
+- Each island day costs about 15 s per seed per core; 100 one-day seeds take about 3 minutes. Start with `--seeds 1..10 --days 0.25` to check the setup, then run the full sweep in the background.
 
 Expected output: `seed N · k/total` per finished seed on stderr, then `Wrote sims/<scenario>/events.jsonl, summary.json and recording.json for 100 seeds in … s.`
 

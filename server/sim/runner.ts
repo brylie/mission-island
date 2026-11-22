@@ -2,6 +2,7 @@ import { createGame, tickSeconds } from '../game.ts'
 import type { CrewCommand } from '../commands.ts'
 import type { CrewNotice } from '../crew.ts'
 import { scenarioFor } from '../scenarios/catalog.ts'
+import { igniteFire } from '../wildfire.ts'
 import { recoveryStage } from '../../src/lookout-recovery.ts'
 import type { Snapshot } from '../../src/protocol.ts'
 import { seededRandom } from '../../src/seeded-random.ts'
@@ -54,6 +55,14 @@ function crewToken(seat: number) {
 
 function eventSeed(seed: number) {
   return (Math.imul(seed + 1, eventSeedMix) >>> 0) % eventSeedRange
+}
+
+// Checkpoints use fixed event seeds so live playtests repeat. A sweep mixes in the run seed instead, and
+// re-lights a checkpoint's opening fire at the same site and size so its hotspot heat varies per seed.
+function reseedEvents(state: Snapshot, seed: number) {
+  state.events.seed = eventSeed(seed)
+  const fire = state.events.fire
+  if (fire) igniteFire(state.events, fire.startedAt, { site: fire.site, size: fire.size }).id = fire.id
 }
 
 // Compares two frames and emits one row for each change a designer would chart.
@@ -123,7 +132,7 @@ export function runSimulation(run: SimRun, emit: Emit, replay?: readonly Recorde
   for (let tick = 0; tick < totalTicks; tick++) {
     now += tickMs
     state = game.tick()
-    if (tick === 0) state.events.seed = eventSeed(run.seed)
+    if (tick === 0) reseedEvents(state, run.seed)
     observer.frame(state, tick)
     const commands = replay
       ? takeQueued(queued, tick)

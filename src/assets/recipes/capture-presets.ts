@@ -7,7 +7,7 @@ export const captureViewport = { width: 1280, height: 720 } as const
 // The Workbench and the game render weather as a rain level. Each named sky is a fixed level.
 export const captureWeather = { clear: 0, mist: 0.03, overcast: 0.3, rain: 0.85 } as const
 
-export const captureSettle = { firstFrameTimeoutMs: 60000, settleMs: 1500, perfSampleMs: 2200 } as const
+export const captureSettle = { firstFrameTimeoutMs: 60000, settleMs: 800, perfSampleMs: 1200 } as const
 
 export const turntableAngles = 8
 

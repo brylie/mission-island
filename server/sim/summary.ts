@@ -18,6 +18,7 @@ interface SeedSummary {
   burnedOut: number
   rainedOut: number
   hoursToLocate: number[]
+  hoursBetweenSpreads: number[]
   fireHours: number[]
   regrowthStages: Record<string, number>
   animalChanges: number
@@ -29,11 +30,17 @@ interface SeedSummary {
 export function summarizeSeed(result: SimResult, events: readonly SimEvent[]): SeedSummary {
   const count = (type: string) => events.filter((event) => event.type === type).length
   const started = new Map<unknown, number>()
-  const hoursToLocate: number[] = [], fireHours: number[] = []
+  const hoursToLocate: number[] = [], fireHours: number[] = [], hoursBetweenSpreads: number[] = []
+  const lastCatch = new Map<unknown, number>()
   const regrowthStages: Record<string, number> = {}
   for (const event of events) {
     if (event.type === 'fire-started') started.set(event.fire, event.tick)
     const from = started.get(event.fire)
+    if (event.type === 'fire-started') lastCatch.set(event.fire, event.tick)
+    if (event.type === 'fire-spread' && lastCatch.has(event.fire)) {
+      hoursBetweenSpreads.push((event.tick - lastCatch.get(event.fire)!) / ticksPerHour)
+      lastCatch.set(event.fire, event.tick)
+    }
     if (event.type === 'fire-located' && from !== undefined) hoursToLocate.push((event.tick - from) / ticksPerHour)
     if (['fire-out', 'fire-burned-out', 'fire-rained-out'].includes(event.type) && from !== undefined) fireHours.push((event.tick - from) / ticksPerHour)
     if (event.type === 'regrowth') regrowthStages[String(event.stage)] = (regrowthStages[String(event.stage)] ?? 0) + 1
@@ -47,6 +54,7 @@ export function summarizeSeed(result: SimResult, events: readonly SimEvent[]): S
     burnedOut: count('fire-burned-out'),
     rainedOut: count('fire-rained-out'),
     hoursToLocate,
+    hoursBetweenSpreads,
     fireHours,
     regrowthStages,
     animalChanges: count('animal'),
@@ -86,6 +94,7 @@ export function summarizeSweep(seeds: readonly SeedSummary[], ticks: number) {
     perSeed: Object.fromEntries(perSeedTotals.map((key) => [key, distribution(seeds.map((seed) => seed[key]))])),
     perFire: {
       hoursToLocate: distribution(seeds.flatMap((seed) => seed.hoursToLocate)),
+      hoursBetweenSpreads: distribution(seeds.flatMap((seed) => seed.hoursBetweenSpreads)),
       fireHours: distribution(seeds.flatMap((seed) => seed.fireHours)),
     },
     regrowthStages: Object.fromEntries([...stages].sort().map((stage) => [stage, distribution(seeds.map((seed) => seed.regrowthStages[stage] ?? 0))])),

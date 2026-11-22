@@ -15,7 +15,7 @@ const usage = `Usage: npm run capture -- [--preset all|name,name] [--seed N] [--
 Writes captures/<preset>/<name>.png and .json, or captures/rev-<sha>/... for --revision, plus captures/index.html.`
 const checkout = resolve(import.meta.dirname, '..')
 const captureRoot = join(checkout, 'captures')
-const browserArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
+const browserArgs = process.env.CAPTURE_SOFTWARE_GL ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
 // CAPTURE_BROWSER points at another Chromium build when Playwright's own download is unavailable.
 const launchBrowser = () => chromium.launch({ args: browserArgs, ...(process.env.CAPTURE_BROWSER && { executablePath: process.env.CAPTURE_BROWSER }) })
 const jsonIndent = 2

@@ -40,7 +40,7 @@ Each capture writes `captures/<preset>/<preset>-<mode>.png` and a JSON sidecar b
 }
 ```
 
-`captures/index.html` shows the newest capture of every preset and mode with its perf numbers. Open it from disk. The perf numbers come from headless Chromium with software WebGL, so compare them between captures rather than with a player's machine.
+`captures/index.html` shows the newest capture of every preset and mode with its perf numbers. Open it from disk. Chromium renders on the GPU through Metal, about 5 s per capture including the settle wait. Set `CAPTURE_SOFTWARE_GL=1` on a machine without a usable GPU; that is roughly 30 times slower. Compare perf numbers between captures from the same machine, not with a player's computer. `CAPTURE_BROWSER` points at another Chromium executable when Playwright's own browser is not installed.
 
 ### Presets
 
@@ -64,7 +64,7 @@ These are the current island's equivalents of the Highwood hero views. When the 
 npm run capture -- --compare main,HEAD --preset ridge-to-harbor,tower-dawn-north
 ```
 
-Each side is captured if it is not already a folder. The command writes `captures/compare/<before>-vs-<after>/<preset>-<mode>.png`: before, after and a heatmap in which changed pixels glow red over a dimmed copy of the after image. `compare.json` lists the share of pixels that changed by more than 8 of 255 and the mean difference for each sheet.
+Each side is captured if it is not already a folder. Both revisions render the presets and camera from the current checkout, so the sheet shows what the code changed for the same view. To compare a preset change, capture both versions into folders and compare the folders. Revision captures leave detached worktrees in `captures/.revisions/`; remove that folder and run `git worktree prune` to clean up. Revisions older than this tooling have no perf readout or render modes, so their sidecars record `perf: null`. The command writes `captures/compare/<before>-vs-<after>/<preset>-<mode>.png`: before, after and a heatmap in which changed pixels glow red over a dimmed copy of the after image. `compare.json` lists the share of pixels that changed by more than 8 of 255 and the mean difference for each sheet.
 
 ## The dev view URL
 
@@ -133,13 +133,13 @@ Other layers return lines, rings and cells from `create()`. Set `live: true` whe
 npm run sim -- --scenario fire-watch --days 1 --seeds 1..100 --crew idle
 ```
 
-The runner starts the host game from a live checkpoint with one seat, a virtual clock and seeded randomness, then steps it at the normal 30 ticks per island second without sockets or rendering. Seeds run in worker threads, one per core less one, or `--workers N`. On a 10-core laptop one island day takes about 30 s per worker, roughly 15 times real speed each. Cargo physics dominates that time.
+The runner starts the host game from a live checkpoint with one seat, a virtual clock and seeded randomness, then steps it at the normal 30 ticks per island second without sockets or rendering. Seeds run in worker threads, one per core less one, or `--workers N`. On a 10-core laptop one island day takes about 15 s per worker, roughly 30 times real speed, so 100 seeds of one day finish in about 3 minutes. Cargo physics (cannon-es contacts) dominates that time.
 
 | Flag | Effect |
 | --- | --- |
 | `--scenario` | A checkpoint ID from the [scenario table](../CONTRIBUTING.md#run-a-live-playtest-scenario). |
 | `--days N` | Island days to run (a day is 480 s). Fractions work. |
-| `--seeds 1..100` or `--seeds 1,4,9` | Seeds. Each seeds the host's randomness and the island-event seed. |
+| `--seeds 1..100` or `--seeds 1,4,9` | Seeds. Each seeds the host's randomness and the island-event seed, and re-lights a checkpoint's opening fire at the same site and size so its heat and spread vary. Juniper wildlife runs from its own recipe seed, so animal rows match across seeds. |
 | `--crew idle\|scripted` | `idle` stands at the checkpoint spawn. `scripted` walks straight at the nearest burning hotspot and sprays when it arrives. It ignores terrain and paths, so treat it as a fast responder rather than a player. |
 | `--out dir` | Output folder. Defaults to `sims/<scenario>/`. |
 | `--replay file` | Replay a recording and check that every run reproduces its events. |
@@ -147,7 +147,7 @@ The runner starts the host game from a live checkpoint with one seat, a virtual 
 It writes three files:
 
 - `events.jsonl`, one event per line, in seed order. Every row has `seed`, `tick`, `day`, `hour` and `type`. Types are `fire-started`, `fire-spread`, `fire-located`, `fire-out`, `fire-burned-out`, `fire-rained-out`, `regrowth` (with a stage of `ash`, `shoots` or `established`), `animal` (a hare or fox changing behaviour) and `weather` (a shower starting or stopping).
-- `summary.json` with the run settings, the commit, wall time, per-seed totals and their distribution across seeds (count, min, p10, median, mean, p90, max), pooled per-fire timings (`hoursToLocate`, `fireHours`), and a digest of each seed's events.
+- `summary.json` with the run settings, the commit, wall time, per-seed totals and their distribution across seeds (count, min, p10, median, mean, p90, max), pooled per-fire timings (`hoursToLocate`, `hoursBetweenSpreads`, `fireHours`), and a digest of each seed's events.
 - `recording.json` with each run's settings, the crew inputs it sent by tick, and its event digest.
 
 ```sh
