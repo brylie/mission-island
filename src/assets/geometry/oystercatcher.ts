@@ -3,6 +3,7 @@ type Pivot = readonly [x: number, y: number, z: number]
 
 export const oystercatcherGeometry = {
   plumage: { pale: '#f1e8ce', dark: '#37454a' },
+  motion: { stepRate: 13, stridePitch: 0.44, probeRate: 2.2, mantleRest: 0.08, mantleDip: 0.84, headDip: 0.78 },
   torso: {
     pivotY: 0.215,
     belly: [

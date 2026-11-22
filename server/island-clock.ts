@@ -14,8 +14,10 @@ export function advanceIsland(
   const before = state.islandTime
   state.islandTime += tickSeconds
   state.weather = weatherAt(state.islandTime)
+  let skippedFrom: number | undefined
   const connectedCrew = state.players.filter((player) => player.connected)
   if (isNight(state.weather.hour) && connectedCrew.length && connectedCrew.every((player) => player.sleeping)) {
+    skippedFrom = state.islandTime
     state.islandTime = nextDawn(state.islandTime)
     state.weather = weatherAt(state.islandTime)
     checkpoint?.()
@@ -32,4 +34,5 @@ export function advanceIsland(
       if (growth[plot] >= growthSeconds) state.farm[plot] = 'ripe'
     }
   }
+  return skippedFrom
 }

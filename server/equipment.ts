@@ -15,12 +15,29 @@ import { stopPrimary, stowTool, type CrewMember } from './crew.ts'
 import { castPoint, catchChance, initialFishingTension, stepFight } from '../src/simulation/fishing.ts'
 import { recordCultivation } from './cultivation-cues.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
+import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
 import { crewInputTimeoutMs, millisecondsPerSecond } from './host-time.ts'
 import { heldCrateForwardM } from './items.ts'
 
 const toolReachDurationMs = 220
 const crateLaunchHeightM = 1.76
 const throwGestureDurationMs = 270
+
+function cultivateWithTool(state: Snapshot, player: Player) {
+  if (!player.grounded || player.onBed) return false
+  const plot = nearbyPlot(player)
+  if (player.equipped === 'hoe' && state.farm[plot] === 'grass') {
+    state.farm[plot] = 'tilled'
+    recordCultivation(state, 'hoe', plot, player.id)
+    return true
+  }
+  if (player.equipped === 'watering-can' && state.farm[plot] === 'planted') {
+    state.farm[plot] = 'watered'
+    recordCultivation(state, 'water', plot, player.id)
+    return true
+  }
+  return false
+}
 
 export function createEquipment(
   state: Snapshot,
@@ -29,9 +46,11 @@ export function createEquipment(
   random: () => number,
   landed: (player: Player, bobber: Point) => FishId,
   checkpoint?: () => void,
+  metrics?: Pick<GameplayPlaytestMetrics, 'use' | 'result'>,
 ) {
   function fishResult(member: CrewMember, result: FishingResult, fish?: FishId) {
     member.notify?.({ type: 'fishing-result', result, ...(fish && { fish }) })
+    metrics?.result(state, member.player, { mechanic: 'fishing', result })
   }
 
   function isReadyToCast(member: CrewMember) {
@@ -65,17 +84,7 @@ export function createEquipment(
       player.charge = { kind: 'cast', power: 0 }
     }
     else if (!item && !player.seat) {
-      if (player.grounded && !player.onBed) {
-        const plot = nearbyPlot(player)
-        if (player.equipped === 'hoe' && state.farm[plot] === 'grass') {
-          state.farm[plot] = 'tilled'
-          recordCultivation(state, 'hoe', plot, player.id)
-        }
-        if (player.equipped === 'watering-can' && state.farm[plot] === 'planted') {
-          state.farm[plot] = 'watered'
-          recordCultivation(state, 'water', plot, player.id)
-        }
-      }
+      if (cultivateWithTool(state, player)) metrics?.use(state, player, 'farming')
       member.primary = { kind: 'reach', since: now }
       member.reachUntil = now + toolReachDurationMs
     }
@@ -92,6 +101,8 @@ export function createEquipment(
       if (bobber) {
         if (!player.seat) player.heading = heading
         player.casting = { bobber, elapsed: 0, power }
+        metrics?.use(state, player, 'fishing')
+        metrics?.result(state, player, { mechanic: 'fishing', result: 'cast' })
       }
       else fishResult(member, 'dry-cast')
     }
@@ -114,6 +125,9 @@ export function createEquipment(
   function updateFishing(member: CrewMember, allowed: boolean) {
     const { player } = member
     if (!allowed) {
+      if (metrics && player.casting && inSkiff(player.seat) && (!canCast(state, player) || state.players.some((other) => other.rowing))) {
+        metrics.result(state, player, { mechanic: 'fishing', result: 'line-retrieved-by-motion' })
+      }
       if (member.primary?.kind === 'cast' || member.primary?.kind === 'reel') stopPrimary(member)
       player.casting = null
     }

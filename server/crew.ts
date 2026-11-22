@@ -18,6 +18,7 @@ const disconnectedCrewReservationMs = 12_000
 export const stopped: Input = { x: 0, z: 0, spray: false, careful: false, sprint: false }
 
 export type CrewNotice = Exclude<ServerMessage, Snapshot | { type: 'welcome' } | { type: 'full' | 'duplicate' }>
+export type CrewBroadcast = (notice: CrewNotice, slot?: number) => void
 
 export interface CrewMember {
   player: Player

@@ -172,7 +172,8 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     actors?: StudyActors
   } = {}) {
     northernScenery.update(frame.camera, close)
-    wildlife(frame, driftwood)
+    const walkers = actors?.snapshot?.players.filter((player) => player.connected && player.grounded && !player.sleeping && !player.seat)
+    wildlife(frame, driftwood, walkers ?? [])
     updateFieldScenery(frame.time)
     marketShower(frame.time, frame.camera, runoff)
     lights(frame.camera, nightLighting(frame.weather.hour))

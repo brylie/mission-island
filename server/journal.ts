@@ -1,5 +1,5 @@
 import { inSkiff } from '../src/actions.ts'
-import { fieldInteractions, type FieldAction } from '../src/field-interactions.ts'
+import { fieldInteractions, fieldSubject, type FieldAction } from '../src/field-interactions.ts'
 import { journalEntry } from '../src/journal/catalog.ts'
 import { fishAt } from '../src/journal/fish.ts'
 import { emptyJournal, placeNear, recordEntry, type Journal, type JournalNote } from '../src/journal/journal.ts'
@@ -10,6 +10,7 @@ import { northernRegions, starterDiscoveries } from '../src/scenery.ts'
 import { distance, type Point } from '../src/world.ts'
 import type { IslandSave } from './save.ts'
 import type { CrewMember } from './crew.ts'
+import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
 import type { InteractionHandlers } from './interactions.ts'
 
 const discoveryApproachRangeM = 8
@@ -28,7 +29,7 @@ export function restoreJournal(save: IslandSave | undefined): Journal {
 }
 
 // The crew's shared field journal. Either player adds to it, the first record of anything stands, and each new line is saved at once.
-export function createJournal(state: Pick<Snapshot, 'journal' | 'islandTime' | 'driftwood' | 'juniper' | 'weather' | 'farmWork'>, checkpoint?: () => void) {
+export function createJournal(state: Snapshot, checkpoint?: () => void, metrics?: Pick<GameplayPlaytestMetrics, 'use' | 'result'>) {
   function add(ids: readonly string[], player: Player, where: Point) {
     const at = placeNear(where)
     const note = { t: Math.floor(state.islandTime), by: player.id, ...(at && { at }) }
@@ -40,13 +41,25 @@ export function createJournal(state: Pick<Snapshot, 'journal' | 'islandTime' | '
   // The reticle's note prompt. The interaction list has already checked the subject is open to this player.
   function record(player: Player, choice: number) {
     const { ids, at } = sightingEntries(state, player, choice)
-    if (at) add(ids, player, at)
+    if (at && add(ids, player, at).length) recordFieldwork(player)
+  }
+
+  function recordFieldwork(player: Player) {
+    metrics?.use(state, player, 'fieldwork')
+    metrics?.result(state, player, { mechanic: 'fieldwork', result: 'observed' })
   }
 
   function inspect(member: CrewMember, subject: number) {
     const option = fieldInteractions(state, member.player).find((choice) => choice.subject === subject)
-    if (!option) return member.notify?.({ type: 'field-unavailable' })
+    if (!option) {
+      if (metrics) {
+        const target = fieldSubject(state, subject)
+        metrics.result(state, member.player, { mechanic: 'fieldwork', result: 'unavailable', ...target && { subject: target } }, target ? subject : undefined)
+      }
+      return member.notify?.({ type: 'field-unavailable' })
+    }
     const { record: id } = option
+    const followingLead = !state.journal.entries[id]?.outing && (state.journal.heardMara || state.playtest?.checkpoint === 'field-outing')
     const note: JournalNote = {
       t: state.islandTime,
       by: member.player.id,
@@ -59,6 +72,8 @@ export function createJournal(state: Pick<Snapshot, 'journal' | 'islandTime' | '
       checkpoint?.()
     }
     if (id === 'place:shellglass') member.notify?.({ type: 'tide-staff', time: note.t })
+    metrics?.use(state, member.player, 'fieldwork', followingLead ? ['outing:mara'] : [])
+    metrics?.result(state, member.player, { mechanic: 'fieldwork', result: 'observed', subject: id }, subject)
   }
 
   function hearMara() {

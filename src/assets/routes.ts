@@ -3,11 +3,11 @@ import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import { gravelTrailModel, laneMarkingModel, roadFinish, roadSurface, sidewalkLift, trailLift, wornTrailModel } from './geometry/route-profiles'
 import type { MeshFactory } from '../island-meshes'
 import { ribbonGeometry } from '../math/ribbon'
-import { coastRadius } from '../terrain'
+import { smoothstep } from '../math/smoothstep'
+import { coastalSurface } from '../terrain'
 import type { PathSurface } from '../routes'
 import { laneMarkings } from '../routes'
 import type { Point } from '../world'
-import { shoreStations } from '../worlds/starter/layout/terrain'
 
 const vertexSize = 3
 const vertexZ = 2
@@ -81,7 +81,7 @@ function gravelTrail(meshes: MeshFactory, name: string, points: readonly Point[]
 function wornPath(meshes: MeshFactory, name: string, points: readonly Point[], width: number, heightAt: (p: Point) => number) {
   const vertices: number[] = [], colors: number[] = [], faces: number[] = []
   const path = trailSamples(points)
-  const { lanes, startTaper, endTaper, edgeSine, edgeCosine, widthMinimum, widthRamp, sway, lift, duneFade, wear: patina, color, opacityEdgeCurve } = wornTrailModel
+  const { lanes, startTaper, endTaper, edgeSine, edgeCosine, widthMinimum, widthRamp, sway, lift, sandFade, wear: patina, color, opacityEdgeCurve } = wornTrailModel
   let along = 0
   const length = path.reduce((sum, p, i) => i ? sum + Math.hypot(p.x - path[i - 1].x, p.z - path[i - 1].z) : sum, 0)
   for (const [i, p] of path.entries()) {
@@ -95,7 +95,8 @@ function wornPath(meshes: MeshFactory, name: string, points: readonly Point[], w
       const offset = width * (half * lane * widthVariation * (widthMinimum + widthRamp * end) + sway.amplitude * Math.sin(along * sway.rate))
       const x = p.x + offset * (before.z - after.z) / span, z = p.z + offset * (after.x - before.x) / span
       vertices.push(x, heightAt({ x, z }) + lift, z)
-      const grass = Math.min(1, Math.max(0, (shoreStations.sandEdge.radius - coastRadius({ x, z })) / duneFade))
+      const { sand, rock } = coastalSurface({ x, z })
+      const grass = 1 - smoothstep((sand + rock - sandFade.start) / sandFade.span)
       const wear = (patina.base + patina.slow.amplitude * Math.sin(along * patina.slow.rate + lane) + patina.fast.amplitude * Math.sin(along * patina.fast.rate - lane)) * end
       colors.push(...color, (1 - Math.abs(lane) ** opacityEdgeCurve) * wear * grass)
       if (i && j) {

@@ -1,6 +1,5 @@
 import type { Material } from '@babylonjs/core/Materials/material'
-import { wetSandTint } from './assets/geometry/shore-finish'
-import { fernfallSheet, starterMeadowFinish, starterOcean, starterShoreFinish } from './assets/geometry/starter-landscape'
+import { fernfallSheet, starterMeadowFinish, starterOcean } from './assets/geometry/starter-landscape'
 import { meadowGroundTone } from './assets/surface-patterns'
 import { surfaceRecipe } from './assets/surface-recipes'
 import { dressStrand } from './assets/strand'
@@ -14,11 +13,12 @@ import { seededRandom } from './seeded-random'
 import { distanceToRoads, distanceToRoute, footpaths, walkways } from './routes'
 import { inFerryYard } from './worlds/starter/ferry-terminal'
 import { driftwoodStrand, fernfallChannel, shoreStations } from './worlds/starter/layout/terrain'
-import { coastPoint, coastRadius, coastSegments, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, pool, shoreProfile, streamX, tidePool, waterLevel } from './terrain'
+import { coastPoint, coastRadius, coastSegments, coastalSurface, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, pool, shoreProfile, streamX, waterLevel } from './terrain'
 import { buildings, distance, harbor, island, lookout, town } from './world'
 import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
 import { createOceanMaterial } from './ocean'
+import { beachAttribute, beachAttributeSize, beachVertex, useBeachMaterial } from './beach-material'
 import { createMeadowBlades, createMeadowSurface } from './meadow-shaders'
 import { shoreDefaults, type ShoreSettings } from './shader-studies'
 
@@ -27,39 +27,26 @@ const fullTurn = halves * Math.PI
 const fernfallMinRefineAngle = 1.38
 const fernfallMaxRefineAngle = 1.52
 const fernfallAngleSubdivisions = 6
-const shellglassMinRefineAngle = 5.23
-const shellglassMaxRefineAngle = 5.60
-const shellglassAngleSubdivisions = 3
+const beachMinRefineAngle = 5.17
+const beachMaxRefineAngle = 5.77
+const beachAngleSubdivisions = 3
 const meadowRingIntervals = 88
 const meadowMinRefineRadius = 0.42
 const meadowMaxRefineRadius = 0.57
 const meadowRingSubdivisions = 7
+const sandGrassExclusion = 0.42
 const beachRingSpacing = 0.006
 
 function coastAngles() {
-  // Refine around the stream and Shellglass. Share the angles at the joined rings.
+  // Refine around the stream, dune slopes, and Shellglass sill.
   const angleStep = fullTurn / coastSegments
-  const angles = Array.from({ length: coastSegments }, (_, j) => {
+  return Array.from({ length: coastSegments }, (_, j) => {
     const angle = j * angleStep
     const steps = angle > fernfallMinRefineAngle && angle < fernfallMaxRefineAngle
       ? fernfallAngleSubdivisions
-      : angle > shellglassMinRefineAngle && angle < shellglassMaxRefineAngle ? shellglassAngleSubdivisions : 1
+      : angle > beachMinRefineAngle && angle < beachMaxRefineAngle ? beachAngleSubdivisions : 1
     return Array.from({ length: steps }, (_, k) => angle + k / steps * angleStep)
   }).flat()
-  angles.push(fullTurn)
-  return angles
-}
-
-function appendSandColor(colors: number[], x: number, z: number, height: number) {
-  const { shellglass } = starterShoreFinish
-  const { seam: seamPattern } = shellglass
-  const bed = Math.max(0, 1 - Math.hypot((x - tidePool.x) / shellglass.toneRadiusX, (z - tidePool.z) / shellglass.toneRadiusZ) ** shellglass.falloffPower)
-  const seam = seamPattern.base + seamPattern.amplitude * Math.sin(x * seamPattern.xFrequency + z * seamPattern.zFrequency)
-  const wet = Math.max(0, Math.min(1, (waterLevel - height) / wetSandTint.depth))
-  const red = (1 - shellglass.redLoss * bed * seam) * (1 - wet * wetSandTint.redLoss)
-  const green = (1 - shellglass.greenLoss * bed * seam) * (1 - wet * wetSandTint.greenLoss)
-  const blue = (1 - shellglass.blueLoss * bed) * (1 + wet * wetSandTint.blueGain)
-  colors.push(red, green, blue, 1)
 }
 
 function tintInfluence(point: Point, site: Point, reach: number) {
@@ -87,36 +74,32 @@ function appendMeadowColor(colors: number[], point: Point, wear: number) {
   colors.push(red, green, blue, 1)
 }
 
-function buildGroundBand(meshes: MeshFactory, name: string, angles: readonly number[], rings: readonly number[], material: Material, wear: number, sand: boolean) {
+function buildGround(meshes: MeshFactory, angles: readonly number[], rings: readonly number[], material: Material, wear: number) {
   const positions: number[] = []
   const uvs: number[] = []
   const colors: number[] = []
+  const beach: number[] = []
   const indices: number[] = []
-  const segments = angles.length - 1
+  const segments = angles.length
   for (const [i, ring] of rings.entries()) {
-    for (let j = 0; j <= segments; j++) {
-      const angle = angles[j]
+    for (const [j, angle] of angles.entries()) {
       const point = coastPoint(angle, ring)
       const { x, z } = point
       const height = groundHeight(point)
       positions.push(x, height, z)
-      if (sand) {
-        uvs.push(angle / fullTurn * starterShoreFinish.uvRepeatsPerTurn, (ring - shoreStations.sandEdge.radius) * starterShoreFinish.uvRadialScale)
-        appendSandColor(colors, x, z, height)
-      }
-      else {
-        uvs.push(x, z)
-        appendMeadowColor(colors, point, wear)
-      }
-      if (i === 0 || j === segments) continue
-      const a = (i - 1) * (segments + 1) + j
-      const b = a + segments + 1
-      if (rings[i - 1] > 0) indices.push(a, b + 1, a + 1)
-      indices.push(a, b, b + 1)
+      uvs.push(x, z)
+      appendMeadowColor(colors, point, wear)
+      beach.push(...beachVertex(point, coastalSurface(point, height)))
+      if (i === 0) continue
+      const offset = (i - 1) * segments
+      const a = offset + j, next = offset + (j + 1) % segments
+      if (rings[i - 1] > 0) indices.push(a, next + segments, next)
+      indices.push(a, a + segments, next + segments)
     }
   }
-  const mesh = meshes.surface(name, positions, indices, material, undefined, uvs)
+  const mesh = meshes.surface('Starter Island terrain', positions, indices, material, undefined, uvs)
   mesh.setVerticesData(VertexBuffer.ColorKind, colors)
+  mesh.setVerticesData(beachAttribute, beach, false, beachAttributeSize)
   mesh.freezeWorldMatrix()
 }
 
@@ -129,20 +112,20 @@ export function createIslandTerrain(meshes: MeshFactory, finish: { material: Mat
   wear: surfaceRecipe('meadow-turf').wear.amount,
 }) {
   const meadow = createMeadowSurface(finish.material)
+  useBeachMaterial(finish.material, meshes)
   const angles = coastAngles()
   const meadowRings = Array.from({ length: meadowRingIntervals + 1 }, (_, i) => {
     const ring = i / meadowRingIntervals * shoreStations.meadowEdge.radius
     const steps = ring > meadowMinRefineRadius && ring < meadowMaxRefineRadius ? meadowRingSubdivisions : 1
     return Array.from({ length: steps }, (_, k) => (i + k / steps) / meadowRingIntervals * shoreStations.meadowEdge.radius)
   }).flat()
-  buildGroundBand(meshes, 'Textured meadow', angles, [...meadowRings, shoreStations.sandEdge.radius], finish.material, finish.wear, false)
-  const beachRings = shoreProfile.slice(shoreProfile.indexOf(shoreStations.sandEdge)).flatMap(({ radius }, i, rings) => {
+  const beachRings = shoreProfile.slice(shoreProfile.indexOf(shoreStations.meadowEdge)).flatMap(({ radius }, i, rings) => {
     const next = rings[i + 1]?.radius
     if (!next || radius >= shoreStations.shoal.radius) return [radius]
     const steps = Math.ceil((next - radius) / beachRingSpacing)
     return Array.from({ length: steps }, (_, j) => radius + (next - radius) * j / steps)
   })
-  buildGroundBand(meshes, 'Beach and seabed', angles, beachRings, meshes.paintSurface('sand'), finish.wear, true)
+  buildGround(meshes, angles, [...meadowRings, ...beachRings.slice(1)], finish.material, finish.wear)
   const banks = driftwoodStrand.banks.map(({ angle, radius }) => coastPoint(angle, radius))
   dressStrand(meshes, 'Driftwood', banks, driftwoodStrand.scatterSeed, groundHeight, (p, y) =>
     coastRadius(p) > driftwoodWrackMinRadius && y > waterLevel - driftwoodWrackMaxDepth && !onBeachTowel(p))
@@ -245,7 +228,6 @@ const islandGrassAttempts = 1900
 const meadowGrassExtentWidth = 29
 const meadowGrassExtentLength = 25
 const grassScatterCentre = 0.5
-const grassMaxCoastRadius = 0.91
 const grassHarborClearance = 5
 const grassTownClearance = 8
 const grassLookoutClearance = 5.5
@@ -264,12 +246,15 @@ export function createGrassTufts(meshes: MeshFactory) {
     const x = center.x + (random() - grassScatterCentre) * extent.width
     const z = center.z + (random() - grassScatterCentre) * extent.length
     const point = { x, z }
-    if (onBeachTowel(point) || coastRadius(point) > grassMaxCoastRadius || distance(point, harbor) < grassHarborClearance || distance(point, town) < grassTownClearance
+    if (onBeachTowel(point) || distance(point, harbor) < grassHarborClearance || distance(point, town) < grassTownClearance
       || distance(point, lookout) < grassLookoutClearance || distanceToRoads(point) < grassRoadClearance || inFerryYard(point, grassYardClearance)
       || footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / halves + grassPathClearance)
       || walkways.some(({ points, width }) => distanceToRoute(point, points) < width / halves + grassPathClearance)
       || buildings.some((entry) => Math.abs(entry.x - x) < entry.w / halves + grassBuildingClearance && Math.abs(entry.z - z) < entry.d / halves + grassBuildingClearance)) continue
-    if (groundHeight(point) > waterLevel + grassWaterClearance) points.push(point)
+    const height = groundHeight(point)
+    if (height <= waterLevel + grassWaterClearance) continue
+    const { sand, rock } = coastalSurface(point, height)
+    if (sand + rock < sandGrassExclusion) points.push(point)
   }
   return createMeadowBlades(meshes, points, groundHeight, grassModelSeed)
 }

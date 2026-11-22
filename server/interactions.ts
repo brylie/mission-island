@@ -7,6 +7,7 @@ import { canOccupyGround } from '../src/simulation/movement.ts'
 import { groundHeight, maxWadeDepth, walkingHeight, waterDepth } from '../src/terrain.ts'
 import { itemStarts, spawns } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
+import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
 import { itemGroundClearance, restingY, updateHeldItems } from './items.ts'
 
 export type InteractionHandlers<Action extends InteractionAction = InteractionAction>
@@ -17,6 +18,7 @@ export function createInteractions(
   handlers: InteractionHandlers,
   physics: Pick<ReturnType<typeof createCargoPhysics>, 'release' | 'relocate'>,
   checkpoint?: () => void,
+  metrics?: Pick<GameplayPlaytestMetrics, 'interaction' | 'result'>,
 ) {
   // E runs the interaction the player chose, only while it is still open to them; with no choice, the best one in reach.
   function interact(member: CrewMember, choice?: InteractionChoice) {
@@ -38,10 +40,12 @@ export function createInteractions(
     if (!chosen) return
     handlers[chosen.action](member, chosen.subject ?? -1)
     updateHeldItems(state)
+    metrics?.interaction(state, player, chosen.action)
   }
 
   function respawn(member: CrewMember) {
     const { player } = member
+    const wasSwimming = player.swimming
     const item = heldItem(state, player)
     if (item) {
       item.holder = null
@@ -62,6 +66,7 @@ export function createInteractions(
     member.reachUntil = 0
     member.throwUntil = 0
     checkpoint?.()
+    metrics?.result(state, player, { mechanic: 'travel', result: wasSwimming ? 'respawned-from-water' : 'respawned-on-land' })
   }
 
   return { interact, respawn }

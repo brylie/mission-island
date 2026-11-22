@@ -16,7 +16,7 @@ const crateDropMinimumY = -0.10
 
 type CargoDestinations = {
   ferry: (item: Item, playerId: number) => void
-  delivery: (item: Item) => void
+  delivery: (item: Item, slot: number) => void
   resident: (item: Item, at: Point) => boolean
 }
 
@@ -34,7 +34,7 @@ export function cargoInteractions(
       destinations.ferry(item, player.id)
     }
     else if (item.kind === 'crate' && dropoff && distance(player, dropoff) < deliveryRadius) {
-      destinations.delivery(item)
+      destinations.delivery(item, player.id)
     }
     else if (destinations.resident(item, player)) {
       return

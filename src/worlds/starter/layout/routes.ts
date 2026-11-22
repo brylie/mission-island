@@ -37,14 +37,14 @@ export const starterTrailLayout = {
     surface: 'desire',
     width: 0.85,
     trim: 1,
-    points: [{ x: 41.7, z: -30.2 }, { x: 44.1, z: -29.05 }, { x: 45.85, z: -28.25 }],
+    points: [{ x: 43.9, z: -26.0 }, { x: 44.8, z: -27.3 }, { x: 45.85, z: -28.25 }],
   },
   driftwood: {
     name: 'Driftwood shore walk',
     surface: 'desire',
     width: 1.1,
     trim: 1.1,
-    points: [{ x: 30.1, z: -24.7 }, { x: 34.7, z: -26.3 }, { x: 39, z: -29.2 }, { x: 42.6, z: -30.68 }],
+    points: [{ x: 30.1, z: -24.7 }, { x: 33.7, z: -26.1 }, { x: 35.65, z: -27.05 }],
   },
 } as const
 

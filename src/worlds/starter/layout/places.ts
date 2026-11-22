@@ -96,7 +96,7 @@ export const starterShaderSites = {
   fernfall: { centerAtZ: 87, z: 86.6 },
   canopy: { x: 2, z: -3 },
   reeds: { x: -13, z: -3 },
-  sand: { x: 36.7, z: -36.8, footprints: { minX: 24, maxZ: -26, minCoastRadius: 0.925, maxDepth: 0.028 } },
+  sand: { x: 36.7, z: -36.8, footprints: { minX: 21, maxZ: -21, maxDepth: 0.028 } },
   flowers: { x: -2.2, z: -1 },
   awning: { x: -3.9, z: 1.1 },
   blueCottageWindow: { x: -43.605, z: -6.765 },
