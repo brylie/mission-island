@@ -39,7 +39,7 @@ class MeadowShader extends MaterialPluginBase {
   override getClassName() { return this.name }
 
   override getUniforms() {
-    return { vertex: this.blades ? uniforms : '', fragment: uniforms, externalUniforms: ['meadowControls', 'meadowEye'] }
+    return { externalUniforms: ['meadowControls', 'meadowEye'] }
   }
 
   override getAttributes(attributes: string[]) {
@@ -56,7 +56,8 @@ class MeadowShader extends MaterialPluginBase {
     if (type === 'vertex') {
       return {
         CUSTOM_VERTEX_DEFINITIONS: this.blades
-          ? `attribute vec3 bladeRoot;
+          ? `${uniforms}
+          attribute vec3 bladeRoot;
           varying vec2 stemXZ;
           ${patchNoise}`
           : '',
@@ -78,7 +79,6 @@ class MeadowShader extends MaterialPluginBase {
     }
     const patchPoint = this.blades ? 'stemXZ' : 'vPositionW.xz'
     const color = this.pbr ? 'surfaceAlbedo' : 'baseColor.rgb'
-    const fragmentHook = this.pbr ? 'CUSTOM_FRAGMENT_BEFORE_LIGHTS' : 'CUSTOM_FRAGMENT_UPDATE_DIFFUSE'
     // A coarse mip keeps the recipe's own tint as the close grain fades.
     const farAlbedo = this.pbr
       ? `
@@ -103,16 +103,20 @@ class MeadowShader extends MaterialPluginBase {
       #ifdef NORMAL
         normalW = normalize(mix(normalW, normalize(vNormalW), far));
       #endif`
+    const shading = `
+      if (meadowControls.w > 0.) {
+        ${terrain}
+        float grassPatch = meadowPatch(${patchPoint});
+        ${color} *= mix(vec3(1.05, .82, .59), vec3(.63, .99, 1.06), grassPatch)
+          * (meadowControls.w * 1.7) + (1. - meadowControls.w * 1.7);
+      }`
     return {
-      CUSTOM_FRAGMENT_DEFINITIONS: `${this.blades ? 'varying vec2 stemXZ;' : ''}
+      // Both Babylon's uniform-buffer and standalone shader variants include this hook.
+      CUSTOM_FRAGMENT_DEFINITIONS: `${uniforms}
+        ${this.blades ? 'varying vec2 stemXZ;' : ''}
         ${patchNoise}`,
-      [fragmentHook]: `
-        if (meadowControls.w > 0.) {
-          ${terrain}
-          float grassPatch = meadowPatch(${patchPoint});
-          ${color} *= mix(vec3(1.05, .82, .59), vec3(.63, .99, 1.06), grassPatch)
-            * (meadowControls.w * 1.7) + (1. - meadowControls.w * 1.7);
-        }`,
+      CUSTOM_FRAGMENT_BEFORE_LIGHTS: this.pbr ? shading : '',
+      CUSTOM_FRAGMENT_UPDATE_DIFFUSE: this.pbr ? '' : shading,
     }
   }
 }
