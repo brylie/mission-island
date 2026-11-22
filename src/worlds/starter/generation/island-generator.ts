@@ -3,7 +3,7 @@ import { seededRandom } from '../../../seeded-random.ts'
 import type { Point } from '../../../world.ts'
 import { highwoodGeneration } from '../layout/island-generation.ts'
 import { accumulateFlow, erodeWithDroplets, fillDepressions, weatherSlopes, type HeightGrid } from './erosion.ts'
-import { authoredShare } from './protection.ts'
+import { authoredShare, originalBearing } from './protection.ts'
 
 const noiseRange = 0.7
 const smoothstepQuadratic = 3
@@ -51,6 +51,10 @@ function rawLand(p: Point) {
   for (const { x, z, rx, rz, weight } of masses) influence = Math.max(influence, weight * smooth(1 - Math.hypot((q.x - x) / rx, (q.z - z) / rz)))
   const edge = Math.min(p.x - grid.west, grid.west + grid.columns * grid.cell - p.x, p.z - grid.south, grid.south + grid.rows * grid.cell - p.z)
   const open = 1 - smooth(edge / edgeMargin)
+  // Land fades out well inside the join sector's edges, so its coast is the noise's.
+  const { fromBearing, toBearing, landFade } = highwoodGeneration.join
+  const bearing = originalBearing(p)
+  influence *= smooth((bearing - fromBearing) / landFade) * smooth((toBearing - bearing) / landFade)
   let land = continent.relief * (influence - continent.threshold) + detail.amplitude * fbm(q.x, q.z, seed + detailSeed, detail) / noiseRange - edgeSink * open
   let hardness = 0
   for (const { from, to, radius, strength } of uplift.cores) hardness = Math.max(hardness, strength * smooth(1 - segmentDistance(p, from, to) / radius))
@@ -136,8 +140,10 @@ function shoreDistance(columns: number, rows: number, cell: number, land: (i: nu
   return inside.map((distance, i) => distance - outside[i])
 }
 
-// Wave exposure: the share of directions from a shore cell that run to open sea.
-function exposureAt(grid: HeightGrid, index: number, sea: (i: number) => boolean) {
+// Wave exposure: the share of directions from a coastal cell that run to open
+// sea. Rays start past the cell's own distance from the shore, so a cell a few
+// metres inland measures the shore in front of it rather than the land around it.
+function exposureAt(grid: HeightGrid, index: number, from: number, sea: (i: number) => boolean) {
   const { columns, rows } = grid
   const { rays, reach } = highwoodGeneration.coast
   const x0 = index % columns, z0 = Math.floor(index / columns)
@@ -145,7 +151,7 @@ function exposureAt(grid: HeightGrid, index: number, sea: (i: number) => boolean
   for (let r = 0; r < rays; r++) {
     const angle = r / rays * fullTurn
     let clear = true
-    for (let step = rayStart; step < reach; step++) {
+    for (let step = from; step < reach; step++) {
       const x = Math.round(x0 + Math.cos(angle) * step), z = Math.round(z0 + Math.sin(angle) * step)
       if (x < 0 || z < 0 || x >= columns || z >= rows) break
       if (!sea(z * columns + x)) {
@@ -158,23 +164,79 @@ function exposureAt(grid: HeightGrid, index: number, sea: (i: number) => boolean
   return open / rays
 }
 
-function shapeCoast(grid: HeightGrid, owned: Float32Array, shore: Float32Array) {
+// Mean of `values` over the cells where `mask` is set, within `radius` cells.
+function localMean(columns: number, rows: number, values: Float32Array, mask: Uint8Array, radius: number) {
+  const width = columns + 1
+  const sum = new Float64Array(width * (rows + 1)), count = new Float64Array(width * (rows + 1))
+  for (let z = 0; z < rows; z++) {
+    for (let x = 0; x < columns; x++) {
+      const i = z * columns + x, o = (z + 1) * width + x + 1
+      sum[o] = (mask[i] ? values[i] : 0) + sum[o - 1] + sum[o - width] - sum[o - width - 1]
+      count[o] = mask[i] + count[o - 1] + count[o - width] - count[o - width - 1]
+    }
+  }
+  const box = (table: Float64Array, x0: number, z0: number, x1: number, z1: number) => table[z1 * width + x1] - table[z0 * width + x1] - table[z1 * width + x0] + table[z0 * width + x0]
+  return Float32Array.from(values, (_, i) => {
+    const x = i % columns, z = Math.floor(i / columns)
+    const x0 = Math.max(0, x - radius), z0 = Math.max(0, z - radius), x1 = Math.min(columns, x + radius + 1), z1 = Math.min(rows, z + radius + 1)
+    const n = box(count, x0, z0, x1, z1)
+    return n ? box(sum, x0, z0, x1, z1) / n : 0
+  })
+}
+
+// Era 4: waves sort the coast. Headlands, which stand more exposed than the shore
+// around them, and hard granite keep bare rock; sand settles at sheltered bay heads.
+function shapeCoast(grid: HeightGrid, owned: Float32Array, shore: Float32Array, hardness: Float32Array) {
   const { seaLevel, coast } = highwoodGeneration
-  const { heights } = grid
+  const { columns, rows, cell, heights } = grid
   const sand = new Float32Array(heights.length), rock = new Float32Array(heights.length)
   const sea = (i: number) => heights[i] < seaLevel
+  const band = Uint8Array.from(shore, (metres, i) => Number(owned[i] > 0 && metres >= 0 && metres <= coast.reachInland))
+  const exposure = Float32Array.from(shore, (metres, i) => band[i] ? exposureAt(grid, i, Math.ceil(metres / cell) + rayStart, sea) : 0)
+  const around = localMean(columns, rows, exposure, band, Math.round(coast.compareRadius / cell))
   for (let i = 0; i < heights.length; i++) {
-    if (owned[i] <= 0 || Math.abs(shore[i]) > coast.rockReach + coast.rockReach) continue
-    const exposure = exposureAt(grid, i, sea)
+    if (!band[i]) continue
+    const standout = exposure[i] - around[i]
+    const x = i % columns, z = Math.floor(i / columns)
+    const slope = x > 0 && z > 0 && x < columns - 1 && z < rows - 1
+      ? Math.hypot(heights[i + 1] - heights[i - 1], heights[i + columns] - heights[i - columns]) / (cell + cell)
+      : 0
+    if (shore[i] <= coast.rockReach && (hardness[i] >= coast.hardRock || standout >= coast.headlandAbove || slope >= coast.cliffSlope)) {
+      rock[i] = owned[i]
+      continue
+    }
     const rise = heights[i] - seaLevel
-    if (exposure < coast.shelteredBelow && rise < coast.beachRise) {
+    if (standout <= -coast.bayBelow && rise < coast.beachRise) {
       const share = owned[i] * (1 - smooth(rise / coast.beachRise))
       sand[i] = share
       heights[i] = seaLevel + rise * (1 - share * (1 - coast.beachFlatten))
     }
-    else if (exposure > coast.exposedAbove && shore[i] > 0 && shore[i] < coast.rockReach) rock[i] = owned[i]
   }
   return { sand, rock }
+}
+
+// Sea joined to the grid's edge. Hollows inland are lakes or pits, not sea.
+function openSea(columns: number, rows: number, heights: Float32Array, seaLevel: number) {
+  const open = new Uint8Array(heights.length)
+  const queue: number[] = []
+  for (let i = 0; i < heights.length; i++) {
+    const x = i % columns, z = Math.floor(i / columns)
+    if ((x === 0 || z === 0 || x === columns - 1 || z === rows - 1) && heights[i] < seaLevel) {
+      open[i] = 1
+      queue.push(i)
+    }
+  }
+  while (queue.length) {
+    const i = queue.pop()!
+    const x = i % columns, z = Math.floor(i / columns)
+    for (const j of [x > 0 ? i - 1 : -1, x < columns - 1 ? i + 1 : -1, z > 0 ? i - columns : -1, z < rows - 1 ? i + columns : -1]) {
+      if (j >= 0 && !open[j] && heights[j] < seaLevel) {
+        open[j] = 1
+        queue.push(j)
+      }
+    }
+  }
+  return open
 }
 
 export function generateIsland(authored: AuthoredIsland): GeneratedIsland {
@@ -190,12 +252,15 @@ export function generateIsland(authored: AuthoredIsland): GeneratedIsland {
   })
   const strength = (i: number) => shield[i]
   erodeWithDroplets(grid, erosion, seededRandom(seed + dropletSeed), (i) => owned[i] > 0 && heights[i] > seaLevel + landMarginM, strength, seaLevel)
-  const talus = hardness.map((hard) => thermal.softTalus + (thermal.hardTalus - thermal.softTalus) * hard)
+  // Alternating hard and soft layers in the granite leave benches and steps.
+  const strata = (height: number) => 1 - thermal.strataContrast * half * (1 + Math.sin(height / thermal.strataMetres * fullTurn))
+  const talus = hardness.map((hard, i) => thermal.softTalus + (thermal.hardTalus - thermal.softTalus) * hard * strata(heights[i]))
   weatherSlopes(grid, thermal, talus, strength)
   const landShore = shoreDistance(columns, rows, cell, (i) => heights[i] >= seaLevel)
-  const { sand, rock } = shapeCoast(grid, owned, landShore)
+  const { sand, rock } = shapeCoast(grid, owned, landShore, hardness)
   // Fill closed hollows so every valley drains to the sea.
-  const filled = fillDepressions(grid, (i) => heights[i] < seaLevel, drainage.spill)
+  const sea = openSea(columns, rows, heights, seaLevel)
+  const filled = fillDepressions(grid, (i) => sea[i] === 1, drainage.spill)
   for (let i = 0; i < heights.length; i++) heights[i] += (filled[i] - heights[i]) * owned[i]
   const flow = accumulateFlow(grid, heights)
   const moisture = flow.map((f) => Math.min(1, Math.log(f) / Math.log(drainage.wetFlow)))

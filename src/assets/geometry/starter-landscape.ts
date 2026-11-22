@@ -24,12 +24,13 @@ export const starterMeadowFinish = {
   greenGrass: { redLoss: 0.08, greenGain: 0.17 },
 } as const
 
-// Tints over the turf on Highwood's generated ground, as red, green and blue
-// multipliers. Steep ground shows granite, high ground turns to heath, and wet
-// hollows where water gathers stay green.
+// Highwood's generated ground. Steep ground shows bare stone (`cover` of the beach
+// shader's stone texture); the tints over the turf are red, green and blue
+// multipliers, kept gentle so turf never turns to clay: high ground leans to
+// heath, wet hollows where water gathers stay green.
 export const highwoodGroundFinish = {
-  rock: { slopeStart: 0.5, slopeFull: 1.05, tint: [1.42, 1.0, 1.34] },
-  heath: { heightStart: 16, heightFull: 36, tint: [1.18, 0.82, 0.92] },
+  rock: { slopeStart: 0.55, slopeFull: 1.0, cover: 0.9 },
+  heath: { heightStart: 16, heightFull: 40, tint: [1.07, 0.92, 0.97] },
   wet: { tint: [0.82, 1.1, 0.9] },
   dry: { heightStart: 4, heightFull: 12, tint: [1.1, 1.0, 0.82] },
 } as const

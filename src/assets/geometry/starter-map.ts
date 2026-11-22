@@ -3,10 +3,11 @@ const locationRadius = 3.5
 
 export const starterMapLook = {
   margin: 14,
-  grassRing: 0.916,
   regionSpread: 0.55,
   water: '#245e68',
-  land: [['shore', '#acc293'], ['grass', '#6f9667']],
+  // Land is painted from the ground: sand along the shore, grass inland, shading
+  // toward `high` up to `reliefMetres` so ridges read like a chart.
+  land: { sand: '#acc293', grass: '#6f9667', high: '#a5a07c', reliefMetres: 45 },
   boundary: { color: '#9abfc1', lineWidth: 1, buoy: { color: '#ffd37b', radius: 2 } },
   discovery: { color: '#e4ffe0', radius: 2.25 },
   paths: {

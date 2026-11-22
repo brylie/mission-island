@@ -33,7 +33,8 @@ export function bindPlaytestEvents(dialog: HTMLDialogElement, token: () => strin
         method: 'POST',
         headers: { Authorization: 'Bearer ' + token() },
       })
-      message.textContent = await result.text()
+      // Success shows in the world; only a refusal stays in the panel to read.
+      message.textContent = result.ok ? '' : await result.text()
       if (result.ok) dialog.close()
     }
     catch { message.textContent = 'Could not reach the host. Try again after reconnecting.' }

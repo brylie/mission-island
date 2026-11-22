@@ -24,6 +24,8 @@ const slopeSampleRadius = 0.08
 const slopeSampleReachM = 0.4
 const halfTurnDegrees = 180
 const turnDegrees = 360
+// The share of the join's fade over which the exact authored ground takes over from the bake.
+const seamBlend = 0.1
 // Generated shores read damp up to this height above the water.
 const generatedWetReachM = 0.35
 
@@ -179,16 +181,18 @@ export function authoredGroundHeight(point: Point) {
   return baseGroundHeight(point, originalCoastRadius(point)) + duneRelief(point)
 }
 
-// Across the join, the higher of the authored and generated ground wins, so
-// Highwood's land meets the old island and its sea never drowns old land.
+// The bake already joins Highwood to the old island (the higher ground wins
+// across the join), so beyond protected ground the baked height is the ground.
+// In the last `seamBlend` of the join's fade the exact authored ground takes over,
+// so the 2 m bake meets the authored surface without a step.
 export function groundHeight(point: Point) {
   const original = originalCoastRadius(point)
   const keep = authoredShare(point, original)
   if (keep >= 1) return baseGroundHeight(point, original) + duneRelief(point)
-  const baked = bakedHeight(point)
-  if (original >= shoreStations.seabed.radius) return Math.max(baked, shoreStations.seabed.y)
+  const baked = Math.max(bakedHeight(point), shoreStations.seabed.y)
+  if (keep <= 1 - seamBlend) return baked
   const authored = baseGroundHeight(point, original) + duneRelief(point)
-  return authored + (Math.max(authored, baked) - authored) * (1 - keep)
+  return baked + (authored - baked) * (keep - 1 + seamBlend) / seamBlend
 }
 
 function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {

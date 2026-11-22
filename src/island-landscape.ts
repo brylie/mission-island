@@ -125,9 +125,13 @@ function blendTint(color: number[], offset: number, tint: readonly number[], amo
   for (let k = 0; k < tint.length; k++) color[offset + k] *= 1 + (tint[k] - 1) * amount
 }
 
-// Colour bare generated ground by its form: rock where it is steep, heath where
-// it is high, green where water gathers and paler on dry low shoulders.
-function tintByForm(positions: number[], colors: number[], steps: number) {
+const beachStride = 4
+const beachRockChannel = 1
+
+// Colour bare generated ground by its form: bare stone where it is steep (the
+// beach shader's stone texture, not a tint, so it reads as rock), heath where it
+// is high, green where water gathers and paler on dry low shoulders.
+function tintByForm(positions: number[], colors: number[], beach: number[], steps: number) {
   const { rock, heath, wet, dry } = highwoodGroundFinish
   const row = steps + 1
   const ramp = (value: number, start: number, full: number) => Math.max(0, Math.min(1, (value - start) / (full - start)))
@@ -143,7 +147,8 @@ function tintByForm(positions: number[], colors: number[], steps: number) {
       blendTint(colors, o, wet.tint, bakedSurface(point).moisture)
       blendTint(colors, o, dry.tint, ramp(height, dry.heightStart, dry.heightFull) * (1 - ramp(height, heath.heightStart, heath.heightFull)))
       blendTint(colors, o, heath.tint, ramp(height, heath.heightStart, heath.heightFull))
-      blendTint(colors, o, rock.tint, ramp(Math.hypot(dx, dz), rock.slopeStart, rock.slopeFull))
+      const stone = beach.length / beachStride > v ? v * beachStride + beachRockChannel : -1
+      if (stone >= 0) beach[stone] = Math.max(beach[stone], rock.cover * ramp(Math.hypot(dx, dz), rock.slopeStart, rock.slopeFull))
     }
   }
 }
@@ -171,7 +176,7 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
           beach.push(...beachVertex(point, coastalSurface(point, height)))
         }
       }
-      tintByForm(positions, colors, steps)
+      tintByForm(positions, colors, beach, steps)
       for (let j = 0; j < steps; j++) {
         for (let i = 0; i < steps; i++) {
           const a = j * (steps + 1) + i, b = a + 1, c = a + steps + 1, d = c + 1

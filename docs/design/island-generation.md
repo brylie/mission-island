@@ -15,7 +15,7 @@ Starter Island's coast is stored as a radius for each bearing around an ellipse 
 Every layer is seeded and deterministic.
 
 1. **Base mass.** A few low-frequency "continent" shapes for the main blocks: the southern block, the Windstone upland, and the Highwood upland. A gentle falloff toward the edge of the map keeps the island surrounded by sea. No ellipse.
-2. **Fractal detail.** fBm noise with lacunarity about 2. A gain of 0.5 gives a smooth coast; a coast's fractal dimension is roughly 2 minus the noise's Hurst exponent, so the fine roughness uses a gain near 0.7. It is strongest near sea level and on hard rock, so the interior stays walkable.
+2. **Fractal detail.** fBm noise with lacunarity 2. The coastline of an fBm surface with Hurst exponent H has a fractal dimension of about 2 − H, and an octave gain of 2^(−H) sets H (Mandelbrot; Voss). A gain of 0.5 gives H = 1 and a smooth coast near 1; the 1.2–1.3 of real rocky coasts needs a gain of about 0.57–0.62. Highwood's fine roughness uses 0.6, strongest near sea level and on hard rock so the interior stays walkable. The relation assumes a homogeneous field; here the coast is the contour of a broad dome plus noise, so the finest scales still read near 1.
 3. **Hard-rock uplands.** Ridged multifractal noise, weighted by an uplift field placed where the story puts granite: Windstone, Cairn Summit and Fallow Ridge. It gives sharp crests and rock bands.
 4. **Domain warping.** Displace the noise coordinates with another noise field, so ridges and valleys fold and flow instead of lining up on a grid.
 
@@ -23,9 +23,9 @@ Every layer is seeded and deterministic.
 
 Erosion is what makes the land read as shaped, rather than as bumps.
 
-- **Hydraulic.** Particle droplets or flow accumulation carve drainage networks: a creek in each valley, with side gullies feeding it. The sediment they carry drops into fans, valley flats and beaches. This produces the benches, valley floors and slope breaks the [experience goal](../backcountry.md#experience-goal) asks for.
-- **Thermal.** Slopes steeper than the talus angle shed material. That leaves clean cliff bands above and scree fans below.
-- **Coastal.** Wave exposure cuts headland cliffs, and sand collects in sheltered bays.
+- **Hydraulic.** Simulated raindrops (Beyer's droplet model) carve the drainage. Each drop speeds up downhill, up to a cap, and picks up sediment where it can carry more. It sets the load down where it slows, as a fan when it dries out, and partly as a delta where it meets the sea. Sediment never builds on the seabed, and cutting stops above the waterline, so coves keep the shape the land gave them. The two glacial valleys are carved deep enough (13–16 m) to gather the drainage.
+- **Thermal.** Slopes steeper than the rock can hold shed material downhill. Soft ground rests near a 35° scree slope. Granite holds far steeper, and it weathers in layers 6 m thick, so hard ground breaks into benches and rock bands.
+- **Coastal.** Each coastal cell measures the share of directions that run to open sea, starting past its own distance from the shore. Wave energy gathers on headlands and spreads in bays, so a cell that stands out from the shore around it, sits on granite or is steep keeps bare rock. Sand settles only at sheltered bay heads, above the water. This sorts the surface layer; it does not yet cut cliffs into the height field.
 
 ## Keeping the settled south
 
@@ -59,16 +59,17 @@ Tested automatically where possible:
 
 ## The current bake
 
-`npm run island:generate` runs the generator in about 3 seconds. It writes `src/assets/geometry/highwood-heightmap.ts`, 2 MB of base64, and the preview `docs/images/highwood-generated.png`. Its parameters are in `src/worlds/starter/layout/island-generation.ts`, and the code is in `src/worlds/starter/generation/`.
+`npm run island:generate` runs the generator in about 3 seconds. It writes `src/assets/geometry/highwood-heightmap.ts`, 454 KB of base64 under the repository's 500 KB file limit, and the preview `docs/images/highwood-generated.png`. Its parameters are in `src/worlds/starter/layout/island-generation.ts`, and the code is in `src/worlds/starter/generation/`. The asset stores heights every 2 m and layers every 4 m; the generator works at 1 m.
 
-- **Join.** Across the old north-west shore, the higher of the authored and generated ground wins. Highwood's land meets the old island, and its sea never drowns old land.
-- **Erosion.** Droplets stop at the sea and never cut below 0.5 m above the datum, so coves come from the land's shape rather than from rills.
+- **Join.** The bake owns the join: across the old north-west shore, the higher of the authored and generated ground wins, so Highwood's land meets the old island and its sea never drowns old land. At runtime the baked height is the ground beyond protected land, and the exact authored ground takes over only in the last tenth of the join's fade, so the two meet without a step. The land's likelihood fades out well inside the join sector, so its coast is drawn by the noise rather than the sector's edge.
+- **Stale bakes.** The asset records a hash of every file it depends on (`bake-sources.ts`): the generator, its parameters and the authored terrain. A test fails until the island is baked again.
+- **Shoreline.** `coastPoint(angle)` stays a radius per bearing for bounds and the skiff buoys. On Highwood it gives the farthest shore along the ray, with bays and straits inside it. The real shoreline is traced once at load by marching squares over the ground (`src/shoreline.ts`, about 40 ms), and the surf and the map follow it.
 - **Measured.**
-  - About 0.18 km² of land in the generated grid, roughly 0.2 km² for the whole island.
-  - A shoreline development index of 2.3.
-  - Under a quarter of the land is steep.
-  - Cairn Summit, at 49.8 m, is the highest point.
-- **Still to tune.** The coastline's box-counting dimension is 1.07, below the 1.2–1.3 target, because erosion and the beach pass smooth the finest coves. The Art Director's review of the bare land from the hero views comes next.
+  - About 0.16 km² of land in the generated grid, roughly 0.2 km² for the whole island.
+  - A shoreline development index of 2.2. A box-counting dimension of 1.09, fitted over the noise's scaling range of 8–64 m.
+  - Under a fifth of the land is steep.
+  - Cairn Summit's crown, at 49.8 m, is the highest point; Fallow Ridge hides Pine Draw from it.
+- **Still to tune.** The coast dimension is below the 1.2–1.3 target: the dome-plus-noise shape reads near 1 at fine scales. Gully density is still even on most slopes, and the old island's smooth hills sit beside the eroded land in a different style.
 
 ## Workbench study
 

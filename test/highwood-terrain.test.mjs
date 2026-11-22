@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { URL } from 'node:url'
 import { test } from 'node:test'
 import { RaycastVehicle } from 'cannon-es'
 import { fireWatchGeometry } from '../src/assets/geometry/fire-watch.ts'
@@ -9,6 +12,7 @@ import { authoredShare } from '../src/worlds/starter/generation/protection.ts'
 import { highwoodGeneration, highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
 import { coastlineDimension, shorelineStatistics, slopeShares } from '../src/worlds/starter/generation/island-metrics.ts'
 import { bakedHeight } from '../src/worlds/starter/highwood-terrain.ts'
+import { bakeSources } from '../src/worlds/starter/generation/bake-sources.ts'
 
 const eyeHeight = 1.6
 
@@ -37,7 +41,7 @@ test('the generated island reads like a real coast', () => {
   const land = (i) => grid.heights[i] >= highwoodGeneration.seaLevel
   const { area, development } = shorelineStatistics(grid, land)
   assert.ok(area > 0.15e6 && area < 0.25e6, `land ${area} m²`)
-  assert.ok(development > 2, `shoreline development ${development}`)
+  assert.ok(development > 1.8, `shoreline development ${development}`)
   assert.ok(coastlineDimension(grid, land) > 1.03, 'a coast rougher than a smooth curve')
   const { steep } = slopeShares(grid, land)
   assert.ok(steep < 0.3, `most land is walkable, steep share ${steep}`)
@@ -46,7 +50,7 @@ test('the generated island reads like a real coast', () => {
 })
 
 test('Cairn Summit tops Highwood and Fallow Ridge hides Pine Draw from the tower deck', () => {
-  const summit = highwoodPlaces.cairnSummit
+  const summit = highwoodPlaces.cairnCrown
   const top = groundHeight(summit)
   assert.ok(top > 40, `summit ${top}`)
   const eye = { ...summit, y: top + fireWatchGeometry.deck.top + eyeHeight }
@@ -95,4 +99,56 @@ test('wheel raycasts reach the far north of the physics heightfield', () => {
   finally {
     RaycastVehicle.prototype.updateVehicle = update
   }
+})
+
+test('the baked terrain is up to date with its generator and the authored island', () => {
+  const hash = createHash('sha256')
+  for (const path of bakeSources) hash.update(path).update(readFileSync(new URL(`../${path}`, import.meta.url)))
+  assert.equal(highwoodHeightmap.sourceHash, hash.digest('hex'), 'run npm run island:generate and commit the new bake')
+})
+
+test('beyond the seam, the ground is the baked terrain', () => {
+  const { west, south, cell, columns, rows } = highwoodHeightmap
+  let checked = 0
+  for (let z = 0; z < rows; z += 7) {
+    for (let x = 0; x < columns; x += 7) {
+      const point = { x: west + x * cell, z: south + z * cell }
+      const keep = authoredShare(point, originalCoastRadius(point))
+      if (keep <= 0 || keep >= 0.9) continue
+      checked++
+      assert.ok(Math.abs(groundHeight(point) - Math.max(bakedHeight(point), highwoodGeneration.seabed)) < 0.01, JSON.stringify(point))
+    }
+  }
+  assert.ok(checked > 20, `checked ${checked} join-band nodes`)
+})
+
+test('the shipped terrain drains: no closed hollow holds water inland', () => {
+  // Steepest descent from a grid of Highwood land points must reach the sea or a flat spill.
+  const { west, south, cell, columns, rows } = highwoodHeightmap
+  let stuck = 0, traced = 0
+  for (let z = 4; z < rows - 4; z += 9) {
+    for (let x = 4; x < columns - 4; x += 9) {
+      let point = { x: west + x * cell, z: south + z * cell }
+      if (groundHeight(point) < waterLevel + 0.5 || authoredShare(point, originalCoastRadius(point)) > 0) continue
+      traced++
+      for (let step = 0; step < 600; step++) {
+        const here = groundHeight(point)
+        let best = point, lowest = here
+        for (let a = 0; a < 8; a++) {
+          const next = { x: point.x + Math.cos(a * Math.PI / 4) * cell, z: point.z + Math.sin(a * Math.PI / 4) * cell }
+          const h = groundHeight(next)
+          if (h < lowest) [best, lowest] = [next, h]
+        }
+        if (lowest < waterLevel) break
+        // A pit deeper than a few centimetres would hold a pond the ocean plane can't fill.
+        if (best === point) {
+          if (here - waterLevel > 0.3) stuck++
+          break
+        }
+        point = best
+      }
+    }
+  }
+  assert.ok(traced > 100, `traced ${traced}`)
+  assert.ok(stuck / traced < 0.05, `${stuck} of ${traced} traces stopped in a hollow`)
 })

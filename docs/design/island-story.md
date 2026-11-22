@@ -25,7 +25,7 @@ During the last cold stage, an ice cap covered the island. Glaciers flowed from 
 
 ## 3. The sea rises and drowns the valley mouths
 
-As the ice sheets melted worldwide, the sea rose by many tens of metres. It flooded the lower ends of the glacial valleys and turned them into long, sheltered inlets. The island's coastline became a pattern of drowned valleys between ridges of harder rock.
+As the ice sheets melted worldwide, the sea rose by around 120 metres. Close to a vanished ice sheet, the land itself springs back up once the ice is gone, and many glaciated coasts show raised beaches for that reason. This island lay near the ice's edge, where the crust rebounded less than the sea rose. So the sea flooded the lower ends of the glacial valleys and turned them into long, sheltered inlets, the kind called fjards where the land around them is low. The island's coastline became a pattern of drowned valleys between ridges of harder rock.
 
 - **Still visible.** Harbor Cove, a drowned valley mouth deep enough for the ferry and sheltered enough for the dock. The coves on Highwood's west coast, where Alder Creek reaches the sea.
 - **Habitats.** Harbor Cove and Depot, the nearshore shallows, and open coastal water.

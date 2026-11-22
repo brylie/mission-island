@@ -8,7 +8,7 @@ import type { Snapshot } from '../src/protocol.ts'
 import { createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewCommand } from './commands.ts'
 import { createLearnerFleet } from './learner-fleet.ts'
-import { createCrewRoster, disconnect, stopped, type CrewBroadcast, type CrewMember, type CrewNotice } from './crew.ts'
+import { createCrewRoster, disconnect, standCrewmate, stopped, type CrewBroadcast, type CrewMember, type CrewNotice } from './crew.ts'
 import { jump, prepareCrewMotion, walkCrew } from './crew-motion.ts'
 import { createEquipment, setAppearance } from './equipment.ts'
 import { advanceIsland } from './island-clock.ts'
@@ -100,9 +100,11 @@ function sendCrewmate(state: Snapshot, crew: ReturnType<typeof createCrewRoster>
   const place = playtestPlaces.find(({ id }) => id === placeId)
   if (!player?.connected || !place) return { ok: false, text: 'Join the crew first.' }
   if (player.seat || state.aviation.flight?.pilotId === player.id) return { ok: false, text: 'Leave your seat or land first.' }
-  Object.assign(player, { x: place.point.x, z: place.point.z, y: walkingHeight(place.point), swimming: false, grounded: true })
+  if (state.farmWork.barrow?.handler === player.id) return { ok: false, text: 'Set down the barrow first.' }
   const member = crew.members().find((each) => each.player === player)
-  if (member) member.verticalSpeed = 0
+  if (!member) return { ok: false, text: 'Join the crew first.' }
+  // A held item travels with its holder.
+  standCrewmate(member, { x: place.point.x, z: place.point.z, y: walkingHeight(place.point), heading: place.heading ?? player.heading })
   return { ok: true, text: `Sent to ${place.label}.` }
 }
 

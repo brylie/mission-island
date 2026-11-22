@@ -5,7 +5,9 @@
 
 // Named places the generator pins or carves. The Fire Watch moves to Cairn Summit later.
 export const highwoodPlaces = {
+  // The summit pin's centre, and the crown the bake raises there (the pin is warped with the land).
   cairnSummit: { x: -95, z: 215 },
+  cairnCrown: { x: -95, z: 226 },
   fallowRidge: { x: -220, z: 380 },
   bracken: { x: -175, z: 285 },
   birchFlats: { x: -420, z: 300 },
@@ -13,6 +15,14 @@ export const highwoodPlaces = {
   creekHead: { x: -255, z: 345 },
   westCove: { x: -350, z: 255 },
 } as const
+
+// Region names shown on the island view and the map, at a point in each.
+export const highwoodLabels = [
+  { name: 'Highwood', at: { x: -250, z: 300 } },
+  { name: 'Cairn Summit', at: highwoodPlaces.cairnCrown },
+  { name: 'Fallow Ridge', at: highwoodPlaces.fallowRidge },
+  { name: 'Pine Draw', at: highwoodPlaces.pineDraw },
+] as const
 
 export const highwoodGeneration = {
   seed: 9137,
@@ -29,7 +39,9 @@ export const highwoodGeneration = {
   // Where the new land may replace the old shore: the original island's north-west,
   // between Windstone's seaward flank and the old west shoulder. Inside `innerRadius` of the
   // old coast the authored island is kept exactly.
-  join: { fromBearing: 86, toBearing: 165, fade: 5, innerRadius: 0.865, outerRadius: 1.0 },
+  // `landFade` is how many degrees inside the sector the land's likelihood fades
+  // in, so the noise, not the sector's edge, draws the coast there.
+  join: { fromBearing: 86, toBearing: 165, fade: 5, landFade: 18, innerRadius: 0.865, outerRadius: 1.0 },
 
   // Era 1: the granite and sandstone block. Each mass is a soft likelihood of
   // land, from 1 at its centre to 0 at its rim; `weight` scales it. Land stands
@@ -50,7 +62,7 @@ export const highwoodGeneration = {
   // Fine fractal roughness. A gain near 0.7 roughens the coastline toward a
   // fractal dimension above 1.1; it is strongest within `coastBand` metres of
   // sea level and on hard rock, so the interior stays walkable.
-  roughness: { wavelength: 37, octaves: 5, lacunarity: 2, gain: 0.7, amplitude: 3.2, coastBand: 5, interior: 0.25 },
+  roughness: { wavelength: 37, octaves: 5, lacunarity: 2, gain: 0.6, amplitude: 3.6, coastBand: 5, interior: 0.25 },
   // The grid's outer margin is always open sea, sinking by up to `edgeSink` metres.
   edgeMargin: 80,
   edgeSink: 30,
@@ -59,7 +71,8 @@ export const highwoodGeneration = {
   // bands and the summit. Strength fades over each core's radius.
   uplift: {
     cores: [
-      { from: { x: -100, z: 210 }, to: { x: -95, z: 220 }, radius: 75, strength: 1 },
+      // Cairn Summit's granite runs north-east to south-west, so it weathers into a ridge, not a cone.
+      { from: { x: -128, z: 196 }, to: { x: -72, z: 238 }, radius: 58, strength: 1 },
       { from: { x: -320, z: 330 }, to: { x: -120, z: 415 }, radius: 70, strength: 0.9 },
       { from: { x: -215, z: 540 }, to: { x: -110, z: 480 }, radius: 55, strength: 0.6 },
       { from: { x: -430, z: 520 }, to: { x: -380, z: 500 }, radius: 60, strength: 0.6 },
@@ -69,7 +82,7 @@ export const highwoodGeneration = {
   },
   // Cairn Summit's crown is pinned so the Fire Watch sees over Fallow Ridge.
   // `shield` is how much of the crown erosion leaves alone.
-  pins: [{ ...highwoodPlaces.cairnSummit, height: 50, radius: 30, shield: 0.55 }],
+  pins: [{ ...highwoodPlaces.cairnSummit, height: 50, radius: 22, shield: 0.3 }],
 
   // Era 2: glaciers carved broad U-shaped valleys toward the sea. Each valley has
   // a flat floor of `floorWidth` and walls rising over `wallWidth`.
@@ -77,16 +90,16 @@ export const highwoodGeneration = {
     // Alder Creek, from Fallow Ridge's west flank to the west cove.
     {
       points: [highwoodPlaces.creekHead, { x: -290, z: 318 }, { x: -325, z: 285 }, highwoodPlaces.westCove],
-      floorWidth: 14,
-      wallWidth: 34,
-      depth: 8,
+      floorWidth: 16,
+      wallWidth: 46,
+      depth: 16,
     },
     // Pine Draw, between Fallow Ridge and the northern strait.
     {
       points: [{ x: -140, z: 440 }, highwoodPlaces.pineDraw, { x: -305, z: 438 }],
-      floorWidth: 18,
-      wallWidth: 40,
-      depth: 6,
+      floorWidth: 20,
+      wallWidth: 50,
+      depth: 13,
     },
   ],
 
@@ -94,23 +107,31 @@ export const highwoodGeneration = {
   erosion: {
     droplets: 320000,
     lifetime: 70,
-    inertia: 0.06,
+    inertia: 0.15,
     capacity: 4,
     minimumCapacity: 0.01,
     erosion: 0.12,
     deposition: 0.2,
     evaporation: 0.011,
     gravity: 4,
-    radius: 4,
+    radius: 3,
     floor: 0.5,
+    maxSpeed: 6,
+    deltaShare: 0.25,
   },
   // Frost: steepest stable rise per metre on soft ground and on granite.
-  thermal: { iterations: 36, rate: 0.5, softTalus: 0.85, hardTalus: 2.4 },
+  // Soft ground rests near a 35° scree slope; granite holds cliffs.
+  // Granite weathers in layers `strataMetres` thick, so hard ground breaks into
+  // benches and rock bands rather than even slopes.
+  thermal: { iterations: 36, rate: 0.5, softTalus: 0.7, hardTalus: 2.4, strataMetres: 6, strataContrast: 0.5 },
 
   // Era 4: waves cut exposed headlands and leave sand in sheltered bays.
-  coast: { rays: 16, reach: 150, shelteredBelow: 0.42, exposedAbove: 0.6, beachRise: 1.5, beachFlatten: 0.55, rockReach: 7 },
-  drainage: { spill: 0.0004, wetFlow: 400 },
+  // Exposure is compared with the shore within `compareRadius`: a cell that stands
+  // out by `headlandAbove` is a headland, one that falls short by `bayBelow` a bay.
+  coast: { rays: 16, reach: 150, reachInland: 14, compareRadius: 70, headlandAbove: 0.07, bayBelow: 0.015, hardRock: 0.45, cliffSlope: 0.9, beachRise: 1.5, beachFlatten: 0.55, rockReach: 7 },
+  // The spill slope outlasts the asset's height rounding, so the baked grid drains too.
+  drainage: { spill: 0.002, wetFlow: 400 },
   // How the generated island is measured: box sizes in cells for the coastline's
   // fractal dimension, slope bands as rise per metre, and what counts as steep.
-  metrics: { boxSizes: [2, 4, 8, 16, 32, 64], slopeBands: [0.15, 0.3, 0.6, 1], steepRise: 0.6 },
+  metrics: { boxSizes: [8, 16, 32, 64], slopeBands: [0.15, 0.3, 0.6, 1], steepRise: 0.6 },
 } as const

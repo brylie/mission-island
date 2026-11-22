@@ -13,7 +13,7 @@ function smooth(t: number) {
 }
 
 // The original island's coast bearing for a point, in degrees from east.
-function originalBearing({ x, z }: Point) {
+export function originalBearing({ x, z }: Point) {
   const degrees = Math.atan2(z / (island.length / halves), x / (island.width / halves)) * halfTurn / Math.PI
   return (degrees + degreesPerTurn) % degreesPerTurn
 }

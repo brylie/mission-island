@@ -3,8 +3,8 @@ import type { Point } from '../../world.ts'
 import { highwoodGeneration } from './layout/island-generation.ts'
 
 // Reads the baked Highwood terrain (scripts/generate-island.mjs). Heights are
-// bilinear over a 1 m grid; the shore, sand, rock and moisture layers are
-// stored at a coarser step. Outside the grid lies open sea.
+// bilinear over the stored grid (2 m cells); the shore, sand, rock and moisture
+// layers are stored at a coarser step. Outside the grid lies open sea.
 
 const bytesPerHeight = 2
 const byteRange = 256

@@ -8,14 +8,15 @@ const deckStandM = 1.2
 
 // Places a playtest can send a crewmate to, so a tester can stand where a hero
 // view or a review needs them without walking there.
-export const playtestPlaces: readonly { id: string, label: string, point: Point }[] = [
+export const playtestPlaces: readonly { id: string, label: string, point: Point, heading?: number }[] = [
   { id: 'fire-watch-stairs', label: 'Fire Watch stairs', point: fireWatchEntrance },
   { id: 'fire-watch-deck', label: 'Fire Watch deck', point: { x: fireFinder.x + deckStandM, z: fireFinder.z } },
-  { id: 'cairn-summit', label: 'Cairn Summit', point: highwoodPlaces.cairnSummit },
+  { id: 'cairn-summit', label: 'Cairn Summit', point: highwoodPlaces.cairnCrown },
   { id: 'fallow-ridge', label: 'Fallow Ridge', point: highwoodPlaces.fallowRidge },
   { id: 'pine-draw', label: 'Pine Draw', point: highwoodPlaces.pineDraw },
   { id: 'bracken', label: 'Bracken Meadow', point: highwoodPlaces.bracken },
   { id: 'birch-flats', label: 'Birch Flats', point: highwoodPlaces.birchFlats },
   { id: 'alder-creek', label: 'Alder Creek head', point: highwoodPlaces.creekHead },
-  ...highwoodHeroViews.map(({ id, label, eye }) => ({ id, label: label.replace('Hero · ', 'Hero view: '), point: eye })),
+  // A hero view's spot faces its target, as the view does.
+  ...highwoodHeroViews.map(({ id, short, eye, target }) => ({ id, label: `Hero: ${short}`, point: eye, heading: Math.atan2(target.x - eye.x, target.z - eye.z) })),
 ]

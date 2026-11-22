@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { Buffer } from 'node:buffer'
 import test from 'node:test'
 import { sandpiperPose } from '../src/sandpiper-motion.ts'
 import { boundaryBuoys, buoyBoundaryPoint, coastPoint, coastRadius, coastalSurface, groundHeight, waterLevel, withinSkiffBoundary } from '../src/terrain.ts'
@@ -7,7 +8,7 @@ import { beachWidthLayout } from '../src/worlds/starter/layout/terrain.ts'
 import { onBeachTowel } from '../src/worlds/starter/sites.ts'
 import { driftwoodSandpipers } from '../src/worlds/starter/layout/wildlife.ts'
 import { joinShare } from '../src/worlds/starter/generation/protection.ts'
-import { highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
+import { highwoodHeightmap } from '../src/assets/geometry/highwood-heightmap.ts'
 
 // Highwood's generated land replaces the original coast across the join sector.
 const authoredCoast = (angle) => joinShare((angle * 180 / Math.PI + 360) % 360) === 0
@@ -81,8 +82,9 @@ test('exposed points and sheltered coves have different sand widths on the produ
   }
   assert.ok(sandWidth(40) > 12, 'the east cove holds a broad strand')
   assert.ok(sandWidth(70) < 2, 'the Windstone point pinches out')
-  // Highwood's sheltered west cove holds sand where the old north-west indentation used to.
-  assert.ok(coastalSurface({ x: highwoodPlaces.westCove.x + 8, z: highwoodPlaces.westCove.z }).sand > 0 || coastalSurface(highwoodPlaces.westCove).sand > 0)
+  // Highwood's generated coast sorts into sandy bay heads and bare rock on headlands.
+  const cells = (layer) => [...Buffer.from(highwoodHeightmap.layers[layer], 'base64')].filter((value) => value > 128).length
+  assert.ok(cells('sand') > 30 && cells('rock') > 100, `sand ${cells('sand')}, rock ${cells('rock')}`)
   assert.ok(sandWidth(190) < 3, 'the west shoulder has a narrow strip')
   assert.ok(sandWidth(255) > 8, 'the beach outside the southern harbor widens')
 })

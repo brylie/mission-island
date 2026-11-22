@@ -6,6 +6,7 @@
 export const highwoodHeroViews = [
   {
     id: 'hero-tower-north',
+    short: 'Tower looking north',
     label: 'Hero · Cairn Summit looking north at dawn',
     feeling: 'Vastness: layered, fading ridges',
     // Aimed over Fallow Ridge's crest, behind which Pine Draw hides its smoke.
@@ -16,6 +17,7 @@ export const highwoodHeroViews = [
   },
   {
     id: 'hero-fire-road',
+    short: 'Into the forest',
     label: 'Hero · Into the forest at midday',
     feeling: 'The threshold from open meadow into tall trunks',
     eye: { x: -128, z: 252, above: 1.7 },
@@ -25,6 +27,7 @@ export const highwoodHeroViews = [
   },
   {
     id: 'hero-creek-ford',
+    short: 'Alder Creek',
     label: 'Hero · Alder Creek after rain',
     feeling: 'Intimacy: wet stones, moss, alder roots',
     eye: { x: -300, z: 312, above: 2.6 },
@@ -34,6 +37,7 @@ export const highwoodHeroViews = [
   },
   {
     id: 'hero-birch-flats',
+    short: 'Birch Flats',
     label: 'Hero · Birch Flats in evening sun',
     feeling: 'Beauty: pale trunks glowing amber, long shadows',
     // From the crown of the bench, looking down its western slope to the sea.
@@ -44,10 +48,11 @@ export const highwoodHeroViews = [
   },
   {
     id: 'hero-ridge-south',
+    short: 'Ridge looking home',
     label: 'Hero · Fallow Ridge looking home',
     feeling: 'Belonging: harbor, Seabrook and the farm small in the distance',
-    // The crest point with a clear line past Cairn Summit to the harbor.
-    eye: { x: -210, z: 390, above: 2 },
+    // Fallow Ridge's southern shoulder, with a clear line past Cairn Summit to the harbor.
+    eye: { x: -220, z: 310, above: 2 },
     target: { x: -35, z: -5, above: 2 },
     hour: 16.5,
     rain: 0,

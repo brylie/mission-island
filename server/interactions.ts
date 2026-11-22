@@ -6,7 +6,7 @@ import { crateHalfSize, type createCargoPhysics } from '../src/simulation/cargo.
 import { canOccupyGround } from '../src/simulation/movement.ts'
 import { groundHeight, maxWadeDepth, waterDepth } from '../src/terrain.ts'
 import { itemStarts, spawns } from '../src/world.ts'
-import { stopPrimary, stopped, type CrewMember } from './crew.ts'
+import { standCrewmate, type CrewMember } from './crew.ts'
 import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
 import { restingHeight, restingY, updateHeldItems, updateStowedItems } from './items.ts'
 import { isVehicleGear } from '../src/rescue-gear.ts'
@@ -66,12 +66,7 @@ export function createInteractions(
       }
     }
     const home = spawns[player.id]
-    Object.assign(player, { ...home, y: groundHeight(home), heading: 0, seat: null, vehicle: undefined, grounded: true, onBed: false, truckSurface: undefined, swimming: false, sleeping: false, casting: null, reaching: false, rightHandRaised: false, throwing: false, rowing: false })
-    stopPrimary(member)
-    member.input = stopped
-    member.verticalSpeed = 0
-    member.reachUntil = 0
-    member.throwUntil = 0
+    standCrewmate(member, { x: home.x, z: home.z, y: groundHeight(home), heading: 0 })
     checkpoint?.()
     metrics?.result(state, player, { mechanic: 'travel', result: wasSwimming ? 'respawned-from-water' : 'respawned-on-land' })
   }

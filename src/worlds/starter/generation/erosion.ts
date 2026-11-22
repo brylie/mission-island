@@ -21,6 +21,37 @@ interface DropletErosion {
   radius: number
   // Lowest height erosion may cut to.
   floor: number
+  // Fastest a drop runs, so speed does not grow with every metre it falls.
+  maxSpeed: number
+  // Share of a drop's load it sets down where it meets the sea, building a delta.
+  deltaShare: number
+}
+
+// Sets down sediment around a point, weighted to the four nodes of its cell. A
+// shielded node keeps its height; the drop keeps what that node refused.
+// Spreads sediment over the brush around a cell, so a load set down at the end of
+// a drop's run forms a fan rather than a spike.
+// Sediment that reaches open water washes away rather than building up the seabed.
+function spread(grid: HeightGrid, area: ReturnType<typeof brush>, x: number, z: number, amount: number, strength: (index: number) => number, waterLevel: number) {
+  const ix = Math.floor(x), iz = Math.floor(z)
+  for (const { dx, dz, weight } of area) {
+    const j = (iz + dz) * grid.columns + ix + dx
+    if (grid.heights[j] >= waterLevel) grid.heights[j] += amount * weight * strength(j)
+  }
+}
+
+function settle(grid: HeightGrid, x: number, z: number, amount: number, strength: (index: number) => number) {
+  const { columns, heights } = grid
+  const ix = Math.floor(x), iz = Math.floor(z)
+  const fx = x - ix, fz = z - iz
+  const i = iz * columns + ix
+  let placed = 0
+  for (const [j, weight] of [[i, (1 - fx) * (1 - fz)], [i + 1, fx * (1 - fz)], [i + columns, (1 - fx) * fz], [i + columns + 1, fx * fz]] as const) {
+    const share = amount * weight * strength(j)
+    heights[j] += share
+    placed += share
+  }
+  return placed
 }
 
 interface ThermalErosion {
@@ -73,8 +104,13 @@ export function erodeWithDroplets(grid: HeightGrid, settings: DropletErosion, ra
       const ix = Math.floor(x), iz = Math.floor(z)
       const offsetX = x - ix, offsetZ = z - iz
       const here = heightAndGradient(grid, x, z)
-      // A drop that reaches the sea is lost with its load, so coves stay open.
-      if (here.height < waterLevel) break
+      // A drop that reaches the sea leaves part of its load as a delta at the shore;
+      // the rest washes out, so coves stay open.
+      if (here.height < waterLevel) {
+        spread(grid, area, x - dirX, z - dirZ, sediment * settings.deltaShare, strength, waterLevel)
+        sediment = 0
+        break
+      }
       dirX = dirX * settings.inertia - here.gx * (1 - settings.inertia)
       dirZ = dirZ * settings.inertia - here.gz * (1 - settings.inertia)
       const length = Math.hypot(dirX, dirZ)
@@ -83,19 +119,17 @@ export function erodeWithDroplets(grid: HeightGrid, settings: DropletErosion, ra
       dirZ /= length
       x += dirX
       z += dirZ
-      if (x < margin || z < margin || x >= columns - margin || z >= rows - margin) break
+      if (x < margin || z < margin || x >= columns - margin || z >= rows - margin) {
+        x -= dirX
+        z -= dirZ
+        break
+      }
       const drop = heightAndGradient(grid, x, z).height - here.height
       const capacity = Math.max(-drop * speed * water * settings.capacity, settings.minimumCapacity)
-      const i = iz * columns + ix
       if (sediment > capacity || drop > 0) {
         // Fill the pit behind the drop, or let the surplus settle.
         const amount = drop > 0 ? Math.min(drop, sediment) : (sediment - capacity) * settings.deposition
-        sediment -= amount
-        const k = strength(i)
-        heights[i] += amount * (1 - offsetX) * (1 - offsetZ) * k
-        heights[i + 1] += amount * offsetX * (1 - offsetZ) * k
-        heights[i + columns] += amount * (1 - offsetX) * offsetZ * k
-        heights[i + columns + 1] += amount * offsetX * offsetZ * k
+        sediment -= settle(grid, ix + offsetX, iz + offsetZ, amount, strength)
       }
       else {
         const amount = Math.min((capacity - sediment) * settings.erosion, -drop)
@@ -107,9 +141,11 @@ export function erodeWithDroplets(grid: HeightGrid, settings: DropletErosion, ra
           sediment += take
         }
       }
-      speed = Math.sqrt(Math.max(0, speed * speed - drop * settings.gravity))
+      speed = Math.min(settings.maxSpeed, Math.sqrt(Math.max(0, speed * speed - drop * settings.gravity)))
       water *= 1 - settings.evaporation
     }
+    // A drop that dries out or runs out of time sets down what it still carries.
+    if (sediment > 0) spread(grid, area, x, z, sediment, strength, waterLevel)
   }
 }
 

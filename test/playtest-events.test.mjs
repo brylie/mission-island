@@ -104,4 +104,20 @@ test('a playtest crewmate can go to a named place, standing on its ground', () =
   assert.ok(Math.abs(player.y - walkingHeight(player)) < 0.5)
   game.playtestEvent({ type: 'go-to', place: 'fire-watch-deck' }, tokens[0])
   assert.ok(game.tick().players[0].y > walkingHeight({ x: 10000, z: 10000 }) + 5, 'the deck is up the tower')
+
+  // Arriving resets the crewmate as respawn does, and the barrow must be set down first.
+  const state = game.tick()
+  Object.assign(state.players[0], { sleeping: true, onBed: true, rowing: true })
+  game.playtestEvent({ type: 'go-to', place: 'bracken' }, tokens[0])
+  const arrived = game.tick().players[0]
+  assert.deepEqual([arrived.sleeping, arrived.onBed, arrived.rowing], [false, false, false])
+  // A hero view's spot faces the view's target.
+  game.playtestEvent({ type: 'go-to', place: 'hero-ridge-south' }, tokens[0])
+  const hero = playtestPlaces.find(({ id }) => id === 'hero-ridge-south')
+  assert.equal(game.tick().players[0].heading, hero.heading)
+  state.players[0].seat = 'driver'
+  assert.deepEqual(game.playtestEvent({ type: 'go-to', place: 'bracken' }, tokens[0]), { ok: false, text: 'Leave your seat or land first.' })
+  state.players[0].seat = null
+  state.farmWork.barrow = { handler: arrived.id }
+  assert.deepEqual(game.playtestEvent({ type: 'go-to', place: 'cairn-summit' }, tokens[0]), { ok: false, text: 'Set down the barrow first.' })
 })

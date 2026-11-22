@@ -21,7 +21,8 @@ export function createPerfReadout(scene: Scene, engine: AbstractEngine) {
   let next = 0
   scene.onAfterRenderObservable.add(() => {
     const now = performance.now()
-    if (now < next) return
+    // Wait for the first measured frames before reporting.
+    if (now < next || !Number.isFinite(engine.getFps())) return
     next = now + refreshMs
     const reading = {
       fps: Math.round(engine.getFps()),
