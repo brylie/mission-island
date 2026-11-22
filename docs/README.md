@@ -26,6 +26,8 @@ Mission Island is a third-person co-op game about two people making a home on a 
 | What is a species, habitat or term in the real world, and what does the game simplify? | [Field guide](field-guide/README.md): [Highwood plants](field-guide/highwood-plants.md), [Highwood habitats](field-guide/highwood-habitats.md) and the [glossary](field-guide/glossary.md) |
 | How are Highwood trees and shrubs generated, and what budgets apply? | [Highwood species](highwood-species.md) and its Workbench study |
 | How do we grow trees, synthesise sound or keep thousands of objects fast, and why do those techniques work? | [Craft](craft/README.md): [procedural flora](craft/procedural-flora.md), [rendering, distance and level of detail](craft/rendering-and-detail.md), and links to surface and shader studies |
+| Which way is +x, how long is an island day, and how do seeds work? | [Conventions](conventions.md) |
+| What might the game wrongly teach, what don't we know yet, and where do our facts come from? | [Misconceptions](misconceptions.md), [open questions](open-questions.md) and the [sources register](sources.yaml) |
 | How do we keep what we learn? | [Knowledge Keeper skill](../.agents/skills/mission-island-knowledge-keeper/SKILL.md) |
 | How can I check the idea with another player? | [Fresh-save playtest through the first shared payout](playtests/starter-island-first-payout.md), [LAN play and saves](../README.md#play-on-your-local-network), [Workbench guide](workbench.md), and [Saltwind traversal and performance checks](saltwind-qa.md) |
 | Why did we choose this, or where should a new idea go? | [Design decisions and open questions](design/decisions.md) |

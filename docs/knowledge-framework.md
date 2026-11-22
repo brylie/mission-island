@@ -90,6 +90,17 @@ Use one shape per kind of subject. Don't invent a new one per topic.
 6. **Every review handover lands.** Each expert reviewer's reasoning becomes a claim on a page.
 7. **No orphans.** Every subject in the world has an entry, and every page is reachable from the handbook.
 
+## Shared pages
+
+- [**Sources register**](sources.yaml) records every source behind a real claim: URL, access date, tier, a short supporting quote, and whether anyone has opened it.
+- **Reference photos** used to shape a model live beside that model's data, with licence and author. For example, `src/assets/geometry/tree-references.ts` holds the Highwood species references, and the Workbench's **Show reference photo** opens them.
+- [**Conventions**](conventions.md) defines axes, units, island time and seeds once.
+- [**Misconceptions**](misconceptions.md) gathers what play might wrongly teach, and how we counter it.
+- [**Open questions**](open-questions.md) indexes sources to find, work planned and questions to answer.
+- **Further reading** on a page is at most five works, none used as a source, each noted for a *young reader*, *teacher* or *researcher*.
+
+The [Knowledge Keeper](../.agents/skills/mission-island-knowledge-keeper/SKILL.md) defines what **verified** means for each document type, and how web search may be used. Search only to check and source claims, never to invent them.
+
 ## Prior art
 
 Each piece of this framework borrows from an established practice. The combination is our own.

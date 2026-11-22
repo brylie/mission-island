@@ -62,7 +62,7 @@ Ask each reviewer to return:
 - a verdict of **ready**, **revise** or **rethink**;
 - findings ranked by severity, with a file and line or a reproducible view;
 - a list of what it checked in the running game versus only read in code. A reviewer that cannot observe its claim should name the control, seed or readout that would let it;
-- a short **knowledge handover**: the techniques, real-world facts, design reasons and lessons its review used or discovered, with sources where it has them. Each reviewer is an expert, and this is how its expertise reaches the [craft pages](../../../docs/craft/README.md), the [field guide](../../../docs/field-guide/README.md) and the design docs. Pass every handover to the Knowledge Keeper.
+- a short **knowledge handover**: the techniques, real-world facts, design reasons and lessons its review used or discovered. Write it as tagged claims, one per line: *claim · register (real, island, build, rationale) · source, or "from the code at `<commit>`" · suggested page*. Each reviewer is an expert, and this is how its expertise reaches the [craft pages](../../../docs/craft/README.md), the [field guide](../../../docs/field-guide/README.md) and the design docs. Pass every handover to the Knowledge Keeper.
 
 ## 5. Apply findings and repeat
 

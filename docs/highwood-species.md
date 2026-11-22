@@ -1,6 +1,6 @@
 # Highwood species references
 
-Each **Compare** link opens **Ecology → Plants → Highwood species** at the default development port. It shows four mature seeds of the species, with a Wikimedia Commons photograph in the reference pane. The link's photo description says what to compare. On another host or port, change the address before `workbench.html`. To review age or exposure, change them in the inspector and the photo stays in place. Check credit and licence on the file page before reusing a photo outside the Workbench.
+The photos are stored with the models in `src/assets/geometry/tree-references.ts`, which is the source of truth. In the study, **Show reference photo** opens the photo for the chosen species and exposure. Each **Compare** link opens **Ecology → Plants → Highwood species** at the default development port. It shows four mature seeds of the species, with a Wikimedia Commons photograph in the reference pane. The link's photo description says what to compare. On another host or port, change the address before `workbench.html`. To review age or exposure, change them in the inspector and the photo stays in place. Check credit and licence on the file page before reusing a photo outside the Workbench.
 
 | Species | Workbench | Photograph, licence, author |
 | --- | --- | --- |

@@ -27,6 +27,7 @@ A checklist for adding a species to the Highwood generator, or changing how an e
    - a licensed reference photo.
 7. **Document it:**
    - a [field guide](../field-guide/highwood-plants.md) entry, with a divergence note for anything simplified;
+   - its reference photos in `src/assets/geometry/tree-references.ts`, with licence, author and what to compare. A test requires at least one per species, and **Show reference photo** in the Workbench opens it;
    - a [references](../highwood-species.md) row;
    - placement rules in [Highwood habitats](../field-guide/highwood-habitats.md).
 8. **Verify.** Run the [verify skill](../../.agents/skills/verify/SKILL.md), which includes the Art Director, Natural Systems and Knowledge Keeper reviews.

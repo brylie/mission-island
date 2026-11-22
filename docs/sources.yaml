@@ -1,0 +1,71 @@
+# Sources register for the Mission Island knowledge base.
+# One entry per source. Pages link to entries by id. Rules: .agents/skills/mission-island-knowledge-keeper/references/sources.md
+# opened: false means the link is cited but no one has yet read it to check the claim. Treat those claims as unsourced.
+# tier: 1 recognised body or peer-reviewed · 2 primary · 3 reputable secondary · 4 community or encyclopedia
+
+- id: wikipedia-osborne-fire-finder
+  title: Osborne Fire Finder
+  publisher: Wikipedia
+  url: https://en.wikipedia.org/wiki/Osborne_Fire_Finder
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  tier: 4
+  region: United States
+  note: Read by an agent, which summarised it. The article cites US Forest Service technical notes, which returned an error and still need checking as the primary source.
+  supports:
+    - claim: A single lookout's fire finder gives a bearing; the fire's position is normally fixed by crossing bearings from two or more towers, with a single-tower distance estimate as a rough fallback.
+      quote: To add on the next read; the agent's summary is not a quote.
+      used-in: explainers/wildfire.md#fighting-a-fire
+
+- id: naturescot-caledonian-pinewood
+  title: Caledonian pinewood
+  publisher: NatureScot
+  url: https://www.nature.scot/landscapes-and-habitats/habitat-types/woodland-habitats/caledonian-pinewood
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: Scotland
+  supports:
+    - claim: General pinewood structure, Scots pine ecology, and pinewood wildlife.
+      used-in: field-guide/highwood-plants.md#sources, explainers/wildfire.md#sources
+
+- id: woodland-trust-a-z
+  title: A–Z of British trees
+  publisher: Woodland Trust
+  url: https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: United Kingdom
+  supports:
+    - claim: General species background for the Highwood trees and shrubs; its individual species pages are the sources to cite.
+      used-in: field-guide/highwood-plants.md#sources, explainers/bracken-slopes.md#sources, explainers/wet-woodland.md#sources
+
+- id: naturescot-muirburn-licensing
+  title: Muirburn licensing
+  publisher: NatureScot
+  url: https://www.nature.scot/professional-advice/protected-areas-and-species/licensing/muirburn-licensing
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: Scotland
+  supports:
+    - claim: Muirburn in Scotland is licensed by NatureScot under the Wildlife Management and Muirburn (Scotland) Act 2024, with stricter rules on peat 40 cm or deeper, and allowed only in a defined season.
+      used-in: explainers/wildfire.md#burning-on-purpose-muirburn
+
+- id: gwct-muirburn-2026
+  title: "Muirburn: 2026/27 season and licences"
+  publisher: Game and Wildlife Conservation Trust
+  url: https://www.gwct.org.uk/blogs/news/2026/september/muirburn-2026-27-season-and-licences/
+  archived:
+  accessed:
+  opened: false
+  tier: 3
+  region: Scotland
+  supports:
+    - claim: Muirburn licensing in practice for the 2026–27 season.
+      used-in: explainers/wildfire.md#sources
