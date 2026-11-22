@@ -10,7 +10,7 @@ import { saltwindFeatures } from '../src/second-island/site-features.ts'
 import { discoveryWalks, landmarks, lowerLake, picnicLedge, sites } from '../src/second-island/sites.ts'
 import { fallsX, fallsY, groundHeight, nearestRoad, surfaceHeight, waterHeight } from '../src/second-island/terrain.ts'
 import { starterFeatures } from '../src/worlds/starter/sites.ts'
-import { coastRadius, fernfallSection, maxWadeDepth, meadowFoot, meadowHill, shoreProfile, streamX, tidePool, walkingHeight, waterDepth, waterLevel } from '../src/terrain.ts'
+import { coastalSurface, fernfallSection, maxWadeDepth, meadowFoot, meadowHill, streamX, tidePool, walkingHeight, waterDepth, waterLevel } from '../src/terrain.ts'
 import { birdActivity, phenomenonStrength, schoolAvoidance } from '../src/wildlife-motion.ts'
 import { beach, buildings, crateSize, extinguisherStarts, forest, jumpSpeed, spawns, truckStart } from '../src/world.ts'
 
@@ -54,7 +54,7 @@ test('site signatures leave dry approaches and preserve their discovery IDs', ()
   }
 })
 
-test('the original Driftwood shore walk stays dry and preserves the Shellglass discovery ID', () => {
+test('the Driftwood shore walk stays dry and preserves the Shellglass discovery ID', () => {
   const driftwood = footpaths.find(({ name }) => name === 'Driftwood shore walk')
   for (const point of walkSamples(driftwood.points)) {
     assert.equal(waterDepth(point), 0)
@@ -86,9 +86,9 @@ test('the tide pool holds wadeable water behind a dry sill, beside the Splitston
   }
   const strand = footpaths.find((p) => p.name === 'Splitstone strand')
   for (const trail of [strand, footpaths.find((p) => p.name === 'Driftwood shore walk')]) {
-    const sandEdge = shoreProfile[2].radius
-    assert.ok(walkSamples(trail.points).every((p) => coastRadius(p) <= sandEdge), trail.name)
-    assert.ok(sandEdge - coastRadius(trail.points.at(-1)) < 0.005, trail.name)
+    assert.ok(coastalSurface(trail.points[0]).sand < 0.3, trail.name)
+    assert.ok(coastalSurface(trail.points.at(-1)).sand > 0.55, trail.name)
+    assert.ok(walkSamples(trail.points).every((p) => canWalkAt(p, 0.35, waterLevel)), trail.name)
   }
   // Cross the open sand and enter the cleft from its southern opening.
   for (const p of walkSamples([...strand.points, { x: 50.5, z: -25.4 }, { x: 53.5, z: -22.5 }, splitstone])) assert.ok(canWalkAt(p, 0.35, waterLevel))
