@@ -20,7 +20,9 @@
     "quality:push": "npm run lint:full && npm run check:unused && npm run build",
     "audit": "npm audit --audit-level=high",
     "build": "npm run check && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sim": "SIM_COMMIT=$(git rev-parse --short HEAD 2>/dev/null) node --experimental-strip-types scripts/sim.mjs",
+    "capture": "node --experimental-strip-types scripts/capture.mjs"
   },
   "dependencies": {
     "@babylonjs/addons": "^9.37.1",
@@ -37,6 +39,7 @@
     "eslint": "^10.15.0",
     "eslint-plugin-security": "^3.0.1",
     "knip": "^5.88.1",
+    "playwright": "^1.62.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.73.0",
     "vite": "^8.0.0"

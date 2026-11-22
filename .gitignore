@@ -160,3 +160,7 @@ vite.config.ts.timestamp-*
 *.local
 .DS_Store
 .mission-island/
+
+# Iteration tooling output
+captures/
+sims/

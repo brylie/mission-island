@@ -1,3 +1,4 @@
+import { createDevTools } from '../dev-tools'
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera'
 import type { Engine } from '@babylonjs/core/Engines/engine'
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color'
@@ -118,6 +119,7 @@ function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Ent
 
 export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values, reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>, field?: FieldSite) {
   const scene = new Scene(engine)
+  const dev = createDevTools(scene, canvas)
   const biome = entry.id === 'biome'
   try {
     scene.clearColor = Color4.FromHexString('#1b292aff')
@@ -244,6 +246,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         layout?.update(delta, time)
         subject.forEach(applyWireframe)
         layout?.meshes().forEach(applyWireframe)
+        dev?.frame({ islandTime: Number(settings.clockStart ?? 0) + time }, time)
         scene.render()
       },
       setLighting(preset: LightingPreset) {
@@ -262,6 +265,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       },
       setCamera,
       dispose() {
+        dev?.dispose()
         layout?.dispose()
         camera.detachControl()
         scene.dispose()
