@@ -77,7 +77,7 @@ export function measureShown(subject: readonly AbstractMesh[]): Bounds | undefin
 // parts of it, such as a crate in a cargo trial. The bounds are measured again whenever the settings
 // change (including the first frame) and whenever playback rests on a new pose, paused or scrubbed,
 // and the figure follows them. While playback runs they hold still, so the figure never shuffles,
-// and the footer says the bounds come from the last resting pose.
+// and the footer marks the bounds as a playback snapshot.
 export function trackSubjectSize(subject: readonly AbstractMesh[], start: Bounds, figure?: ReturnType<typeof createScaleFigure>) {
   let bounds = start
   let measuredFor = ''
@@ -89,7 +89,7 @@ export function trackSubjectSize(subject: readonly AbstractMesh[], start: Bounds
       const extent = bounds.max.subtract(bounds.min)
       return [extent.x, extent.z, extent.y] as const
     },
-    // True while playback runs, so the bounds are a snapshot of the last resting pose.
+    // True while playback runs, so the bounds are a snapshot rather than the live pose.
     held: () => held,
     // `pose` is the clock time while playback is paused, and undefined while it runs.
     // Returns whether the footer needs rewriting.
@@ -146,12 +146,12 @@ export function writeBounds(dimensions?: readonly [number, number, number], crew
   size.replaceChildren()
   if (!dimensions) return
   const [width, depth, height] = dimensions.map(metres)
-  const when = held ? ', last paused pose' : ''
+  const when = held ? ', playback snapshot' : ''
   const shown = document.createElement('span')
   shown.ariaHidden = 'true'
   shown.textContent = `bounds ${width} × ${depth} × ${height} m (w × d × h${when})${crew ? ` · crew ${metres(crew)} m` : ''}`
   const spoken = document.createElement('span')
   spoken.className = 'sr-only'
-  spoken.textContent = `Bounds of everything shown${held ? ' at the last paused pose' : ''}: width ${width} m, depth ${depth} m, height ${height} m.${crew ? ` Crew member ${metres(crew)} m tall.` : ''}`
+  spoken.textContent = `Bounds of everything shown${held ? ', as a snapshot taken during playback' : ''}: width ${width} m, depth ${depth} m, height ${height} m.${crew ? ` Crew member ${metres(crew)} m tall.` : ''}`
   size.append(shown, spoken)
 }
