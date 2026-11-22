@@ -20,6 +20,7 @@ One list of everything we know we don't know: research to do, sources to find, a
 - **Archive failures.** Four Wildlife Trusts pages couldn't be saved to the Wayback Machine. Try again later or from a browser.
 - **Moved pages' shapes.** The wildfire, bracken slopes and wet woodland pages still use their own headings, not the framework's process and place shapes. Reshape them in a later edit, and fix any anchors that change.
 - **A broken link from before this work.** `docs/roadmap.md` links to `architecture.md#flatbed-and-future-fire-truck`, a heading that no longer exists. `node scripts/check-doc-links.mjs` reports it.
+- **Two alder quotes not found.** `node scripts/check-source-quotes.mjs` couldn't find the Woodland Trust alder quotes about siskins and otters on the page; the fetcher probably paraphrased them. Check them on the page, or find the actual wording.
 - **Quote checks.** A person needs to check each `quote-via: fetcher` quote in the sources register against its page, before those claims can be marked checked.
 - **Archiving.** No source has an archived copy yet. Saving pages to the Wayback Machine sends their URLs to an outside service, so it needs the maintainer's go-ahead.
 

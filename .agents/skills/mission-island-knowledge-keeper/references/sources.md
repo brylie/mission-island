@@ -59,7 +59,8 @@ Add one entry per source to [`docs/sources.yaml`](../../../../docs/sources.yaml)
 ```
 
 - **Keep quotes short.** That respects copyright and makes the claim quick to check.
-- **Archive each source when you add it,** where you're able to, and record the archived URL.
+- **Archive each source when you add it** with the Wayback Machine's Save Page Now (`https://web.archive.org/save/<url>`; the maintainer agreed to this on 2026-11-22), and record the archived URL. Its form is `https://web.archive.org/web/<14-digit timestamp>/<url>`. Log failures in the open questions index rather than retrying in a loop.
+- **Check the quote word for word** with `node scripts/check-source-quotes.mjs --write`. Then a person only has to judge whether the quote supports the claim.
 - **Record every existing citation,** including those added before these rules. Set `opened: false` for any no one has checked. That is honest, and it's the to-do list.
 
 ## Status of a claim

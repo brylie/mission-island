@@ -28,7 +28,7 @@ Many wet woods stay as carr for a very long time, held by a high water table, re
 
 ## Why wet woods matter
 
-- **Life.** Wet, decaying wood is good habitat for invertebrates (`wt-wet-woodland`). Alder roots make nest sites for otters, and siskins, redpolls and goldfinches eat alder seed (`woodtrust-alder`).
+- **Life.** Wet, decaying wood is good habitat for invertebrates (`wt-wet-woodland`). Alder roots make nest sites for otters, and siskins, redpolls and goldfinches eat alder seed (`woodtrust-alder`; the quotes for these two weren't found word for word on the page, so a person needs to check them).
 - **Water.** Wet woods slow floodwater, trap silt and filter water flowing into streams and lochs.
 - **Banks.** Alder roots bind riverbanks against erosion.
 

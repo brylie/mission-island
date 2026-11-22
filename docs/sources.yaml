@@ -8,7 +8,7 @@
   title: Osborne Fire Finder
   publisher: Wikipedia
   url: https://en.wikipedia.org/wiki/Osborne_Fire_Finder
-  archived:
+  archived: https://web.archive.org/web/20261122203509/https://en.wikipedia.org/wiki/Osborne_Fire_Finder
   accessed: 2026-11-22
   opened: true
   tier: 4
@@ -23,7 +23,7 @@
   title: The Osborne Firefinder
   publisher: US Forest Service
   url: https://www.fs.usda.gov/t-d/pubs/html/03511311/03511311.html
-  archived:
+  archived: https://web.archive.org/web/20261122210050/https://www.fs.usda.gov/t-d/pubs/html/03511311/03511311.html
   accessed:
   opened: false
   tier: 1
@@ -37,7 +37,7 @@
   title: Fire Tower Study for the Adirondack Park
   publisher: New York State Department of Environmental Conservation
   url: https://extapps.dec.ny.gov/docs/lands_forests_pdf/ftowerstudy.pdf
-  archived:
+  archived: https://web.archive.org/web/20261122210106/https://extapps.dec.ny.gov/docs/lands_forests_pdf/ftowerstudy.pdf
   accessed:
   opened: false
   tier: 1
@@ -51,7 +51,7 @@
   title: How to report wildfires
   publisher: Scottish Fire and Rescue Service
   url: https://www.firescotland.gov.uk/outdoors/wildfires/how-to-report-wildfires/
-  archived:
+  archived: https://web.archive.org/web/20261122210028/https://www.firescotland.gov.uk/outdoors/wildfires/how-to-report-wildfires/
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -61,19 +61,22 @@
   supports:
     - claim: Someone who finds a wildfire should move away from the fire, smoke and vegetation, and call 999 for the fire service.
       quote: "Position yourself away from the fire, smoke, and any vegetation."
+      quote-match: exact (2026-11-22)
       used-in: field-guide/processes/wildfire.md#if-you-find-a-fire
     - claim: Members of the public shouldn't try to fight a wildfire.
       quote: "Leave the firefighting to us, it's what we are trained to do."
+      quote-match: exact (2026-11-22)
       used-in: field-guide/processes/wildfire.md#if-you-find-a-fire
     - claim: A wildfire can keep smouldering or spread underground.
       quote: "The fire can smoulder or spread underground."
+      quote-match: exact (2026-11-22)
       used-in: field-guide/processes/wildfire.md#if-you-find-a-fire
 
 - id: naturescot-caledonian-pinewood
   title: Caledonian pinewood
   publisher: NatureScot
   url: https://www.nature.scot/landscapes-and-habitats/habitat-types/woodland-habitats/caledonian-pinewood
-  archived:
+  archived: https://web.archive.org/web/20261122203546/https://www.nature.scot/landscapes-and-habitats/habitat-types/woodland-habitats/caledonian-pinewood
   accessed:
   opened: false
   tier: 1
@@ -86,7 +89,7 @@
   title: A–Z of British trees
   publisher: Woodland Trust
   url: https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/
-  archived:
+  archived: https://web.archive.org/web/20261122203615/https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/
   accessed:
   opened: false
   tier: 1
@@ -99,7 +102,7 @@
   title: Muirburn licensing
   publisher: NatureScot
   url: https://www.nature.scot/professional-advice/protected-areas-and-species/licensing/muirburn-licensing
-  archived:
+  archived: https://web.archive.org/web/20261122203654/https://www.nature.scot/professional-advice/protected-areas-and-species/licensing/muirburn-licensing
   accessed:
   opened: false
   tier: 1
@@ -112,7 +115,7 @@
   title: "Muirburn: 2026/27 season and licences"
   publisher: Game and Wildlife Conservation Trust
   url: https://www.gwct.org.uk/blogs/news/2026/september/muirburn-2026-27-season-and-licences/
-  archived:
+  archived: https://web.archive.org/web/20261122203722/https://www.gwct.org.uk/blogs/news/2026/september/muirburn-2026-27-season-and-licences/
   accessed:
   opened: false
   tier: 3
@@ -137,16 +140,18 @@
   supports:
     - claim: "Red squirrel, crossbill (including the Scottish crossbill), crested tit, wood ants and capercaillie live in Caledonian pinewood."
       quote: "check the deep crowns for crossbills (including the endemic Scottish crossbill"
+      quote-match: unfetchable (2026-11-22)
       used-in: field-guide/highwood-habitats.md#pinewood-interior
     - claim: "Crested tits use holes in standing deadwood."
       quote: "Crested tits like holes in standing deadwood"
+      quote-match: unfetchable (2026-11-22)
       used-in: field-guide/highwood-habitats.md#pinewood-interior
 
 - id: woodtrust-caledonian
   title: "Caledonian forest and native conifer woods"
   publisher: Woodland Trust
   url: https://woodlandtrust.org.uk/trees-woods-and-wildlife/habitats/caledonian-forest-and-native-conifer-woods/
-  archived:
+  archived: https://web.archive.org/web/20261122203814/https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/habitats/caledonian-forest-and-native-conifer-woods/
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -155,13 +160,14 @@
   supports:
     - claim: "Crested tits flourish in Caledonian pinewood."
       quote: "crested tits flourish in this habitat"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/highwood-habitats.md#pinewood-interior
 
 - id: fc-rides-edges
   title: "Nature's hidden havens: rides, edges and glades"
   publisher: Forestry Commission
   url: https://forestrycommission.blog.gov.uk/2025/07/28/natures-hidden-havens-rides-edges-and-glades
-  archived:
+  archived: https://web.archive.org/web/20261122203941/https://forestrycommission.blog.gov.uk/2025/07/28/natures-hidden-havens-rides-edges-and-glades/
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -170,13 +176,14 @@
   supports:
     - claim: "Woodland edges and glades are valuable habitats, for songbirds and for butterflies in sunny clearings."
       quote: "Open glades allow sunlight to reach the ground and create warm patches for butterflies"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/highwood-habitats.md#edges-and-gaps
 
 - id: fls-deer-management
   title: "Deer management"
   publisher: Forestry and Land Scotland
   url: https://forestryandland.gov.scot/what-we-do/about-us/corporate-information/deer-management
-  archived:
+  archived: https://web.archive.org/web/20261122204011/https://forestryandland.gov.scot/about-us/key-documents/our-strategies/deer-management
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -185,13 +192,14 @@
   supports:
     - claim: "Deer browse young trees."
       quote: "Deer will also eat young trees, killing or deforming them"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/highwood-habitats.md#edges-and-gaps
 
 - id: woodtrust-juniper
   title: "Juniper"
   publisher: Woodland Trust
   url: https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/juniper/
-  archived:
+  archived: https://web.archive.org/web/20261122204039/https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/juniper/
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -200,16 +208,18 @@
   supports:
     - claim: "Juniper has declined across the UK."
       quote: "has been declining throughout the UK in range and abundance"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
     - claim: "Browsing by deer and rabbits is partly to blame for juniper's decline."
       quote: "partially attributed to browsing of foliage by deer and rabbits"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
 
 - id: plantlife-lowland-juniper
   title: "Saving England's lowland juniper"
   publisher: Plantlife
   url: https://www.plantlife.org.uk/our-work/saving-englands-lowland-juniper/
-  archived:
+  archived: https://web.archive.org/web/20261122204115/https://www.plantlife.org.uk/our-work/saving-englands-lowland-juniper/
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -218,6 +228,7 @@
   supports:
     - claim: "Juniper regeneration needs early-successional, open ground."
       quote: "Early successional habitat suitable for Juniper regeneration has been created"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
 
 - id: wt-heather
@@ -233,13 +244,14 @@
   supports:
     - claim: "Heather attracts nectar-feeding insects."
       quote: "attract all kinds of nectar-loving insects"
+      quote-match: unfetchable (2026-11-22)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
 
 - id: woodtrust-heathland
   title: "Heathland and moorland"
   publisher: Woodland Trust
   url: https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/habitats/heathland-and-moorland/
-  archived:
+  archived: https://web.archive.org/web/20261122204157/https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/habitats/heathland-and-moorland/
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -248,13 +260,14 @@
   supports:
     - claim: "Heath supports ground-nesting birds."
       quote: "home to specialist insects and ground-nesting birds"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
 
 - id: rspb-heathland
   title: "Heathland"
   publisher: RSPB
   url: https://www.rspb.org.uk/birds-and-wildlife/habitats/heathland
-  archived:
+  archived: https://web.archive.org/web/20261122204235/https://www.rspb.org.uk/birds-and-wildlife/habitats/heathland
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -263,13 +276,14 @@
   supports:
     - claim: "Heath supports common lizards."
       quote: "basking reptiles, such as Common lizards"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
 
 - id: jncc-h4060
   title: "Alpine and Boreal heaths (H4060)"
   publisher: JNCC
   url: https://sac.jncc.gov.uk/habitat/H4060
-  archived:
+  archived: https://web.archive.org/web/20261122204303/https://sac.jncc.gov.uk/habitat/H4060/
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -278,6 +292,7 @@
   supports:
     - claim: "Exposed heath holds low, wind-pruned plants, with lichens. Describes montane heath, higher than the island's ridge."
       quote: "low-growing or prostrate owing to exposure to high winds"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/highwood-habitats.md#exposed-ridge-toward-windstone-ridge
 
 - id: wt-meadow-pipit
@@ -293,13 +308,14 @@
   supports:
     - claim: "Meadow pipits nest on moorland, heath and rough grassland."
       quote: "a common nesting bird of moorland, heathland and rough grassland"
+      quote-match: unfetchable (2026-11-22)
       used-in: field-guide/highwood-habitats.md#exposed-ridge-toward-windstone-ridge
 
 - id: woodtrust-alder
   title: "Alder"
   publisher: Woodland Trust
   url: https://woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/alder
-  archived:
+  archived: https://web.archive.org/web/20261122204346/https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/alder
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -308,12 +324,15 @@
   supports:
     - claim: "Alder roots have nitrogen-fixing nodules that condition the soil."
       quote: "The roots have nitrogen-fixing nodules, conditioning the soil"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
     - claim: "Siskin, redpoll and goldfinch eat alder seeds."
       quote: "the seeds are eaten by the siskin, redpoll and goldfinch"
+      quote-match: not-found (2026-11-22)
       used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
     - claim: "Otters nest among alder roots."
       quote: "Alder roots make the perfect nest sites for otters."
+      quote-match: not-found (2026-11-22)
       used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
 
 - id: wt-wet-woodland
@@ -329,13 +348,14 @@
   supports:
     - claim: "Wet, decaying wood is good habitat for invertebrates."
       quote: "Wet, decaying wood and seepages make good habitat for invertebrates"
+      quote-match: unfetchable (2026-11-22)
       used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
 
 - id: tfl-bracken
   title: "Bracken species profile"
   publisher: Trees for Life
   url: https://treesforlife.org.uk/forest/species-profiles/bracken/
-  archived:
+  archived: https://web.archive.org/web/20261122204440/https://treesforlife.org.uk/into-the-forest/trees-plants-animals/plants/bracken/
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -344,16 +364,18 @@
   supports:
     - claim: "Bracken fronds contain toxic compounds."
       quote: "fronds contain toxic compounds"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/places/bracken-slopes.md
     - claim: "Bracken and dog violets growing together on sunny hillsides are important habitat for the pearl-bordered fritillary."
       quote: "The combination of bracken and dog violets growing together"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/places/bracken-slopes.md
 
 - id: scotgov-bracken-2025
   title: "Bracken presence and management practices on Scottish grassland farms, 2025"
   publisher: Scottish Government
   url: https://www.gov.scot/publications/bracken-presence-management-practices-scottish-grassland-farms-2025/pages/2/
-  archived:
+  archived: https://web.archive.org/web/20261122204507/https://www.gov.scot/publications/bracken-presence-management-practices-scottish-grassland-farms-2025/pages/2/
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -362,13 +384,14 @@
   supports:
     - claim: "Bracken is directly toxic to livestock."
       quote: "direct toxicity from bracken"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/places/bracken-slopes.md#bracken-and-people
 
 - id: lakedistrict-lyme
   title: "Lyme disease"
   publisher: Lake District National Park
   url: https://lakedistrict.gov.uk/?p=12647
-  archived:
+  archived: https://web.archive.org/web/20261122204541/https://lakedistrict.gov.uk/explore/visitor-facilities/lyme-disease/
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -377,13 +400,14 @@
   supports:
     - claim: "People are most at risk of picking up ticks brushing through tall vegetation, especially bracken."
       quote: "most at risk of picking up ticks when brushing through tall vegetation, especially bracken"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/places/bracken-slopes.md#bracken-and-people
 
 - id: bto-whinchat
   title: "Whinchat BirdFacts"
   publisher: British Trust for Ornithology
   url: https://bto.org/understanding-birds/birdfacts/whinchat
-  archived:
+  archived: https://web.archive.org/web/20261122204614/https://www.bto.org/learn/about-birds/birdfacts/whinchat
   accessed: 2026-11-22
   opened: true
   quote-via: fetcher
@@ -392,4 +416,5 @@
   supports:
     - claim: "Whinchats nest in grass tussocks and use bracken as perches."
       quote: "tussocks for nest sites"
+      quote-match: exact (2026-11-22)
       used-in: field-guide/places/bracken-slopes.md#how-bracken-changes-a-place
