@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { createGame } from '../server/game.ts'
+import { createPlaytestMetrics } from '../server/playtest-metrics.ts'
 import { islandSaveFile } from '../server/save.ts'
 import { aerialSurveys, rackBrief, surveyClue } from '../src/aviation.ts'
 import { startRidgeFlight, stepRidgeFlight } from '../src/simulation/ridge-flight.ts'
@@ -46,7 +47,9 @@ function flySurvey(h, pilot) {
 }
 
 test('both players see the meadow mark and the second pilot can survey without a checkout', (t) => {
-  const h = setup(t, { players: [player(0, ridgeLaunch), player(1, besideSign)], arrange: (save) => {
+  const rows = []
+  const metrics = createPlaytestMetrics((row) => rows.push(row))()
+  const h = setup(t, { metrics, players: [player(0, ridgeLaunch), player(1, besideSign)], arrange: (save) => {
     delete save.world.aviation
   } })
   const a = h.join(tokens[0]), b = h.join(tokens[1])
@@ -100,6 +103,18 @@ test('both players see the meadow mark and the second pilot can survey without a
   assert.deepEqual([...reported].sort(), [...a.state.aviation.aerial].sort())
   assert.equal(notice(b, 'surveyed').length, 1)
   assert.deepEqual([b.state.aviation.qualified, b.state.aviation.surveyed, h.game.crewCoins], [true, true, 0])
+  assert.deepEqual(rows.filter(({ event, mechanic }) => event === 'mechanic-use' && mechanic === 'gliding')
+    .map(({ slot, repeat, relatedWork }) => [slot, repeat, relatedWork]), [
+    [0, false, ['ridge:checkout']],
+    [1, false, ['ridge:survey']],
+    [1, true, ['ridge:aerial-log']],
+  ])
+  assert.deepEqual(rows.filter(({ event, mechanic }) => event === 'gameplay-outcome' && mechanic === 'gliding')
+    .map(({ slot, outing, result }) => [slot, outing, result]), [
+    [0, 'checkout', 'qualified'],
+    [1, 'survey', 'surveyed'],
+    [1, 'free', 'landed'],
+  ])
 })
 
 function steerTowards(h, pilot, target, until) {

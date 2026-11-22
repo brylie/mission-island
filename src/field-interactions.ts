@@ -65,6 +65,15 @@ function visibleFrom(player: Player, target: Anchor, metres: number) {
 
 type World = Pick<Snapshot, 'farmWork' | 'journal' | 'juniper' | 'weather'>
 
+// An inspection can go out of reach before it is handled. Its choice still names the same subject.
+export function fieldSubject(state: Pick<World, 'juniper'>, subject: number): OutingId | undefined {
+  if (subject < 0) return undefined
+  if (subject < fixed.length) return fixed[subject]?.record
+  const slot = subject - fixed.length
+  if (Math.floor(slot / hareRecordSlots) >= state.juniper.hares.length) return undefined
+  return slot % hareRecordSlots ? 'sight:hare/sheltering' : 'sight:hare/grazing'
+}
+
 export function fieldInteractions(state: World, player: Player): FieldInteraction[] {
   if (!player.grounded || player.onBed || player.truckSurface || player.seat || player.sleeping || player.swimming
     || state.farmWork.barrow?.handler === player.id) return []

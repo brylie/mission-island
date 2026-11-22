@@ -1,22 +1,22 @@
 import { swellFavor, type SwellAction } from '../src/gate-swell.ts'
 import type { Snapshot } from '../src/protocol.ts'
-import type { CrewNotice } from './crew.ts'
+import type { CrewBroadcast } from './crew.ts'
 import type { InteractionHandlers } from './interactions.ts'
 
 // Host side of Wren's swollen gate. Each check swing records what the crew saw for both players, so
 // whoever reports back to Wren knows whether the gate caught. Planing clears the finding until the next swing.
-export function createGateSwell(state: Snapshot, notifyCrew: (message: CrewNotice) => void) {
+export function createGateSwell(state: Snapshot, notifyCrew: CrewBroadcast) {
   const interactions = {
-    'check-swing'() {
+    'check-swing'(member) {
       const caught = state.gateRepair.swelling === 'swollen'
       state.gate = { open: true, closePending: false }
       state.residents.wren.checked = caught ? 'fault' : 'sound'
-      notifyCrew({ type: 'gate-step', step: caught ? 'caught' : 'clear' })
+      notifyCrew({ type: 'gate-step', step: caught ? 'caught' : 'clear' }, member.player.id)
     },
-    plane() {
+    plane(member) {
       state.gateRepair.swelling = 'planed'
       state.residents.wren.checked = null
-      notifyCrew({ type: 'gate-step', step: 'planed' })
+      notifyCrew({ type: 'gate-step', step: 'planed' }, member.player.id)
     },
   } satisfies InteractionHandlers<SwellAction>
 

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { createGame } from '../server/game.ts'
+import { createPlaytestMetrics } from '../server/playtest-metrics.ts'
 import { islandSaveFile } from '../server/save.ts'
 import { interactRequest } from '../src/actions.ts'
 import { fenceZ, gateFavor, gateway, onBench, toolboxItem, wrenAt, wrenLendsToolbox } from '../src/gate-repair.ts'
@@ -48,9 +49,9 @@ function afterFirstRepair(save, { record = {}, swelling, established = false } =
   Object.assign(save.world.items[toolboxId], { x: gateway.x + 1, z: fenceZ - 1.2, holder: null })
 }
 
-function crew(t, options = {}, goods = { fish: 2, carrots: 2 }) {
+function crew(t, options = {}, goods = { fish: 2, carrots: 2 }, metrics) {
   const players = [player(0, byWren, { y: walkingHeight(byWren), goods: { ...goods } }), player(1, atTheGate, { y: walkingHeight(atTheGate) })]
-  const h = setup(t, { players, arrange: (save) => afterFirstRepair(save, options) })
+  const h = setup(t, { players, metrics, arrange: (save) => afterFirstRepair(save, options) })
   return { h, a: h.join(tokens[0]), b: h.join(tokens[1]) }
 }
 
@@ -60,7 +61,8 @@ function act(h, client, action, subject) {
 }
 
 test('Wren asks about the swollen gate, and the crew checks, planes and reports it honestly', (t) => {
-  const { h, a, b } = crew(t, { established: true })
+  const recorded = []
+  const { h, a, b } = crew(t, { established: true }, undefined, createPlaytestMetrics((event) => recorded.push(event))())
   assert.ok(distance(wrenAt(a.state), mendingBench) < 2, 'Wren is at work')
   assert.match(favorLine(wren, a.state), /swollen the gate/)
   act(h, a, 'accept-favor', WREN)
@@ -94,6 +96,9 @@ test('Wren asks about the swollen gate, and the crew checks, planes and reports 
   assert.deepEqual(a.state.residents.wren, { ...blankRecord(), trust: 4, kept: [...establishedFavors, 'wren-swell'] })
   assert.equal(a.state.gateRepair.swelling, undefined, 'the gate swings clear again')
   assert.match(favorLine(wren, a.state), /fish pie/, 'Wren moves on to the next favor')
+  assert.deepEqual(recorded.filter(({ event }) => event === 'wren-report').map(({ result, slot, trustChange }) => [result, slot, trustChange]), [
+    ['honest', 0, 0],
+  ])
 })
 
 test('a false report breaks the promise once, both players learn of it, and it survives a restart', (t) => {
@@ -169,6 +174,8 @@ test('a declined favor, a disconnect mid-job and a failed swing never cost trust
 })
 
 test('normal favors earn Wren’s loan, a breach revokes it, and both players can earn it back', (t) => {
+  const recorded = []
+  const newMetricsRun = createPlaytestMetrics((event) => recorded.push(event))
   const root = mkdtempSync(join(tmpdir(), 'mission-island-trust-arc-'))
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const file = islandSaveFile(root, 5173)
@@ -177,7 +184,7 @@ test('normal favors earn Wren’s loan, a breach revokes it, and both players ca
     player(0, bench, { goods: { fish: 0, carrots: 3 }, materials: { timber: repairQuantity, stone: 0 } }),
     player(1, atTheGate, { goods: { fish: 2, carrots: 2 } }),
   ]
-  let h = setup(t, { players, arrange(save) {
+  let h = setup(t, { players, metrics: newMetricsRun(), arrange(save) {
     const toolbox = { ...save.world.items[toolboxId] }
     afterFirstRepair(save)
     save.world.items[toolboxId] = toolbox
@@ -227,7 +234,7 @@ test('normal favors earn Wren’s loan, a breach revokes it, and both players ca
   step(a, 'pick-up', toolboxId)
   assert.ok(onBench(toolboxItem(b.state)), 'the host rejects a stale free pickup')
   file.write(h.game.snapshotForSave())
-  h = setup(t, { saved: file.load() })
+  h = setup(t, { saved: file.load(), metrics: newMetricsRun() })
   b = h.join(tokens[1])
   assert.match(conversationLines(wren, b.state)[0], /You told me it swung clear/)
   a = h.join(tokens[0])
@@ -264,6 +271,31 @@ test('normal favors earn Wren’s loan, a breach revokes it, and both players ca
   for (const client of [a, b]) assert.equal(pickup(client)?.label, 'Pick up the toolbox')
   step(b, 'pick-up', toolboxId)
   assert.equal(toolboxItem(a.state).holder, b.player.id)
+
+  assert.deepEqual(recorded.filter(({ event }) => event === 'wren-report').map(({ result, slot, trustChange }) => [result, slot, trustChange]), [
+    ['broken', 0, -2],
+  ])
+  assert.deepEqual(recorded.filter(({ event }) => event === 'gate-step').map(({ step, slot }) => [step, slot]), [
+    ['caught', 1],
+    ['caught', 1],
+    ['planed', 0],
+    ['clear', 0],
+  ])
+  assert.deepEqual(recorded.filter(({ event }) => event === 'favor-paid').map(({ favor, slot, trustChange, restored }) => [favor, slot, trustChange, restored]), [
+    [repairSupplyFavor.id, null, 1, false],
+    [benchLunchFavor, 0, 1, false],
+    ['wren-swell', 1, 0, false],
+    ['wren-pie', 1, 1, false],
+    ['wren-soup', 0, 2, true],
+  ])
+  const readings = recorded.filter(({ event }) => event === 'wren-state')
+  assert.ok(readings.some(({ trust, freeLoan, toolboxHolder }) => trust === 3 && freeLoan && toolboxHolder === 0))
+  assert.ok(readings.some(({ standing, freeLoan, swollenGateLoan }) => standing === 'wronged' && !freeLoan && swollenGateLoan))
+  assert.ok(readings.some(({ standing, freeLoan }) => standing === 'wary' && !freeLoan))
+  assert.deepEqual(readings.slice(-2).map(({ standing, freeLoan, toolboxHolder }) => [standing, freeLoan, toolboxHolder]), [
+    ['steady', true, null],
+    ['steady', true, 1],
+  ])
 })
 
 test('the ledger rules hold on their own: one breach at a time, amends only on the broken favor', () => {

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { createGame } from '../server/game.ts'
+import { createPlaytestMetrics } from '../server/playtest-metrics.ts'
 import { islandSaveFile } from '../server/save.ts'
 import { actionHint } from '../src/actions.ts'
 import { interactions } from '../src/interaction-options.ts'
@@ -38,10 +39,11 @@ function beside(id, hour = 10) {
   return [-0.9, 0.9].map((side, index) => player(index, { x: spot.x + side, z: spot.z + 0.6 }, { y: walkingHeight(spot) }))
 }
 
-function startAfterShift(t, id, { hour = 10, arrange, goods = [] } = {}) {
+function startAfterShift(t, id, { hour = 10, arrange, goods = [], metrics } = {}) {
   const players = beside(id, hour).map((entry, index) => ({ ...entry, goods: { fish: 0, carrots: 0, ...goods[index] } }))
   const h = setup(t, {
     players,
+    metrics,
     arrange(save) {
       Object.assign(save.world, { mission: 'complete', fire: 0 })
       save.islandTime = at(hour)
@@ -96,7 +98,9 @@ test('Mara takes a porch hand-in, then a late crewmate cannot talk to her throug
   const root = mkdtempSync(join(tmpdir(), 'mission-island-household-'))
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const file = islandSaveFile(root, 5173)
-  const { h, a, b } = startAfterShift(t, 'mara', { hour: 18.5, goods: [{}, { carrots: 2 }] })
+  const recorded = []
+  const run = createPlaytestMetrics((event) => recorded.push(event))
+  const { h, a, b } = startAfterShift(t, 'mara', { hour: 18.5, goods: [{}, { carrots: 2 }], metrics: run() })
   choose(a, 'accept-favor', 'mara')
   h.advance()
   const save = h.game.snapshotForSave()
@@ -105,7 +109,7 @@ test('Mara takes a porch hand-in, then a late crewmate cannot talk to her throug
   choose(b, 'hand-over', 'mara')
   h.advance()
   assert.equal(a.state.residents.mara.trust, 1)
-  const resumed = setup(t, { saved: file.load() })
+  const resumed = setup(t, { saved: file.load(), metrics: run() })
   const late = resumed.join(tokens[1])
   const spot = residentAt(byId('mara').schedule, late.state)
   assert.deepEqual([spot.indoors, spot.windowLit], [true, true])
@@ -119,6 +123,10 @@ test('Mara takes a porch hand-in, then a late crewmate cannot talk to her throug
   assert.equal(late.state.residents.mara.trust, 0)
   const notHome = /Mara is inside.*small fishing dock from 06:00/
   assert.match(favorGuides(starterResidents, late.state, late.player).find(({ title }) => title === 'Carrots for Mara’s supper').next, notHome)
+  const payments = recorded.filter(({ event, resident }) => event === 'favor-paid' && resident === 'mara')
+  assert.deepEqual(payments.map(({ run, favor, residentStop, slot, trustChange }) => [run, favor, residentStop, slot, trustChange]), [
+    [1, 'mara-supper', 'home', 1, 1],
+  ])
 })
 
 test('both crewmates turn in and see households resume from the same dawn', (t) => {
