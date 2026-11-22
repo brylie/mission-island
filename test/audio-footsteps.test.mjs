@@ -2,10 +2,10 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { carrierShift, countFootfalls, groundTravel } from '../src/audio/gait.ts'
 import { walkGait } from '../src/island-render-pose.ts'
-import { footGround, sandRadius } from '../src/audio/surface.ts'
+import { footGround } from '../src/audio/surface.ts'
+import { coastPoint, coastalSurface } from '../src/terrain.ts'
 
 const footSurface = (point, player) => footGround(point, player)?.surface ?? null
-import { coastPoint, coastRadius } from '../src/terrain.ts'
 import { dockEndZ, harbor, harborDock } from '../src/world.ts'
 
 const walker = { seat: null, grounded: true, swimming: false }
@@ -48,13 +48,17 @@ test('dock boards win over terrain and the harbor trail is gravel', () => {
   assert.equal(footSurface(harbor, { ...walker, truckSurface: 'bed' }), 'boards')
 })
 
-test('sand starts where the rendered beach does', () => {
-  const angle = 5.3
-  const meadowEdge = coastPoint(angle, sandRadius - 0.006)
-  const beachEdge = coastPoint(angle, sandRadius + 0.006)
-  assert.ok(coastRadius(meadowEdge) < sandRadius && coastRadius(beachEdge) >= sandRadius)
-  assert.notEqual(footSurface(meadowEdge, walker), 'sand')
-  assert.equal(footSurface(beachEdge, walker), 'sand')
+test('footsteps follow the local beach cover through meadow, broad sand, dunes and exposed rock', () => {
+  const meadow = coastPoint(5.28, 0.83)
+  const broadBeach = coastPoint(5.2, 0.88)
+  const dune = { x: 39.5, z: -25.7 }
+  const exposed = coastPoint(5.78, 0.985)
+  assert.ok(coastalSurface(broadBeach).sand > 0.6)
+  assert.ok(coastalSurface(dune).sand > 0.8)
+  assert.ok(coastalSurface(exposed).rock > 0.65)
+  for (const point of [broadBeach, dune]) assert.equal(footSurface(point, walker), 'sand')
+  assert.notEqual(footSurface(meadow, walker), 'sand', 'the meadow behind the beach is not sand')
+  assert.equal(footSurface(exposed, walker), 'fallback', 'exposed shore rock is bare ground')
 })
 
 test('no footstep sounds when airborne, seated or swimming', () => {

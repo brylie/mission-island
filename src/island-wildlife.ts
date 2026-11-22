@@ -5,6 +5,7 @@ import { juniperFern, sampleUnderstoryBlade, understoryBladeCount, understoryGro
 import { createGullFlock, createThermalGulls } from './gull-flock'
 import { starterGullPerches } from './gull-sites'
 import { createCoastalFish } from './school-fish'
+import { createSandpipers } from './sandpipers'
 import { driftwoodShallows, type DriftwoodFrame } from './simulation/driftwood-school'
 import { starterBatFlock, starterOffshoreSchools, starterUnderstorySites, starterWildflowerMeadows } from './worlds/starter/layout/wildlife'
 import { onBeachTowel } from './worlds/starter/sites'
@@ -13,7 +14,8 @@ import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
 import { distanceToRoads, distanceToRoute, footpaths } from './routes'
 import { islandTrees, seededRandom } from './scenery'
-import { coastPoint, coastRadius, groundHeight, grove, pool, waterDepth, waterLevel } from './terrain'
+import { coastPoint, coastRadius, coastalSurface, groundHeight, grove, pool, waterDepth, waterLevel } from './terrain'
+import { beachHasSand } from './worlds/starter/beach-landforms'
 import { createFlocks, createSchools } from './wildlife'
 import type { WildlifeFrame } from './wildlife'
 
@@ -37,7 +39,7 @@ export function createWildflowers(meshes: MeshFactory) {
   for (const [x, z] of patches) {
     for (let i = 0; i < samplesPerPatch; i++) {
       const point = { x: x + (random() - half) * patchWidthM, z: z + (random() - half) * patchDepthM }
-      if (coastRadius(point) > inlandLimit || onBeachTowel(point)) continue
+      if (coastRadius(point) > inlandLimit || onBeachTowel(point) || beachHasSand(coastalSurface(point))) continue
       const y = groundHeight(point)
       const angle = random() * Math.PI
       const height = stemHeight.minimum + random() * stemHeight.variation
@@ -75,23 +77,26 @@ export function createUnderstory(meshes: MeshFactory) {
   const ferns: Point[] = []
   const plants: UnderstoryPlant[] = []
   for (const habitat of [
-    { ...juniperFern, kind: 'fern' as const, x: grove.x + juniper.groveOffsetX, z: grove.z + juniper.groveOffsetZ, radius: juniper.radiusM },
-    { ...mirrorPoolRushes, kind: 'rushes' as const, x: pool.x, z: pool.z, radius: mirrorPool.radiusM },
-    { ...driftwoodMarram, kind: 'marram' as const, x: driftwood.x, z: driftwood.z, radius: driftwood.radiusM },
-  ]) {
+    { ...juniperFern, kind: 'fern', x: grove.x + juniper.groveOffsetX, z: grove.z + juniper.groveOffsetZ, radius: juniper.radiusM, samples: samplesPerSite, ring, dune: false },
+    { ...mirrorPoolRushes, kind: 'rushes', x: pool.x, z: pool.z, radius: mirrorPool.radiusM, samples: samplesPerSite, ring, dune: false },
+    { ...driftwoodMarram, kind: 'marram', ...driftwood, radius: driftwood.radiusM, ring: { innerRatio: 0, widthRatio: 1 }, dune: true },
+  ] as const) {
     const random = seededRandom(habitat.seed)
     const positions: number[] = []
-    for (let i = 0; i < samplesPerSite; i++) {
+    for (let i = 0; i < habitat.samples; i++) {
       const angle = random() * fullTurn
-      const radius = habitat.radius * (ring.innerRatio + random() * ring.widthRatio)
+      const radius = habitat.radius * (habitat.ring.innerRatio + random() * habitat.ring.widthRatio)
       const point = { x: habitat.x + radius * Math.cos(angle), z: habitat.z + radius * Math.sin(angle) }
-      if (onBeachTowel(point) || waterDepth(point) > maximumPlantWaterDepthM || distanceToRoads(point) < roadClearanceM
+      const height = groundHeight(point)
+      if (onBeachTowel(point) || height < waterLevel - maximumPlantWaterDepthM || distanceToRoads(point) < roadClearanceM
         || footpaths.some(({ points, width }) => distanceToRoute(point, points) < width * half + pathEdgeClearanceM)) continue
+      if (habitat.dune && random() > coastalSurface(point, height).duneGrass * habitat.density) continue
       if (habitat.seed === juniperFern.seed) ferns.push(point)
       plants.push({ ...point, kind: habitat.kind })
-      const origin = { ...point, y: groundHeight(point) + understoryGroundOffset }
+      const origin = { ...point, y: height + understoryGroundOffset }
       const scale = plantMinimumScale + random() * plantScaleSpread
-      for (let leaf = 0; leaf < understoryBladeCount; leaf++) {
+      const blades = habitat.dune ? habitat.blades : understoryBladeCount
+      for (let leaf = 0; leaf < blades; leaf++) {
         positions.push(...sampleUnderstoryBlade(habitat, origin, angle, leaf, scale, random).positions)
       }
     }
@@ -124,12 +129,14 @@ export function createStarterWildlife(meshes: MeshFactory) {
   const roost = tree ? { x: tree.x, z: tree.z, y: groundHeight(tree) + tree.height * treeHeightRatio } : fallbackRoost
   const gulls = createGullFlock(meshes, starterGullPerches)
   const soaringGulls = createThermalGulls(meshes, liftSites, starterGullPerches.length)
+  const sandpipers = createSandpipers(meshes)
   const flocks = createFlocks(meshes, [{ center, landing: roost, roost, range, color, count, bat: true }])
-  return (frame: WildlifeFrame, school: DriftwoodFrame | undefined) => {
+  return (frame: WildlifeFrame, school: DriftwoodFrame | undefined, walkers: readonly Point[]) => {
     driftwood(frame, school)
     schools(frame)
     flocks(frame)
     gulls(frame)
     soaringGulls(frame)
+    sandpipers(frame, walkers)
   }
 }

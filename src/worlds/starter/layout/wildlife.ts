@@ -10,9 +10,20 @@ export const starterWildflowerMeadows = {
 export const starterUnderstorySites = {
   juniper: { groveOffsetX: 2, groveOffsetZ: 1, radiusM: 12 },
   mirrorPool: { radiusM: 16 },
-  driftwood: { x: 37, z: -32, radiusM: 4.4 },
+  driftwood: { x: 39, z: -26.0, radiusM: 5.8, samples: 175, density: 0.52 },
   samplesPerSite: 105,
   ring: { innerRatio: 0.68, widthRatio: 0.5 },
+} as const
+
+export const driftwoodSandpipers = {
+  seed: 1806,
+  count: 6,
+  firstBearing: 5.296,
+  bearingSpacing: 0.021,
+  bearingWander: 0.008,
+  inlandRadius: 0.986,
+  crossShoreWander: 0.006,
+  crossShoreSpacing: 0.003,
 } as const
 
 export const starterOffshoreSchools = {

@@ -56,7 +56,7 @@ Some jobs end with telling the resident how it went. If Wren asks whether the ga
 
 Find Mara at the small fishing dock during the day. Talk to her for walking directions to Shellglass Tide Pool and Juniper Hollow. Either player can open **Field journal → Mara’s outing** to reread the clues. You can split up and compare entries when you get back.
 
-Press **E** when the prompt offers to inspect a detail or record an observation. At Driftwood, look for pink foxglove bells above the sand and a line of weed and shells where the track fades. Shellglass has a mended tide staff and small conical limpets clamped to rock. At Juniper, the trail cairn leads to low white clover with three leaflets and pale flower heads. Stand back to watch brown hares lower their heads to graze. During heavy rain, look for a hare crouching under a pine or beside a fallen trunk.
+Press **E** when the prompt offers to inspect a detail or record an observation. At Driftwood, look for pink foxglove bells on the dune slope and a line of weed and shells farther east near Shellglass. Shellglass has a mended tide staff and small conical limpets clamped to rock. At Juniper, the trail cairn leads to low white clover with three leaflets and pale flower heads. Stand back to watch brown hares lower their heads to graze. During heavy rain, look for a hare crouching under a pine or beside a fallen trunk.
 
 Each new journal record gives the crew one observation XP. If you have already discovered Shellglass or Juniper, reading its landmark completes an outing step using the existing place entry. Grazing and sheltering are separate observations. Talk to Mara again after the first outing record for her advice about the rain.
 

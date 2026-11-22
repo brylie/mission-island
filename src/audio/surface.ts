@@ -2,16 +2,12 @@ import { groundSurfaces } from '../assets/audio/ground.ts'
 import type { Player } from '../protocol.ts'
 import { distanceToRoads, distanceToRoute, footpaths, walkways } from '../routes.ts'
 import { islandTrees, northernRegions } from '../scenery.ts'
-import { coastRadius, shoreProfile, waterDepth } from '../terrain.ts'
+import { coastalSurface, waterDepth } from '../terrain.ts'
+import { beachHasSand } from '../worlds/starter/beach-landforms.ts'
 import { onDock, type Point } from '../world.ts'
-import { shoreStations } from '../worlds/starter/layout/terrain.ts'
 import type { FootSurface } from './footstep-recipes.ts'
 
 const halfWidthDivisor = 2
-
-// The rendered beach band begins where the meadow blend ends, and darkens where the sand stays wet.
-export const sandRadius = shoreProfile[2].radius
-const wetSandRadius = shoreStations.wetSand.radius
 
 type Ground = { surface: FootSurface, damp: boolean }
 
@@ -38,8 +34,10 @@ export function groundSurface(point: Point): FootSurface {
   if (depth > groundSurfaces.shallows.minDepthMetres && depth < groundSurfaces.shallows.maxDepthMetres) return 'shallows'
   if (onPath(point, 'gravel')) return 'gravel'
   if (paved(point)) return 'pavement'
-  if (coastRadius(point) >= sandRadius) return 'sand'
-  if (onPath(point, 'desire')) return 'fallback'
+  // Sand follows the shaped beaches and dunes; exposed shore rock and worn paths are bare ground.
+  const coast = coastalSurface(point)
+  if (beachHasSand(coast)) return 'sand'
+  if (coast.rock > coast.sand || onPath(point, 'desire')) return 'fallback'
   return wooded(point) ? 'litter' : 'grass'
 }
 
@@ -52,5 +50,5 @@ export function footGround(point: Point, player: Pick<Player, 'seat' | 'grounded
   const surface = groundSurface(point)
   const { damp } = groundSurfaces
   const soaked = surface === 'pavement' || surface === 'boards' ? rain >= damp.pavingRain : rain >= damp.rain
-  return { surface, damp: soaked || (surface === 'sand' && coastRadius(point) >= wetSandRadius) }
+  return { surface, damp: soaked || (surface === 'sand' && coastalSurface(point).wet >= damp.wetSand) }
 }

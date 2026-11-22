@@ -1,6 +1,6 @@
 import { blend, clamp, fractalNoise1D, wrap } from '../../math/noise.ts'
 import { island } from '../../world.ts'
-import { coastlineLayout } from './layout/terrain.ts'
+import { beachWidthLayout, coastlineLayout } from './layout/terrain.ts'
 
 export { starterCoastSeed } from './layout/terrain.ts'
 
@@ -55,24 +55,52 @@ function smooth(value: number) {
 // surveyed shelves. Fade back into the shaped coast over the next metres.
 const protectedShore = coastlineLayout.protectedShelves.map(({ bearing, halfWidth, fade }) => ({ along: coastDistance(bearing), halfWidth, fade }))
 const landforms = coastlineLayout.landforms.map((feature) => ({ ...feature, along: coastDistance(feature.bearing) }))
-const bands = coastlineLayout.noiseBands.map(({ wavelength, amplitude }) => ({ cells: Math.round(perimeter / wavelength), amplitude }))
+function periodicBands(bands: readonly { wavelength: number, amplitude: number }[]) {
+  return bands.map(({ wavelength, amplitude }) => ({ cells: Math.round(perimeter / wavelength), amplitude }))
+}
+
+const coastBands = periodicBands(coastlineLayout.noiseBands)
+const beachBands = periodicBands(beachWidthLayout.noiseBands)
+const openShore = distances.map((along) => {
+  let influence = 1
+  for (const { along: centre, halfWidth, fade } of protectedShore) {
+    influence *= smooth((distanceAlongCoast(along, centre) - halfWidth) / fade)
+  }
+  return influence
+})
+const landformOffsets = distances.map((along) => {
+  let offset = 0
+  for (const { along: centre, halfWidth, displacement } of landforms) {
+    offset += displacement * smooth(1 - distanceAlongCoast(along, centre) / halfWidth)
+  }
+  return offset
+})
+
+function coastSample(angle: number) {
+  return wrap(angle / turn, 1) * resolution
+}
+
+function interpolate(values: readonly number[], sample: number) {
+  const index = Math.floor(sample)
+  return blend(values[index], values[index + 1], sample - index)
+}
 
 export function createStarterCoast(seed: number) {
-  const offsets = distances.map((along) => {
-    let influence = 1
-    for (const { along: centre, halfWidth, fade } of protectedShore) {
-      influence *= smooth((distanceAlongCoast(along, centre) - halfWidth) / fade)
-    }
-    let shape = 0
-    for (const { along: centre, halfWidth, displacement } of landforms) {
-      shape += displacement * smooth(1 - distanceAlongCoast(along, centre) / halfWidth)
-    }
-    return influence * (shape + fractalNoise1D(along / perimeter, seed, bands))
+  const offsets = distances.map((along, i) =>
+    openShore[i] * (landformOffsets[i] + fractalNoise1D(along / perimeter, seed, coastBands)))
+  return (angle: number) => baselineScale(angle) + interpolate(offsets, coastSample(angle)) / rayLength(angle)
+}
+
+export function createStarterBeachWidth(seed: number) {
+  const { meanM, minM, maxM, landformInfluence } = beachWidthLayout
+  const widths = distances.map((along, i) => {
+    const change = fractalNoise1D(along / perimeter, seed, beachBands)
+    // The signed landforms identify projecting points and sheltered indentations.
+    return Math.min(maxM, Math.max(minM, meanM + change - landformOffsets[i] * landformInfluence))
   })
-  return (angle: number) => {
-    const sample = wrap(angle / turn, 1) * resolution
-    const index = Math.floor(sample)
-    const offset = blend(offsets[index], offsets[index + 1], sample - index)
-    return baselineScale(angle) + offset / rayLength(angle)
+  // The dock and the hand-shaped Driftwood coast use their surveyed margins.
+  return (angle: number, surveyedWidthM: number) => {
+    const sample = coastSample(angle)
+    return blend(surveyedWidthM, interpolate(widths, sample), interpolate(openShore, sample))
   }
 }
