@@ -9,7 +9,7 @@ import { createCargoPhysics, type LearnerFleet } from '../src/simulation/cargo.t
 import type { CrewCommand } from './commands.ts'
 import { createDrivingPractice } from './driving-practice.ts'
 import { learnerVehicleIds, type LearnerVehicleId } from '../src/learner-vehicles.ts'
-import { createCrewRoster, disconnect, stopped, type CrewMember, type CrewNotice } from './crew.ts'
+import { createCrewRoster, disconnect, stopped, type CrewBroadcast, type CrewMember, type CrewNotice } from './crew.ts'
 import { jump, prepareCrewMotion, walkCrew } from './crew-motion.ts'
 import { createEquipment, setAppearance } from './equipment.ts'
 import { advanceIsland } from './island-clock.ts'
@@ -24,6 +24,7 @@ import type { IslandSave } from './save.ts'
 import { farmingQualified } from '../src/farm-orders.ts'
 import { stepSkiff } from './skiff.ts'
 import { crewInputTimeoutMs } from './host-time.ts'
+import type { PlaytestMetricsRun } from './playtest-metrics.ts'
 
 const hostTicksPerSecond = 30
 const juniperUpdateIntervalTicks = 3
@@ -37,6 +38,7 @@ type GameOptions = {
   playtest?: TrialRun
   save?: IslandSave
   checkpoint?: () => void
+  metrics?: PlaytestMetricsRun
 }
 
 // The truck carries its driver's input and records driven distance; the skiff moves with its rowers.
@@ -81,6 +83,14 @@ function stepVehicles(
   return { before, still }
 }
 
+function stepWildlife(state: Snapshot, driftwood: ReturnType<typeof createDriftwoodSchool>, juniper: ReturnType<typeof createJuniperHabitat>, tick: number) {
+  state.driftwood = driftwood.step(state.players, state.skiff)
+  // Animal motion follows real simulation ticks, even when the crew sleeps through the night.
+  if (tick % juniperUpdateIntervalTicks === 0) {
+    state.juniper = juniper(tick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping))
+  }
+}
+
 // A checkpoint can arrange the ferry stage, the truck and loose crates, so physics follows the arranged world.
 function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>, trial: T) {
   physics.placeFerry(state)
@@ -90,21 +100,28 @@ function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoP
   return trial
 }
 
-export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
+function observeCrewNotices(state: Snapshot, notifyCrew: CrewBroadcast, metrics?: PlaytestMetricsRun): CrewBroadcast {
+  if (!metrics) return notifyCrew
+  return (notice, slot) => {
+    notifyCrew(notice)
+    metrics.notice(state, notice, slot)
+  }
+}
+
+export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest, metrics }: GameOptions = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat(), driftwood = createDriftwoodSchool(clock() >>> 0)
-  const world = restoreIsland(physics, juniper, driftwood.frame(), save)
-  const { state, growth } = world
+  const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save)
   const trial = playtest && settleTrial(state, physics, prepareTrial(state, playtest))
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
   const freight = createFreight(crew, state, clock, checkpoint)
-  const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
-  const journal = createJournal(state, checkpoint)
-  const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint)
+  const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint, metrics?.gameplay)
+  const journal = createJournal(state, checkpoint, metrics?.gameplay)
+  const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint, metrics?.gameplay)
   const { interactions, gate, residents, farm }
-    = createGameInteractions(world, physics, { crew, orders, freight, journal, clock, checkpoint })
-  const aviation = createAviation(state, crew.notifyAll, checkpoint)
+    = createGameInteractions({ state, growth }, physics, { notifyCrew: observeCrewNotices(state, crew.notifyAll, metrics), orders, freight, journal, clock, checkpoint, metrics: metrics?.gameplay })
+  const aviation = createAviation(state, crew.notifyAll, checkpoint, metrics?.gameplay)
   const practice = createDrivingPractice(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
@@ -113,7 +130,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       crew.expireCrew(now)
       return state
     }
-    advanceIsland(state, growth, tickSeconds, checkpoint)
+    const skippedFrom = advanceIsland(state, growth, tickSeconds, checkpoint)
     crew.expireCrew(now)
     gate.tick()
     residents.tick()
@@ -137,11 +154,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       farm.tick(player)
     }
     updateHeldItems(state)
-    state.driftwood = driftwood.step(state.players, state.skiff)
-    // Animal motion follows real simulation ticks, even when the crew sleeps through the night.
-    if (++wildlifeTick % juniperUpdateIntervalTicks === 0) {
-      state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping))
-    }
+    stepWildlife(state, driftwood, juniper, ++wildlifeTick)
+    metrics?.sample(state, skippedFrom, { members, now })
     return state
   }
 
@@ -213,6 +227,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     const member = crew.join(token, notify)
     if (typeof member === 'string') return { type: member } as const
     if (trial && !state.playtest?.started) trial.place(member.player)
+    else metrics?.sample(state)
     return {
       type: 'joined' as const,
       id: member.player.id,
@@ -225,6 +240,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         gate.releasePin(member.player.id)
         farm.recover(member.player.id)
         aviation.interrupt(member)
+        if (!trial || state.playtest?.started) metrics?.sample(state)
       },
     }
   }

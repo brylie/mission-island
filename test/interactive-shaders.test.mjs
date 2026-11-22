@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { interactiveStudies, shaderGroups } from '../src/interactive-shaders/catalog.ts'
 import { skiffStudyPose, wakeStrength } from '../src/interactive-shaders/skiff-wake.ts'
-import { coastPoint, coastRadius, maxWadeDepth, waterDepth } from '../src/terrain.ts'
+import { coastPoint, coastalSurface, maxWadeDepth, waterDepth } from '../src/terrain.ts'
 import { offset } from '../src/world.ts'
 import { onBeachTowel } from '../src/worlds/starter/sites.ts'
 import { workspaceOf } from '../src/workbench/library.ts'
@@ -27,7 +27,7 @@ test('shore review subjects sit on traversable sand, wadeable shallows, and open
   const at = (id) => interactiveStudies.find((study) => study.id === id).field.point
   const sand = at('sand-footprints')
   assert.equal(waterDepth(sand), 0)
-  assert.ok(coastRadius(sand) > 0.925 && coastRadius(sand) < 1)
+  assert.ok(coastalSurface(sand).sand > 0.65)
   assert.equal(onBeachTowel(sand), false)
   for (const id of ['wading-rings', 'seabed-caustics']) {
     assert.ok(waterDepth(at(id)) > 0.15 && waterDepth(at(id)) < maxWadeDepth, id)

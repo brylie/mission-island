@@ -11,4 +11,4 @@ export const understoryBladeGeometry = {
 } as const
 
 export const mirrorPoolRushes = { name: 'Mirror Pool rushes', height: 1.25, bend: 0.17, color: '#7b9362', seed: 2833 } as const
-export const driftwoodMarram = { name: 'Driftwood marram', height: 0.45, bend: 0.24, color: '#a3a677', seed: 3301 } as const
+export const driftwoodMarram = { name: 'Driftwood marram', height: 0.45, bend: 0.24, color: '#b0b382', seed: 3301, widthScale: 0.24, blades: 11 } as const

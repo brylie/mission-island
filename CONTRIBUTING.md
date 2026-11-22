@@ -52,6 +52,34 @@ Agents can use the same scenario IDs from the shell. For example, to try fishing
 MISSION_ISLAND_CHECKPOINT=dock-fishing MISSION_ISLAND_CREW_SIZE=1 npm run playtest
 ```
 
+### Record gameplay metrics
+
+Enable the host log for a two-player household playtest with the following command. Use `MISSION_ISLAND_CHECKPOINT=wren-trust` to start with Wren, or switch checkpoints from **Live playtest**. For a regular saved game, set `MISSION_ISLAND_PLAYTEST_METRICS=1` when starting `npm run dev`.
+
+```sh
+MISSION_ISLAND_PLAYTEST_METRICS=1 MISSION_ISLAND_CHECKPOINT=household-evening MISSION_ISLAND_CREW_SIZE=2 npm run playtest
+```
+
+The host prints the location of a local JSON Lines file in `.mission-island/metrics/`. Each row records the run number, elapsed milliseconds since the crew started, and the island clock. Restarting or switching checkpoints starts a new run in the same file. The first rows of a run establish the baseline.
+
+- `crew` gives the connected seat numbers. The log uses seat numbers for attributable actions and omits player names, session tokens and network addresses.
+- `household` records location, indoor status and window-light changes. A `sleep-skip` gives the start and end of a clock jump. The log resumes at dawn without filling in the skipped hours.
+- `favor-accepted` and `favor-paid` record shared favor progress. A payment includes the acting seat when available, the resident's location at payment, coins, Trust change and whether it restored standing. `gate-step`, `wren-report` and `wren-state` record swing and planing results, honest or broken reports, and changes to Wren's Trust, standing, loan eligibility and toolbox holder.
+
+For job choices, repeat play, and co-op downtime, start an ordinary test save with `MISSION_ISLAND_PLAYTEST_METRICS=1 MISSION_ISLAND_SAVE=gameplay-playtest npm run dev`. Let players choose freely after the starter shift. Ask what they wanted to do again and when they felt stuck. Checkpoints can reproduce specific mechanics and are identified in `run-start`.
+
+| Rows | How to read them |
+| --- | --- |
+| `job-options`, `job-choice` | Host-eligible Harbor board choices at an approach or change in availability, and choices sent to the board handler. Ines’s accepted orders have a `produce:` prefix. A refused board choice names the gameplay reason. An eligible choice can exist before the player opens the board. |
+| `job-progress`, `job-resumed` | Hand-in progress and completion by contributing seat. For a job started in the same run, compare its accepted choice with the first contribution and with completion. A resumed job carries its saved progress. |
+| `mechanic-use` | Episodes of valid fishing, cultivation, rowing, gliding, and manual field observations. A seat gets a new episode after 45 seconds without a tracked use of that mechanic or when matching work changes. Each launched flight starts an episode, and the log records any remaining aerial survey work. Mara’s unrecorded leads count as related work after the crew hears them. A repeat with empty `relatedWork` is a candidate for voluntary play. Check the player's account to learn why they returned. |
+| `co-op-activity` | A per-seat timeline while at least two players are connected, sampled every 250 ms. It describes roles such as rowing or riding, equipment and actions such as a cast or barrow use, and quiet states. Movement flags distinguish riding or carrying from sitting or holding still. Read the duration up to the next state or `co-op-ended`. |
+| `gameplay-outcome`, `gameplay-recovery` | Fishing and flight results, field observation feedback, barrow returns and recalls, and respawns. A recovery pairs an observed setback with a matching success by the same connected seat and includes the elapsed time and number of setbacks. A cast with no bite is logged as an outcome. |
+
+The log records host-observed activity. A quiet seat may be reading, watching, coordinating aloud, or taking a break. Menus, conversations between players, and the reason for a pause are outside the host's view. Episode and recovery histories restart when that seat disconnects.
+
+Use the timestamps alongside the two players' observations in [the playtest issue](https://github.com/brylie/mission-island/issues/52). The rows describe host state. Record what each device displayed and what each player noticed during the session.
+
 ### Add a scenario for a job, mechanic or field test
 
 1. Define a [Scenario](server/scenarios/scenario.ts) alongside the [harbor examples](server/scenarios/harbor.ts). Give it a stable ID, a menu title and its island. Implement `placePlayer` to establish each seat’s position, heading and equipment. Use the seat ID for repeatable co-op roles. The host can call placement again before the crew is ready, so make it safe to repeat.

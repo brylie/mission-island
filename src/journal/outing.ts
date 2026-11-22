@@ -15,7 +15,7 @@ export type OutingId = keyof typeof outingSubjects
 export const outingIds = Object.keys(outingSubjects) as OutingId[]
 
 export const fieldLeads = [
-  'Shellglass. Walk Harbor Trail up from the dock and follow the road to the striped market awning. Take Beach Trail past the farm to Driftwood. Where the worn shore track fades into sand, follow the wrack east to my mended tide staff.',
+  'Shellglass. Walk Harbor Trail up from the dock and follow the road to the striped market awning. Take Beach Trail past the farm to Driftwood. When the track fades at the grassy dunes, cross the open sand to the east. Look for the wrack below my mended tide staff.',
   'Juniper Hollow. Take the worn path between the crew cottages and follow it inland to the low cairn. Keep along the edge of the pines to a clover patch. Stand back and watch where the hares feed.',
 ] as const
 

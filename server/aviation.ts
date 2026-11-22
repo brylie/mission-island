@@ -7,6 +7,7 @@ import { distance, localPoint, offset, spawns, truckRoof, type Point, type Pose 
 import { ridgeApproach, ridgeHeading, ridgeLandingRadius, ridgeLaunch, ridgeMeadow, ridgeReturn } from '../src/worlds/starter/ridge-scout.ts'
 import { mirrorPoolWillow } from '../src/worlds/starter/sites.ts'
 import { stopPrimary, stopped, stowTool, type CrewMember, type CrewNotice } from './crew.ts'
+import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
 import { looseCargoTop } from './items.ts'
 import type { IslandSave } from './save.ts'
 
@@ -29,7 +30,7 @@ function landingResult(record: NonNullable<AviationState['flight']>, outcome: 'f
   return record.observed ? 'surveyed' : 'observation'
 }
 
-export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice) => void, checkpoint?: () => void) {
+export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice) => void, checkpoint?: () => void, metrics?: Pick<GameplayPlaytestMetrics, 'use' | 'result' | 'touch'>) {
   const aviation = state.aviation
   let flight: ReturnType<typeof startRidgeFlight> | undefined
 
@@ -62,17 +63,20 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
     if (!interaction) return false
     if (interaction === 'mark') {
       aviation.marked = true
+      metrics?.touch(player)
       return true
     }
     if (aviation.flight) return true
     if (!safeGround(ridgeLaunch)) {
       member.notify?.({ type: 'flight-result', result: 'blocked', pilotId: player.id })
+      metrics?.result(state, player, { mechanic: 'gliding', result: 'blocked', outing: nextOuting(aviation) })
       return true
     }
     resetPilot(member)
     flight = startRidgeFlight()
     aviation.flight = { pilotId: player.id, outing: nextOuting(aviation), bank: 0, pitch: 0, climbing: false, approach: false, observed: false, spotted: [] }
     Object.assign(player, flight.pilot, { grounded: false, reaching: false, throwing: false, rightHandRaised: false })
+    metrics?.use(state, player, 'gliding')
     // The checkpoint uses the pilot's recovery pose while the loan is active.
     checkpoint?.()
     return true
@@ -80,7 +84,7 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
 
   function finish(member: CrewMember, result: FlightResult, recover: boolean) {
     const { player } = member
-    const spotted = aviation.flight?.spotted ?? []
+    const { outing, spotted } = aviation.flight!
     Object.assign(player, recover ? recoveryPose(player) : landedPose(player))
     resetPilot(member)
     flight = undefined
@@ -93,6 +97,7 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
     if (aerial.length) aviation.aerial = [...aviation.aerial ?? [], ...aerial]
     checkpoint?.()
     notifyCrew({ type: 'flight-result', result, pilotId: player.id, ...aerial.length ? { aerial, recorded: aviation.aerial?.length } : {} })
+    metrics?.result(state, player, { mechanic: 'gliding', result, outing, aerialRecorded: aerial.length })
   }
 
   // Notes what the pilot has flown through or over so far on this flight.
