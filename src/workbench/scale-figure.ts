@@ -31,7 +31,7 @@ function createScaleFigure(meshes: MeshFactory, { min, extent, ground, alpha }: 
       const reach = (Math.abs(side[0]) * extent.x + Math.abs(side[1]) * extent.z) / halves + studioScaleFigure.clearance
       root = createCrew(meshes, 0).root
       root.position.set(min.x + extent.x / halves + side[0] * reach, ground, min.z + extent.z / halves + side[1] * reach)
-      // Turned toward the camera, which orbits at the entry's perspective angle.
+      // In profile, facing the subject: a clean height reference that reads as someone inspecting it.
       root.rotation.y = -alpha
       const bounds = root.getHierarchyBoundingVectors(true)
       figure = { height: bounds.max.y - bounds.min.y, ...bounds }

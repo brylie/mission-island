@@ -161,6 +161,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     const scaleFigure = scaleFigureFor(meshes, entry, field, { min: shown.min, extent, ground: groundHeight })
     const fitFigure = (visible: boolean) => framingWithFigure({ ...shown, center, size, ground: groundHeight }, scaleFigure?.(visible))
     let figureFrame = fitFigure(showFigure)
+    const subjectZoomLimit = camera.upperRadiusLimit ?? Infinity
     let focusHeight = Number(values.focusHeight ?? studioCamera.landscapeFocusHeight)
     const layout = entry.landscape
       ? createLandscapeLayout(meshes, canvas, draft, () => ({
@@ -220,7 +221,8 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     function frame(alpha: number, beta: number, fov?: number) {
       const aspect = engine.getAspectRatio(camera)
       const fit = radius * (figureFrame?.scale ?? 1) * Math.max(1, studioCamera.fit.aspect / Math.max(studioCamera.fit.minAspect, aspect))
-      camera.upperRadiusLimit = Math.max(camera.upperRadiusLimit ?? fit, fit)
+      // Widen the zoom-out limit only while the figure needs it.
+      camera.upperRadiusLimit = Math.max(subjectZoomLimit, fit)
       setCamera({ alpha, beta, fov, radius: fit, target: (figureFrame?.center ?? center).asArray() })
     }
 
