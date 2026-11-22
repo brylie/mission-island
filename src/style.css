@@ -527,3 +527,5 @@ kbd {
 #fisher-advice {
   white-space: pre-line;
 }
+
+.perf-readout { position: fixed; left: 8px; bottom: 8px; z-index: 50; padding: 3px 7px; border-radius: 4px; background: #102929d0; color: #fff3d0; font: 600 11px/1.4 ui-monospace, monospace; pointer-events: none; }

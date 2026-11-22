@@ -4,7 +4,7 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { Scene } from '@babylonjs/core/scene'
 import { fireWatchRoofBounds } from './fire-watch'
-import { fireWatchBaseHeight, groundHeight, waterLevel } from './terrain'
+import { coastBounds, fireWatchBaseHeight, groundHeight, waterLevel } from './terrain'
 import { buildings, houseRoofRise } from './world'
 import type { LookSettings } from './look-options-ui'
 import { ridgeHeading } from './worlds/starter/ridge-scout'
@@ -17,8 +17,6 @@ const rayParallelTolerance = 0.0001
 const terrainSampleCount = 16
 const rayTerrainClearance = 0.25
 const reticleReach = 18
-const overviewMinimumHalfHeight = 106
-const overviewHalfWidth = 125
 const overviewMinimumAspect = 0.3
 const followRadius = 5.92
 const vehicleRadiusIncrease = 3.38
@@ -27,13 +25,16 @@ const vehiclePitchDrop = 0.025
 const shoulderOffset = 0.38
 const vehiclePivotHeight = 1.55
 const standingPivotLift = 0.5
-const overviewHeight = 174
-const overviewZ = -120
-const overviewFocusZ = 58
-const overviewFarPlane = 680
+// The overview frames the whole coast from the south, at the angle the original
+// island view used: 174 m up and 178 m back from its focus.
+const overviewElevation = 174
+const overviewSetback = 178
+const overviewMarginM = 16
+const overviewFarReach = 3.9
+const overviewFocusFraction = 0.5
 const followFieldOfView = 0.94
 const followNearPlane = 0.12
-const followFarPlane = 620
+const followFarPlane = 1000
 const skyRed = 0.725
 const skyGreen = 0.875
 const skyBlue = 0.89
@@ -41,8 +42,8 @@ const lookYawSensitivity = 0.0034
 const lookMinimumPitch = -0.79
 const lookMaximumPitch = 0.92
 const lookPitchSensitivity = 0.0028
-const overviewFogStart = 400
-const overviewFogEnd = 500
+const overviewFogStartReach = 2.3
+const overviewFogEndReach = 2.9
 const ridgePitch = 0.14
 const trackingSnapDistanceSquared = 196
 const trackingBlendPerSecond = 8
@@ -50,8 +51,17 @@ const followTerrainClearance = 0.35
 const aimFallbackLengthSquared = 0.0025
 const aimDepth = 6
 const vehicleAimDepthIncrease = 3
-const followFogStart = 55
-const followFogEnd = 155
+const followFogStart = 45
+const followFogEnd = 900
+
+const coast = coastBounds()
+const coastSpan = { x: coast.east - coast.west, z: coast.north - coast.south }
+const overviewFocus = { x: (coast.west + coast.east) / halfWidthDivisor, z: coast.south + coastSpan.z * overviewFocusFraction }
+// Seen at this angle, the island's depth shrinks on screen by the sine of the view's pitch.
+const overviewPitchSine = overviewElevation / Math.hypot(overviewElevation, overviewSetback)
+const overviewHalfWidth = coastSpan.x / halfWidthDivisor + overviewMarginM
+const overviewMinimumHalfHeight = coastSpan.z * overviewPitchSine / halfWidthDivisor + overviewMarginM
+const overviewScale = Math.max(overviewHalfWidth, overviewMinimumHalfHeight)
 
 type RidgeView = 'preflight' | 'flight'
 
@@ -124,10 +134,11 @@ function shoulderRig(vehicleBlend: number, pitch: number) {
 }
 
 export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
-  const overview = new FreeCamera('Island overview', new Vector3(0, overviewHeight, overviewZ), scene)
+  const lift = overviewScale / overviewSetback
+  const overview = new FreeCamera('Island overview', new Vector3(overviewFocus.x, overviewElevation * lift, overviewFocus.z - overviewSetback * lift), scene)
   overview.mode = Camera.ORTHOGRAPHIC_CAMERA
-  overview.setTarget(new Vector3(0, 0, overviewFocusZ))
-  overview.maxZ = overviewFarPlane
+  overview.setTarget(new Vector3(overviewFocus.x, 0, overviewFocus.z))
+  overview.maxZ = overviewScale * overviewFarReach
 
   const follow = new FreeCamera('Third-person follow', Vector3.Zero(), scene)
   follow.fov = followFieldOfView
@@ -232,8 +243,8 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
         }
         ridgeView = undefined
         scene.activeCamera = overview
-        scene.fogStart = overviewFogStart
-        scene.fogEnd = overviewFogEnd
+        scene.fogStart = overviewScale * overviewFogStartReach
+        scene.fogEnd = overviewScale * overviewFogEndReach
         frameOverview(overview, aspect)
         return overview
       }

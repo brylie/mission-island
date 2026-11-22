@@ -36,10 +36,12 @@ test('a player who resumes in deep water can swim or respawn without losing prog
 })
 
 test('pre-coastline crew and skiff positions recover through normal save and reconnect', (t) => {
-  // Fixed positions from the old shoreline at 79faeda. One was dry ground, the
-  // other usable swimming water near the old limit. The skiff was afloat south of the island.
-  const oldShore = { x: -106.14, z: 56.93 }
-  const oldLimit = { x: -170, z: 91 }
+  // Fixed positions off the south-west shore, which the Highwood backcountry did
+  // not move. One is swimming water inside the buoys, the other is beyond them.
+  // The north-west points this test used before are now Highwood's dry land.
+  // The skiff was afloat south of the island.
+  const oldShore = { x: -81, z: -24 }
+  const oldLimit = { x: -150, z: -50 }
   assert.ok(waterDepth(oldShore) > maxWadeDepth && withinSkiffBoundary(oldShore))
   assert.equal(withinSkiffBoundary(oldLimit), false)
   const host = setup(t, {

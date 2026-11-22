@@ -1,3 +1,4 @@
+import { createPerfReadout } from './perf-readout'
 import type { Camera } from '@babylonjs/core/Cameras/camera'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
@@ -70,6 +71,7 @@ function createItemNodes(meshes: ReturnType<typeof createMeshFactory>) {
 export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) {
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
   const scene = new Scene(engine)
+  createPerfReadout(scene, engine)
   const islandCamera = createIslandCamera(scene, canvas)
   const review = createShaderReview(scene, canvas, engine, islandCamera.releaseMouse)
 

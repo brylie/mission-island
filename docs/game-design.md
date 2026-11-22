@@ -45,6 +45,10 @@ Aim for a quaint and comforting island. Give props generous shapes, warm colors,
 
 Ground the game in simple physical behavior. Crates have weight, boats drift after paddling, and the dock holds a player above the water. Keep recovery easy. Missed throws can be picked up, fishing attempts can be repeated, and crops grow while both players explore. Use shared meshes, simple geometry, and inexpensive motion for background life so the game stays responsive on the LAN.
 
+### A place with a deep history
+
+The island's geology, ecology and history are the foundation for its places, jobs and discoveries. Granite crags, glacial valleys, drowned coves, dunes, pinewoods, burn scars and the harbor each come from an era of [the island's deep history](design/island-story.md). The terrain generator follows the same story ([island generation](design/island-generation.md)), and the [biome plan](design/starter-island-biomes.md) builds its habitats on it. When a place needs a detail, a job or a discovery, ask which part of that story made it.
+
 ## An inhabited island
 
 Give each destination a detail that helps players infer who uses the place, what they do there, or how the landscape changes. At Shellglass a repaired tide staff faces the approach. At Mirror Lake someone put their basket at one end of the seat, leaving space for company. The surveyor’s mark at Tarnstep gives visitors a bearing they can still follow.

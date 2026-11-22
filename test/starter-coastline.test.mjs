@@ -6,6 +6,11 @@ import { createStarterBeachWidth, createStarterCoast, starterCoastSeed } from '.
 import { beachWidthLayout } from '../src/worlds/starter/layout/terrain.ts'
 import { onBeachTowel } from '../src/worlds/starter/sites.ts'
 import { driftwoodSandpipers } from '../src/worlds/starter/layout/wildlife.ts'
+import { joinShare } from '../src/worlds/starter/generation/protection.ts'
+import { highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
+
+// Highwood's generated land replaces the original coast across the join sector.
+const authoredCoast = (angle) => joinShare((angle * 180 / Math.PI + 360) % 360) === 0
 
 test('the seeded coast closes smoothly and preserves the silhouettes of its site shelves', () => {
   const coast = createStarterCoast(starterCoastSeed)
@@ -22,12 +27,14 @@ test('the seeded coast closes smoothly and preserves the silhouettes of its site
   for (const angle of samples) {
     assert.ok(Math.abs(coast(angle) - coast(angle + turn)) < 1e-12)
     assert.ok(Math.abs(coast(angle - 1e-5) - coast(angle + 1e-5)) < 0.001)
-    assert.ok(Math.abs(coastRadius(coastPoint(angle)) - 1) < 1e-12)
+    if (authoredCoast(angle)) assert.ok(Math.abs(coastRadius(coastPoint(angle)) - 1) < 1e-12)
+    // On Highwood the coast point is the farthest generated shore along the ray.
+    else assert.ok(Math.abs(groundHeight(coastPoint(angle)) - waterLevel) < 1, `generated shore at ${angle}`)
   }
 })
 
 test('landform waterlines and visible buoys agree with terrain and navigation', () => {
-  for (const bearing of [43, 70, 142, 210, 248, 275, 300]) {
+  for (const bearing of [43, 70, 210, 248, 275, 300]) {
     const angle = bearing * Math.PI / 180
     assert.ok(Math.abs(groundHeight(coastPoint(angle)) - waterLevel) < 1e-10)
     assert.ok(groundHeight(coastPoint(angle, 0.996)) > waterLevel)
@@ -74,7 +81,8 @@ test('exposed points and sheltered coves have different sand widths on the produ
   }
   assert.ok(sandWidth(40) > 12, 'the east cove holds a broad strand')
   assert.ok(sandWidth(70) < 2, 'the Windstone point pinches out')
-  assert.ok(sandWidth(140) > 9, 'sand collects again in the northwestern indentation')
+  // Highwood's sheltered west cove holds sand where the old north-west indentation used to.
+  assert.ok(coastalSurface({ x: highwoodPlaces.westCove.x + 8, z: highwoodPlaces.westCove.z }).sand > 0 || coastalSurface(highwoodPlaces.westCove).sand > 0)
   assert.ok(sandWidth(190) < 3, 'the west shoulder has a narrow strip')
   assert.ok(sandWidth(255) > 8, 'the beach outside the southern harbor widens')
 })

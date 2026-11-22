@@ -11,6 +11,18 @@ The intended feeling is **being useful in a place you know**. On the first morni
 | Stewardship | Let useful work leave evidence. A planned stage of the ferry repair should be visible from the depot road the next morning. | Could the crew point to what changed after their contribution? |
 | Curiosity | A worn path reaches the edge of the sand. From there the staff and the shape of the rocks invite a closer look. A different tide or animal behavior can invite a second visit. | What would make either player pause here on the way to a job? |
 
+## Sense of place
+
+Looking over the island should make players feel awe, curiosity and connection with wild country, and want to stop, look and remember the place. The land comes from a long story: granite and sandstone, ice, a rising sea, waves, forest and fire, then people. [The island's deep history](island-story.md) tells it, so every cove, crag and stand has a reason to be where it is.
+
+Five hero views carry the Highwood backcountry's character. Each phase is reviewed against them, with the same camera, hour and weather every time. [Highwood experience goal](../backcountry.md#experience-goal)
+
+- The Fire Watch deck looking north at dawn, with mist in the draws: vastness.
+- The fire road entering the forest at midday: the threshold from meadow into tall trunks.
+- The Alder Creek ford, overcast after rain: intimacy.
+- Birch Flats in low evening sun: beauty.
+- The ridge crest looking back south in late afternoon: belonging.
+
 ## Style at two distances
 
 **From the island view**, read the shape and purpose first. A truck needs a cab and a legible cargo bed. A harbor needs a road that leads the eye to its working edge. **At walking distance**, spend detail where hands, feet, and eyes will go. Show how a side rail attaches, leave space for two people beside a bench, and give the path a convincing ending. Use metres for dimensions and compare a prop with the crew and truck before adding more detail.
@@ -44,11 +56,12 @@ Start with the saved meadow views at walking, hillside and island distances. Mat
 | **Good Job!** | Clear practical objectives with room to improvise. A paid delivery can survive a clumsy first attempt, and a partner can solve the same obstruction another way. [Nintendo](https://www.nintendo.com/us/store/products/good-job-switch/) |
 | **Farming Simulator** | Work that progresses through identifiable steps and equipment with a purpose. A harvest becomes a larger barrow order. A later farming tool changes how the crew handles it. [GIANTS manual](https://manuals.giants-software.com/Farming_Simulator_25/Basegame/lang/en/FS25-manual_EN.pdf) |
 | **Totally Reliable Delivery Service** | Physical cargo and a co-op mishap you can recover from together. Make the difference between throwing, hand loading, and securing a load easy to see. [Official game site](https://www.totallyreliable.com/) |
-| **Stormworks: Build and Rescue** | Rescue work where the vehicle, weather, and crew roles shape the response. Build from small local jobs toward equipment and responsibilities players know how to use. [Geometa’s game page](https://store.steampowered.com/app/573090/Stormworks_Build_and_Rescue/) |
+| **Stormworks: Build and Rescue** | Rescue work where the vehicle, weather, and crew roles shape the response. Build from small local jobs toward equipment and responsibilities players know how to use. The crew reads a bearing, chooses a vehicle and a route, and drives it over rough ground to the scene, so a fire access road, a fallen log or a steep track tests both the vehicle and the plan. [Geometa’s game page](https://store.steampowered.com/app/573090/Stormworks_Build_and_Rescue/) |
+| **Firewatch** | A lookout over wild country that rewards patient watching. Smoke can rise behind a far ridge before anyone reports it, and the same meadow looks different in morning and evening light. Let the scenery carry the mood and the story, and let the talk between the lookout and the crewmate on the ground become part of the play. [Campo Santo’s game page](https://www.firewatchgame.com/) |
 | **Stardew Valley** | Familiar days, resident relationships, and skills that open new work. Let the crew build Trust through useful deeds and see the island change through a shared project. [Official game overview](https://www.stardewvalley.net/about/) |
 | **Animal Crossing** | The comfort of ordinary routines and the freedom to make a place and a wardrobe feel like yours. Keep the appeal of visiting the same spot at another hour or in a different season. [Nintendo’s island guide](https://animalcrossing.nintendo.com/new-horizons/explore/) |
 | **Micro Machines** | The delight of reading a small vehicle and its route from above. Preserve that silhouette when adding functional exterior details. |
 | **Human Fall Flat** | Two people improvising with the same object. Let a fallen crate suggest a different approach, with a simple way to get it back into play. [Official game listing](https://store.steampowered.com/app/477160/Human_Fall_Flat/) |
 | **Flashing Lights** | Service work that players can understand by seeing who is at the wheel or beside the equipment. Give a partner a useful role in bringing the situation under control. |
 
-Use those references to discuss a camera distance, a rhythm, or a feeling. Build the island’s characters, writing, materials, sounds, and places from its own fishing, farming, and harbor life.
+Use those references to discuss a camera distance, a rhythm, or a feeling. Build the island’s characters, writing, materials, sounds, and places from its own fishing, farming, harbor, and wildland life.

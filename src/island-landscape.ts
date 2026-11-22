@@ -1,5 +1,5 @@
 import type { Material } from '@babylonjs/core/Materials/material'
-import { fernfallSheet, starterMeadowFinish, starterOcean } from './assets/geometry/starter-landscape'
+import { fernfallSheet, highwoodGroundFinish, starterMeadowFinish, starterOcean } from './assets/geometry/starter-landscape'
 import { meadowGroundTone } from './assets/surface-patterns'
 import { surfaceRecipe } from './assets/surface-recipes'
 import { dressStrand } from './assets/strand'
@@ -13,7 +13,10 @@ import { seededRandom } from './seeded-random'
 import { distanceToRoads, distanceToRoute, footpaths, walkways } from './routes'
 import { inFerryYard } from './worlds/starter/ferry-terminal'
 import { driftwoodStrand, fernfallChannel, shoreStations } from './worlds/starter/layout/terrain'
-import { coastPoint, coastRadius, coastSegments, coastalSurface, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, pool, shoreProfile, streamX, waterLevel } from './terrain'
+import { coastPoint, coastRadius, coastSegments, coastalSurface, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, originalCoastPoint, originalCoastRadius, pool, shoreProfile, streamX, waterLevel } from './terrain'
+import { authoredShare } from './worlds/starter/generation/protection'
+import { highwoodHeightmap } from './assets/geometry/highwood-heightmap'
+import { bakedSurface } from './worlds/starter/highwood-terrain'
 import { buildings, distance, harbor, island, lookout, town } from './world'
 import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
@@ -80,27 +83,108 @@ function buildGround(meshes: MeshFactory, angles: readonly number[], rings: read
   const colors: number[] = []
   const beach: number[] = []
   const indices: number[] = []
+  const owned: boolean[] = []
   const segments = angles.length
   for (const [i, ring] of rings.entries()) {
     for (const [j, angle] of angles.entries()) {
-      const point = coastPoint(angle, ring)
+      const point = originalCoastPoint(angle, ring)
       const { x, z } = point
       const height = groundHeight(point)
       positions.push(x, height, z)
+      owned.push(authoredShare(point, originalCoastRadius(point)) < fullyAuthored)
       uvs.push(x, z)
       appendMeadowColor(colors, point, wear)
       beach.push(...beachVertex(point, coastalSurface(point, height)))
       if (i === 0) continue
       const offset = (i - 1) * segments
       const a = offset + j, next = offset + (j + 1) % segments
-      if (rings[i - 1] > 0) indices.push(a, next + segments, next)
-      indices.push(a, a + segments, next + segments)
+      // Ground the Highwood generator owns is drawn by its own tiles.
+      const generated = (...corners: number[]) => corners.every((corner) => owned[corner])
+      if (rings[i - 1] > 0 && !generated(a, next + segments, next)) indices.push(a, next + segments, next)
+      if (!generated(a, a + segments, next + segments)) indices.push(a, a + segments, next + segments)
     }
   }
   const mesh = meshes.surface('Starter Island terrain', positions, indices, material, undefined, uvs)
   mesh.setVerticesData(VertexBuffer.ColorKind, colors)
   mesh.setVerticesData(beachAttribute, beach, false, beachAttributeSize)
   mesh.freezeWorldMatrix()
+}
+
+const fullyAuthored = 0.999
+const tileMetres = 64
+const tileCell = 1.5
+// Generated tiles dip this far below the ring mesh where both cover the old shore, so they never fight.
+const seamDip = 0.03
+const deepSeaFloor = -3
+
+const vertexStride = 3
+const colorStride = 4
+const depthOffset = 2
+
+function blendTint(color: number[], offset: number, tint: readonly number[], amount: number) {
+  for (let k = 0; k < tint.length; k++) color[offset + k] *= 1 + (tint[k] - 1) * amount
+}
+
+// Colour bare generated ground by its form: rock where it is steep, heath where
+// it is high, green where water gathers and paler on dry low shoulders.
+function tintByForm(positions: number[], colors: number[], steps: number) {
+  const { rock, heath, wet, dry } = highwoodGroundFinish
+  const row = steps + 1
+  const ramp = (value: number, start: number, full: number) => Math.max(0, Math.min(1, (value - start) / (full - start)))
+  for (let j = 0; j <= steps; j++) {
+    for (let i = 0; i <= steps; i++) {
+      const v = j * row + i
+      const at = (k: number) => positions[k * vertexStride + 1]
+      const dx = (at(j * row + Math.min(steps, i + 1)) - at(j * row + Math.max(0, i - 1))) / (tileCell * (Math.min(steps, i + 1) - Math.max(0, i - 1)))
+      const dz = (at(Math.min(steps, j + 1) * row + i) - at(Math.max(0, j - 1) * row + i)) / (tileCell * (Math.min(steps, j + 1) - Math.max(0, j - 1)))
+      const height = at(v)
+      const point = { x: positions[v * vertexStride], z: positions[v * vertexStride + depthOffset] }
+      const o = v * colorStride
+      blendTint(colors, o, wet.tint, bakedSurface(point).moisture)
+      blendTint(colors, o, dry.tint, ramp(height, dry.heightStart, dry.heightFull) * (1 - ramp(height, heath.heightStart, heath.heightFull)))
+      blendTint(colors, o, heath.tint, ramp(height, heath.heightStart, heath.heightFull))
+      blendTint(colors, o, rock.tint, ramp(Math.hypot(dx, dz), rock.slopeStart, rock.slopeFull))
+    }
+  }
+}
+
+// Highwood's generated ground, in square tiles so off-screen tiles are culled.
+function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: number) {
+  const map = highwoodHeightmap
+  const east = map.west + (map.columns - 1) * map.cell, north = map.south + (map.rows - 1) * map.cell
+  const steps = Math.round(tileMetres / tileCell)
+  for (let tz = map.south; tz < north; tz += tileMetres) {
+    for (let tx = map.west; tx < east; tx += tileMetres) {
+      const positions: number[] = [], uvs: number[] = [], colors: number[] = [], beach: number[] = [], indices: number[] = []
+      const keep: boolean[] = []
+      let wet = false
+      for (let j = 0; j <= steps; j++) {
+        for (let i = 0; i <= steps; i++) {
+          const point = { x: Math.min(east, tx + i * tileCell), z: Math.min(north, tz + j * tileCell) }
+          const share = authoredShare(point, originalCoastRadius(point))
+          const height = groundHeight(point)
+          keep.push(share < fullyAuthored)
+          wet ||= height > deepSeaFloor
+          positions.push(point.x, height - (share > 0 ? seamDip : 0), point.z)
+          uvs.push(point.x, point.z)
+          appendMeadowColor(colors, point, wear)
+          beach.push(...beachVertex(point, coastalSurface(point, height)))
+        }
+      }
+      tintByForm(positions, colors, steps)
+      for (let j = 0; j < steps; j++) {
+        for (let i = 0; i < steps; i++) {
+          const a = j * (steps + 1) + i, b = a + 1, c = a + steps + 1, d = c + 1
+          if (keep[a] || keep[b] || keep[c] || keep[d]) indices.push(a, b, d, a, d, c)
+        }
+      }
+      if (!wet || !indices.length) continue
+      const mesh = meshes.surface('Highwood terrain', positions, indices, material, undefined, uvs)
+      mesh.setVerticesData(VertexBuffer.ColorKind, colors)
+      mesh.setVerticesData(beachAttribute, beach, false, beachAttributeSize)
+      mesh.freezeWorldMatrix()
+    }
+  }
 }
 
 const driftwoodWrackMinRadius = 0.935
@@ -126,6 +210,7 @@ export function createIslandTerrain(meshes: MeshFactory, finish: { material: Mat
     return Array.from({ length: steps }, (_, j) => radius + (next - radius) * j / steps)
   })
   buildGround(meshes, angles, [...meadowRings, ...beachRings.slice(1)], finish.material, finish.wear)
+  buildGeneratedGround(meshes, finish.material, finish.wear)
   const banks = driftwoodStrand.banks.map(({ angle, radius }) => coastPoint(angle, radius))
   dressStrand(meshes, 'Driftwood', banks, driftwoodStrand.scatterSeed, groundHeight, (p, y) =>
     coastRadius(p) > driftwoodWrackMinRadius && y > waterLevel - driftwoodWrackMaxDepth && !onBeachTowel(p))

@@ -110,10 +110,13 @@ function addIslandColliders(world: World) {
   // Cover the whole island, including the wading shelf and a margin for falling cargo.
   const outerRadius = shoreProfile[shoreProfile.length - 1].radius
   const coast = coastBounds(outerRadius)
-  const west = Math.floor(coast.west) - heightfieldMarginMetres
-  const east = Math.ceil(coast.east) + heightfieldMarginMetres
   const north = Math.ceil(coast.north) + heightfieldMarginMetres
   const south = Math.floor(coast.south) - heightfieldMarginMetres
+  // cannon-es clamps both ray indices to the heightfield's first dimension, so a
+  // field longer north–south than east–west would hide its far rows from wheel
+  // raycasts. Pad the east edge with open sea until the field is square enough.
+  const west = Math.floor(coast.west) - heightfieldMarginMetres
+  const east = Math.max(Math.ceil(coast.east) + heightfieldMarginMetres, west + north - south)
   const heights = Array.from({ length: east - west + 1 }, (_, i) =>
     Array.from({ length: north - south + 1 }, (_, j) => groundHeight({ x: west + i, z: north - j })))
   const ground = new Body({ position: new Vec3(west, 0, north), shape: new Heightfield(heights, { elementSize: 1 }) })
