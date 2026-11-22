@@ -10,6 +10,8 @@ export interface LandscapeShot {
   options: Values
   grid: boolean
   wireframe: boolean
+  // Subject setups only: whether the crew stands beside the subject for scale.
+  scaleFigure?: boolean
 }
 
 const maxNameLength = 60
@@ -57,6 +59,7 @@ function readShot(value: unknown, maxRadius: number, minRadius: number = studioC
     options,
     grid: value.grid,
     wireframe: value.wireframe,
+    ...(value.scaleFigure === true && { scaleFigure: true }),
   }
 }
 

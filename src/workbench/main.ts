@@ -21,8 +21,8 @@ import { readStorage, writeStorage } from '../browser-storage'
 import { entries as initialEntries } from './catalog'
 import { restoreOptions, type Control, type Values } from './subject'
 import type { FieldSite } from './field-site'
-import { createStage } from './stage'
-import type { Angle, CameraState } from './stage'
+import { createStage, type Angle, type CameraState } from './stage'
+import { showScaleTools } from './scale-figure'
 import { landscapeViews, openFieldView, scenicChoices } from './landscape-views'
 import { createLandscapeDraft, draftLabels, draftStorageKey } from './landscape-draft'
 import { createLandscapeMap } from './landscape-map'
@@ -61,6 +61,7 @@ const scenicView = element<HTMLSelectElement>('landscape-view')
 const grid = element<HTMLInputElement>('grid')
 const wireframe = element<HTMLInputElement>('wireframe')
 const turntable = element<HTMLInputElement>('turntable')
+const scaleFigure = element<HTMLInputElement>('scale-figure')
 const status = element('stage-error')
 const checkZFighting = element<HTMLButtonElement>('check-z-fighting')
 const zFightingResult = element('z-fighting-result')
@@ -79,6 +80,7 @@ interface SavedView {
   grid: boolean
   wireframe: boolean
   turntable: boolean
+  scaleFigure?: boolean
 }
 
 function readSavedView(): Partial<SavedView> {
@@ -131,6 +133,7 @@ lightSelect.value = saved.lighting && saved.lighting in lightingPresets ? saved.
 grid.checked = saved.grid ?? true
 wireframe.checked = saved.wireframe ?? false
 turntable.checked = saved.turntable ?? false
+scaleFigure.checked = saved.scaleFigure ?? false
 scenicView.append(...scenicChoices.map(([id, label]) => new Option(label, id)))
 
 function reportError(text: string) {
@@ -151,6 +154,7 @@ function remember() {
     grid: grid.checked,
     wireframe: wireframe.checked,
     turntable: turntable.checked,
+    scaleFigure: scaleFigure.checked,
   }
   writeStorage('sessionStorage', storeKey, JSON.stringify(view))
   if (asset.id === 'biome' && new URLSearchParams(location.search).has('recipe')) {
@@ -206,6 +210,7 @@ function applyDisplay() {
   stage?.setLighting(lightSelect.value as LightingPreset)
   stage?.setGrid(grid.checked)
   stage?.setWireframe(wireframe.checked)
+  showScaleTools(stage, scaleFigure.checked)
   element('grid-size').textContent = grid.checked && stage ? `Grid ${stage.step} m` : ''
 }
 
@@ -223,7 +228,7 @@ function rebuild(camera?: CameraState, reframeOnResize = false) {
   checkZFighting.disabled = true
   reportError('')
   try {
-    stage = createPreviewStage(engine, canvas, asset, values, reportError, draft, fieldSite())
+    stage = createPreviewStage(engine, canvas, asset, values, reportError, draft, fieldSite(), scaleFigure.checked)
     checkZFighting.disabled = false
     if (camera) stage.keepCamera(camera, reframeOnResize)
     applyDisplay()
@@ -231,7 +236,7 @@ function rebuild(camera?: CameraState, reframeOnResize = false) {
   }
   catch (error) {
     reportError(error instanceof Error ? error.message : 'Could not open the selected preview.')
-    element('geometry').textContent = ''
+    element('geometry').textContent = element('subject-size').textContent = ''
   }
   seek = true
   studies.setScene(Boolean(asset.landscape), Boolean(stage))
@@ -346,6 +351,7 @@ function openSubjectSetup() {
   const { shot, lighting } = setup
   optionsByAsset[asset.id] = shot.options
   grid.checked = shot.grid
+  scaleFigure.checked = shot.scaleFigure ?? false
   wireframe.checked = shot.wireframe
   lightSelect.value = lighting
   playing = turntable.checked = false
@@ -495,7 +501,7 @@ checkZFighting.addEventListener('click', () => {
   }
   zFightingResult.append(list)
 })
-for (const control of [grid, wireframe, turntable, rateSelect, lightSelect]) {
+for (const control of [grid, wireframe, turntable, scaleFigure, rateSelect, lightSelect]) {
   control.addEventListener('change', () => {
     applyDisplay()
     remember()
@@ -539,6 +545,7 @@ function currentSetupLink() {
     options: values,
     grid: grid.checked,
     wireframe: wireframe.checked,
+    ...(scaleFigure.checked && { scaleFigure: true }),
   }, lightSelect.value as LightingPreset)
   return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? studioCamera.fov }, hour: Number(values.hour), rain: Number(values.rain), marketRainAge: Number(values.marketRainAge), time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
 }

@@ -33,6 +33,10 @@ test('subject setups round-trip isolated and field views, including large orbit 
     assert.deepEqual(readSubjectLink(link.hash), { shot, lighting: 'golden' })
   }
   for (const hash of ['#site-town', '#site-town?setup=broken', '#site-town?setup=%7B%7D']) assert.equal(readSubjectLink(hash), undefined)
+  // The crew-for-scale choice travels with a setup only when it is on.
+  const withCrew = { ...shot, scaleFigure: true }
+  assert.deepEqual(readSubjectLink(new URL(subjectLink('http://localhost:5173/', 'clover', false, withCrew, 'daylight')).hash).shot, withCrew)
+  assert.equal(readSubjectLink(new URL(subjectLink('http://localhost:5173/', 'clover', false, { ...shot, scaleFigure: 'yes' }, 'daylight')).hash).shot.scaleFigure, undefined)
 })
 
 test('furnishing drafts survive reopening and preserve the canonical island placement', (t) => {
