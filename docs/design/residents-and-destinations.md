@@ -12,7 +12,9 @@ Trust grows over several kept promises. One knowingly broken promise can undo th
 
 **Playable.** Mara leaves the porch at 06:00, reaches the dock at 06:15, leaves work at 18:00 and is home at 18:15. Players can approach Mara for a lead. They can get a rod from their own cottage chest and fish from the shore or the stopped skiff. The dock serves small craft.
 
-**Playable favor.** Mara asks for two carrots from Island Farm for a stew. Once the crew keeps it, Mara greets them as the crew that fed her and passes on a clue about the Shellglass tide pool. [Residents and favors](../mechanics/resident-favors.md)
+**Playable favor.** Mara asks for two carrots from Island Farm for a stew. Once the crew keeps it, Mara greets them as the crew that fed her. [Residents and favors](../mechanics/resident-favors.md)
+
+**Playable outing.** Mara gives both walking clues on the first conversation. Either player can revisit them in the shared field journal. She acknowledges the crew’s first record and suggests returning to Juniper in heavy rain. [Mara’s field outing](../player-guide.md#maras-field-outing)
 
 **Proposed detail.** A line worn smooth along one side of the dock shows where Mara rests the rod. Leave the boarding edge clear so a crewmate can paddle in while the other talks. A later favor could ask the crew to watch where fish school near the shore and recognize the shared observation. [Field outing #51](https://github.com/brylie/mission-island/issues/51)
 
@@ -20,9 +22,11 @@ Trust grows over several kept promises. One knowingly broken promise can undo th
 
 ## Wren and the garden gate
 
-**Playable.** Wren lives in the lilac-roofed cottage east of the Blue cottage and works at the mending bench on the grass beside the ferry approach from 07:00 to 17:00. The bench sits by the current ferry terminal and should move with it when the terminal is rebuilt. A tall picket fence closes off the front garden. The gate's worn top hinge pin lets the leaf drop into a groove, so it sticks a short way open. Until it is fixed, Wren goes out the back door and walks the long way round, between the Blue cottage and the fence. Either player can borrow the toolbox and a pin from the bench and mend the gate. From the next dawn Wren takes the shortcut through the gate, the groove has grassed over, and Wren greets the crew as the people who fixed it. [Neighbor repairs](../mechanics/neighbor-repairs.md) · [Gate repair #92](https://github.com/brylie/mission-island/issues/92)
+**Playable.** Wren lives in the lilac-roofed cottage east of the Blue cottage and works at the mending bench on the grass beside Harbor Depot road, at the north edge of the ferry freight yard, from 07:00 to 17:00. A tall picket fence closes off the front garden. The gate's worn top hinge pin lets the leaf drop into a groove, so it sticks a short way open. Until it is fixed, Wren goes out the back door and walks the long way round, between the Blue cottage and the fence. Either player can borrow the toolbox and a pin from the bench and mend the gate. From the next dawn Wren takes the shortcut through the gate, the groove has grassed over, and Wren greets the crew as the people who fixed it. [Neighbor repairs](../mechanics/neighbor-repairs.md) · [Gate repair #92](https://github.com/brylie/mission-island/issues/92)
 
-**Proposed Trust story.** The playable gate repair is one kept promise. Swinging the repaired gate earns Wren’s Trust once. Imagine a later favor where the gate still catches during the test and Wren asks whether it is safe to use. The crew can say it needs more work and try again. If a player sees it catch and chooses to tell Wren it is safe, Wren has reason to doubt even a crew that has helped several times. At the next visit Wren could say, “You said it swung clear. I had to go round the back again.”
+**Playable Trust story.** The second repair, Wren's swollen gate, is playable, with the breach, amends and rebuilding described below. [Reporting back and broken promises](../mechanics/resident-favors.md#reporting-back-and-broken-promises)
+
+**Original proposal.** The playable gate repair is one kept promise. Swinging the repaired gate earns Wren’s Trust once. Imagine a later favor where the gate still catches during the test and Wren asks whether it is safe to use. The crew can say it needs more work and try again. If a player sees it catch and chooses to tell Wren it is safe, Wren has reason to doubt even a crew that has helped several times. At the next visit Wren could say, “You said it swung clear. I had to go round the back again.”
 
 Either player could return to put the gate right. Wren might thank them and still come outside to check the next repair. After the crew keeps its word on other jobs, Wren might leave the toolbox on the porch for either player with a note about what needs fixing. That first unsupervised loan tells both players what they have earned back.
 
@@ -40,13 +44,15 @@ Either player could return to put the gate right. Wren might thank them and stil
 
 ## The harbor steward, freight yard and ferry terminal
 
-**Playable foundation.** Harbor Depot stages the starter freight and houses the job board. Harbor Depot road leads to the future ferry site. The small dock near the cottages already serves the skiff. The repair and a working ferry belong to the milestone.
+**Playable foundation.** Harbor Depot stages the starter freight and houses the job board. Harbor Depot road runs straight past the ferry freight yard onto the ferry ramp. After four orders, a tally board at the yard's corner explains the three-stage repair, records each crewmate's coins and timber, and shows the next step. The terminal changes with each stage. The small dock near the cottages still serves the skiff. Until a steward arrives, the tally board stands in for them. [Ferry terminal](../mechanics/ferry-terminal.md)
 
 **Playable resident.** Bram, the harbor steward, lives above the depot office and keeps the freight tally beside the job board from 06:30 to 16:30. After the starter shift, his first favor asks the crew to set one crate in the yellow staging bay beside the depot, clear of Harbor Depot road. Once it is kept, Bram names what the ferry terminal needs.
 
-**Proposed detail.** The steward walks from a harbor-side home to the yard to check the morning freight. A tally board by the bay marks outgoing loads. Farther down the road, a stack of replacement planks and a gap in the landing show where the crew’s repair materials will go. For a first favor, have the steward ask the crew to stage a load without blocking that road. After the first shared hauling checkout, either player can ask the steward what the terminal needs next. Choose a home and schedule that let players meet the steward both on foot and at work. [First hauling qualification #50](https://github.com/brylie/mission-island/issues/50) · [Ferry restoration #4](https://github.com/brylie/mission-island/issues/4)
+**Proposed detail.** The steward walks from a harbor-side home to the yard to check the morning freight. The ferry tally board at the freight yard records the repair. The timber pallet in the yard and the gap in the landing show where the crew’s repair materials go. For a first favor, have the steward ask the crew to stage a load without blocking that road. After the first shared hauling checkout, either player can ask the steward what the terminal needs next. Choose a home and schedule that let players meet the steward both on foot and at work. [First hauling qualification #50](https://github.com/brylie/mission-island/issues/50) · [Ferry restoration #4](https://github.com/brylie/mission-island/issues/4)
 
 **Walk it.** Drive to the yard while a partner follows the foot route. From the cab, check the sightline to the waiting player and the loading bay. From ground level, ask the walker to point to the ferry works and then lead the driver to the fishing dock. Record the clue that helped them distinguish the two.
+
+The [Seabrook village services brief](seabrook-village-services.md) proposes a village hall and reading room, a mending shed, and a clinic with a response cupboard.
 
 ## Before handing off a resident
 

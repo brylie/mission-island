@@ -6,15 +6,20 @@ Mission Island is a third-person co-op game about two people making a home on a 
 
 | If you are asking… | Start here |
 | --- | --- |
-| What are we making, and what should a session feel like? | [Game design](game-design.md) and [creative direction and inspirations](design/creative-direction.md) |
+| What are we making, and what should a session feel like? | [Product and game design](game-design.md) and [creative direction and inspirations](design/creative-direction.md) |
 | How do jobs teach practical skills and lead to later careers? | [Learning through island work](design/learning-and-careers.md) and the [Co-op Gameplay Designer skill](../.agents/skills/mission-island-coop-gameplay/SKILL.md) |
+| How do jobs, favors and incidents share the crew’s attention? | [Island activity scheduler](design/island-activity-scheduler.md) |
 | What can we play today, and where is the crew going next? | [Playable features and roadmap](roadmap.md) and [the crew’s progression](design/progression.md) |
 | Where should a feature, asset, or world edit go? | [Architecture and contribution guide](architecture.md) |
 | How do I plan or review a feature across systems? | [Game Architect skill](../.agents/skills/mission-island-game-architect/SKILL.md) |
-| What exactly happens when a player uses something? | [Starter chests and tools](mechanics/inventory.md), [charged throws](mechanics/throwing.md), [fishing](mechanics/fishing.md), [swimming and the shallows](mechanics/swimming.md), [farming and sales](mechanics/farming-and-market.md), and [orders and pay](mechanics/crew-orders.md) |
+| What exactly happens when a player uses something? | [Starter chests and tools](mechanics/inventory.md), [charged throws](mechanics/throwing.md), [fishing](mechanics/fishing.md), [swimming and the shallows](mechanics/swimming.md), [farming and sales](mechanics/farming-and-market.md), [orders and pay](mechanics/crew-orders.md), [neighbor repairs](mechanics/neighbor-repairs.md), [the fire watch and wildfires](mechanics/fire-watch.md), [the ferry terminal project](mechanics/ferry-terminal.md), and [the field journal](mechanics/field-journal.md) |
 | What belongs at this location? | [Inhabited places](game-design.md#an-inhabited-island), [the two-island destination survey](living-world-qa.md), and [Saltwind’s site inventory](saltwind-island.md) |
+| What gives the crew a reason to stay for a season? | [Starter Island story and cadence](design/starter-island-story-and-cadence.md) |
+| Where should the first Starter Island world-building pass begin? | [Starter Island world-building brief](design/starter-island-worldbuilding-brief.md) |
+| How do habitats fit together across Starter Island? | [Starter Island biome plan](design/starter-island-biomes.md) |
 | How should a place change with latitude, exposure, or time of year? | [Island climates and seasons](design/climate-and-seasons.md) |
 | How do I review or improve the look of a model, place, or seasonal scene? | [Creative direction](design/creative-direction.md) and [Art Director skill](../.agents/skills/mission-island-art-director/SKILL.md) |
+| Which color should a new asset use, and how do light and color fit together? | [Color direction](design/color-direction.md) (proposal) |
 | How do I design or review generated sound and island ambience? | [Procedural Audio skill](../.agents/skills/mission-island-procedural-audio/SKILL.md) |
 | How do we get variation that still makes sense? | [Generativity and the Juniper Hollow habitat](game-design.md#generativity) and [the Biome Composer workflow](../CONTRIBUTING.md#asset-workbench) |
 | How do I review an ecological or procedural simulation? | [Natural Systems Reviewer skill](../.agents/skills/mission-island-natural-systems/SKILL.md) |
@@ -27,9 +32,12 @@ Mission Island is a third-person co-op game about two people making a home on a 
 | --- | --- |
 | Choose what to build after the first payday | [Second-shift brief and acceptance playtest](design/second-shift.md) |
 | Compare hauling with farming and fishing before pricing a repair | [Starter Island economy and pacing sheet](design/starter-economy.md) |
+| What everyday services should Seabrook add? | [Village services and residents](design/seabrook-village-services.md) |
+| Plan a village route, sample week, or starter career | [Starter Island play plan](design/starter-island-play-plan.md) |
 | Give a resident a routine, a memorable workplace and a reason to return | [Resident and destination briefs](design/residents-and-destinations.md) |
 | Review a mechanic from a new player’s viewpoint | [Playtest and Accessibility Reviewer skill](../.agents/skills/mission-island-playtest-accessibility/SKILL.md) |
 | Set up a repeatable review and share the evidence | [Shared Workbench and playtest workflow](playtests/review-workflow.md) |
+| Check a change end to end before handoff | [Verify skill](../.agents/skills/verify/SKILL.md): static checks, a run in the game, and the matching reviewers in a loop |
 | Turn a session into evidence for a decision | [Playtest findings log](playtests/findings.md) |
 | Hand an implementer one change another crew can verify | [Playable change issue template](../.github/ISSUE_TEMPLATE/playable-change.md) |
 

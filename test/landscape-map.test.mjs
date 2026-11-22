@@ -2,8 +2,15 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { coastPoint } from '../src/terrain.ts'
 import {
-  fullMapView, mapPointInView, maxMapZoom, panMap, pointInWorld, pointOnMap,
-  shotCameraPoint, viewPointOnMap, zoomMap,
+  fullMapView,
+  mapPointInView,
+  maxMapZoom,
+  panMap,
+  pointInWorld,
+  pointOnMap,
+  shotCameraPoint,
+  viewPointOnMap,
+  zoomMap,
 } from '../src/workbench/landscape-map-projection.ts'
 
 test('the landscape map fits the coastline and maps pointer coordinates north-up', () => {

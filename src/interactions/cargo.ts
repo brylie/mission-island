@@ -1,0 +1,88 @@
+import { ferryDrop } from '../ferry-repair.ts'
+import { onBench, toolboxLoanForSwollenGate, toolboxPickable, wrenLendsToolbox } from '../gate-repair.ts'
+import { deliveryDrop, deliveryRadius, lookoutSprayReach } from '../jobs.ts'
+import type { Item, Player, Snapshot } from '../protocol.ts'
+import { stagingFavor, wantsCargo } from '../residents/favors.ts'
+import { truckPoint } from '../truck-pose.ts'
+import { cargoSlots, crateSize, distance, lookout, truckBed } from '../world.ts'
+import { starterResidents } from '../worlds/starter/residents.ts'
+import type { InteractionOption, InteractionPolicies } from './definition.ts'
+import { atExtinguisherHome, extinguisherCharge, nearWildfire } from '../wildfire.ts'
+
+const half = 2
+const percentScale = 100
+
+const occupiedBedSlotRadius = 0.93
+const truckBedReach = 3.5
+const itemPickupReach = 2.7
+const itemPickupVerticalReach = 2.1
+const toolTargetLift = 0.25
+const crateTargetRadius = 0.6
+const toolTargetRadius = 0.4
+
+export const cargoActions = {
+  'put-down': 'default',
+  'pick-up': 'default',
+} as const satisfies InteractionPolicies
+export type CargoAction = keyof typeof cargoActions
+
+export function heldItem(state: Pick<Snapshot, 'items'>, player: Player) {
+  return state.items.find((item) => item.holder === player.id)
+}
+
+export function freeBed(state: Snapshot) {
+  return cargoSlots.find((slot) => {
+    const position = truckPoint(state.truck, 0, truckBed.top + crateSize / half, slot)
+    return !state.items.some((item) => item.onBed && distance(item, position) < occupiedBedSlotRadius)
+  })
+}
+
+export function byTruckBed(state: Snapshot, player: Player) {
+  return distance(truckPoint(state.truck, 0, truckBed.top, truckBed.center), player) < truckBedReach
+}
+
+export function putDownOption(state: Snapshot, player: Player, item: Item): InteractionOption<CargoAction> {
+  const option = { action: 'put-down' as const, name: 'Ground', key: 'E' }
+  if (item.kind === 'toolbox') return { ...option, label: 'Set toolbox down' }
+  if (item.kind === 'extinguisher') {
+    if (extinguisherCharge(item) > 0 && ((state.mission === 'fire' && distance(player, lookout) < lookoutSprayReach) || nearWildfire(state, player))) {
+      return { ...option, key: 'Left click', label: `Hold to spray · ${Math.round(extinguisherCharge(item) * percentScale)}% left` }
+    }
+    if (atExtinguisherHome(item, player)) return { ...option, label: 'Return extinguisher to its stand' }
+    return { ...option, label: extinguisherCharge(item) > 0 ? 'Set extinguisher down' : 'Set empty extinguisher down · Refill at any fire station' }
+  }
+  if (ferryDrop(state, player, item)) return { ...option, label: 'Stack timber for the ferry repair' }
+  const drop = deliveryDrop(state)
+  if (drop && distance(player, drop) < deliveryRadius) return { ...option, label: 'Deliver crate' }
+  const staging = stagingFavor(starterResidents, state, player)
+  if (staging) return { ...option, label: `Stage crate for ${staging.resident.identity.name}` }
+  if (byTruckBed(state, player) && freeBed(state) !== undefined) return { ...option, label: 'Load crate' }
+  return { ...option, key: 'Left click', label: 'Hold to throw · E to set down' }
+}
+
+// Crates are cargo while a delivery is open, a resident has asked the crew to move one, or ferry timber is on the way.
+// Extinguishers are always free to take.
+function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 'residents' | 'ferryRepair'>, item: Item, player: Player, cargoWanted: boolean) {
+  const eligible = item.kind === 'crate'
+    ? deliveryDrop(state) !== undefined || cargoWanted || state.ferryRepair.haul > 0
+    : item.kind === 'toolbox' ? toolboxPickable(state, item) : true
+  return eligible && !item.delivered && item.holder === null && distance(item, player) < itemPickupReach && Math.abs(item.y - player.y) < itemPickupVerticalReach
+}
+
+function pickupLabel(state: Snapshot, item: Item, name: string) {
+  if (item.onBed) return 'Unload crate'
+  if (item.kind !== 'toolbox') return `Pick up ${name.toLowerCase()}`
+  if (onBench(item) && toolboxLoanForSwollenGate(state) && !wrenLendsToolbox(state)) return 'Borrow the toolbox for the gate'
+  return 'Pick up the toolbox'
+}
+
+export function pickupOptions(state: Snapshot, player: Player): InteractionOption<CargoAction>[] {
+  const cargoWanted = wantsCargo(starterResidents, state)
+  return state.items.filter((item) => canPickUp(state, item, player, cargoWanted))
+    .sort((a, b) => distance(a, player) - distance(b, player))
+    .map((item) => {
+      const name = item.kind === 'toolbox' ? 'Toolbox' : item.kind === 'crate' ? 'Crate' : 'Extinguisher'
+      const label = pickupLabel(state, item, name)
+      return { action: 'pick-up' as const, subject: item.id, key: 'E', label, name, at: { x: item.x, y: item.y + (item.kind === 'crate' ? 0 : toolTargetLift), z: item.z }, radius: item.kind === 'crate' ? crateTargetRadius : toolTargetRadius }
+    })
+}

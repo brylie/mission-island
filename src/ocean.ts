@@ -2,11 +2,21 @@ import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial'
 import { Vector2, Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { Scene } from '@babylonjs/core/scene'
+import { shoreDepthEncoding } from './assets/effects/shore-depth'
+import { rgba8 } from './assets/rgba8'
 import { shellglassWash } from './shellglass-tide'
 import { tidePool, waterLevel } from './terrain'
 import { island } from './world'
 import { createShoreDepth } from './shore-depth'
 import { shoreDefaults, type ShoreSettings } from './shader-studies'
+
+const half = 0.5
+const fullShaderQuality = 2
+const previewFogStart = 500
+const previewFogEnd = 600
+const basinCoordinateDecimals = 3
+const packedDepthHighWeight = rgba8.max << shoreDepthEncoding.highShift
+const glslDepthBias = String(shoreDepthEncoding.depthBias).replace(/^0[.]/, '.')
 
 const vertexSource = `
 precision highp float;
@@ -45,7 +55,7 @@ uniform vec4 basinBounds;
 uniform float tideLift;
 
 float washCoverage(vec2 p) {
-  vec2 offset = p - vec2(${tidePool.x.toFixed(3)}, ${tidePool.z.toFixed(3)});
+  vec2 offset = p - vec2(${tidePool.x.toFixed(basinCoordinateDecimals)}, ${tidePool.z.toFixed(basinCoordinateDecimals)});
   vec2 across = vec2(dot(offset, vec2(${shellglassWash.cos}, -${shellglassWash.sin})),
     dot(offset, vec2(${shellglassWash.sin}, ${shellglassWash.cos})));
   float radius = length(across / vec2(${shellglassWash.rx}, ${shellglassWash.rz}));
@@ -53,7 +63,7 @@ float washCoverage(vec2 p) {
 }
 
 float unpackDepth(vec4 data) {
-  return dot(data.rg, vec2(65280.0, 255.0) / 65535.0) * 2.75 - .25;
+  return dot(data.rg, vec2(${packedDepthHighWeight.toFixed(1)}, ${rgba8.max.toFixed(1)}) / ${shoreDepthEncoding.max.toFixed(1)}) * ${shoreDepthEncoding.depthSpan} - ${glslDepthBias};
 }
 float depthAt(vec2 p) {
   vec2 coast = (p - coastBounds.xy) / coastBounds.zw;
@@ -150,7 +160,7 @@ export function createOceanMaterial(scene: Scene, mode: 'ocean' | 'preview' | 'w
     defines,
     needAlphaBlending: !preview,
   })
-  material.setVector2('islandRadii', new Vector2(island.width / 2, island.length / 2))
+  material.setVector2('islandRadii', new Vector2(island.width * half, island.length * half))
   if (mode === 'wash') {
     material.backFaceCulling = false
     material.disableDepthWrite = true
@@ -176,14 +186,14 @@ export function createOceanMaterial(scene: Scene, mode: 'ocean' | 'preview' | 'w
       material.setFloat('tideLift', localWaterLevel - waterLevel)
       material.setFloat('clarity', shore.clarity)
       material.setFloat('foamReach', shore.foamReach)
-      material.setFloat('quality', shore.quality === 'off' ? 0 : shore.quality === 'low' ? 1 : 2)
+      material.setFloat('quality', shore.quality === 'off' ? 0 : shore.quality === 'low' ? 1 : fullShaderQuality)
       material.setFloat('daylight', daylight)
       material.setFloat('rain', rain)
       material.setFloat('time', time)
       material.setVector3('eye', scene.activeCamera?.globalPosition ?? origin)
       material.setColor3('fogColor', scene.fogColor)
-      material.setFloat('fogStart', preview ? 500 : scene.fogStart)
-      material.setFloat('fogEnd', preview ? 600 : scene.fogEnd)
+      material.setFloat('fogStart', preview ? previewFogStart : scene.fogStart)
+      material.setFloat('fogEnd', preview ? previewFogEnd : scene.fogEnd)
     },
   }
 }

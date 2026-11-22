@@ -1,3 +1,26 @@
+import { harborDockGeometry, harborDockPile } from './assets/geometry/waterfront.ts'
+import { fireStationGeometry } from './assets/geometry/fire-station.ts'
+import { mendingBenchGeometry } from './assets/geometry/wren-garden.ts'
+import {
+  crateStarts,
+  crewHomes,
+  crewSpawnSetback,
+  doorApproach,
+  extinguisherStarts,
+  extinguisherStations,
+  harborDockAnchor,
+  harborDockPileLayout,
+  mendingBenchSite,
+  mendingBenchToolboxOffsetZ,
+  publicBuildings,
+  wrenCottage,
+  type StarterBuilding,
+} from './worlds/starter/layout/places.ts'
+
+export { beach, ferryTerminal, forest, harbor, island, lookout, skiffStart, town, truckStart } from './worlds/starter/layout/places.ts'
+export { crateStarts, crewHomes, extinguisherStarts, extinguisherStations, wrenCottage }
+export { crewHipHeight } from './assets/geometry/crew-clothing.ts'
+
 export interface Point {
   x: number
   z: number
@@ -7,84 +30,55 @@ export interface Pose extends Point {
   heading: number
 }
 
-export const island = { width: 134, length: 92 }
-export const harbor = { x: -46, z: -16 }
-export const town = { x: 40, z: 13 }
-export const lookout = { x: 7, z: 29 }
-export const beach = { x: 32, z: -35.5 }
-export const forest = { x: -27, z: 22 }
-export const houseRoofRise = 1.65
-export const jobPay = { crate: 2, delivery: 3, fire: 4 }
+export { houseRoofRise } from './assets/geometry/starter-house.ts'
+const crateCoins = 2
+const deliveryBonusCoins = 3
+const lookoutFireCoins = 4
+export const jobPay = { crate: crateCoins, delivery: deliveryBonusCoins, fire: lookoutFireCoins }
 export const starterPay = {
   crate: { label: 'Crate delivered', coins: jobPay.crate },
   delivery: { label: 'Harbor delivery complete', coins: jobPay.crate + jobPay.delivery },
   fire: { label: 'Lookout fire out', coins: jobPay.fire },
 }
+export const crewWalkSpeed = 8
+export const crewCarrySpeed = 6.5
+export const crewSprintMultiplier = 1.55
 export const jumpSpeed = 6.85
 export const jumpGravity = 17
-export const truckStart: Pose = { x: -41, z: -11, heading: Math.PI / 2 }
 export const truckSeatSpeed = 2
-export const skiffStart: Pose = { x: -48.5, z: -35.8, heading: -2.5 }
-export const harborDock = { x: -44, firstZ: -29, planks: 18, spacing: 0.49, width: 3.45, plankDepth: 0.45, top: 0.23 }
-export const harborDockPiles = [-45.6, -42.4].flatMap(x =>
-  [-31, -34, -37].map(z => ({ x, z, bottom: -1.545, top: .705, diameter: .43 })))
+export const harborDock = { ...harborDockAnchor, ...harborDockGeometry } as const
+const { bottom, top, diameter } = harborDockPile
+export const harborDockPiles = harborDockPileLayout.lateralOffsets.flatMap((offset) =>
+  harborDockPileLayout.distanceAlongDock.map((distance) => ({ x: harborDock.x + offset, z: harborDock.firstZ - distance, bottom, top, diameter })))
 export const dockEndZ = harborDock.firstZ - (harborDock.planks - 1) * harborDock.spacing
-export const ferryTerminal = { x: -32, z: -31, width: 6 }
-export const truckBed = { width: 2.28, length: 3.12, center: -1.39, top: 1.12 }
-export const truckRoof = { width: 2.36, length: 1.52, center: 1.03, top: 2.3 }
-export const truckHood = { width: 2.46, length: 1.07, center: 2.325, top: 1.43 }
-const railThickness = 0.14
-export const truckSideRails = { thickness: railThickness, height: 0.62, x: (truckBed.width - railThickness) / 2 }
-const tailLipThickness = 0.12
-export const truckTailLip = {
-  thickness: tailLipThickness, height: 0.28, z: truckBed.center - (truckBed.length + tailLipThickness) / 2,
-}
-export const cargoSlots = [-0.46, -1.46, -2.46]
-export const crateSize = 0.89
-export const crewHomes = [
-  { name: 'Amber cottage', building: { x: -52, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#f2d5a4', roof: '#a85d36' },
-    chest: { x: -50.65, z: -7.52 }, wardrobe: { x: -53.35, z: -7.27 } },
-  { name: 'Blue cottage', building: { x: -45, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#d5e9dc', roof: '#477986' },
-    chest: { x: -43.65, z: -7.52 }, wardrobe: { x: -46.35, z: -7.27 } },
-]
+export { cargoSlots, truckBed, truckHood, truckRoof, truckSideRails, truckTailLip } from './assets/geometry/flatbed.ts'
+export { crateSize } from './assets/geometry/supply-props.ts'
 
+const half = 0.5
 export function cottageDoor(home: typeof crewHomes[number]) {
   const { x, z, d } = home.building
-  return { x, z: z - d / 2 - 0.55 }
+  return { x, z: z - d * half - doorApproach }
 }
-export const chestSize = { width: 0.92, depth: 0.64, height: 0.66 }
-export const spawns: Point[] = crewHomes.map(({ chest }) => ({ x: chest.x, z: chest.z - 1.34 }))
-export const crateStarts: Point[] = [
-  { x: -49, z: -15 }, { x: -47, z: -17 }, { x: -45, z: -15 },
-]
-export const extinguisherStarts: Point[] = [{ x: 20, z: 22 }, { x: 22, z: 22 }]
-// Wren works at a mending bench on the grass beside the ferry approach. The loaned toolbox lives on its top.
-export const mendingBench = { x: -27.4, z: -26.6, heading: Math.PI / 2, top: .86 }
-export const toolboxHome: Point = { x: mendingBench.x, z: mendingBench.z + .42 }
+export { chestSize } from './assets/geometry/starter-furniture.ts'
+export const spawns: Point[] = crewHomes.map(({ chest }) => ({ x: chest.x, z: chest.z - crewSpawnSetback }))
+export const mendingBench = { ...mendingBenchSite, geometry: mendingBenchGeometry }
+export const toolboxHome: Point = { x: mendingBench.x, z: mendingBench.z + mendingBenchToolboxOffsetZ }
 export const itemStarts = [
   ...crateStarts.map((start) => ({ kind: 'crate' as const, start })),
   ...extinguisherStarts.map((start) => ({ kind: 'extinguisher' as const, start })),
-  { kind: 'toolbox' as const, start: toolboxHome, lift: mendingBench.top },
+  { kind: 'toolbox' as const, start: toolboxHome, lift: mendingBench.geometry.surface.top },
+  // Fire stations come after the toolbox so older saves keep their item IDs.
+  ...extinguisherStations.map(({ x, z }) => ({ kind: 'extinguisher' as const, start: { x, z }, lift: fireStationGeometry.restTop })),
 ]
-export const wrenCottage = { x: -35.8, z: -2.4, w: 4.5, d: 3.9, h: 3.3, wall: '#e9d6c3', roof: '#6c5c86' }
-
-export const buildings = [
-  { x: -50, z: -22, w: 8, d: 5, h: 4.65, wall: '#f3c78e', roof: '#a84632' },
-  { x: -38, z: -20, w: 6, d: 5, h: 4.1, wall: '#f7e3a1', roof: '#1b7773' },
-  { x: 35, z: 22, w: 6, d: 5, h: 4.8, wall: '#f4ce91', roof: '#b74635' },
-  { x: 43, z: 22, w: 6, d: 5, h: 5.25, wall: '#eb9973', roof: '#9e3c39' },
-  { x: 50, z: 21.4, w: 4, d: 4, h: 4.1, wall: '#ffe8b7', roof: '#236b75' },
-  { x: 39, z: 2.6, heading: Math.PI, w: 6, d: 5, h: 4.9, wall: '#f5e3b2', roof: '#b74e36' },
-  { x: 48, z: 2.6, heading: Math.PI, w: 5, d: 5, h: 4.35, wall: '#76b7a3', roof: '#25585f' },
-  { x: 25, z: 18, w: 4, d: 4, h: 4.1, wall: '#e47c63', roof: '#a02e30' },
-  { x: 10, z: 33, w: 3, d: 3, h: 4.65, wall: '#d6b188', roof: '#12605b' },
+export const buildings: StarterBuilding[] = [
+  ...publicBuildings,
   ...crewHomes.map(({ building }) => building),
   wrenCottage,
 ]
 
 export function onDock(point: Point) {
-  return Math.abs(point.x - harborDock.x) <= harborDock.width / 2 &&
-    point.z <= harborDock.firstZ + harborDock.plankDepth / 2 && point.z >= dockEndZ - harborDock.plankDepth / 2
+  return Math.abs(point.x - harborDock.x) <= harborDock.width * half
+    && point.z <= harborDock.firstZ + harborDock.plankDepth * half && point.z >= dockEndZ - harborDock.plankDepth * half
 }
 
 export function distance(a: Point, b: Point) {

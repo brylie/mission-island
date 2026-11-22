@@ -1,13 +1,14 @@
-import { coastPoint } from '../terrain.ts'
+import { coastBounds } from '../terrain.ts'
 import type { Point } from '../world.ts'
 import type { CameraState } from './stage'
 
-const coast = Array.from({ length: 192 }, (_, index) => coastPoint(index * Math.PI / 96))
 const margin = 12
-const west = Math.min(...coast.map(({ x }) => x)) - margin
-const east = Math.max(...coast.map(({ x }) => x)) + margin
-const south = Math.min(...coast.map(({ z }) => z)) - margin
-const north = Math.max(...coast.map(({ z }) => z)) + margin
+const metresRounding = 10
+const coast = coastBounds()
+const west = coast.west - margin
+const east = coast.east + margin
+const south = coast.south - margin
+const north = coast.north + margin
 
 export const landscapeMapSize = { width: east - west, height: north - south }
 
@@ -63,4 +64,12 @@ export function shotCameraPoint({ alpha, beta, radius, target }: CameraState): P
     x: target[0] + Math.cos(alpha) * horizontalRadius,
     z: target[2] + Math.sin(alpha) * horizontalRadius,
   }
+}
+
+export function onMap({ u, v }: MapPoint) {
+  return u >= 0 && u <= 1 && v >= 0 && v <= 1
+}
+
+export function roundedPoint({ x, z }: Point): Point {
+  return { x: Math.round(x * metresRounding) / metresRounding, z: Math.round(z * metresRounding) / metresRounding }
 }

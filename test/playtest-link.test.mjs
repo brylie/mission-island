@@ -4,11 +4,8 @@ import test from 'node:test'
 import { landscapeLink, landscapeWindow, saltwindLink, readLandscapeView, readSaltwindView } from '../src/playtest-link.ts'
 
 const host = 'http://demo:example@192.168.1.10:5173/dev/index.html?save=family#private'
-const bench = { focus: [39, 17.65], camera: { target: [39, 1, 17.65], alpha: -1.3, beta: 1.1, radius: 6, fov: .8 },
-  hour: 0, rain: 0, time: 0, grid: false, wireframe: true }
-const slip = { point: { x: -311, z: -225, y: 3, velocity: 0, grounded: true, swimming: false }, eye: [-311, 7, -211],
-  yaw: 3.1, orbit: 3, pitch: .2, arm: 12, time: 128, cycle: .5, speed: 0, site: 'rescue', weather: 'dusk', overview: false,
-  tour: { stop: 0, leg: 0, progress: 0, playing: false } }
+const bench = { focus: [39, 17.65], camera: { target: [39, 1, 17.65], alpha: -1.3, beta: 1.1, radius: 6, fov: 0.8 }, hour: 0, rain: 0, time: 0, grid: false, wireframe: true }
+const slip = { point: { x: -311, z: -225, y: 3, velocity: 0, grounded: true, swimming: false }, eye: [-311, 7, -211], yaw: 3.1, orbit: 3, pitch: 0.2, arm: 12, time: 128, cycle: 0.5, speed: 0, site: 'rescue', weather: 'dusk', overview: false, tour: { stop: 0, leg: 0, progress: 0, playing: false } }
 
 for (const [name, state, write, read, path] of [
   ['Seabrook bench', bench, landscapeLink, readLandscapeView, 'workbench.html'],

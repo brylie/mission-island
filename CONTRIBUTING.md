@@ -26,22 +26,60 @@ Run `npm run playtest` and open the printed **Network** URL on both computers. *
 
 Press **O → Live playtest** or open **Live checkpoints** in the Workbench on the same host. Select a scenario and crew size. **Start checkpoint** sets up the world, places each player and waits for the requested crew. **Restart checkpoint** restores that scenario’s baseline for everyone. Refreshing a browser rejoins the current run. To change to solo, leave one browser connected.
 
+**Playtest events** in the same menu start an island event without waiting for the host's schedule. **Start wildfire** lights a fire of the chosen size, site and heat, or a random one for each choice left on **Random**. **Start it already located** skips the search. **End wildfire** ends the current fire as a burnout, with no pay and a burn scar. Events start only after the checkpoint has started and the starter shift is complete. The host refuses them in a regular game.
+
 | Scenario ID | Starting condition |
 | --- | --- |
 | `dock-fishing` | Each angler stands at the end of the fishing dock, facing open water with a rod equipped. Cast immediately to test the current fishing mechanic. |
+| `ferry-approach` | The ferry repair is open and the crew stands by the flatbed on the return road from Seabrook. Drive to the ferry without the map to try the approach. |
+| `ferry-restored` | The ferry ramp is open. The flatbed waits on Harbor Depot road, facing the terminal. |
+| `ferry-yard` | The flatbed is parked in the ferry freight yard with two timber crates behind it. Stack them by the yard pallet. |
 | `harbor-delivery` | The crew starts beside the supply crates with the Harbor Depot delivery active. |
 | `wren-fit` (default) | One player has the toolbox and the other has the pin. In solo play the toolbox rests by the gate. Press **E** to fit the pin and **E** again to test the swing. |
 | `wren-discover` | The crew arrives outside the unrepaired garden. |
 | `wren-morning` | The repair is paid and Wren is about to leave home. |
+| `wren-swell` | Two days later, the crew has agreed to plane Wren's swollen gate. The toolbox is beside the gate and Wren is at the mending bench. To try a breach, swing the gate, see it catch, then tell Wren it swings clear before planing. To finish the repair, swing the gate and see it catch, plane the edge, swing it again and report honestly. Planing needs a swing that caught, and a false report clears the finding, so after one, swing the gate again before planing. |
+| `wren-trust` | The hinge and ferry edging are complete. One crewmate stands by Wren with carrots. The other waits at the gate with fish. Give Wren the lunch carrot, check the free toolbox loan, then accept the swollen-gate favor and try the full breach and recovery sequence. |
 | `ridge-checkout` | The crew is unqualified. The first player stands at the Windstone Ridge loan rack facing the meadow. In a pair, the second stands beside the landing sign to mark the meadow. Press **E** to launch the checkout. |
 | `ridge-soaring` | A dry 10:30 with the crew qualified and the Mirror Pool survey done. Both players stand at the rack. Press **E** for an island survey flight and climb in the rising air. |
 | `village-favors` | At 09:30 after the starter shift, the crew stands beside Bram at the depot. Each crewmate carries two fish and two carrots for Ines's and Mara's favors. |
+| `household-evening` | At 18:30, one crewmate stands at Mara's porch with two carrots and the other stands outside Wren's cottage. Watch both residents go indoors, then compare the windows at bedtime and before departure. |
+| `field-outing` | At 07:30, both players stand near Mara on the fishing dock with a fresh field journal. Follow her leads to Shellglass and Juniper, then look for sheltering hares during the first late-morning shower. |
+| `fire-watch` | Smoke is reported on a morning that stays dry; a grass fire burns on Windstone meadow slope. One crewmate stands at the foot of the Fire Watch stairs and the other by its fire station. Climb the tower, sight the fire finder, then take an extinguisher west and put the fire out. |
 
 Agents can use the same scenario IDs from the shell. For example, to try fishing alone:
 
 ```sh
 MISSION_ISLAND_CHECKPOINT=dock-fishing MISSION_ISLAND_CREW_SIZE=1 npm run playtest
 ```
+
+### Record gameplay metrics
+
+Enable the host log for a two-player household playtest with the following command. Use `MISSION_ISLAND_CHECKPOINT=wren-trust` to start with Wren, or switch checkpoints from **Live playtest**. For a regular saved game, set `MISSION_ISLAND_PLAYTEST_METRICS=1` when starting `npm run dev`.
+
+```sh
+MISSION_ISLAND_PLAYTEST_METRICS=1 MISSION_ISLAND_CHECKPOINT=household-evening MISSION_ISLAND_CREW_SIZE=2 npm run playtest
+```
+
+The host prints the location of a local JSON Lines file in `.mission-island/metrics/`. Each row records the run number, elapsed milliseconds since the crew started, and the island clock. Restarting or switching checkpoints starts a new run in the same file. The first rows of a run establish the baseline.
+
+- `crew` gives the connected seat numbers. The log uses seat numbers for attributable actions and omits player names, session tokens and network addresses.
+- `household` records location, indoor status and window-light changes. A `sleep-skip` gives the start and end of a clock jump. The log resumes at dawn without filling in the skipped hours.
+- `favor-accepted` and `favor-paid` record shared favor progress. A payment includes the acting seat when available, the resident's location at payment, coins, Trust change and whether it restored standing. `gate-step`, `wren-report` and `wren-state` record swing and planing results, honest or broken reports, and changes to Wren's Trust, standing, loan eligibility and toolbox holder.
+
+For job choices, repeat play, and co-op downtime, start an ordinary test save with `MISSION_ISLAND_PLAYTEST_METRICS=1 MISSION_ISLAND_SAVE=gameplay-playtest npm run dev`. Let players choose freely after the starter shift. Ask what they wanted to do again and when they felt stuck. Checkpoints can reproduce specific mechanics and are identified in `run-start`.
+
+| Rows | How to read them |
+| --- | --- |
+| `job-options`, `job-choice` | Host-eligible Harbor board choices at an approach or change in availability, and choices sent to the board handler. Ines’s accepted orders have a `produce:` prefix. A refused board choice names the gameplay reason. An eligible choice can exist before the player opens the board. |
+| `job-progress`, `job-resumed` | Hand-in progress and completion by contributing seat. For a job started in the same run, compare its accepted choice with the first contribution and with completion. A resumed job carries its saved progress. |
+| `mechanic-use` | Episodes of valid fishing, cultivation, rowing, gliding, and manual field observations. A seat gets a new episode after 45 seconds without a tracked use of that mechanic or when matching work changes. Each launched flight starts an episode, and the log records any remaining aerial survey work. Mara’s unrecorded leads count as related work after the crew hears them. A repeat with empty `relatedWork` is a candidate for voluntary play. Check the player's account to learn why they returned. |
+| `co-op-activity` | A per-seat timeline while at least two players are connected, sampled every 250 ms. It describes roles such as rowing or riding, equipment and actions such as a cast or barrow use, and quiet states. Movement flags distinguish riding or carrying from sitting or holding still. Read the duration up to the next state or `co-op-ended`. |
+| `gameplay-outcome`, `gameplay-recovery` | Fishing and flight results, field observation feedback, barrow returns and recalls, and respawns. A recovery pairs an observed setback with a matching success by the same connected seat and includes the elapsed time and number of setbacks. A cast with no bite is logged as an outcome. |
+
+The log records host-observed activity. A quiet seat may be reading, watching, coordinating aloud, or taking a break. Menus, conversations between players, and the reason for a pause are outside the host's view. Episode and recovery histories restart when that seat disconnects.
+
+Use the timestamps alongside the two players' observations in [the playtest issue](https://github.com/brylie/mission-island/issues/52). The rows describe host state. Record what each device displayed and what each player noticed during the session.
 
 ### Add a scenario for a job, mechanic or field test
 
@@ -65,9 +103,34 @@ mise run quality
 mise run audit
 ```
 
-The pre-commit hook checks file formats, merge markers, private keys, and large additions. It also runs type-aware ESLint with security and complexity rules, Knip for unused code and dependencies, the mechanics tests, and the production build. The coverage gate requires at least 81% for lines, functions, and branches across the host and shared mechanics. The pre-push hook audits npm dependencies. Run the audit separately with `mise run audit`.
+The pre-commit hook checks file formats, merge markers, private keys, and large additions. It also runs type-aware ESLint with security and complexity rules, the TypeScript type check, and the mechanics tests. ESLint caches its results in `node_modules/.cache/eslint/`, so it only re-checks files that changed. A cached file can miss a type-aware error when a file it depends on changes, so the pre-push hook lints again without the cache.
 
-On pull requests into `main` and pushes to `main`, GitHub Actions runs the pre-commit and pre-push checks. Open **CI → Quality and tests** to inspect coverage, the build, and the dependency audit.
+The pre-push hook runs ESLint without the cache, Knip for unused code and dependencies, the production build, and the npm dependency audit.
+
+`mise run quality` runs the npm scripts behind both hooks. It skips the hooks' built-in file checks, such as `detect-private-key` and `check-json`, and the audit. To run every hook check, use `prek run --all-files --hook-stage pre-commit` and `prek run --all-files --hook-stage pre-push`. Run the audit separately with `mise run audit`.
+
+The coverage gate runs only in CI, because it takes a few minutes. It fails the build when lines, functions, or branches drop below 81% across the host and shared mechanics. Run it locally with `npm run coverage`.
+
+Run `npm run lint:fix` to apply ESLint layout fixes. First-party JavaScript and TypeScript follow the ESLint Stylistic recommended preset with LF line endings and parentheses around all arrow function parameters. Multiline interaction registries use one entry per line.
+
+Name gameplay thresholds, timeouts, and other numeric settings in the module that owns the rule. Include units in the name when they matter. `no-magic-numbers` checks first-party JavaScript and TypeScript, including object fields, model builders, and Workbench code. The rule accepts `-1`, `0`, `1`, array indexes, and numeric literals in named enum members and types.
+
+**Approved locations for authored numeric data**
+
+- `src/assets/geometry/*.ts` for dimensions, support volumes, and vertex or placement tuples in local model coordinates.
+- `src/assets/audio/*.ts`, `src/assets/effects/*.ts`, and `src/assets/recipes/*.ts` for authored sound, particle, shader, and lighting data.
+- The island layout files listed in `eslint.config.mjs` for authored terrain profiles, scenery locations, and routes.
+- `test/` for test inputs and expected values.
+
+Keep the approved production modules to constants and types. ESLint rejects functions, calls, and mutations there. Geometry, audio, effects, and world layouts have no imports. Recipe modules can import types and compose values from neighboring recipe files. Runtime code imports the data and names its own settings. ESLint uses the repository configuration for all source files, including exceptions.
+
+Name shared colors for their role in the palette. Share a constant when several assets are meant to use the same paint or material. Keep a model’s individual finishes with its geometry.
+
+ESLint reports numeric-literal violations directly and disables inline overrides.
+
+The correctness rules check callback returns, loop control, imports, parameter reassignment, and other common errors. Switches over typed unions in the host and shared gameplay modules must handle every declared case.
+
+On pull requests into `main` and pushes to `main`, GitHub Actions runs the pre-commit and pre-push checks and the coverage gate. Open **CI → Quality and tests** to inspect coverage, the build, and the dependency audit.
 
 ## Build and iterate together
 

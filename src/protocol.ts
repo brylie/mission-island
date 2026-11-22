@@ -14,8 +14,13 @@ import type { JobBoardState, JobId } from './jobs'
 import type { GardenGate, GateRepair, GateStep } from './gate-repair'
 import type { FavorReceipt, ResidentRecords } from './residents/trust'
 import type { InteractionChoice } from './interaction-options'
+import type { FishId } from './journal/fish'
+import type { Journal } from './journal/journal'
+import type { FerryRepair } from './ferry-repair'
+import type { FarmOrderId, FarmWork } from './farm-orders'
 import type { MaterialPockets, MaterialsWork, RepairMaterial } from './materials-work'
 export type FishingResult = 'caught' | 'no-bite' | 'dry-cast' | 'boat-moving' | 'escaped' | 'line-snapped'
+import type { IslandEvents, WildfireSize } from './wildfire.ts'
 
 export interface Weather {
   hour: number
@@ -60,8 +65,8 @@ export interface Player extends Pose {
   materials?: MaterialPockets
   seeds: number
   starterSeedClaimed?: boolean
-  charge: { kind: ChargeKind; power: number } | null
-  casting: { bobber: Point; elapsed: number; power: number; fight?: { progress: number; tension: number; pulling: boolean } } | null
+  charge: { kind: ChargeKind, power: number } | null
+  casting: { bobber: Point, elapsed: number, power: number, fight?: { progress: number, tension: number, pulling: boolean } } | null
   throwing: boolean
   rowing: boolean
   ownsAngler: boolean
@@ -78,9 +83,11 @@ export interface Item extends Pose {
   holder: number | null
   onBed: boolean
   y: number
-  rotation: { x: number; y: number; z: number; w: number } | null
+  rotation: { x: number, y: number, z: number, w: number } | null
   delivered: boolean
   spraying: boolean
+  // An extinguisher's remaining contents, from 0 to 1. Missing means full.
+  charge?: number
 }
 
 export type Mission = 'delivery' | 'fire' | 'complete'
@@ -106,7 +113,9 @@ export interface Snapshot {
   mission: Mission
   fire: number
   lookoutFireClearedAt?: number
+  events: IslandEvents
   farm: PlotStage[]
+  farmWork: FarmWork
   cultivation?: CultivationCue[]
   weather: Weather
   islandTime: number
@@ -115,41 +124,61 @@ export interface Snapshot {
   gateRepair: GateRepair
   residents: ResidentRecords
   lastFavorPay?: FavorReceipt
+  ferryRepair: FerryRepair
   materialsWork: MaterialsWork
   aviation: AviationState
+  journal: Journal
 }
 
 export type ServerMessage =
   | Snapshot
-  | { type: 'welcome'; id: number; scenarios?: readonly ScenarioSummary[] }
-  | { type: 'fishing-result'; result: FishingResult }
-  | { type: 'market-sale'; coins: number }
-  | { type: 'job-pay'; coins: number; job: keyof typeof starterPay }
-  | { type: 'order-pay'; coins: number; id: JobId }
-  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'open-wardrobe' | 'open-clothing-counter' }
-  | { type: 'resident-chat'; resident: string }
-  | { type: 'favor-accepted'; resident: string; favor: string; playerId: number }
-  | { type: 'favor-pay'; resident: string; favor: string; coins: number; trust: number }
-  | { type: 'gate-step'; step: GateStep }
-  | { type: 'materials-step'; step: 'gathered' | 'inspected' | 'timber-checked' | 'qualified'; material: RepairMaterial }
-  | { type: 'materials-step'; step: 'delivered'; material: RepairMaterial; remaining: number }
-  | { type: 'angler-purchase'; result: ClothingPurchaseResult }
-  | { type: 'clothing-purchase'; item: ClothingId; result: ClothingPurchaseResult }
-  | { type: 'flight-result'; result: FlightResult; pilotId: number; aerial?: string[]; recorded?: number }
-  | { type: 'aerial-sighting'; id: string }
+  | { type: 'welcome', id: number, scenarios?: readonly ScenarioSummary[] }
+  | { type: 'fishing-result', result: FishingResult, fish?: FishId }
+  | { type: 'market-sale', coins: number }
+  | { type: 'farm-pay', id: FarmOrderId, coins: number }
+  | { type: 'barrow-returned' }
+  | { type: 'job-pay', coins: number, job: keyof typeof starterPay }
+  | { type: 'order-pay', coins: number, id: JobId }
+  | { type: 'order-unavailable' | 'starter-seed' | 'crew-note' | 'ferry-tally' | 'open-wardrobe' | 'open-clothing-counter' }
+  | { type: 'resident-chat', resident: string }
+  | { type: 'tide-staff', time: number }
+  | { type: 'field-unavailable' }
+  | { type: 'favor-accepted', resident: string, favor: string, playerId: number }
+  | { type: 'favor-pay', resident: string, favor: string, coins: number, trust: number, restored: boolean }
+  | { type: 'favor-report', resident: string, favor: string, playerId: number, result: 'honest' | 'broken', trust: number }
+  | { type: 'gate-step', step: GateStep }
+  | { type: 'materials-step', step: 'gathered' | 'inspected' | 'timber-checked' | 'qualified', material: RepairMaterial }
+  | { type: 'materials-step', step: 'delivered', material: RepairMaterial, remaining: number }
+  | { type: 'ferry-progress', kind: 'coins' | 'timber', player: number, amount: number }
+  | { type: 'ferry-order', crates: number }
+  | { type: 'ferry-stage', stage: number }
+  | { type: 'angler-purchase', result: ClothingPurchaseResult }
+  | { type: 'clothing-purchase', item: ClothingId, result: ClothingPurchaseResult }
+  | { type: 'flight-result', result: FlightResult, pilotId: number, aerial?: string[], recorded?: number }
+  | { type: 'aerial-sighting', id: string }
+  | WildfireNotice
+  // A transient sound cue from host physics. Never saved; clients drop repeated or late IDs.
+  | { type: 'crate-impact', id: string, item: number, x: number, y: number, z: number, strength: number, surface: 'ground' | 'bed' }
   | { type: 'full' | 'duplicate' }
+
+export type WildfireNotice =
+  | { type: 'wildfire', event: 'smoke' | 'burned-out' | 'rained-out', place: string, size: WildfireSize }
+  | { type: 'wildfire', event: 'out', place: string, size: WildfireSize, coins: number }
+  | { type: 'wildfire', event: 'spread', place: string, size: WildfireSize, burning: number }
+  | { type: 'wildfire', event: 'located' | 'bearing', place: string, size: WildfireSize, degrees: number, direction: string, metres: number, playerId?: number }
+  | { type: 'wildfire', event: 'clear', playerId: number }
 
 export type ClothingPurchaseResult = 'bought' | 'already-owned' | 'insufficient-funds' | 'away'
 
 export type ClientMessage =
-  | { type: 'join'; token: string }
-  | { type: 'input'; input: Input }
-  | { type: 'appearance'; appearance: CrewAppearance }
-  | { type: 'crew-name'; name: string }
-  | { type: 'primary'; phase: 'start' | 'release' | 'cancel'; aim?: number }
-  | { type: 'equip'; item: InventoryItem }
-  | { type: 'take-job'; id: JobId }
+  | { type: 'join', token: string }
+  | { type: 'input', input: Input }
+  | { type: 'appearance', appearance: CrewAppearance }
+  | { type: 'crew-name', name: string }
+  | { type: 'primary', phase: 'start' | 'release' | 'cancel', aim?: number }
+  | { type: 'equip', item: InventoryItem }
+  | { type: 'take-job', id: JobId }
   | { type: 'buy-angler' | 'buy-seed' }
-  | { type: 'buy-clothing'; item: ClothingId }
-  | { type: 'interact'; choice?: InteractionChoice }
+  | { type: 'buy-clothing', item: ClothingId }
+  | { type: 'interact', choice?: InteractionChoice }
   | { type: 'seat' | 'jump' | 'respawn' }

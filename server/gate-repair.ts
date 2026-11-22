@@ -1,8 +1,9 @@
-import { gateFavor, gateMendedStage, gateway, gatewayClear, onBench, toolboxItem, wrenAt } from '../src/gate-repair.ts'
+import { atGate, gateFavor, gateMendedStage, gateway, gatewayClear, onBench, toolboxItem, wrenAt, wrenGatewayRadius } from '../src/gate-repair.ts'
 import type { GateAction, GateStep } from '../src/gate-repair.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { distance, toolboxHome } from '../src/world.ts'
 import type { CrewMember, CrewNotice } from './crew.ts'
+import type { InteractionHandlers } from './interactions.ts'
 import { restingY } from './items.ts'
 
 // Host transitions for Wren's gate. The interaction layer has already checked the step is still
@@ -21,6 +22,8 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
   function recallToolbox() {
     const toolbox = toolboxItem(state)
     if (!toolbox || repair().stage === 'sagging' || onBench(toolbox)) return false
+    // While the swollen gate is being planed, a toolbox set down at the gate is in use, not left behind.
+    if (repair().swelling && toolbox.holder === null && atGate(toolbox)) return false
     const holder = state.players.find((player) => player.id === toolbox.holder)
     if (holder?.connected) return false
     shelveToolbox()
@@ -37,48 +40,45 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
     if (current.stage === 'sagging') {
       Object.assign(current, { stage: 'accepted', acceptedAt: state.islandTime })
       state.residents.wren = { ...state.residents.wren, active: gateFavor }
-    } else if (recallToolbox()) step(member, 'recalled')
+    }
+    else if (recallToolbox()) step(member, 'recalled')
   }
 
-  function act(member: CrewMember, intent: GateAction) {
-    const { player } = member
-    const current = repair()
-    switch (intent) {
-      case 'return-toolbox':
-        shelveToolbox()
-        step(member, 'returned')
-        break
-      case 'inspect':
-        current.stage = 'inspected'
-        step(member, 'inspected')
-        break
-      case 'take-pin':
-        current.pinHolder = player.id
-        step(member, 'pin')
-        break
-      case 'fit':
-        Object.assign(current, { stage: 'fitted', pinHolder: null })
-        notifyCrew({ type: 'gate-step', step: 'fitted' })
-        break
-      case 'test':
-        Object.assign(current, { stage: 'mended', mendedAt: state.islandTime })
-        state.gate = { open: true, closePending: false }
-        keepFavor()
-        break
-      case 'open':
-        state.gate = { open: true, closePending: false }
-        if (current.stage !== 'mended') step(member, 'stuck')
-        break
-      case 'close':
-        state.gate.closePending = true
-        break
-    }
-  }
+  const interactions = {
+    'return-toolbox'(member) {
+      shelveToolbox()
+      step(member, 'returned')
+    },
+    inspect(member) {
+      repair().stage = 'inspected'
+      step(member, 'inspected')
+    },
+    'take-pin'(member) {
+      repair().pinHolder = member.player.id
+      step(member, 'pin')
+    },
+    fit() {
+      Object.assign(repair(), { stage: 'fitted', pinHolder: null })
+      notifyCrew({ type: 'gate-step', step: 'fitted' })
+    },
+    test() {
+      Object.assign(repair(), { stage: 'mended', mendedAt: state.islandTime })
+      state.gate = { open: true, closePending: false }
+      keepFavor()
+    },
+    open(member) {
+      state.gate = { open: true, closePending: false }
+      if (repair().stage !== 'mended' || repair().swelling === 'swollen') step(member, 'stuck')
+    },
+    close() {
+      state.gate.closePending = true
+    },
+  } satisfies InteractionHandlers<GateAction>
 
   // Wren opens a mended gate on the shortcut and closes it behind, once nobody stands in the opening.
   function tick() {
     const wren = wrenAt(state)
-    const passing = gateMendedStage(state) === 'settled' && !wren.indoors && distance(wren, gateway) < 1.5
+    const passing = gateMendedStage(state) === 'settled' && !wren.indoors && distance(wren, gateway) < wrenGatewayRadius
     if (passing && !state.gate.open) state.gate = { open: true, closePending: true }
     if (state.gate.open && state.gate.closePending && gatewayClear(state)) state.gate = { open: false, closePending: false }
   }
@@ -87,5 +87,5 @@ export function createGateRepair(state: Snapshot, notifyCrew: (message: CrewNoti
     if (repair().pinHolder === playerId) repair().pinHolder = null
   }
 
-  return { act, talk, tick, releasePin }
+  return { interactions, talk, tick, releasePin }
 }

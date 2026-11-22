@@ -1,109 +1,159 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import {
+  ambulanceBody,
+  fireEngineBody,
+  loggingBed,
+  patrolDoorStripe,
+  rescueHelicopter,
+  roadVehicleGeometry,
+  roadVehicleProfiles,
+  saltwindVehicleDimensions,
+  saltwindVehiclePaint as paint,
+  saltwindVehicleWheel,
+  utilityAirplane,
+  type SaltwindVehiclePart,
+} from '../assets/geometry/saltwind-vehicles'
 import { createOreHauler, haulerSpec } from '../assets/ore-hauler'
 import type { MeshFactory } from '../island-meshes'
 
-const cream = '#fff0d0', glass = '#407783', rubber = '#303c39', steel = '#8da3a0'
-
-// Model origin is on the ground. Local +Z is forward, +Y is up, and +X is the vehicle's right.
-export const vehicleSpecs = {
-  ambulance: { name: 'Ambulance', width: 2.32, length: 6.1, height: 2.9, track: 1.78, axles: [-1.75, 1.95], wheel: 0.40 },
-  engine: { name: 'Fire engine', width: 2.55, length: 8.2, height: 3.25, track: 2.06, axles: [-2.62, -1.42, 2.7], wheel: 0.52 },
-  patrol: { name: 'Patrol car', width: 1.92, length: 4.75, height: 1.65, track: 1.48, axles: [-1.49, 1.37], wheel: 0.32 },
-  logger: { name: 'Logging truck', width: 2.55, length: 10.2, height: 3.6, track: 2.04, axles: [-3.6, -2.35, 3.28], wheel: 0.54,
-    cargo: { width: 2.22, length: 6.55, height: 1.9, floor: 1.29, z: -1.35 } },
-  hauler: haulerSpec,
-  helicopter: { name: 'Rescue helicopter', width: 10.2, length: 11.65, height: 3.35, skids: [-0.90, 0.90] },
-  airplane: { name: 'Utility airplane', width: 10.8, length: 7.6, height: 2.8, gear: [[-0.98, 0.4], [0.98, 0.4], [0, 2.42]] },
-} as const
+const { helicopter, airplane, ...roadVehicleDimensions } = saltwindVehicleDimensions
+export const vehicleSpecs = { ...roadVehicleDimensions, hauler: haulerSpec, helicopter, airplane } as const
 export type VehicleId = keyof typeof vehicleSpecs
+type RoadVehicleId = keyof typeof roadVehicleDimensions
+
+const half = 0.5
+const quarterTurn = Math.PI * half
+const diameterPerRadius = 2
+
+function vehicleParts(meshes: MeshFactory, root: TransformNode) {
+  const box = (x: number, y: number, z: number, width: number, height: number, depth: number, color: string) =>
+    meshes.box(x, y, z, width, height, depth, color, root)
+  const part = ({ center, size }: SaltwindVehiclePart, color: string) => box(...center, ...size, color)
+  const ellipsoid = ({ center, size }: SaltwindVehiclePart, color: string, segments: number) =>
+    meshes.sphere(...center, ...size, color, root, true, segments)
+  function wheel(x: number, z: number, radius: number, thickness: number) {
+    const { tireSegments, hubSegments, hubDiameterPerRadius, hubThickness } = saltwindVehicleWheel
+    const diameter = radius * diameterPerRadius
+    const hub = radius * hubDiameterPerRadius
+    meshes.cylinder(x, radius, z, diameter, diameter, thickness, tireSegments, paint.rubber, root).rotation.z = quarterTurn
+    meshes.cylinder(x + Math.sign(x) * thickness * half, radius, z, hub, hub, hubThickness, hubSegments, paint.steel, root).rotation.z = quarterTurn
+  }
+  return { box, ellipsoid, part, wheel }
+}
+
+type Parts = ReturnType<typeof vehicleParts>
+
+function buildHelicopter({ box, ellipsoid, part }: Parts) {
+  const model = rescueHelicopter
+  ellipsoid(model.cabin, paint.helicopter, model.shellSegments)
+  ellipsoid(model.windshield, paint.glass, model.shellSegments)
+  ellipsoid(model.tailBoom, paint.cream, model.shellSegments)
+  part(model.tailFin, paint.helicopter).rotation.x = model.tailFin.rake
+  part(model.tailRotor, paint.rubber).rotation.x = model.tailRotor.rake
+  part(model.rotorMast, paint.steel)
+  for (const blade of model.rotorBlades) part(blade, paint.rubber)
+  const { skid, skidStrut } = model
+  for (const x of helicopter.skids) {
+    box(x, skid.y, skid.z, ...skid.size, paint.steel)
+    for (const z of skidStrut.z) {
+      box(x * skidStrut.xRatio, skidStrut.y, z, ...skidStrut.size, paint.steel).rotation.z = Math.sign(x) * skidStrut.splay
+    }
+  }
+}
+
+function buildAirplane({ box, ellipsoid, part, wheel }: Parts) {
+  const model = utilityAirplane
+  ellipsoid(model.fuselage, paint.cream, model.shellSegments)
+  ellipsoid(model.canopy, paint.glass, model.shellSegments)
+  part(model.wing, paint.airplaneWing)
+  part(model.tailplane, paint.airplaneWing)
+  part(model.fin, paint.airplaneFin).rotation.x = model.fin.rake
+  part(model.propeller, paint.rubber).rotation.z = model.propeller.roll
+  const { gearStrut, gearWheel } = model
+  for (const [x, z] of airplane.gear) {
+    box(x * gearStrut.xRatio, gearStrut.y, z, ...gearStrut.size, paint.steel).rotation.z = Math.sign(x) * gearStrut.splay
+    wheel(x, z, gearWheel.radius, gearWheel.thickness)
+  }
+}
+
+function buildRoadEquipment({ box, part }: Parts, id: RoadVehicleId) {
+  const { width } = roadVehicleDimensions[id]
+  switch (id) {
+    case 'ambulance': {
+      const { compartment, stripe, careEmblem, doorSeam } = ambulanceBody
+      box(0, compartment.y, compartment.z, width, compartment.height, compartment.depth, paint.cream)
+      box(0, stripe.y, stripe.z, width + stripe.extraWidth, stripe.height, stripe.depth, paint.ambulanceStripe)
+      part(careEmblem.bar, paint.ambulanceStripe)
+      part(careEmblem.upright, paint.ambulanceStripe)
+      part(doorSeam, paint.steel)
+      break
+    }
+    case 'engine': {
+      const { compartment, lockers, ladderRails, ladderRungs } = fireEngineBody
+      box(0, compartment.y, compartment.z, width, compartment.height, compartment.depth, paint.engineBody)
+      for (const side of [-1, 1]) for (const z of lockers.z) box(side * width * half, lockers.y, z, ...lockers.size, paint.steel)
+      for (const x of ladderRails.x) box(x, ladderRails.y, ladderRails.z, ...ladderRails.size, paint.steel)
+      for (let i = 0; i < ladderRungs.count; i++) {
+        box(0, ladderRungs.y, ladderRungs.firstZ + i * ladderRungs.spacing, ...ladderRungs.size, paint.steel)
+      }
+      break
+    }
+    case 'patrol': {
+      const stripe = patrolDoorStripe
+      for (const side of [-1, 1]) box(side * width * stripe.lateralWidthRatio, stripe.y, stripe.z, ...stripe.size, paint.cream)
+      break
+    }
+    case 'logger': {
+      const { cargo } = roadVehicleDimensions.logger
+      const { floor, stake } = loggingBed
+      box(0, cargo.floor - floor.drop, cargo.z, cargo.width + floor.extraWidth, floor.thickness, cargo.length, paint.loggerBed)
+      for (const side of [-1, 1]) {
+        const x = side * (cargo.width + stake.extraWidth) * half
+        for (const ratio of stake.lengthRatios) {
+          box(x, cargo.floor + cargo.height * half, cargo.z + ratio * cargo.length, stake.width, cargo.height, stake.depth, paint.steel)
+        }
+      }
+      break
+    }
+  }
+}
+
+function buildRoadVehicle(parts: Parts, id: RoadVehicleId) {
+  const { box, wheel } = parts
+  const { width, length, track, axles, wheel: radius } = roadVehicleDimensions[id]
+  const color = id === 'ambulance' ? paint.cream : paint[id]
+  const profile = id === 'patrol' ? roadVehicleProfiles.low : roadVehicleProfiles.tall
+  const { shell, sill, cabWidthRatio, windshield, sideGlass, headlamp, tailLamp, wheelClearance, grille, beaconMount, beacon } = roadVehicleGeometry
+  const front = length * half
+  const cabZ = front - profile.cab.inset
+  const bodyY = profile.shell.y
+  box(0, bodyY, 0, width * shell.widthRatio, profile.shell.height, length - shell.lengthInset, color)
+  box(0, bodyY - sill.drop, 0, width * sill.widthRatio, sill.height, length - sill.lengthInset, paint.rubber)
+  box(0, profile.cab.y, cabZ, width * cabWidthRatio, profile.cab.height, profile.cab.depth, color)
+  box(0, profile.windshield.y, cabZ + profile.windshield.offsetZ, width * windshield.widthRatio, profile.windshield.height, windshield.thickness, paint.glass)
+  for (const side of [-1, 1]) {
+    box(side * width * sideGlass.lateralWidthRatio, profile.sideGlass.y, cabZ, sideGlass.thickness, profile.sideGlass.height, profile.sideGlass.depth, paint.glass)
+    box(side * width * headlamp.lateralWidthRatio, bodyY + headlamp.raise, front - headlamp.frontInset, ...headlamp.size, paint.headlamp)
+    box(side * width * tailLamp.lateralWidthRatio, bodyY, -front + tailLamp.rearInset, ...tailLamp.size, paint.tailLamp)
+    for (const axle of axles) wheel(side * track * half, axle, radius, width - track - wheelClearance)
+  }
+  box(0, bodyY + grille.raise, front - grille.frontInset, width * grille.widthRatio, grille.height, grille.depth, paint.grille)
+  if (id === 'ambulance' || id === 'engine' || id === 'patrol') {
+    const y = profile.beaconHeight
+    box(0, y + beaconMount.raise, cabZ, width * beaconMount.widthRatio, beaconMount.height, beaconMount.depth, paint.rubber)
+    for (const side of [-1, 1]) {
+      box(side * width * beacon.lateralWidthRatio, y + beacon.raise, cabZ, ...beacon.size, side > 0 ? paint.rightBeacon : paint.leftBeacon)
+    }
+  }
+  buildRoadEquipment(parts, id)
+}
 
 export function createSaltwindVehicle(meshes: MeshFactory, id: VehicleId) {
   if (id === 'hauler') return createOreHauler(meshes).root
   const root = new TransformNode(vehicleSpecs[id].name, meshes.scene)
-  const box = (x: number, y: number, z: number, w: number, h: number, d: number, color: string) =>
-    meshes.box(x, y, z, w, h, d, color, root)
-  const ellipsoid = (x: number, y: number, z: number, w: number, h: number, d: number, color: string) =>
-    meshes.sphere(x, y, z, w, h, d, color, root, true, 10)
-  const cross = (y: number, z: number) => {
-    box(0, y, z, 0.56, 0.16, 0.035, '#d85846')
-    box(0, y, z + 0.018, 0.16, 0.51, 0.035, '#d85846')
-  }
-  const wheel = (x: number, z: number, radius: number, thickness: number) => {
-    meshes.cylinder(x, radius, z, radius * 2, radius * 2, thickness, 12, rubber, root).rotation.z = Math.PI / 2
-    meshes.cylinder(x + Math.sign(x) * thickness / 2, radius, z, radius * 1.08, radius * 1.08, 0.04, 10, steel, root).rotation.z = Math.PI / 2
-  }
-
-  if (id === 'helicopter') {
-    ellipsoid(0, 1.65, 1.02, 2.18, 2.03, 4.25, '#e7a54c')
-    ellipsoid(0, 1.95, 2.04, 1.88, 1.37, 2.17, glass)
-    ellipsoid(0, 1.72, -2.44, 0.57, 0.6, 4.76, cream)
-    box(0, 2.18, -4.48, 0.20, 1.36, 0.88, '#e7a54c').rotation.x = -.27
-    box(0.15, 2.05, -4.58, 0.09, 1.45, 0.14, rubber).rotation.x = -.55
-    box(0, 2.83, 0.75, 0.18, 0.61, 0.18, steel)
-    box(0, 3.17, 0.75, 10.2, 0.07, 0.24, rubber)
-    box(0, 3.2, 0.75, 0.24, 0.07, 10.2, rubber)
-    for (const x of vehicleSpecs.helicopter.skids) {
-      box(x, 0.11, 0.68, 0.17, 0.22, 3.67, steel)
-      for (const z of [-0.55, 1.84]) box(x * 0.83, 0.43, z, 0.12, 0.66, 0.13, steel).rotation.z = Math.sign(x) * 0.27
-    }
-    return root
-  }
-  if (id === 'airplane') {
-    ellipsoid(0, 1.41, 0, 1.33, 1.3, 7.25, cream)
-    ellipsoid(0, 1.92, 0.82, 1.16, 0.92, 2.65, glass)
-    box(0, 2.14, 0.45, 10.8, 0.19, 1.64, '#e6bb66')
-    box(0, 1.58, -2.88, 3.24, 0.12, 0.92, '#e6bb66')
-    box(0, 2.02, -2.85, 0.13, 1.55, 0.99, '#cf7355').rotation.x = -.26
-    box(0, 1.44, 3.66, 1.5, 0.12, 0.10, rubber).rotation.z = .66
-    for (const [x, z] of vehicleSpecs.airplane.gear) {
-      box(x * .78, 0.66, z, 0.12, 0.86, 0.16, steel).rotation.z = Math.sign(x) * .4
-      wheel(x, z, .285, .16)
-    }
-    return root
-  }
-
-  const spec = vehicleSpecs[id]
-  const { width, length, track, axles, wheel: radius } = spec
-  const color = { ambulance: cream, engine: '#c54d3e', patrol: '#385563', logger: '#537d62' }[id]
-  const low = id === 'patrol'
-  const cabZ = length / 2 - (low ? 1.63 : 1.18)
-  const bodyY = low ? .61 : 1.0
-  box(0, bodyY, 0, width * .92, low ? .54 : .57, length - .13, color)
-  box(0, bodyY - .27, 0, width * .80, .25, length - .38, rubber)
-  box(0, low ? 1.16 : 1.87, cabZ, width * .88, low ? .62 : 1.48, low ? 2 : 2.18, color)
-  box(0, low ? 1.28 : 2.2, cabZ + (low ? .91 : 1.096), width * .76, low ? .39 : .58, .035, glass)
-  for (const side of [-1, 1]) {
-    box(side * width * .444, low ? 1.26 : 2.19, cabZ, .035, low ? .35 : .55, low ? 1.45 : 1.55, glass)
-    box(side * width * .35, bodyY + .04, length / 2 - .043, .28, .23, .063, '#ffeab1')
-    box(side * width * .39, bodyY, -length / 2 + .034, .22, .15, .060, '#d95d48')
-    for (const axle of axles) wheel(side * track / 2, axle, radius, width - track - .10)
-  }
-  box(0, bodyY + .03, length / 2 - .035, width * .39, .28, .06, '#394b4a')
-  if (id === 'ambulance' || id === 'engine' || id === 'patrol') {
-    const y = low ? 1.51 : 2.69
-    box(0, y + .035, cabZ, width * .63, .13, .24, rubber)
-    for (const side of [-1, 1]) box(side * width * .23, y + .13, cabZ, .38, .15, .23, side > 0 ? '#498bc2' : '#d65847')
-  }
-  if (id === 'ambulance') {
-    box(0, 1.79, -1.03, width, 2.17, 3.9, cream)
-    box(0, 1.11, -1.045, width + .025, .19, 3.94, '#d85846')
-    cross(2.15, -3.005)
-    box(0, 1.92, -3.025, .032, 1.29, .034, steel)
-  }
-  if (id === 'engine') {
-    box(0, 1.87, -1.24, width, 1.81, 5.11, '#c64f41')
-    for (const side of [-1, 1]) for (const z of [-2.85, -1.32, .20]) box(side * width / 2, 1.92, z, .035, .85, 1.34, steel)
-    for (const x of [-.39, .39]) box(x, 2.92, -.86, .10, .12, 4.65, steel)
-    for (let i = 0; i < 9; i++) box(0, 2.92, -2.85 + i * .49, .73, .08, .08, steel)
-  }
-  if (id === 'patrol') for (const x of [-width * .463, width * .463]) box(x, .72, -.25, .035, .41, 1.59, cream)
-  if (id === 'logger') {
-    const cargo = vehicleSpecs[id].cargo
-    box(0, cargo.floor - .095, cargo.z, cargo.width + .23, .19, cargo.length, '#48534d')
-    for (const side of [-1, 1]) {
-      const x = side * (cargo.width + .13) / 2
-      for (const ratio of [-.42, -.13, .16, .45]) box(x, cargo.floor + cargo.height / 2, cargo.z + ratio * cargo.length, .13, cargo.height, .17, steel)
-    }
-  }
+  const parts = vehicleParts(meshes, root)
+  if (id === 'helicopter') buildHelicopter(parts)
+  else if (id === 'airplane') buildAirplane(parts)
+  else buildRoadVehicle(parts, id)
   return root
 }

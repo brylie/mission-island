@@ -1,9 +1,15 @@
 import type { Material } from '@babylonjs/core/Materials/material'
+import { createFieldOutingScenery } from './assets/field-outing'
+import { shellRockCap, tidePoolDressing } from './assets/geometry/tide-pool-dressing'
+import { starterDecorationOffsets } from './worlds/starter/layout/sites'
+import { fernfallSpray, mirrorPoolMist } from './assets/recipes/starter-phenomena'
 import { createBuoy, createDock, createHarborBoat } from './assets/waterfront'
 import { createClothingCounter, createHomeChest, createRock, createTree, createUmbrella, createWardrobe, umbrellaColors } from './assets/props'
 import { createHouse } from './assets/buildings'
 import { createGardenGate } from './gate-scene'
 import { createResidentFigures } from './resident-scene'
+import type { ResidentWorld } from './residents/definition'
+import { residentAt } from './residents/schedule'
 import { starterResidents } from './worlds/starter/residents'
 import { createRoad, createSidewalk, createTrail } from './assets/routes'
 import { playerColors } from './assets/crew'
@@ -23,7 +29,7 @@ import { createPhenomena } from './island-phenomena'
 import { createFerryTerminal } from './island-terminal'
 import { createStarterWildlife, createUnderstory, createWildflowers } from './island-wildlife'
 import { jobBoard } from './jobs'
-import { footpaths, road, walkways } from './routes'
+import { depotJunction, depotLane, footpaths, harborRoad, walkways } from './routes'
 import { createShellglassTide } from './shellglass-art'
 import { islandRocks, islandTrees } from './scenery'
 import type { SiteFeature } from './worlds/site-feature'
@@ -34,19 +40,24 @@ import { createSurfaceMaterial } from './materials'
 import { meadowDefaults, shaderPresets, shoreDefaults, type ShaderQuality } from './shader-studies'
 import type { WildlifeFrame } from './wildlife'
 import { createStreetLights } from './street-lights'
-import { boundaryBuoys, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
-import { buildings, crewHomes } from './world'
+import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
+import { buildings, crewHomes, extinguisherStations } from './world'
+import { createFireWatch } from './assets/fire-watch'
+import { createFireStation } from './assets/fire-station'
 
 export type IslandSurfaceTarget = 'meadow' | 'harbor-trail' | 'dock'
 
 interface WorldSubstitutions {
-  surfaceStudy?: { target: IslandSurfaceTarget; material: Material; wear: number }
+  surfaceStudy?: { target: IslandSurfaceTarget, material: Material, wear: number }
   replaceBuilding?: number
   features?: readonly SiteFeature[]
   replaceFeature?: SiteFeature
   replaceFarm?: boolean
+  replaceFireWatch?: boolean
   liveParticles?: boolean
 }
+
+const rainPavingWetness = 0.74
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
   const study = substitutions.surfaceStudy
@@ -59,48 +70,63 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const paving = createSurfaceMaterial(meshes.scene, 'concrete')
   const wetPaving = createWetPaving(paving)
   for (const path of walkways) createSidewalk(meshes, path, paving)
-  createRoad(meshes, road)
+  createRoad(meshes, harborRoad)
+  const { depotRoad, wardrobeZ, clothingCounterZ } = starterDecorationOffsets
+  createRoad(meshes, depotLane, depotRoad.width, { lift: depotRoad.lift, marked: [depotLane[0], { x: depotJunction.x + depotRoad.markingEndX, z: depotJunction.z }] })
 
-  buildings.forEach((building, index) => {
-    if (index !== substitutions.replaceBuilding) meshes.batchModel(createHouse(meshes, building))
+  const households = buildings.flatMap((building, index) => {
+    if (index === substitutions.replaceBuilding) return []
+    const schedule = starterResidents.find((resident) => resident.schedule.household.building === building)?.schedule
+    const house = createHouse(meshes, building, schedule?.household)
+    meshes.batchModel(house.root)
+    return schedule ? [{ schedule, house }] : []
   })
+  if (!substitutions.replaceFireWatch) createFireWatch(meshes, fireWatchBaseHeight())
+  for (const station of extinguisherStations) createFireStation(meshes, station, groundHeight(station))
+  function showHouseholds(state: ResidentWorld) {
+    for (const { schedule, house } of households) house.showWindows(residentAt(schedule, state).windowLit)
+  }
   const homeChests = crewHomes.map(({ chest }, i) => createHomeChest(meshes, chest, playerColors[i]))
-  crewHomes.forEach(({ wardrobe }, i) => createWardrobe(meshes, { ...wardrobe, z: wardrobe.z + 0.49 },
-    groundHeight(wardrobe), playerColors[i]))
-  createClothingCounter(meshes, { ...clothingCounter, z: clothingCounter.z - 0.65 }, groundHeight(clothingCounter))
+  crewHomes.forEach(({ wardrobe }, i) => void createWardrobe(meshes, { ...wardrobe, z: wardrobe.z + wardrobeZ }, groundHeight(wardrobe), playerColors[i]))
+  createClothingCounter(meshes, { ...clothingCounter, z: clothingCounter.z + clothingCounterZ }, groundHeight(clothingCounter))
   const showFarm = createFarm(meshes, substitutions.replaceFarm ? [] : undefined)
   showFarm([])
   const marketShower = createMarketShower(meshes)
   const boardY = groundHeight(jobBoard)
-  for (const dx of [-0.66, 0.66]) meshes.box(jobBoard.x + dx, boardY + 0.91, jobBoard.z, 0.12, 1.82, 0.13, '#765641')
-  meshes.box(jobBoard.x, boardY + 1.38, jobBoard.z, 1.75, 0.93, 0.14, '#996447')
-  meshes.box(jobBoard.x, boardY + 1.88, jobBoard.z, 1.98, 0.14, 0.45, '#387e76')
-  for (const dx of [-0.52, 0, 0.52]) {
-    meshes.box(jobBoard.x + dx, boardY + 1.38, jobBoard.z + 0.077, 0.32, 0.48, 0.012, '#fff0c1', undefined, false)
+  const { panel, posts, cap, cards, color } = jobBoard.geometry
+  for (const dx of posts.x) meshes.box(jobBoard.x + dx, boardY + posts.y, jobBoard.z, ...posts.size, posts.color)
+  meshes.box(jobBoard.x, boardY + panel.centreY, jobBoard.z, panel.width, panel.height, panel.depth, color)
+  meshes.box(jobBoard.x, boardY + cap.y, jobBoard.z, ...cap.size, cap.color)
+  for (const dx of cards.x) {
+    meshes.box(jobBoard.x + dx, boardY + panel.centreY, jobBoard.z + cards.z, ...cards.size, cards.color, undefined, false)
   }
   createDock(meshes, saltBloomPile, study?.target === 'dock' ? study.material : undefined)
-  createFerryTerminal(meshes)
-  const features = (substitutions.features ?? starterFeatures).filter(feature => feature.site !== substitutions.replaceFeature?.site)
+  const ferry = createFerryTerminal(meshes)
+  const features = (substitutions.features ?? starterFeatures).filter((feature) => feature.site !== substitutions.replaceFeature?.site)
   placeSiteFeatures(meshes, features, walkingHeight)
-  const shellglass = createShellglassTide(meshes, features.find(feature => feature.site === 'shellglass' && feature.model === 'tide-staff'))
+  const shellglass = createShellglassTide(meshes, features.find((feature) => feature.site === 'shellglass' && feature.model === 'tide-staff'))
+  const updateFieldScenery = createFieldOutingScenery(meshes)
   for (const point of shellRocks) {
-    const { size, heading } = point
-    const rock = meshes.sphere(point.x, groundHeight(point) + .055, point.z, size, .23, size * .65, '#798b80')
+    const { geometry, heading } = point
+    const rock = meshes.sphere(point.x, groundHeight(point) + geometry.centreHeight, point.z, geometry.width, geometry.height, geometry.depth, shellRockCap.rockColor)
     rock.rotation.y = heading
-    meshes.sphere(point.x + .025, groundHeight(point) + .165, point.z - .015, .16, .055, .12, '#ecd3aa')
+    const [dx, dy, dz] = shellRockCap.offset
+    meshes.sphere(point.x + dx, groundHeight(point) + dy, point.z + dz, ...shellRockCap.size, shellRockCap.color)
   }
   // Limpets on the sill and wrack in the basin give the pool a scale at foot level.
-  for (let i = 0; i < 17; i++) {
-    const patch = Math.floor(i / 4)
-    const a = patch * 1.77 + .105 * (i % 4)
-    const x = tidePool.x + (2.18 + .17 * Math.sin(i * 4.1)) * Math.cos(a), z = tidePool.z + (1.47 + .15 * Math.cos(i * 2.5)) * Math.sin(a)
+  const { count: dressingCount, patch, across, along, limpet, wrack } = tidePoolDressing
+  for (let i = 0; i < dressingCount; i++) {
+    const a = Math.floor(i / patch.size) * patch.angle + patch.spacingAngle * (i % patch.size)
+    const x = tidePool.x + (across.radius + across.variation * Math.sin(i * across.frequency)) * Math.cos(a)
+    const z = tidePool.z + (along.radius + along.variation * Math.cos(i * along.frequency)) * Math.sin(a)
     const y = groundHeight({ x, z })
     if (y >= waterLevel) {
-      meshes.cylinder(x, y + .033, z, .024, .16, .085, 7, '#d4c1a0')
-    } else {
-      for (let j = 0; j < 3; j++) {
-        const blade = meshes.sphere(x + j * .046, y + .074, z, .074, .21, .15, j % 2 ? '#848045' : '#65744b', undefined, false, 5)
-        blade.rotation.z = .3 + j * .25
+      meshes.cylinder(x, y + limpet.centreY, z, limpet.tip, limpet.base, limpet.height, limpet.sides, limpet.color)
+    }
+    else {
+      for (let j = 0; j < wrack.count; j++) {
+        const blade = meshes.sphere(x + j * wrack.spacing, y + wrack.centreY, z, ...wrack.size, wrack.colors[j % wrack.colors.length], undefined, false, wrack.segments)
+        blade.rotation.z = wrack.tilt + j * wrack.tiltStep
       }
     }
   }
@@ -115,34 +141,40 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const northernScenery = createNorthernScenery(meshes)
   const blades = createGrassTufts(meshes)
   createWildflowers(meshes)
-  const ferns = createUnderstory(meshes)
+  const { ferns, plants } = createUnderstory(meshes)
   const wildlife = createStarterWildlife(meshes)
   const phenomena = createPhenomena(meshes.scene, [
-    { ...pool, name: 'Mirror Pool dawn mist', kind: 'mist', y: waterLevel, extent: 22, seed: 5182, scatter: true },
-    ...(substitutions.liveParticles ? [] : [
-      { name: 'Fernfall spray', kind: 'spray' as const, x: streamX(89.2), y: waterLevel + .04, z: 89.2, extent: 2.7, seed: 2961 },
-    ]),
+    { ...mirrorPoolMist, ...pool, y: waterLevel },
+    ...(substitutions.liveParticles
+      ? []
+      : [
+          { ...fernfallSpray, x: streamX(fernfallSpray.z), y: waterLevel + fernfallSpray.aboveWater },
+        ]),
   ])
   const lights = createStreetLights(meshes)
   // Wren's cottage garden and the residents belong to the island, so the Workbench shows them too. The game animates them.
   const garden = createGardenGate(meshes)
   const residents = createResidentFigures(meshes, starterResidents, playerColors.length)
 
-  beachUmbrellas.forEach(({ x, z }, index) => createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))
+  beachUmbrellas.forEach(({ x, z }, index) => void createUmbrella(meshes, x, z, umbrellaColors[index], groundHeight))
 
-  const omittedBuilding = buildings.findIndex(building => building.x === parallaxCottage)
+  const omittedBuilding = buildings.findIndex((building) => building.x === parallaxCottage)
   const interactive = createIslandShaderEffects(meshes, substitutions.replaceBuilding !== omittedBuilding, boat)
   meshes.finishScenery()
   const shore = { ...shoreDefaults }
   const calm = { gust: 0, grassDistance: 0, patchContrast: 0 }
   const reducedMist = { ...shaderPresets.dawnSilver, reduced: true }
   const unlitMist = { mistDensity: 1, scattering: 0 }
-  function updateEnvironment(frame: WildlifeFrame, light: number, close: boolean, runoff: MarketRunoff,
-    { driftwood, quality = 'full', tideTime = frame.time, actors }: {
-      driftwood?: Parameters<typeof wildlife>[1]; quality?: ShaderQuality; tideTime?: number; actors?: StudyActors
-    } = {}) {
+  function updateEnvironment(frame: WildlifeFrame, light: number, close: boolean, runoff: MarketRunoff, { driftwood, quality = 'full', tideTime = frame.time, actors }: {
+    driftwood?: Parameters<typeof wildlife>[1]
+    quality?: ShaderQuality
+    tideTime?: number
+    actors?: StudyActors
+  } = {}) {
     northernScenery.update(frame.camera, close)
-    wildlife(frame, driftwood)
+    const walkers = actors?.snapshot?.players.filter((player) => player.connected && player.grounded && !player.sleeping && !player.seat)
+    wildlife(frame, driftwood, walkers ?? [])
+    updateFieldScenery(frame.time)
     marketShower(frame.time, frame.camera, runoff)
     lights(frame.camera, nightLighting(frame.weather.hour))
     shore.quality = quality
@@ -152,13 +184,12 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     const meadow = enabled ? meadowDefaults : calm
     water.meadow(frame.time, frame.camera, meadow)
     blades(frame.time, frame.camera, meadow)
-    wetPaving(enabled ? Math.max(frame.weather.rain * .74, runoff.puddle) * shaderPresets.rainPolished.wetness : 0,
-      shaderPresets.rainPolished.reflection)
+    wetPaving(enabled ? Math.max(frame.weather.rain * rainPavingWetness, runoff.puddle) * shaderPresets.rainPolished.wetness : 0, shaderPresets.rainPolished.reflection)
     const mist = quality === 'low' ? reducedMist : shaderPresets.dawnSilver
     phenomena(frame, enabled ? mist : unlitMist)
     interactive({ ...frame, light }, { ...actors, runoff, tideLevel: tide.level, quality })
     return tide
   }
 
-  return { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden, residents }
+  return { juniper, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, plants, garden, residents, ferry }
 }

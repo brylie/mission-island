@@ -1,108 +1,36 @@
+import { gameplayEffectPresets } from '../assets/recipes/workbench-gameplay-effect-studies'
 import type { EffectStudy } from './effect-studies'
 import { canvasRunoffFixture, gateFrostFixture, mothFixture, snuffFixture, ventFixture } from './gameplay-air-fixtures'
 import { brakeChipsFixture, chalkFixture, grainSpillFixture, hoistFixture, washFixture } from './gameplay-job-fixtures'
 import { carrotPullFixture, cloverStepFixture, hedgeFixture, hiveTrafficFixture, slateFixture } from './gameplay-land-fixtures'
 import { bobberFixture, bootTrailFixture, hullDrainFixture, mooringShakeFixture, slipwayFixture } from './gameplay-water-fixtures'
 
-export const gameplayEffectStudies: EffectStudy[] = [
-  {
-    id: 'bobber-bite-dip', name: 'Bobber bite dip', group: 'Water', seed: 7239, width: 4.3, height: 2.4, angle: 1.34,
-    description: 'A bite tugs the float sideways and below the surface. A tight ripple follows the dip at the fishing pier.',
-    strength: 'Bite ripple strength', footprint: 'Ripple reach', fixture: bobberFixture,
-  },
-  {
-    id: 'slipway-tire-sheet', name: 'Slipway tire sheet', group: 'Water', seed: 9463, width: 7.2, height: 3.15, angle: .62,
-    description: 'A low fan of water peels away from the tires as a flatbed crosses a wet launch ramp.',
-    strength: 'Surface water', footprint: 'Tire spray reach', fixture: slipwayFixture,
-  },
-  {
-    id: 'hull-drain-trickle', name: 'Hull drain trickle', group: 'Water', seed: 2836, width: 5.3, height: 2.85, angle: .97,
-    description: 'A narrow stream leaves the raised skiff’s drain, tapers, and breaks into drips over the slip.',
-    strength: 'Drain flow', footprint: 'Drain reach', fixture: hullDrainFixture,
-  },
-  {
-    id: 'mooring-line-shake', name: 'Mooring-line shake', group: 'Water', seed: 3956, width: 5.6, height: 2.35, angle: .98,
-    description: 'A wave travels along a wet rope and throws a short spray as the line is taken up at the dock.',
-    strength: 'Water shed', footprint: 'Bead scatter', fixture: mooringShakeFixture,
-  },
-  {
-    id: 'boot-drain-trail', name: 'Wet boot trail', group: 'Water', seed: 5683, width: 4.4, height: 2.65, angle: -1.08,
-    description: 'Wet soles leave alternating dark tread marks on the boarding planks. Older marks fade as the crew walks on.',
-    strength: 'Track wetness', footprint: 'Tread size', fixture: bootTrailFixture,
-  },
-  {
-    id: 'lantern-moths', name: 'Lantern moths', group: 'Weather and air', seed: 7017, width: 3.55, height: 2.5, angle: .95,
-    description: 'Pale wings flutter and bank around a lit lantern at a sheltered stopping place.',
-    strength: 'Moth activity', footprint: 'Flight spread', fixture: mothFixture,
-  },
-  {
-    id: 'workshop-vent-steam', name: 'Workshop vent steam', group: 'Weather and air', seed: 7251, width: 4.5, height: 4.55, angle: 1.15, wind: true,
-    description: 'A roof vent lets out short columns of white steam that widen and lean into crosswind above the workshop.',
-    strength: 'Vent output', footprint: 'Steam spread', fixture: ventFixture,
-  },
-  {
-    id: 'gate-frost-shake', name: 'Gate frost shake', group: 'Weather and air', seed: 9354, width: 3.9, height: 2.55, angle: 1.32,
-    description: 'Pale frost flakes break off the top rail as a cold gate swings. They skip once and settle on the ground.',
-    strength: 'Frost buildup', footprint: 'Flake scatter', fixture: gateFrostFixture,
-  },
-  {
-    id: 'canvas-runoff', name: 'Canvas runoff', group: 'Weather and air', seed: 5088, width: 4.45, height: 2.95, angle: 1.14,
-    description: 'Water gathers into separate streams along a sagging canvas edge and strikes the wet ground below.',
-    strength: 'Runoff flow', footprint: 'Stream spread', fixture: canvasRunoffFixture,
-  },
-  {
-    id: 'lantern-snuff-curl', name: 'Lantern snuff curl', group: 'Weather and air', seed: 3965, width: 3.3, height: 3.1, angle: .98, wind: true,
-    description: 'The flame goes dark and a thin ribbon curls off the lantern before fading into the air.',
-    strength: 'Wick smoke', footprint: 'Curl spread', fixture: snuffFixture,
-  },
-  {
-    id: 'carrot-pull-crumbs', name: 'Carrot pull crumbs', group: 'Vegetation and loose ground', seed: 9481, width: 3.45, height: 2.55, angle: 1.03,
-    description: 'A lifted carrot shakes loose little clods that fall back into the furrow as the root comes clear.',
-    strength: 'Clinging soil', footprint: 'Soil scatter', fixture: carrotPullFixture,
-  },
-  {
-    id: 'hive-entrance-traffic', name: 'Hive entrance traffic', group: 'Vegetation and loose ground', seed: 6359, width: 3.8, height: 2.45, angle: .98,
-    description: 'Bees fan out from the hive entrance while returning bees dip toward the landing board. Use at Long Acre.',
-    strength: 'Hive traffic', footprint: 'Approach spread', fixture: hiveTrafficFixture,
-  },
-  {
-    id: 'clover-petal-scatter', name: 'Clover petal scatter', group: 'Vegetation and loose ground', seed: 3729, width: 4.3, height: 2.55, angle: 1.12, wind: true,
-    description: 'A foot brushing clover throws soft white and pink petals into a short drift at ankle height.',
-    strength: 'Petal shed', footprint: 'Petal scatter', fixture: cloverStepFixture,
-  },
-  {
-    id: 'loose-slate-tumble', name: 'Loose slate tumble', group: 'Vegetation and loose ground', seed: 7761, width: 4.55, height: 2.5, angle: 1.02,
-    description: 'Flat slate shards flip off a spoil bank and skip onto the quarry path.',
-    strength: 'Loose slate', footprint: 'Tumble spread', fixture: slateFixture,
-  },
-  {
-    id: 'hedge-clipping-fall', name: 'Hedge clipping fall', group: 'Vegetation and loose ground', seed: 6244, width: 4.25, height: 2.65, angle: .98,
-    description: 'Clippings flick off the blades and tumble down the hedge each time the shears close.',
-    strength: 'Clipping density', footprint: 'Clipping spread', fixture: hedgeFixture,
-  },
-  {
-    id: 'gravel-brake-chips', name: 'Gravel brake chips', group: 'Jobs', seed: 4582, width: 8.6, height: 3, angle: .45,
-    description: 'A flatbed braking on loose gravel flicks stones forward from the front tires. The stones bounce low and settle.',
-    strength: 'Loose gravel', footprint: 'Chip throw', fixture: brakeChipsFixture,
-  },
-  {
-    id: 'tailgate-grain-spill', name: 'Tailgate grain spill', group: 'Jobs', seed: 7004, width: 6.8, height: 3.25, angle: -.92,
-    description: 'A tipped sack spills a stream of grain over the flatbed tailgate. Kernels bounce apart on the ground.',
-    strength: 'Grain flow', footprint: 'Spill reach', fixture: grainSpillFixture,
-  },
-  {
-    id: 'hoist-chain-shake', name: 'Hoist chain shake', group: 'Jobs', seed: 9183, width: 4.5, height: 3.2, angle: 1.18,
-    description: 'Rust flakes shake loose from a chain under load as the hoist lifts a crate off the deck.',
-    strength: 'Loose rust', footprint: 'Flake spread', fixture: hoistFixture,
-  },
-  {
-    id: 'wash-station-rinse', name: 'Wash-station rinse', group: 'Jobs', seed: 5124, width: 3.7, height: 2.55, angle: .94,
-    description: 'Short fans of rinse water rise where the crew turns carrots in the washing trough.',
-    strength: 'Rinse splash', footprint: 'Splash reach', fixture: washFixture,
-  },
-  {
-    id: 'chalk-line-snap', name: 'Chalk line snap', group: 'Jobs', seed: 4850, width: 4.5, height: 2.5, angle: 1.18,
-    description: 'A taut cord snaps across the planks, leaves a chalk mark, and raises a narrow puff of blue dust.',
-    strength: 'Chalk load', footprint: 'Dust spread', fixture: chalkFixture,
-  },
-]
+type StudyId = typeof gameplayEffectPresets[number]['id']
+
+const fixtures: Record<StudyId, EffectStudy['fixture']> = {
+  'bobber-bite-dip': bobberFixture,
+  'slipway-tire-sheet': slipwayFixture,
+  'hull-drain-trickle': hullDrainFixture,
+  'mooring-line-shake': mooringShakeFixture,
+  'boot-drain-trail': bootTrailFixture,
+  'lantern-moths': mothFixture,
+  'workshop-vent-steam': ventFixture,
+  'gate-frost-shake': gateFrostFixture,
+  'canvas-runoff': canvasRunoffFixture,
+  'lantern-snuff-curl': snuffFixture,
+  'carrot-pull-crumbs': carrotPullFixture,
+  'hive-entrance-traffic': hiveTrafficFixture,
+  'clover-petal-scatter': cloverStepFixture,
+  'loose-slate-tumble': slateFixture,
+  'hedge-clipping-fall': hedgeFixture,
+  'gravel-brake-chips': brakeChipsFixture,
+  'tailgate-grain-spill': grainSpillFixture,
+  'hoist-chain-shake': hoistFixture,
+  'wash-station-rinse': washFixture,
+  'chalk-line-snap': chalkFixture,
+}
+
+export const gameplayEffectStudies: EffectStudy[] = gameplayEffectPresets.map((preset) => ({
+  ...preset,
+  fixture: fixtures[preset.id],
+}))

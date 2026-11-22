@@ -1,6 +1,8 @@
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import { Color3 } from '@babylonjs/core/Maths/math.color'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { lookoutAshMesh, lookoutTwig, lookoutVergeBlade } from './assets/geometry/lookout-recovery'
+import { lookoutVergeGrowth, lookoutVergeStages } from './assets/recipes/lookout-recovery'
 import { createLookoutFire } from './fire-effect'
 import type { MeshFactory } from './island-meshes'
 import { lookoutRecoveryAt, recoveryBeds, type LookoutRecovery } from './lookout-recovery'
@@ -10,31 +12,69 @@ import { distanceToRoute, footpaths } from './routes'
 import { seededRandom } from './seeded-random'
 import { groundHeight } from './terrain'
 import { lookout, type Point } from './world'
+import { lookoutCharredTwigs } from './worlds/starter/layout/scenery'
 
+const half = 0.5
+const dimensions = 3
+const normalizedGridSpan = 2
+const piRadiansPerTurn = 2
+const sootStripePower = 2
 const trail = footpaths.find(({ name }) => name === 'Lookout trail')!
-const verge = (point: Point) => distanceToRoute(point, trail.points) - trail.width / 2
+// Distance from a point to the edge of the nearest of these paths.
+const vergeOf = (paths: readonly { points: readonly Point[], width: number }[]) => (point: Point) =>
+  Math.min(...paths.map(({ points, width }) => distanceToRoute(point, points) - width * half))
+const verge = vergeOf([trail])
 const clamp = (n: number) => Math.max(0, Math.min(1, n))
 
-function buildAsh(meshes: MeshFactory) {
+const worldOrigin = { x: 0, y: 0, z: 0 }
+
+// An oval of burnt ground. `keep` returns how much of a point survives, for trimming ash back from a trail.
+export interface RecoveryBed extends Point {
+  rx: number
+  rz: number
+}
+// How much ash survives at a point, and whether regrowth may root there.
+interface Keep {
+  ash(point: Point): number
+  grows(point: Point): boolean
+}
+// Ash fades out at a path's edge and nothing regrows on the path itself.
+function pathKeep(edge: (point: Point) => number): Keep {
+  return {
+    ash: (point) => clamp(edge(point) * lookoutAshMesh.edge.trailFade),
+    grows: (point) => edge(point) >= lookoutVergeGrowth.scatter.trailSetback,
+  }
+}
+const lookoutKeep = pathKeep(verge)
+// Wildfire scars stay off every island footpath.
+const footpathKeep = pathKeep(vergeOf(footpaths))
+
+export function createLookoutAsh(meshes: MeshFactory, origin = worldOrigin) {
+  return createRecoveryAsh(meshes, recoveryBeds, lookoutKeep, origin)
+}
+
+function createRecoveryAsh(meshes: MeshFactory, beds: readonly RecoveryBed[], keep: Keep, origin = worldOrigin, name = 'Lookout ash and wet soil') {
   const vertices: number[] = [], indices: number[] = [], colors: number[] = []
-  const steps = 16
-  for (const [index, bed] of recoveryBeds.entries()) {
-    const start = vertices.length / 3
+  const { grid: { steps, raised }, edge, dust, soot, finish } = lookoutAshMesh
+  const row = steps + 1
+  for (const [index, bed] of beds.entries()) {
+    const start = vertices.length / dimensions
     for (let j = 0; j <= steps; j++) for (let i = 0; i <= steps; i++) {
-      const u = 2 * i / steps - 1, v = 2 * j / steps - 1
+      const u = normalizedGridSpan * i / steps - 1, v = normalizedGridSpan * j / steps - 1
       const point = { x: bed.x + u * bed.rx, z: bed.z + v * bed.rz }
-      const edge = Math.hypot(u, v) + .089 * Math.sin(u * 13 + v * 7 + index) * Math.sin(v * 10)
-      const dust = (.77 + .16 * Math.sin(u * 47 + v * 11) * Math.cos(v * 46)) * clamp((1 - edge) * 6) * clamp(verge(point) * 5)
-      const soot = .62 + .28 * Math.sin(u * 9 + v * 6.5) ** 2 + .09 * Math.cos(u * 51 - v * 18)
-      vertices.push(point.x, groundHeight(point) + .017, point.z)
-      colors.push(soot, soot * .98, soot, dust)
+      const roughEdge = Math.hypot(u, v) + edge.ripple * Math.sin(u * edge.uFrequency + v * edge.vFrequency + index) * Math.sin(v * edge.crossFrequency)
+      const opacity = (dust.opacity + dust.variation * Math.sin(u * dust.uFrequency + v * dust.vFrequency) * Math.cos(v * dust.crossFrequency)) * clamp((1 - roughEdge) * edge.fade) * keep.ash(point)
+      const value = soot.base + soot.stripes * Math.sin(u * soot.uFrequency + v * soot.vFrequency) ** sootStripePower + soot.flecks * Math.cos(u * soot.fleckU - v * soot.fleckV)
+      vertices.push(point.x - origin.x, groundHeight(point) + raised - origin.y, point.z - origin.z)
+      colors.push(value, value * soot.greenScale, value, opacity)
       if (i && j) {
-        const a = start + j * (steps + 1) + i
-        indices.push(a - steps - 2, a - steps - 1, a, a - steps - 2, a, a - 1)
+        const a = start + j * row + i
+        const opposite = a - row - 1
+        indices.push(opposite, a - row, a, opposite, a, a - 1)
       }
     }
   }
-  const paint = createIslandMaterial(meshes.scene, 'Lookout ash and wet soil', '#645951')
+  const paint = createIslandMaterial(meshes.scene, name, finish)
   paint.backFaceCulling = false
   const mesh = meshes.surface('Lookout scorched verge', vertices, indices, paint)
   mesh.setVerticesData(VertexBuffer.ColorKind, colors)
@@ -45,11 +85,12 @@ function buildAsh(meshes: MeshFactory) {
 }
 
 function addBlade(vertices: number[], point: Point, angle: number, height: number, bend: number, width: number, lift = 0) {
-  const y = groundHeight(point) + .021 + lift
+  const { raised, bendAtJoint, heightAtJoint } = lookoutVergeBlade
+  const y = groundHeight(point) + raised + lift
   const dx = Math.cos(angle), dz = Math.sin(angle)
   const a = [point.x - dz * width, y, point.z + dx * width]
   const b = [point.x + dz * width, y, point.z - dx * width]
-  const middle = [point.x + dx * bend * .42, y + height * .66, point.z + dz * bend * .42]
+  const middle = [point.x + dx * bend * bendAtJoint, y + height * heightAtJoint, point.z + dz * bend * bendAtJoint]
   const tip = [point.x + dx * bend, y + height, point.z + dz * bend]
   vertices.push(...a, ...b, ...middle, ...middle, ...b, ...tip)
 }
@@ -57,79 +98,98 @@ function addBlade(vertices: number[], point: Point, angle: number, height: numbe
 function paintBlades(meshes: MeshFactory, vertices: number[], name: string, color: string) {
   const material = meshes.paint(color)
   material.backFaceCulling = false
-  return meshes.surface(name, vertices, Array.from({ length: vertices.length / 3 }, (_, i) => i), material).freezeWorldMatrix()
+  return meshes.surface(name, vertices, Array.from({ length: vertices.length / dimensions }, (_, i) => i), material).freezeWorldMatrix()
 }
 
-function buildVerge(meshes: MeshFactory, stage: 'ash' | 'shoots' | 'established') {
-  const random = seededRandom(4623)
+function buildVerge(meshes: MeshFactory, stage: 'ash' | 'shoots' | 'established', beds: readonly RecoveryBed[], keep: Keep, seedOffset = 0) {
+  const { seed, scatter: sites, shoots, leaves, flowers } = lookoutVergeGrowth
+  const growth = lookoutVergeStages[stage]
+  const random = seededRandom(seed + seedOffset)
   const blades: number[] = [], lights: number[] = [], petals: number[] = []
-  for (const bed of recoveryBeds) for (let i = 0; i < 43; i++) {
-    const angle = random() * Math.PI * 2, scatter = random()
-    const radius = .15 + scatter * .84
+  for (const bed of beds) for (let i = 0; i < sites.perBed; i++) {
+    const angle = random() * Math.PI * piRadiansPerTurn, scatter = random()
+    const radius = sites.firstRadius + scatter * sites.radiusRange
     const point = { x: bed.x + Math.cos(angle) * radius * bed.rx, z: bed.z + Math.sin(angle) * radius * bed.rz }
-    const scale = .58 + random() * .75, sway = random() * Math.PI * 2
+    const scale = sites.minScale + random() * sites.scaleRange, sway = random() * Math.PI * piRadiansPerTurn
     // First-dawn shoots are a subset of the same rooted clumps seen on later visits.
-    if (verge(point) < .29 || (stage === 'shoots' && (radius < .59 || i % 5 === 0))) continue
-    const height = (stage === 'ash' ? .04 : stage === 'shoots' ? .21 : .37) * scale
-    const spread = (stage === 'ash' ? .29 : stage === 'shoots' ? .105 : .16) * scale
-    for (let leaf = 0; leaf < 5; leaf++) {
-      addBlade(leaf % 3 ? blades : lights, point, sway + leaf * (.64 + scatter * .4),
-        height * (1 - .075 * leaf), spread * (1 + leaf * .08), .026 + .008 * scale)
+    if (!keep.grows(point) || (stage === 'shoots' && (radius < shoots.firstRadius || i % shoots.skipEvery === 0))) continue
+    const height = growth.height * scale
+    const spread = growth.spread * scale
+    for (let leaf = 0; leaf < leaves.count; leaf++) {
+      addBlade(leaf % leaves.paleEvery ? blades : lights, point, sway + leaf * (leaves.spread + scatter * leaves.spreadVariation), height * (1 - leaves.heightStep * leaf), spread * (1 + leaf * leaves.bendStep), leaves.width + leaves.widthVariation * scale)
     }
-    if (stage === 'established' && i % 6 === 0) {
-      for (let lobe = 0; lobe < 5; lobe++) {
-        addBlade(petals, point, lobe * Math.PI * .4 + sway, .034, .075, .025, height * .92)
+    if (stage === 'established' && i % flowers.every === 0) {
+      for (let lobe = 0; lobe < flowers.lobes; lobe++) {
+        addBlade(petals, point, lobe * Math.PI * flowers.anglePi + sway, flowers.height, flowers.spread, flowers.width, height * flowers.crownScale)
       }
     }
   }
-  const colors = {
-    ash: ['#695746', '#8b7150'],
-    shoots: ['#668849', '#9caa58'],
-    established: ['#5e804c', '#82965a'],
-  }[stage]
-  const group = [paintBlades(meshes, blades, stage + ' verge grass', colors[0]), paintBlades(meshes, lights, stage + ' pale tips', colors[1])]
-  if (petals.length) group.push(paintBlades(meshes, petals, 'Lookout recovery meadow flowers', '#efd190'))
+  const group = [paintBlades(meshes, blades, stage + ' verge grass', growth.blades), paintBlades(meshes, lights, stage + ' pale tips', growth.tips)]
+  if (petals.length) group.push(paintBlades(meshes, petals, 'Lookout recovery meadow flowers', flowers.color))
   return group
 }
 
 function buildCharredTwigs(meshes: MeshFactory) {
   const root = new TransformNode('Fallen charred twigs', meshes.scene)
-  for (const [x, z, length, heading] of [[4.77, 28.58, .67, .69], [4.38, 28.94, .31, -.48], [5.38, 29.74, .51, 1.41], [7.25, 31.23, .56, -.21]]) {
+  const { bark, exposedEnd } = lookoutTwig
+  for (const [x, z, length, heading] of lookoutCharredTwigs) {
     const y = groundHeight({ x, z })
-    const stick = meshes.box(x, y + .046, z, .087, .075, length, '#493c35', root, false)
+    const stick = meshes.box(x, y + bark.y, z, bark.width, bark.height, length, bark.finish, root, false)
     stick.rotation.y = heading
-    const freshEnd = meshes.box(x + Math.sin(heading) * length / 2, y + .044, z + Math.cos(heading) * length / 2,
-      .077, .057, .023, '#b48c63', root, false)
+    const freshEnd = meshes.box(x + Math.sin(heading) * length * half, y + exposedEnd.y, z + Math.cos(heading) * length * half, ...exposedEnd.size, exposedEnd.finish, root, false)
     freshEnd.rotation.y = heading
   }
   return root
 }
 
-const soil = {
-  ash: { tint: Color3.FromHexString('#625b58'), opacity: 1 },
-  shoots: { tint: Color3.FromHexString('#807461'), opacity: .8 },
-  established: { tint: Color3.FromHexString('#8a7f5a'), opacity: .35 },
+const soilTint = {
+  ash: Color3.FromHexString(lookoutVergeStages.ash.tint),
+  shoots: Color3.FromHexString(lookoutVergeStages.shoots.tint),
+  established: Color3.FromHexString(lookoutVergeStages.established.tint),
 }
 
-function createLookoutRecovery(meshes: MeshFactory) {
-  const ash = buildAsh(meshes)
-  const twigs = buildCharredTwigs(meshes)
-  const grass = { ash: buildVerge(meshes, 'ash'), shoots: buildVerge(meshes, 'shoots'), established: buildVerge(meshes, 'established') }
+interface GroundLook {
+  keep?: Keep
+  ashTint?: string
+  // Varies where the regrowth roots, so each scar grows back differently.
+  seed?: number
+  name?: string
+}
+
+// Ash, then shoots, then grass and flowers over the same beds, switched by the recovery stage.
+export function createRecoveryGround(meshes: MeshFactory, beds: readonly RecoveryBed[], { keep = footpathKeep, ashTint, seed = 0, name }: GroundLook = {}) {
+  const freshAsh = ashTint ? Color3.FromHexString(ashTint) : soilTint.ash
+  const ash = createRecoveryAsh(meshes, beds, keep, worldOrigin, name)
+  const grass = { ash: buildVerge(meshes, 'ash', beds, keep, seed), shoots: buildVerge(meshes, 'shoots', beds, keep, seed), established: buildVerge(meshes, 'established', beds, keep, seed) }
   function show(stage: LookoutRecovery) {
     ash.mesh.setEnabled(stage !== 'undisturbed')
-    twigs.setEnabled(stage !== 'undisturbed')
     for (const [id, group] of Object.entries(grass)) for (const mesh of group) mesh.setEnabled(stage === id)
     if (stage === 'undisturbed') return
-    const { tint, opacity } = soil[stage]
-    ash.paint.diffuseColor.copyFrom(tint)
-    ash.paint.alpha = opacity
+    ash.paint.diffuseColor.copyFrom(stage === 'ash' ? freshAsh : soilTint[stage])
+    ash.paint.alpha = lookoutVergeStages[stage].opacity
   }
   let current: LookoutRecovery = 'undisturbed'
   show(current)
+  return {
+    show(stage: LookoutRecovery) {
+      if (stage === current) return
+      current = stage
+      show(stage)
+    },
+    dispose() {
+      ash.mesh.dispose()
+      ash.paint.dispose()
+      for (const group of Object.values(grass)) for (const mesh of group) mesh.dispose()
+    },
+  }
+}
+
+function createLookoutRecovery(meshes: MeshFactory) {
+  const ground = createRecoveryGround(meshes, recoveryBeds, { keep: lookoutKeep })
+  const twigs = buildCharredTwigs(meshes)
   return (stage: LookoutRecovery) => {
-    if (stage === current) return
-    current = stage
-    show(stage)
+    twigs.setEnabled(stage !== 'undisturbed')
+    ground.show(stage)
   }
 }
 

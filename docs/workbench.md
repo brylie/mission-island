@@ -8,7 +8,7 @@ Choose a workspace to narrow the library to one job. Search matches words in sub
 | Ecology | Scrub hare and fox poses. Compare clover and tussock seeds and growth. Use the Biome Composer for feeding, pursuit, concealment and rain responses. |
 | Construction | Edit named Starter Island furnishings in place. Review Starter houses and combine Saltwind roof, tower, canopy, width and paint options at their actual addresses. |
 | Surfaces | Compare the procedural texture gallery, edit substance-specific finishes, and run [interactive shader studies](shader-studies.md) and [twenty additional studies](more-shader-studies.md) in the studio and on Starter Island. |
-| Effects | Audition 52 seeded effects at crew or truck scale. Scrub the burst, adjust the source footprint, or open the Tarnstep and Forest Lookout field setups. |
+| Effects | Audition 52 seeded effects at crew or truck scale. Scrub the burst, adjust the source footprint, or open the Tarnstep and Forest Lookout field setups. Listen to the Starter Island surf, footstep and crate sounds under **Sound**. |
 | Characters | Try a uniform, fabric dye or cap while posing the crew. Rehearse offering, accepting and fulfilling a fish order with a stand-in shopkeeper at Seabrook Market. |
 | Vehicles | Inspect exteriors and lights. Compare vehicles on a neutral stage and at their parking or landing sites. |
 | Mechanics | Replay a cargo throw, compare fishing strategies, or set the crop stage in the actual field. |
@@ -53,17 +53,36 @@ The command writes one URL to standard output and exits nonzero for invalid inpu
 
 To verify a handoff, open its link in a fresh browser profile. Check the subject title, the photo’s accessible description and magnification, and the source link. Pan the photo and confirm the model camera stays put.
 
+## Audition island sound
+
+Open **Effects → Sound → Starter Island sound**. Choose a **Sound layer**, then **Play** for one cue or **Repeat** to keep it going at the chosen pace. **Stop** ends playback. The first click in a fresh tab starts audio. Each layer has its own controls:
+
+- **Surf:** breaker strength and spacing.
+- **Footsteps:** surface (gravel, sand, dock boards, pavement, grass, leaf litter, shallow water or bare earth), **Soaked ground**, and walking pace.
+- **Crate impact:** drop strength and receiving surface.
+
+**Seed** picks related variations. **Listener distance** places the source ahead and to the right of the listener. Clear **Spatial audition** for an unspatialised baseline at the recipe's own level. Clear **Solo layer** to hear all three layers together. The observations line shows the audio state, the active layer, the last cue and the voice count, so you can inspect a muted session. **Copy setup link** keeps the seed, distance and recipe settings, and the game uses the same recipes from `src/audio/recipes.ts`.
+
+Open **Effects → Sound → Island sound families** for the continuous and wildlife sounds. Choose a **Sound family**, then **Play**, **Repeat** or **Stop**:
+
+- **Flatbed engine:** **Engine running**, **Road speed**, **Engine effort** and **Idle roughness**. Effort is heard as the pull that would produce it, so you can compare a straining engine with plain speed at the same road speed.
+- **Wind and canopy:** **Gust strength**, or **Follow island gusts** to hear the same envelope that lifts the windblown leaves, plus **Exposure** and a broadleaf or conifer **Canopy** at the listening distance.
+- **Plant and bark contact:** the **Plant** (juniper fern, Mirror Pool rushes, Driftwood marram or tree bark) and **Contact speed**.
+- **Gulls and songbirds:** a gull kek, gull mew, gull wings or songbird phrase.
+
+Recipe tuning lives in `src/assets/audio/`, one file per family.
+
 ## Adding a subject
 
 1. Register an `Entry` from `src/workbench/subject.ts` in an appropriate study module. Give it a stable ID, a library group and the path to its source. Group membership determines its workspace.
-2. Instantiate the production mesh factory or mechanic. Supply controls in the author’s terms and units. Use live controls for pose and placement and commit geometry changes when the control is released.
+2. Use the same model factory, shader, recipe, and attachment data that the game uses. Let the study supply its own camera, initial state, and replay timing. Identify any stand-ins for scenery or interactions that the game has yet to implement. Use live controls for pose and placement and commit geometry changes when the control is released.
 3. For a timed subject, implement scrubbing and paused frames. For interactive trials, expose actions with their availability and use the observation panel for quantities or outcomes a designer would otherwise have to guess.
-4. Supply a field site when the subject has a meaningful setting. Transform the subject into island coordinates and omit the original instance when replacing a fixture. Check the pose and clearances in both settings.
+4. Supply a field site when the subject has a meaningful setting. Render the subject at its production placement and omit the original instance if the study supplies a controlled version. Check contact points, poses, and clearances in both settings.
 5. Exercise a shared setup in a fresh browser tab. Verify that settings, time, camera and site survive, and that the trial leaves live saves untouched.
 
 ## Scope of the trials
 
-The cargo trial steps the actual Cannon simulation at the server’s fixed rate. The fishing trial uses the server’s cast validation, bite probability and fight rules. It guarantees a bite after a valid cast so reeling strategies can be compared. The farm preview exposes crop states. The **Resident routines** study reads each resident's real schedule and conversation. Choose a resident and an hour, then set the crew's trust and the favor's state to hear what they would say. On the island, the stage moves to where that resident is at that hour.
+The cargo trial steps the actual Cannon simulation at the server’s fixed rate. The fishing trial uses the server’s cast validation, bite probability and fight rules. It guarantees a bite after a valid cast so reeling strategies can be compared. The farm preview exposes crop states. The **Resident routines** study reads each resident's real schedule and conversation. Choose a resident and an hour, then set the crew's trust, the resident's standing, the favor's state and the rain to hear what they would say. Change the remark seed to hear other small talk that fits the same moment. On the island, the stage moves to where that resident is at that hour.
 
 Further work can add named plant species backed by shared generators, collision updates for edited scenery, and a versioned catalog of approved material and building recipes. Each can use the existing subject, field site and setup-link conventions.
 

@@ -2,8 +2,8 @@ import type { Scene } from '@babylonjs/core/scene'
 import { createParticleEffect } from './particle-effect'
 import { particleBurst } from './particle-motion'
 import type { Particle, ParticleOrigin, ParticleSource, ParticleTuning } from './particle-motion'
-import { particleRecipes } from './particle-recipes'
-import { particleAccents } from './particle-shelf-recipes'
+import { particleRecipes } from './assets/recipes/particle-recipes'
+import { particleAccents } from './assets/recipes/particle-accents'
 import { smoothRange } from './wildlife-motion'
 import type { WildlifeFrame } from './wildlife'
 
@@ -11,9 +11,19 @@ const recipes = { ...particleRecipes, ...particleAccents }
 export type WorldEffectId = keyof typeof recipes
 type Emitter = ReturnType<typeof createParticleEffect>
 
+const hashOffsetBasis = 2166136261
+const hashPrime = 16777619
+const streamingViewRange = 34
+const burstViewRange = 36
+const defaultBurstSeconds = 0.16
+const defaultLocalCycle = 8
+const defaultLocalRange = 25
+const localFadeStart = 0.7
+const minLocalOpacity = 0.015
+
 function seed(key: string) {
-  let hash = 2166136261
-  for (const char of key) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619)
+  let hash = hashOffsetBasis
+  for (const char of key) hash = Math.imul(hash ^ char.charCodeAt(0), hashPrime)
   return hash >>> 0
 }
 
@@ -24,8 +34,8 @@ function emitter(scene: Scene, id: WorldEffectId, key: string) {
 const off = { strength: 0, footprint: 1 }
 
 export function createMovingEffects(scene: Scene) {
-  const streams = new Map<string, { pool: Emitter; source?: ParticleSource; tuning?: ParticleTuning }>()
-  const bursts = new Map<WorldEffectId, { pool: Emitter; particles: Particle[]; sequence: number }>()
+  const streams = new Map<string, { pool: Emitter, source?: ParticleSource, tuning?: ParticleTuning }>()
+  const bursts = new Map<WorldEffectId, { pool: Emitter, particles: Particle[], sequence: number }>()
   let time = 0
   type Eye = Pick<ParticleSource, 'x' | 'y' | 'z'>
   let eye: Eye | undefined
@@ -36,7 +46,7 @@ export function createMovingEffects(scene: Scene) {
       eye = close ? camera : undefined
     },
     emit(id: WorldEffectId, owner: string, source: ParticleSource, tuning: ParticleTuning) {
-      if (!eye || Math.hypot(eye.x - source.x, eye.y - source.y, eye.z - source.z) > 34) return
+      if (!eye || Math.hypot(eye.x - source.x, eye.y - source.y, eye.z - source.z) > streamingViewRange) return
       const key = id + ':' + owner
       let stream = streams.get(key)
       if (!stream) {
@@ -46,8 +56,8 @@ export function createMovingEffects(scene: Scene) {
       stream.source = source
       stream.tuning = tuning
     },
-    burst(id: WorldEffectId, origin: ParticleSource, strength = 1, footprint = 1, length = .16, delay = 0) {
-      if (!eye || Math.hypot(eye.x - origin.x, eye.y - origin.y, eye.z - origin.z) > 36) return
+    burst(id: WorldEffectId, origin: ParticleSource, strength = 1, footprint = 1, length = defaultBurstSeconds, delay = 0) {
+      if (!eye || Math.hypot(eye.x - origin.x, eye.y - origin.y, eye.z - origin.z) > burstViewRange) return
       let burst = bursts.get(id)
       if (!burst) {
         burst = { pool: emitter(scene, id, 'event'), particles: [], sequence: 0 }
@@ -65,7 +75,7 @@ export function createMovingEffects(scene: Scene) {
         stream.tuning = undefined
       }
       for (const burst of bursts.values()) {
-        burst.particles = burst.particles.filter(particle => time < particle.birth + particle.life)
+        burst.particles = burst.particles.filter((particle) => time < particle.birth + particle.life)
         burst.pool.draw(time, eye ? burst.particles : [])
       }
     },
@@ -85,25 +95,25 @@ export interface LocalEffect {
 export function createLocalEffects(scene: Scene, placements: readonly LocalEffect[]) {
   const sites = placements.map((site, index) => {
     const key = 'site ' + index
-    const period = site.cycle ?? 8
+    const period = site.cycle ?? defaultLocalCycle
     const recipe = recipes[site.id]
     let pool: Emitter | undefined
     let particles: Particle[] = []
     return (frame: WildlifeFrame, overview: boolean) => {
       const { anchor } = site
       const { x, y, z } = frame.camera
-      const range = site.range ?? 25
+      const range = site.range ?? defaultLocalRange
       const distance = Math.hypot(x - anchor.x, y - anchor.y, z - anchor.z)
-      const opacity = overview ? 0 : site.opacity(frame) * (1 - smoothRange(range * .7, range, distance))
-      if (opacity <= .015) {
+      const opacity = overview ? 0 : site.opacity(frame) * (1 - smoothRange(range * localFadeStart, range, distance))
+      if (opacity <= minLocalOpacity) {
         pool?.draw(0, [])
         return
       }
       if (!pool) {
         pool = emitter(scene, site.id, key)
         const cycle = particleBurst(recipe, seed(site.id + key), 0, period, site.tuning, site.origin ?? (() => anchor))
-        const tail = cycle.filter(particle => particle.birth + particle.life > period)
-          .map(particle => ({ ...particle, birth: particle.birth - period }))
+        const tail = cycle.filter((particle) => particle.birth + particle.life > period)
+          .map((particle) => ({ ...particle, birth: particle.birth - period }))
         particles = [...tail, ...cycle]
       }
       pool.draw(frame.time % period, particles, opacity)

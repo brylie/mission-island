@@ -1,6 +1,6 @@
 import { readStorage, writeStorage } from './browser-storage'
 
-export interface LookSettings { invertHorizontal: boolean; invertVertical: boolean; speed: number }
+export interface LookSettings { invertHorizontal: boolean, invertVertical: boolean, speed: number }
 // New keys: the old invert settings were stored with their labels reversed.
 const keys = { invertHorizontal: 'mission-island-look-invert-x', invertVertical: 'mission-island-look-invert-y', speed: 'mission-island-look-speed' }
 

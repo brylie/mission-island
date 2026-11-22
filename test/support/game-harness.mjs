@@ -17,8 +17,13 @@ export class GameClient extends EventEmitter {
     if (message.type === 'state') this.state = message
     else this.messages.push(message)
   }
+
   request(type, extra = {}) { this.emit('message', Buffer.from(JSON.stringify({ type, ...extra }))) }
-  close() { this.readyState = 3; this.emit('close') }
+  close() {
+    this.readyState = 3
+    this.emit('close')
+  }
+
   terminate() { this.close() }
   get player() {
     const id = this.messages.find(({ type }) => type === 'welcome')?.id
@@ -28,22 +33,40 @@ export class GameClient extends EventEmitter {
 
 export function player(id, point = spawns[id], overrides = {}) {
   return {
-    ...point, id, heading: 0, y: groundHeight(point), grounded: true, onBed: false, reaching: false, rightHandRaised: false,
-    connected: true, sleeping: false, seat: null, inventory: [], equipped: null, goods: { fish: 0, carrots: 0 },
-    seeds: 0, charge: null, casting: null, throwing: false, rowing: false, ownsAngler: false, ...overrides,
+    ...point,
+    id,
+    heading: 0,
+    y: groundHeight(point),
+    grounded: true,
+    onBed: false,
+    reaching: false,
+    rightHandRaised: false,
+    connected: true,
+    sleeping: false,
+    seat: null,
+    inventory: [],
+    equipped: null,
+    goods: { fish: 0, carrots: 0 },
+    seeds: 0,
+    charge: null,
+    casting: null,
+    throwing: false,
+    rowing: false,
+    ownsAngler: false,
+    ...overrides,
   }
 }
 
-export function setup(t, { saved, players = [], arrange = () => {}, random = () => 0 } = {}) {
+export function setup(t, { saved, players = [], arrange = () => {}, random = () => 0, playtest, metrics } = {}) {
   let time = 10000
   const checkpoint = t.mock.fn(() => game.snapshotForSave())
   const save = saved ?? createGame().snapshotForSave()
   if (!saved) save.crew = players.map((entry, index) => ({ token: tokens[index], player: entry, reserved: true }))
   arrange(save)
-  const game = createGame({ save, clock: () => time, random, checkpoint })
+  const game = createGame({ save, clock: () => time, random, checkpoint, playtest, metrics })
   const sessions = createSocketSessions(game)
   const sockets = []
-  t.after(() => sockets.forEach((socket) => socket.close()))
+  t.after(() => sockets.forEach((socket) => void socket.close()))
   function advance(ticks = 1) {
     for (let i = 0; i < ticks; i++) {
       time += 1000 / 30

@@ -5,7 +5,8 @@ import { bindLegMesh } from './crew-knee'
 import { buildHat } from './shop-hats'
 import { buildSleeve, buildTopBody } from './shop-tops'
 import { buildBottomLeg, buildShoe } from './shop-legwear'
-import { tailored } from './shop-tailoring'
+import { waistbandGeometry } from './geometry/shop-tailoring'
+import { tailored, type Section } from './shop-tailoring'
 import type { MeshFactory } from '../island-meshes'
 import { isEveryday, wearsSwimsuit, type CrewAppearance } from '../crew-appearance'
 import { isStockPiece, pieceSlots, shopBottoms, shopTops, type PieceSlot, type StockId } from '../wardrobe-stock'
@@ -51,23 +52,24 @@ function createShopGarment(meshes: MeshFactory, rig: GarmentRig, id: StockId, dy
   if (isStockPiece('trousers', id)) {
     const belt = garmentRoot(id, rig.root)
     const { color, detail } = shopBottoms[id]
-    tailored(meshes, belt, 'Waistband and seat', color, [
-      [.718, 0, -.002, .256, .156], [.755, 0, -.002, .277, .165], [.784, 0, -.004, .275, .169], [.800, 0, -.005, .270, .169, detail],
-      [.823, 0, -.011, .258, .155, detail], [.829, 0, -.011, .253, .150, detail],
-    ], 32, .036)
+    const { rows, sides, opening } = waistbandGeometry
+    const profile = rows.map(([y, x, z, w, d, trim]): Section => [y, x, z, w, d, trim ? detail : undefined])
+    tailored(meshes, belt, 'Waistband and seat', color, profile, sides, opening)
     roots.push(belt)
   }
   return roots
 }
 
+const farmWorkwear = { shirt: 'dock-jacket', trousers: 'crab-cargo', shoes: 'puddle-wellies', hat: 'rain-brim' } as const
+
 export function wornStock<Slot extends PieceSlot>(slot: Slot, appearance: CrewAppearance) {
-  if (!isEveryday(appearance.uniform) || (slot === 'trousers' && wearsSwimsuit(appearance))) return
-  const id = appearance[slot]
+  if (appearance.uniform !== 'farmer' && (!isEveryday(appearance.uniform) || (slot === 'trousers' && wearsSwimsuit(appearance)))) return
+  const id = appearance.uniform === 'farmer' ? farmWorkwear[slot] : appearance[slot]
   return isStockPiece(slot, id) ? id : undefined
 }
 
 export function createShopAttachments(meshes: MeshFactory, rig: GarmentRig) {
-  const worn = new Map<PieceSlot, { id: StockId; roots: TransformNode[]; dye?: string }>()
+  const worn = new Map<PieceSlot, { id: StockId, roots: TransformNode[], dye?: string }>()
   function sync(appearance: CrewAppearance, dye?: string) {
     for (const slot of pieceSlots) {
       const id = wornStock(slot, appearance)

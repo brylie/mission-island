@@ -1,29 +1,42 @@
 import type { Point } from '../world.ts'
-import { advanceSchool, createSchool, poolRadius, threatBuffer, type SchoolThreat, type SwimHabitat } from './fish-school.ts'
+import { advanceSchool, createSchool, poolRadius, schoolIsRegrouping, threatBuffer, type SchoolThreat, type SwimHabitat } from './fish-school.ts'
+
+const minimumSwimDepthM = 0.48
+const shoreProbeSeconds = 0.65
+const shallowWaterDepthM = 0.95
+const shallowsRepulsionGain = 6
+const maximumDeepWaterPush = 0.8
+const deepWaterDepthM = 1.45
+const deepWaterReturnGain = 1.3
+const slopeProbeM = 0.4
+const minimumDepthGradient = 0.01
+const spawnDepthAttempts = 12
+const spawnRadiusShrink = 0.75
+const snapshotPrecision = 1000
 
 export function createCoastalSchool(seed: number, origin: Point, waterDepth: (point: Point) => number) {
   const toWorld = (p: Point) => ({ x: origin.x + p.x, z: origin.z + p.z })
   const depth = (p: Point) => waterDepth(toWorld(p))
   const habitat: SwimHabitat = {
     // Leave room above the bed for the head and tail, including on a slope.
-    navigable: p => depth(p) >= .48,
+    navigable: (p) => depth(p) >= minimumSwimDepthM,
     steer(p, vx, vz) {
-      const d = depth({ x: p.x + vx * .65, z: p.z + vz * .65 })
-      const shallow = Math.max(0, .95 - d) * 6
-      const deep = Math.min(.8, Math.max(0, d - 1.45) * 1.3)
+      const d = depth({ x: p.x + vx * shoreProbeSeconds, z: p.z + vz * shoreProbeSeconds })
+      const shallow = Math.max(0, shallowWaterDepthM - d) * shallowsRepulsionGain
+      const deep = Math.min(maximumDeepWaterPush, Math.max(0, d - deepWaterDepthM) * deepWaterReturnGain)
       if (!shallow && !deep) return { x: 0, z: 0 }
-      const dx = depth({ x: p.x + .4, z: p.z }) - depth({ x: p.x - .4, z: p.z })
-      const dz = depth({ x: p.x, z: p.z + .4 }) - depth({ x: p.x, z: p.z - .4 })
-      const scale = (shallow - deep) / Math.max(.01, Math.hypot(dx, dz))
+      const dx = depth({ x: p.x + slopeProbeM, z: p.z }) - depth({ x: p.x - slopeProbeM, z: p.z })
+      const dz = depth({ x: p.x, z: p.z + slopeProbeM }) - depth({ x: p.x, z: p.z - slopeProbeM })
+      const scale = (shallow - deep) / Math.max(minimumDepthGradient, Math.hypot(dx, dz))
       return { x: dx * scale, z: dz * scale }
     },
   }
   const school = createSchool(seed)
   for (const fish of school.fish) {
     // Seeds can straddle the waterline. Pull those fish in toward the authored wet origin.
-    for (let attempt = 0; attempt < 12 && !habitat.navigable(fish); attempt++) {
-      fish.x *= .75
-      fish.z *= .75
+    for (let attempt = 0; attempt < spawnDepthAttempts && !habitat.navigable(fish); attempt++) {
+      fish.x *= spawnRadiusShrink
+      fish.z *= spawnRadiusShrink
     }
   }
   function step(threats: readonly SchoolThreat[]) {
@@ -33,11 +46,12 @@ export function createCoastalSchool(seed: number, origin: Point, waterDepth: (po
     })
     advanceSchool(school, nearby, habitat)
   }
-  const round = (n: number) => Math.round(n * 1000) / 1000
+  const round = (n: number) => Math.round(n * snapshotPrecision) / snapshotPrecision
   function frame() {
     return {
       leader: school.leader,
-      fish: school.fish.map(f => {
+      regrouping: schoolIsRegrouping(school),
+      fish: school.fish.map((f) => {
         const { x, z } = toWorld(f)
         return { x: round(x), z: round(z), heading: round(f.heading), startled: f.alarm > 0 }
       }),

@@ -1,5 +1,5 @@
 import type { IslandSurfaceTarget } from '../island-world'
-import type { SurfaceRecipe, SurfaceSettings } from '../surface-recipes'
+import type { SurfaceRecipe, SurfaceSettings } from '../assets/surface-recipes'
 import type { Point } from '../world'
 import type { SiteFeature } from '../worlds/site-feature'
 
@@ -20,4 +20,5 @@ export interface FieldSite {
   replaceBuilding?: number
   replaceFeature?: SiteFeature
   replaceFarm?: boolean
+  replaceFireWatch?: boolean
 }

@@ -7,6 +7,7 @@ import { createRecipeMaterial } from '../materials'
 import type { MeshFactory } from '../island-meshes'
 import type { WildlifeFrame } from '../wildlife'
 import { marketRunoffPreview, dryMarketRainAge } from '../market-runoff'
+import { secondsAtIslandHour } from '../residents/schedule'
 import { draftFeatures } from './site-drafts'
 import type { FieldSite } from './field-site'
 
@@ -29,13 +30,16 @@ export function createFieldScenery(meshes: MeshFactory, site: FieldSite) {
     ...site,
     features: draftFeatures(),
     surfaceStudy: surface && material && {
-      target: surface.target, material, wear: surface.settings.wear ?? surface.recipe.wear.amount,
+      target: surface.target,
+      material,
+      wear: surface.settings.wear ?? surface.recipe.wear.amount,
     },
   })
   return {
-    surfaceMeshes: material ? meshes.scene.meshes.filter(mesh => mesh.material === material) : undefined,
+    surfaceMeshes: material ? meshes.scene.meshes.filter((mesh) => mesh.material === material) : undefined,
     update(frame: WildlifeFrame, light: number) {
       const runoff = marketRunoffPreview(frame.weather.rain, dryMarketRainAge)
+      world.showHouseholds({ islandTime: secondsAtIslandHour(frame.weather.hour), gateRepair: { stage: 'sagging', pinHolder: null } })
       world.updateEnvironment(frame, light, true, runoff, { driftwood: school(frame.time) })
     },
   }

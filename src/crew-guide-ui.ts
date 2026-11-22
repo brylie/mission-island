@@ -1,8 +1,10 @@
 import { crateDriverXp, haulerUnlockXp } from './ore-contracts'
+import { tallyLines } from './ferry-repair'
 import { jobs } from './jobs'
 import type { Player, Snapshot } from './protocol'
-import { conversationLines, favorGuides, isCustom, openOffer } from './residents/favors'
-import { atResident } from './residents/schedule'
+import { createResidentConversation } from './resident-conversation-ui'
+import { favorGuides } from './residents/favors'
+import { residentVisitingHours } from './residents/schedule'
 import { crewHomes, jobPay, starterPay } from './world'
 import { starterResident, starterResidents } from './worlds/starter/residents'
 
@@ -10,14 +12,13 @@ function favorTitle(receipt: Snapshot['lastFavorPay']) {
   return receipt && starterResident(receipt.resident)?.favors.find((favor) => favor.id === receipt.favor)?.title
 }
 
-export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismissed: boolean) => void, accept: (subject: number) => void) {
+export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismissed: boolean) => void, act: Parameters<typeof createResidentConversation>[1]) {
   const title = dialog.querySelector<HTMLElement>('#guide-title')!
   const note = dialog.querySelector<HTMLElement>('#guide-note')!
   const conversation = dialog.querySelector<HTMLElement>('#resident-conversation')!
-  const greeting = dialog.querySelector<HTMLElement>('#resident-line')!
-  const advice = dialog.querySelector<HTMLElement>('#resident-advice')!
-  const agree = dialog.querySelector<HTMLButtonElement>('#resident-accept')!
+  const talk = createResidentConversation(dialog, act)
   const favors = dialog.querySelector<HTMLElement>('#guide-favors')!
+  const neighbors = dialog.querySelector<HTMLElement>('#guide-neighbors')!
   const home = dialog.querySelector<HTMLElement>('#guide-home')!
   const workTitle = dialog.querySelector<HTMLElement>('#guide-work-title')!
   const work = dialog.querySelector<HTMLElement>('#guide-work')!
@@ -25,7 +26,11 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   const lead = dialog.querySelector<HTMLElement>('#guide-lead')!
   const toggle = dialog.querySelector<HTMLButtonElement>('#toggle-fisher-lead')!
   let shownFavors = ''
-  let speaker = -1
+  neighbors.replaceChildren(...starterResidents.map(({ identity, schedule }) => {
+    const entry = document.createElement('li')
+    entry.textContent = `${identity.name} · ${residentVisitingHours(schedule)}`
+    return entry
+  }))
 
   function showLead(visible: boolean) {
     lead.hidden = !visible
@@ -36,12 +41,6 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   toggle.addEventListener('click', () => {
     showLead(lead.hidden)
     setDismissed(lead.hidden)
-  })
-
-  // Agreeing goes back through the host, which checks the resident is still in reach and still asking.
-  agree.addEventListener('click', () => {
-    if (speaker >= 0) accept(speaker)
-    dialog.close()
   })
 
   function showFavors(state: Snapshot, player: Player) {
@@ -61,28 +60,33 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   }
 
   function update(state: Snapshot, player: Player) {
-    if (!dialog.open || note.hidden) return
+    if (!dialog.open) return
+    // A conversation follows shared progress, so a finding from a crewmate's swing appears while it is open.
+    if (note.hidden) return talk.refresh(state, player)
     const order = state.jobs.active
     const heading = order ? jobs[order.id].title : state.mission === 'complete' ? 'Your next job' : 'Your first shift'
     const direction = order
       ? 'Your crew already has an order. Follow the progress and destination on the mission card.'
       : state.mission === 'complete'
-        ? 'The Harbor Job Board is open beside the Harbor Depot freight yard. Walk up and press E to choose an order with your crewmate.'
+        ? 'The Harbor Job Board is open beside Harbor Depot. Walk up and press E to choose an order with your crewmate. Four finished orders open the ferry repair.'
         : state.mission === 'fire'
           ? 'Pick up the extinguishers at Fire Supplies and head to Forest Lookout. Putting out the fire opens the Harbor Job Board back at the depot.'
-          : 'Cross the main road to the Harbor Depot freight yard south of the cottages. One crewmate can load the flatbed from the back with E while the other boards with F. Once loaded, follow the road east to Seabrook. Next comes the lookout fire, then the job board beside the depot.'
+          : 'Cross the depot lane to the Harbor Depot crate stack south of the cottages. One crewmate can load the flatbed from the back with E while the other boards with F. Once loaded, follow the road east to Seabrook. Next comes the lookout fire, then the job board beside the depot.'
     const balance = `Crew bank · ${state.crewCoins} ${state.crewCoins === 1 ? 'coin' : 'coins'}`
     const latest = state.lastStarterPay && starterPay[state.lastStarterPay]
     const receipt = latest
       ? `Last starter payout · ${latest.label} · +${latest.coins} coins.`
       : `Starter pay goes straight into the shared crew bank. Earn ${jobPay.crate} coins per crate, ${jobPay.delivery} extra for finishing the delivery, and ${jobPay.fire} for clearing the lookout fire.`
     const xp = player.deliveryXp ?? 0
-    const certification = xp >= haulerUnlockXp ? 'Certified to drive the Slatecliff ore truck.' :
-      `Slatecliff ore truck certification takes ${haulerUnlockXp} driver XP. Earn ${crateDriverXp} XP for each crate you haul by truck and your crew delivers.`
+    const certification = xp >= haulerUnlockXp
+      ? 'Certified to drive the Slatecliff ore truck.'
+      : `Slatecliff ore truck certification takes ${haulerUnlockXp} driver XP. Earn ${crateDriverXp} XP for each crate you haul by truck and your crew delivers.`
     const kept = favorTitle(state.lastFavorPay)
     const favorPay = kept ? ` Last favor · ${kept} · +${state.lastFavorPay!.coins} coins.` : ''
     for (const [element, value] of [
-      [home, crewHomes[player.id].name], [workTitle, heading], [work, direction],
+      [home, crewHomes[player.id].name],
+      [workTitle, heading],
+      [work, direction],
       [pay, `${balance}. ${receipt}${favorPay} ${xp} driver XP. ${certification}`],
     ] as const) {
       if (element.textContent !== value) element.textContent = value
@@ -93,19 +97,13 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   return {
     update,
     open(state: Snapshot, player: Player, talking: string | false, dismissed: boolean) {
-      speaker = talking ? starterResidents.findIndex(({ id }) => id === talking) : -1
-      const resident = starterResidents[speaker]
-      title.textContent = resident ? `${resident.identity.name} · ${resident.identity.role}` : 'Crew guide'
-      conversation.hidden = !resident
-      note.hidden = Boolean(resident)
-      if (resident) {
-        [greeting.textContent, advice.textContent] = conversationLines(resident, state)
-        const offer = openOffer(resident, state)
-        agree.hidden = !offer || isCustom(offer) || !atResident(resident, state, player)
-        agree.textContent = `Agree to help ${resident.identity.name}`
-      } else {
-        showLead(!dismissed)
-      }
+      // The ferry tally board opens in the same dialog as a conversation, without a resident to answer.
+      const board = talking === 'tally' ? tallyLines(state) : undefined
+      const speaking = board ? talk.board(board.lines) && board.title : talking ? talk.show(state, player, talking) : undefined
+      title.textContent = speaking || 'Crew guide'
+      conversation.hidden = !speaking
+      note.hidden = Boolean(speaking)
+      if (!speaking) showLead(!dismissed)
       dialog.showModal()
       update(state, player)
     },

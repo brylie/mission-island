@@ -1,11 +1,17 @@
-import { footpaths, road, walkways } from '../routes'
+import { landscapeMapArt, landscapeMapGuides, landscapeMapTracking } from '../assets/geometry/workbench-map-art'
+import { footpaths, roads, walkways } from '../routes'
 import { islandTrees, northernProps } from '../scenery'
-import { coastPoint, groundHeight, waterLevel } from '../terrain'
+import { coastPoint, coastSegments, groundHeight, waterLevel } from '../terrain'
 import { buildings, dockEndZ, harborDock } from '../world'
 import type { Point } from '../world'
+import type { MapPoint } from './landscape-map-projection'
 import { landscapeMapSize, pointInWorld, pointOnMap } from './landscape-map-projection'
 
+const halves = 2
+const fullTurn = Math.PI * halves
+
 export function paintLandscapeMap(ink: CanvasRenderingContext2D) {
+  const { sea, terrain, tree: treeMark, prop: propMark, paths, road, dock, building } = landscapeMapArt
   const { width, height } = ink.canvas
   const scale = width / landscapeMapSize.width
   const project = (point: Point) => {
@@ -14,36 +20,37 @@ export function paintLandscapeMap(ink: CanvasRenderingContext2D) {
   }
   function coast(radius: number) {
     ink.beginPath()
-    for (let i = 0; i < 192; i++) {
-      const point = project(coastPoint(i * Math.PI / 96, radius))
+    for (let i = 0; i < coastSegments; i++) {
+      const point = project(coastPoint(i * halves * Math.PI / coastSegments, radius))
       if (i === 0) ink.moveTo(...point)
       else ink.lineTo(...point)
     }
     ink.closePath()
   }
 
-  ink.fillStyle = '#23494e'
+  ink.fillStyle = sea
   ink.fillRect(0, 0, width, height)
-  for (const [radius, color] of [[1.07, '#2b595a'], [1.025, '#427471'], [1, '#c9b987']] as const) {
+  for (const { radius, color } of landscapeMapArt.coast) {
     coast(radius)
     ink.fillStyle = color
     ink.fill()
   }
 
   ink.save()
-  coast(0.966)
+  coast(terrain.coastInset)
   ink.clip()
-  const tile = 4
+  const tile = terrain.samplePixels
+  const { lowland, elevationTint } = terrain
   for (let y = 0; y < height; y += tile) {
     for (let x = 0; x < width; x += tile) {
-      const point = pointInWorld((x + tile / 2) / width, (y + tile / 2) / height)
+      const point = pointInWorld((x + tile / halves) / width, (y + tile / halves) / height)
       const elevation = groundHeight(point)
-      const rise = Math.max(0, elevation) / 15
-      const slope = groundHeight({ x: point.x - 1.4, z: point.z + 1.4 }) - elevation
-      const light = Math.max(-10, Math.min(14, slope * 28))
+      const rise = Math.max(0, elevation) / terrain.elevationScale
+      const slope = groundHeight({ x: point.x - terrain.slopeSampleOffset, z: point.z + terrain.slopeSampleOffset }) - elevation
+      const light = Math.max(terrain.minLight, Math.min(terrain.maxLight, slope * terrain.slopeContrast))
       ink.fillStyle = elevation < waterLevel
-        ? '#558780'
-        : `rgb(${Math.round(113 + rise * 68 + light)}, ${Math.round(147 + rise * 31 + light)}, ${Math.round(97 + rise * 46 + light)})`
+        ? terrain.submerged
+        : `rgb(${Math.round(lowland.red + rise * elevationTint.red + light)}, ${Math.round(lowland.green + rise * elevationTint.green + light)}, ${Math.round(lowland.blue + rise * elevationTint.blue + light)})`
       ink.fillRect(x, y, tile, tile)
     }
   }
@@ -52,11 +59,11 @@ export function paintLandscapeMap(ink: CanvasRenderingContext2D) {
   function dot(point: Point, radius: number, color: string) {
     ink.fillStyle = color
     ink.beginPath()
-    ink.arc(...project(point), radius, 0, Math.PI * 2)
+    ink.arc(...project(point), radius, 0, fullTurn)
     ink.fill()
   }
-  for (const tree of islandTrees) dot(tree, Math.max(2, tree.height * scale * 0.34), '#456d50')
-  for (const prop of northernProps) dot(prop, Math.max(1.6, prop.size * scale * 0.68), prop.tree ? '#4a7155' : '#9a9e80')
+  for (const tree of islandTrees) dot(tree, Math.max(treeMark.minRadius, tree.height * scale * treeMark.sizeScale), treeMark.color)
+  for (const prop of northernProps) dot(prop, Math.max(propMark.minRadius, prop.size * scale * propMark.sizeScale), prop.tree ? propMark.tree : propMark.rock)
 
   ink.lineCap = ink.lineJoin = 'round'
   function route(points: readonly Point[], widthMetres: number, color: string) {
@@ -69,35 +76,65 @@ export function paintLandscapeMap(ink: CanvasRenderingContext2D) {
     }
     ink.stroke()
   }
-  for (const trail of footpaths) route(trail.points, trail.width, '#c4b98c')
-  for (const trail of walkways) route(trail.points, trail.width, '#c8caab')
-  route(road, 6.8, '#534f45')
-  route(road, 4.9, '#b5ab90')
-  route([{ x: harborDock.x, z: harborDock.firstZ + 0.3 }, { x: harborDock.x, z: dockEndZ - 0.3 }], harborDock.width, '#a98a64')
+  for (const trail of footpaths) route(trail.points, trail.width, paths.trail)
+  for (const trail of walkways) route(trail.points, trail.width, paths.walkway)
+  for (const path of roads) route(path, road.outsideWidth, road.edge)
+  for (const path of roads) route(path, road.insideWidth, road.surface)
+  route([{ x: harborDock.x, z: harborDock.firstZ + dock.endInset }, { x: harborDock.x, z: dockEndZ - dock.endInset }], harborDock.width, dock.color)
   for (const { x, z, w, d } of buildings) {
-    ink.fillStyle = '#e2c8a0'
-    ink.fillRect(...project({ x: x - w / 2, z: z + d / 2 }), w * scale, d * scale)
+    ink.fillStyle = building
+    ink.fillRect(...project({ x: x - w / halves, z: z + d / halves }), w * scale, d * scale)
   }
 }
 
-export function paintMapGuides(ink: CanvasRenderingContext2D, zoom: number) {
+function paintMapGuides(ink: CanvasRenderingContext2D, zoom: number) {
   const { width, height } = ink.canvas
   const scale = width * zoom / landscapeMapSize.width
-  const metres = [25, 10, 5, 2, 1].find((length) => length * scale <= width * 0.14) ?? 1
+  const { color, north, scale: ruler } = landscapeMapGuides
+  const metres = ruler.distances.find((length) => length * scale <= width * ruler.widthFraction) ?? 1
 
-  ink.fillStyle = '#f1e6bb'
-  ink.font = 'bold 20px system-ui'
+  ink.fillStyle = color
+  ink.font = north.label.font
   ink.textAlign = 'center'
-  ink.fillText('N', width - 33, 34)
+  ink.fillText('N', width - north.label.edge, north.label.y)
   ink.beginPath()
-  ink.moveTo(width - 33, 45)
-  ink.lineTo(width - 41, 65)
-  ink.lineTo(width - 33, 60)
-  ink.lineTo(width - 25, 65)
+  const [tip, ...edges] = north.outline
+  ink.moveTo(width - tip[0], tip[1])
+  for (const [edge, y] of edges) ink.lineTo(width - edge, y)
   ink.closePath()
   ink.fill()
   ink.textAlign = 'left'
-  ink.font = '18px system-ui'
-  ink.fillText(`${metres} m`, 23, height - 33)
-  ink.fillRect(23, height - 24, metres * scale, 3)
+  ink.font = ruler.label.font
+  ink.fillText(`${metres} m`, ruler.x, height - ruler.label.bottom)
+  ink.fillRect(ruler.x, height - ruler.bar.bottom, metres * scale, ruler.bar.thickness)
+}
+
+export function paintMapTracking(context: CanvasRenderingContext2D, zoom: number, focus?: MapPoint, cursor?: MapPoint) {
+  const { focusRing, crosshair } = landscapeMapTracking
+  const { width, height } = context.canvas
+  context.clearRect(0, 0, width, height)
+  paintMapGuides(context, zoom)
+  if (focus) {
+    const { u, v } = focus
+    context.beginPath()
+    context.arc(u * width, v * height, focusRing.radius, 0, fullTurn)
+    context.lineWidth = focusRing.outline
+    context.strokeStyle = focusRing.edge
+    context.stroke()
+    context.lineWidth = focusRing.width
+    context.strokeStyle = focusRing.color
+    context.stroke()
+  }
+  if (cursor) {
+    const x = cursor.u * width
+    const y = cursor.v * height
+    context.beginPath()
+    context.moveTo(x - crosshair.radius, y)
+    context.lineTo(x + crosshair.radius, y)
+    context.moveTo(x, y - crosshair.radius)
+    context.lineTo(x, y + crosshair.radius)
+    context.lineWidth = crosshair.width
+    context.strokeStyle = crosshair.color
+    context.stroke()
+  }
 }

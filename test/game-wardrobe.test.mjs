@@ -15,7 +15,7 @@ function atWardrobe(id) {
   return player(id, { x, z: z - 0.55 })
 }
 
-test('players find their own wardrobe, see applied pieces, and recover them after a rejoin and restart', t => {
+test('players find their own wardrobe, see applied pieces, and recover them after a rejoin and restart', (t) => {
   const h = setup(t, { players: [atWardrobe(0), atWardrobe(1)] })
   const a = h.join(tokens[0])
   const b = h.join(tokens[1])
@@ -39,7 +39,7 @@ test('players find their own wardrobe, see applied pieces, and recover them afte
   assert.deepEqual(restarted.join(tokens[0]).player.appearance, first)
 })
 
-test('work outfits respect shared qualifications while keeping the wearer’s personal and everyday choices', t => {
+test('work outfits respect shared qualifications while keeping the wearer’s personal and everyday choices', (t) => {
   const h = setup(t, { players: [atWardrobe(0), atWardrobe(1)] })
   const a = h.join(tokens[0])
   const everyday = { uniform: 'default', skin: 'deep', hair: 'short', nose: 'small', mouth: 'wide', shirt: 'blue', shoes: 'brown' }
@@ -48,27 +48,31 @@ test('work outfits respect shared qualifications while keeping the wearer’s pe
   h.advance()
   assert.deepEqual(a.player.appearance, everyday)
 
-  const delivered = setup(t, { saved: h.game.snapshotForSave(), arrange: save => { save.world.mission = 'fire' } })
+  const delivered = setup(t, { saved: h.game.snapshotForSave(), arrange: (save) => {
+    save.world.mission = 'fire'
+  } })
   const courier = delivered.join(tokens[0])
   courier.request('appearance', { appearance: { ...everyday, uniform: 'courier' } })
   courier.request('appearance', { appearance: { ...everyday, uniform: 'rescue' } })
   delivered.advance()
   assert.deepEqual(courier.player.appearance, { ...everyday, uniform: 'courier' })
 
-  const qualified = setup(t, { saved: delivered.game.snapshotForSave(), arrange: save => { save.world.mission = 'complete' } })
+  const qualified = setup(t, { saved: delivered.game.snapshotForSave(), arrange: (save) => {
+    save.world.mission = 'complete'
+  } })
   const left = qualified.join(tokens[0])
   const right = qualified.join(tokens[1])
   assert.equal(left.player.appearance.uniform, 'courier')
   for (const client of [left, right]) client.request('appearance', { appearance: { ...everyday, uniform: 'rescue' } })
   qualified.advance()
-  assert.ok(left.state.players.every(entry => entry.appearance.uniform === 'rescue'))
+  assert.ok(left.state.players.every((entry) => entry.appearance.uniform === 'rescue'))
   left.request('appearance', { appearance: everyday })
   qualified.advance()
   assert.deepEqual(left.player.appearance, everyday)
   assert.deepEqual(right.player.appearance, { ...everyday, uniform: 'rescue' })
 })
 
-test('a returning profile keeps its default palette when the other slot is the only one available', t => {
+test('a returning profile keeps its default palette when the other slot is the only one available', (t) => {
   const h = setup(t)
   const first = h.join(tokens[0])
   const second = h.join(tokens[1])
@@ -82,9 +86,11 @@ test('a returning profile keeps its default palette when the other slot is the o
   assert.equal(returning.player.appearanceBase, 0)
 })
 
-test('the last three crew coins buy one outfit for one player even when both purchase before the next tick', t => {
+test('the last three crew coins buy one outfit for one player even when both purchase before the next tick', (t) => {
   const point = { x: clothingCounter.x, z: clothingCounter.z + 0.85 }
-  const h = setup(t, { players: [player(0, point), player(1, point)], arrange: save => { save.crewCoins = anglerCost } })
+  const h = setup(t, { players: [player(0, point), player(1, point)], arrange: (save) => {
+    save.crewCoins = anglerCost
+  } })
   const a = h.join(tokens[0])
   const b = h.join(tokens[1])
   for (const client of [a, b]) {
@@ -96,7 +102,7 @@ test('the last three crew coins buy one outfit for one player even when both pur
   b.request('buy-angler')
   a.request('buy-angler')
   h.advance()
-  const results = client => client.messages.filter(message => message.type === 'angler-purchase').map(message => message.result)
+  const results = (client) => client.messages.filter((message) => message.type === 'angler-purchase').map((message) => message.result)
   assert.deepEqual(results(a), ['bought', 'already-owned'])
   assert.deepEqual(results(b), ['insufficient-funds'])
   assert.equal(a.player.ownsAngler, true)
@@ -106,7 +112,7 @@ test('the last three crew coins buy one outfit for one player even when both pur
 
   const restarted = setup(t, { saved: h.game.snapshotForSave() })
   const buyer = restarted.join(tokens[0])
-  const equip = uniform => {
+  const equip = (uniform) => {
     buyer.request('appearance', { appearance: { uniform, skin: 'warm' } })
     restarted.advance()
     assert.equal(buyer.player.appearance.uniform, uniform)
@@ -117,8 +123,10 @@ test('the last three crew coins buy one outfit for one player even when both pur
   equip('angler')
 })
 
-test('purchasing from outside the counter leaves purchases and crew coins untouched', t => {
-  const h = setup(t, { arrange: save => { save.crewCoins = anglerCost } })
+test('purchasing from outside the counter leaves purchases and crew coins untouched', (t) => {
+  const h = setup(t, { arrange: (save) => {
+    save.crewCoins = anglerCost
+  } })
   const a = h.join(tokens[0])
   a.request('buy-angler')
   h.advance()
@@ -127,9 +135,11 @@ test('purchasing from outside the counter leaves purchases and crew coins untouc
   assert.equal(a.state.crewCoins, anglerCost)
 })
 
-test('individual purchases unlock only the buyer’s matching piece and keep the rest of their outfit', t => {
+test('individual purchases unlock only the buyer’s matching piece and keep the rest of their outfit', (t) => {
   const point = { x: clothingCounter.x, z: clothingCounter.z + 0.82 }
-  const h = setup(t, { players: [player(0, point), player(1, point)], arrange: save => { save.crewCoins = 3 } })
+  const h = setup(t, { players: [player(0, point), player(1, point)], arrange: (save) => {
+    save.crewCoins = 3
+  } })
   const a = h.join(tokens[0])
   const b = h.join(tokens[1])
   const pieces = { uniform: 'default', skin: 'warm', hat: 'amber', trousers: 'slate-shorts', shoes: 'brown' }
@@ -170,14 +180,16 @@ test('individual purchases unlock only the buyer’s matching piece and keep the
 
 test('each mix-and-match counter piece has its own shop portrait', () => {
   const rack = new URL('../src/assets/clothing/', import.meta.url)
-  const images = readdirSync(rack).filter(file => file.endsWith('.webp')).sort()
-  const expected = Object.values(stockedPieces).flatMap(group => Object.keys(group).map(id => id + '.webp'))
+  const images = readdirSync(rack).filter((file) => file.endsWith('.webp')).sort()
+  const expected = Object.values(stockedPieces).flatMap((group) => Object.keys(group).map((id) => id + '.webp'))
   assert.deepEqual(images, expected.sort())
 })
 
-test('the Seabrook collection prices, unlocks, and restores all forty pieces independently', t => {
+test('the Seabrook collection prices, unlocks, and restores all forty pieces independently', (t) => {
   const point = { x: clothingCounter.x, z: clothingCounter.z + 0.82 }
-  const h = setup(t, { players: [player(0, point), player(1, point)], arrange: save => { save.crewCoins = 150 } })
+  const h = setup(t, { players: [player(0, point), player(1, point)], arrange: (save) => {
+    save.crewCoins = 150
+  } })
   const buyer = h.join(tokens[0])
   const observer = h.join(tokens[1])
   const collection = Object.values(stockedPieces).flatMap(Object.keys)

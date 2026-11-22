@@ -14,10 +14,12 @@ Use one row per crew session to answer two questions. When does the crew first r
 | Buy the Harbor angler uniform | −3 | The buyer unlocks the uniform. |
 | Farm supplies / beach gear order | +6 / +10 | Deliver two seed crates / three beach crates. The whole order pays once. |
 | Fresh fish / carrot order | +6 / +8 | Contribute two fish / two carrots across the crew. Contributed goods have been used up. |
-| Mend Wren's gate | +5 | Once per save. The crew uses the loaned toolbox and one hinge pin from Wren's mending bench by the ferry approach. Wren's trust rises by one. [Neighbor repairs](../mechanics/neighbor-repairs.md) |
-| Carrots for Mara / fish for Ines / stage a load for Bram | +5 each | Once per save. Two carrots and two fish are used up; the staged crate leaves the yard. That resident's trust rises by one. [Residents and favors](../mechanics/resident-favors.md) |
+| Ferry repair stage | −12 per stage, given in steps of up to 5 | Also two timber crates hauled from the Seabrook timber stack. The coins and crates are given up for good, and three stages restore the terminal. Trial values for [#52](https://github.com/brylie/mission-island/issues/52). [Ferry terminal](../mechanics/ferry-terminal.md) |
+| Mend Wren's gate | +5 | Once per save. The crew uses the loaned toolbox and one hinge pin from Wren's mending bench by the ferry freight yard. Wren's trust rises by one. [Neighbor repairs](../mechanics/neighbor-repairs.md) |
+| Carrots for Mara / fish for Ines / stage a load for Bram / Wren's swollen gate, pie and soup | +5 each | Once per save. Goods handed over are used up; the staged crate leaves the yard. That resident's trust rises by one. Making amends for a broken promise pays the coins but earns no trust. [Residents and favors](../mechanics/resident-favors.md) |
+| A carrot for Wren's bench lunch | +3 | Once per save after the ferry approach edging. The carrot is used up and Wren's Trust rises by one. [Residents and favors](../mechanics/resident-favors.md) |
 
-One crew bank spans both islands. Count each payment once even when both people see it. Four completed board orders currently mark readiness for a future second island. Ferry repair stages, donation prices and travel are planned. Recheck amounts against the [order rules](../mechanics/crew-orders.md), [fishing](../mechanics/fishing.md) and [farm and market rules](../mechanics/farming-and-market.md) when tuning changes.
+One crew bank spans both islands. Count each payment once even when both people see it. Four completed board orders open the ferry repair. Its stage costs are trial values, and travel is planned. Recheck amounts against the [order rules](../mechanics/crew-orders.md), [fishing](../mechanics/fishing.md) and [farm and market rules](../mechanics/farming-and-market.md) when tuning changes.
 
 ## Compare two routes to the same contribution
 

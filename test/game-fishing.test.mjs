@@ -4,7 +4,7 @@ import { canWalkAt } from '../src/simulation/movement.ts'
 import { actionHint } from '../src/actions.ts'
 import { residentAt } from '../src/residents/schedule.ts'
 import { mara } from '../src/worlds/starter/residents/mara.ts'
-import { footpaths } from '../src/routes.ts'
+import { harborRoad } from '../src/routes.ts'
 import { maxWadeDepth, walkingHeight, waterLevel } from '../src/terrain.ts'
 import { daySeconds } from '../src/weather.ts'
 import { ferryTerminal, skiffStart } from '../src/world.ts'
@@ -64,7 +64,8 @@ test('two players board a skiff, and paddling retrieves the other player’s lin
   const a = h.join(tokens[0])
   const b = h.join(tokens[1])
   assert.equal(actionHint(a.state, a.player)[1], 'Board skiff')
-  a.request('seat'); b.request('seat')
+  a.request('seat')
+  b.request('seat')
   h.advance()
   assert.equal(a.player.seat, 'port')
   assert.equal(b.player.seat, 'starboard')
@@ -88,7 +89,7 @@ const fisherAt = (hour) => residentAt(mara.schedule, { islandTime: (hour - 6) * 
 
 test('Mara moves between walkable stops and either crewmate can talk at the fishing dock', (t) => {
   for (const hour of [0, 18.25, ...Array.from({ length: 26 }, (_, index) => 6 + index / 100)]) {
-    assert.ok(canWalkAt(fisherAt(hour), .25, waterLevel - maxWadeDepth))
+    assert.ok(canWalkAt(fisherAt(hour), 0.25, waterLevel - maxWadeDepth))
   }
   const dock = fisherAt(8)
   const h = setup(t, {
@@ -101,10 +102,10 @@ test('Mara moves between walkable stops and either crewmate can talk at the fish
     client.request('interact', { choice: { action: 'talk', subject: 0 } })
     assert.deepEqual(client.messages.at(-1), { type: 'resident-chat', resident: 'mara' })
   }
-  const approach = footpaths.find(({ name }) => name === 'Ferry approach').points
-  assert.deepEqual(approach.at(-1), ferryTerminal)
-  for (let z = approach[0].z; z > ferryTerminal.z + 1; z -= .5) {
-    assert.ok(canWalkAt({ x: ferryTerminal.x, z }, .5, waterLevel - maxWadeDepth))
+  // Harbor Depot road ends at the ferry barrier, and its straight ramp lane can be walked to the terminal.
+  assert.deepEqual(harborRoad[0], { x: ferryTerminal.x, z: ferryTerminal.z })
+  for (let z = harborRoad[1].z; z > ferryTerminal.z + 1; z -= 0.5) {
+    assert.ok(canWalkAt({ x: ferryTerminal.x, z }, 0.5, waterLevel - maxWadeDepth))
   }
 })
 

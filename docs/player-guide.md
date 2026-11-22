@@ -15,13 +15,16 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | **Right click** | Hold to raise your right hand while on foot with that hand free. Your crewmate can see the gesture. |
 | **B** | Buy one carrot seed at Seabrook Market. |
 | **1 / 2 / 3** | Equip or stow your fishing rod, hoe, or watering can. |
-| **R** | Keyboard shortcut for spraying the extinguisher. |
+| **R** | Keyboard shortcut for spraying a held extinguisher. |
 | **C** | Switch between the island overview and the close third-person view. |
 | **Mouse** | Look around your character or vehicle. The first gameplay keypress captures the mouse. Aim the reticle at something you can use to choose it: it turns gold and a tooltip names the thing and the key. With nothing under the reticle, **E** uses whatever is nearest. |
 | **Esc** | Release the mouse. Press a gameplay key to capture it again. |
-| **O** | Open Options for your name, appearance, mouse look (invert either axis, look speed), and **Respawn at home**. |
+| **J** | Open the crew's field journal. Press **J** again or **Esc** to close it. |
+| **O** | Open Options for your name, appearance, mouse look (invert either axis, look speed), sound (ambience and effects levels, mute), and **Respawn at home**. |
 
 Bring crates to the tail of the truck to set them on the bed. Amber orbs appear along the recommended route once a crate is loaded. Jump over the low rear lip and ride along on the bed as the truck moves. The side rails and rear lip help keep crates aboard through turns. At Seabrook, step out, collect each crate from the bed, and press **E** with the crate inside the glowing teal delivery circle. The beach has a shallow wading shelf. You slow down as the water gets deeper.
+
+Sound starts after your first click or key press. Surf grows as you near the shore, and your boots sound different on gravel paths, pavement, grass, leaf litter, sand, dock boards and in shallow water, duller and squelchier once rain soaks the ground. The flatbed idles while someone is in the driver's seat and strains as it pulls away or climbs. Wind is strongest on the ridge and the shore and hushes among trees, where the crowns rustle as the leaves blow. Ferns, rushes and marram rustle as you push through them, gulls call around the harbor and over the lift sites, and songbirds sing in the woods by day. Both crewmates hear a crate land, from where each of them stands, and a harder drop sounds heavier than a gentle set-down. Every cue also has visible feedback, so muting changes nothing you need to finish a job. **Options → Sound** sets ambience and effects levels or mutes this browser.
 
 Jump onto or over low rocks and crates. The bed or hood gives you a second jump onto the cab roof.
 
@@ -33,15 +36,31 @@ The truck has four-wheel suspension and follows the terrain under each wheel. **
 
 After the lookout fire, press **E** at the Harbor Depot job board to take the next crew order. You can read the board from the mission panel anywhere on the island. Deliver seed crates to Island Farm, take beach gear to Driftwood Beach, or fill fish and carrot orders at Seabrook Market. Either player can contribute to an order. You can keep fishing, farming, or exploring while the order is open.
 
-Each completed order deposits its posted reward once in the crew bank. Both islands show the same balance. Either player can use it to buy seeds or a uniform. Four completed orders mark the crew ready for the future second island. Coins are available to spend along the way. See the [crew orders specification](mechanics/crew-orders.md) for payouts and rules.
+Wildfires break out now and then once the starter shift is done. When smoke is reported, climb the Fire Watch tower beside Fire Supplies and press **E** at the fire finder for a bearing, or look for the smoke column. Red fire stations at the depot, Seabrook, the farm, the tower and Pinewoods each hold an extinguisher you can take at any time. Hold left click near the flames to spray, and press **E** at any station to refill. Larger fires spread if left alone, pay less the more they spread, and need more than one extinguisher. [Fire watch](mechanics/fire-watch.md)
+
+Each completed order deposits its posted reward once in the crew bank. Both islands show the same balance. Either player can use it to buy seeds or a uniform. Four completed orders open the ferry terminal repair. Coins are available to spend along the way. See the [crew orders specification](mechanics/crew-orders.md) for payouts and rules.
+
+## Restoring the ferry terminal
+
+Harbor Depot road ends at the ferry terminal, behind a striped barrier. Once your crew has finished four harbor orders, read the tally board at the corner of the freight yard beside the barrier. Each of the three repair stages needs coins from the crew bank and timber crates from the Seabrook timber stack, on the verge south of the main road west of the beach trail. Aim at the coin box to donate, or at the order slip to have timber stacked at Seabrook. Load the timber onto the flatbed, drive back down Harbor Depot road, pull into the yard and set each crate down by the pallet. The board shows who gave what. Each finished stage changes the landing, and the last one raises the barrier so the flatbed can drive straight onto the ramp. See [the ferry terminal](mechanics/ferry-terminal.md) for the details.
 
 ## Helping Wren
 
-Wren lives in the lilac-roofed cottage just east of the Blue cottage. The garden gate drags a groove in the path and sticks a short way open. Try it and you can't squeeze through. Talk to Wren at the cottage, or at the mending bench beside the ferry approach during the day. Wren lends you the red toolbox on that bench. Inspect the hinge with **E**, pick up a hinge pin from the tray on the bench, and fit it at the gate with the toolbox close by. Then swing the gate to test it. One of you can do all of it, or split the work: one inspects and holds the toolbox while the other fetches the pin. The crew bank gets five coins once, and Wren remembers who helped. If your crewmate leaves with the toolbox, ask Wren to put it back on the bench. Come back the next morning to see Wren use the gate. See [neighbor repairs](mechanics/neighbor-repairs.md) for the details.
+Wren lives in the lilac-roofed cottage just east of the Blue cottage. The garden gate drags a groove in the path and sticks a short way open. Try it and you can't squeeze through. Talk to Wren at the cottage, or at the mending bench beside Harbor Depot road, at the edge of the ferry freight yard, during the day. Wren lends you the red toolbox on that bench. Inspect the hinge with **E**, pick up a hinge pin from the tray on the bench, and fit it at the gate with the toolbox close by. Then swing the gate to test it. One of you can do all of it, or split the work: one inspects and holds the toolbox while the other fetches the pin. The crew bank gets five coins once, and Wren remembers who helped. If your crewmate leaves with the toolbox, ask Wren to put it back on the bench. Come back the next morning to see Wren use the gate. See [neighbor repairs](mechanics/neighbor-repairs.md) for the details.
 
 ## Getting to know the neighbors
 
-Mara fishes from the small dock, Ines keeps the Seabrook Market stall, and Bram keeps the freight tally beside the Harbor Depot job board. Each walks to work in the morning and home in the evening on the shared clock. Aim at a resident and press **E** to talk. When someone needs a hand, the conversation offers **Agree to help**. Mara would like two carrots, Ines two fish, and Bram a crate set down in the yellow bay beside the depot. Either of you can agree, and either can finish it. The crew bank gets five coins once, the resident trusts the crew a little more, and their greeting changes. See [residents and favors](mechanics/resident-favors.md).
+Mara fishes from the small dock, Ines keeps the Seabrook Market stall, and Bram keeps the freight tally beside the Harbor Depot job board. Each walks to work in the morning and home in the evening on the shared clock. Aim at a resident and press **E** to talk. When someone needs a hand, the conversation offers **Agree to help**. Mara would like two carrots, Ines two fish, and Bram a crate set down in the yellow bay beside the depot. Either of you can agree, and either can finish it. The crew bank gets five coins once, the resident trusts the crew a little more, and their greeting changes. Talk again another day and they'll have something new to say about the weather, the island or the neighbors.
+
+Some jobs end with telling the resident how it went. If Wren asks whether the gate swings clear, tell the truth. Saying it does when you saw it catch costs Wren's trust, and it takes the crew a repair and two more favors to win it back. See [residents and favors](mechanics/resident-favors.md).
+
+## Mara’s field outing
+
+Find Mara at the small fishing dock during the day. Talk to her for walking directions to Shellglass Tide Pool and Juniper Hollow. Either player can open **Field journal → Mara’s outing** to reread the clues. You can split up and compare entries when you get back.
+
+Press **E** when the prompt offers to inspect a detail or record an observation. At Driftwood, look for pink foxglove bells on the dune slope and a line of weed and shells farther east near Shellglass. Shellglass has a mended tide staff and small conical limpets clamped to rock. At Juniper, the trail cairn leads to low white clover with three leaflets and pale flower heads. Stand back to watch brown hares lower their heads to graze. During heavy rain, look for a hare crouching under a pine or beside a fallen trunk.
+
+Each new journal record gives the crew one observation XP. If you have already discovered Shellglass or Juniper, reading its landmark completes an outing step using the existing place entry. Grazing and sheltering are separate observations. Talk to Mara again after the first outing record for her advice about the rain.
 
 ## Windstone Ridge gliding
 
@@ -73,11 +92,13 @@ The delivery and lookout fire missions unlock work outfits for both crewmates. E
 
 The island clock runs one day every eight real minutes. At night, press **E** at your cottage door. Dawn begins when every connected player turns in. Press **E** again or walk away to cancel while waiting.
 
+Both of you share one field notebook, opened with **J**. It notes a fish when you land it and a place when you discover it. Aim at an animal, a plant, or a landmark and press **E** to jot a note. New subjects and behaviors earn shared observation XP. See [field journal](mechanics/field-journal.md).
+
 Follow the northern hills to discover landmarks. Their names fade with distance in the follow view and stay on your island overview after discovery. The minimap keeps the coastline, biomes, route lines, and a simpler set of symbols. One world unit is one metre. The buoy line sits 75 metres offshore.
 
 ## Saves and reconnecting
 
-The host automatically saves in `.mission-island/saves/island-5173.json` for the usual port. The island clock, missions, farm, item positions, crew names, discoveries, and personal progress survive a restart. The same browser profile reclaims its crew identity. For a separate named save, start the host with a lowercase slot name.
+The host automatically saves in `.mission-island/saves/island-5173.json` for the usual port. The island clock, missions, farm, item positions, crew names, discoveries, the field journal, and personal progress survive a restart. The same browser profile reclaims its crew identity. For a separate named save, start the host with a lowercase slot name.
 
 ```sh
 MISSION_ISLAND_SAVE=weekend npm run dev

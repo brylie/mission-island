@@ -19,7 +19,7 @@ Materials should suggest how something grows, weathers, or is handled. Look at w
 
 For sound, a direction to try is a cue with a recognizable source: boots change tone at the dock, or a saw becomes audible on the approach to a timber yard. Pair important prompts with visible feedback so two players talking across the room can still follow the action. Start by listening for surf, surface footsteps, and crate impacts on the route from Harbor Depot to Driftwood Beach. [Starter Island audio pass #136](https://github.com/brylie/mission-island/issues/136) · [Procedural Audio skill](../../.agents/skills/mission-island-procedural-audio/SKILL.md) · [Timber Works sound proposal](https://github.com/brylie/mission-island/issues/47)
 
-The [crew character turnaround](crew-character-art.md) sets the proportions and finish for character fittings. The [coastal model studies](coastal-model-studies.md) show how to apply that direction to plants, wildlife, buildings and vehicles with the game’s mesh factories.
+The [crew character turnaround](crew-character-art.md) sets the proportions and finish for character fittings. The [coastal model studies](coastal-model-studies.md) show how to apply that direction to plants, wildlife, buildings and vehicles with the game’s mesh factories. The [color direction](color-direction.md) proposes how light, named material families, dyes and signal colors fit together.
 
 ### Give forms a reason to look the way they do
 
@@ -39,12 +39,16 @@ Start with the saved meadow views at walking, hillside and island distances. Mat
 
 ## What we take from our references
 
-| Reference | Quality we are aiming for in Mission Island |
+| Reference | Quality we want in Mission Island |
 | --- | --- |
-| Animal Crossing | Comfort in ordinary routines and affection for familiar neighbors. Give Seabrook its own residents, vernacular, and waterfront details. |
-| Micro Machines | The delight of reading a small vehicle and its route from above. Preserve that silhouette when adding realistic exterior details. |
-| Human: Fall Flat and Totally Reliable Delivery Service | The pleasure of two people improvising with a physical object. A missed throw should create a recoverable moment the crew can laugh about. |
-| Flashing Lights and Good Job! | Work that people can understand by looking at the equipment and the situation. Let roles emerge from who is at the wheel, at the hose, or beside the load. |
-| Stardew Valley | A familiar daily rhythm with reasons to meet a resident again. Let the crew earn shared trust through specific deeds and remember who asked for help. |
+| **Good Job!** | Clear practical objectives with room to improvise. A paid delivery can survive a clumsy first attempt, and a partner can solve the same obstruction another way. [Nintendo](https://www.nintendo.com/us/store/products/good-job-switch/) |
+| **Farming Simulator** | Work that progresses through identifiable steps and equipment with a purpose. A harvest becomes a larger barrow order. A later farming tool changes how the crew handles it. [GIANTS manual](https://manuals.giants-software.com/Farming_Simulator_25/Basegame/lang/en/FS25-manual_EN.pdf) |
+| **Totally Reliable Delivery Service** | Physical cargo and a co-op mishap you can recover from together. Make the difference between throwing, hand loading, and securing a load easy to see. [Official game site](https://www.totallyreliable.com/) |
+| **Stormworks: Build and Rescue** | Rescue work where the vehicle, weather, and crew roles shape the response. Build from small local jobs toward equipment and responsibilities players know how to use. [Geometa’s game page](https://store.steampowered.com/app/573090/Stormworks_Build_and_Rescue/) |
+| **Stardew Valley** | Familiar days, resident relationships, and skills that open new work. Let the crew build Trust through useful deeds and see the island change through a shared project. [Official game overview](https://www.stardewvalley.net/about/) |
+| **Animal Crossing** | The comfort of ordinary routines and the freedom to make a place and a wardrobe feel like yours. Keep the appeal of visiting the same spot at another hour or in a different season. [Nintendo’s island guide](https://animalcrossing.nintendo.com/new-horizons/explore/) |
+| **Micro Machines** | The delight of reading a small vehicle and its route from above. Preserve that silhouette when adding functional exterior details. |
+| **Human Fall Flat** | Two people improvising with the same object. Let a fallen crate suggest a different approach, with a simple way to get it back into play. [Official game listing](https://store.steampowered.com/app/477160/Human_Fall_Flat/) |
+| **Flashing Lights** | Service work that players can understand by seeing who is at the wheel or beside the equipment. Give a partner a useful role in bringing the situation under control. |
 
 Use those references to discuss a camera distance, a rhythm, or a feeling. Build the island’s characters, writing, materials, sounds, and places from its own fishing, farming, and harbor life.

@@ -37,7 +37,7 @@ test('the Seabrook market approach and sale work before, during and after a show
   for (const [time, phase] of [[60, 'dry'], [115, 'rain'], [161.7, 'after']]) {
     const h = setup(t, {
       players: [player(0, sidewalk, { goods: stock }), player(1)],
-      arrange: save => { save.islandTime = time },
+      arrange: (save) => { save.islandTime = time },
     })
     const seller = h.join(tokens[0])
     const runoff = marketRunoffAt(seller.state.islandTime)
@@ -49,7 +49,7 @@ test('the Seabrook market approach and sale work before, during and after a show
     h.hold(seller, 16, { z: -1 })
     h.input(seller)
     h.advance()
-    assert.ok(seller.player.z < sidewalk.z - .4, phase)
+    assert.ok(seller.player.z < sidewalk.z - 0.4, phase)
     assert.match(actionHint(seller.state, seller.player)[1], /Sell for/, phase)
     seller.request('interact')
     h.advance()
@@ -60,7 +60,9 @@ test('the Seabrook market approach and sale work before, during and after a show
 })
 
 test('simultaneous purchases spend the last shared coin once and award the seed to its buyer', (t) => {
-  const h = setup(t, { players: [player(0, market), player(1, market)], arrange(save) { save.crewCoins = 1 } })
+  const h = setup(t, { players: [player(0, market), player(1, market)], arrange(save) {
+    save.crewCoins = 1
+  } })
   const a = h.join(tokens[0])
   const b = h.join(tokens[1])
   b.request('buy-seed')
@@ -115,7 +117,10 @@ test('rain waters a shared plot, repeated crops grow from zero, and harvest is a
 test('hand watering starts growth and darkness pauses it', (t) => {
   const h = setup(t, {
     players: [player(0, farmPlots[3], { inventory: ['watering-can'], equipped: 'watering-can' })],
-    arrange: (save) => { save.world.farm[3] = 'planted'; save.islandTime = daySeconds * 0.67 },
+    arrange: (save) => {
+      save.world.farm[3] = 'planted'
+      save.islandTime = daySeconds * 0.67
+    },
   })
   const a = h.join(tokens[0])
   h.click(a)

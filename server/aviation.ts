@@ -1,22 +1,26 @@
 import { aerialSighting, aviationInteraction, nextOuting, type AviationState, type FlightResult } from '../src/aviation.ts'
 import type { Player, Snapshot } from '../src/protocol.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
-import { startRidgeFlight, stepRidgeFlight } from '../src/simulation/ridge-flight.ts'
-import { groundHeight } from '../src/terrain.ts'
+import { landingFootRadiusM, startRidgeFlight, stepRidgeFlight } from '../src/simulation/ridge-flight.ts'
+import { groundHeight, walkingHeight } from '../src/terrain.ts'
 import { distance, localPoint, offset, spawns, truckRoof, type Point, type Pose } from '../src/world.ts'
 import { ridgeApproach, ridgeHeading, ridgeLandingRadius, ridgeLaunch, ridgeMeadow, ridgeReturn } from '../src/worlds/starter/ridge-scout.ts'
 import { mirrorPoolWillow } from '../src/worlds/starter/sites.ts'
 import { stopPrimary, stopped, stowTool, type CrewMember, type CrewNotice } from './crew.ts'
+import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
 import { looseCargoTop } from './items.ts'
 import type { IslandSave } from './save.ts'
 
-const recoveryPoints = [ridgeLaunch, offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, -1.5),
-  offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, 1.5), ridgeReturn, ridgeMeadow]
+const launchRecoveryBehindM = -1.5
+const launchRecoveryAheadM = 1.5
+const willowSurveyMinimumHeightM = 2
+const willowSurveyRangeM = 7
+
+const recoveryPoints = [ridgeLaunch, offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, launchRecoveryBehindM), offset({ ...ridgeLaunch, heading: ridgeHeading }, 0, launchRecoveryAheadM), ridgeReturn, ridgeMeadow]
 const meadowPose = { ...ridgeMeadow, heading: ridgeHeading }
 
 function landedPose({ x, z, heading }: Pose) {
-  return { x, z, heading, y: groundHeight({ x, z }), grounded: true, seat: null,
-    swimming: false, onBed: false, truckSurface: undefined, reaching: false, rightHandRaised: false, throwing: false }
+  return { x, z, heading, y: walkingHeight({ x, z }), grounded: true, seat: null, swimming: false, onBed: false, truckSurface: undefined, reaching: false, rightHandRaised: false, throwing: false }
 }
 
 function landingResult(record: NonNullable<AviationState['flight']>, outcome: 'field' | 'early' | 'missed'): FlightResult {
@@ -26,13 +30,13 @@ function landingResult(record: NonNullable<AviationState['flight']>, outcome: 'f
   return record.observed ? 'surveyed' : 'observation'
 }
 
-export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice) => void, checkpoint?: () => void) {
+export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice) => void, checkpoint?: () => void, metrics?: Pick<GameplayPlaytestMetrics, 'use' | 'result' | 'touch'>) {
   const aviation = state.aviation
   let flight: ReturnType<typeof startRidgeFlight> | undefined
 
   function safeGround(point: Point) {
-    return canOccupyGround(point, .45, 0) && !isInsideTruck(state.truck, point) &&
-      looseCargoTop(state.items, point, .45) <= groundHeight(point)
+    return canOccupyGround(point, landingFootRadiusM, 0) && !isInsideTruck(state.truck, point)
+      && looseCargoTop(state.items, point, landingFootRadiusM) <= groundHeight(point)
   }
 
   function recoveryPose(player: Player) {
@@ -59,18 +63,20 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
     if (!interaction) return false
     if (interaction === 'mark') {
       aviation.marked = true
+      metrics?.touch(player)
       return true
     }
     if (aviation.flight) return true
     if (!safeGround(ridgeLaunch)) {
       member.notify?.({ type: 'flight-result', result: 'blocked', pilotId: player.id })
+      metrics?.result(state, player, { mechanic: 'gliding', result: 'blocked', outing: nextOuting(aviation) })
       return true
     }
     resetPilot(member)
     flight = startRidgeFlight()
-    aviation.flight = { pilotId: player.id, outing: nextOuting(aviation),
-      bank: 0, pitch: 0, climbing: false, approach: false, observed: false, spotted: [] }
+    aviation.flight = { pilotId: player.id, outing: nextOuting(aviation), bank: 0, pitch: 0, climbing: false, approach: false, observed: false, spotted: [] }
     Object.assign(player, flight.pilot, { grounded: false, reaching: false, throwing: false, rightHandRaised: false })
+    metrics?.use(state, player, 'gliding')
     // The checkpoint uses the pilot's recovery pose while the loan is active.
     checkpoint?.()
     return true
@@ -78,7 +84,7 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
 
   function finish(member: CrewMember, result: FlightResult, recover: boolean) {
     const { player } = member
-    const spotted = aviation.flight?.spotted ?? []
+    const { outing, spotted } = aviation.flight!
     Object.assign(player, recover ? recoveryPose(player) : landedPose(player))
     resetPilot(member)
     flight = undefined
@@ -87,10 +93,11 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
     if (result === 'qualified') aviation.qualified = true
     if (result === 'surveyed') aviation.surveyed = true
     // Aerial surveys count only after a safe landing. A crash or an interruption loses this flight's sightings.
-    const aerial = recover ? [] : spotted.filter(id => !aviation.aerial?.includes(id))
+    const aerial = recover ? [] : spotted.filter((id) => !aviation.aerial?.includes(id))
     if (aerial.length) aviation.aerial = [...aviation.aerial ?? [], ...aerial]
     checkpoint?.()
     notifyCrew({ type: 'flight-result', result, pilotId: player.id, ...aerial.length ? { aerial, recorded: aviation.aerial?.length } : {} })
+    metrics?.result(state, player, { mechanic: 'gliding', result, outing, aerialRecorded: aerial.length })
   }
 
   // Notes what the pilot has flown through or over so far on this flight.
@@ -98,7 +105,7 @@ export function createAviation(state: Snapshot, notifyCrew: (notice: CrewNotice)
     const { x, z } = localPoint(meadowPose, pilot)
     record.approach ||= Math.abs(x) < ridgeApproach.halfWidth && z >= ridgeApproach.start && z < -ridgeLandingRadius
     const height = pilot.y - groundHeight(pilot)
-    if (record.outing === 'survey' && height >= 2 && distance(pilot, mirrorPoolWillow) <= 7) record.observed = true
+    if (record.outing === 'survey' && height >= willowSurveyMinimumHeightM && distance(pilot, mirrorPoolWillow) <= willowSurveyRangeM) record.observed = true
     const sighting = record.outing !== 'checkout' && aerialSighting(pilot, [...aviation.aerial ?? [], ...record.spotted])
     if (sighting) {
       record.spotted.push(sighting.id)

@@ -1,6 +1,7 @@
 import { cleanCrewName, readAppearance } from '../src/crew-appearance.ts'
 import { isClothingId } from '../src/clothing-catalog.ts'
-import { interactionActions } from '../src/interaction-options.ts'
+import { isInteractionAction } from '../src/interaction-options.ts'
+import { interactionChoice } from '../src/interactions/definition.ts'
 import { starterTools } from '../src/inventory.ts'
 import { isJobId, type JobId } from '../src/jobs.ts'
 import type { ClientMessage, Input } from '../src/protocol.ts'
@@ -8,7 +9,7 @@ import { stopped } from './crew.ts'
 
 export type CrewCommand =
   | Exclude<ClientMessage, { type: 'join' | 'take-job' }>
-  | { type: 'take-job'; id: JobId | undefined }
+  | { type: 'take-job', id: JobId | undefined }
 
 function readHeading(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.atan2(Math.sin(value), Math.cos(value)) : undefined
@@ -18,7 +19,8 @@ function readInput(raw: unknown): Input {
   if (!raw || typeof raw !== 'object') return stopped
   const { x, z, spray, aim, careful, sprint, brake, raiseRightHand, flightTurn, flightPitch } = raw as Record<string, unknown>
   const axis = (value: unknown) => typeof value === 'number' && Number.isFinite(value)
-    ? Math.max(-1, Math.min(1, value)) : 0
+    ? Math.max(-1, Math.min(1, value))
+    : 0
   return {
     x: axis(x),
     z: axis(z),
@@ -36,11 +38,11 @@ function readInput(raw: unknown): Input {
 // A malformed choice is dropped rather than read as a bare press, which would run the default interaction.
 function readChoice(raw: unknown) {
   if (!raw || typeof raw !== 'object') return null
-  const { action, subject } = raw as Record<string, unknown>
-  const known = interactionActions.find((name) => name === action)
-  if (!known) return null
-  if (subject === undefined) return { action: known }
-  return Number.isSafeInteger(subject) && (subject as number) >= 0 ? { action: known, subject: subject as number } : null
+  const { action, subject, favor } = raw as Record<string, unknown>
+  if (!isInteractionAction(action)) return null
+  if (subject !== undefined && (typeof subject !== 'number' || !Number.isSafeInteger(subject) || subject < 0)) return null
+  if (favor !== undefined && (typeof favor !== 'string' || !favor)) return null
+  return interactionChoice({ action, subject, favor })
 }
 
 export function readCrewCommand(message: Record<string, unknown>): CrewCommand | undefined {

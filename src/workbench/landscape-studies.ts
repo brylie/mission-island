@@ -3,6 +3,8 @@ import { landscapeShotLink, readLandscapeShot } from './landscape-shot'
 import type { LandscapeShot } from './landscape-shot'
 
 const shotsKey = 'mission-island-landscape-shots'
+const referenceMaxPixels = 1600
+const jpegFallbackQuality = 0.97
 const referenceKey = 'mission-island-landscape-reference'
 
 interface Reference {
@@ -21,7 +23,8 @@ function loadShots() {
     const value: unknown = JSON.parse(readStorage('localStorage', shotsKey) ?? '[]')
     const shots = Array.isArray(value) ? value.map(readLandscapeShot) : []
     return shots.filter((shot): shot is LandscapeShot => Boolean(shot))
-  } catch {
+  }
+  catch {
     return []
   }
 }
@@ -32,7 +35,8 @@ function loadReference(): Reference | undefined {
     const shot = readLandscapeShot(value?.shot)
     const image = value?.image
     if (shot && typeof image === 'string' && /^data:image\/(png|jpeg);base64,/.test(image)) return { shot, image }
-  } catch {
+  }
+  catch {
     return undefined
   }
 }
@@ -65,7 +69,9 @@ export function createLandscapeStudies(canvas: HTMLCanvasElement, controls: Stud
   let captureRequested = false
 
   const getSelected = () => shots.find((shot) => shot.name === selected.value)
-  const report = (message: string) => { status.textContent = message }
+  const report = (message: string) => {
+    status.textContent = message
+  }
   const refreshSaveLabel = () => {
     save.textContent = name.value.trim() === selected.value && selected.value ? 'Update shot' : 'Save shot'
   }
@@ -143,7 +149,8 @@ export function createLandscapeStudies(canvas: HTMLCanvasElement, controls: Stud
       try {
         await navigator.clipboard.writeText(url)
         report('Shot link copied.')
-      } catch {
+      }
+      catch {
         link.value = url
         link.hidden = false
         link.select()
@@ -222,7 +229,7 @@ export function createLandscapeStudies(canvas: HTMLCanvasElement, controls: Stud
       try {
         // Read the drawing buffer in the same frame that rendered it.
         const copy = document.createElement('canvas')
-        const scale = Math.min(1, 1600 / Math.max(canvas.width, canvas.height))
+        const scale = Math.min(1, referenceMaxPixels / Math.max(canvas.width, canvas.height))
         copy.width = Math.max(1, Math.round(canvas.width * scale))
         copy.height = Math.max(1, Math.round(canvas.height * scale))
         const context = copy.getContext('2d')
@@ -232,7 +239,7 @@ export function createLandscapeStudies(canvas: HTMLCanvasElement, controls: Stud
         reference = { shot, image: copy.toDataURL() }
         let stored = writeStorage('sessionStorage', referenceKey, JSON.stringify(reference))
         if (!stored) {
-          reference.image = copy.toDataURL('image/jpeg', 0.97)
+          reference.image = copy.toDataURL('image/jpeg', jpegFallbackQuality)
           stored = writeStorage('sessionStorage', referenceKey, JSON.stringify(reference))
         }
         image.src = reference.image
@@ -241,7 +248,8 @@ export function createLandscapeStudies(canvas: HTMLCanvasElement, controls: Stud
         report(stored
           ? 'Reference captured. Adjust the live view to compare.'
           : 'Reference captured. Browser storage is unavailable, so keep this page open.')
-      } catch {
+      }
+      catch {
         report('Could not capture the preview.')
       }
     },

@@ -1,27 +1,36 @@
-import type { Interaction } from '../interaction-options.ts'
+import type { InteractionOption, InteractionPolicies } from '../interactions/definition.ts'
 import type { Player, Snapshot } from '../protocol.ts'
 import { walkingHeight } from '../terrain.ts'
 import type { ResidentDefinition } from './definition.ts'
-import { activeFavor, isCustom, openOffer } from './favors.ts'
+import { activeFavor, isCustom, openOffer, pendingReport } from './favors.ts'
 import { atResident, residentAt } from './schedule.ts'
 
-export type ResidentAction = 'talk' | 'accept-favor' | 'hand-over'
-export const residentActions: readonly ResidentAction[] = ['talk', 'accept-favor', 'hand-over']
+const residentAimHeightM = 1.1
+const residentAimRadiusM = 0.55
 
-interface ResidentOptions { talk: Interaction[]; accept: Interaction[] }
+export const residentActions = {
+  'talk': 'explicit',
+  'accept-favor': 'explicit',
+  'hand-over': 'explicit',
+  'report-sound': 'explicit',
+  'report-fault': 'explicit',
+} as const satisfies InteractionPolicies
+export type ResidentAction = keyof typeof residentActions
+
+interface ResidentOptions { talk: InteractionOption<ResidentAction>[], accept: InteractionOption<ResidentAction>[] }
 
 function residentTarget(resident: ResidentDefinition, state: Snapshot) {
   const spot = residentAt(resident.schedule, state)
-  return { name: resident.identity.name, at: { x: spot.x, y: walkingHeight(spot) + 1.1, z: spot.z }, radius: .55 }
+  return { name: resident.identity.name, at: { x: spot.x, y: walkingHeight(spot) + residentAimHeightM, z: spot.z }, radius: residentAimRadiusM }
 }
 
-function handOver(resident: ResidentDefinition, state: Snapshot, player: Player, subject: number): Interaction | undefined {
+function handOver(resident: ResidentDefinition, state: Snapshot, player: Player, subject: number): InteractionOption<ResidentAction> | undefined {
   const favor = activeFavor(resident, state)
   if (!favor || !('goods' in favor.kind)) return undefined
   const { goods, quantity } = favor.kind
   if (player.goods[goods] < quantity) return undefined
   const noun = goods === 'carrots' && quantity === 1 ? 'carrot' : goods
-  return { action: 'hand-over', subject, key: 'E', label: `Give ${quantity} ${noun} to ${resident.identity.name}`, ...residentTarget(resident, state) }
+  return { action: 'hand-over', subject, favor: favor.id, key: 'E', label: `Give ${quantity} ${noun} to ${resident.identity.name}`, ...residentTarget(resident, state) }
 }
 
 // A resident never takes E away from a service: the reticle on a resident picks them, and a bare press
@@ -33,12 +42,18 @@ export function residentInteractions(registry: readonly ResidentDefinition[], st
   for (const [subject, resident] of registry.entries()) {
     if (!atResident(resident, state, player)) continue
     const { name } = resident.identity
-    const talk: Interaction = { action: 'talk', subject, key: 'E', label: `Talk to ${name}`, ...residentTarget(resident, state) }
+    const talk: InteractionOption<ResidentAction> = { action: 'talk', subject, key: 'E', label: `Talk to ${name}`, ...residentTarget(resident, state) }
     const offer = openOffer(resident, state)
     const give = handOver(resident, state, player, subject)
     if (give) options.talk.push(give)
     options.talk.push(talk)
-    if (offer && !isCustom(offer)) options.accept.push({ action: 'accept-favor', subject, key: 'E', label: `Agree to help ${name}`, name })
+    if (offer && !isCustom(offer)) options.accept.push({ action: 'accept-favor', subject, favor: offer.id, key: 'E', label: `Agree to help ${name}`, name })
+    // Reporting back is a choice in the conversation too: both answers are always offered side by side.
+    const waiting = pendingReport(resident, state)
+    if (waiting) {
+      const target = { subject, favor: waiting.favor.id, key: 'E', name }
+      options.accept.push({ ...target, action: 'report-sound', label: waiting.report.sound }, { ...target, action: 'report-fault', label: waiting.report.fault })
+    }
   }
   return options
 }

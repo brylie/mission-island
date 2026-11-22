@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { createGame } from '../server/game.ts'
+import { createPlaytestMetrics } from '../server/playtest-metrics.ts'
 import { islandSaveFile } from '../server/save.ts'
 import { aerialSurveys, rackBrief, surveyClue } from '../src/aviation.ts'
 import { startRidgeFlight, stepRidgeFlight } from '../src/simulation/ridge-flight.ts'
@@ -14,7 +15,7 @@ import { mirrorPoolWillow } from '../src/worlds/starter/sites.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
 const besideSign = offset({ ...ridgeMeadow, heading: ridgeHeading }, 5.55, -8)
-const notice = (client, result) => client.messages.filter(message => message.type === 'flight-result' && message.result === result)
+const notice = (client, result) => client.messages.filter((message) => message.type === 'flight-result' && message.result === result)
 
 function beforeLanding() {
   const flight = startRidgeFlight()
@@ -28,11 +29,11 @@ function beforeLanding() {
 }
 
 function walkTo(h, client, target) {
-  for (let tick = 0; tick < 180 && distance(client.player, target) > .45; tick++) {
+  for (let tick = 0; tick < 180 && distance(client.player, target) > 0.45; tick++) {
     h.input(client, { x: target.x - client.player.x, z: target.z - client.player.z })
     h.advance()
   }
-  assert.ok(distance(client.player, target) <= .45)
+  assert.ok(distance(client.player, target) <= 0.45)
   h.input(client)
   h.advance()
 }
@@ -40,13 +41,15 @@ function walkTo(h, client, target) {
 function flySurvey(h, pilot) {
   for (let tick = 0; tick < 290 && (tick === 0 || pilot.state.aviation.flight); tick++) {
     const seconds = tick / 30
-    h.input(pilot, { flightTurn: seconds > .35 && seconds < 1.72 ? 1 : seconds > 3 && seconds < 5.65 ? -1 : 0 })
+    h.input(pilot, { flightTurn: seconds > 0.35 && seconds < 1.72 ? 1 : seconds > 3 && seconds < 5.65 ? -1 : 0 })
     h.advance()
   }
 }
 
 test('both players see the meadow mark and the second pilot can survey without a checkout', (t) => {
-  const h = setup(t, { players: [player(0, ridgeLaunch), player(1, besideSign)], arrange: save => {
+  const rows = []
+  const metrics = createPlaytestMetrics((row) => rows.push(row))()
+  const h = setup(t, { metrics, players: [player(0, ridgeLaunch), player(1, besideSign)], arrange: (save) => {
     delete save.world.aviation
   } })
   const a = h.join(tokens[0]), b = h.join(tokens[1])
@@ -100,19 +103,31 @@ test('both players see the meadow mark and the second pilot can survey without a
   assert.deepEqual([...reported].sort(), [...a.state.aviation.aerial].sort())
   assert.equal(notice(b, 'surveyed').length, 1)
   assert.deepEqual([b.state.aviation.qualified, b.state.aviation.surveyed, h.game.crewCoins], [true, true, 0])
+  assert.deepEqual(rows.filter(({ event, mechanic }) => event === 'mechanic-use' && mechanic === 'gliding')
+    .map(({ slot, repeat, relatedWork }) => [slot, repeat, relatedWork]), [
+    [0, false, ['ridge:checkout']],
+    [1, false, ['ridge:survey']],
+    [1, true, ['ridge:aerial-log']],
+  ])
+  assert.deepEqual(rows.filter(({ event, mechanic }) => event === 'gameplay-outcome' && mechanic === 'gliding')
+    .map(({ slot, outing, result }) => [slot, outing, result]), [
+    [0, 'checkout', 'qualified'],
+    [1, 'survey', 'surveyed'],
+    [1, 'free', 'landed'],
+  ])
 })
 
 function steerTowards(h, pilot, target, until) {
   for (let tick = 0; tick < 30 * 60 && pilot.state.aviation.flight; tick++) {
     const { x, z, heading } = pilot.player
     const error = Math.atan2(target.x - x, target.z - z) - heading
-    h.input(pilot, { flightTurn: Math.max(-1, Math.min(1, 2 * Math.atan2(Math.sin(error), Math.cos(error)))), flightPitch: -.6 })
+    h.input(pilot, { flightTurn: Math.max(-1, Math.min(1, 2 * Math.atan2(Math.sin(error), Math.cos(error)))), flightPitch: -0.6 })
     h.advance()
     if (until?.()) return
   }
 }
 
-const flyingCrew = (aerial = []) => ({ players: [player(0, ridgeLaunch), player(1, besideSign)], arrange: save => {
+const flyingCrew = (aerial = []) => ({ players: [player(0, ridgeLaunch), player(1, besideSign)], arrange: (save) => {
   save.world.aviation = { qualified: true, surveyed: true, aerial }
 } })
 
@@ -123,8 +138,8 @@ test('a free flight over Mirror Pool records its aerial survey once, after a saf
   a.request('interact')
   h.advance()
   steerTowards(h, a, pool.site, () => a.state.aviation.flight?.spotted.includes('pool'))
-  assert.deepEqual(a.messages.filter(m => m.type === 'aerial-sighting').map(m => m.id).filter(id => id === 'pool'), ['pool'])
-  assert.equal(b.messages.filter(m => m.type === 'aerial-sighting').length, 0, 'only the pilot hears a sighting')
+  assert.deepEqual(a.messages.filter((m) => m.type === 'aerial-sighting').map((m) => m.id).filter((id) => id === 'pool'), ['pool'])
+  assert.equal(b.messages.filter((m) => m.type === 'aerial-sighting').length, 0, 'only the pilot hears a sighting')
   assert.deepEqual(b.state.aviation.aerial, [], 'nothing is recorded before landing')
   h.advanceUntil(() => a.state.aviation.flight === null)
   assert.ok(a.state.aviation.aerial.includes('pool'))
@@ -145,7 +160,7 @@ test('a free flight over Mirror Pool records its aerial survey once, after a saf
   steerTowards(h, a, pool.site)
   h.advanceUntil(() => a.state.aviation.flight === null)
   assert.equal(a.state.aviation.aerial.length, recorded)
-  assert.ok(notice(a, 'landed').slice(1).every(result => !result.aerial?.includes('pool')))
+  assert.ok(notice(a, 'landed').slice(1).every((result) => !result.aerial?.includes('pool')))
   assert.deepEqual(h.game.snapshotForSave().world.aviation.aerial, a.state.aviation.aerial)
 })
 
@@ -161,7 +176,9 @@ test('an interrupted flight loses its sightings, and the checkout flight records
   assert.equal(a.state.aviation.flight, null)
   assert.deepEqual(a.state.aviation.aerial, [])
 
-  const fresh = setup(t, { players: [player(0, ridgeLaunch)], arrange: save => { delete save.world.aviation } })
+  const fresh = setup(t, { players: [player(0, ridgeLaunch)], arrange: (save) => {
+    delete save.world.aviation
+  } })
   const pilot = fresh.join(tokens[0])
   pilot.request('interact')
   fresh.advance()
@@ -191,11 +208,11 @@ test('one loan wins simultaneous requests, with no charge and neutral controls a
   h.advance(10)
   assert.equal(b.state.aviation.flight.pilotId, a.player.id)
   assert.equal(b.player.grounded, true)
-  assert.ok(a.state.aviation.flight.bank < -.2)
-  assert.ok(a.state.aviation.flight.pitch < -.1)
+  assert.ok(a.state.aviation.flight.bank < -0.2)
+  assert.ok(a.state.aviation.flight.pitch < -0.1)
   h.advance(45)
-  assert.ok(Math.abs(a.state.aviation.flight.bank) < .01)
-  assert.ok(Math.abs(a.state.aviation.flight.pitch) < .01)
+  assert.ok(Math.abs(a.state.aviation.flight.bank) < 0.01)
+  assert.ok(Math.abs(a.state.aviation.flight.pitch) < 0.01)
   a.request('respawn')
   h.advance()
   assert.equal(b.state.aviation.flight, null)
@@ -241,8 +258,9 @@ test('the host shows the updraft lifting the borrowed wing on both clients', (t)
 })
 
 test('a pilot can climb in the updraft, turn back to the willow, and land the survey in one flight', (t) => {
-  const h = setup(t, { players: [player(0, ridgeLaunch), player(1, besideSign)],
-    arrange: save => { save.world.aviation = { qualified: true, surveyed: false } } })
+  const h = setup(t, { players: [player(0, ridgeLaunch), player(1, besideSign)], arrange: (save) => {
+    save.world.aviation = { qualified: true, surveyed: false }
+  } })
   const a = h.join(tokens[0]), b = h.join(tokens[1])
   a.request('interact')
   let climbed = false
@@ -268,8 +286,9 @@ test('disconnect and a disk restart on either side of qualifying touchdown agree
   t.after(() => rmSync(directory, { recursive: true, force: true }))
   const disk = islandSaveFile(directory, 5173)
   const appearance = { uniform: 'default', skin: 'deep', shirt: 'blue' }
-  const h = setup(t, { players: [player(0, ridgeLaunch, { appearance }), player(1, besideSign)],
-    arrange: save => { save.crewCoins = 9 } })
+  const h = setup(t, { players: [player(0, ridgeLaunch, { appearance }), player(1, besideSign)], arrange: (save) => {
+    save.crewCoins = 9
+  } })
   const a = h.join(tokens[0]), b = h.join(tokens[1])
   a.request('interact')
   h.advance(beforeLanding())
@@ -308,8 +327,9 @@ test('disconnect and a disk restart on either side of qualifying touchdown agree
 })
 
 test('ground visits and a survey landing without the airborne observation give no credit', (t) => {
-  const h = setup(t, { players: [player(0, ridgeLaunch), player(1, { x: mirrorPoolWillow.x + 2, z: mirrorPoolWillow.z })],
-    arrange: save => { save.world.aviation = { qualified: true, surveyed: false } } })
+  const h = setup(t, { players: [player(0, ridgeLaunch), player(1, { x: mirrorPoolWillow.x + 2, z: mirrorPoolWillow.z })], arrange: (save) => {
+    save.world.aviation = { qualified: true, surveyed: false }
+  } })
   const a = h.join(tokens[0]), b = h.join(tokens[1])
   b.request('interact')
   b.request('respawn')
@@ -325,7 +345,7 @@ test('saves keep aerial surveys, older saves start with none, and unknown or dup
   const directory = mkdtempSync(join(tmpdir(), 'mission-aerial-'))
   t.after(() => rmSync(directory, { recursive: true, force: true }))
   const file = islandSaveFile(directory, 0, 'aerial')
-  const write = aviation => {
+  const write = (aviation) => {
     const save = createGame().snapshotForSave()
     save.world.aviation = aviation
     file.write(save)

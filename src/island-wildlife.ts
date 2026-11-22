@@ -1,116 +1,142 @@
+import { islandTreeGeometry } from './assets/geometry/starter-scenery'
+import { driftwoodMarram, mirrorPoolRushes } from './assets/geometry/understory'
+import { wildflowerMeadowGeometry } from './assets/geometry/wildflower-meadow'
+import { juniperFern, sampleUnderstoryBlade, understoryBladeCount, understoryGroundOffset } from './assets/understory'
 import { createGullFlock, createThermalGulls } from './gull-flock'
 import { starterGullPerches } from './gull-sites'
 import { createCoastalFish } from './school-fish'
+import { createSandpipers } from './sandpipers'
 import { driftwoodShallows, type DriftwoodFrame } from './simulation/driftwood-school'
+import { starterBatFlock, starterOffshoreSchools, starterUnderstorySites, starterWildflowerMeadows } from './worlds/starter/layout/wildlife'
 import { onBeachTowel } from './worlds/starter/sites'
 import { liftSites } from './worlds/starter/lift'
 import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
-import { distanceToRoute, footpaths, road } from './routes'
+import { distanceToRoads, distanceToRoute, footpaths } from './routes'
 import { islandTrees, seededRandom } from './scenery'
-import { coastPoint, coastRadius, groundHeight, grove, pool, waterDepth, waterLevel } from './terrain'
+import { coastPoint, coastRadius, coastalSurface, groundHeight, grove, pool, waterDepth, waterLevel } from './terrain'
+import { beachHasSand } from './worlds/starter/beach-landforms'
 import { createFlocks, createSchools } from './wildlife'
 import type { WildlifeFrame } from './wildlife'
 
+const half = 0.5
+const quarterTurn = Math.PI * half
+const fullTurn = Math.PI + Math.PI
+const coordinatesPerVertex = 3
+
 export function createWildflowers(meshes: MeshFactory) {
-  const random = seededRandom(64286)
+  const { seed, patches, samplesPerPatch, patchWidthM, patchDepthM, inlandLimit } = starterWildflowerMeadows
+  const { height: stemHeight, tipLeanRatio, stem, petals, eye } = wildflowerMeadowGeometry
+  const random = seededRandom(seed)
   const stems: number[] = []
   const blooms: number[] = []
   const centers: number[] = []
   function face(target: number[], x: number, y: number, z: number, angle: number, height: number, span: number) {
     const dx = Math.cos(angle) * span
     const dz = Math.sin(angle) * span
-    target.push(x - dx, y, z - dz, x + dx, y, z + dz, x + dx * 1.25, y + height, z + dz * 1.25)
+    target.push(x - dx, y, z - dz, x + dx, y, z + dz, x + dx * tipLeanRatio, y + height, z + dz * tipLeanRatio)
   }
-  for (const [x, z] of [[-31, 18], [-17, 29], [28, -25], [37, -23]]) {
-    for (let i = 0; i < 23; i++) {
-      const point = { x: x + (random() - 0.5) * 11, z: z + (random() - 0.5) * 7 }
-      if (coastRadius(point) > 0.93 || onBeachTowel(point)) continue
+  for (const [x, z] of patches) {
+    for (let i = 0; i < samplesPerPatch; i++) {
+      const point = { x: x + (random() - half) * patchWidthM, z: z + (random() - half) * patchDepthM }
+      if (coastRadius(point) > inlandLimit || onBeachTowel(point) || beachHasSand(coastalSurface(point))) continue
       const y = groundHeight(point)
       const angle = random() * Math.PI
-      const height = 0.19 + random() * 0.28
-      face(stems, point.x, y - 0.015, point.z, angle, height, 0.052)
-      face(stems, point.x, y - 0.015, point.z, angle + Math.PI / 2, height * 0.76, 0.045)
-      for (let petal = 0; petal < 3; petal++) {
-        face(blooms, point.x, y + height - 0.06, point.z, angle + 0.27 + petal * Math.PI / 3, 0.093, 0.08)
+      const height = stemHeight.minimum + random() * stemHeight.variation
+      face(stems, point.x, y - stem.belowGroundM, point.z, angle, height, stem.faceHalfWidthM)
+      face(stems, point.x, y - stem.belowGroundM, point.z, angle + quarterTurn, height * stem.crossingHeightRatio, stem.crossingHalfWidthM)
+      for (let petal = 0; petal < petals.count; petal++) {
+        face(blooms, point.x, y + height - petals.belowTipM, point.z, angle + petals.rotationRad + petal * Math.PI / petals.count, petals.heightM, petals.halfWidthM)
       }
-      face(centers, point.x, y + height - 0.043, point.z, angle + 0.43, 0.069, 0.03)
+      face(centers, point.x, y + height - eye.belowTipM, point.z, angle + eye.rotationRad, eye.heightM, eye.halfWidthM)
     }
   }
   for (const [name, vertices, color] of [
-    ['Wildflower stems', stems, '#527f57'], ['Wildflower petals', blooms, '#f1dda6'], ['Wildflower centers', centers, '#e3a348'],
+    ['Wildflower stems', stems, stem.color],
+    ['Wildflower petals', blooms, petals.color],
+    ['Wildflower centers', centers, eye.color],
   ] as const) {
     const paint = meshes.paint(color)
     paint.backFaceCulling = false
-    meshes.surface(name, vertices, Array.from({ length: vertices.length / 3 }, (_, i) => i), paint).freezeWorldMatrix()
+    meshes.surface(name, vertices, Array.from({ length: vertices.length / coordinatesPerVertex }, (_, i) => i), paint).freezeWorldMatrix()
   }
 }
 
+const maximumPlantWaterDepthM = 0.04
+const roadClearanceM = 4.3
+const pathEdgeClearanceM = 0.68
+const plantMinimumScale = 0.66
+const plantScaleSpread = 0.82
+
+export type PlantKind = 'fern' | 'rushes' | 'marram'
+export type UnderstoryPlant = Point & { kind: PlantKind }
+
+// Builds the understory meshes and returns every plant it placed, so sounds and effects can find them.
 export function createUnderstory(meshes: MeshFactory) {
+  const { juniper, mirrorPool, driftwood, samplesPerSite, ring } = starterUnderstorySites
   const ferns: Point[] = []
+  const plants: UnderstoryPlant[] = []
   for (const habitat of [
-    { name: 'Juniper fern fans', x: grove.x + 2, z: grove.z + 1, radius: 12, height: .53, bend: .5, color: '#72925d', seed: 1632 },
-    { name: 'Mirror Pool rushes', x: pool.x, z: pool.z, radius: 16, height: 1.25, bend: .17, color: '#7b9362', seed: 2833 },
-    { name: 'Driftwood marram', x: 37, z: -32, radius: 4.4, height: .45, bend: .24, color: '#a3a677', seed: 3301 },
-  ]) {
+    { ...juniperFern, kind: 'fern', x: grove.x + juniper.groveOffsetX, z: grove.z + juniper.groveOffsetZ, radius: juniper.radiusM, samples: samplesPerSite, ring, dune: false },
+    { ...mirrorPoolRushes, kind: 'rushes', x: pool.x, z: pool.z, radius: mirrorPool.radiusM, samples: samplesPerSite, ring, dune: false },
+    { ...driftwoodMarram, kind: 'marram', ...driftwood, radius: driftwood.radiusM, ring: { innerRatio: 0, widthRatio: 1 }, dune: true },
+  ] as const) {
     const random = seededRandom(habitat.seed)
     const positions: number[] = []
-    for (let i = 0; i < 105; i++) {
-      const angle = random() * Math.PI * 2
-      const radius = habitat.radius * (.68 + random() * .5)
+    for (let i = 0; i < habitat.samples; i++) {
+      const angle = random() * fullTurn
+      const radius = habitat.radius * (habitat.ring.innerRatio + random() * habitat.ring.widthRatio)
       const point = { x: habitat.x + radius * Math.cos(angle), z: habitat.z + radius * Math.sin(angle) }
-      if (onBeachTowel(point) || waterDepth(point) > .04 || distanceToRoute(point, road) < 4.3 ||
-        footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / 2 + .68)) continue
-      if (habitat.seed === 1632) ferns.push(point)
-      const y = groundHeight(point) - .025, scale = .66 + random() * .82
-      for (let leaf = 0; leaf < 5; leaf++) {
-        const theta = angle + leaf * 2.34 + random() * .26
-        const height = habitat.height * scale * (.7 + random() * .4)
-        const bend = habitat.bend * scale * (.6 + random() * .6)
-        const x = Math.cos(theta) * bend, z = Math.sin(theta) * bend
-        const wide = .03 + bend * .1
-        const wx = Math.sin(theta) * wide, wz = -Math.cos(theta) * wide
-        const root = [point.x + x * .07, y, point.z + z * .07]
-        const left = [point.x + x * .42 - wx, y + height * .63, point.z + z * .42 - wz]
-        const right = [point.x + x * .42 + wx, y + height * .63, point.z + z * .42 + wz]
-        const tip = [point.x + x, y + height, point.z + z]
-        positions.push(...root, ...left, ...right, ...left, ...tip, ...right)
+      const height = groundHeight(point)
+      if (onBeachTowel(point) || height < waterLevel - maximumPlantWaterDepthM || distanceToRoads(point) < roadClearanceM
+        || footpaths.some(({ points, width }) => distanceToRoute(point, points) < width * half + pathEdgeClearanceM)) continue
+      if (habitat.dune && random() > coastalSurface(point, height).duneGrass * habitat.density) continue
+      if (habitat.seed === juniperFern.seed) ferns.push(point)
+      plants.push({ ...point, kind: habitat.kind })
+      const origin = { ...point, y: height + understoryGroundOffset }
+      const scale = plantMinimumScale + random() * plantScaleSpread
+      const blades = habitat.dune ? habitat.blades : understoryBladeCount
+      for (let leaf = 0; leaf < blades; leaf++) {
+        positions.push(...sampleUnderstoryBlade(habitat, origin, angle, leaf, scale, random).positions)
       }
     }
     const paint = meshes.paint(habitat.color)
     paint.backFaceCulling = false
-    meshes.surface(habitat.name, positions, Array.from({ length: positions.length / 3 }, (_, i) => i), paint).freezeWorldMatrix()
+    meshes.surface(habitat.name, positions, Array.from({ length: positions.length / coordinatesPerVertex }, (_, i) => i), paint).freezeWorldMatrix()
   }
-  return ferns
+  return { ferns, plants }
 }
 
 export function createStarterWildlife(meshes: MeshFactory) {
   const driftwood = createCoastalFish(meshes, driftwoodShallows, waterLevel)
-  const schools = createSchools(meshes, [-2.17, 1.19].map((angle) => {
+  const { bearingsRad, coastRelativeRadius, offshoreSwing, bearingSwingRad, patrolRadPerSecond, minimumDepthM } = starterOffshoreSchools
+  const schools = createSchools(meshes, bearingsRad.map((angle) => {
     const off = coastPoint(angle)
     const length = Math.hypot(off.x, off.z)
     return {
       swim(time: number) {
-        const phase = time * .18 + angle
-        return coastPoint(angle + .115 * Math.sin(phase), 1.042 + .007 * Math.cos(phase))
+        const phase = time * patrolRadPerSecond + angle
+        return coastPoint(angle + bearingSwingRad * Math.sin(phase), coastRelativeRadius + offshoreSwing * Math.cos(phase))
       },
       deep: { x: off.x / length, z: off.z / length },
       level: waterLevel,
-      isWater: (point) => waterDepth(point) > .36,
+      isWater: (point) => waterDepth(point) > minimumDepthM,
     }
   }))
-  const tree = islandTrees.find(({ variant, x, z }) => variant % 3 === 0 && x > -14 && x < -5 && z > 13)
-  const roost = tree ? { x: tree.x, z: tree.z, y: groundHeight(tree) + tree.height * 1.025 } : { x: -9, y: 1, z: 20 }
+  const { center, range, count, color, treeHeightRatio, fallbackRoost, treeSearch } = starterBatFlock
+  const tree = islandTrees.find(({ variant, x, z }) =>
+    variant % islandTreeGeometry.canopy.broadleafEvery === 0 && x > treeSearch.westX && x < treeSearch.eastX && z > treeSearch.southZ)
+  const roost = tree ? { x: tree.x, z: tree.z, y: groundHeight(tree) + tree.height * treeHeightRatio } : fallbackRoost
   const gulls = createGullFlock(meshes, starterGullPerches)
   const soaringGulls = createThermalGulls(meshes, liftSites, starterGullPerches.length)
-  const flocks = createFlocks(meshes, [
-    { center: { x: -13, y: 5, z: 24 }, landing: roost, roost, range: 9, color: '#6f677e', count: 3, bat: true },
-  ])
-  return (frame: WildlifeFrame, school: DriftwoodFrame | undefined) => {
+  const sandpipers = createSandpipers(meshes)
+  const flocks = createFlocks(meshes, [{ center, landing: roost, roost, range, color, count, bat: true }])
+  return (frame: WildlifeFrame, school: DriftwoodFrame | undefined, walkers: readonly Point[]) => {
     driftwood(frame, school)
     schools(frame)
     flocks(frame)
     gulls(frame)
     soaringGulls(frame)
+    sandpipers(frame, walkers)
   }
 }

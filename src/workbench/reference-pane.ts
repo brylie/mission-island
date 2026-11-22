@@ -4,12 +4,15 @@ import { encodeCrop, fitCrop, readCrop } from './reference-crop'
 import { readStorage, writeStorage } from '../browser-storage'
 import { readReference, referenceDescription, withReference } from './reference-link'
 
+const cropSaveDelay = 150
+
 function savedReference(key: string) {
   try {
-    const saved = JSON.parse(readStorage('localStorage', key) ?? 'null') as { address?: string; open?: boolean; description?: string; crop?: string } | null
+    const saved = JSON.parse(readStorage('localStorage', key) ?? 'null') as { address?: string, open?: boolean, description?: string, crop?: string } | null
     const address = readReference(saved?.address ?? '')?.source ?? ''
     return { address, description: referenceDescription(saved?.description), open: Boolean(address && saved?.open), crop: readCrop(saved?.crop) }
-  } catch {
+  }
+  catch {
     return { address: '', description: '', open: false, crop: fitCrop }
   }
 }
@@ -48,11 +51,13 @@ export function createReferencePane() {
   let pending: number | undefined
   const controls = createPhotoControls(picture, () => {
     window.clearTimeout(pending)
-    pending = window.setTimeout(remember, 150)
+    pending = window.setTimeout(remember, cropSaveDelay)
   })
-  window.addEventListener('pagehide', () => { if (pending !== undefined) remember() })
+  window.addEventListener('pagehide', () => {
+    if (pending !== undefined) remember()
+  })
 
-  function display(open: boolean, crop = controls.crop, focalX?: number) {
+  function display(open: boolean, crop = controls.crop, initialFocalX?: number) {
     controls.reset(crop)
     pane.hidden = !open
     toggle.setAttribute('aria-expanded', String(open))
@@ -72,6 +77,7 @@ export function createReferencePane() {
     img.alt = description || 'Reference photo for ' + name
     img.referrerPolicy = 'no-referrer'
     status.textContent = 'Loading reference…'
+    let focalX = initialFocalX
     img.onload = () => {
       if (img.parentElement !== picture) return
       status.textContent = 'Reference photo loaded.'
@@ -105,7 +111,7 @@ export function createReferencePane() {
     remember()
     if (!pane.hidden) (editor.open ? input : editor.querySelector('summary'))?.focus()
   })
-  pane.addEventListener('keydown', event => {
+  pane.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return
     event.stopPropagation()
     display(false)
@@ -113,7 +119,7 @@ export function createReferencePane() {
     toggle.focus()
   })
   input.addEventListener('input', () => input.setCustomValidity(''))
-  form.addEventListener('submit', event => {
+  form.addEventListener('submit', (event) => {
     event.preventDefault()
     const ref = readReference(input.value.trim())
     if (!ref) {
@@ -161,7 +167,8 @@ export function createReferencePane() {
         description = referenceDescription(params.get('refAlt'))
         display(true, readCrop(params.get('crop')), focalX)
         remember()
-      } else {
+      }
+      else {
         display(open, crop)
         if (open) remember()
       }

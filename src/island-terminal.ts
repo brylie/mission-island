@@ -1,30 +1,64 @@
+import type { Mesh } from '@babylonjs/core/Meshes/mesh'
+import { createFerryTerminalModel } from './assets/ferry-terminal'
+import { deckSolids, ferryServiceRestored, ferryStages, initialFerryRepair, stageNeeds } from './ferry-repair'
 import type { MeshFactory } from './island-meshes'
-import { groundHeight, waterLevel } from './terrain'
-import { ferryTerminal } from './world'
+import type { Snapshot } from './protocol'
 
-export function createFerryTerminal({ box, paintSurface }: MeshFactory) {
-  const { x, z, width } = ferryTerminal
-  const y = groundHeight(ferryTerminal)
-  const concrete = paintSurface('concrete', '#92978b')
-  const wood = paintSurface('wood', '#87674d')
-  const steel = '#4c6461'
-  const apronEnd = -40
-  box(x, y - .08, (z + apronEnd) / 2, width, .23, z - apronEnd, concrete)
-  for (const side of [-1, 1]) {
-    const edge = x + side * (width / 2 - .12)
-    box(edge, y + .56, z, .24, 1.12, .24, wood)
-    box(edge, y + .44, -35.6, .18, .8, 9, concrete)
-    box(edge, waterLevel - .85, -43.9, .32, 2.4, .32, steel)
-    box(edge, waterLevel + .11, -43.4, .19, .29, 6.6, steel).rotation.x = side * .04
+const deckedStage = 2
+const maxCoins = Math.max(...ferryStages.map(({ coins }) => coins))
+const maxCrates = Math.max(...ferryStages.map(({ crates }) => crates))
+
+function showSwatch(options: Mesh[], index: number) {
+  options.forEach((mesh, i) => void mesh.setEnabled(i === index))
+}
+
+export function createFerryTerminal(meshes: MeshFactory) {
+  const { down, raised, stages, signs, board, stackedTimber } = createFerryTerminalModel(meshes, deckSolids, {
+    stages: ferryStages.length,
+    coins: maxCoins,
+    crates: maxCrates,
+  })
+  const { pips, coins, crates, firstCrewSwatch, completedSwatch } = board
+
+  function owners(ledger: number[], needed: number, length: number) {
+    const slots = ledger.flatMap((amount, slot) => Array.from({ length: amount }, () => slot + firstCrewSwatch))
+    return Array.from({ length }, (_, i) => i < slots.length ? slots[i] : i < needed ? 1 : 0)
   }
-  box(x, y + .78, z, width, .32, .19, '#aa622f')
-  for (const dx of [-2.2, -1.45, -.7, .05, .8, 1.55, 2.3]) {
-    box(x + dx, y + .79, z + .10, .24, .33, .02, '#f7cf79', undefined, false).rotation.z = -.42
+
+  function updateTally(state: Pick<Snapshot, 'ferryRepair'>) {
+    const { ferryRepair } = state
+    const needs = stageNeeds(state)
+    const ledger = ferryRepair.ledger[ferryRepair.stage]
+    pips.forEach((options, i) => void showSwatch(options, i < ferryRepair.stage ? completedSwatch : i === ferryRepair.stage ? 1 : 0))
+    const coinCells = needs && ledger ? owners(ledger.coins, needs.coins, maxCoins) : coins.map(() => completedSwatch)
+    const crateCells = needs && ledger ? owners(ledger.crates, needs.crates, maxCrates) : crates.map(() => completedSwatch)
+    coins.forEach((options, i) => void showSwatch(options, coinCells[i]))
+    crates.forEach((options, i) => void showSwatch(options, crateCells[i]))
   }
-  for (const [i, boardZ] of [-40.3, -41, -41.7, -44, -44.7, -45.4, -46.1].entries()) {
-    const last = i === 2 || i === 3
-    const plank = box(x + (last ? .62 : 0), waterLevel + .23 - (last ? .16 : 0), boardZ,
-      last ? width - 1.45 : width, .22, .66, wood)
-    if (last) plank.rotation.z = i === 2 ? -.065 : .1
+
+  let shown = ''
+
+  function update(state: Pick<Snapshot, 'ferryRepair'>) {
+    const { stage, ledger, haul } = state.ferryRepair
+    const key = `${stage}:${haul}:${JSON.stringify(ledger[stage] ?? null)}`
+    if (key === shown) return
+    shown = key
+    const restored = ferryServiceRestored(state)
+    down.setEnabled(!restored)
+    raised.setEnabled(restored)
+    stages.broken.setEnabled(stage === 0)
+    stages.braced.setEnabled(stage >= 1)
+    stages.scaffold.setEnabled(stage >= 1 && !restored)
+    stages.decked.setEnabled(stage >= deckedStage)
+    signs.soon.setEnabled(stage === deckedStage)
+    signs.open.setEnabled(restored)
+    signs.lit.setEnabled(restored)
+    signs.dark.setEnabled(!restored)
+    updateTally(state)
+    const stacked = stageNeeds(state)?.cratesGiven ?? 0
+    stackedTimber.forEach((mesh, i) => void mesh.setEnabled(i < stacked))
   }
+
+  update(initialFerryRepair())
+  return { update }
 }

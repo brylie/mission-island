@@ -3,7 +3,8 @@ type StorageArea = 'localStorage' | 'sessionStorage'
 export function readStorage(area: StorageArea, key: string) {
   try {
     return window[area].getItem(key)
-  } catch {
+  }
+  catch {
     return null
   }
 }
@@ -13,7 +14,8 @@ export function writeStorage(area: StorageArea, key: string, value: string | nul
     if (value === null) window[area].removeItem(key)
     else window[area].setItem(key, value)
     return true
-  } catch {
+  }
+  catch {
     return false
   }
 }

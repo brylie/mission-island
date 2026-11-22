@@ -1,45 +1,66 @@
+import { starterMapLook as look } from './assets/geometry/starter-map'
 import { inSkiff } from './actions'
 import { defaultAppearance, shirtColor } from './crew-appearance'
 import { farm, market } from './farm'
+import { drawFarmMap } from './farm-order-ui'
 import { activeJob, deliveryDrop, jobBoard } from './jobs'
 import { materialsWaypoint } from './materials-work'
 import type { Player, Snapshot } from './protocol'
 import { drawRidgeMap } from './ridge-ui'
-import { footpaths, road, walkways } from './routes'
+import { footpaths, roads, walkways } from './routes'
 import { northernRegions, starterDiscoveries } from './scenery'
-import { boundaryBuoys, buoyBoundaryPoint, coastPoint } from './terrain'
+import { boundaryBuoys, buoyBoundaryPoint, coastBounds, coastPoint, coastSegments, offshoreLimitMetres } from './terrain'
 import { crewHomes, ferryTerminal, harbor, lookout } from './world'
-import type { Point } from './world'
+import { fireCentre } from './wildfire'
 
 type MapDot = (x: number, z: number, color: string, radius: number) => void
 
-function drawShift(state: Snapshot, dot: MapDot) {
-  if (state.mission === 'fire') dot(lookout.x, lookout.z, '#f7a17d', 6)
+const half = 0.5
+const fullTurn = Math.PI + Math.PI
+const coast = coastBounds()
+const mapCentre = { x: (coast.east + coast.west) * half, z: (coast.north + coast.south) * half }
+const mapWidth = coast.east - coast.west + look.margin
+const mapHeight = coast.north - coast.south + look.margin
+const rings = Array.from({ length: coastSegments }, (_, i) => {
+  const angle = i * fullTurn / coastSegments
+  return { shore: coastPoint(angle), grass: coastPoint(angle, look.grassRing), boundary: buoyBoundaryPoint(angle) }
+})
+
+function drawShift(state: Snapshot, dot: MapDot, ring: MapDot) {
+  const wildfire = state.events.fire
+  if (wildfire?.located) {
+    const centre = fireCentre(wildfire)
+    ring(centre.x, centre.z, look.wildfire.ring, look.wildfire.ringRadius)
+    dot(centre.x, centre.z, look.wildfire.color, look.wildfire.radius)
+  }
+  if (state.mission === 'fire') dot(lookout.x, lookout.z, look.fire.color, look.fire.radius)
   else {
     const drop = deliveryDrop(state)
     if (drop) {
-      dot(harbor.x, harbor.z, '#fff0ae', 5)
-      dot(drop.x, drop.z, '#acf3da', 5)
+      dot(harbor.x, harbor.z, look.harbor.color, look.harbor.radius)
+      dot(drop.x, drop.z, look.delivery.color, look.delivery.radius)
     }
   }
 }
 
 function drawWork(state: Snapshot, local: Player | undefined, dot: MapDot) {
   const marketOrder = activeJob(state)?.kind === 'market'
-  dot(market.x, market.z, marketOrder ? '#acf3da' : '#f2d3bc', marketOrder ? 6 : 3.5)
-  if (state.mission === 'complete' && !state.jobs.active) dot(jobBoard.x, jobBoard.z, '#ffd379', 5.5)
+  dot(market.x, market.z, marketOrder ? look.market.activeColor : look.market.color, marketOrder ? look.market.activeRadius : look.market.radius)
+  if (state.mission === 'complete' && !state.jobs.active) dot(jobBoard.x, jobBoard.z, look.jobBoard.color, look.jobBoard.radius)
   const supplies = local && materialsWaypoint(state, local)
-  if (supplies) dot(supplies.x, supplies.z, '#efac5b', 5.5)
+  if (supplies) dot(supplies.x, supplies.z, look.supplies.color, look.supplies.radius)
+  drawFarmMap(state, dot)
   drawRidgeMap(state, dot)
 }
 
-function drawIslandPaths(drawRoute: (points: typeof road, width: number, color: string) => void) {
+function drawIslandPaths(drawRoute: (points: readonly { x: number, z: number }[], width: number, color: string) => void) {
   for (const { points, surface } of footpaths) {
-    if (surface === 'desire') drawRoute(points, .85, '#b5a77e')
-    else drawRoute(points, 2, surface === 'pavement' ? '#c4c9c1' : '#a5a77e')
+    const { width, color } = look.paths[surface]
+    drawRoute(points, width, color)
   }
-  for (const { points } of walkways) drawRoute(points, 2, '#c4c9c1')
-  drawRoute(road, 4, '#c7bb9a')
+  const { pavement, road } = look.paths
+  for (const { points } of walkways) drawRoute(points, pavement.width, pavement.color)
+  for (const path of roads) drawRoute(path, road.width, road.color)
 }
 
 export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapshot) {
@@ -48,43 +69,44 @@ export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapsh
   const { width, height } = map
   const local = state?.players.find((player) => player.id === id)
   const afloat = local && inSkiff(local.seat)
-  const scale = Math.min(width / (afloat ? 390 : 224), height / (afloat ? 400 : 245))
-  const mx = (x: number) => width / 2 + x * scale
-  const mz = (z: number) => height / 2 - (z - 66) * scale
+  const offshore = afloat ? offshoreLimitMetres + offshoreLimitMetres : 0
+  const scale = Math.min(width / (mapWidth + offshore), height / (mapHeight + offshore))
+  const mx = (x: number) => width * half + (x - mapCentre.x) * scale
+  const mz = (z: number) => height * half - (z - mapCentre.z) * scale
   const dot = (x: number, z: number, color: string, radius: number) => {
     ink.fillStyle = color
     ink.beginPath()
-    ink.arc(mx(x), mz(z), radius, 0, Math.PI * 2)
+    ink.arc(mx(x), mz(z), radius, 0, fullTurn)
     ink.fill()
   }
-  const traceRing = (pointAt: (angle: number) => Point) => {
+  const traceRing = (ring: 'shore' | 'grass' | 'boundary') => {
     ink.beginPath()
-    for (let i = 0; i < 128; i++) {
-      const { x, z } = pointAt(i / 128 * Math.PI * 2)
+    for (const [i, points] of rings.entries()) {
+      const { x, z } = points[ring]
       if (i === 0) ink.moveTo(mx(x), mz(z))
       else ink.lineTo(mx(x), mz(z))
     }
     ink.closePath()
   }
-  ink.fillStyle = '#245e68'
+  ink.fillStyle = look.water
   ink.fillRect(0, 0, width, height)
   if (afloat) {
-    traceRing(buoyBoundaryPoint)
-    ink.strokeStyle = '#9abfc1'
-    ink.lineWidth = 1
+    traceRing('boundary')
+    ink.strokeStyle = look.boundary.color
+    ink.lineWidth = look.boundary.lineWidth
     ink.stroke()
-    for (const { x, z } of boundaryBuoys) dot(x, z, '#ffd37b', 2)
+    for (const { x, z } of boundaryBuoys) dot(x, z, look.boundary.buoy.color, look.boundary.buoy.radius)
   }
-  for (const [radius, color] of [[1, '#acc293'], [0.916, '#6f9667']] as const) {
+  for (const [ring, color] of look.land) {
     ink.fillStyle = color
-    traceRing((angle) => coastPoint(angle, radius))
+    traceRing(ring)
     ink.fill()
   }
   for (const region of northernRegions) {
-    dot(region.at.x, region.at.z, region.color, region.spread * scale * 0.55)
+    dot(region.at.x, region.at.z, region.color, region.spread * scale * look.regionSpread)
   }
   for (const region of starterDiscoveries) if (local?.discoveries?.includes(region.id)) {
-    dot(region.site.x, region.site.z, '#e4ffe0', 2.25)
+    dot(region.site.x, region.site.z, look.discovery.color, look.discovery.radius)
   }
   ink.lineJoin = 'round'
   ink.lineCap = 'round'
@@ -98,19 +120,31 @@ export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapsh
     }
     ink.stroke()
   })
+  ink.fillStyle = look.north.color
+  ink.font = look.north.font
+  ink.textAlign = 'center'
+  ink.textBaseline = 'top'
+  ink.fillText(look.north.text, width * half, look.north.inset)
   if (!state) return
-  drawShift(state, dot)
-  ink.fillStyle = '#38433a'
-  ink.fillRect(mx(state.truck.x) - 5, mz(state.truck.z) - 4, 10, 8)
-  if (state.skiff) dot(state.skiff.x, state.skiff.z, '#fff0ca', 3.5)
-  dot(farm.x, farm.z, '#e3ba77', 3.5)
-  dot(ferryTerminal.x, ferryTerminal.z, '#d7a07d', 3.5)
+  const ring = (x: number, z: number, color: string, radius: number) => {
+    ink.strokeStyle = color
+    ink.lineWidth = look.wildfire.ringWidth
+    ink.beginPath()
+    ink.arc(mx(x), mz(z), radius, 0, fullTurn)
+    ink.stroke()
+  }
+  drawShift(state, dot, ring)
+  ink.fillStyle = look.truck.color
+  ink.fillRect(mx(state.truck.x) - look.truck.width * half, mz(state.truck.z) - look.truck.height * half, look.truck.width, look.truck.height)
+  if (state.skiff) dot(state.skiff.x, state.skiff.z, look.skiff.color, look.skiff.radius)
+  dot(farm.x, farm.z, look.farm.color, look.farm.radius)
+  dot(ferryTerminal.x, ferryTerminal.z, look.ferry.color, look.ferry.radius)
   drawWork(state, local, dot)
   const home = crewHomes[id]
-  if (home) dot(home.chest.x, home.chest.z, '#fed487', 3)
+  if (home) dot(home.chest.x, home.chest.z, look.chest.color, look.chest.radius)
   for (const player of state.players) {
     if (!player.connected) continue
-    dot(player.x, player.z, '#234244', 6.5)
-    dot(player.x, player.z, shirtColor(player.appearance ?? defaultAppearance, player.appearanceBase ?? player.id).color, 4.5)
+    dot(player.x, player.z, look.player.border, look.player.radius)
+    dot(player.x, player.z, shirtColor(player.appearance ?? defaultAppearance, player.appearanceBase ?? player.id).color, look.player.fillRadius)
   }
 }

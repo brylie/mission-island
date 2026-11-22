@@ -1,4 +1,5 @@
 import type { LiveTrial, ScenarioSummary } from './live-checkpoints'
+import { bindPlaytestEvents } from './playtest-events-ui'
 
 export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => string) {
   const panel = dialog.querySelector<HTMLFieldSetElement>('#live-checkpoint')!
@@ -8,6 +9,7 @@ export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => s
   const message = panel.querySelector('[role="status"]')!
   const banner = document.querySelector<HTMLButtonElement>('#checkpoint-banner')!
   const options = document.querySelector<HTMLButtonElement>('#options-button')!
+  const events = bindPlaytestEvents(dialog, token)
   let current: LiveTrial | undefined
   let activeTitle = ''
   let pending = false
@@ -23,7 +25,8 @@ export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => s
   }
   function label() {
     start.textContent = current?.checkpoint === select.value && String(current.seats) === seats.value
-      ? 'Restart checkpoint' : 'Start checkpoint'
+      ? 'Restart checkpoint'
+      : 'Start checkpoint'
   }
   panel.onchange = label
   start.onclick = async () => {
@@ -32,17 +35,20 @@ export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => s
     const args = new URLSearchParams({ checkpoint: select.value, seats: seats.value, revision: String(current.revision) })
     try {
       const result = await fetch('/api/live-checkpoint?' + args.toString(), {
-        method: 'POST', headers: { Authorization: 'Bearer ' + token() },
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token() },
       })
       message.textContent = await result.text()
       if (result.ok) dialog.close()
-    } catch { message.textContent = 'Could not reach the host. Try again after reconnecting.' }
+    }
+    catch { message.textContent = 'Could not reach the host. Try again after reconnecting.' }
     finally { pending = start.disabled = false }
   }
   function update(trial: LiveTrial | undefined) {
     if (!trial) return
     if (current?.revision !== trial.revision) {
       panel.hidden = banner.hidden = false
+      events.show()
       current = trial
       select.value = trial.checkpoint
       const option = select.selectedOptions[0]

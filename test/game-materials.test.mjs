@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { blankRecord } from '../src/residents/trust.ts'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -15,17 +16,15 @@ import { materialSources, repairChoices, repairSite, sampleTray } from '../src/w
 import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
-const bench = { x: -27.1, z: -24.1 }
+const bench = { x: -23, z: -18.3 }
 const timberTrail = [{ x: -26.5, z: -10 }, { x: -26.65, z: 12.45 }]
-const stoneTrail = [{ x: -22, z: -11 }, { x: -20, z: -11 }, { x: 10, z: 12 }, { x: 32, z: 12 },
-  { x: 35, z: 11 }, { x: 32, z: 3 }, { x: 30, z: -24 }, { x: 41.5, z: -26 }]
+const stoneTrail = [{ x: -22, z: -11 }, { x: -20, z: -11 }, { x: 10, z: 12 }, { x: 32, z: 12 }, { x: 35, z: 11 }, { x: 32, z: 3 }, { x: 30, z: -24 }, { x: 41.5, z: -26 }]
 const trails = { timber: timberTrail, stone: stoneTrail }
 
 function afterGate(save) {
   save.islandTime = 480
-  Object.assign(save.world, { mission: 'complete', fire: 0,
-    gateRepair: { stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: 0 } })
-  save.world.residents.wren = { trust: 1, kept: [gateFavor], active: null }
+  Object.assign(save.world, { mission: 'complete', fire: 0, gateRepair: { stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: 0 } })
+  save.world.residents.wren = { ...blankRecord(), trust: 1, kept: [gateFavor] }
   save.crewCoins = 5
   // An island made before material progress existed can start the checkout.
   delete save.world.materialsWork
@@ -37,7 +36,7 @@ function makeArchive(t) {
   return islandSaveFile(root, 5194)
 }
 
-function walk(h, client, target, range = .35) {
+function walk(h, client, target, range = 0.35) {
   for (let i = 0; i < 440 && distance(client.player, target) > range; i++) {
     const d = distance(client.player, target)
     h.input(client, { x: (target.x - client.player.x) / d, z: (target.z - client.player.z) / d, sprint: true })
@@ -89,7 +88,7 @@ function sample(h, client, material) {
 }
 
 function choose(h, client, material) {
-  walk(h, client, { x: repairChoices[material].x + .9, z: repairChoices[material].z })
+  walk(h, client, { x: repairChoices[material].x + 0.9, z: repairChoices[material].z })
   act(h, client, 'choose-repair-material', material)
   assert.deepEqual(client.state.materialsWork.request, { material, delivered: 0 })
 }
@@ -134,7 +133,7 @@ for (const material of repairMaterials) {
     assert.equal(carriedMaterial(a.player, material), 0)
     assert.equal(a.state.crewCoins, 10)
     assert.equal(awardCount(a), 1)
-    assert.deepEqual(a.state.residents.wren, { trust: 2, kept: [gateFavor, repairSupplyFavor.id], active: null })
+    assert.deepEqual(a.state.residents.wren, { ...blankRecord(), trust: 2, kept: [gateFavor, repairSupplyFavor.id] })
   })
 
   test(`split ${material} collection, reconnect, and concurrent final delivery award and consume once`, (t) => {
@@ -213,7 +212,7 @@ for (const material of repairMaterials) {
 
 test('marked material placements are dry and reach the walking routes', () => {
   for (const point of [sampleTray, repairSite, ...Object.values(materialSources), ...Object.values(repairChoices)]) {
-    assert.ok(canWalkAt(point, .36, waterLevel), `${point.x}, ${point.z} has dry clearance`)
+    assert.ok(canWalkAt(point, 0.36, waterLevel), `${point.x}, ${point.z} has dry clearance`)
   }
 })
 

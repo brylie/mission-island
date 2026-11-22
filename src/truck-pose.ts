@@ -2,8 +2,11 @@ import type { GroundDrive } from './vehicles/ground-drive.ts'
 import { offset } from './world.ts'
 import type { Point, Pose } from './world.ts'
 
-export type TruckPose = Pose & { y: number; pitch: number; roll: number }
-export type Truck = TruckPose & { speed: number; steering: number; braking: boolean; suspension: number[] }
+const wheelCount = 4
+const wheelsPerAxle = 2
+
+export type TruckPose = Pose & { y: number, pitch: number, roll: number }
+export type Truck = TruckPose & { speed: number, steering: number, braking: boolean, suspension: number[] }
 type SpatialPoint = Point & { y: number }
 
 function basis({ pitch, heading, roll }: TruckPose) {
@@ -37,7 +40,10 @@ export function truckSurface(pose: TruckPose, point: Point, height: number) {
 }
 
 export function parkedGroundPose(
-  pose: Pose, { axles: [rear, front], halfTrack }: GroundDrive['wheels'], heightAt: (point: Point) => number, clearance = 0,
+  pose: Pose,
+  { axles: [rear, front], halfTrack }: GroundDrive['wheels'],
+  heightAt: (point: Point) => number,
+  clearance = 0,
 ): TruckPose {
   const frontLeft = heightAt(offset(pose, -halfTrack, front))
   const frontRight = heightAt(offset(pose, halfTrack, front))
@@ -45,8 +51,8 @@ export function parkedGroundPose(
   const rearRight = heightAt(offset(pose, halfTrack, rear))
   return {
     ...pose,
-    y: (frontLeft + frontRight + rearLeft + rearRight) / 4 + clearance,
-    pitch: Math.atan2(rearLeft + rearRight - frontLeft - frontRight, 2 * (front - rear)),
-    roll: Math.atan2(frontRight + rearRight - frontLeft - rearLeft, 4 * halfTrack),
+    y: (frontLeft + frontRight + rearLeft + rearRight) / wheelCount + clearance,
+    pitch: Math.atan2(rearLeft + rearRight - frontLeft - frontRight, wheelsPerAxle * (front - rear)),
+    roll: Math.atan2(frontRight + rearRight - frontLeft - rearLeft, wheelCount * halfTrack),
   }
 }

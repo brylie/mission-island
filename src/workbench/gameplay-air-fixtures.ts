@@ -1,120 +1,115 @@
-import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import { createOilLantern } from '../assets/effect-props'
-import { createRock } from '../assets/props'
+import { Vector3 } from '@babylonjs/core/Maths/math.vector'
+import { createMillVent, createOilLantern } from '../assets/effect-props'
+import { gateFrostStage, lanternStage, mothStage, snuffStage, ventStage } from '../assets/geometry/workbench-effect-fixtures'
+import { canvasRunoffMotion, gateFrostMotion, mothMotion, snuffMotion, ventMotion } from '../assets/recipes/workbench-effect-fixtures'
+import { createWrenGateAssembly, wrenGateTopRail } from '../assets/wren-gate'
+import { gateLeaf } from '../gate-layout'
 import type { MeshFactory } from '../island-meshes'
 import { contactAge, crewAt, type Fixture } from './effect-fixtures'
+import { createMarketRunoffStage } from './market-awning-stage'
 
-function lanternStand(meshes: MeshFactory, height: number) {
+const halves = 2
+const half = 0.5
+
+function lanternStand(meshes: MeshFactory) {
+  const { height, legs, top } = lanternStage
   const lantern = createOilLantern(meshes)
   lantern.root.position.y = height
-  for (const x of [-.38, .38]) {
-    for (const z of [-.22, .22]) meshes.box(x, height / 2, z, .085, height, .09, '#6a5c49')
+  for (const x of legs.x) {
+    for (const z of legs.z) meshes.box(x, height / halves, z, legs.width, height, legs.depth, legs.color)
   }
-  meshes.box(0, height - .037, 0, .98, .073, .63, '#9e815f')
+  meshes.box(0, height - top.inset, 0, ...top.size, top.color)
   return lantern
 }
 
 export function mothFixture(meshes: MeshFactory): Fixture {
-  const height = .94
-  const lamp = lanternStand(meshes, height)
-  const crew = crewAt(meshes, -1.2, -.51, 1)
-  crew.root.rotation.y = 1.17
-  const y = height + .26
+  const lamp = lanternStand(meshes)
+  const { crew } = mothStage
+  crewAt(meshes, crew.x, crew.z, crew.id).root.rotation.y = crew.heading
+  const { orbit, flame } = mothMotion
+  const y = lanternStage.height + orbit.heightAboveStand
   return {
     sourceAt(time, index) {
-      const angle = time * 4.9 + index * 1.38
-      const ray = .29 + (index % 5) * .107
-      return { x: Math.cos(angle) * ray, y, z: Math.sin(angle) * ray,
-        orbit: { x: 0, z: 0, angularSpeed: index % 3 ? 3.8 : -2.15, peelAfter: 1.45 } }
+      const angle = time * orbit.approachRate + index * orbit.angleStep
+      const radius = orbit.radius + (index % orbit.radiusCycle) * orbit.radiusStep
+      const angularSpeed = index % orbit.turnCycle ? orbit.turnRate : orbit.counterTurnRate
+      return { x: Math.cos(angle) * radius, y, z: Math.sin(angle) * radius, orbit: { x: 0, z: 0, angularSpeed, peelAfter: orbit.peelAfter } }
     },
     pose(time) {
-      lamp.flame.scaling.y = .13 + .022 * Math.sin(time * 12)
+      lamp.flame.scaling.y = flame.heightScale + flame.variation * Math.sin(time * flame.frequency)
     },
   }
 }
 
 export function ventFixture(meshes: MeshFactory): Fixture {
-  meshes.box(0, .66, -.57, 2.7, 1.32, 1.37, '#6d766d')
-  meshes.box(0, 1.34, -.55, 2.95, .14, 1.54, '#486360')
-  meshes.cylinder(.03, 1.52, -.23, .27, .29, .4, 9, '#8a9990')
-  meshes.cylinder(.03, 1.728, -.23, .22, .22, .02, 9, '#405352')
-  crewAt(meshes, -1.71, .42)
+  const { wall, roof, vent: ventPlacement, crew } = ventStage
+  meshes.box(...wall.position, ...wall.size, wall.color)
+  meshes.box(0, roof.y, roof.z, roof.width, roof.thickness, roof.depth, roof.color)
+  const vent = createMillVent(meshes)
+  vent.root.position.set(ventPlacement.x, roof.y + roof.thickness / halves, ventPlacement.z)
+  const { x, y, z } = vent.root.position
+  const outlet = { x, y: y + vent.outletHeight, z }
+  crewAt(meshes, crew.x, crew.z)
   return {
     sourceAt(time) {
-      if (contactAge(time, .25, 1.1, .74) !== undefined) return { x: .03, y: 1.74, z: -.23 }
+      if (contactAge(time, ...ventMotion.puff) !== undefined) return outlet
     },
   }
 }
 
 export function gateFrostFixture(meshes: MeshFactory): Fixture {
-  const gate = new TransformNode('Frosted gate', meshes.scene)
-  gate.position.set(-1.05, 0, -.13)
-  const wood = '#817861', frost = '#c5d6cb'
-  for (const x of [-1.09, 1.09]) {
-    meshes.box(x, .64, -.13, .135, 1.28, .16, wood)
-    meshes.box(x, 1.29, -.13, .146, .025, .17, frost)
+  const { crew, frost } = gateFrostStage
+  const { release, contacts, swing, floor } = gateFrostMotion
+  const gate = createWrenGateAssembly(meshes, { x: -gateLeaf.length / halves, y: 0, z: 0 })
+  gate.wornPin.setEnabled(false)
+  const rail = wrenGateTopRail
+  const top = rail.y + rail.height / halves
+  meshes.box(rail.x, top + frost.thickness / halves, rail.z, rail.width, frost.thickness, rail.depth, frost.color, gate.leaf)
+  const contact = new Vector3(rail.x, top + frost.thickness, rail.z)
+  crewAt(meshes, crew.x, crew.z, crew.id).root.rotation.y = crew.heading
+  function pose(time: number) {
+    gate.hinge.rotation.y = swing.angle * Math.sin(Math.min(time, swing.duration) * Math.PI / swing.duration)
   }
-  for (const y of [.37, .95]) meshes.box(1.02, y, 0, 1.96, .122, .087, wood, gate)
-  for (let i = 0; i < 7; i++) {
-    const x = .17 + i * .283
-    meshes.box(x, .64, .012, .124, .83, .077, wood, gate)
-    meshes.box(x, 1.062, .012, .131, .024, .088, frost, gate)
-  }
-  const crew = crewAt(meshes, 1.31, .72, 1)
-  crew.root.rotation.y = -2.7
-  const angle = (time: number) => .61 * Math.sin(Math.min(time, 3) * Math.PI / 3)
   return {
     sourceAt(time, index) {
-      if (contactAge(time, .4, 1.05, .16) === undefined) return
-      const arm = .62 + index % 7 * .19
-      const yaw = angle(time)
-      return { x: -1.05 + arm * Math.cos(yaw), z: -.13 - arm * Math.sin(yaw), y: 1.076, yaw, floor: .015 }
+      if (contactAge(time, ...release) === undefined) return
+      pose(time)
+      const across = (index % contacts) / (contacts - 1) - half
+      contact.x = rail.x + across * (rail.width - rail.depth)
+      const { x, y, z } = Vector3.TransformCoordinates(contact, gate.leaf.computeWorldMatrix(true))
+      return { x, y, z, yaw: gate.hinge.rotation.y, floor }
     },
-    pose(time) {
-      gate.rotation.y = angle(time)
-    },
+    pose,
   }
 }
 
 export function canvasRunoffFixture(meshes: MeshFactory): Fixture {
-  for (const x of [-1.25, 1.25]) meshes.cylinder(x, 1.02, -.38, .085, .097, 2.04, 7, '#7a7159')
-  const tarp = meshes.paint('#57837b')
-  tarp.backFaceCulling = false
-  const edge: number[] = [], indices: number[] = []
-  for (let i = 0; i < 7; i++) {
-    const x = (i - 3) * .46, lift = .085 * Math.abs(i - 3)
-    edge.push(x, 2.04 + lift, -.96, x, 1.64 + lift, .58)
-    const n = i * 2
-    if (i) indices.push(n - 2, n, n + 1, n - 2, n + 1, n - 1)
-  }
-  meshes.surface('Sloped canvas shelter', edge, indices, tarp)
-  createRock(meshes, 1.58, .57, .68, .8, true)
-  crewAt(meshes, -.87, -.55, 1)
-  meshes.box(0, .008, .78, 2.85, .017, .53, '#508a8b', undefined, false)
+  const { runway, runoffLane } = createMarketRunoffStage(meshes)
+  const { surge: [start, period, duration], stagger, staggerCycle, ripplesStart } = canvasRunoffMotion
   return {
     sourceAt(time, index) {
-      const lane = (index % 5 - 2) * .58
-      const surge = contactAge(time, .28 + .035 * (index % 4), .67, .24)
-      if (surge !== undefined) return { x: lane, y: 1.64 + Math.abs(lane) * .184, z: .59, floor: .02 }
+      const surge = contactAge(time, start + stagger * (index % staggerCycle), period, duration)
+      if (surge !== undefined) return runoffLane(index)
     },
     accents: [{ id: 'surface-pops', sourceAt: (time, index) => {
-      if (time >= .68) return { x: (index % 5 - 2) * .51, y: .022, z: .84 }
+      if (time >= ripplesStart) return runway(index)
     } }],
   }
 }
 
 export function snuffFixture(meshes: MeshFactory): Fixture {
-  const lamp = lanternStand(meshes, .94)
-  const crew = crewAt(meshes, -.74, -.83)
-  crew.root.rotation.y = .82
+  const lamp = lanternStand(meshes)
+  const { crew } = snuffStage
+  crewAt(meshes, crew.x, crew.z).root.rotation.y = crew.heading
+  const { extinguish, smokeEnd, source, unlitGlobeVisibility } = snuffMotion
   return {
     sourceAt(time) {
-      if (time > .52 && time < 1.13) return { x: 0, y: 1.34, z: 0 }
+      if (time > extinguish && time < smokeEnd) return { ...source }
     },
     pose(time) {
-      const lit = time < .52
+      const lit = time < extinguish
       lamp.flame.setEnabled(lit)
-      lamp.globe.visibility = lit ? 1 : .2
+      lamp.globe.visibility = lit ? 1 : unlitGlobeVisibility
     },
   }
 }

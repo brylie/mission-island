@@ -1,3 +1,5 @@
+import { audioStudy } from './audio-study'
+import { islandSoundStudy } from './island-sound-study'
 import { coastalModelStudies } from './coastal-model-studies'
 import { islandShaderStudies } from './island-shader-studies'
 import { shaderStudies } from './shader-studies'
@@ -6,6 +8,7 @@ import { biomeEntry } from './biome-preview'
 import { brinewickMarketStudy } from './brinewick-market-study'
 import { residentRoutinesStudy } from './resident-routines-study'
 import { crewStudy } from './crew-study'
+import { dyeLineupStudy } from './dye-lineup-study'
 import { effectStudies } from './effect-studies'
 import { farmStudy } from './farm-study'
 import { gullStudy } from './gull-study'
@@ -15,6 +18,7 @@ import { materialStudies } from './material-studies'
 import { mechanicStudies } from './mechanic-studies'
 import { longAcreStudy } from './long-acre-study'
 import { lookoutRecoveryStudy } from './lookout-recovery-study'
+import { fireWatchStudy } from './fire-watch-study'
 import { ridgeScoutStudy } from './ridge-scout-study'
 import { natureEntries } from './nature-studies'
 import { routeStudies } from './route-studies'
@@ -39,7 +43,9 @@ export const entries: Entry[] = [
   landscapeStudy,
   ridgeScoutStudy,
   lookoutRecoveryStudy,
+  fireWatchStudy,
   crewStudy,
+  dyeLineupStudy,
   ...starterSceneryStudies,
   houseStudy,
   homeChestStudy,
@@ -48,6 +54,8 @@ export const entries: Entry[] = [
   harborBoatStudy,
   buoyStudy,
   ...effectStudies,
+  audioStudy,
+  islandSoundStudy,
   ...routeStudies,
   ...materialStudies,
   ...shaderStudies,

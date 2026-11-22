@@ -15,7 +15,7 @@ export function prepareTrial(state: Snapshot, settings: TrialRun) {
   }
 
   function startWhenReady() {
-    const players = state.players.filter(player => player.connected)
+    const players = state.players.filter((player) => player.connected)
     if (players.length !== settings.seats) return false
     scenario.startCrew?.(state, players)
     state.playtest!.started = true

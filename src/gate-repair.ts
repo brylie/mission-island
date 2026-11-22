@@ -1,14 +1,15 @@
-import { gateMendedStage, gateWidth, gateway, hingePost } from './gate-layout.ts'
+import type { InteractionOption, InteractionPolicies } from './interactions/definition.ts'
+import { gateLeaf, gateMendedStage, gateway, hingePost, mendingPinHeight } from './gate-layout.ts'
 import type { Item, Player, Snapshot } from './protocol.ts'
-import { deliveryDrop } from './jobs.ts'
 import { residentAt, standing } from './residents/schedule.ts'
+import { trustTier } from './residents/trust.ts'
 import { walkingHeight } from './terrain.ts'
-import { distance, mendingBench, toolboxHome, wrenCottage } from './world.ts'
+import { distance, mendingBench, toolboxHome } from './world.ts'
 import type { Point } from './world.ts'
-import { backPath, wrenSchedule } from './worlds/starter/residents/wren-route.ts'
+import { wrenSchedule } from './worlds/starter/residents/wren-route.ts'
 
-export { backPath, gateMendedStage, gateway, hingePost }
-export { fenceHeight, fenceZ } from './gate-layout.ts'
+export { gateMendedStage, gateway }
+export { fenceZ } from './gate-layout.ts'
 const residentName = 'Wren'
 export const gateFavor = 'wren-gate'
 export const favorCoins = 5
@@ -18,16 +19,27 @@ export interface GateRepair {
   pinHolder: number | null
   acceptedAt?: number
   mendedAt?: number
+  // Wren's second repair: after a wet spell the leaf swells and catches until its edge is planed.
+  swelling?: 'swollen' | 'planed'
 }
 export interface GardenGate {
   open: boolean
   closePending: boolean
 }
-export type GateAction = 'inspect' | 'take-pin' | 'fit' | 'test' | 'open' | 'close' | 'return-toolbox'
-export const gateActions: readonly GateAction[] = ['inspect', 'take-pin', 'fit', 'test', 'open', 'close', 'return-toolbox']
+export const gateActions = {
+  'inspect': 'explicit',
+  'take-pin': 'explicit',
+  'fit': 'explicit',
+  'test': 'explicit',
+  'open': 'explicit',
+  'close': 'explicit',
+  'return-toolbox': 'explicit',
+} as const satisfies InteractionPolicies
+export type GateAction = keyof typeof gateActions
+
 export const gateStages: readonly GateStage[] = ['sagging', 'accepted', 'inspected', 'fitted', 'mended']
-export type GateStep = 'inspected' | 'pin' | 'fitted' | 'stuck' | 'recalled' | 'returned'
-type GateWorld = Pick<Snapshot, 'gate' | 'gateRepair' | 'items' | 'players' | 'islandTime' | 'mission' | 'jobs'>
+export type GateStep = 'inspected' | 'pin' | 'fitted' | 'stuck' | 'recalled' | 'returned' | 'caught' | 'planed' | 'clear'
+export type GateWorld = Pick<Snapshot, 'gate' | 'gateRepair' | 'items' | 'players' | 'islandTime' | 'mission' | 'jobs' | 'residents'>
 
 export function initialGateRepair() {
   return {
@@ -36,20 +48,14 @@ export function initialGateRepair() {
   }
 }
 
-const front = wrenCottage.z - wrenCottage.d / 2
-const fenceZ = gateway.z
-export const gateLeaf = { length: 1.06, height: 1.5, thickness: .08 }
-export const sagAngle = .3 // radians: the dragging leaf stops well short of an opening a person fits through
+export const sagAngle = 0.3 // radians: the dragging leaf stops well short of an opening a person fits through
 const openAngle = 1.75
-export const fenceRuns = [
-  { from: { x: wrenCottage.x - 2.6, z: front + .7 }, to: { x: wrenCottage.x - 2.6, z: fenceZ } },
-  { from: { x: wrenCottage.x + 2.6, z: front + .7 }, to: { x: wrenCottage.x + 2.6, z: fenceZ } },
-  { from: { x: wrenCottage.x - 2.6, z: fenceZ }, to: { x: hingePost.x - .06, z: fenceZ } },
-  { from: { x: gateway.x + gateWidth / 2 + .06, z: fenceZ }, to: { x: wrenCottage.x + 2.6, z: fenceZ } },
-]
 const actionRadius = 2.5
 const benchRadius = 2
 const wrenRadius = 2.4
+const toolboxShelfRadius = 0.3
+export const wrenGatewayRadius = 1.5
+const occupiedGatewayRadius = 1.3
 
 export function wrenRoute(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>) {
   return wrenSchedule.route(state)
@@ -59,7 +65,7 @@ export function wrenAt(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>) {
   return residentAt(wrenSchedule, state)
 }
 
-function atGate(player: Pick<Player, 'x' | 'z'>) {
+export function atGate(player: Pick<Player, 'x' | 'z'>) {
   return distance(player, gateway) <= actionRadius
 }
 
@@ -69,8 +75,8 @@ function atMendingBench(player: Player) {
 
 function atWren(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>, player: Player) {
   const wren = wrenAt(state)
-  return standing(player) && !wren.indoors && distance(player, wren) < wrenRadius &&
-    Math.abs(player.y - walkingHeight(wren)) < 1
+  return standing(player) && !wren.indoors && distance(player, wren) < wrenRadius
+    && Math.abs(player.y - walkingHeight(wren)) < 1
 }
 
 export function toolboxItem(state: Pick<Snapshot, 'items'>) {
@@ -78,13 +84,24 @@ export function toolboxItem(state: Pick<Snapshot, 'items'>) {
 }
 
 export function onBench(item: Pick<Item, 'x' | 'z' | 'holder'>) {
-  return item.holder === null && distance(item, toolboxHome) < .3
+  return item.holder === null && distance(item, toolboxHome) < toolboxShelfRadius
 }
 
-// The toolbox is on loan from the moment Wren asks. Once it is back on the bench after the repair, it stays there.
-function toolboxPickable(state: Pick<Snapshot, 'gateRepair'>, item: Item) {
+// Once Wren relies on the crew without checking their work, the toolbox is theirs to borrow whenever they like.
+export function wrenLendsToolbox(state: Pick<Snapshot, 'residents'>) {
+  const wren = state.residents.wren
+  return Boolean(wren && trustTier(wren.trust) === 'trusted' && !wren.breach)
+}
+
+export function toolboxLoanForSwollenGate(state: Pick<Snapshot, 'gateRepair' | 'residents'>) {
+  const { breach, checked } = state.residents.wren ?? {}
+  return state.gateRepair.swelling === 'swollen' && (!breach || checked === 'fault')
+}
+
+export function toolboxPickable(state: Pick<Snapshot, 'gateRepair' | 'residents'>, item: Item) {
   const { stage } = state.gateRepair
-  return stage !== 'sagging' && !(stage === 'mended' && onBench(item))
+  if (stage === 'sagging') return false
+  return stage !== 'mended' || !onBench(item) || wrenLendsToolbox(state) || toolboxLoanForSwollenGate(state)
 }
 
 function connectedAt(state: GateWorld, id: number | null) {
@@ -95,7 +112,11 @@ function connectedAt(state: GateWorld, id: number | null) {
 // Fit needs the acting player, the single unfitted pin and the toolbox at the gate at the same moment.
 export function canFit(state: GateWorld, player: Player) {
   if (state.gateRepair.stage !== 'inspected' || !standing(player) || !atGate(player)) return false
-  if (!connectedAt(state, state.gateRepair.pinHolder)) return false
+  return Boolean(connectedAt(state, state.gateRepair.pinHolder)) && toolboxAtGate(state)
+}
+
+// The toolbox counts at the gate when it is set down there or carried by a connected crewmate standing there.
+export function toolboxAtGate(state: GateWorld) {
   const toolbox = toolboxItem(state)
   if (!toolbox) return false
   return toolbox.holder === null ? atGate(toolbox) : Boolean(connectedAt(state, toolbox.holder))
@@ -105,25 +126,17 @@ function handsFor(state: GateWorld, player: Player) {
   return state.items.find((item) => item.holder === player.id)
 }
 
-// The one pick-up rule, shared by E's item pickup and the gate, so a swing never hides an item in reach.
-// Crates are cargo while a delivery is open or a resident has asked the crew to move one.
-export function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs'>, item: Item, player: Player, cargoWanted = false) {
-  const eligible = item.kind === 'crate' ? deliveryDrop(state) !== undefined || cargoWanted
-    : item.kind === 'toolbox' ? toolboxPickable(state, item) : state.mission === 'fire'
-  return eligible && !item.delivered && item.holder === null && distance(item, player) < 2.7 && Math.abs(item.y - player.y) < 2.1
-}
-
 function repairStep(state: GateWorld, player: Player): GateAction | null {
   if (state.gateRepair.stage === 'accepted') return 'inspect'
   if (canFit(state, player)) return 'fit'
   return state.gateRepair.stage === 'fitted' ? 'test' : null
 }
 
-interface GateOptions { primary: GateAction[]; secondary: GateAction[] }
+interface GateOptions { primary: GateAction[], secondary: GateAction[] }
 
 // Every gate action open to this player. Primary steps outrank setting down a held item; the secondary
 // swing comes after picking up anything nearby. Talking to Wren is a resident interaction.
-export function gateOptions(state: GateWorld, player: Player): GateOptions {
+function gateOptions(state: GateWorld, player: Player): GateOptions {
   const options: GateOptions = { primary: [], secondary: [] }
   if (!standing(player)) return options
   const { stage } = state.gateRepair
@@ -139,23 +152,46 @@ export function gateOptions(state: GateWorld, player: Player): GateOptions {
 }
 
 // Where the reticle finds each gate action: Wren, the bench tray, or the gate itself.
-export function gateTarget(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>, action: GateAction) {
+const toolboxReturnAimHeight = 1.1
+const toolboxReturnAimRadius = 0.55
+const pinAimRadius = 0.6
+const gateAimHeight = 0.85
+const gateAimRadius = 0.8
+
+function gateTarget(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>, action: GateAction) {
   if (action === 'return-toolbox') {
     const wren = wrenAt(state)
-    return { name: residentName, at: { x: wren.x, y: walkingHeight(wren) + 1.1, z: wren.z }, radius: .55 }
+    return { name: residentName, at: { x: wren.x, y: walkingHeight(wren) + toolboxReturnAimHeight, z: wren.z }, radius: toolboxReturnAimRadius }
   }
-  if (action === 'take-pin') return { name: 'Hinge pins', at: { x: mendingBench.x, y: walkingHeight(mendingBench) + .95, z: mendingBench.z }, radius: .6 }
-  return { name: `${residentName}’s gate`, at: { x: gateway.x, y: walkingHeight(gateway) + .85, z: gateway.z }, radius: .8 }
+  if (action === 'take-pin') return { name: 'Hinge pins', at: { x: mendingBench.x, y: walkingHeight(mendingBench) + mendingPinHeight, z: mendingBench.z }, radius: pinAimRadius }
+  return gateSwingTarget()
 }
 
-export function gateHint(action: GateAction, state: Pick<Snapshot, 'gateRepair'>): [string, string] {
+export function gateSwingTarget() {
+  return { name: `${residentName}’s gate`, at: { x: gateway.x, y: walkingHeight(gateway) + gateAimHeight, z: gateway.z }, radius: gateAimRadius }
+}
+
+function gateHint(action: GateAction, state: Pick<Snapshot, 'gateRepair'>): [string, string] {
   const broken = state.gateRepair.stage !== 'mended'
   const labels: Record<GateAction, string> = {
-    inspect: 'Inspect the sagging hinge', 'take-pin': 'Take a hinge pin',
-    fit: 'Fit the hinge pin', test: 'Swing the gate to test it', open: broken ? 'Try the sagging gate' : 'Open the gate',
-    close: 'Close the gate', 'return-toolbox': `Return the toolbox to ${residentName}`,
+    'inspect': 'Inspect the sagging hinge',
+    'take-pin': 'Take a hinge pin',
+    'fit': 'Fit the hinge pin',
+    'test': 'Swing the gate to test it',
+    'open': broken ? 'Try the sagging gate' : 'Open the gate',
+    'close': 'Close the gate',
+    'return-toolbox': `Return the toolbox to ${residentName}`,
   }
   return ['E', labels[action]]
+}
+
+export function gateInteractions(state: GateWorld, player: Player) {
+  const { primary, secondary } = gateOptions(state, player)
+  function option(action: GateAction): InteractionOption<GateAction> {
+    const [key, label] = gateHint(action, state)
+    return { action, key, label, ...gateTarget(state, action) }
+  }
+  return { primary: primary.map(option), secondary: secondary.map(option) }
 }
 
 export const gateStepText: Record<GateStep, string> = {
@@ -165,26 +201,38 @@ export const gateStepText: Record<GateStep, string> = {
   stuck: 'The gate drags in its groove and sticks',
   recalled: `${residentName} put the toolbox back on the mending bench`,
   returned: `Toolbox back on ${residentName}’s mending bench`,
+  caught: 'The gate catches on its swollen edge · Plane it with the toolbox, then swing it again',
+  planed: 'Swollen edge planed · Swing the gate to check it',
+  clear: `The gate swings clear · Tell ${residentName} it is fixed`,
 }
 
-// The leaf angle follows the host gate state. A mended gate swings clear; a sagging one drags short.
+// The leaf angle follows the host gate state. A mended gate swings clear; a sagging or swollen one stops short.
 export function leafAngle(state: Pick<Snapshot, 'gate' | 'gateRepair'>) {
   if (!state.gate.open) return 0
-  return state.gateRepair.stage === 'mended' ? openAngle : sagAngle
+  return state.gateRepair.stage === 'mended' && state.gateRepair.swelling !== 'swollen' ? openAngle : sagAngle
 }
 
 interface GateSolid {
-  x: number; z: number; halfWidth: number; halfDepth: number; floor: number; top: number
-  bound: number; cos: number; sin: number; heading: number
+  x: number
+  z: number
+  halfWidth: number
+  halfDepth: number
+  floor: number
+  top: number
+  bound: number
+  cos: number
+  sin: number
+  heading: number
 }
 
+const half = 0.5
+
 export function plank(from: Point, to: Point, depth: number, height: number): GateSolid {
-  const x = (from.x + to.x) / 2, z = (from.z + to.z) / 2
-  const halfWidth = distance(from, to) / 2
+  const x = (from.x + to.x) * half, z = (from.z + to.z) * half
+  const halfWidth = distance(from, to) * half, halfDepth = depth * half
   const heading = -Math.atan2(to.z - from.z, to.x - from.x)
   const floor = walkingHeight({ x, z })
-  return { x, z, halfWidth, halfDepth: depth / 2, floor, top: floor + height, bound: Math.hypot(halfWidth, depth / 2),
-    cos: Math.cos(heading), sin: Math.sin(heading), heading }
+  return { x, z, halfWidth, halfDepth, floor, top: floor + height, bound: Math.hypot(halfWidth, halfDepth), cos: Math.cos(heading), sin: Math.sin(heading), heading }
 }
 
 function leafSolid(angle: number) {
@@ -196,9 +244,10 @@ export function solidTop(solids: readonly GateSolid[], point: Point, padding: nu
   let top = -Infinity
   for (const solid of solids) {
     const dx = point.x - solid.x, dz = point.z - solid.z
-    if (Math.abs(dz) > solid.bound + 2 * padding || Math.abs(dx) > solid.bound + 2 * padding) continue
-    if (Math.abs(dx * solid.cos - dz * solid.sin) <= solid.halfWidth + padding &&
-      Math.abs(dx * solid.sin + dz * solid.cos) <= solid.halfDepth + padding) top = Math.max(top, solid.top)
+    const paddedBound = solid.bound + (padding + padding)
+    if (Math.abs(dz) > paddedBound || Math.abs(dx) > paddedBound) continue
+    if (Math.abs(dx * solid.cos - dz * solid.sin) <= solid.halfWidth + padding
+      && Math.abs(dx * solid.sin + dz * solid.cos) <= solid.halfDepth + padding) top = Math.max(top, solid.top)
   }
   return top
 }
@@ -210,21 +259,22 @@ export function gateBlockers(state: Pick<Snapshot, 'gate' | 'gateRepair'>) {
 // The leaf only swings shut once Wren, the crew and any loose cargo are out of the opening.
 export function gatewayClear(state: Pick<Snapshot, 'players' | 'items' | 'gateRepair' | 'islandTime'>) {
   const wren = wrenAt(state)
-  return distance(wren, gateway) >= 1.5 &&
-    state.players.every((player) => !player.connected || distance(player, gateway) >= 1.3) &&
-    state.items.every((item) => item.holder !== null || item.delivered || distance(item, gateway) >= 1.3)
+  return distance(wren, gateway) >= wrenGatewayRadius
+    && state.players.every((player) => !player.connected || distance(player, gateway) >= occupiedGatewayRadius)
+    && state.items.every((item) => item.holder !== null || item.delivered || distance(item, gateway) >= occupiedGatewayRadius)
 }
 
-interface FavorGuide { title: string; detail: string; next: string }
+interface FavorGuide { title: string, detail: string, next: string }
 
 function toolboxWhere(state: Pick<Snapshot, 'items' | 'players'>, player: Player) {
   const toolbox = toolboxItem(state)
   if (!toolbox) return ''
   if (toolbox.holder === player.id) return 'You have the toolbox.'
   const holder = state.players.find((entry) => entry.id === toolbox.holder)
-  if (holder) return holder.connected ? 'Your partner has the toolbox.'
+  if (holder) return holder.connected
+    ? 'Your partner has the toolbox.'
     : `Your partner left with the toolbox. Talk to ${residentName} to have it put back on the mending bench.`
-  if (onBench(toolbox)) return `The toolbox is on ${residentName}’s mending bench by the ferry approach.`
+  if (onBench(toolbox)) return `The toolbox is on ${residentName}’s mending bench by the ferry yard.`
   return atGate(toolbox) ? 'The toolbox is set down by the gate.' : `The toolbox was left away from the gate. Talk to ${residentName} to get it back.`
 }
 
@@ -232,41 +282,40 @@ function toolboxWhere(state: Pick<Snapshot, 'items' | 'players'>, player: Player
 export function gateRepairGuide(state: Pick<Snapshot, 'gateRepair' | 'items' | 'players' | 'islandTime'>, player: Player): FavorGuide {
   const { stage, pinHolder } = state.gateRepair
   const title = `${residentName}’s gate`
-  if (stage === 'sagging') return { title, detail: `${residentName}’s garden gate drags a groove in the path.`,
-    next: `Talk to ${residentName} at the lilac-roofed cottage east of the Blue cottage, or at the mending bench by the ferry approach during the day.` }
+  if (stage === 'sagging') return { title, detail: `${residentName}’s garden gate drags a groove in the path.`, next: `Talk to ${residentName} at the lilac-roofed cottage east of the Blue cottage, or at the mending bench by the ferry freight yard during the day.` }
   if (stage === 'mended') {
     const settled = gateMendedStage(state) === 'settled'
-    return { title, detail: 'Gate repaired. The crew earned a favor with Wren.',
-      next: settled ? 'Wren uses the gate now. Watch for the short walk through it each morning.'
-        : 'Walk with Wren from the cottage tomorrow morning.' }
+    return { title, detail: 'Gate repaired. The crew earned a favor with Wren.', next: settled
+      ? 'Wren uses the gate now. Watch for the short walk through it each morning.'
+      : 'Walk with Wren from the cottage tomorrow morning.' }
   }
   const detail = `${residentName}’s top hinge is loose, so the gate drags a groove and sticks.`
   const tools = toolboxWhere(state, player)
   if (stage === 'accepted') return { title, detail, next: `${tools} Inspect the hinge at ${residentName}’s gate, east of the Blue cottage.` }
   if (stage === 'fitted') return { title, detail: 'The new pin is in.', next: 'Swing the gate to test it.' }
-  const pin = pinHolder === null ? 'Pick up a hinge pin at the mending bench by the ferry approach.'
+  const pin = pinHolder === null
+    ? 'Pick up a hinge pin at the mending bench by the ferry freight yard.'
     : pinHolder === player.id ? 'You have the hinge pin. Bring it to the gate.' : 'Your partner has the hinge pin.'
   return { title, detail, next: `${tools} ${pin} Fit it at the gate with the toolbox close by.` }
 }
 
 // Mission card steps: inspect, fetch a pin, fit it, test the swing.
+const pinCollectedStep = 2
+const pinFittedStep = 3
+export const gateRepairStepCount = 4
+
 export function favorProgress({ stage, pinHolder }: GateRepair) {
-  return { sagging: 0, accepted: 0, inspected: pinHolder === null ? 1 : 2, fitted: 3, mended: 4 }[stage]
+  return { sagging: 0, accepted: 0, inspected: pinHolder === null ? 1 : pinCollectedStep, fitted: pinFittedStep, mended: gateRepairStepCount }[stage]
 }
 
 // Wren remembers the repair once the crew has earned trust, and greets them differently from the next morning.
 export function wrenLines(state: Pick<Snapshot, 'gateRepair' | 'islandTime'>, kept: readonly string[]): [string, string] {
   const { stage } = state.gateRepair
   if (stage === 'mended' && kept.includes(gateFavor) && gateMendedStage(state) === 'settled') {
-    return ['“Morning! The gate swings like new, so I’ve stopped going round the back. I won’t forget who fixed it.”',
-      '“If the ferry crew ever needs fittings made, come and find me at the mending bench.”']
+    return ['“Morning! The gate swings like new, so I’ve stopped going round the back. I won’t forget who fixed it.”', '“If the ferry crew ever needs fittings made, come and find me at the mending bench.”']
   }
-  if (stage === 'mended') return ['“Thank you, both of you. I’ll walk through it properly tomorrow morning.”',
-    '“Leave the toolbox on my mending bench when you’re finished with it.”']
-  if (stage === 'fitted') return ['“That sounds like a new pin going in. Give the gate a swing and see if it clears.”',
-    '“If it still drags, have another look at the top hinge.”']
-  if (stage === 'inspected') return ['“Worn right through, was it? The spare hinge pins are in the tray on my mending bench by the ferry.”',
-    '“Bring a pin and the toolbox to the gate. Either of you can fit it.”']
-  return ['“My gate’s top hinge has worked loose. It drags a groove in the path, so I go round the back of the cottage instead.”',
-    '“Borrow the toolbox from my mending bench by the ferry. Have a look at the hinge first, then you’ll know which part it needs.”']
+  if (stage === 'mended') return ['“Thank you, both of you. I’ll walk through it properly tomorrow morning.”', '“Leave the toolbox on my mending bench when you’re finished with it.”']
+  if (stage === 'fitted') return ['“That sounds like a new pin going in. Give the gate a swing and see if it clears.”', '“If it still drags, have another look at the top hinge.”']
+  if (stage === 'inspected') return ['“Worn right through, was it? The spare hinge pins are in the tray on my mending bench by the ferry.”', '“Bring a pin and the toolbox to the gate. Either of you can fit it.”']
+  return ['“My gate’s top hinge has worked loose. It drags a groove in the path, so I go round the back of the cottage instead.”', '“Borrow the toolbox from my mending bench by the ferry. Have a look at the hinge first, then you’ll know which part it needs.”']
 }

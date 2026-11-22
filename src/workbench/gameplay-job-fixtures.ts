@@ -1,152 +1,218 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { poseCrew } from '../assets/crew'
-import { createProduceCarrot } from '../assets/effect-props'
+import { buildHarvestedCarrot } from '../assets/barrow'
 import { createFlatbed, poseFlatbed } from '../assets/flatbed'
+import { brakeChipRoad, chalkDeck, grainSpillSet, hoistRig, washStation } from '../assets/geometry/workbench-job-fixtures'
 import { createSupply } from '../assets/props'
 import type { MeshFactory } from '../island-meshes'
 import { flatbedGroundDrive } from '../vehicles/flatbed'
-import { crateSize, truckBed } from '../world'
+import { crateSize, truckBed, truckTailLip } from '../world'
 import { contactAge, crewAt, type Fixture } from './effect-fixtures'
+
+const half = 0.5
 
 export function brakeChipsFixture(meshes: MeshFactory): Fixture {
   const truck = createFlatbed(meshes)
-  meshes.box(0, -.047, 0, 4.9, .092, 8.8, meshes.paintSurface('gravel', '#9d9079')).receiveShadows = true
-  const travel = (time: number) => -1.96 + 2.85 * (1 - Math.exp(-2.2 * time))
+  meshes.box(...brakeChipRoad.box, meshes.paintSurface('gravel', brakeChipRoad.color)).receiveShadows = true
+  const startZM = -1.96, brakingTravelM = 2.85, brakingDecayPerSecond = 2.2
+  const peakPitchRad = -0.044, peakPitchS = 0.61, pitchFalloffPerSecond = 4.3, pitchCurvePower = 2
+  const steeringRad = 0.033
+  const chipStartS = 0.52, chipEndS = 1.3, chipGroupSize = 4, omittedChipSlot = 3, leftChipInterval = 3
+  const tireOutsetM = 0.106, behindAxleM = 0.11, chipYM = 0.059, chipYawRad = 0.41, bounceFloorYM = 0.023
+  const chipSpeedScale = 1.33, chipSpeedDecayPerSecond = 0.36
+  const travel = (time: number) => startZM + brakingTravelM * (1 - Math.exp(-brakingDecayPerSecond * time))
+  const { halfTrack, axles: [, frontAxle], radius } = flatbedGroundDrive.wheels
   return {
     sourceAt(time, index) {
-      if (index % 4 === 3 || time < .52 || time > 1.3) return
-      const side = index % 3 ? 1 : -1
-      const { halfTrack, axles } = flatbedGroundDrive.wheels
-      return { x: side * (halfTrack + .106), y: .059, z: travel(time) + axles[1] - .11,
-        yaw: side * .41, speed: 1.33 - time * .36, floor: .023 }
+      if (index % chipGroupSize === omittedChipSlot || time < chipStartS || time > chipEndS) return
+      const side = index % leftChipInterval ? 1 : -1
+      return {
+        x: side * (halfTrack + tireOutsetM),
+        y: chipYM,
+        z: travel(time) + frontAxle - behindAxleM,
+        yaw: side * chipYawRad,
+        speed: chipSpeedScale - time * chipSpeedDecayPerSecond,
+        floor: bounceFloorYM,
+      }
     },
     pose(time) {
-      truck.root.position.set(0, 0, travel(time))
-      truck.root.rotation.x = -.044 * Math.exp(-Math.pow((time - .61) * 4.3, 2))
-      poseFlatbed(truck, travel(time) / flatbedGroundDrive.wheels.radius, .033)
+      const z = travel(time)
+      truck.root.position.set(0, 0, z)
+      truck.root.rotation.x = peakPitchRad * Math.exp(-Math.pow((time - peakPitchS) * pitchFalloffPerSecond, pitchCurvePower))
+      poseFlatbed(truck, z / radius, steeringRad)
     },
   }
 }
 
 export function grainSpillFixture(meshes: MeshFactory): Fixture {
   const truck = createFlatbed(meshes)
-  truck.root.position.set(0, 0, 1.28)
+  const truckZM = 1.28
+  truck.root.position.z = truckZM
   const sack = new TransformNode('Tipped grain sack', meshes.scene)
-  meshes.sphere(0, .274, 0, .64, .73, .49, '#b89e73', sack, true, 8)
-  meshes.cylinder(0, .598, 0, .256, .37, .134, 9, '#b29a70', sack)
-  const top = meshes.cylinder(0, .672, 0, .186, .185, .017, 8, '#826740', sack)
-  top.receiveShadows = true
-  const crew = crewAt(meshes, 1.18, -1.32, 1)
-  crew.root.rotation.y = -1.45
+  const { sack: { belly, neck, mouth, outletHeightM }, floor } = grainSpillSet
+  const sackXM = 0.17, bedClearanceM = 0.12, insideTailgateM = 0.38
+  const sackYM = truckBed.top + bedClearanceM, sackZM = truckZM + truckTailLip.z + insideTailgateM
+  meshes.sphere(...belly.ellipsoid, belly.color, sack, true, belly.segments)
+  meshes.cylinder(...neck.cylinder, neck.color, sack)
+  meshes.cylinder(...mouth.cylinder, mouth.color, sack).receiveShadows = true
+  const workerXM = 1.18, workerZM = -1.32, workerHeadingRad = -1.45
+  const crew = crewAt(meshes, workerXM, workerZM, 1)
+  crew.root.rotation.y = workerHeadingRad
   poseCrew(crew, 0, 0, false, 'crate')
-  meshes.box(0, -.041, -1.36, 4.65, .082, 3.35, '#7c7664').receiveShadows = true
-  const tip = (time: number) => -.48 - Math.min(1, time / .91) * 1.2
+  meshes.box(...floor.box, floor.color).receiveShadows = true
+  const initialTiltRad = -0.48, tippingDurationS = 0.91, additionalTiltRad = 1.2
+  const releaseStartS = 0.84, releaseEndS = 2.62, grainSpeedScale = 1.3, grainSpeedDecayPerSecond = 0.19, bounceFloorYM = 0.026
+  const tip = (time: number) => initialTiltRad - Math.min(1, time / tippingDurationS) * additionalTiltRad
   return {
     sourceAt(time) {
-      if (time > .84 && time < 2.62) {
+      if (time > releaseStartS && time < releaseEndS) {
         const tilt = tip(time)
-        return { x: .17, y: truckBed.top + .12 + Math.cos(tilt) * .66,
-          z: -1.35 + Math.sin(tilt) * .66, yaw: Math.PI, speed: 1.3 - time * .19, floor: .026 }
+        return {
+          x: sackXM,
+          y: sackYM + Math.cos(tilt) * outletHeightM,
+          z: sackZM + Math.sin(tilt) * outletHeightM,
+          yaw: Math.PI,
+          speed: grainSpeedScale - time * grainSpeedDecayPerSecond,
+          floor: bounceFloorYM,
+        }
       }
     },
     pose(time) {
-      sack.position.set(.17, truckBed.top + .12, -1.35)
+      sack.position.set(sackXM, sackYM, sackZM)
       sack.rotation.x = tip(time)
     },
   }
 }
 
 export function hoistFixture(meshes: MeshFactory): Fixture {
+  const { liftZM, posts, beam, hook: { shaft, jaw, offsetAboveCrateM }, chain } = hoistRig
   const crate = createSupply(meshes, 'crate')
   const hook = new TransformNode('Hoist hook', meshes.scene)
-  meshes.cylinder(0, .03, 0, .055, .061, .13, 8, '#7f8580', hook)
-  meshes.box(.047, -.02, 0, .143, .048, .062, '#737b78', hook).rotation.z = .28
-  for (const x of [-1.65, 1.65]) meshes.box(x, 1.38, -.24, .18, 2.76, .2, '#727d78')
-  meshes.box(0, 2.76, -.24, 3.52, .17, .265, '#89948c')
-  const chain = Array.from({ length: 15 }, (_, i) => {
-    const link = meshes.sphere(0, 0, 0, i % 2 ? .068 : .091, .118, i % 2 ? .09 : .064, '#737d78', undefined, false)
+  meshes.cylinder(...shaft.cylinder, shaft.color, hook)
+  meshes.box(...jaw.box, jaw.color, hook).rotation.z = jaw.tiltRad
+  for (const x of posts.x) meshes.box(x, posts.y, liftZM, ...posts.size, posts.color)
+  meshes.box(...beam.box, beam.color)
+  const linkPatternLength = 2
+  const links = Array.from({ length: chain.count }, (_, index) => {
+    const [width, height, depth] = index % linkPatternLength ? chain.acrossBeam : chain.alongBeam
+    const link = meshes.sphere(0, 0, 0, width, height, depth, chain.color, undefined, false)
     link.name = 'Chain link'
     return link
   })
-  const crew = crewAt(meshes, 1.11, .5)
-  crew.root.rotation.y = -1.96
-  const lift = (time: number) => .02 + .92 * Math.max(0, 1 - Math.exp(-1.8 * (time - .42)))
+  const workerXM = 1.11, workerZM = 0.5, workerHeadingRad = -1.96
+  const crew = crewAt(meshes, workerXM, workerZM)
+  crew.root.rotation.y = workerHeadingRad
+  const startingClearanceM = 0.02, liftTravelM = 0.92, liftResponsePerSecond = 1.8, liftStartS = 0.42
+  const lift = (time: number) => startingClearanceM + liftTravelM * Math.max(0, 1 - Math.exp(-liftResponsePerSecond * (time - liftStartS)))
+  const shakeStartS = 0.46, shakePeriodS = 0.78, shakeWindowS = 0.16
+  const flakeSwayM = 0.02, flakeSwayRadPerSecond = 14, flakeBaseYM = 1.3, maximumFlakeSpawnYM = 2.52
+  const flakeLayers = 4, flakeLayerSpacingM = 0.1, bounceFloorYM = 0.026
+  const linkSwayRadPerSecond = 18, linkPhaseSpanRad = 10, linkSwayM = 0.021
   return {
     sourceAt(time, index) {
-      if (contactAge(time, .46, .78, .16) === undefined) return
-      return { x: .02 * Math.sin(time * 14), y: Math.min(2.52, 1.3 + lift(time) + (index % 4) * .1), z: -.24, floor: .026 }
+      if (contactAge(time, shakeStartS, shakePeriodS, shakeWindowS) === undefined) return
+      return {
+        x: flakeSwayM * Math.sin(time * flakeSwayRadPerSecond),
+        y: Math.min(maximumFlakeSpawnYM, flakeBaseYM + lift(time) + (index % flakeLayers) * flakeLayerSpacingM),
+        z: liftZM,
+        floor: bounceFloorYM,
+      }
     },
     pose(time) {
-      crate.position.set(0, crateSize / 2 + lift(time), -.24)
-      hook.position.set(0, crateSize + lift(time) + .066, -.24)
-      for (const [index, link] of chain.entries()) {
-        const fraction = (index + .5) / chain.length
-        const y = hook.position.y + (2.68 - hook.position.y) * fraction
-        link.position.set(Math.sin(time * 18 - fraction * 10) * (1 - fraction) * .021, y, -.24)
-        link.scaling.y = Math.max(.041, (2.68 - hook.position.y) / chain.length + .009)
+      const clearance = lift(time)
+      crate.position.set(0, crateSize * half + clearance, liftZM)
+      hook.position.set(0, crateSize + clearance + offsetAboveCrateM, liftZM)
+      const chainSpan = chain.anchorYM - hook.position.y
+      for (const [index, link] of links.entries()) {
+        const fraction = (index + half) / links.length
+        const y = hook.position.y + chainSpan * fraction
+        const sway = Math.sin(time * linkSwayRadPerSecond - fraction * linkPhaseSpanRad)
+        link.position.set(sway * (1 - fraction) * linkSwayM, y, liftZM)
+        link.scaling.y = Math.max(chain.minimumHeightM, chainSpan / links.length + chain.overlapM)
       }
     },
   }
 }
 
 export function washFixture(meshes: MeshFactory): Fixture {
-  const basin = meshes.paintSurface('metal', '#718a87')
-  meshes.box(0, .78, 0, 1.86, .153, .97, basin)
-  for (const x of [-.86, .86]) {
-    for (const z of [-.47, .47]) meshes.box(x, .846, z, .086, .194, .077, basin)
-    meshes.box(x, .351, .09, .125, .702, .36, '#696f65')
+  const { basin, supports, water, produce } = washStation
+  const metal = meshes.paintSurface('metal', basin.color)
+  meshes.box(...basin.floor, metal)
+  for (const x of basin.corners.x) {
+    for (const z of basin.corners.z) meshes.box(x, basin.corners.y, z, ...basin.corners.size, metal)
+    meshes.box(x, supports.y, supports.z, ...supports.size, supports.color)
   }
-  for (const z of [-.437, .437]) meshes.box(0, .883, z, 1.84, .12, .082, basin)
-  meshes.box(0, .875, 0, 1.62, .037, .78, '#548883', undefined, false)
-  const crew = crewAt(meshes, .19, -.832, 1)
+  for (const z of basin.rims.z) meshes.box(0, basin.rims.y, z, ...basin.rims.size, metal)
+  meshes.box(...water.box, water.color, undefined, false)
+  const workerXM = 0.19, workerZM = -0.832
+  const crew = crewAt(meshes, workerXM, workerZM, 1)
   poseCrew(crew, 0, 0, false, 'tool', 1, 1, 0, false, true)
-  for (let i = 0; i < 5; i++) {
+  const [leftArm, rightArm] = crew.arms
+  for (let index = 0; index < produce.count; index++) {
     const carrot = new TransformNode('Produce in rinsing trough', meshes.scene)
-    carrot.position.set(.39 - i * .165, .923, .057 + Math.sin(i * 3) * .123)
-    carrot.rotation.set(1.31, i * 1.7, -.17)
-    createProduceCarrot(meshes, carrot)
+    carrot.position.set(
+      produce.firstXM - index * produce.spacingXM,
+      produce.heightM,
+      produce.centerZM + Math.sin(index * produce.staggerPhaseStepRad) * produce.staggerM,
+    )
+    carrot.rotation.set(produce.pitchRad, index * produce.headingStepRad, produce.rollRad)
+    buildHarvestedCarrot(meshes, carrot)
   }
+  const rinseStartS = 0.33, rinsePeriodS = 0.77, rinseWindowS = 0.44
+  const splashSwayM = 0.32, splashSwayRadPerSecond = 4, splashYM = 0.969, splashZM = 0.082, bounceFloorYM = 0.9
+  const scrubRadPerSecond = 10.5, leftPitchRad = -1.53, leftScrubRad = 0.085, rightPitchRad = -1.41, rightScrubRad = 0.115
   return {
     sourceAt(time) {
-      if (contactAge(time, .33, .77, .44) !== undefined) {
-        return { x: Math.sin(time * 4) * .32, y: .969, z: .082, floor: .9 }
+      if (contactAge(time, rinseStartS, rinsePeriodS, rinseWindowS) !== undefined) {
+        return { x: Math.sin(time * splashSwayRadPerSecond) * splashSwayM, y: splashYM, z: splashZM, floor: bounceFloorYM }
       }
     },
     pose(time) {
-      crew.arms[0].rotation.x = -1.53 + Math.sin(time * 10.5) * .085
-      crew.arms[1].rotation.x = -1.41 - Math.sin(time * 10.5) * .115
+      const scrub = Math.sin(time * scrubRadPerSecond)
+      leftArm.rotation.x = leftPitchRad + scrub * leftScrubRad
+      rightArm.rotation.x = rightPitchRad - scrub * rightScrubRad
     },
   }
 }
 
 export function chalkFixture(meshes: MeshFactory): Fixture {
-  const wood = meshes.paintSurface('wood', '#8d725a')
-  for (let i = 0; i < 11; i++) meshes.box(0, -.045, (i - 5) * .29, 4.3, .09, .278, wood).receiveShadows = true
-  const left = crewAt(meshes, -1.73, -.33)
-  const right = crewAt(meshes, 1.7, -.33, 1)
-  left.root.rotation.y = 1.15
-  right.root.rotation.y = -1.13
+  const { planks, line } = chalkDeck
+  const wood = meshes.paintSurface('wood', planks.color)
+  const centerPlank = (planks.count - 1) * half
+  for (let index = 0; index < planks.count; index++) {
+    meshes.box(0, planks.y, (index - centerPlank) * planks.spacingM, ...planks.size, wood).receiveShadows = true
+  }
+  const leftXM = -1.73, rightXM = 1.7, crewZM = -0.33, leftHeadingRad = 1.15, rightHeadingRad = -1.13
+  const left = crewAt(meshes, leftXM, crewZM)
+  const right = crewAt(meshes, rightXM, crewZM, 1)
+  left.root.rotation.y = leftHeadingRad
+  right.root.rotation.y = rightHeadingRad
   poseCrew(left, 0, 0, false, 'tool', 1)
   poseCrew(right, 0, 0, false, 'tool', 1)
-  const cords = Array.from({ length: 14 }, () => meshes.box(0, 0, 0, .22, .022, .021, '#85b3be', undefined, false))
-  const mark = meshes.box(0, .008, .16, 2.95, .005, .027, '#729eac', undefined, false)
-  const snap = (time: number) => contactAge(time, .61, .91, .27) ?? .27
+  const cords = Array.from({ length: line.cord.sections }, () => meshes.box(0, 0, 0, ...line.cord.size, line.cord.color, undefined, false))
+  const mark = meshes.box(...line.mark.box, line.mark.color, undefined, false)
+  const halfSpan = line.cord.spanM * half
+  const snapStartS = 0.61, snapPeriodS = 0.91, vibrationWindowS = 0.27, dustWindowS = 0.087
+  const tautYM = 0.039, vibrationRadPerSecond = 18, vibrationDecayPerSecond = 10, vibrationAmplitudeM = 0.23, markVisibility = 0.76
+  const dustSlots = 24, dustSpacingM = 0.121, dustYM = 0.034, bounceFloorYM = 0.01
+  const centerDustSlot = (dustSlots - 1) * half
   function cordHeight(time: number, u: number) {
-    const age = snap(time)
-    return .039 + Math.abs(Math.sin(age * 18)) * Math.exp(-age * 10) * Math.sin(u * Math.PI) * .23
+    const age = contactAge(time, snapStartS, snapPeriodS, vibrationWindowS) ?? vibrationWindowS
+    return tautYM + Math.abs(Math.sin(age * vibrationRadPerSecond)) * Math.exp(-age * vibrationDecayPerSecond) * Math.sin(u * Math.PI) * vibrationAmplitudeM
   }
   return {
     sourceAt(time, index) {
-      const t = contactAge(time, .61, .91, .087)
-      if (t !== undefined) return { x: (index % 24 - 11.5) * .121, y: .034, z: .16, floor: .01 }
+      if (contactAge(time, snapStartS, snapPeriodS, dustWindowS) !== undefined) {
+        return { x: (index % dustSlots - centerDustSlot) * dustSpacingM, y: dustYM, z: line.z, floor: bounceFloorYM }
+      }
     },
     pose(time) {
-      mark.visibility = time < .61 ? 0 : .76
+      mark.visibility = time < snapStartS ? 0 : markVisibility
       for (const [index, cord] of cords.entries()) {
         const a = index / cords.length, b = (index + 1) / cords.length
         const start = cordHeight(time, a), end = cordHeight(time, b)
-        cord.position.set(-1.48 + (a + b) * 1.48, (start + end) / 2, .16)
-        cord.rotation.z = Math.atan2(end - start, 2.96 / cords.length)
+        cord.position.set(-halfSpan + (a + b) * halfSpan, (start + end) * half, line.z)
+        cord.rotation.z = Math.atan2(end - start, line.cord.spanM / cords.length)
       }
     },
   }

@@ -6,7 +6,7 @@ import { advanceHauler } from '../src/simulation/ore-truck.ts'
 import { offset, truckStart, town } from '../src/world.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
-test('a driver with 90 XP earns certification when a crewmate delivers the next crate they drove', t => {
+test('a driver with 90 XP earns certification when a crewmate delivers the next crate they drove', (t) => {
   const start = offset(truckStart, 2.2, -1.5)
   const h = setup(t, { players: [player(0, start, { deliveryXp: 90 }), player(1, town)], arrange(save) {
     save.world.items[0].holder = 0
@@ -42,7 +42,7 @@ test('a driver with 90 XP earns certification when a crewmate delivers the next 
 function driveTo(pose, goal, loaded, send) {
   const batch = []
   function step(throttle, steer, brake) {
-    const input = { throttle, steer, brake, dt: .05 }
+    const input = { throttle, steer, brake, dt: 0.05 }
     advanceHauler(pose, input, loaded)
     batch.push(input)
     if (batch.length === 8) send(batch.splice(0))
@@ -52,7 +52,7 @@ function driveTo(pose, goal, loaded, send) {
     assert.ok(++ticks < 6000, 'truck reaches the next bay')
     const turn = Math.atan2(goal.x - pose.x, goal.z - pose.z) - pose.heading
     const angle = Math.atan2(Math.sin(turn), Math.cos(turn))
-    step(pose.speed < 5 ? 1 : 0, Math.abs(angle) < .025 ? 0 : Math.sign(angle), false)
+    step(pose.speed < 5 ? 1 : 0, Math.abs(angle) < 0.025 ? 0 : Math.sign(angle), false)
   }
   while (pose.speed) step(0, 0, true)
   if (batch.length) send(batch)
@@ -65,7 +65,7 @@ test('six contracts use the boarded truck’s driven position and pay only once 
     save.crew = [{ token: tokens[0], player: player(0, undefined, { deliveryXp: haulerUnlockXp }), reserved: false }]
     let game = createGame({ save, clock: () => now })
     const ticket = () => game.freight.status(tokens[0]).ticket
-    const act = cmd => game.freight.act(tokens[0], { revision: ticket().revision, ...cmd })
+    const act = (cmd) => game.freight.act(tokens[0], { revision: ticket().revision, ...cmd })
     const accept = { action: 'accept', choice: order.id }
     assert.match(act(accept), /Board/)
     assert.equal(act({ action: 'board' }), undefined)
@@ -73,7 +73,7 @@ test('six contracts use the boarded truck’s driven position and pay only once 
     const load = { action: 'load', choice: order.ore }
     assert.match(act(load), /hopper/)
     const pose = { ...dispatchBay, heading: Math.PI / 2, speed: 0 }
-    const send = steps => {
+    const send = (steps) => {
       now += steps.length * 50
       assert.equal(act({ action: 'drive', steps }), undefined)
       assert.deepEqual(ticket().truck, { x: pose.x, z: pose.z, heading: pose.heading })
@@ -107,9 +107,9 @@ test('host clock bounds input batches and an old batch cannot advance the truck 
   const save = createGame().snapshotForSave()
   save.crew = [{ token: tokens[0], player: player(0, undefined, { deliveryXp: haulerUnlockXp }), reserved: false }]
   const { freight } = createGame({ save, clock: () => now })
-  const act = command => freight.act(tokens[0], command)
+  const act = (command) => freight.act(tokens[0], command)
   assert.equal(act({ action: 'board', revision: 0 }), undefined)
-  const batch = { action: 'drive', revision: 1, steps: Array(10).fill({ throttle: 1, steer: 0, brake: false, dt: .05 }) }
+  const batch = { action: 'drive', revision: 1, steps: Array(10).fill({ throttle: 1, steer: 0, brake: false, dt: 0.05 }) }
   assert.match(act(batch), /clock/)
   now += 500
   assert.equal(act(batch), undefined)
@@ -117,8 +117,8 @@ test('host clock bounds input batches and an old batch cannot advance the truck 
   assert.match(act({ action: 'leave', revision: 2 }), /Stop/)
 })
 
-test('unloaded driving and hand deliveries leave the ore truck locked', t => {
-  const h = setup(t, { players: [player(0, offset(truckStart, 2.1, .8)), player(1, town)], arrange(save) {
+test('unloaded driving and hand deliveries leave the ore truck locked', (t) => {
+  const h = setup(t, { players: [player(0, offset(truckStart, 2.1, 0.8)), player(1, town)], arrange(save) {
     save.world.items[0].holder = 1
   } })
   const driver = h.join(tokens[0]), helper = h.join(tokens[1])

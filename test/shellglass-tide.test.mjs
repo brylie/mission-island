@@ -12,11 +12,11 @@ test('Shellglass tides repeat independently of the day with a wet rim after the 
   assert.ok(shellglassCycle > daySeconds)
   assert.equal(shellglassTideAt(0).phase, 'Low water')
   assert.notEqual(shellglassTideAt(daySeconds).phase, 'Low water')
-  assert.equal(shellglassTideAt(shellglassCycle * .36).phase, 'Rising')
-  assert.equal(shellglassTideAt(shellglassCycle * .5).level, shellglassHigh)
-  const retreat = shellglassTideAt(shellglassCycle * .76)
+  assert.equal(shellglassTideAt(shellglassCycle * 0.36).phase, 'Rising')
+  assert.equal(shellglassTideAt(shellglassCycle * 0.5).level, shellglassHigh)
+  const retreat = shellglassTideAt(shellglassCycle * 0.76)
   assert.equal(retreat.phase, 'Retreating')
-  assert.ok(retreat.wetRim > retreat.level + .06)
+  assert.ok(retreat.wetRim > retreat.level + 0.06)
   const repeat = shellglassTideAt(retreat.time + shellglassCycle)
   assert.equal(repeat.phase, retreat.phase)
   assert.ok(Math.abs(repeat.level - retreat.level) < 1e-10)
@@ -28,7 +28,9 @@ test('Shellglass tides repeat independently of the day with a wet rim after the 
 })
 
 test('clients recover the same tide from the host clock after a seat reconnect', (t) => {
-  const host = setup(t, { arrange: save => { save.islandTime = shellglassCycle * .76 } })
+  const host = setup(t, { arrange: (save) => {
+    save.islandTime = shellglassCycle * 0.76
+  } })
   const a = host.join(tokens[0])
   const b = host.join(tokens[1])
   const before = shellglassTideAt(a.state.islandTime)
@@ -42,16 +44,15 @@ test('clients recover the same tide from the host clock after a seat reconnect',
 })
 
 test('the dry walk connects Driftwood Beach to the Shellglass rim and Splitstone', () => {
-  const path = [beach, { x: 37.8, z: -32.8 }, shellglassPoint, { x: 44.55, z: -30.8 },
-    { x: 45.85, z: -28.25 }, { x: 50.5, z: -25.4 }, { x: 53.5, z: -22.5 }, splitstone]
+  const path = [beach, { x: 37.8, z: -32.8 }, shellglassPoint, { x: 44.55, z: -30.8 }, { x: 45.85, z: -28.25 }, { x: 50.5, z: -25.4 }, { x: 53.5, z: -22.5 }, splitstone]
   const player = { ...beach, y: walkingHeight(beach), heading: 0, grounded: true }
   const motor = { player, verticalSpeed: 0 }
   for (const target of path.slice(1)) {
     for (let frame = 0; frame < 180; frame++) {
       const x = target.x - player.x, z = target.z - player.z, distance = Math.hypot(x, z)
-      if (distance < .14) break
+      if (distance < 0.14) break
       stepPlayerOnTerrain(motor, [], { x: x / distance, z: z / distance }, false, 1 / 60, () => -Infinity)
-      assert.ok(canWalkAt(player, .35, waterLevel))
+      assert.ok(canWalkAt(player, 0.35, waterLevel))
       assert.equal(waterDepth(player), 0)
       assert.equal(player.swimming, false)
       const { cos, sin, rx, rz } = shellglassWash
@@ -60,6 +61,6 @@ test('the dry walk connects Driftwood Beach to the Shellglass rim and Splitstone
         assert.ok(groundHeight(player) > shellglassHigh, 'the high wash stays below the dry route')
       }
     }
-    assert.ok(Math.hypot(target.x - player.x, target.z - player.z) < .14, JSON.stringify(target))
+    assert.ok(Math.hypot(target.x - player.x, target.z - player.z) < 0.14, JSON.stringify(target))
   }
 })

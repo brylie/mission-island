@@ -1,3 +1,5 @@
+export const fullCheckpointCrewSeats = 2
+
 export interface ScenarioSummary {
   id: string
   title: string
@@ -6,7 +8,7 @@ export interface ScenarioSummary {
 
 export interface TrialRun {
   checkpoint: string
-  seats: 1 | 2
+  seats: 1 | typeof fullCheckpointCrewSeats
   revision: number
 }
 

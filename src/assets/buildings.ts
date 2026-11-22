@@ -1,49 +1,90 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
-import { houseRoofRise } from '../world'
 import type { buildings } from '../world'
+import { houseRoofRise, starterHouseModel } from './geometry/starter-house'
 
-const cream = '#fff3d0'
+const half = 0.5
+const sides = [-1, 1] as const
 
-export function createHouse(meshes: MeshFactory, building: typeof buildings[number]) {
+export function createHouse(meshes: MeshFactory, building: typeof buildings[number], household?: { rearEntrance?: boolean }) {
   const { scene, box, surface, shadows, paintSurface } = meshes
   const root = new TransformNode('House', scene)
   const { x, z, w, d, h, wall } = building
   root.position.set(x, 0, z)
-  root.rotation.y = 'heading' in building ? building.heading ?? 0 : 0
+  root.rotation.y = building.heading ?? 0
+  // Occupied panes switch material independently of the batched exterior.
+  const lightable = household ? new TransformNode('Household windows', scene) : undefined
+  lightable?.position.copyFrom(root.position)
+  lightable?.rotation.copyFrom(root.rotation)
 
-  function roof() {
-    const { w, d, h, roof: color } = building
-    const left = -w / 2 - 0.35
-    const right = w / 2 + 0.35
-    const front = -d / 2 - 0.3
-    const back = d / 2 + 0.3
+  const { roof, foundation, door, windows, chimney } = starterHouseModel
+  const { frame, glazing, mullion } = windows
+  const frontWall = -d * half
+
+  function buildRoof() {
+    const { slope, fascia, gable, ridge } = roof
+    const left = -w * half - roof.sideOverhang
+    const right = w * half + roof.sideOverhang
+    const front = frontWall - roof.depthOverhang
+    const back = d * half + roof.depthOverhang
     const top = h + houseRoofRise
-    for (const [edge, tilt, sign] of [[front, -1, -1], [back, 1, 1]]) {
-      const length = Math.hypot(edge, top - h)
-      // The slopes overlap under the ridge cap. Recess one end face so they can share that joint.
-      const slab = box(0, (h + top) / 2, edge / 2, right - left - (sign > 0 ? 0.025 : 0), 0.19, length, color, root)
-      slab.rotation.x = tilt * Math.atan2(top - h, Math.abs(edge))
-      const ridge = box(0, h + 0.06, edge, right - left + 0.1, 0.16, 0.16, color, root)
-      ridge.position.z += sign * 0.03
+    const width = right - left
+    const rise = top - h
+    for (const [edge, side] of [[front, -1], [back, 1]]) {
+      const length = Math.hypot(edge, rise)
+      // Recess one slope where the two slabs meet under the ridge cap.
+      const slab = box(0, (h + top) * half, edge * half, width - (side > 0 ? slope.endRecess : 0), slope.thickness, length, building.roof, root)
+      slab.rotation.x = side * Math.atan2(rise, Math.abs(edge))
+      const trim = box(0, h + fascia.rise, edge, width + fascia.widthAllowance, fascia.height, fascia.depth, building.roof, root)
+      trim.position.z += side * fascia.setback
     }
-    const gable = surface('Gables', [
-      left + 0.22, h, front, left + 0.22, h, back, left + 0.22, top, 0,
-      right - 0.22, h, front, right - 0.22, top, 0, right - 0.22, h, back,
-    ], [0, 2, 1, 3, 5, 4], building.wall, root)
-    shadows.addShadowCaster(gable, false)
-    box(0, top + 0.01, 0, right - left + 0.07, 0.14, 0.17, color, root)
+    const insetLeft = left + gable.inset, insetRight = right - gable.inset
+    const ends = surface('Gables', [
+      [insetLeft, h, front],
+      [insetLeft, h, back],
+      [insetLeft, top, 0],
+      [insetRight, h, front],
+      [insetRight, top, 0],
+      [insetRight, h, back],
+    ].flat(), [...gable.triangles], wall, root)
+    shadows.addShadowCaster(ends, false)
+    box(0, top + ridge.rise, 0, width + ridge.widthAllowance, ridge.height, ridge.depth, building.roof, root)
   }
 
-  box(0, 0.12, 0, w + 0.35, 0.25, d + 0.35, paintSurface('concrete'), root)
-  box(0, h / 2, 0, w, h, d, wall, root)
-  roof()
-  box(0, 1.25, -d / 2 - 0.04, 1.26, 2.48, 0.13, '#395951', root)
-  for (const sign of [-1, 1]) {
-    box(sign * w * 0.31, h * 0.61, -d / 2 - 0.04, 1.24, 1.03, 0.15, cream, root)
-    box(sign * w * 0.31, h * 0.61, -d / 2 - 0.13, 0.96, 0.77, 0.06, '#4c7a83', root)
-    box(sign * w * 0.31, h * 0.61, -d / 2 - 0.17, 0.075, 0.8, 0.045, cream, root)
+  box(0, foundation.centerY, 0, w + foundation.edgeAllowance, foundation.height, d + foundation.edgeAllowance, paintSurface('concrete'), root)
+  box(0, h * half, 0, w, h, d, wall, root)
+  buildRoof()
+  box(0, door.centerY, frontWall - door.outset, ...door.size, door.color, root)
+  if (household?.rearEntrance) box(0, door.centerY, -frontWall + door.outset, ...door.size, door.color, root)
+  const windowY = h * windows.heightRatio
+  const windowWalls = household?.rearEntrance ? sides : [-1] as const
+  const panes = windowWalls.flatMap((facing) => sides.map((side) => {
+    const windowX = side * w * windows.sideFraction
+    const wallZ = facing * d * half
+    box(windowX, windowY, wallZ + facing * frame.outset, ...frame.size, frame.color, root)
+    box(windowX, windowY, wallZ + facing * mullion.outset, ...mullion.size, mullion.color, root)
+    return box(windowX, windowY, wallZ + facing * glazing.outset, ...glazing.size, glazing.color, lightable ?? root, !lightable)
+  }))
+  if (lightable) {
+    const sideWall = w * half
+    const [frameWidth, frameHeight, frameDepth] = frame.size
+    const [paneWidth, paneHeight, paneDepth] = glazing.size
+    const [mullionWidth, mullionHeight, mullionDepth] = mullion.size
+    for (const side of sides) {
+      box(side * (sideWall + frame.outset), windowY, 0, frameDepth, frameHeight, frameWidth, frame.color, root)
+      box(side * (sideWall + mullion.outset), windowY, 0, mullionDepth, mullionHeight, mullionWidth, mullion.color, root)
+      panes.push(box(side * (sideWall + glazing.outset), windowY, 0, paneDepth, paneHeight, paneWidth, glazing.color, lightable, false))
+    }
   }
-  if (w > 5) box(w * 0.26, h + 1.08, 0.6, 0.55, 1.55, 0.52, '#925c4b', root)
-  return root
+  if (w > chimney.houseMinimumWidth) box(w * chimney.xRatio, h + chimney.rise, chimney.z, ...chimney.size, chimney.color, root)
+  let lit = false
+  return {
+    root,
+    showWindows: (next: boolean) => {
+      if (!lightable || lit === next) return
+      lit = next
+      const material = lit ? meshes.paint(glazing.litColor, true) : meshes.paint(glazing.color)
+      for (const pane of panes) pane.material = material
+    },
+  }
 }

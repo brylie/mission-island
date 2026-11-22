@@ -18,6 +18,24 @@ For each session, copy the block below. Give each distinct observation a short t
 - Retest — setup, observable pass condition, owner if assigned, and result/build when repeated.
 ```
 
+### 2026-11-21 · shared journal · Mara’s outing through a host restart
+
+- Starting point — Two isolated Brave sessions joined a disposable disk-backed island save at Mara’s dock. The scripted walkers followed the two routes using normal host movement input. Both read Mara’s clues in the same journal, and her carrot offer stayed available.
+- Split visit — Crew 1 reached Shellglass and read the tide staff from the dry rim. Crew 2 read the Juniper cairn and recorded grazing in daylight. On arrival, each landmark received one general journal entry. Inspecting it added a confirmation to the same entry. Both browsers showed seven of eight outing observations and nine global XP before the rain.
+- Return — Crew 1 returned to Mara for her acknowledgement and rain clue. Crew 2 walked down to the cairn, returned to the lookout in heavy rain, and recorded a sheltering hare. The rain reading on the saved observation was about 0.875.
+- Recovery — Crew 2 reloaded the page. Both journals matched at eight of eight outing observations and ten global XP. The host process then stopped and restarted from the same save file. Both browsers rejoined with the same entries, clue state, observation details, and totals. The global tally includes the Pine forest discovery and the brown hare species entry.
+- Capture — Crew 2’s journal after the host restart shows the full outing tally, global XP, and both crew slots connected. [Updated journal screenshot](../images/shared-journal-after-restart.png)
+- Retest — Use the two-seat `field-outing` checkpoint to walk the route again. Use a disposable disk-backed save for a process restart. Clue-only navigation by first-time players remains unverified.
+
+### 2026-11-21 · field-outing · A shared journal from the shore to Juniper
+
+- Starting point — Two isolated Brave sessions joined the fresh `field-outing` checkpoint at 07:30. The walkthrough used scripted waypoints with normal host movement input, keyboard **E**, and the live journal buttons. Mara’s written clues contained landmarks and directions.
+- Split route — Crew 1 followed the road through Seabrook and entered Shellglass along the Driftwood spur. The foxgloves stood on turf, and the dirt tread faded at the sand beside the wrack. Crew 1 stood on the dry rim to read the staff and record a limpet. Separating the limpet cluster from the staff let each prompt read clearly on approach.
+- Juniper — Crew 2 walked the worn track between the cottages, passed the cairn and reached the clover lookout on foot. The approach went around the tree just uphill from the cairn. Crew 2 recorded a grazing hare around 08:44. In an earlier pass, the grazing prompt disappeared before the key press. Slower consumption and faster regrowth gave the final run time to read and record the behavior.
+- Both screens — The first visit showed the same seven entries and seven observation XP. Crew 1 returned to Mara, who recognized the first record at Juniper and offered the rain clue. Crew 2 walked back down to the cairn and returned to the lookout during the shower. A sheltering hare earned the eighth record around 10:42, with both journals showing eight records and eight XP after Crew 2 reloaded.
+- Capture — Crew 2’s journal after reconnect shows the eight-record tally alongside the two connected crew slots. [Journal screenshot](../images/field-outing-journal.png)
+- Retest — Start `field-outing` with two seats. Give two new players only Mara’s clues and observe where they turn or stop. Navigation by first-time players remains unverified. The host test covers duplicate credit, stale observations, older saves and disk restart. [Field outing #51](https://github.com/brylie/mission-island/issues/51)
+
 ### 2026-11-21 · ridge-checkout · Pilot swap on Windstone Ridge
 
 - Starting point: the `ridge-checkout` live checkpoint on an in-memory playtest host, two seats, an unqualified crew. A coding agent played both roles. Crew 1 ran in the in-app browser. Crew 2 started in a second browser tab, and a script on the same host took the seat over for the swap. Nobody new to the game took part.
@@ -54,9 +72,19 @@ For each session, copy the block below. Give each distinct observation a short t
 - In both runs, the players split gathering. After the first delivery, the returning crewmate still carried one unit and the Crew guide showed one remaining. Both browsers sent a final **E** command. Each saw one 5-coin award, and only one pocket lost a unit. On the return to the site, the timber rail or the row of stones was visible against the gravel and the label read **Repaired**.
 - The host tests cover both timber and stone solo, co-op reconnect after the first section, simultaneous final delivery, and reload from a disk save with the completed edging, one award and both sources still available. The browser walk used scripted directions. Human landmark recognition remains on the [#52 checklist](https://github.com/brylie/mission-island/issues/52).
 
+### 2026-11-21 · wren-swell · Telling Wren the gate swings clear
+
+- Starting point — `wren-swell` checkpoint, a solo agent session in the browser. Wren trusts the crew once, the swollen-gate job is under way, and the toolbox is beside the gate.
+- Moment — The crewmate pressed **E** at the gate and saw `The gate catches on its swollen edge`. The mission card switched to the finding. They walked to Wren at the bench and talked; the agent sent the talk choice over the page's socket. The conversation showed a greeting, a remark, advice, Wren's question with the finding in bold, and **Tell Wren it swings clear** beside **Tell Wren it still catches**. Clicked the first.
+- Both screens — Solo. Trust went 1 → 0, the job stayed open, the report buttons disappeared until the next swing, and Wren's next greeting named the false report.
+- Outcome — Found and fixed three things. The mission card said the toolbox was on the bench while it lay by the gate. Wren's greeting still said the gate "swings like new" while it was swollen. Wren's breach line and the neighbors' gossip both said "this morning" a few minutes after the report.
+- Interpretation — The finding beside both answers makes the stakes plain. Hypothesis: a player who didn't do the swing still understands from the bold line what they would be claiming.
+- Decision — Keep. Next, test with two people: one swings, the other reports without talking to the first.
+- Retest — Two people. Pass: the reporting player can say, before choosing, what the last swing showed, and afterward the swinger can explain what happened from Wren's greeting alone.
+
 ### 2026-11-21 · Starter Island crew feedback
 
-The crew reported traversal, flight, fishing, collectable readability, and world art concerns on current main. See the [provisional findings and backlog cross-check](starter-island-follow-up-2026-11-21.md) for the full record and suggested retests.
+The crew reported traversal, flight, fishing, collectable readability, and world art concerns on the `79faeda` build. See the [provisional findings and backlog cross-check](starter-island-follow-up-2026-11-21.md) for the full record and suggested retests.
 
 ## Triage after the session
 

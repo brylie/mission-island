@@ -85,7 +85,7 @@ The bluish-green colonies emit their own light in the preview. Increase **Exposu
 
 ![A dark swatch lit by pinpricks of cyan glow algae](images/glow-algae-dusk.jpg)
 
-The recipe definitions contain stable IDs, default wear, and feature spacing in millimetres. Use **Copy setup link** to share a swatch with your own settings and camera. [Gameplay recipes](../src/gameplay-surface-recipes.ts) · [Original surface catalog](surface-catalog.md)
+The recipe definitions contain stable IDs, default wear, and feature spacing in millimetres. Use **Copy setup link** to share a swatch with your own settings and camera. [Gameplay recipes](../src/assets/recipes/gameplay-surfaces.ts) · [Original surface catalog](surface-catalog.md)
 
 [gallery]: http://localhost:5173/workbench.html#texture-gallery?setup=%7B%22version%22%3A1%2C%22name%22%3A%22Gameplay+surfaces%22%2C%22time%22%3A0%2C%22camera%22%3A%7B%22alpha%22%3A1.5707963267948966%2C%22beta%22%3A0.04%2C%22fov%22%3A0.8%2C%22radius%22%3A10.9%2C%22target%22%3A%5B0%2C0.03%2C0%5D%7D%2C%22options%22%3A%7B%22pattern%22%3A%22gameplay%22%2C%22spacing%22%3A1%7D%2C%22grid%22%3Afalse%2C%22wireframe%22%3Afalse%7D&light=overcast
 [magnetite-seam]: http://localhost:5173/workbench.html#magnetite-seam?setup=%7B%22version%22%3A1%2C%22name%22%3A%22Magnetite+seam%22%2C%22time%22%3A0%2C%22camera%22%3A%7B%22alpha%22%3A0.88%2C%22beta%22%3A1.03%2C%22fov%22%3A0.8%2C%22radius%22%3A2.6928%2C%22target%22%3A%5B0%2C0.08772%2C0%5D%7D%2C%22options%22%3A%7B%22spacing%22%3A160%2C%22wear%22%3A0.55%2C%22relief%22%3A1%2C%22tint%22%3A%22%239b8d80%22%7D%2C%22grid%22%3Afalse%2C%22wireframe%22%3Afalse%7D&light=grazing

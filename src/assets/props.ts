@@ -1,107 +1,133 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import { surfaces } from '../materials'
-import { treeTrunkRadius } from '../scenery'
-import { chestSize, crateSize } from '../world'
 import type { Point } from '../world'
-const cream = '#fff3d0'
+import { beachUmbrellaGeometry } from './geometry/site-props'
+import { clothingCounterModel, homeChestModel, wardrobeModel } from './geometry/starter-furniture'
+import { islandRockGeometry, islandTreeGeometry } from './geometry/starter-scenery'
+import { cargoCrateModel, extinguisherModel, loanToolboxModel } from './geometry/supply-props'
 
-export const extinguisherNozzle = { height: .98, center: .19, length: .35 }
+const half = 0.5
+const sides = [-1, 1] as const
 
-export const umbrellaColors = ['#e97a59', '#ffce64', '#4faba4']
+export const umbrellaColors = beachUmbrellaGeometry.canopy.colors
 
 export function createHomeChest({ scene, box, paintSurface }: MeshFactory, point: Point, color: string) {
   const root = new TransformNode('Home chest', scene)
   root.position.set(point.x, 0, point.z)
-  const { width, depth, height } = chestSize
-  const wood = paintSurface('wood', '#a77a52')
-  const boxHeight = height - 0.145
-  box(0, boxHeight / 2, 0, width - 0.045, boxHeight, depth - 0.035, wood, root)
-  box(0, boxHeight - 0.072, -0.014, width - 0.16, 0.1, depth - 0.015, color, root)
+  const { dimensions: { width, depth, height }, body, lining, lid, latch } = homeChestModel
+  const wood = paintSurface('wood', homeChestModel.wood)
+  const boxHeight = height - body.lidClearance
+  box(0, boxHeight * half, 0, width - body.widthInset, boxHeight, depth - body.depthInset, wood, root)
+  box(0, boxHeight - lining.belowRim, lining.z, width - lining.widthInset, lining.height, depth - lining.depthInset, color, root)
   const hinge = new TransformNode('Chest lid', scene)
   hinge.parent = root
-  hinge.position.set(0, boxHeight + 0.007, depth / 2)
-  box(0, 0.064, -depth / 2, width, 0.128, depth, wood, hinge)
-  box(0, -0.012, -depth - 0.009, 0.133, 0.16, 0.032, '#dbb26c', hinge)
+  hinge.position.set(0, boxHeight + lid.hingeRise, depth * half)
+  box(0, lid.centerY, -depth * half, width, lid.height, depth, wood, hinge)
+  box(0, latch.y, -depth - latch.forwardOfLid, ...latch.size, latch.color, hinge)
   return { root, hinge }
 }
 
 export function createWardrobe({ box, paintSurface }: MeshFactory, { x, z }: Point, y: number, color: string) {
-  const wood = paintSurface('wood', '#9c6a47')
-  const doors = paintSurface('wood', '#bc8b5c')
-  box(x, y + 0.97, z, 1.05, 1.94, 0.33, wood)
-  box(x, y + 1.97, z, 1.15, 0.09, 0.39, wood)
-  for (const side of [-1, 1]) {
-    box(x + side * 0.225, y + 0.97, z - 0.17, 0.43, 1.7, 0.064, doors)
-    box(x + side * 0.225, y + 1.44, z - 0.207, 0.32, 0.38, 0.019, color)
-    box(x + side * 0.078, y + 0.96, z - 0.219, 0.034, 0.145, 0.042, '#654937')
+  const { body, cornice, door, panel, pull } = wardrobeModel
+  const wood = paintSurface('wood', wardrobeModel.wood)
+  const doors = paintSurface('wood', wardrobeModel.doorWood)
+  box(x, y + body.y, z, ...body.size, wood)
+  box(x, y + cornice.y, z, ...cornice.size, wood)
+  for (const side of sides) {
+    const doorX = x + side * door.x
+    box(doorX, y + door.y, z + door.z, ...door.size, doors)
+    box(doorX, y + panel.y, z + panel.z, ...panel.size, color)
+    box(x + side * pull.x, y + pull.y, z + pull.z, ...pull.size, pull.color)
   }
 }
 
 export function createClothingCounter({ box, paintSurface }: MeshFactory, { x, z }: Point, y: number) {
-  const wood = paintSurface('wood', '#a77856')
-  box(x, y + 0.51, z, 1.46, 1.02, 0.42, wood)
-  box(x, y + 1.06, z, 1.58, 0.12, 0.52, wood)
-  box(x, y + 0.68, z + 0.216, 1.26, 0.45, 0.027, '#537d8c')
-  for (const [index, color] of ['#84aaa7', '#ccead7', '#537d8c'].entries()) {
-    box(x + 0.31, y + 1.16 + index * 0.072, z, 0.47 - index * 0.03, 0.072, 0.27, color)
+  const { body, top, banner, cloth } = clothingCounterModel
+  const wood = paintSurface('wood', clothingCounterModel.wood)
+  box(x, y + body.y, z, ...body.size, wood)
+  box(x, y + top.y, z, ...top.size, wood)
+  box(x, y + banner.y, z + banner.z, ...banner.size, banner.color)
+  for (const [index, color] of cloth.colors.entries()) {
+    box(x + cloth.x, y + cloth.firstY + index * cloth.thickness, z, cloth.firstWidth - index * cloth.widthStep, cloth.thickness, cloth.depth, color)
   }
 }
 
 export function createSupply({ scene, box, cylinder }: MeshFactory, kind: 'crate' | 'extinguisher' | 'toolbox') {
   const node = new TransformNode('Supply', scene)
   if (kind === 'toolbox') {
-    // Wren's loaner: a red steel box with a lid tray and a carry handle along the body.
-    box(0, 0.13, 0, 0.2, 0.22, 0.52, '#b8463a', node)
-    box(0, 0.255, 0, 0.21, 0.035, 0.54, '#8f3029', node)
-    for (const z of [-0.17, 0.17]) box(0, 0.32, z, 0.035, 0.11, 0.035, '#3c3d3f', node)
-    box(0, 0.375, 0, 0.04, 0.035, 0.38, '#3c3d3f', node)
-    box(0.105, 0.2, 0, 0.012, 0.03, 0.07, '#e7c46a', node)
-  } else if (kind === 'crate') {
-    box(0, 0, 0, crateSize, crateSize, crateSize, '#cf8b4f', node)
-    for (const side of [-1, 1]) {
-      box(side * 0.3, 0, 0, 0.11, 0.91, 0.91, '#f9c174', node)
-    }
-    box(0, 0.06, -0.453, 0.35, 0.23, 0.02, '#ffe8b1', node)
-  } else {
-    cylinder(0, 0.48, 0, 0.56, 0.56, 0.83, 12, '#d4513d', node)
-    cylinder(0, 0.57, 0, 0.57, 0.57, 0.18, 12, cream, node)
-    const { height, center, length } = extinguisherNozzle
-    box(0, height, 0, 0.42, 0.15, 0.22, '#2b4445', node)
-    box(0, height, center, 0.15, 0.12, length, '#2b4445', node)
+    const { body, lid, handleSupports, handle, latch } = loanToolboxModel
+    box(0, body.y, 0, ...body.size, body.color, node)
+    box(0, lid.y, 0, ...lid.size, lid.color, node)
+    for (const z of handleSupports.z) box(0, handleSupports.y, z, ...handleSupports.size, handle.color, node)
+    box(0, handle.y, 0, ...handle.size, handle.color, node)
+    box(latch.x, latch.y, 0, ...latch.size, latch.color, node)
+  }
+  else if (kind === 'crate') {
+    const { size, body, brace, label } = cargoCrateModel
+    box(0, 0, 0, size, size, size, body, node)
+    for (const side of sides) box(side * brace.x, 0, 0, ...brace.size, brace.color, node)
+    box(0, label.y, label.z, ...label.size, label.color, node)
+  }
+  else {
+    const { tank, band, tankSides, head, nozzle } = extinguisherModel
+    cylinder(0, tank.y, 0, tank.diameter, tank.diameter, tank.height, tankSides, tank.color, node)
+    cylinder(0, band.y, 0, band.diameter, band.diameter, band.height, tankSides, band.color, node)
+    box(0, nozzle.height, 0, ...head.size, head.color, node)
+    box(0, nozzle.height, nozzle.center, nozzle.width, nozzle.thickness, nozzle.length, head.color, node)
   }
   return node
 }
 
-export function createUmbrella({ cylinder, surface }: MeshFactory, x: number, z: number, color: string,
-  heightAt: (point: Point) => number = () => 0) {
+export function createUmbrella({ cylinder, surface }: MeshFactory, x: number, z: number, color: string, heightAt: (point: Point) => number = () => 0) {
   const y = heightAt({ x, z })
-  cylinder(x, y + 1.25, z, 0.12, 0.16, 2.5, 6, '#8c6545')
-  cylinder(x, y + 2.6, z, 0.15, 3, 0.67, 8, color)
+  const { pole, canopy, towel } = beachUmbrellaGeometry
+  cylinder(x, y + pole.centreY, z, pole.topDiameter, pole.baseDiameter, pole.height, pole.sides, pole.color)
+  cylinder(x, y + canopy.centreY, z, canopy.topDiameter, canopy.baseDiameter, canopy.height, canopy.sides, color)
   // Adjacent woven bands share their hems and follow the sand beneath each corner.
-  const ends = [-1.15, -.99, -.92, -.84, .84, .92, .99, 1.15]
-  for (let i = 1; i < ends.length; i++) {
-    const corners = [[.35, ends[i - 1]], [1.45, ends[i - 1]], [1.45, ends[i]], [.35, ends[i]]]
-    const vertices = corners.flatMap(([dx, dz]) => [x + dx, heightAt({ x: x + dx, z: z + dz }) + .022, z + dz])
-    surface('Beach towel', vertices, [0, 1, 2, 0, 2, 3], i === 2 || i === 6 ? color : '#f4e2b6').freezeWorldMatrix()
+  const [left, right] = towel.x
+  let firstZ: number = towel.firstZ
+  for (const { endZ, stripe } of towel.bands) {
+    const corners = [[left, firstZ], [right, firstZ], [right, endZ], [left, endZ]]
+    const vertices = corners.flatMap(([dx, dz]) => [x + dx, heightAt({ x: x + dx, z: z + dz }) + towel.lift, z + dz])
+    surface('Beach towel', vertices, [...towel.triangles], stripe ? color : towel.color).freezeWorldMatrix()
+    firstZ = endZ
   }
 }
 
+const treeColors = [...islandTreeGeometry.canopy.colors, surfaces.leaves.color]
+
 export function createTree({ cylinder, sphere, paintSurface }: MeshFactory, x: number, z: number, height: number, variant: number, ground = 0) {
-  cylinder(x, ground + height * 0.25 - 0.08, z, 0.31, treeTrunkRadius * 2, height * 0.5 + 0.16, 6, paintSurface('wood'))
-  const canopy = paintSurface('leaves', ['#44784b', '#558953', '#366d4c', surfaces.leaves.color][variant % 4])
-  if (variant % 3 === 0) {
-    sphere(x, ground + height * 0.64, z, height * 0.8, height * 0.8, height * 0.77, canopy)
-    sphere(x + height * 0.23, ground + height * 0.54, z + 0.27, height * 0.58, height * 0.57, height * 0.54, paintSurface('leaves', '#619553'))
-  } else {
-    cylinder(x, ground + height * 0.55, z, 0.1, height * 0.67, height * 0.63, 7, canopy)
-    cylinder(x, ground + height * 0.76, z, 0.04, height * 0.48, height * 0.61, 7, paintSurface('leaves', variant % 2 ? '#55894e' : '#3e7852'))
+  const { trunk, trunkHeightRatio, canopy } = islandTreeGeometry
+  const trunkHeight = height * trunkHeightRatio
+  cylinder(x, ground + trunkHeight * half - trunk.embedDepth * half, z, trunk.tipDiameter, trunk.baseDiameter, trunkHeight + trunk.embedDepth, trunk.sides, paintSurface('wood'))
+  const leaves = paintSurface('leaves', treeColors[variant % treeColors.length])
+  if (variant % canopy.broadleafEvery === 0) {
+    const { crown, branch } = canopy.broadleaf
+    const [width, rise, depth] = crown.sizeRatios
+    sphere(x, ground + height * crown.yRatio, z, height * width, height * rise, height * depth, leaves)
+    const [branchWidth, branchRise, branchDepth] = branch.sizeRatios
+    sphere(
+      x + height * branch.xRatio,
+      ground + height * branch.yRatio,
+      z + branch.z,
+      height * branchWidth,
+      height * branchRise,
+      height * branchDepth,
+      paintSurface('leaves', branch.color),
+    )
+  }
+  else {
+    const { lower, upper, sides: segments } = canopy.conifer
+    cylinder(x, ground + height * lower.yRatio, z, lower.tipDiameter, height * lower.baseRatio, height * lower.heightRatio, segments, leaves)
+    const finish = upper.colors[variant % upper.colors.length ? 1 : 0]
+    cylinder(x, ground + height * upper.yRatio, z, upper.tipDiameter, height * upper.baseRatio, height * upper.heightRatio, segments, paintSurface('leaves', finish))
   }
 }
 
 export function createRock({ sphere, paintSurface }: MeshFactory, x: number, z: number, size: number, angle: number, light: boolean, ground = 0) {
-  const rock = sphere(x, size * 0.12 + ground, z, size, size * 0.78, size * 1.1,
-    paintSurface('stone', light ? '#b0ad91' : surfaces.stone.color))
+  const { centerHeightRatio, heightRatio, depthRatio } = islandRockGeometry
+  const rock = sphere(x, size * centerHeightRatio + ground, z, size, size * heightRatio, size * depthRatio, paintSurface('stone', light ? '#b0ad91' : surfaces.stone.color))
   rock.rotation.y = angle
   return rock
 }

@@ -1,17 +1,25 @@
-import { atClothingCounter, heldItem } from '../src/actions.ts'
+import { heldItem } from '../src/interactions/cargo.ts'
+import { atClothingCounter } from '../src/interactions/home.ts'
+import type { OrderAction } from '../src/interactions/work.ts'
 import { clothingCatalog, ownsClothing, type ClothingId } from '../src/clothing-catalog.ts'
-import { market, saleValue, seedPrice } from '../src/farm.ts'
-import { atJobBoard, jobs, orderContribution } from '../src/jobs.ts'
+import { market, marketTradeReach, saleValue, seedPrice } from '../src/farm.ts'
+import { jobs, orderContribution } from '../src/jobs.ts'
 import type { JobId } from '../src/jobs.ts'
 import type { Item, Player, Snapshot } from '../src/protocol.ts'
 import { crateStarts, distance, starterPay } from '../src/world.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import type { CrewMember, CrewNotice } from './crew.ts'
+import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
+import { jobBlocked } from './job-choice.ts'
+import type { InteractionHandlers } from './interactions.ts'
 
 export function createOrders(
-  state: Pick<Snapshot, 'crewCoins' | 'lastStarterPay' | 'items' | 'jobs' | 'mission' | 'islandTime' | 'lookoutFireClearedAt'>,
-  physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'release'>, notifyCrew: (message: CrewNotice) => void,
-  creditCrate: (id: number) => void, checkpoint?: () => void,
+  state: Snapshot,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'remove' | 'relocate'>,
+  notifyCrew: (message: CrewNotice) => void,
+  creditCrate: (id: number) => void,
+  checkpoint?: () => void,
+  metrics?: Pick<GameplayPlaytestMetrics, 'choice' | 'emit'>,
 ) {
   function payCrew(message: Extract<CrewNotice, { type: 'job-pay' | 'order-pay' | 'market-sale' }>) {
     state.crewCoins += message.coins
@@ -20,8 +28,9 @@ export function createOrders(
   }
 
   function startJob(member: CrewMember, id: JobId | undefined) {
-    if (id === undefined || state.mission !== 'complete' || state.jobs.active || !atJobBoard(member.player) ||
-      member.player.sleeping || heldItem(state, member.player)) {
+    const blocked = id === undefined ? undefined : jobBlocked(state, member.player, id)
+    if (id !== undefined) metrics?.choice(state, member.player, id, blocked)
+    if (id === undefined || blocked) {
       member.notify?.({ type: 'order-unavailable' })
       return
     }
@@ -32,34 +41,38 @@ export function createOrders(
         const crate = state.items[i]
         physics.remove(crate)
         Object.assign(crate, { holder: null, heading: 0, delivered: i >= job.quantity })
-        if (!crate.delivered) physics.release(crate, point)
+        if (!crate.delivered) physics.relocate(crate, point)
       }
     }
     checkpoint?.()
   }
 
-  function advanceOrder(quantity: number) {
+  function advanceOrder(quantity: number, slot: number) {
     const order = state.jobs.active
     if (!order) return
     order.progress += quantity
     const job = jobs[order.id]
-    if (order.progress < job.quantity) return
+    const complete = order.progress >= job.quantity
+    metrics?.emit(state, { event: 'job-progress', slot, job: order.id, progress: order.progress, target: job.quantity, complete })
+    if (!complete) return
     state.jobs.active = null
     state.jobs.completed++
     payCrew({ type: 'order-pay', id: order.id, coins: job.coins })
   }
 
-  function deliverCrate(item: Item) {
+  function deliverCrate(item: Item, slot: number) {
     if (item.delivered) return
     creditCrate(item.id)
     item.delivered = true
     if (state.jobs.active) {
-      advanceOrder(1)
-    } else if (state.items.filter((entry) => entry.kind === 'crate').every((crate) => crate.delivered)) {
+      advanceOrder(1, slot)
+    }
+    else if (state.items.filter((entry) => entry.kind === 'crate').every((crate) => crate.delivered)) {
       state.mission = 'fire'
       delete state.lookoutFireClearedAt
       payCrew({ type: 'job-pay', job: 'delivery', coins: starterPay.delivery.coins })
-    } else {
+    }
+    else {
       payCrew({ type: 'job-pay', job: 'crate', coins: starterPay.crate.coins })
     }
   }
@@ -68,7 +81,7 @@ export function createOrders(
     const contribution = orderContribution(state, player.goods)
     if (contribution) {
       player.goods[contribution.goods] -= contribution.quantity
-      advanceOrder(contribution.quantity)
+      advanceOrder(contribution.quantity, player.id)
       return
     }
     const proceeds = saleValue(player.goods)
@@ -81,16 +94,13 @@ export function createOrders(
     state.mission = 'complete'
     state.lookoutFireClearedAt = state.islandTime
     payCrew({ type: 'job-pay', job: 'fire', coins: starterPay.fire.coins })
-    for (const tool of state.items.filter(({ kind }) => kind === 'extinguisher')) {
-      tool.holder = null
-      tool.spraying = false
-    }
+    for (const tool of state.items.filter(({ kind }) => kind === 'extinguisher')) tool.spraying = false
     checkpoint?.()
   }
 
   function buySeed(player: Player) {
-    if (player.seat || !player.grounded || player.onBed || heldItem(state, player) ||
-      distance(player, market) >= 2.25 || state.crewCoins < seedPrice) return
+    if (player.seat || !player.grounded || player.onBed || heldItem(state, player)
+      || distance(player, market) >= marketTradeReach || state.crewCoins < seedPrice) return
     state.crewCoins -= seedPrice
     player.seeds++
     checkpoint?.()
@@ -108,5 +118,10 @@ export function createOrders(
     return 'bought'
   }
 
-  return { startJob, deliverCrate, visitMarket, completeFire, buySeed, buyClothing }
+  const interactions = {
+    // The client opens this panel locally. Choosing a job sends the separate take-job command.
+    'job-board': () => {},
+    'market': ({ player }) => visitMarket(player),
+  } satisfies InteractionHandlers<OrderAction>
+  return { startJob, deliverCrate, interactions, completeFire, buySeed, buyClothing }
 }

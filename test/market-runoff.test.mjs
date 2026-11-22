@@ -21,7 +21,7 @@ test('rain reaches the awning before it fills the gutter and the puddle outlasts
 })
 
 test('the fixed-camera preview distinguishes a running gutter and residual drips', () => {
-  const wet = marketRunoffPreview(.92, dryMarketRainAge)
+  const wet = marketRunoffPreview(0.92, dryMarketRainAge)
   const after = marketRunoffPreview(0, 3.2)
   const dry = marketRunoffPreview(0, dryMarketRainAge)
   assert.ok(wet.stream > 0 && after.drip > 0 && after.puddle > 0)

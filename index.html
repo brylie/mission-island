@@ -116,7 +116,9 @@
         <div class="mission-actions">
           <button id="open-crew-guide" type="button" aria-haspopup="dialog" aria-controls="crew-guide-dialog" disabled>Crew guide</button>
           <button id="open-job-board" type="button" aria-haspopup="dialog" aria-controls="job-board-dialog" hidden>Harbor job board</button>
+          <button id="open-journal" type="button" aria-haspopup="dialog" aria-controls="journal-dialog" disabled>Field journal</button>
         </div>
+        <p id="farm-hud" class="farm-hud" aria-label="Shared farm order" aria-live="polite" hidden></p>
         <section id="ridge-hud" class="ridge-hud" aria-label="Windstone aviation" hidden>
           <strong></strong>
           <p></p>
@@ -145,6 +147,7 @@
         <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Walk / drive</span></div>
         <div><kbd>E</kbd><span>Interact</span></div>
         <div><kbd>F</kbd><span>Enter / exit</span></div>
+        <div><kbd>J</kbd><span>Field journal</span></div>
         <div><kbd>Shift</kbd><span>Sprint / slow drive</span></div>
         <div><kbd>Space</kbd><span>Jump / brake</span></div>
         <div><kbd>Left click</kbd><span>Reach / throw / use tool</span></div>
@@ -184,20 +187,46 @@
           <p id="guide-pay"></p>
         </section>
         <div id="guide-favors"></div>
+        <details>
+          <summary>Where to find neighbors</summary>
+          <ul id="guide-neighbors"></ul>
+        </details>
         <section>
           <h3>Between shifts</h3>
-          <p>The gravel turn east of Harbor Depot leads to the closed ferry terminal. The damaged ramp needs a crew to repair it someday.</p>
+          <p>Harbor Depot road runs past the ferry freight yard to the closed ferry terminal. Once the crew has finished four harbor orders, the tally board by the barrier explains the repair.</p>
           <p>Take a seed to Island Farm off the beach trail south of Seabrook. Equip the hoe to till a plot, then press E to plant.</p>
           <p>Look for the orange rack on the north end of the minimap. Windstone Ridge lends a free glider. A successful checkout opens the Mirror Pool survey for both players.</p>
-          <p id="guide-lead">Follow the depot trail past the freight yard to the small wooden fishing dock. Mara works there after dawn and heads home at dusk.</p>
+          <p id="guide-lead">Follow the depot trail past the depot crate stack to the small wooden fishing dock. Mara works there after dawn and heads home at dusk.</p>
           <button id="toggle-fisher-lead" type="button" aria-controls="guide-lead" aria-expanded="true">Put away Mara’s lead</button>
         </section>
       </div>
       <div id="resident-conversation" hidden>
-        <p id="resident-line"></p>
+        <p id="resident-line" role="status"></p>
+        <p id="resident-remark"></p>
         <p id="resident-advice"></p>
-        <button id="resident-accept" type="button" hidden></button>
+        <p id="resident-favor" hidden></p>
+        <section id="resident-field-notes" aria-label="Field clues"></section>
+        <div class="resident-choices">
+          <button id="resident-accept" type="button" hidden></button>
+          <button id="resident-report-sound" type="button" hidden></button>
+          <button id="resident-report-fault" type="button" hidden></button>
+        </div>
       </div>
+      <form method="dialog"><button type="submit" autofocus>Close</button></form>
+    </dialog>
+
+    <dialog id="journal-dialog" class="options-dialog journal-dialog" aria-labelledby="journal-title">
+      <h2 id="journal-title">Field journal</h2>
+      <p id="journal-tally" role="status"></p>
+      <div class="journal-pages" role="group" aria-label="Journal pages">
+        <button type="button" data-page="fish" aria-pressed="true">Fish <span></span></button>
+        <button type="button" data-page="places" aria-pressed="false">Places <span></span></button>
+        <button type="button" data-page="nature" aria-pressed="false">Nature <span></span></button>
+        <button type="button" data-page="outing" aria-pressed="false">Mara’s outing <span></span></button>
+      </div>
+      <ul id="journal-clues" aria-label="Clues from Mara" hidden></ul>
+      <ul id="journal-list"></ul>
+      <p id="journal-help">The journal notes a fish when you land it and a place when you walk there. Aim at an animal, a plant or a landmark and press E to record it. Both of you share one journal.</p>
       <form method="dialog"><button type="submit" autofocus>Close</button></form>
     </dialog>
 
@@ -217,6 +246,12 @@
           <label><input id="invert-horizontal" type="checkbox" autofocus /> Invert horizontal look</label>
           <label><input id="invert-vertical" type="checkbox" /> Invert vertical look</label>
           <label class="look-speed">Look speed <input id="look-speed" type="range" min="0.4" max="2" step="0.1" value="1" /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Sound</legend>
+          <label class="look-speed">Ambience <input id="sound-ambience" type="range" min="0" max="1" step="0.05" value="0.7" /></label>
+          <label class="look-speed">Effects <input id="sound-effects" type="range" min="0" max="1" step="0.05" value="0.8" /></label>
+          <label><input id="sound-muted" type="checkbox" /> Mute sound</label>
         </fieldset>
         <fieldset class="appearance">
           <legend>Crew appearance</legend>
@@ -238,6 +273,18 @@
           <label>Crew <select name="seats"><option value="1">Solo</option><option value="2">Two players over LAN</option></select></label>
           <p>Starting a checkpoint resets this playtest for both players. Your island save stays separate.</p>
           <button type="button">Restart checkpoint</button>
+          <span role="status"></span>
+        </fieldset>
+        <fieldset id="playtest-events" hidden>
+          <legend>Playtest events</legend>
+          <label>Wildfire <select name="size"><option value="">Random size</option></select></label>
+          <label>Site <select name="site"><option value="">Random site</option></select></label>
+          <label>Heat <select name="intensity"><option value="">Random heat</option></select></label>
+          <label><input type="checkbox" name="located" /> Start it already located</label>
+          <div class="playtest-event-actions">
+            <button type="button" data-event="wildfire">Start wildfire</button>
+            <button type="button" data-event="end-wildfire">End wildfire</button>
+          </div>
           <span role="status"></span>
         </fieldset>
         <fieldset id="playtest-tools" hidden><legend>Landscape Workbench</legend><button type="button" id="copy-playtest">Copy playtest link</button>

@@ -8,16 +8,16 @@ export function createLibraryPanel() {
   const lastSubject = new Map<Workspace, string>()
   let entries: Entry[] = []
   let asset: Entry
-  workspaceSelect.append(...Object.keys(workspaces).map(name => new Option(name, name)))
+  workspaceSelect.append(...Object.keys(workspaces).map((name) => new Option(name, name)))
   workspaceSelect.addEventListener('change', () => {
     librarySearch.value = ''
     const workspace = workspaceSelect.value as Workspace
-    const next = lastSubject.get(workspace) ?? entries.find(entry => workspaceOf(entry.group) === workspace)?.id
+    const next = lastSubject.get(workspace) ?? entries.find((entry) => workspaceOf(entry.group) === workspace)?.id
     if (next) location.hash = next
     renderLibrary()
   })
   librarySearch.addEventListener('input', renderLibrary)
-  librarySearch.addEventListener('keydown', event => {
+  librarySearch.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') library.querySelector('a')?.click()
     if (event.key === 'Escape') {
       librarySearch.value = ''

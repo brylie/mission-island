@@ -1,30 +1,46 @@
 import { bindCheckpointControls } from './live-checkpoint-ui'
 import './style.css'
 import { drawIslandMap } from './island-map'
-import { actionHint, atClothingCounter, heldItem, inSkiff, interactRequest } from './actions'
+import { actionHint, inSkiff, interactRequest } from './actions'
+import { heldItem } from './interactions/cargo'
+import { atClothingCounter } from './interactions/home'
 import { createRidgeHud, flightInput, ridgeActionHint } from './ridge-ui'
 import { readStorage, writeStorage } from './browser-storage'
 import { cleanCrewName } from './crew-appearance'
+import { bindJoinName, openJoinName } from './join-name-ui'
+import { bindSoundOptions } from './sound-options-ui'
 import { createCrewGuide } from './crew-guide-ui'
-import { missionCard } from './mission-card'
-import { materialsFeedback, repairMaterials } from './materials-work'
+import { createMissionHud } from './mission-ui'
+import { repairMaterials } from './materials-work'
 import { bindControlsToggle } from './controls-toggle-ui'
 import { bindLookOptions } from './look-options-ui'
 import { createReticleFocus } from './reticle-ui'
-import { gateStepText } from './gate-repair'
-import { favorFeedback } from './resident-notices'
 import { createJobBoard } from './job-board-ui'
-import { atJobBoard, jobs } from './jobs'
+import { createJournalPage } from './journal-ui'
+import { atJobBoard } from './jobs'
 import { starterTools, toolNames } from './inventory'
 import type { InventoryItem } from './inventory'
-import type { ClientMessage, FishingResult, Input, Player, ServerMessage, Snapshot } from './protocol'
-import { starterDiscoveries } from './scenery'
+import type { ClientMessage, Input, Player, ServerMessage, Snapshot } from './protocol'
 import { createRenderer } from './scene'
 import { bindLanInvite } from './lan-invite'
 import { bindPlaytestCopy } from './playtest-link'
+import { createIslandConnection } from './island-connection'
+import { starterNoticeFeedback } from './starter-notice-feedback'
 import { isNight } from './weather'
 import { createClothingCounter, createWardrobe } from './wardrobe-ui'
-import { starterPay } from './world'
+
+const clientTokenBytes = 16
+const tokenHexRadix = 16
+const tokenHexDigitsPerByte = 2
+const residentNewsDurationMs = 4200
+const percentScale = 100
+const minutesPerHour = 60
+const clockDigits = 2
+const hudRainThreshold = 0.3
+const dawnNoticeMinHourJump = 2
+const dawnNoticeDurationMs = 2400
+const secondaryMouseButton = 2
+const inputHeartbeatMs = 60
 
 function element<T extends HTMLElement>(id: string) {
   const node = document.getElementById(id)
@@ -43,25 +59,20 @@ const clock = element('island-clock')
 const light = element('status-light')
 const crewCount = element('crew-count')
 const crewRows = [element('crew-0'), element('crew-1')]
-const missionLabel = element('mission-label')
-const missionTitle = element('mission-title')
-const missionDescription = element('mission-description')
-const progress = element('progress-track')
-const segments = Array.from(progress.children)
-const progressLabel = element('progress-label')
-const missionStep = element('mission-step')
 const boardButton = element<HTMLButtonElement>('open-job-board')
 const boardDialog = element<HTMLDialogElement>('job-board-dialog')
 const board = createJobBoard(boardDialog, (id) => send({ type: 'take-job', id }))
+const journal = createJournalPage(element('journal-dialog'), element('open-journal'), () => live && !modalOpen(), () => pauseControls())
 const guideButton = element<HTMLButtonElement>('open-crew-guide')
 const guideDialog = element<HTMLDialogElement>('crew-guide-dialog')
 const guide = createCrewGuide(guideDialog, (dismissed) => {
   leadDismissed = dismissed
   writeStorage('localStorage', leadKey(), dismissed ? 'yes' : null)
-}, (subject) => send({ type: 'interact', choice: { action: 'accept-favor', subject } }))
+}, (choice) => send({ type: 'interact', choice }))
 const respawn = element<HTMLButtonElement>('respawn')
 bindControlsToggle(element<HTMLButtonElement>('controls-toggle'), element('game-controls'))
 const spray = element('spray-control')
+const updateMission = createMissionHud(element, boardButton, spray)
 const cameraButton = element<HTMLButtonElement>('camera')
 const orbitControl = element('orbit-control')
 const optionsButton = element<HTMLButtonElement>('options-button')
@@ -71,12 +82,13 @@ const joinNameDialog = element<HTMLDialogElement>('join-name-dialog')
 const joinName = element<HTMLInputElement>('join-name')
 const editCrewName = element<HTMLButtonElement>('edit-crew-name')
 const lookSettings = bindLookOptions((settings) => renderer?.setLook(settings))
+const soundSettings = bindSoundOptions((settings) => renderer?.setSound(settings))
 const reticle = createReticleFocus(playfield, document.querySelector('.reticle'))
 const openWardrobe = element<HTMLButtonElement>('open-wardrobe')
 const wardrobeDialog = element<HTMLDialogElement>('wardrobe-dialog')
 const counterDialog = element<HTMLDialogElement>('clothing-counter-dialog')
-const wardrobe = createWardrobe(wardrobeDialog, appearance => send({ type: 'appearance', appearance }))
-const counter = createClothingCounter(counterDialog, item => send({ type: 'buy-clothing', item }))
+const wardrobe = createWardrobe(wardrobeDialog, (appearance) => send({ type: 'appearance', appearance }))
+const counter = createClothingCounter(counterDialog, (item) => send({ type: 'buy-clothing', item }))
 const fishingWallet = element('fishing-wallet')
 const toolSlots = element('tool-slots')
 const chargeMeter = element('charge-meter')
@@ -89,7 +101,6 @@ const ridgeHud = createRidgeHud(element('ridge-hud'))
 const map = element<HTMLCanvasElement>('map')
 
 let renderer: ReturnType<typeof createRenderer> | undefined
-let socket: WebSocket | undefined
 let id = -1
 let live = false
 let message = ''
@@ -107,20 +118,12 @@ writeStorage('sessionStorage', crewKey, token)
 if (!savedToken) writeStorage('localStorage', crewKey, token)
 const leadKey = () => `mission-island-fisher-lead-${token}`
 let leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
+const connection = createIslandConnection(() => token, receive, disconnected)
 const skipNameKey = () => `mission-island-skip-name-${token}`
 const checkpointControls = bindCheckpointControls(optionsDialog, () => token)
 let offerJoinName = false
-let editingName: { id: number; token: string; name: string } | undefined
-let actionFeedback: { key: string; label: string; until: number } | undefined
-const feedbackText: Record<FishingResult, [string, string]> = {
-  caught: ['+1 fish', 'Caught a fish'],
-  'no-bite': ['', 'No bite'],
-  'dry-cast': ['', 'Aim at open water'],
-  escaped: ['', 'The fish escaped'],
-  'line-snapped': ['', 'The line snapped'],
-  'boat-moving': ['', 'Let the skiff settle before casting'],
-}
-
+let editingName: { id: number, token: string, name: string } | undefined
+let actionFeedback: { key: string, label: string, until: number } | undefined
 const toolButtons = starterTools.map((item, index) => {
   const button = document.createElement('button')
   const key = document.createElement('kbd')
@@ -136,8 +139,7 @@ const toolButtons = starterTools.map((item, index) => {
   return button
 })
 function newToken() {
-  return Array.from(crypto.getRandomValues(new Uint8Array(16)),
-    (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return Array.from(crypto.getRandomValues(new Uint8Array(clientTokenBytes)), (byte) => byte.toString(tokenHexRadix).padStart(tokenHexDigitsPerByte, '0')).join('')
 }
 
 const renderFailed = 'This browser could not start WebGL. Try a browser with hardware acceleration enabled.'
@@ -150,8 +152,10 @@ try {
   bootMessage.textContent = 'Building the island scenery…'
   renderer = createRenderer(canvas, markers)
   renderer.setLook(lookSettings())
+  renderer.setSound(soundSettings())
   bootMessage.textContent = 'Connecting to the host…'
-} catch (error) {
+}
+catch (error) {
   renderer?.dispose()
   renderer = undefined
   console.error(error)
@@ -160,30 +164,9 @@ try {
 showNotice()
 drawIslandMap(map, id)
 
-function updateMission(state: Snapshot) {
-  const card = missionCard(state, id)
-  missionLabel.textContent = card.label
-  missionTitle.textContent = card.title
-  missionDescription.textContent = card.detail
-  progress.setAttribute('aria-label', card.progress)
-  progress.setAttribute('aria-valuemax', String(card.max))
-  progress.setAttribute('aria-valuenow', String(card.value))
-  progressLabel.textContent = card.text
-  const count = card.max === 100 ? 3 : card.max
-  segments.forEach((segment, index) => {
-    segment.toggleAttribute('hidden', index >= count)
-    segment.classList.toggle('active', card.value >= (index + 1) * card.max / count)
-  })
-  boardButton.hidden = state.mission !== 'complete'
-  spray.hidden = state.mission !== 'fire'
-  if (missionStep.textContent !== card.instruction) missionStep.textContent = card.instruction
-}
-
 function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player | undefined) {
-  if (earlier) {
-    const found = starterDiscoveries.find(({ id }) => player.discoveries.includes(id) && !earlier.discoveries?.includes(id))
-    if (found) actionFeedback = { key: '', label: `Discovered ${found.name}`, until: performance.now() + 4200 }
-  }
+  const news = journal.update(state, player, earlier)
+  if (news) actionFeedback = { key: '', label: news, until: performance.now() + residentNewsDurationMs }
   wardrobe.update(state, player)
   if (counterDialog.open) counter.update(state, player, atClothingCounter(player) && !heldItem(state, player))
   const coins = state.crewCoins
@@ -193,8 +176,7 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
     const quantity = player.materials?.[material]
     return quantity ? [`${quantity} ${material}`] : []
   })
-  const contents = [balance, player.deliveryXp ? player.deliveryXp + ' driver XP' : '', `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`,
-    fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '', ...materials]
+  const contents = [balance, player.deliveryXp ? player.deliveryXp + ' driver XP' : '', `${player.seeds} ${player.seeds === 1 ? 'seed' : 'seeds'}`, fish ? `${fish} fish` : '', carrots ? `${carrots} ${carrots === 1 ? 'carrot' : 'carrots'}` : '', ...materials]
     .filter(Boolean).join(' · ')
   if (fishingWallet.textContent !== contents) fishingWallet.textContent = contents
   fishingWallet.hidden = false
@@ -209,9 +191,10 @@ function updatePersonalDisplay(state: Snapshot, player: Player, earlier: Player 
   chargeMeter.hidden = !player.charge && !fight
   if (fight) {
     chargeMeter.dataset.kind = 'cast'
-    chargeLabel.textContent = `Reeled ${Math.round(fight.progress * 100)}% · tension ${Math.round(fight.tension * 100)}%`
+    chargeLabel.textContent = `Reeled ${Math.round(fight.progress * percentScale)}% · tension ${Math.round(fight.tension * percentScale)}%`
     chargePower.value = fight.progress
-  } else if (player.charge) {
+  }
+  else if (player.charge) {
     chargeMeter.dataset.kind = player.charge.kind
     const label = player.charge.kind === 'throw' ? 'Throw power' : 'Cast power'
     if (chargeLabel.textContent !== label) chargeLabel.textContent = label
@@ -226,10 +209,10 @@ function update(state: Snapshot) {
   snapshot = state
   checkpointControls.update(state.playtest)
   const hours = Math.floor(state.weather.hour)
-  const minutes = Math.floor((state.weather.hour - hours) * 60)
-  clock.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} · ${state.weather.rain > 0.3 ? 'Rain' : isNight(hours) ? 'Night' : 'Daylight'}`
-  if (previousHour !== undefined && isNight(previousHour) && !isNight(hours) && Math.abs(previousHour - hours) > 2) {
-    actionFeedback = { key: '', label: 'Morning on the island', until: performance.now() + 2400 }
+  const minutes = Math.floor((state.weather.hour - hours) * minutesPerHour)
+  clock.textContent = `${String(hours).padStart(clockDigits, '0')}:${String(minutes).padStart(clockDigits, '0')} · ${state.weather.rain > hudRainThreshold ? 'Rain' : isNight(hours) ? 'Night' : 'Daylight'}`
+  if (previousHour !== undefined && isNight(previousHour) && !isNight(hours) && Math.abs(previousHour - hours) > dawnNoticeMinHourJump) {
+    actionFeedback = { key: '', label: 'Morning on the island', until: performance.now() + dawnNoticeDurationMs }
   }
   renderer?.update(state, id, follow)
   drawIslandMap(map, id, state)
@@ -242,12 +225,17 @@ function update(state: Snapshot) {
     if (title) title.textContent = player?.name || `Crew ${index + 1}`
     const role = row.querySelector('small')
     if (role) role.textContent = player
-      ? player.sleeping ? 'Turning in' : player.seat === 'driver' ? 'Driving' : player.seat === 'passenger' ? 'Riding'
-        : inSkiff(player.seat) ? 'Afloat' : index === id ? 'You' : 'Online'
+      ? player.sleeping
+        ? 'Turning in'
+        : player.seat === 'driver'
+          ? 'Driving'
+          : player.seat === 'passenger'
+            ? 'Riding'
+            : inSkiff(player.seat) ? 'Afloat' : index === id ? 'You' : 'Online'
       : 'Open'
   })
 
-  updateMission(state)
+  updateMission(state, id)
   const player = connected.find((entry) => entry.id === id)
   ridgeHud.update(state, player)
   if (player) {
@@ -257,10 +245,7 @@ function update(state: Snapshot) {
       offerJoinName = false
       if (!player.name) {
         pauseControls()
-        joinName.value = ''
-        joinName.setCustomValidity('')
-        joinName.placeholder = `Crew ${player.id + 1}`
-        joinNameDialog.showModal()
+        openJoinName(joinNameDialog, joinName, `Crew ${player.id + 1}`)
       }
     }
   }
@@ -273,9 +258,11 @@ function update(state: Snapshot) {
   const focus = reticle.update(state, player, renderer?.aimRay())
   renderer?.pinTip(reticle.tip, focus?.at)
   const ridgeHint = player && ridgeActionHint(state, player)
-  const [key, action] = ridgeHint ?? (player?.charge ? ['', 'Release left click']
-    : actionFeedback && performance.now() < actionFeedback.until ? [actionFeedback.key, actionFeedback.label]
-    : player ? actionHint(state, player, focus) : ['', ''])
+  const [key, action] = ridgeHint ?? (player?.charge
+    ? ['', 'Release left click']
+    : actionFeedback && performance.now() < actionFeedback.until
+      ? [actionFeedback.key, actionFeedback.label]
+      : player ? actionHint(state, player, focus) : ['', ''])
   const waiting = checkpointControls.waitingPrompt(state.playtest)
   prompt.hidden = !action && !waiting
   promptKey.hidden = !key || Boolean(waiting)
@@ -283,125 +270,99 @@ function update(state: Snapshot) {
   promptAction.textContent = waiting ?? action
 }
 
-function connect() {
-  const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:'
-  socket = new WebSocket(`${scheme}//${location.host}/play`)
-  socket.addEventListener('open', () => send({ type: 'join', token }))
-  socket.addEventListener('message', (event: MessageEvent<string>) => {
-    const incoming = JSON.parse(event.data) as ServerMessage
-    switch (incoming.type) {
-      case 'welcome':
-        if (incoming.scenarios) checkpointControls.setCatalog(incoming.scenarios)
-        offerJoinName = readStorage('localStorage', skipNameKey()) !== 'yes'
-        id = incoming.id
-        live = true
-        respawn.disabled = false
-        if (renderer) bootMessage.textContent = 'Restoring your crew and map…'
-        status.textContent = 'LAN connected'
-        light.dataset.online = 'true'
-        message = ''
-        showNotice()
-        break
-      case 'state':
-        update(incoming)
-        if (renderer && document.body.hasAttribute('data-booting')) {
-          document.body.removeAttribute('data-booting')
-          bootStatus.hidden = true
-          writeStorage('sessionStorage', reloadKey, null)
-        }
-        break
-      case 'full':
-        message = 'Both crew slots are occupied. Waiting for a slot…'
-        bootMessage.textContent = message
-        showNotice()
-        break
-      case 'duplicate':
-        token = newToken()
-        writeStorage('sessionStorage', crewKey, token)
-        leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
-        break
-      case 'fishing-result': {
-        const [key, label] = feedbackText[incoming.result]
-        actionFeedback = { key, label, until: performance.now() + 1900 }
-        break
+// A new connection starts a fresh listening run; shared crate impacts play from each viewer's position.
+function hearNotice(message: ServerMessage) {
+  if (message.type === 'welcome') renderer?.resetSound()
+  else if (message.type === 'crate-impact') renderer?.hearImpact(message)
+}
+
+function receive(incoming: ServerMessage) {
+  hearNotice(incoming)
+  const feedback = starterNoticeFeedback(incoming, id, snapshot)
+  if (feedback) actionFeedback = feedback
+  switch (incoming.type) {
+    case 'welcome':
+      if (incoming.scenarios) checkpointControls.setCatalog(incoming.scenarios)
+      offerJoinName = readStorage('localStorage', skipNameKey()) !== 'yes'
+      id = incoming.id
+      live = true
+      respawn.disabled = false
+      if (renderer) bootMessage.textContent = 'Restoring your crew and map…'
+      status.textContent = 'LAN connected'
+      light.dataset.online = 'true'
+      message = ''
+      showNotice()
+      break
+    case 'state':
+      update(incoming)
+      if (renderer && document.body.hasAttribute('data-booting')) {
+        document.body.removeAttribute('data-booting')
+        bootStatus.hidden = true
+        writeStorage('sessionStorage', reloadKey, null)
       }
-      case 'market-sale':
-        actionFeedback = { key: `+${incoming.coins} coins`, label: 'Market sale · Crew bank', until: performance.now() + 2100 }
-        break
-      case 'job-pay': {
-        actionFeedback = { key: `+${incoming.coins} coins`, label: `${starterPay[incoming.job].label} · Crew bank`,
-          until: performance.now() + 3200 }
-        break
-      }
-      case 'crew-note':
-        openGuide()
-        break
-      case 'resident-chat':
-        openGuide(incoming.resident)
-        break
-      case 'favor-accepted':
-      case 'favor-pay':
-        actionFeedback = { ...favorFeedback(incoming, id), until: performance.now() + 4200 }
-        break
-      case 'gate-step':
-        actionFeedback = { key: '', label: gateStepText[incoming.step], until: performance.now() + 3200 }
-        break
-      case 'materials-step':
-        actionFeedback = { key: '', label: materialsFeedback(incoming), until: performance.now() + 4800 }
-        break
-      case 'open-wardrobe':
-      case 'open-clothing-counter':
-        openClothing(incoming.type === 'open-wardrobe')
-        break
-      case 'clothing-purchase':
-        if (counterDialog.open) counter.result(incoming.item, incoming.result)
-        break
-      case 'order-pay':
-        actionFeedback = { key: `+${incoming.coins} coins`, label: `${jobs[incoming.id].title} complete · Crew bank`, until: performance.now() + 3200 }
-        break
-      case 'starter-seed':
-        actionFeedback = { key: '+1 seed', label: 'Plant it at Island Farm', until: performance.now() + 3200 }
-        break
-      case 'flight-result': case 'aerial-sighting':
-        ridgeHud.receive(incoming)
-        break
-      case 'order-unavailable':
-        board.reject()
-        if (snapshot) updateBoard(snapshot)
-        break
-    }
-  })
-  socket.addEventListener('close', () => {
-    live = false
-    offerJoinName = false
-    if (joinNameDialog.open) joinNameDialog.close()
-    if (wardrobeDialog.open) wardrobeDialog.close()
-    if (counterDialog.open) counterDialog.close()
-    respawn.disabled = true
-    writeStorage('sessionStorage', reloadKey, 'yes')
-    actionFeedback = undefined
-    chargeMeter.hidden = true
-    openWardrobe.disabled = true
-    keys.clear()
-    primary = false
-    rightButtonHeld = false
-    light.dataset.online = 'false'
-    status.textContent = 'Reconnecting'
-    message ||= 'Reconnecting to the host. The island may reload when it is ready.'
-    bootMessage.textContent = message
-    showNotice()
-    board.reject()
-    if (snapshot) updateBoard(snapshot)
-    setTimeout(connect, 1200)
-  })
+      break
+    case 'full':
+      message = 'Both crew slots are occupied. Waiting for a slot…'
+      bootMessage.textContent = message
+      showNotice()
+      break
+    case 'duplicate':
+      token = newToken()
+      writeStorage('sessionStorage', crewKey, token)
+      leadDismissed = readStorage('localStorage', leadKey()) === 'yes'
+      break
+    case 'crew-note':
+      openGuide()
+      break
+    case 'resident-chat':
+    case 'ferry-tally':
+      openGuide('resident' in incoming ? incoming.resident : 'tally')
+      break
+    case 'open-wardrobe':
+    case 'open-clothing-counter':
+      openClothing(incoming.type === 'open-wardrobe')
+      break
+    case 'clothing-purchase':
+      if (counterDialog.open) counter.result(incoming.item, incoming.result)
+      break
+    case 'flight-result': case 'aerial-sighting':
+      ridgeHud.receive(incoming)
+      break
+    case 'order-unavailable':
+      board.reject()
+      if (snapshot) updateBoard(snapshot)
+      break
+  }
+}
+
+function disconnected() {
+  live = false
+  offerJoinName = false
+  if (joinNameDialog.open) joinNameDialog.close()
+  if (wardrobeDialog.open) wardrobeDialog.close()
+  if (counterDialog.open) counterDialog.close()
+  respawn.disabled = true
+  writeStorage('sessionStorage', reloadKey, 'yes')
+  actionFeedback = undefined
+  chargeMeter.hidden = true
+  openWardrobe.disabled = true
+  keys.clear()
+  primary = false
+  rightButtonHeld = false
+  light.dataset.online = 'false'
+  status.textContent = 'Reconnecting'
+  message ||= 'Reconnecting to the host. The island may reload when it is ready.'
+  bootMessage.textContent = message
+  showNotice()
+  board.reject()
+  if (snapshot) updateBoard(snapshot)
 }
 
 function send(message: ClientMessage) {
-  if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message))
+  connection.send(message)
 }
 
-const keyBindings = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown',
-  'ArrowRight', 'KeyB', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyF', 'KeyC', 'KeyR', 'Space', 'Digit1', 'Digit2', 'Digit3'])
+const keyBindings = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'KeyB', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyF', 'KeyC', 'KeyR', 'Space', 'Digit1', 'Digit2', 'Digit3'])
 
 function aimHeading() {
   return follow ? renderer?.aimHeading() : undefined
@@ -471,13 +432,13 @@ function openJobBoard() {
 }
 
 function modalOpen() {
-  return optionsDialog.open || boardDialog.open || guideDialog.open || joinNameDialog.open ||
-    wardrobeDialog.open || counterDialog.open
+  return optionsDialog.open || boardDialog.open || guideDialog.open || joinNameDialog.open
+    || wardrobeDialog.open || counterDialog.open || journal.dialog.open
 }
 
 function openClothing(fromWardrobe: boolean) {
   if (!live || !snapshot || modalOpen()) return
-  const player = snapshot.players.find(entry => entry.id === id)
+  const player = snapshot.players.find((entry) => entry.id === id)
   if (!player) return
   pauseControls()
   if (fromWardrobe) wardrobe.open(snapshot, player)
@@ -568,13 +529,13 @@ function cancelMouseActions() {
 }
 
 function overGameplay(target: EventTarget | null) {
-  return document.pointerLockElement === canvas || (target instanceof Element && playfield.contains(target) &&
-    !target.closest('button, a, input, select, textarea, dialog'))
+  return document.pointerLockElement === canvas || (target instanceof Element && playfield.contains(target)
+    && !target.closest('button, a, input, select, textarea, dialog'))
 }
 
 function beginMouseAction(event: MouseEvent) {
   if (event.ctrlKey || event.metaKey || !live || renderer?.isReviewing() || modalOpen() || !overGameplay(event.target)) return
-  if (event.button === 2) {
+  if (event.button === secondaryMouseButton) {
     setRightButton(true)
     return
   }
@@ -585,7 +546,7 @@ function beginMouseAction(event: MouseEvent) {
 }
 function endMouseAction(event: MouseEvent) {
   if (event.button === 0) finishPrimary('release')
-  if (event.button === 2) setRightButton(false)
+  if (event.button === secondaryMouseButton) setRightButton(false)
 }
 window.addEventListener('pointerdown', beginMouseAction, true)
 window.addEventListener('mousedown', beginMouseAction, true)
@@ -609,7 +570,7 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('blur', () => {
   pauseControls()
 })
-window.addEventListener('pagehide', () => socket?.close())
+window.addEventListener('pagehide', () => connection.close())
 cameraButton.addEventListener('click', () => {
   toggleCamera()
   cameraButton.blur()
@@ -622,25 +583,7 @@ editCrewName.addEventListener('click', () => {
   crewName.focus()
   crewName.select()
 })
-joinName.addEventListener('input', () => joinName.setCustomValidity(''))
-element('join-name-form').addEventListener('submit', (event) => {
-  const name = cleanCrewName(joinName.value)
-  if (!name) {
-    event.preventDefault()
-    joinName.setCustomValidity('Enter a game name or choose Skip for now.')
-    joinName.reportValidity()
-    return
-  }
-  if (live) send({ type: 'crew-name', name })
-})
-function skipJoinName() {
-  writeStorage('localStorage', skipNameKey(), 'yes')
-}
-joinNameDialog.addEventListener('cancel', skipJoinName)
-element('skip-join-name').addEventListener('click', () => {
-  skipJoinName()
-  joinNameDialog.close()
-})
+bindJoinName(joinNameDialog, joinName, (name) => live && send({ type: 'crew-name', name }), () => writeStorage('localStorage', skipNameKey(), 'yes'))
 function saveCrewName() {
   const original = editingName
   editingName = undefined
@@ -660,8 +603,8 @@ respawn.addEventListener('click', () => {
   send({ type: 'respawn' })
   optionsDialog.close()
 })
-if (renderer) connect()
-setInterval(sendInput, 60)
+if (renderer) connection.connect()
+setInterval(sendInput, inputHeartbeatMs)
 
 if (import.meta.hot) {
   import.meta.hot.on('vite:beforeFullReload', () => {
@@ -677,13 +620,15 @@ if (import.meta.hot) {
     try {
       renderer = module.createRenderer(canvas, markers)
       renderer.setLook(lookSettings())
+      renderer.setSound(soundSettings())
       if (modalOpen()) renderer.releaseMouse()
       if (snapshot) renderer.update(snapshot, id, follow)
-      if (!socket) {
+      if (!connection.started) {
         bootMessage.textContent = 'Connecting to the host…'
-        connect()
+        connection.connect()
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error(error)
     }
     showNotice()
