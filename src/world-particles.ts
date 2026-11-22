@@ -3,7 +3,7 @@ import { createParticleEffect } from './particle-effect'
 import { particleBurst } from './particle-motion'
 import type { Particle, ParticleOrigin, ParticleSource, ParticleTuning } from './particle-motion'
 import { particleRecipes } from './assets/recipes/particle-recipes'
-import { particleAccents } from './assets/recipes/particle-shelf-recipes'
+import { particleAccents } from './assets/recipes/particle-accents'
 import { smoothRange } from './wildlife-motion'
 import type { WildlifeFrame } from './wildlife'
 

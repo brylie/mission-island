@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { launchParticle, particleAppearance, particleBurst, particleHeight, particleLoop } from '../src/particle-motion.ts'
 import { particleRecipes } from '../src/assets/recipes/particle-recipes.ts'
-import { particleAccents } from '../src/assets/recipes/particle-shelf-recipes.ts'
+import { particleAccents } from '../src/assets/recipes/particle-accents.ts'
 
 const origin = { x: 2, y: 1, z: -3 }
 const tuning = { strength: 1, footprint: 1 }
