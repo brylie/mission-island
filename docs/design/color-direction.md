@@ -15,7 +15,7 @@ An audit of the `#rrggbb` literals in `src/` (November 2026) found a palette tha
 - **Off-family hues are people and flowers.** Violets, roses and bright blues come almost entirely from wardrobe dyes and foxgloves.
 - **The same paint is retyped by hand.** 1,051 unique hexes in world code collapse to 385 colors you can tell apart, and to about 62 at a looser threshold. One cream has 20 near-identical versions across 13 files.
 
-Some of those look-alikes do different jobs. A warm white can be a cottage wall, an eye highlight or the sun's color. Others are the same paint typed twice. The second kind costs coherence and performance: `meshes.paint(hex)` creates a material for each distinct hex and merges static meshes per material, so two identical creams become two materials and two draw calls.
+Some of those look-alikes do different jobs. A warm white can be a cottage wall, an eye highlight or the sun's color. Others are the same paint typed twice. The second kind costs coherence and performance: `meshes.paint(hex, glow)` caches one material per key, made from the glow flag and the exact hex string. Repeated calls with the same key reuse that material, and static meshes are merged per material. Two creams that look the same but are typed as different hexes have different keys, so they become two materials and two draw calls.
 
 ## The system in six parts
 
