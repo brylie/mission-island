@@ -5,7 +5,7 @@ import { heldItem } from './interactions/cargo.ts'
 import { interactionChoice } from './interactions/definition.ts'
 import { besideSubject, defaultInteraction } from './interaction-options.ts'
 import type { Interaction, InteractionChoice } from './interaction-options.ts'
-import { learnerVehicles, nearestBoardableLearner, practiceStatus, practiceStop } from './learner-vehicles.ts'
+import { flatbedHasSeat, learnerVehicles, nearestBoardableLearner, practiceStatus, practiceStop } from './learner-vehicles.ts'
 
 const skiffBoardSpeed = 0.65
 const skiffBoardReach = 3.3
@@ -40,7 +40,7 @@ export function canCast(state: Snapshot, player: Player) {
 function roadBoardingHint(state: Snapshot, player: Player): [string, string] | undefined {
   if (!player.grounded || player.onBed || player.truckSurface) return
   const learner = nearestBoardableLearner(state.vehicles, state.players, player)
-  const truckNear = distance(player, state.truck) < truckBoardReach && Math.abs(state.truck.speed) <= truckSeatSpeed
+  const truckNear = distance(player, state.truck) < truckBoardReach && Math.abs(state.truck.speed) <= truckSeatSpeed && flatbedHasSeat(state.players)
   if (learner && (!truckNear || distance(state.vehicles[learner], player) < distance(state.truck, player))) {
     return ['F', `${learner === 'tractor' ? 'Drive' : 'Board'} ${learnerVehicles[learner].noun}`]
   }

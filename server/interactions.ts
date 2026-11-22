@@ -59,7 +59,7 @@ export function createInteractions(
       }
     }
     const home = spawns[player.id]
-    Object.assign(player, { ...home, y: groundHeight(home), heading: 0, seat: null, grounded: true, onBed: false, truckSurface: undefined, swimming: false, sleeping: false, casting: null, reaching: false, rightHandRaised: false, throwing: false, rowing: false })
+    Object.assign(player, { ...home, y: groundHeight(home), heading: 0, seat: null, vehicle: undefined, grounded: true, onBed: false, truckSurface: undefined, swimming: false, sleeping: false, casting: null, reaching: false, rightHandRaised: false, throwing: false, rowing: false })
     stopPrimary(member)
     member.input = stopped
     member.verticalSpeed = 0

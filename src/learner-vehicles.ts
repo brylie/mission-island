@@ -110,6 +110,11 @@ export function openLearnerSeat(players: readonly Rider[], id: LearnerVehicleId)
   return (['driver', 'passenger'] as const).find((seat) => seatOffset(id, seat) && !taken(seat))
 }
 
+// Whether the flatbed still has a free seat. Learner seats name their vehicle.
+export function flatbedHasSeat(players: readonly Rider[]) {
+  return (['driver', 'passenger'] as const).some((seat) => !players.some((entry) => entry.seat === seat && !entry.vehicle))
+}
+
 // The nearest learner vehicle that is stopped, in reach and has a free seat.
 export function nearestBoardableLearner(vehicles: Record<LearnerVehicleId, Point & { speed: number }>, players: readonly Rider[], player: Point) {
   return learnerVehicleIds

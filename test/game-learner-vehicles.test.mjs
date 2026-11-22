@@ -6,7 +6,7 @@ import test from 'node:test'
 import { createGame } from '../server/game.ts'
 import { islandSaveFile } from '../server/save.ts'
 import { careerUnlockXp, learnerSolids, learnerVehicles, practiceStopXp } from '../src/learner-vehicles.ts'
-import { distance, offset } from '../src/world.ts'
+import { distance, offset, truckStart } from '../src/world.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
 const { pickup, tractor } = learnerVehicles
@@ -144,4 +144,31 @@ test('a save file keeps learner seats and XP, and rejects a seat the vehicle doe
     file.write(save)
     assert.throws(() => file.load(), /Could not load island save/, JSON.stringify(bad))
   }
+})
+
+test('a crewmate boards a free learner vehicle when the nearer flatbed is full', (t) => {
+  const pickupPose = offset(truckStart, 4.2, 0)
+  const { join, advance } = setup(t, {
+    players: [
+      player(0, truckStart, { seat: 'driver' }),
+      player(1, truckStart, { seat: 'passenger' }),
+      player(2, offset(truckStart, 2, 0)),
+    ],
+    arrange: (save) => { save.world.vehicles = { ...save.world.vehicles, pickup: { ...pickupPose, heading: truckStart.heading } } },
+  })
+  join(tokens[0])
+  join(tokens[1])
+  const third = join(tokens[2])
+  third.request('seat')
+  advance()
+  assert.deepEqual([third.player.seat, third.player.vehicle], ['driver', 'pickup'])
+})
+
+test('respawning from a learner seat leaves no vehicle behind', (t) => {
+  const { join, advance } = setup(t, { players: [player(0, pickup.park, { seat: 'driver', vehicle: 'pickup' })] })
+  const driver = join(tokens[0])
+  driver.request('respawn')
+  advance()
+  assert.equal(driver.player.seat, null)
+  assert.equal(driver.player.vehicle, undefined)
 })

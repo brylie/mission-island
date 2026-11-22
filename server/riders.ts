@@ -8,7 +8,7 @@ import { stopPrimary, stowTool, type CrewMember } from './crew.ts'
 import { updateHeldItems } from './items.ts'
 import { canOccupyGround } from '../src/simulation/movement.ts'
 import { skiffExit } from './skiff.ts'
-import { learnerVehicles, nearestBoardableLearner, openLearnerSeat, seatOffset, type LearnerSeat } from '../src/learner-vehicles.ts'
+import { flatbedHasSeat, learnerVehicles, nearestBoardableLearner, openLearnerSeat, seatOffset, type LearnerSeat } from '../src/learner-vehicles.ts'
 
 const cabDoorExitLateralM = 2.1
 const cabDoorExitForwardM = 0.9
@@ -41,7 +41,8 @@ function seatExit(state: Snapshot, player: Snapshot['players'][number]) {
 // Board whichever road vehicle in reach is closest: a learner vehicle or the flatbed.
 function boardRoadVehicle(state: Snapshot, player: Snapshot['players'][number]) {
   const learner = nearestBoardableLearner(state.vehicles, state.players, player)
-  const truckInReach = distance(state.truck, player) < truckBoardingRangeM && Math.abs(state.truck.speed) <= truckSeatSpeed
+  // A full flatbed never wins over a learner vehicle with a free seat.
+  const truckInReach = distance(state.truck, player) < truckBoardingRangeM && Math.abs(state.truck.speed) <= truckSeatSpeed && flatbedHasSeat(state.players)
   if (learner && (!truckInReach || distance(state.vehicles[learner], player) < distance(state.truck, player))) {
     const seat = openLearnerSeat(state.players, learner)
     if (seat) Object.assign(player, { seat, vehicle: learner })
