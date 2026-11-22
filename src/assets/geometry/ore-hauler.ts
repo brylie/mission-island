@@ -38,8 +38,10 @@ export const oreHaulerCab = {
     emblem: {
       centerX: 1.158,
       halfWidth: 0.008,
+      // The smaller ridge stands a little prouder where it overlaps the peak.
+      ridgeHalfWidth: 0.011,
       peak: [[2.69, 1.51], [3.09, 1.51], [2.90, 1.73]],
-      ridge: [[3.04, 1.51], [3.29, 1.51], [3.17, 1.65]],
+      ridge: [[3.04, 1.515], [3.29, 1.515], [3.17, 1.65]],
     },
   },
   mirror: {
@@ -91,9 +93,9 @@ export const oreHaulerTipper = {
     plate: { center: [0, floor + height / 2, rear + 0.155], size: [width - 0.10, height, 0.12] },
     cap: { center: [0, lip, rear - 0.012], size: [width - 0.02, 0.12, 0.14] },
     stiffener: { center: [0.80, 1.91, rear + 0.122], size: [0.105, 1.10, 0.10] },
-    hinge: { center: [0.81, lip + 0.015, rear - 0.07], size: [0.34, 0.15, 0.17] },
+    hinge: { center: [0.81, lip + 0.02, rear - 0.07], size: [0.34, 0.15, 0.17] },
     latch: { center: [0.88, 1.32, rear + 0.16], size: [0.18, 0.27, 0.16] },
-    chevron: { center: [0.19, 1.97, rear + 0.053], size: [0.48, 0.085, 0.025], slant: 0.40 },
+    chevron: { center: [0.19, 1.97, rear + 0.053], size: [0.34, 0.085, 0.025], slant: 0.40 },
     crossbar: { center: [0, 1.52, rear + 0.14], size: [1.98, 0.11, 0.10] },
   },
   headboard: { center: [0, 2.25, front - 0.025], size: [2.19, 1.99, 0.13] },
@@ -103,6 +105,8 @@ export const oreHaulerTipper = {
 
 const fenderX = 1.02
 const tandemWingWidth = 0.44
+// The raked wings are a little narrower than the flat guard so their sides never coincide.
+const raisedWingWidth = 0.42
 const tandemWingThickness = 0.105
 const tandemWingDrop = 0.70
 
@@ -117,18 +121,18 @@ export const oreHaulerChassis = {
   },
   fender: {
     tandem: { center: [fenderX, 1.17, -2.345], size: [tandemWingWidth, tandemWingThickness, 2.03] },
-    rearWing: { center: [fenderX, 1.045, -3.46], size: [tandemWingWidth, tandemWingThickness, 0.35], rake: -tandemWingDrop },
-    frontWing: { center: [fenderX, 1.045, -1.23], size: [tandemWingWidth, tandemWingThickness, 0.35], rake: tandemWingDrop },
+    rearWing: { center: [fenderX, 1.045, -3.46], size: [raisedWingWidth, tandemWingThickness, 0.35], rake: -tandemWingDrop },
+    frontWing: { center: [fenderX, 1.045, -1.23], size: [raisedWingWidth, tandemWingThickness, 0.35], rake: tandemWingDrop },
     mudFlap: { center: [fenderX, 0.69, -3.58], size: [0.40, 0.57, 0.06] },
     front: { center: [fenderX, 1.135, steeringAxle], size: [0.43, 0.10, 1.08] },
   },
   tailLights: {
-    housing: { center: [0.89, 0.78, -4.16], size: [0.45, 0.20, 0.12] },
+    housing: { center: [0.89, 0.785, -4.16], size: [0.45, 0.20, 0.12] },
     redLens: { center: [0.92, 0.79, -4.23], size: [0.24, 0.105, 0.035] },
     amberLens: { center: [0.73, 0.79, -4.23], size: [0.10, 0.105, 0.035] },
   },
   rearCrossmember: { center: [0, 0.77, -4.14], size: [2.19, 0.18, 0.14] },
-  rearBracket: { center: [0.64, 0.64, -4.16], size: [0.095, 0.31, 0.12] },
+  rearBracket: { center: [0.64, 0.64, -4.155], size: [0.095, 0.31, 0.10] },
   rearBumper: { center: [0, 0.51, -4.19], size: [2.18, 0.14, 0.22] },
 } as const
 

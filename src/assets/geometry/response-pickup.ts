@@ -42,9 +42,11 @@ export const responsePickupBody = {
     profile: [[tail, wellTop], [2.36, wellTop], [nose, 0.96], [nose, 1.02], [2.34, beltline], [tail, beltline]],
   },
   underbody: { halfWidth: 0.62, profile: [[tail + 0.1, 0.4], [nose - 0.1, 0.4], [nose - 0.1, wellTop], [tail + 0.1, wellTop]] },
-  rocker: { center: [rockerX, (sill + wellTop) * half, -0.025], size: [0.08, wellTop - sill, 1.95] },
-  frontCorner: { center: [rockerX, 0.72, 2.2], size: [0.08, 0.36, 0.5] },
-  rearCorner: { center: [rockerX, 0.72, -2.2], size: [0.08, 0.36, 0.44] },
+  // Rockers and corners stand just inside the body sides and short of its ends,
+  // so no two faces share a plane.
+  rocker: { center: [rockerX, (sill + wellTop) * half, -0.025], size: [0.07, wellTop - sill, 1.95] },
+  frontCorner: { center: [rockerX, 0.73, 2.2], size: [0.07, 0.34, 0.48] },
+  rearCorner: { center: [rockerX, 0.73, -2.19], size: [0.07, 0.34, 0.42] },
   archLip: { x: 0.96, y: 0.9, z: [rearAxle, frontAxle], size: [0.1, 0.05, 0.92] },
   cab: {
     halfWidth: 0.92,
@@ -67,7 +69,7 @@ export const responsePickupBody = {
     },
   },
   door: {
-    seams: { x: 0.962, z: [-0.06, 0.92], y: 0.9, size: [0.012, 0.4, 0.02] },
+    seams: { x: 0.96, z: [-0.06, 0.92], y: 0.9, size: [0.012, 0.38, 0.02] },
     handles: { x: 0.97, z: [-0.18, 0.62], y: 1.03, size: [0.03, 0.04, 0.16] },
     stripe: { center: [0.963, 0.97, -0.6], size: [0.01, 0.08, 3.6] },
     // A cream shield with a red flame marks the Seabrook crew on each front door.
@@ -75,7 +77,7 @@ export const responsePickupBody = {
     flame: { centerX: 0.973, halfWidth: 0.004, profile: [[0.27, 0.79], [0.41, 0.79], [0.37, 0.88], [0.34, 0.97], [0.31, 0.88]] },
   },
   mirror: {
-    mount: { center: [0.98, 1.24, 0.82], size: [0.12, 0.04, 0.04] },
+    mount: { center: [0.98, 1.25, 0.82], size: [0.12, 0.04, 0.04] },
     housing: { center: [1.06, 1.32, 0.82], size: [0.08, 0.2, 0.12] },
     glass: { center: [1.06, 1.32, 0.755], size: [0.065, 0.15, 0.015] },
   },
@@ -92,16 +94,17 @@ export const responsePickupBody = {
   headlightHousing: { center: [0.66, 0.99, nose + 0.01], size: [0.34, 0.2, 0.04] },
   indicator: { center: [0.88, 0.99, nose + 0.005], size: [0.08, 0.12, 0.04] },
   frontBumper: { center: [0, 0.62, nose + 0.05], size: [1.9, 0.16, 0.16] },
-  pushBar: { x: [-0.36, 0.36], center: [0, 0.86, nose + 0.12], size: [0.06, 0.42, 0.06], rail: { center: [0, 1.04, nose + 0.12], size: [0.84, 0.06, 0.06] } },
+  pushBar: { x: [-0.36, 0.36], center: [0, 0.86, nose + 0.12], size: [0.06, 0.42, 0.06], rail: { center: [0, 1.05, nose + 0.12], size: [0.84, 0.06, 0.07] } },
   bed: {
-    floor: { center: [0, beltline + 0.01, (tail + bedFront) * half], size: [1.72, 0.02, bedFront - tail - 0.06] },
-    side: { centerX: 0.91, halfWidth: 0.05, profile: [[tail, beltline - 0.02], [bedFront, beltline - 0.02], [bedFront, bedLip], [tail, bedLip]] },
-    railCap: { center: [0.91, bedLip + 0.02, (tail + bedFront) * half], size: [0.14, 0.04, bedFront - tail] },
+    floor: { center: [0, beltline + 0.01, (tail + bedFront) * half], size: [1.7, 0.02, bedFront - tail - 0.06] },
+    // Bed sides and tailgate stand a few millimetres proud of the body's tail.
+    side: { centerX: 0.913, halfWidth: 0.05, profile: [[tail - 0.01, beltline - 0.02], [bedFront, beltline - 0.02], [bedFront, bedLip], [tail - 0.01, bedLip]] },
+    railCap: { center: [0.91, bedLip + 0.02, (tail + bedFront) * half], size: [0.14, 0.04, bedFront - tail - 0.02] },
     headboard: { center: [0, (beltline + bedLip) * half, bedFront + 0.03], size: [1.72, bedLip - beltline, 0.06] },
-    tailgate: { center: [0, (beltline + bedLip) * half, tail + 0.03], size: [1.72, bedLip - beltline + 0.04, 0.06] },
+    tailgate: { center: [0, (beltline + bedLip) * half, tail + 0.025], size: [1.71, bedLip - beltline + 0.04, 0.06] },
     tailgateHandle: { center: [0, 1.34, tail - 0.005], size: [0.28, 0.05, 0.03] },
     // A response locker spans the bed behind the cab; two spare extinguishers ride beside it.
-    locker: { center: [0, 1.36, -1.0], size: [1.7, 0.5, 0.56] },
+    locker: { center: [0, 1.36, -1.0], size: [1.66, 0.5, 0.56] },
     lockerLid: { center: [0, 1.62, -1.0], size: [1.72, 0.03, 0.58] },
     lockerLatch: { x: [-0.4, 0.4], center: [0, 1.42, -1.29], size: [0.12, 0.08, 0.02] },
     extinguishers: { x: [-0.55, 0.55], y: 1.4, z: -1.62, diameter: 0.17, height: 0.56, segments: 10 },

@@ -52,7 +52,7 @@ export const rescueHelicopter = {
   skid: { y: 0.11, z: 0.68, size: [0.17, 0.22, 3.67] },
   skidStrut: { xRatio: 0.83, y: 0.43, z: [-0.55, 1.84], size: [0.12, 0.66, 0.13], splay: 0.27 },
   // Upturned skid tips and a boarding step between the struts.
-  skidTip: { y: 0.2, z: 2.62, size: [0.17, 0.12, 0.36], rake: -0.6 },
+  skidTip: { y: 0.2, z: 2.62, size: [0.15, 0.12, 0.36], rake: -0.6 },
   skidStep: { xRatio: 0.95, y: 0.3, z: 0.65, size: [0.25, 0.05, 0.6] },
   // Red rescue bands wrap the tail boom behind the cabin.
   rescueBands: [
@@ -136,7 +136,7 @@ export const roadVehicleGeometry = {
   beaconMount: { widthRatio: 0.63, raise: 0.035, height: 0.13, depth: 0.24 },
   beacon: { lateralWidthRatio: 0.23, raise: 0.13, size: [0.38, 0.15, 0.23] },
   // Each beacon sits in a frame base, with a clear takedown lamp between them.
-  beaconHousing: { margin: 0.04, height: 0.06 },
+  beaconHousing: { margin: 0.04, height: 0.06, drop: 0.01 },
   takedown: { raise: 0.11, size: [0.18, 0.08, 0.14] },
 } as const
 
@@ -149,7 +149,7 @@ export const ambulanceBody = {
   careEmblem: {
     x: ambulanceSide + 0.018,
     bar: { center: [0, 2.15, -1.6], size: [0.035, 0.16, 0.56] },
-    upright: { center: [0, 2.15, -1.6], size: [0.035, 0.51, 0.16] },
+    upright: { center: [0, 2.15, -1.6], size: [0.045, 0.51, 0.16] },
   },
   // Rear double doors in a frame surround, with windows, handles and the stripe carried across.
   rearDoors: {
@@ -158,7 +158,7 @@ export const ambulanceBody = {
     window: { x: 0.53, y: 2.25, z: ambulanceRear - 0.045, size: [0.62, 0.42, 0.02] },
     handle: { x: 0.12, y: 1.65, z: ambulanceRear - 0.05, size: [0.05, 0.22, 0.04] },
     band: { x: 0.53, y: 1.11, z: ambulanceRear - 0.045, size: [0.98, 0.19, 0.02] },
-    hinge: { x: 1.02, ys: [1.2, 2.4], z: ambulanceRear - 0.045, size: [0.04, 0.14, 0.03] },
+    hinge: { x: 1.025, ys: [1.2, 2.4], z: ambulanceRear - 0.045, size: [0.04, 0.14, 0.03] },
   },
   rearStep: { center: [0, 0.52, -3.17], size: [1.5, 0.08, 0.32] },
   // Red marker beacons at the top rear corners of the box.
@@ -167,7 +167,7 @@ export const ambulanceBody = {
   sideDoor: {
     x: ambulanceSide + 0.012,
     seam: { y: 1.7, z: [-0.2, -1.2], size: [0.02, 1.62, 0.03] },
-    header: { center: [0, 2.52, -0.7], size: [0.02, 0.03, 1.03] },
+    header: { center: [0, 2.52, -0.7], size: [0.03, 0.03, 1.0] },
     glass: { center: [0, 2.12, -0.7], size: [0.02, 0.45, 0.62] },
     handle: { center: [0, 1.62, -0.33], size: [0.03, 0.05, 0.2] },
   },

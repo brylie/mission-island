@@ -95,7 +95,7 @@ export const flatbedBody = {
     tread: { center: [1.17, 0.7, 0.78], size: [0.34, 0.08, 0.52] },
     bracket: { center: [1.12, 0.52, 0.76], size: [0.36, 0.07, 0.46] },
     // Hangers drop from the cab skirt to carry the lower step.
-    hanger: { x: 1.0, z: [0.58, 0.94], y: 0.615, size: [0.05, 0.25, 0.05] },
+    hanger: { x: 1.0, z: [0.58, 0.94], y: 0.61, size: [0.05, 0.24, 0.05] },
   },
   roofMarker: { center: [0.7, roofTop + 0.02, 1.6], size: [0.13, 0.05, 0.1] },
   grille: {
@@ -116,8 +116,8 @@ export const flatbedBody = {
   // A flat mudguard over each rear wheel, with raked wings and a mud flap.
   rearFender: {
     top: { center: [1.22, 1.03, -1.89], size: [0.46, 0.08, 1.1] },
-    frontWing: { center: [1.22, 0.93, -1.225], size: [0.46, 0.08, 0.3], rake: 0.7 },
-    rearWing: { center: [1.22, 0.93, -2.555], size: [0.46, 0.08, 0.3], rake: -0.7 },
+    frontWing: { center: [1.22, 0.93, -1.225], size: [0.44, 0.08, 0.3], rake: 0.7 },
+    rearWing: { center: [1.22, 0.93, -2.555], size: [0.44, 0.08, 0.3], rake: -0.7 },
     mudFlap: { center: [1.2, 0.6, -2.72], size: [0.4, 0.54, 0.05] },
   },
   // Diesel on the right, a tool locker on the left, both tucked under the deck.
@@ -129,7 +129,7 @@ export const flatbedBody = {
   // A cab guard keeps loose cargo off the rear window.
   cabGuard: {
     posts: { x: [-1.0, 1.0], center: [0, 1.53, 0.215], size: [0.08, 0.94, 0.05] },
-    rails: { heights: [1.56, 1.96], center: [0, 0, 0.215], size: [2.08, 0.07, 0.05] },
+    rails: { heights: [1.56, 1.96], center: [0, 0, 0.215], size: [2.12, 0.07, 0.06] },
   },
 } as const
 

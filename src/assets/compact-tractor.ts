@@ -17,6 +17,7 @@ const quarterTurn = Math.PI * half
 const fullTurn = Math.PI + Math.PI
 const diameterPerRadius = 2
 const lugsPerPair = 2
+const platesPerPair = 2
 const slowSignOrange = '#e0773a'
 const seatBlack = '#2f3a36'
 
@@ -72,8 +73,10 @@ function buildOperatorStation({ box }: VehicleBodywork, meshes: MeshFactory) {
   box(seat.back, seatBlack).rotation.x = seat.back.rake
   const [axleZ, axleY] = fender.axle
   for (const side of sides) {
-    for (const angle of fender.angles) {
-      const plate = box({ center: [fender.x, axleY + fender.radius * Math.sin(angle), axleZ + fender.radius * Math.cos(angle)], size: fender.plate }, finish, side)
+    for (const [index, angle] of fender.angles.entries()) {
+      const [width, thickness, length] = fender.plate
+      const size = [width - (index % platesPerPair) * fender.narrowerBy, thickness, length] as const
+      const plate = box({ center: [fender.x, axleY + fender.radius * Math.sin(angle), axleZ + fender.radius * Math.cos(angle)], size }, finish, side)
       plate.rotation.x = quarterTurn - angle
     }
     box({ center: [tailLightHousing.x, tailLightHousing.center[1], tailLightHousing.center[2]], size: tailLightHousing.size }, fleetPaint.frame, side)

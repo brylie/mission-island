@@ -33,7 +33,7 @@ export const compactTractorBody = {
     profile: [[0.05, 0.62], [1.46, 0.62], [nose, 0.78], [nose, 1.08], [1.48, 1.18], [0.05, 1.18]],
   },
   louvers: { x: 0.334, y: 0.96, z: [0.55, 0.72, 0.89, 1.06], size: [0.01, 0.2, 0.07] },
-  stripe: { center: [0.333, 1.1, 0.75], size: [0.01, 0.04, 1.4] },
+  stripe: { center: [0.333, 1.1, 0.8], size: [0.01, 0.04, 1.3] },
   grille: {
     surround: { center: [0, 0.93, nose + 0.01], size: [0.3, 0.26, 0.03] },
     bar: { heights: [0.86, 0.93, 1.0], z: nose + 0.03, size: [0.24, 0.02, 0.02] },
@@ -50,13 +50,15 @@ export const compactTractorBody = {
   seat: {
     post: { center: [0, 0.8, -0.62], size: [0.1, 0.3, 0.1] },
     pan: { center: [0, 0.98, -0.62], size: [0.46, 0.1, 0.42] },
-    back: { center: [0, 1.22, -0.84], size: [0.46, 0.44, 0.1], rake: -0.2 },
+    back: { center: [0, 1.22, -0.84], size: [0.42, 0.44, 0.1], rake: -0.2 },
   },
-  // A thin mudguard arches over each rear tire as a run of flat plates.
-  fender: { x: 0.66, axle: [rearAxle, rearRadius], radius: 0.7, angles: [0.42, 0.9, 1.35, 1.79, 2.24, 2.72], plate: [0.4, 0.04, 0.36] },
+  // A thin mudguard arches over each rear tire as a run of flat plates. Neighbors
+  // alternate in width so their overlapping side faces never share a plane.
+  fender: { x: 0.66, axle: [rearAxle, rearRadius], radius: 0.7, angles: [0.42, 0.9, 1.35, 1.79, 2.24, 2.72], plate: [0.4, 0.04, 0.36], narrowerBy: 0.02 },
   rops: {
     posts: { x: [-0.6, 0.6], center: [0, (deck + ropsTop) * 0.5, ropsZ], size: [0.07, ropsTop - deck, 0.07] },
-    bar: { center: [0, ropsTop, ropsZ], size: [1.27, 0.07, 0.07] },
+    // The top bar is deeper than the posts so their faces never coincide.
+    bar: { center: [0, ropsTop, ropsZ], size: [1.31, 0.07, 0.09] },
     // A lower rail between the posts carries the slow-vehicle sign.
     signRail: { center: [0, 1.55, ropsZ], size: [1.2, 0.05, 0.05] },
     beacon: { center: [0, ropsTop + 0.07, ropsZ], size: [0.12, 0.08, 0.12] },

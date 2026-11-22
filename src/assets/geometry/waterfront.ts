@@ -58,11 +58,14 @@ export const harborSkiff = {
       { widthRatio: 0.905, height: -0.05, lengthRatio: 0.95, grainOffset: 0.3 },
     ],
   },
+  // Each bench spans the inside of the hull at its station, measured at its top
+  // edge, and stops short of the lining by `clearance`.
   thwart: {
     y: 0.19,
     height: 0.12,
     depth: 0.44,
-    stations: [{ z: -1.3, width: 1.99 }, { z: 0.25, width: 1.99 }, { z: 1.42, width: 1.58 }],
+    clearance: 0.015,
+    stations: [-1.3, 0.25, 1.42],
   },
   outboard: {
     leg: { y: 0.29, z: -2.34, size: [0.39, 0.62, 0.28], color: '#36484a' },

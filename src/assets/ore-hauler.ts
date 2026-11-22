@@ -27,9 +27,9 @@ function buildCab({ box, panel }: VehicleBodywork, treadPlate: Material) {
     box(windows.divider, frame, side)
     box(door.handle, frame, side)
     box(door.trim, roof, side)
-    const { centerX, halfWidth, peak, ridge } = door.emblem
+    const { centerX, halfWidth, ridgeHalfWidth, peak, ridge } = door.emblem
     panel('Slatecliff peak', halfWidth, peak, roof, side * centerX)
-    panel('Slatecliff ridge', halfWidth, ridge, roof, side * centerX)
+    panel('Slatecliff ridge', ridgeHalfWidth, ridge, roof, side * centerX)
     box(mirror.mount, frame, side)
     box(mirror.housing, frame, side)
     box(mirror.glass, silver, side)

@@ -328,7 +328,7 @@ function buildRoadVehicle(parts: Parts, id: RoadVehicleId) {
     box(0, y + beaconMount.raise, cabZ, width * beaconMount.widthRatio, beaconMount.height, beaconMount.depth, fleetPaint.frame)
     const [beaconWidth, beaconHeight, beaconDepth] = beacon.size
     const margin = beaconHousing.margin + beaconHousing.margin
-    const housingY = y + beacon.raise - (beaconHeight - beaconHousing.height) * half
+    const housingY = y + beacon.raise - (beaconHeight - beaconHousing.height) * half - beaconHousing.drop
     for (const side of sides) {
       const x = side * width * beacon.lateralWidthRatio
       box(x, housingY, cabZ, beaconWidth + margin, beaconHousing.height, beaconDepth + margin, fleetPaint.frame)
