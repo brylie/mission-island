@@ -1,55 +1,52 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
-import { barrowRig } from '../barrow'
 import type { MeshFactory } from '../island-meshes'
+import { barrowFeet, barrowFrame, barrowTray, barrowWheel, packedCarrotSlots } from './geometry/barrow'
+import { buildHarvestedCarrot } from './harvested-carrot'
 
-type Vertex = [number, number, number]
-export const barrowFeet = { halfWidth: 0.326, z: -0.355 }
+export { barrowFeet } from './geometry/barrow'
+export { buildHarvestedCarrot } from './harvested-carrot'
 
-export function buildHarvestedCarrot({ box, cylinder }: MeshFactory, root: TransformNode) {
-  cylinder(0, 0, 0, 0.091, 0.021, 0.231, 9, '#eb8339', root).rotation.x = Math.PI / 2
-  for (const side of [-1, 1]) {
-    box(side * 0.018, 0.009, 0.128, 0.024, 0.024, 0.083, '#6f9749', root).rotation.set(-0.31, side * 0.37, 0)
-  }
-}
+type Vertex = readonly [number, number, number]
+const half = 0.5
+const quarterTurn = Math.PI * half
 
 function buildTray(meshes: MeshFactory, root: TransformNode) {
-  const { rimHeight, trayHalfDepth: depth, trayHalfWidth: width } = barrowRig
-  const rim: Vertex[] = [[-width, rimHeight, -depth], [width, rimHeight, -depth], [width * 0.76, rimHeight - 0.04, depth], [-width * 0.76, rimHeight - 0.04, depth]]
-  const floor: Vertex[] = [[-0.255, 0.53, -0.32], [0.255, 0.53, -0.32], [0.19, 0.53, 0.34], [-0.19, 0.53, 0.34]]
+  const { rim, floor, innerRim, base, panels, lip } = barrowTray
   const { box, surface, shadows } = meshes
-  const inner = rim.map(([x, y, z]): Vertex => [x * 0.97, y - 0.016, z * 0.97])
-  box(0, 0.518, 0, 0.52, 0.024, 0.67, '#395c50', root)
+  const inner = rim.map(([x, y, z]): Vertex => [x * innerRim.insetScale, y - innerRim.drop, z * innerRim.insetScale])
+  box(0, base.y, 0, ...base.size, base.color, root)
   const addPanel = (name: string, points: Vertex[], color: string) => {
-    const panel = surface(name, points.flat(), [0, 1, 2, 0, 2, 3], color, root)
+    const panel = surface(name, points.flat(), [...panels.triangles], color, root)
     shadows.addShadowCaster(panel, false)
   }
-  for (let i = 0; i < 4; i++) {
-    const j = (i + 1) % 4
-    addPanel('Pressed steel tray', [floor[i], floor[j], rim[j], rim[i]], '#39665a')
-    addPanel('Painted tray inside', [floor[j], floor[i], inner[i], inner[j]], '#50776a')
+  for (let i = 0; i < rim.length; i++) {
+    const j = (i + 1) % rim.length
+    addPanel('Pressed steel tray', [floor[i], floor[j], rim[j], rim[i]], panels.steel)
+    addPanel('Painted tray inside', [floor[j], floor[i], inner[i], inner[j]], panels.interior)
     const [x, y, z] = rim[i]
     const [nextX, nextY, nextZ] = rim[j]
-    const lip = box((x + nextX) / 2, (y + nextY) / 2, (z + nextZ) / 2, 0.029, 0.026, Math.hypot(nextX - x, nextY - y, nextZ - z) + 0.025, '#75978a', root)
-    lip.rotation.set(-Math.atan2(nextY - y, Math.hypot(nextX - x, nextZ - z)), Math.atan2(nextX - x, nextZ - z), 0)
+    const edge = box((x + nextX) * half, (y + nextY) * half, (z + nextZ) * half, lip.width, lip.height, Math.hypot(nextX - x, nextY - y, nextZ - z) + lip.overhang, lip.color, root)
+    edge.rotation.set(-Math.atan2(nextY - y, Math.hypot(nextX - x, nextZ - z)), Math.atan2(nextX - x, nextZ - z), 0)
   }
 }
 
 export function createBarrow(meshes: MeshFactory) {
   const { scene, box, cylinder } = meshes
-  const { wheelRadius, wheelZ, wheelHalfWidth, grip } = barrowRig
+  const { radius, axleZ, halfWidth, tire, rim, axle: shaft, spokes } = barrowWheel
   const root = new TransformNode('Farm wheelbarrow', scene)
   const axle = new TransformNode('Barrow axle', scene)
   axle.parent = root
-  axle.position.set(0, wheelRadius, wheelZ)
+  axle.position.set(0, radius, axleZ)
   const wheel = new TransformNode('Farm barrow wheel', scene)
   wheel.parent = axle
-  const diameter = wheelRadius * 2
-  cylinder(0, 0, 0, diameter, diameter, wheelHalfWidth * 2, 24, '#303431', wheel).rotation.z = Math.PI / 2
-  cylinder(0, 0, 0, 0.315, 0.315, wheelHalfWidth * 2 + 0.013, 16, '#857759', wheel).rotation.z = Math.PI / 2
-  cylinder(0, 0, 0, 0.095, 0.095, 0.239, 10, '#4d514b', axle).rotation.z = Math.PI / 2
+  const diameter = radius + radius
+  const wheelWidth = halfWidth + halfWidth
+  cylinder(0, 0, 0, diameter, diameter, wheelWidth, tire.segments, tire.color, wheel).rotation.z = quarterTurn
+  cylinder(0, 0, 0, rim.diameter, rim.diameter, wheelWidth + rim.extraWidth, rim.segments, rim.color, wheel).rotation.z = quarterTurn
+  cylinder(0, 0, 0, shaft.diameter, shaft.diameter, shaft.width, shaft.segments, shaft.color, axle).rotation.z = quarterTurn
   for (const side of [-1, 1]) {
-    for (const angle of [0, Math.PI / 3, 2 * Math.PI / 3]) {
-      box(side * 0.104, 0, 0, 0.018, 0.273, 0.025, '#b39b6f', wheel).rotation.x = angle
+    for (const angle of spokes.angles) {
+      box(side * spokes.x, 0, 0, ...spokes.size, spokes.color, wheel).rotation.x = angle
     }
   }
 
@@ -57,26 +54,26 @@ export function createBarrow(meshes: MeshFactory) {
   tilt.parent = axle
   const frame = new TransformNode('Tray and handles', scene)
   frame.parent = tilt
-  frame.position.set(0, -wheelRadius, -wheelZ)
+  frame.position.set(0, -radius, -axleZ)
   buildTray(meshes, frame)
+  const { rail, grip, axleStrut, leg, legBrace, footPad, crossBrace } = barrowFrame
   for (const side of [-1, 1]) {
-    const rail = box(side * 0.31, 0.617, 0.029, 0.057, 0.059, 1.04, '#8b6947', frame)
-    rail.rotation.set(0.43, -side * 0.29, 0)
-    box(side * grip.x, grip.y, grip.z, 0.07, 0.074, 0.18, '#5d4934', frame).rotation.copyFrom(rail.rotation)
-    box(side * 0.205, 0.39, 0.44, 0.039, 0.32, 0.049, '#485954', frame).rotation.z = -side * 0.51
-    box(side * 0.28, 0.249, barrowFeet.z, 0.05, 0.494, 0.052, '#50605a', frame).rotation.z = side * 0.19
-    box(side * 0.25, 0.246, -0.239, 0.039, 0.54, 0.042, '#50605a', frame).rotation.x = -0.46
-    box(side * barrowFeet.halfWidth, 0.031, barrowFeet.z, 0.097, 0.052, 0.066, '#39413e', frame)
+    const handle = box(side * rail.center[0], rail.center[1], rail.center[2], ...rail.size, rail.color, frame)
+    handle.rotation.set(rail.pitch, -side * rail.splay, 0)
+    box(side * grip.center.x, grip.center.y, grip.center.z, ...grip.size, grip.color, frame).rotation.copyFrom(handle.rotation)
+    box(side * axleStrut.center[0], axleStrut.center[1], axleStrut.center[2], ...axleStrut.size, axleStrut.color, frame).rotation.z = -side * axleStrut.splay
+    box(side * leg.x, leg.y, barrowFeet.z, ...leg.size, leg.color, frame).rotation.z = side * leg.splay
+    box(side * legBrace.center[0], legBrace.center[1], legBrace.center[2], ...legBrace.size, legBrace.color, frame).rotation.x = legBrace.pitch
+    box(side * barrowFeet.halfWidth, footPad.y, barrowFeet.z, ...footPad.size, footPad.color, frame)
   }
-  box(0, 0.32, -0.31, 0.65, 0.036, 0.043, '#51605a', frame)
+  box(0, crossBrace.y, crossBrace.z, ...crossBrace.size, crossBrace.color, frame)
 
-  const carrots = Array.from({ length: 6 }, (_, i) => {
+  const carrots = packedCarrotSlots.map(({ center: [x, y, z], heading, scale }) => {
     const carrot = new TransformNode('Packed carrot', scene)
     carrot.parent = frame
-    const y = 0.575 + (i % 2) * 0.026
-    carrot.position.set((i % 3 - 1) * 0.148, y, i < 3 ? -0.167 : 0.15)
-    carrot.rotation.y = [0.62, -0.14, 0.35, -0.66, 0.16, 0.48][i]
-    carrot.scaling.setAll(0.91 + (i % 3) * 0.06)
+    carrot.position.set(x, y, z)
+    carrot.rotation.y = heading
+    carrot.scaling.setAll(scale)
     buildHarvestedCarrot(meshes, carrot)
     carrot.setEnabled(false)
     return { carrot, y }

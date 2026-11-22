@@ -15,10 +15,4 @@ export const ridgeWindsock = { ...offset(launchPose, -2.9, 2.85), geometry: ridg
 export const ridgeLandingSign = { ...offset({ ...ridgeMeadow, heading: ridgeHeading }, 6, -7), heading: ridgeHeading, geometry: ridgeLandingSignGeometry }
 export const ridgeUpdraft = { ...offset(launchPose, -10.5, 20), radius: 8.5, ceiling: 36, lift: 10 }
 
-// The same vertices are used to build the wing and probe the glider's clearance.
-export const ridgeWing = {
-  nose: { x: 0, y: 1.94, z: 0.98 },
-  left: { x: -1.8, y: 1.78, z: -0.78 },
-  keel: { x: 0, y: 1.91, z: -0.52 },
-  right: { x: 1.8, y: 1.78, z: -0.78 },
-}
+export { ridgeWing } from '../../assets/geometry/ridge-course.ts'

@@ -6,6 +6,7 @@ export const crewHoe = {
   tilt: -0.8,
   shaft: { centre: [0, -0.36, 0], diameter: 0.068, length: 1.29, sides: 9, color: '#ab784d' },
   blade: { centre: [0, -0.99, 0.08], size: [0.21, 0.082, 0.34], color: '#58716e' },
+  soilContact: [0, -1, 0.09],
 } as const
 
 export const crewWateringCan = {

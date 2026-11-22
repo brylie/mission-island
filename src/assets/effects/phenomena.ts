@@ -99,3 +99,14 @@ export const phenomenonShader = {
         }
       `,
 }
+
+export const phenomenonActivityStyle = {
+  mist: { morning: { rise: [4.4, 6.2], fall: [7.2, 9.4] }, rainLoss: 0.69 },
+  spray: {
+    base: 0.32,
+    rainGain: 0.58,
+    daytimeGain: 0.1,
+    daytime: { rise: [6, 10], fall: [16, 19] },
+  },
+  glow: { daylight: { rise: [4.7, 6.3], fall: [17.8, 20] }, rainFade: [0.15, 0.65] },
+} as const

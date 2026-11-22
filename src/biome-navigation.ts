@@ -1,17 +1,51 @@
+import { biomePatchGeometry } from './assets/geometry/biome-vegetation.ts'
+import { sitePropGeometry } from './assets/geometry/site-props.ts'
 import { distance, offset, type Point } from './world.ts'
 
 type HabitatPatch = Point & { kind: string, angle: number }
 const maxStep = 0.66 // metres
 const clearingRadius = 7.85
+const half = 0.5
+const footprintMarginM = 0.15
+const segmentAxisEpsilon = 1e-8
+const longestLogCrossingM = 1.45
+const detourCornerClearanceM = 0.08
+const minimumCornerDistanceM = 0.02
+const diameterRatio = 2
+const liftReachM = 0.32
+const branchLiftM = 0.21
+const branchReachM = 0.36
+const edgeLiftRatio = 0.55
+const crownLiftRatio = 0.45
+const easeBase = 3
+const easeSlope = 2
+
+export function biomeTreeHeight(angle: number) {
+  const { baseHeightM, heightPerRadianM } = biomePatchGeometry.tree
+  return baseHeightM + angle * heightPerRadianM
+}
+
+export function biomeRockSize(angle: number) {
+  const { baseSizeM, sizePerRadianM } = biomePatchGeometry.rock
+  return baseSizeM + sizePerRadianM * angle
+}
 
 export function habitatObstacles(patches: readonly HabitatPatch[]) {
   return patches.flatMap((p) => {
     const pose = { x: p.x, z: p.z, heading: p.angle }
-    if (p.kind === 'logs') return [{ ...pose, kind: p.kind, width: 2.4, depth: 0.52, height: 0.46 }]
-    if (p.kind === 'trees') return [{ ...pose, kind: p.kind, width: 0.53, depth: 0.53, height: (2.7 + p.angle * 0.24) / 2 }]
+    if (p.kind === 'logs') {
+      const { trunk } = sitePropGeometry.log
+      const [, depth, width] = trunk.size
+      return [{ ...pose, kind: p.kind, width, depth, height: trunk.center[1] + depth * half }]
+    }
+    if (p.kind === 'trees') {
+      const { supportWidthM } = biomePatchGeometry.tree
+      return [{ ...pose, kind: p.kind, width: supportWidthM, depth: supportWidthM, height: biomeTreeHeight(p.angle) * half }]
+    }
     if (p.kind === 'stones') {
-      const size = 0.8 + 0.13 * p.angle
-      return [{ ...pose, kind: p.kind, width: size, depth: size * 1.1, height: size * 0.51 }]
+      const size = biomeRockSize(p.angle)
+      const { supportDepthRatio, supportHeightRatio } = biomePatchGeometry.rock
+      return [{ ...pose, kind: p.kind, width: size, depth: size * supportDepthRatio, height: size * supportHeightRatio }]
     }
     return []
   })
@@ -23,8 +57,8 @@ export function habitatNavigation(patches: readonly HabitatPatch[]) {
     cos: Math.cos(o.heading),
     sin: Math.sin(o.heading),
     low: o.height <= maxStep,
-    halfX: o.width / 2 + 0.15,
-    halfZ: o.depth / 2 + 0.15,
+    halfX: o.width * half + footprintMarginM,
+    halfZ: o.depth * half + footprintMarginM,
   }))
 
   type Obstacle = typeof obstacles[number]
@@ -39,7 +73,7 @@ export function habitatNavigation(patches: readonly HabitatPatch[]) {
     let enter = 0, exit = 1
     for (const [start, end, half] of [[a.x, b.x, o.halfX], [a.z, b.z, o.halfZ]]) {
       const delta = end - start
-      if (Math.abs(delta) < 1e-8) {
+      if (Math.abs(delta) < segmentAxisEpsilon) {
         if (Math.abs(start) >= half) return false
       }
       else {
@@ -51,7 +85,7 @@ export function habitatNavigation(patches: readonly HabitatPatch[]) {
     }
     // An overlapping spawn in an edited recipe can still walk out.
     if (enter === 0 && exit < 1) return false
-    return !o.low || (o.kind === 'logs' && (exit - enter) * length > 1.45)
+    return !o.low || (o.kind === 'logs' && (exit - enter) * length > longestLogCrossingM)
   }
 
   function clear(from: Point, to: Point) {
@@ -67,7 +101,7 @@ export function habitatNavigation(patches: readonly HabitatPatch[]) {
     })
   }
   const corners = obstacles.filter((o) => !o.low || o.kind === 'logs').flatMap((o) =>
-    [-1, 1].flatMap((x) => [-1, 1].map((z) => offset(o, x * (o.halfX + 0.08), z * (o.halfZ + 0.08)))))
+    [-1, 1].flatMap((x) => [-1, 1].map((z) => offset(o, x * (o.halfX + detourCornerClearanceM), z * (o.halfZ + detourCornerClearanceM)))))
     .filter(open)
   let edges: { to: number, cost: number }[][] | undefined
 
@@ -77,7 +111,7 @@ export function habitatNavigation(patches: readonly HabitatPatch[]) {
     // Build once per layout, only if an animal actually needs a detour.
     edges ??= corners.map((p, i) => corners.flatMap((q, j) =>
       i !== j && clear(p, q) ? [{ to: j, cost: distance(p, q) }] : []))
-    const cost = corners.map((p) => distance(from, p) > 0.02 && clear(from, p) ? distance(from, p) : Infinity)
+    const cost = corners.map((p) => distance(from, p) > minimumCornerDistanceM && clear(from, p) ? distance(from, p) : Infinity)
     const first = corners.map((_, i) => i)
     const visited = new Set<number>()
     while (true) {
@@ -103,21 +137,22 @@ export function habitatNavigation(patches: readonly HabitatPatch[]) {
   }
 
   // Feet rise as they reach the near edge, pass over the crown, and settle on the far side.
+  const [branchX, , branchZ] = sitePropGeometry.log.branch.center
   function lift(point: Point) {
     let height = 0
     for (const o of obstacles) {
       if (!o.low) continue
       const p = local(point, o)
-      const across = Math.abs(2 * p.z / o.depth)
-      const radial = o.kind === 'stones' ? Math.hypot(2 * p.x / o.width, across) : across
+      const across = Math.abs(diameterRatio * p.z / o.depth)
+      const radial = o.kind === 'stones' ? Math.hypot(diameterRatio * p.x / o.width, across) : across
       const outside = o.kind === 'stones'
-        ? Math.max(0, radial - 1) * o.width / 2
-        : Math.hypot(Math.max(0, Math.abs(p.x) - o.width / 2), Math.max(0, Math.abs(p.z) - o.depth / 2))
-      const reach = Math.max(0, 1 - outside / 0.32)
+        ? Math.max(0, radial - 1) * o.width * half
+        : Math.hypot(Math.max(0, Math.abs(p.x) - o.width * half), Math.max(0, Math.abs(p.z) - o.depth * half))
+      const reach = Math.max(0, 1 - outside / liftReachM)
       if (!reach) continue
       const crown = Math.sqrt(Math.max(0, 1 - radial * radial))
-      const branch = o.kind === 'logs' ? 0.21 * Math.max(0, 1 - Math.hypot(p.x + 0.45, p.z - 0.09) / 0.36) : 0
-      height = Math.max(height, (o.height * (0.55 + 0.45 * crown) + branch) * reach * reach * (3 - 2 * reach))
+      const branch = o.kind === 'logs' ? branchLiftM * Math.max(0, 1 - Math.hypot(p.x - branchX, p.z - branchZ) / branchReachM) : 0
+      height = Math.max(height, (o.height * (edgeLiftRatio + crownLiftRatio * crown) + branch) * reach * reach * (easeBase - easeSlope * reach))
     }
     return height
   }

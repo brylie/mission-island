@@ -2,6 +2,9 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { createFarmTools, poseCrew } from '../assets/crew'
 import { farmFurrowTop } from '../assets/farm'
+import { crewHoe } from '../assets/geometry/crew-equipment'
+import { harvestChaffStage, hoeStage, seedParachuteStage, takeoffFeatherStage, wetFernStage } from '../assets/geometry/workbench-land-fixtures'
+import { harvestChaffMotion, hoeMotion, seedParachuteMotion, takeoffFeatherMotion, wetFernMotion } from '../assets/recipes/workbench-land-fixtures'
 import { createRock } from '../assets/props'
 import { juniperFern, sampleUnderstoryBlade, understoryBladeCount, understoryGroundOffset } from '../assets/understory'
 import { createFarm } from '../island-farm'
@@ -10,28 +13,36 @@ import { seededRandom } from '../seeded-random'
 import { wingedAnimal } from '../wildlife'
 import { contactAge, crewAt, type Fixture } from './effect-fixtures'
 
+const half = 0.5
+const halves = 2
+
 export function parachutesFixture(meshes: MeshFactory): Fixture {
-  meshes.box(0, -0.035, 0, 4.6, 0.07, 2.4, '#6b8052').receiveShadows = true
-  crewAt(meshes, -1.46, 0.56, 1)
-  for (let i = 0; i < 9; i++) {
-    const x = -0.37 + i % 3 * 0.37, z = -0.36 + Math.floor(i / 3) * 0.28
-    const height = 0.59 + 0.19 * Math.sin(i * 2.4)
-    meshes.cylinder(x, height / 2, z, 0.025, 0.034, height, 6, '#66794a')
-    meshes.sphere(x, height, z, 0.19, 0.18, 0.19, '#e9d9a7', undefined, true, 7)
+  const { ground, crew, flowers } = seedParachuteStage
+  const { stem, head } = flowers
+  meshes.box(0, ground.y, 0, ...ground.size, ground.color).receiveShadows = true
+  crewAt(meshes, crew.x, crew.z, crew.id)
+  for (let i = 0; i < flowers.count; i++) {
+    const x = flowers.x + i % flowers.columns * flowers.columnSpacing
+    const z = flowers.z + Math.floor(i / flowers.columns) * flowers.rowSpacing
+    const height = flowers.height + flowers.heightVariation * Math.sin(i * flowers.variationFrequency)
+    meshes.cylinder(x, height * half, z, stem.top, stem.bottom, height, stem.sides, stem.color)
+    meshes.sphere(x, height, z, ...head.size, head.color, undefined, true, head.segments)
   }
+  const { release, source } = seedParachuteMotion
   return {
     sourceAt(time) {
-      if (contactAge(time, 0.31, 0.91, 0.42) !== undefined) {
-        return { x: 0.08 + Math.sin(time * 3.7) * 0.23, y: 0.67, z: -0.04 }
+      if (contactAge(time, ...release) !== undefined) {
+        return { x: source.x + Math.sin(time * source.frequency) * source.sway, y: source.y, z: source.z }
       }
     },
   }
 }
 
 export function fernFixture(meshes: MeshFactory): Fixture {
-  meshes.box(0, -0.044, 0, 4.5, 0.088, 2.8, '#677853').receiveShadows = true
-  const crew = crewAt(meshes, -0.78, -0.31, 1)
-  crew.root.rotation.y = 1.02
+  const { ground, crew: actor } = wetFernStage
+  meshes.box(0, ground.y, 0, ...ground.size, ground.color).receiveShadows = true
+  const crew = crewAt(meshes, actor.x, actor.z, actor.id)
+  crew.root.rotation.y = actor.heading
   poseCrew(crew, 0, 0, false, undefined, 1)
   const frond = new TransformNode('Brushed frond', meshes.scene)
   const paint = meshes.paint(juniperFern.color)
@@ -48,96 +59,114 @@ export function fernFixture(meshes: MeshFactory): Fixture {
     meshes.surface(juniperFern.name, positions, indices, paint)
   }
   const tip = Vector3.FromArray(first.tip)
-  const pulse = (time: number) => contactAge(time, 0.4, 0.96, 0.56)
+  const { brush, shake, releaseDuration, floor } = wetFernMotion
+  const pulse = (time: number) => contactAge(time, ...brush)
   function pose(time: number) {
     const t = pulse(time)
-    frond.rotation.x = t === undefined ? 0 : -0.61 * Math.sin(t * 14) * Math.exp(-t * 4)
-    frond.rotation.z = t === undefined ? 0 : Math.sin(t * 12) * 0.23 * Math.exp(-t * 4)
+    const remaining = t === undefined ? 0 : Math.exp(-t * shake.damping)
+    frond.rotation.x = t === undefined ? 0 : shake.pitch * Math.sin(t * shake.pitchFrequency) * remaining
+    frond.rotation.z = t === undefined ? 0 : Math.sin(t * shake.rollFrequency) * shake.roll * remaining
   }
   return {
     sourceAt(time) {
       const t = pulse(time)
-      if (t === undefined || t > 0.19) return
+      if (t === undefined || t > releaseDuration) return
       pose(time)
       const { x, y, z } = Vector3.TransformCoordinates(tip, frond.computeWorldMatrix(true))
-      return { x, y, z, floor: 0.035 }
+      return { x, y, z, floor }
     },
     pose,
   }
 }
 
 export function hoeFixture(meshes: MeshFactory): Fixture {
-  const plotCenter = { x: -0.36, z: 0.65 }
-  const showPlot = createFarm(meshes, [plotCenter], () => 0)
+  const { plot, crew: actor } = hoeStage
+  const showPlot = createFarm(meshes, [plot], () => 0)
   showPlot(['tilled'])
-  const crew = crewAt(meshes, 0.37, -0.49)
+  const crew = crewAt(meshes, actor.x, actor.z)
   const { hoe } = createFarmTools(meshes, crew)
   hoe.setEnabled(true)
-  const blade = new Vector3(0, -1, 0.09)
+  const blade = new Vector3(...crewHoe.soilContact)
+  const { contact, swing, minimumSourceY } = hoeMotion
+  const [, period] = contact
   function pose(time: number) {
-    const beat = (time - 0.45) * Math.PI * 2 / 0.89
+    const beat = (time - swing.start) * Math.PI * halves / period
     poseCrew(crew, 0, 0, false, 'tool')
-    crew.arms[0].rotation.x = -0.34 - (1 - Math.cos(beat)) * 0.52
-    hoe.rotation.z = -0.83
+    crew.arms[0].rotation.x = swing.restingPitch - (1 - Math.cos(beat)) * swing.reach
+    hoe.rotation.z = swing.toolRoll
   }
   return {
     sourceAt(time) {
-      if (contactAge(time, 0.41, 0.89, 0.14) === undefined) return
+      if (contactAge(time, ...contact) === undefined) return
       pose(time)
       const { x, y, z } = Vector3.TransformCoordinates(blade, hoe.computeWorldMatrix(true))
-      return { x, y: Math.max(0.15, y), z, floor: farmFurrowTop }
+      return { x, y: Math.max(minimumSourceY, y), z, floor: farmFurrowTop }
     },
     pose,
   }
 }
 
-export function chaffFixture(meshes: MeshFactory): Fixture {
-  const crew = crewAt(meshes, -0.7, 0.11)
-  crew.root.rotation.y = 0.62
-  poseCrew(crew, 0, 0, false, 'crate')
+function cutBarley(meshes: MeshFactory) {
   const bundle = new TransformNode('Cut barley', meshes.scene)
-  for (let index = 0; index < 14; index++) {
-    const x = (index % 4 - 1.4) * 0.075, z = (Math.floor(index / 4) - 1.5) * 0.069
-    const height = 0.52 + 0.13 * Math.cos(index * 4)
-    meshes.cylinder(x, 0.03, z, 0.026, 0.033, height, 6, '#b79952', bundle)
-    meshes.sphere(x, height * 0.51, z, 0.075, 0.177, 0.082, index % 2 ? '#d8b75d' : '#cda358', bundle)
+  const { bundle: layout } = harvestChaffStage
+  const { stem, head, base } = layout
+  for (let index = 0; index < layout.count; index++) {
+    const x = (index % layout.columns - layout.columnCentre) * layout.columnSpacing
+    const z = (Math.floor(index / layout.columns) - layout.rowCentre) * layout.rowSpacing
+    const height = layout.height + layout.heightVariation * Math.cos(index * layout.variationFrequency)
+    meshes.cylinder(x, stem.y, z, stem.top, stem.bottom, height, stem.sides, stem.color, bundle)
+    meshes.sphere(x, height * head.heightRatio, z, ...head.size, head.colors[index % head.colors.length], bundle)
   }
-  meshes.box(0, 0.015, 0, 0.32, 0.08, 0.31, '#8c6d46', bundle)
-  meshes.box(0, -0.039, 0.14, 3.6, 0.078, 2.8, '#897756').receiveShadows = true
-  for (let index = 0; index < 9; index++) {
-    const x = 1.16 + 0.28 * Math.cos(index * 2.4), z = -0.52 + Math.cos(index * 1.66) * 0.51
-    meshes.cylinder(x, 0.18, z, 0.022, 0.024, 0.36, 5, '#a58c4e')
+  meshes.box(0, base.y, 0, ...base.size, base.color, bundle)
+  return bundle
+}
+
+export function chaffFixture(meshes: MeshFactory): Fixture {
+  const { crew: actor, ground, stubble } = harvestChaffStage
+  const crew = crewAt(meshes, actor.x, actor.z)
+  crew.root.rotation.y = actor.heading
+  poseCrew(crew, 0, 0, false, 'crate')
+  const bundle = cutBarley(meshes)
+  meshes.box(0, ground.y, ground.z, ...ground.size, ground.color).receiveShadows = true
+  const { stem } = stubble
+  for (let index = 0; index < stubble.count; index++) {
+    const x = stubble.x + stubble.xVariation * Math.cos(index * stubble.xFrequency)
+    const z = stubble.z + Math.cos(index * stubble.zFrequency) * stubble.zVariation
+    meshes.cylinder(x, stem.y, z, stem.top, stem.bottom, stem.height, stem.sides, stem.color)
   }
+  const { release, source, swayFrequency, bundle: motion } = harvestChaffMotion
   function sourceAt(time: number) {
-    if (contactAge(time, 0.38, 0.99, 0.28) !== undefined) {
-      return { x: -0.13, y: 0.94 + 0.095 * Math.sin(time * 20), z: 0.55, floor: 0.02 }
+    if (contactAge(time, ...release) !== undefined) {
+      return { x: source.x, y: source.y + source.bob * Math.sin(time * swayFrequency), z: source.z, floor: source.floor }
     }
   }
   return {
     sourceAt,
     accents: [{ id: 'chaff-dust', sourceAt }],
     pose(time) {
-      bundle.position.set(-0.18, 0.81 + 0.09 * Math.sin(time * 20), 0.55)
-      bundle.rotation.z = 0.71 + 0.29 * Math.sin(time * 14)
+      bundle.position.set(motion.x, motion.y + motion.bob * Math.sin(time * swayFrequency), motion.z)
+      bundle.rotation.z = motion.roll + motion.rollSway * Math.sin(time * motion.rollFrequency)
     },
   }
 }
 
 export function feathersFixture(meshes: MeshFactory): Fixture {
-  const bird = wingedAnimal(meshes, '#eae4cd', false)
-  bird.root.rotation.y = 1.18
-  bird.root.scaling.setAll(1.1)
-  const crew = crewAt(meshes, -1.47, -0.6, 1)
-  crew.root.rotation.y = 1.28
-  createRock(meshes, -0.22, 0.3, 0.83, 0.68, false)
+  const { bird: model, crew: actor, rock } = takeoffFeatherStage
+  const bird = wingedAnimal(meshes, model.color, false)
+  bird.root.rotation.y = model.heading
+  bird.root.scaling.setAll(model.scale)
+  const crew = crewAt(meshes, actor.x, actor.z, actor.id)
+  crew.root.rotation.y = actor.heading
+  createRock(meshes, rock.x, rock.z, rock.size, rock.heading, false)
+  const { feathers, takeoff, wings } = takeoffFeatherMotion
   return {
     sourceAt(time) {
-      if (time >= 0.35 && time < 0.55) return { x: -0.18 + time - 0.35, y: 0.65, z: 0.28, floor: 0.048 }
+      if (time >= feathers.start && time < feathers.end) return { x: feathers.x + time - feathers.start, y: feathers.y, z: feathers.z, floor: feathers.floor }
     },
     pose(time) {
-      const launch = Math.max(0, Math.min(time - 0.32, 2.8))
-      const flap = launch > 0 ? Math.sin(launch * 19) * 0.73 : -0.75
-      bird.root.position.set(-0.23 + launch * 1.56, 0.43 + Math.min(2.15, launch * 1.88), 0.29 + launch * 0.2)
+      const launch = Math.max(0, Math.min(time - takeoff.start, takeoff.duration))
+      const flap = launch > 0 ? Math.sin(launch * wings.flapRate) * wings.flapReach : wings.restingRoll
+      bird.root.position.set(takeoff.x + launch * takeoff.xSpeed, takeoff.y + Math.min(takeoff.maxClimb, launch * takeoff.climb), takeoff.z + launch * takeoff.zSpeed)
       bird.wings[0].rotation.z = flap
       bird.wings[1].rotation.z = -flap
     },

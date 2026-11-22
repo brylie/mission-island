@@ -67,6 +67,15 @@ export const exteriorWindows = {
 
 const canopyPostHeight = 2.96
 
+export const streetCanopy = { widthRatio: 0.72, depth: 2.85, height: 3.17 }
+
+export const saltwindCottageExterior = {
+  width: 7.2,
+  depth: 6.3,
+  height: 3.35,
+  cottagePaint: [['#edc280', '#ac6550'], ['#cba487', '#7a6254'], ['#a8b8a0', '#526f65']],
+} as const
+
 export const exteriorCanopy = {
   fabric: { count: 10, thickness: 0.15, rake: 0.10 },
   props: { sideInset: 0.12, eaveInset: 0.15, y: canopyPostHeight / 2, size: [0.15, canopyPostHeight, 0.15] },

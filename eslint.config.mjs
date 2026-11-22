@@ -59,7 +59,11 @@ const authoredWorldLayouts = [
   'src/worlds/saltwind/layout/sites.ts',
   'src/worlds/saltwind/layout/terrain.ts',
   'src/worlds/starter/layout/places.ts',
+  'src/worlds/starter/layout/routes.ts',
+  'src/worlds/starter/layout/scenery.ts',
+  'src/worlds/starter/layout/sites.ts',
   'src/worlds/starter/layout/terrain.ts',
+  'src/worlds/starter/layout/wildlife.ts',
 ]
 
 const independentAuthoredData = ['src/assets/{audio,effects,geometry}/*.ts', ...authoredWorldLayouts]
@@ -85,7 +89,6 @@ const existingLimits = {
   'src/scene.ts': { 'max-lines': lineLimit(339), 'max-lines-per-function': lineLimit(295), 'complexity': complexity(43) },
   'src/second-island/main.ts': { 'max-lines': lineLimit(446), 'max-lines-per-function': lineLimit(412), 'complexity': complexity(25) },
   'src/second-island/ore-hauling.ts': { 'max-lines-per-function': lineLimit(162) },
-  'src/assets/surface-textures.ts': { complexity: complexity(28) },
   'src/workbench/landscape-layout.ts': { 'max-lines-per-function': lineLimit(193) },
   'src/workbench/landscape-map.ts': { 'max-lines': lineLimit(459), 'max-lines-per-function': lineLimit(379) },
   'src/workbench/landscape-studies.ts': { 'max-lines-per-function': lineLimit(207) },

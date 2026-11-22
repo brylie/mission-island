@@ -1,18 +1,24 @@
 import type { Material } from '@babylonjs/core/Materials/material'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
-import { roadSurface, sidewalkLift, trailLift } from './geometry/route-profiles'
+import { gravelTrailModel, laneMarkingModel, roadFinish, roadSurface, sidewalkLift, trailLift, wornTrailModel } from './geometry/route-profiles'
 import type { MeshFactory } from '../island-meshes'
 import { ribbonGeometry } from '../math/ribbon'
-import { coastRadius, shoreProfile } from '../terrain'
+import { coastRadius } from '../terrain'
 import type { PathSurface } from '../routes'
 import { laneMarkings } from '../routes'
 import type { Point } from '../world'
+import { shoreStations } from '../worlds/starter/layout/terrain'
 
-function ribbon({ surface }: MeshFactory, name: string, strips: ReadonlyArray<readonly Point[]>, width: number, y: number, material: string | Material, tile = 2.5, heightAt?: (p: Point) => number) {
+const vertexSize = 3
+const vertexZ = 2
+const half = 0.5
+const trailSampleSpacing = 0.32
+
+function ribbon({ surface }: MeshFactory, name: string, strips: ReadonlyArray<readonly Point[]>, width: number, y: number, material: string | Material, tile: number = roadFinish.lineTile, heightAt?: (p: Point) => number) {
   const { positions, indices } = ribbonGeometry(strips, width, y)
   const uvs: number[] = []
-  for (let i = 0; i < positions.length; i += 3) {
-    const x = positions[i], z = positions[i + 2]
+  for (let i = 0; i < positions.length; i += vertexSize) {
+    const x = positions[i], z = positions[i + vertexZ]
     if (heightAt) positions[i + 1] += heightAt({ x, z })
     uvs.push(x / tile, z / tile)
   }
@@ -23,9 +29,9 @@ function ribbon({ surface }: MeshFactory, name: string, strips: ReadonlyArray<re
 // short of the junction.
 export function createRoad(meshes: MeshFactory, points: readonly Point[], width: number = roadSurface.width, { lift = 0, marked = points }: { lift?: number, marked?: readonly Point[] } = {}) {
   return {
-    shoulder: ribbon(meshes, 'Road shoulder', [points], width + roadSurface.shoulderWidth, roadSurface.shoulder + lift, meshes.paintSurface('gravel'), 2.05),
-    asphalt: ribbon(meshes, 'Asphalt', [points], width, roadSurface.asphalt + lift, meshes.paintSurface('stone', '#636d65'), 3.0),
-    markings: ribbon(meshes, 'Centerline', laneMarkings(marked), 0.17, 0.099 + lift, '#e0cd9f'),
+    shoulder: ribbon(meshes, 'Road shoulder', [points], width + roadSurface.shoulderWidth, roadSurface.shoulder + lift, meshes.paintSurface('gravel'), roadFinish.gravelTile),
+    asphalt: ribbon(meshes, 'Asphalt', [points], width, roadSurface.asphalt + lift, meshes.paintSurface('stone', roadFinish.asphalt), roadFinish.asphaltTile),
+    markings: ribbon(meshes, 'Centerline', laneMarkings(marked), laneMarkingModel.width, laneMarkingModel.y + lift, laneMarkingModel.color),
   }
 }
 
@@ -33,7 +39,7 @@ function trailSamples(points: readonly Point[]) {
   return points.flatMap((p, i) => {
     const next = points[i + 1]
     if (!next) return [p]
-    const steps = Math.ceil(Math.hypot(next.x - p.x, next.z - p.z) / 0.32)
+    const steps = Math.ceil(Math.hypot(next.x - p.x, next.z - p.z) / trailSampleSpacing)
     return Array.from({ length: steps }, (_, j) => ({
       x: p.x + (next.x - p.x) * j / steps,
       z: p.z + (next.z - p.z) * j / steps,
@@ -43,22 +49,23 @@ function trailSamples(points: readonly Point[]) {
 
 function gravelTrail(meshes: MeshFactory, name: string, points: readonly Point[], width: number, heightAt: (p: Point) => number, material: Material) {
   const positions: number[] = [], indices: number[] = [], uvs: number[] = [], colors: number[] = []
-  const path = trailSamples(points), lanes = [-1, -0.83, 0, 0.83, 1]
+  const path = trailSamples(points)
+  const { lanes, startTaper, endTaper, edgeSine, edgeCosine, widthMinimum, widthRamp, tint } = gravelTrailModel
   const end = path[path.length - 1]
   let along = 0
   for (const [i, point] of path.entries()) {
     const prev = path[Math.max(0, i - 1)], next = path[Math.min(i + 1, path.length - 1)]
     const dx = next.x - prev.x, dz = next.z - prev.z, length = Math.hypot(dx, dz)
     along += Math.hypot(point.x - prev.x, point.z - prev.z)
-    const tip = Math.min(1, along / 0.65, Math.hypot(point.x - end.x, point.z - end.z) / 0.80)
+    const tip = Math.min(1, along / startTaper, Math.hypot(point.x - end.x, point.z - end.z) / endTaper)
     for (const [j, lane] of lanes.entries()) {
-      const ripple = 0.075 * Math.sin(along * 2.3 + lane) + 0.045 * Math.cos(along * 4.1 - lane)
-      const spread = lane * (width / 2 + ripple) * (0.78 + 0.22 * tip)
+      const ripple = edgeSine.amplitude * Math.sin(along * edgeSine.rate + lane) + edgeCosine.amplitude * Math.cos(along * edgeCosine.rate - lane)
+      const spread = lane * (width * half + ripple) * (widthMinimum + widthRamp * tip)
       const x = point.x - dz / length * spread, z = point.z + dx / length * spread
       positions.push(x, heightAt({ x, z }) + trailLift, z)
       uvs.push(x, z)
       const edge = Math.abs(lane)
-      colors.push(1, 0.98, 0.95 - 0.07 * edge, edge === 1 ? 0 : tip)
+      colors.push(1, tint.green, tint.blue - tint.blueEdgeLoss * edge, edge === 1 ? 0 : tip)
       if (i && j) {
         const d = i * lanes.length + j
         indices.push(d - lanes.length - 1, d - 1, d - lanes.length, d - lanes.length, d - 1, d)
@@ -74,23 +81,23 @@ function gravelTrail(meshes: MeshFactory, name: string, points: readonly Point[]
 function wornPath(meshes: MeshFactory, name: string, points: readonly Point[], width: number, heightAt: (p: Point) => number) {
   const vertices: number[] = [], colors: number[] = [], faces: number[] = []
   const path = trailSamples(points)
-  const lanes = [-1, -0.52, 0, 0.52, 1]
+  const { lanes, startTaper, endTaper, edgeSine, edgeCosine, widthMinimum, widthRamp, sway, lift, duneFade, wear: patina, color, opacityEdgeCurve } = wornTrailModel
   let along = 0
   const length = path.reduce((sum, p, i) => i ? sum + Math.hypot(p.x - path[i - 1].x, p.z - path[i - 1].z) : sum, 0)
   for (const [i, p] of path.entries()) {
     const before = path[Math.max(0, i - 1)], after = path[Math.min(path.length - 1, i + 1)]
     along += Math.hypot(p.x - before.x, p.z - before.z)
     const span = Math.hypot(after.x - before.x, after.z - before.z)
-    const end = Math.min(1, along / 1.1, (length - along) / 1.5)
+    const end = Math.min(1, along / startTaper, (length - along) / endTaper)
     for (const [j, lane] of lanes.entries()) {
       const side = Math.sign(lane)
-      const widthVariation = 1 + 0.17 * Math.sin(along * 1.35 + side * 1.7) + 0.08 * Math.cos(along * 3.9 - side)
-      const offset = width * (0.5 * lane * widthVariation * (0.58 + 0.42 * end) + 0.10 * Math.sin(along * 1.12))
+      const widthVariation = 1 + edgeSine.amplitude * Math.sin(along * edgeSine.rate + side * edgeSine.phase) + edgeCosine.amplitude * Math.cos(along * edgeCosine.rate - side)
+      const offset = width * (half * lane * widthVariation * (widthMinimum + widthRamp * end) + sway.amplitude * Math.sin(along * sway.rate))
       const x = p.x + offset * (before.z - after.z) / span, z = p.z + offset * (after.x - before.x) / span
-      vertices.push(x, heightAt({ x, z }) + 0.018, z)
-      const grass = Math.min(1, Math.max(0, (shoreProfile[2].radius - coastRadius({ x, z })) / 0.012))
-      const wear = (0.77 + 0.13 * Math.sin(along * 1.84 + lane) + 0.09 * Math.sin(along * 5.52 - lane)) * end
-      colors.push(0.58, 0.46, 0.29, (1 - Math.abs(lane) ** 1.6) * wear * grass)
+      vertices.push(x, heightAt({ x, z }) + lift, z)
+      const grass = Math.min(1, Math.max(0, (shoreStations.sandEdge.radius - coastRadius({ x, z })) / duneFade))
+      const wear = (patina.base + patina.slow.amplitude * Math.sin(along * patina.slow.rate + lane) + patina.fast.amplitude * Math.sin(along * patina.fast.rate - lane)) * end
+      colors.push(...color, (1 - Math.abs(lane) ** opacityEdgeCurve) * wear * grass)
       if (i && j) {
         const d = i * lanes.length + j
         faces.push(d - lanes.length - 1, d - 1, d - lanes.length, d - lanes.length, d - 1, d)
@@ -107,10 +114,10 @@ export function createTrail(meshes: MeshFactory, name: string, points: readonly 
   if (surface === 'desire') return wornPath(meshes, name, points, width, heightAt)
   if (surface === 'gravel' && material) return gravelTrail(meshes, name, points, width, heightAt, material)
   const paved = surface === 'pavement'
-  return ribbon(meshes, name, [points], width, trailLift, material ?? meshes.paintSurface(paved ? 'concrete' : 'gravel'), material ? 1 : paved ? 2 : 1.85, heightAt)
+  return ribbon(meshes, name, [points], width, trailLift, material ?? meshes.paintSurface(paved ? 'concrete' : 'gravel'), material ? 1 : paved ? roadFinish.pavingTile : roadFinish.gravelPathTile, heightAt)
 }
 
 export function createSidewalk(meshes: MeshFactory, path: { name: string, points: readonly Point[], width: number }, material = meshes.paintSurface('concrete')) {
   // The sidewalk continues across the beach approach at the Seabrook junction.
-  return ribbon(meshes, path.name, [path.points], path.width, sidewalkLift, material, 2)
+  return ribbon(meshes, path.name, [path.points], path.width, sidewalkLift, material, roadFinish.pavingTile)
 }

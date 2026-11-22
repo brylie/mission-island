@@ -1,7 +1,7 @@
 {
   "eslint.config.mjs": {
     "no-magic-numbers": {
-      "count": 29
+      "count": 28
     }
   },
   "scripts/workbench-reference.mjs": {
@@ -134,11 +134,6 @@
       "count": 7
     }
   },
-  "src/assets/barrow.ts": {
-    "no-magic-numbers": {
-      "count": 129
-    }
-  },
   "src/assets/coastal-profiles.ts": {
     "no-magic-numbers": {
       "count": 2
@@ -154,11 +149,6 @@
       "count": 67
     }
   },
-  "src/assets/effect-props.ts": {
-    "no-magic-numbers": {
-      "count": 87
-    }
-  },
   "src/assets/farm.ts": {
     "no-magic-numbers": {
       "count": 54
@@ -169,39 +159,9 @@
       "count": 32
     }
   },
-  "src/assets/fish.ts": {
-    "no-magic-numbers": {
-      "count": 33
-    }
-  },
-  "src/assets/foxglove.ts": {
-    "no-magic-numbers": {
-      "count": 76
-    }
-  },
-  "src/assets/gull.ts": {
-    "no-magic-numbers": {
-      "count": 110
-    }
-  },
-  "src/assets/materials-work.ts": {
-    "no-magic-numbers": {
-      "count": 89
-    }
-  },
-  "src/assets/net-shed.ts": {
-    "no-magic-numbers": {
-      "count": 56
-    }
-  },
   "src/assets/ridge-flight-orbs.ts": {
     "no-magic-numbers": {
       "count": 1
-    }
-  },
-  "src/assets/ridge-glider.ts": {
-    "no-magic-numbers": {
-      "count": 74
     }
   },
   "src/assets/ridge-updraft.ts": {
@@ -212,11 +172,6 @@
   "src/assets/rock-ledges.ts": {
     "no-magic-numbers": {
       "count": 60
-    }
-  },
-  "src/assets/routes.ts": {
-    "no-magic-numbers": {
-      "count": 50
     }
   },
   "src/assets/shop-garments.ts": {
@@ -239,19 +194,9 @@
       "count": 43
     }
   },
-  "src/assets/surface-maps.ts": {
-    "no-magic-numbers": {
-      "count": 30
-    }
-  },
   "src/assets/surface-pattern-tools.ts": {
     "no-magic-numbers": {
       "count": 12
-    }
-  },
-  "src/assets/surface-textures.ts": {
-    "no-magic-numbers": {
-      "count": 113
     }
   },
   "src/assets/wayfinding-sign.ts": {
@@ -309,29 +254,9 @@
       "count": 6
     }
   },
-  "src/barrow-gait.ts": {
-    "no-magic-numbers": {
-      "count": 12
-    }
-  },
-  "src/biome-model.ts": {
-    "no-magic-numbers": {
-      "count": 70
-    }
-  },
-  "src/biome-navigation.ts": {
-    "no-magic-numbers": {
-      "count": 35
-    }
-  },
   "src/biome-recipe.ts": {
     "no-magic-numbers": {
       "count": 42
-    }
-  },
-  "src/biome-scenery.ts": {
-    "no-magic-numbers": {
-      "count": 103
     }
   },
   "src/charged-actions.ts": {
@@ -369,11 +294,6 @@
       "count": 12
     }
   },
-  "src/gull-flight.ts": {
-    "no-magic-numbers": {
-      "count": 125
-    }
-  },
   "src/gull-flock.ts": {
     "no-magic-numbers": {
       "count": 8
@@ -384,34 +304,14 @@
       "count": 13
     }
   },
-  "src/gull-thermals.ts": {
-    "no-magic-numbers": {
-      "count": 38
-    }
-  },
-  "src/hare.ts": {
-    "no-magic-numbers": {
-      "count": 25
-    }
-  },
   "src/interactions/cargo.ts": {
     "no-magic-numbers": {
       "count": 1
     }
   },
-  "src/interactive-shaders/catalog.ts": {
-    "no-magic-numbers": {
-      "count": 32
-    }
-  },
   "src/interactive-shaders/effects.ts": {
     "no-magic-numbers": {
       "count": 4
-    }
-  },
-  "src/interactive-shaders/island-effects.ts": {
-    "no-magic-numbers": {
-      "count": 62
     }
   },
   "src/interactive-shaders/light.ts": {
@@ -429,16 +329,6 @@
       "count": 9
     }
   },
-  "src/interactive-shaders/surfaces.ts": {
-    "no-magic-numbers": {
-      "count": 82
-    }
-  },
-  "src/interactive-shaders/vegetation.ts": {
-    "no-magic-numbers": {
-      "count": 98
-    }
-  },
   "src/interactive-shaders/water.ts": {
     "no-magic-numbers": {
       "count": 31
@@ -454,16 +344,6 @@
       "count": 51
     }
   },
-  "src/island-landmarks.ts": {
-    "no-magic-numbers": {
-      "count": 30
-    }
-  },
-  "src/island-map.ts": {
-    "no-magic-numbers": {
-      "count": 34
-    }
-  },
   "src/island-north.ts": {
     "no-magic-numbers": {
       "count": 21
@@ -477,11 +357,6 @@
   "src/island-sun-shafts.ts": {
     "no-magic-numbers": {
       "count": 11
-    }
-  },
-  "src/island-wildlife.ts": {
-    "no-magic-numbers": {
-      "count": 78
     }
   },
   "src/island-world.ts": {
@@ -519,11 +394,6 @@
       "count": 1
     }
   },
-  "src/lookout-recovery-art.ts": {
-    "no-magic-numbers": {
-      "count": 91
-    }
-  },
   "src/lookout-recovery.ts": {
     "no-magic-numbers": {
       "count": 9
@@ -542,11 +412,6 @@
   "src/materials-interactions.ts": {
     "no-magic-numbers": {
       "count": 12
-    }
-  },
-  "src/materials.ts": {
-    "no-magic-numbers": {
-      "count": 43
     }
   },
   "src/math/noise.ts": {
@@ -572,11 +437,6 @@
   "src/objective-marker.ts": {
     "no-magic-numbers": {
       "count": 13
-    }
-  },
-  "src/ocean.ts": {
-    "no-magic-numbers": {
-      "count": 7
     }
   },
   "src/ore-contracts.ts": {
@@ -649,19 +509,9 @@
       "count": 6
     }
   },
-  "src/routes.ts": {
-    "no-magic-numbers": {
-      "count": 111
-    }
-  },
   "src/scene.ts": {
     "no-magic-numbers": {
       "count": 43
-    }
-  },
-  "src/scenery.ts": {
-    "no-magic-numbers": {
-      "count": 105
     }
   },
   "src/school-fish.ts": {
@@ -694,21 +544,6 @@
       "count": 1
     }
   },
-  "src/second-island/long-acre-art.ts": {
-    "no-magic-numbers": {
-      "count": 91
-    }
-  },
-  "src/second-island/long-acre.ts": {
-    "no-magic-numbers": {
-      "count": 113
-    }
-  },
-  "src/second-island/lots.ts": {
-    "no-magic-numbers": {
-      "count": 96
-    }
-  },
   "src/second-island/main.ts": {
     "no-magic-numbers": {
       "count": 78
@@ -717,11 +552,6 @@
   "src/second-island/ore-hauling.ts": {
     "no-magic-numbers": {
       "count": 43
-    }
-  },
-  "src/second-island/place-effects.ts": {
-    "no-magic-numbers": {
-      "count": 88
     }
   },
   "src/second-island/sandspit-school.ts": {
@@ -764,21 +594,6 @@
       "count": 7
     }
   },
-  "src/shellglass-art.ts": {
-    "no-magic-numbers": {
-      "count": 75
-    }
-  },
-  "src/shellglass-tide.ts": {
-    "no-magic-numbers": {
-      "count": 31
-    }
-  },
-  "src/shore-depth.ts": {
-    "no-magic-numbers": {
-      "count": 22
-    }
-  },
   "src/simulation/cargo-impacts.ts": {
     "no-magic-numbers": {
       "count": 5
@@ -792,11 +607,6 @@
   "src/simulation/driftwood-school.ts": {
     "no-magic-numbers": {
       "count": 7
-    }
-  },
-  "src/simulation/fish-school.ts": {
-    "no-magic-numbers": {
-      "count": 81
     }
   },
   "src/simulation/fishing.ts": {
@@ -822,21 +632,6 @@
   "src/soaring-guide.ts": {
     "no-magic-numbers": {
       "count": 3
-    }
-  },
-  "src/starter-action-effects.ts": {
-    "no-magic-numbers": {
-      "count": 114
-    }
-  },
-  "src/starter-effect-cues.ts": {
-    "no-magic-numbers": {
-      "count": 22
-    }
-  },
-  "src/starter-place-effects.ts": {
-    "no-magic-numbers": {
-      "count": 121
     }
   },
   "src/street-lights.ts": {
@@ -877,16 +672,6 @@
   "src/wet-paving.ts": {
     "no-magic-numbers": {
       "count": 1
-    }
-  },
-  "src/wildlife-motion.ts": {
-    "no-magic-numbers": {
-      "count": 42
-    }
-  },
-  "src/wildlife.ts": {
-    "no-magic-numbers": {
-      "count": 91
     }
   },
   "src/workbench/audio-study.ts": {
@@ -939,54 +724,9 @@
       "count": 2
     }
   },
-  "src/workbench/effect-air-fixtures.ts": {
-    "no-magic-numbers": {
-      "count": 111
-    }
-  },
-  "src/workbench/effect-fixtures.ts": {
-    "no-magic-numbers": {
-      "count": 126
-    }
-  },
-  "src/workbench/effect-job-fixtures.ts": {
-    "no-magic-numbers": {
-      "count": 98
-    }
-  },
-  "src/workbench/effect-land-fixtures.ts": {
-    "no-magic-numbers": {
-      "count": 153
-    }
-  },
-  "src/workbench/effect-studies.ts": {
-    "no-magic-numbers": {
-      "count": 53
-    }
-  },
-  "src/workbench/expanded-effect-studies.ts": {
-    "no-magic-numbers": {
-      "count": 81
-    }
-  },
   "src/workbench/furnishing-studies.ts": {
     "no-magic-numbers": {
       "count": 12
-    }
-  },
-  "src/workbench/gameplay-air-fixtures.ts": {
-    "no-magic-numbers": {
-      "count": 69
-    }
-  },
-  "src/workbench/gameplay-effect-studies.ts": {
-    "no-magic-numbers": {
-      "count": 80
-    }
-  },
-  "src/workbench/gameplay-land-fixtures.ts": {
-    "no-magic-numbers": {
-      "count": 152
     }
   },
   "src/workbench/gull-study.ts": {
@@ -1047,11 +787,6 @@
   "src/workbench/main.ts": {
     "no-magic-numbers": {
       "count": 14
-    }
-  },
-  "src/workbench/material-studies.ts": {
-    "no-magic-numbers": {
-      "count": 53
     }
   },
   "src/workbench/mechanic-studies.ts": {
@@ -1139,11 +874,6 @@
       "count": 2
     }
   },
-  "src/workbench/surface-studies.ts": {
-    "no-magic-numbers": {
-      "count": 55
-    }
-  },
   "src/workbench/vehicle-studies.ts": {
     "no-magic-numbers": {
       "count": 10
@@ -1152,11 +882,6 @@
   "src/workbench/z-fighting.ts": {
     "no-magic-numbers": {
       "count": 16
-    }
-  },
-  "src/world-particles.ts": {
-    "no-magic-numbers": {
-      "count": 9
     }
   },
   "src/worlds/starter/island-remarks.ts": {
@@ -1201,12 +926,7 @@
   },
   "src/worlds/starter/ridge-scout.ts": {
     "no-magic-numbers": {
-      "count": 30
-    }
-  },
-  "src/worlds/starter/sites.ts": {
-    "no-magic-numbers": {
-      "count": 87
+      "count": 20
     }
   }
 }

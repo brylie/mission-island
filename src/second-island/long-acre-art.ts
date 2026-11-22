@@ -2,15 +2,29 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
 import type { WildlifeFrame } from '../wildlife'
 import type { createCrew } from '../assets/crew'
+import { honeyPropPaint } from '../assets/geometry/honey-props'
+import { apiaryHedge, apiaryRail, apiarySteppingStone, honeybee } from '../assets/geometry/long-acre-apiary'
+import { longAcreGroundCover } from '../assets/geometry/long-acre-flowers'
 import { buildHoneyExtractor, buildHoneyHive, buildHoneyKit, buildHoneyShelf, createHoneyGearModels, honeyHiveEntrance } from '../assets/honey-props'
 import { createLongAcreFlowers, longAcreLeafColors } from '../assets/long-acre-flowers'
-import { apiary, beeCount, flowerBeds, flowerOffsets, hiveEntrances, honeyReward, honeyStops, pollinatorsAt } from './long-acre'
+import { longAcreGardenPlacement } from '../worlds/saltwind/layout/scenery'
+import { apiary, beeCount, beeHiveFlightHeight, flowerBeds, flowerOffsets, hiveEntrances, honeyReward, honeyStops, pollinatorsAt } from './long-acre'
 import type { HoneyOrder } from './long-acre'
 import type { MapPoint } from './sites'
 import { groundHeight, surfaceHeight } from './terrain'
 import type { ScenerySolids } from './walking'
 
-const wood = '#af8153', darkWood = '#745741'
+const apiaryCameraHeight = 17
+const apiaryDetailRadius = 25
+const wingbeatFrequency = 78
+const flightWingAmplitude = 0.89
+const landedWingTilt = 0.18
+const feedingFlowerTilt = 0.095
+const flowerSwayFrequency = 2.1
+const flowerSwayPhaseStep = 0.72
+const flowerSwayRainThreshold = 0.3
+const wetFlowerSway = 0.037
+const dryFlowerSway = 0.019
 
 function onGround(meshes: MeshFactory, name: string, point: MapPoint) {
   const root = new TransformNode(name, meshes.scene)
@@ -18,11 +32,8 @@ function onGround(meshes: MeshFactory, name: string, point: MapPoint) {
   return root
 }
 
-const marketShelfOffsetZ = 0.65
-const kitBenchOffsetX = 1.02
-const extractorBenchOffsetX = 0.68
-
 export function createHoneyMarketStand(meshes: MeshFactory) {
+  const { marketShelfOffsetZ } = longAcreGardenPlacement.props
   const root = onGround(meshes, 'Farmers market honey shelf', { x: honeyStops.market.x, z: honeyStops.market.z + marketShelfOffsetZ })
   buildHoneyShelf(meshes, root, honeyReward)
 }
@@ -33,54 +44,64 @@ function buildApiary(meshes: MeshFactory) {
     buildHoneyHive(meshes, root, i === 0 ? 'light' : 'dark')
   })
 
-  const kit = onGround(meshes, 'Veil and clean jars', { x: honeyStops.kit.x - kitBenchOffsetX, z: honeyStops.kit.z })
+  const { props, hedge, rail, steppingStones } = longAcreGardenPlacement
+  const kit = onGround(meshes, 'Veil and clean jars', { x: honeyStops.kit.x - props.kitBenchOffsetX, z: honeyStops.kit.z })
   buildHoneyKit(meshes, kit)
 
-  const extraction = onGround(meshes, 'Covered Long Acre honey bench', { x: honeyStops.extractor.x - extractorBenchOffsetX, z: honeyStops.extractor.z })
+  const extraction = onGround(meshes, 'Covered Long Acre honey bench', { x: honeyStops.extractor.x - props.extractorBenchOffsetX, z: honeyStops.extractor.z })
   buildHoneyExtractor(meshes, extraction)
 
-  for (let i = 0; i < 10; i++) {
-    const z = 25.2 + i * 0.34, x = 177.7 + 0.15 * Math.cos(i * 1.7), y = groundHeight(x, z)
-    meshes.sphere(x, y + 0.39, z, 0.67, 0.86 + 0.11 * Math.sin(i), 0.61, longAcreLeafColors[i % 3], undefined, true, 5)
+  for (let i = 0; i < hedge.count; i++) {
+    const z = hedge.z + i * hedge.spacing, x = hedge.x + hedge.weave * Math.cos(i * hedge.weaveRate), y = groundHeight(x, z)
+    const { centerY, width, height, heightVariation, depth, segments } = apiaryHedge
+    meshes.sphere(x, y + centerY, z, width, height + heightVariation * Math.sin(i), depth, longAcreLeafColors[i % longAcreLeafColors.length], undefined, true, segments)
   }
-  for (const x of [182.4, 184.7, 187]) {
-    const y = surfaceHeight(x, 24.25)
-    meshes.box(x, y + 0.36, 24.25, 0.10, 0.72, 0.105, darkWood)
-    if (x < 187) meshes.box(x + 1.15, y + 0.55, 24.25, 2.34, 0.078, 0.093, wood)
+  const { post, beam } = apiaryRail
+  for (const [i, x] of rail.postX.entries()) {
+    const y = surfaceHeight(x, rail.z)
+    meshes.box(x, y + post.centerY, rail.z, ...post.size, honeyPropPaint.darkWood)
+    if (i < rail.postX.length - 1) meshes.box(x + rail.railCenterFromPost, y + beam.centerY, rail.z, ...beam.size, honeyPropPaint.wood)
   }
   // Stepping stones point visitors around the east end of the low apiary rail.
-  for (let i = 0; i < 6; i++) {
-    const x = 187.55 - Math.max(0, i - 3) * 0.55, z = 26.72 - i * 0.77
-    const stone = meshes.box(x, surfaceHeight(x, z) + 0.025, z, 0.51, 0.065, 0.42, '#a79470', undefined, false)
-    stone.rotation.y = Math.sin(i * 2) * 0.24
+  for (let i = 0; i < steppingStones.count; i++) {
+    const x = steppingStones.x - Math.max(0, i - steppingStones.turnAfter) * steppingStones.turnStepX
+    const z = steppingStones.z - i * steppingStones.spacingZ
+    const { centerY, size, color, yawFrequency, yawAmplitude } = apiarySteppingStone
+    const stone = meshes.box(x, surfaceHeight(x, z) + centerY, z, ...size, color, undefined, false)
+    stone.rotation.y = Math.sin(i * yawFrequency) * yawAmplitude
   }
+}
+
+function createBee(meshes: MeshFactory, index: number) {
+  const { abdomen, bands, head, wings: wing, segments } = honeybee
+  const root = onGround(meshes, 'Honeybee ' + (index + 1), hiveEntrances[index % hiveEntrances.length])
+  root.position.y += beeHiveFlightHeight
+  meshes.sphere(0, 0, 0, ...abdomen.size, abdomen.color, root, false, segments)
+  for (const z of bands.z) meshes.sphere(0, 0, z, ...bands.size, bands.color, root, false, segments)
+  meshes.sphere(0, head.y, head.z, ...head.size, head.color, root, false, segments)
+  const wings = [-1, 1].map((sign) => meshes.sphere(sign * wing.x, wing.y, wing.z, ...wing.size, wing.color, root, false, segments))
+  return { root, wings }
 }
 
 export function createLongAcreGarden(meshes: MeshFactory, solids?: ScenerySolids) {
   const first = meshes.scene.meshes.length
   buildApiary(meshes)
   solids?.capture(meshes.scene.meshes.slice(first))
+  const { scatter, leaf } = longAcreGroundCover
   flowerBeds.forEach((bed, j) => {
-    for (let i = 0; i < 14; i++) {
-      const angle = i * 2.399, radius = 0.21 + 0.21 * (i % 5)
-      const x = bed.x + Math.cos(angle) * radius, z = bed.z + Math.sin(angle) * radius * 0.83
+    for (let i = 0; i < scatter.count; i++) {
+      const angle = i * scatter.turn, radius = scatter.baseRadius + scatter.ringStep * (i % scatter.ringCount)
+      const x = bed.x + Math.cos(angle) * radius, z = bed.z + Math.sin(angle) * radius * scatter.depthScale
       const y = groundHeight(x, z)
-      const leaves = meshes.sphere(x, y + 0.062, z, 0.25 + 0.07 * (i % 3), 0.15, 0.26, longAcreLeafColors[(i + j) % 3], undefined, false, 4)
+      const width = leaf.width + leaf.widthStep * (i % leaf.widthLevels)
+      const leaves = meshes.sphere(x, y + leaf.y, z, width, leaf.height, leaf.depth, longAcreLeafColors[(i + j) % longAcreLeafColors.length], undefined, false, leaf.segments)
       leaves.rotation.y = angle
     }
   })
   const flowers = flowerBeds.map((bed, j) => createLongAcreFlowers(meshes, bed, j, flowerOffsets, surfaceHeight))
-  const bees = Array.from({ length: beeCount }, (_, i) => {
-    const root = onGround(meshes, 'Honeybee ' + (i + 1), hiveEntrances[i % 2])
-    root.position.y += 0.54
-    meshes.sphere(0, 0, 0, 0.082, 0.074, 0.142, '#dfaa36', root, false, 5)
-    for (const z of [-0.035, 0.02]) meshes.sphere(0, 0, z, 0.085, 0.075, 0.027, '#574332', root, false, 5)
-    meshes.sphere(0, 0.008, 0.071, 0.052, 0.052, 0.059, '#543d30', root, false, 5)
-    const wings = [-1, 1].map((sign) => meshes.sphere(sign * 0.054, 0.032, -0.016, 0.094, 0.011, 0.054, '#f7ead0', root, false, 5))
-    return { root, wings }
-  })
+  const bees = Array.from({ length: beeCount }, (_, i) => createBee(meshes, i))
   return (frame: WildlifeFrame, overview: boolean, rainAt: (time: number) => number = () => frame.weather.rain) => {
-    const nearby = !overview && Math.hypot(frame.camera.x - apiary.x, frame.camera.y - 17, frame.camera.z - apiary.z) < 25
+    const nearby = !overview && Math.hypot(frame.camera.x - apiary.x, frame.camera.y - apiaryCameraHeight, frame.camera.z - apiary.z) < apiaryDetailRadius
     if (!nearby) {
       for (const { root } of bees) root.setEnabled(false)
       return
@@ -93,14 +114,15 @@ export function createLongAcreGarden(meshes: MeshFactory, solids?: ScenerySolids
       root.position.set(sample.x, surfaceHeight(sample.x, sample.z) + sample.height, sample.z)
       root.rotation.y = sample.yaw
       for (const [side, wing] of wings.entries()) {
-        wing.rotation.z = (side ? 1 : -1) * (sample.activity === 'flight' ? Math.sin(frame.time * 78 + i) * 0.89 : 0.18)
+        wing.rotation.z = (side ? 1 : -1) * (sample.activity === 'flight' ? Math.sin(frame.time * wingbeatFrequency + i) * flightWingAmplitude : landedWingTilt)
       }
     }
     let visiting = 0
     flowers.forEach((bed, j) => void bed.forEach((root, i) => {
       const fed = motion.some((bee) => bee.bed === j && bee.flower === i)
       if (fed) visiting++
-      root.rotation.z = (fed ? 0.095 : 0) + Math.sin(frame.time * 2.1 + i * 0.72 + j) * (frame.weather.rain > 0.3 ? 0.037 : 0.019)
+      const sway = frame.weather.rain > flowerSwayRainThreshold ? wetFlowerSway : dryFlowerSway
+      root.rotation.z = (fed ? feedingFlowerTilt : 0) + Math.sin(frame.time * flowerSwayFrequency + i * flowerSwayPhaseStep + j) * sway
     }))
     return {
       phase,

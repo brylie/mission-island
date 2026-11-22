@@ -107,6 +107,12 @@ export const shellglassBasin = {
   rimHeight: 0.61,
 } as const
 
+export const shellglassPocketSites = [
+  { x: 47.74, z: -32.89, rx: 0.40, rz: 0.33, level: 0.045 },
+  { x: 46.66, z: -31.82, rx: 0.40, rz: 0.30, level: 0.030 },
+  { x: 44.63, z: -33.53, rx: 0.38, rz: 0.29, level: 0.055 },
+] as const
+
 export const driftwoodStrand = {
   scatterSeed: 3125,
   banks: [

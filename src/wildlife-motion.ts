@@ -1,6 +1,14 @@
+import { phenomenonActivityStyle } from './assets/effects/phenomena.ts'
+import { birdActivityStyle } from './assets/recipes/ambient-wildlife.ts'
 import { smoothstep } from './math/smoothstep.ts'
 import type { Point } from './world.ts'
 import type { Weather } from './protocol.ts'
+
+const strongestAvoidanceRadiusM = 1
+const threatRadiusM = 7.5
+const overlappingThreatEpsilonM = 0.001
+const deepWaterBias = 0.55
+const maximumAvoidanceM = 4.8
 
 export function smoothRange(start: number, end: number, value: number) {
   return smoothstep((value - start) / (end - start))
@@ -11,30 +19,41 @@ export function schoolAvoidance(origin: Point, threats: readonly Point[], escape
   for (const threat of threats) {
     const x = origin.x - threat.x, z = origin.z - threat.z
     const range = Math.hypot(x, z)
-    const strength = 1 - smoothRange(1, 7.5, range)
-    const length = Math.max(0.001, range)
-    pushX += (x / length + escape.x * 0.55) * strength
-    pushZ += (z / length + escape.z * 0.55) * strength
+    const strength = 1 - smoothRange(strongestAvoidanceRadiusM, threatRadiusM, range)
+    const length = Math.max(overlappingThreatEpsilonM, range)
+    pushX += (x / length + escape.x * deepWaterBias) * strength
+    pushZ += (z / length + escape.z * deepWaterBias) * strength
   }
   const length = Math.hypot(pushX, pushZ)
-  const scale = 4.8 / Math.max(1, length)
+  const scale = maximumAvoidanceM / Math.max(1, length)
   return { x: pushX * scale, z: pushZ * scale }
 }
 
+type FadeRange = readonly [start: number, end: number]
+function dailyEnvelope({ rise, fall }: { rise: FadeRange, fall: FadeRange }, hour: number) {
+  return smoothRange(...rise, hour) * (1 - smoothRange(...fall, hour))
+}
+
 export function birdActivity(time: number, weather: Weather) {
-  const h = weather.hour
-  const day = smoothRange(5.4, 6.7, h) * (1 - smoothRange(17.2, 19.2, h))
-  const sheltered = smoothRange(0.55, 0.96, weather.rain) * 0.9
+  const { daylight, birdRainShelter, landing: circuit, batActivity } = birdActivityStyle
+  const day = dailyEnvelope(daylight, weather.hour)
+  const sheltered = smoothRange(...birdRainShelter.ramp, weather.rain) * birdRainShelter.maximum
   const roost = Math.max(1 - day, sheltered)
-  const landing = smoothRange(0.64, 0.79, (time % 48) / 48) * (1 - smoothRange(0.90, 0.99, (time % 48) / 48))
-  const bat = (1 - smoothRange(0.03, 0.77, day)) * (1 - smoothRange(0.25, 0.83, weather.rain))
+  const progress = (time % circuit.periodS) / circuit.periodS
+  const landing = smoothRange(...circuit.settle, progress) * (1 - smoothRange(...circuit.takeoff, progress))
+  const bat = (1 - smoothRange(...batActivity.daylight, day)) * (1 - smoothRange(...batActivity.rain, weather.rain))
   return { roost, landing: landing * (1 - roost), bat }
 }
 
 export function phenomenonStrength(kind: 'mist' | 'spray' | 'glow', weather: Weather) {
   const { hour, rain } = weather
-  if (kind === 'mist') return smoothRange(4.4, 6.2, hour) * (1 - smoothRange(7.2, 9.4, hour)) * (1 - rain * 0.69)
-  if (kind === 'spray') return 0.32 + 0.58 * rain + 0.1 * smoothRange(6, 10, hour) * (1 - smoothRange(16, 19, hour))
-  const dark = 1 - smoothRange(4.7, 6.3, hour) * (1 - smoothRange(17.8, 20, hour))
-  return dark * (1 - smoothRange(0.15, 0.65, rain))
+  const { mist, spray, glow } = phenomenonActivityStyle
+  if (kind === 'mist') return dailyEnvelope(mist.morning, hour) * (1 - rain * mist.rainLoss)
+  if (kind === 'spray') {
+    // Apply the daytime gain during the rising edge before fading it at dusk.
+    const { rise, fall } = spray.daytime
+    return spray.base + spray.rainGain * rain + spray.daytimeGain * smoothRange(...rise, hour) * (1 - smoothRange(...fall, hour))
+  }
+  const dark = 1 - dailyEnvelope(glow.daylight, hour)
+  return dark * (1 - smoothRange(...glow.rainFade, rain))
 }

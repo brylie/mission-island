@@ -1,17 +1,11 @@
+import { barrowFrame, barrowTray, barrowWheel } from './assets/geometry/barrow.ts'
 import { walkingHeight } from './terrain.ts'
 import { localPoint, offset, type Point, type Pose } from './world.ts'
 
 const pushOffset = 0.94
-const trayHalfWidth = 0.39
-const trayHalfDepth = 0.5
-const rimHeight = 0.82
-const wheelRadius = 0.26
-const wheelZ = 0.55
-const wheelHalfWidth = 0.095
-const gripX = 0.46
-const gripHeight = 0.9
-const gripZ = -0.48
 const lift = 0.13
+const { halfWidth: trayHalfWidth, halfDepth: trayHalfDepth, rimHeight } = barrowTray
+const { radius: wheelRadius, axleZ: wheelZ, halfWidth: wheelHalfWidth } = barrowWheel
 export const barrowRig = {
   pushOffset,
   trayHalfWidth,
@@ -20,11 +14,12 @@ export const barrowRig = {
   wheelRadius,
   wheelZ,
   wheelHalfWidth,
-  grip: { x: gripX, y: gripHeight, z: gripZ },
+  grip: { ...barrowFrame.grip.center },
   lift,
 }
 
 const wheelDiameter = wheelRadius + wheelRadius
+// Upright support envelopes also provide Cannon's tray-then-wheel collision shapes.
 export const barrowSolids = [
   { halfWidth: trayHalfWidth, halfDepth: trayHalfDepth, z: 0, height: rimHeight },
   { halfWidth: wheelHalfWidth, halfDepth: wheelRadius, z: wheelZ, height: wheelDiameter },

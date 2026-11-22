@@ -3,6 +3,8 @@ import { Texture } from '@babylonjs/core/Materials/Textures/texture'
 import type { Scene } from '@babylonjs/core/scene'
 import { blend, clamp, hash, valueNoise, wrap } from '../math/noise.ts'
 import { bakeSurfaceMaps, components, normalMap } from './surface-maps.ts'
+import { cellularChips, surfaceNoise as noise, surfaceTextureResolution, tiledLeaves, weatheredMetalSample, type SurfaceTextureResolution } from './recipes/surface-sampling.ts'
+import { rgba8 } from './rgba8.ts'
 import { surfaceRepeatMeters, type SurfaceRecipe, type SurfaceSettings } from './surface-recipes.ts'
 
 export const noiseTypes = {
@@ -14,9 +16,15 @@ export const noiseTypes = {
   ripple: 'Ripples',
 } as const
 
-const size = 128
+const size = surfaceTextureResolution.preview
+const half = 0.5
+const fullTurnFactor = 2
+const sampleContrast = 0.37
+const sampleBrightness = 0.94
+const anisotropicSamples = 8
 
 function cellular(u: number, v: number, cells: number) {
+  const look = cellularChips
   const x = u * cells
   const y = v * cells
   let nearest = Infinity
@@ -27,37 +35,38 @@ function cellular(u: number, v: number, cells: number) {
     for (let i = Math.floor(x) - 1; i <= Math.floor(x) + 1; i++) {
       const ix = wrap(i, cells)
       const iy = wrap(j, cells)
-      const dx = x - i - 0.18 - hash(ix, iy, 32) * 0.65
-      const dy = y - j - 0.18 - hash(ix, iy, 43) * 0.65
+      const dx = x - i - look.center - hash(ix, iy, look.seed.x) * look.jitter
+      const dy = y - j - look.center - hash(ix, iy, look.seed.y) * look.jitter
       const d = dx * dx + dy * dy
       if (d < nearest) {
         next = nearest
         nearest = d
-        tone = hash(ix, iy, 18)
-        face = (dx * 1.8 + dy * 0.95 > 0.04) ? 1 : 0
+        tone = hash(ix, iy, look.seed.tone)
+        face = (dx * look.face.x + dy * look.face.y > look.face.threshold) ? 1 : 0
       }
       else if (d < next) next = d
     }
   }
-  const gap = clamp((Math.sqrt(next) - Math.sqrt(nearest) - 0.04) * 3.4)
-  return gap * (0.42 + tone * 0.35 + face * 0.23)
+  const gap = clamp((Math.sqrt(next) - Math.sqrt(nearest) - look.gap.inset) * look.gap.contrast)
+  return gap * (look.shade.base + tone * look.shade.tone + face * look.shade.face)
 }
 
 function leaves(u: number, v: number) {
-  const lanes = 10
+  const look = tiledLeaves
+  const { lanes } = look
   const cellX = Math.floor(u * lanes)
   const cellY = Math.floor(v * lanes)
-  const r = hash(wrap(cellX, lanes), wrap(cellY, lanes), 81)
-  const x = u * lanes - cellX - 0.5
-  const y = v * lanes - cellY - 0.5
-  const angle = (r - 0.5) * 2.4 + 0.72
+  const r = hash(wrap(cellX, lanes), wrap(cellY, lanes), look.seed)
+  const x = u * lanes - cellX - half
+  const y = v * lanes - cellY - half
+  const angle = (r - half) * look.angle.spread + look.angle.base
   const long = x * Math.cos(angle) + y * Math.sin(angle)
   const short = y * Math.cos(angle) - x * Math.sin(angle)
-  const bladeWidth = (1 - Math.min(1, Math.abs(long) / 0.535)) * (0.19 + r * 0.095)
-  const blade = clamp((bladeWidth - Math.abs(short)) * 38)
-  const midrib = clamp(1 - Math.abs(short) * 34) * blade
-  const veins = clamp(1 - Math.abs(Math.sin((long - Math.abs(short) * 0.76) * 48)) * 3.7) * blade
-  return blade * (0.44 + r * 0.29) + midrib * 0.17 + veins * 0.105
+  const bladeWidth = (1 - Math.min(1, Math.abs(long) / look.blade.length)) * (look.blade.width + r * look.blade.widthVariation)
+  const blade = clamp((bladeWidth - Math.abs(short)) * look.blade.softness)
+  const midrib = clamp(1 - Math.abs(short) * look.midribSharpness) * blade
+  const veins = clamp(1 - Math.abs(Math.sin((long - Math.abs(short) * look.veins.slant) * look.veins.repeat)) * look.veins.sharpness) * blade
+  return blade * (look.shade.blade + r * look.shade.variation) + midrib * look.shade.midrib + veins * look.shade.veins
 }
 
 export const metalTypes = {
@@ -73,53 +82,56 @@ interface TextureDetails {
 }
 
 function pattern(name: string, u: number, v: number, striations: number) {
-  const fine = valueNoise(u, v, 48, 8)
-  const broad = valueNoise(u, v, 6, 3)
-  const fractal = broad * 0.42 + valueNoise(u, v, 16, 6) * 0.36 + fine * 0.22
-  const ripple = 0.5 + Math.sin(Math.PI * 2 * (v * 9 + (broad - 0.5) * 0.55)) * 0.5
+  const fine = valueNoise(u, v, noise.fine.cells, noise.fine.seed)
+  const broad = valueNoise(u, v, noise.broad.cells, noise.broad.seed)
+  const fractal = broad * noise.fractal.broad + valueNoise(u, v, noise.fractal.cells, noise.fractal.seed) * noise.fractal.middle + fine * noise.fractal.fine
+  const ripple = half + Math.sin(Math.PI * fullTurnFactor * (v * noise.ripple.frequency + (broad - half) * noise.ripple.distortion)) * half
   switch (name) {
     case 'value': return broad
     case 'fractal': return fractal
     case 'cellular':
-    case 'gravel': return cellular(u, v, 18) * 0.91 + fine * 0.09
+    case 'gravel': return cellular(u, v, noise.chips.cells) * noise.chips.chips + fine * noise.chips.fine
     case 'grain': return fine
-    case 'ripple': return ripple * 0.72 + fine * 0.28
-    case 'sand': return ripple * 0.39 + fine * 0.24 + fractal * 0.37
-    case 'grass': return fractal * 0.61 + valueNoise(u, v, 64, 10) * 0.39
-    case 'leaves': return leaves(u, v) * 0.77 + fractal * 0.23
-    case 'wood': return valueNoise(u * 4, v, 12, 51) * 0.52 + (0.5 + 0.5 * Math.sin(u * Math.PI * 2 * striations + broad)) * 0.48
-    case 'metal': return valueNoise(u, v * 7, 17, 52) * 0.7 + fine * 0.3
-    case 'concrete': return fine * 0.6 + valueNoise(u, v, 24, 37) * 0.4
-    case 'water': return ripple * 0.52 + fractal * 0.48
-    default: return fractal * 0.7 + fine * 0.3
+    case 'ripple': return ripple * noise.rippleFinish.ripple + fine * noise.rippleFinish.fine
+    case 'sand': return ripple * noise.sand.ripple + fine * noise.sand.fine + fractal * noise.sand.fractal
+    case 'grass': return fractal * noise.grass.fractal + valueNoise(u, v, noise.grass.cells, noise.grass.seed) * noise.grass.speckle
+    case 'leaves': return leaves(u, v) * noise.leaves.leaves + fractal * noise.leaves.fractal
+    case 'wood': return valueNoise(u * noise.wood.stretch, v, noise.wood.cells, noise.wood.seed) * noise.wood.grain
+      + (half + half * Math.sin(u * Math.PI * fullTurnFactor * striations + broad)) * noise.wood.lines
+    case 'metal': return valueNoise(u, v * noise.metal.stretch, noise.metal.cells, noise.metal.seed) * noise.metal.grain + fine * noise.metal.fine
+    case 'concrete': return fine * noise.concrete.fine + valueNoise(u, v, noise.concrete.cells, noise.concrete.seed) * noise.concrete.chips
+    case 'water': return ripple * noise.water.ripple + fractal * noise.water.fractal
+    default: return fractal * noise.default.fractal + fine * noise.default.fine
   }
 }
 
-export function createTextureSample(scene: Scene, name: string, scale = 1, contrast = 0.37, normalStrength = 0, details: TextureDetails = {}) {
+export function createTextureSample(scene: Scene, name: string, scale = 1, contrast = sampleContrast, normalStrength = 0, details: TextureDetails = {}) {
   const heights = new Float32Array(size * size)
-  const color = new Uint8Array(heights.length * 4)
+  const color = new Uint8Array(heights.length * rgba8.stride)
   const metal = details.metal
   const finish = metal ? metalTypes[metal.type] : undefined
   const tint = finish ? components(metal?.color ?? finish.color) : undefined
   const oxide = finish ? components(finish.oxide) : undefined
   const packed = metal ? new Uint8Array(color.length) : undefined
   for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) heights[y * size + x] = pattern(name, x / size, y / size, details.striations ?? 25)
+    for (let x = 0; x < size; x++) heights[y * size + x] = pattern(name, x / size, y / size, details.striations ?? noise.wood.striations)
   }
+  const wear = weatheredMetalSample
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const index = (y * size + x) * 4
-      const brightness = clamp(0.94 + (heights[y * size + x] - 0.5) * contrast)
+      const index = (y * size + x) * rgba8.stride
+      const brightness = clamp(sampleBrightness + (heights[y * size + x] - half) * contrast)
       if (metal && packed && tint && oxide) {
-        const patches = valueNoise(x / size, y / size, 7, 70) * 0.69 + valueNoise(x / size, y / size, 21, 53) * 0.31
-        const rust = metal.oxidation > 0 ? clamp((patches - 0.95 + metal.oxidation * 1.02) * 6) : 0
-        for (let i = 0; i < 3; i++) color[index + i] = blend(tint[i] * brightness, oxide[i] * brightness, rust)
-        color[index + 3] = 255
-        packed.set([255, 255 * blend(0.16 + metal.abrasion * 0.51, 0.91, rust), 255 * (1 - rust), 255], index)
+        const patches = valueNoise(x / size, y / size, wear.broad.cells, wear.broad.seed) * wear.broad.weight
+          + valueNoise(x / size, y / size, wear.fine.cells, wear.fine.seed) * wear.fine.weight
+        const rust = metal.oxidation > 0 ? clamp((patches - wear.oxidation.threshold + metal.oxidation * wear.oxidation.gain) * wear.oxidation.contrast) : 0
+        for (let i = 0; i < rgba8.alpha; i++) color[index + i] = blend(tint[i] * brightness, oxide[i] * brightness, rust)
+        color[index + rgba8.alpha] = rgba8.max
+        packed.set([rgba8.max, rgba8.max * blend(wear.roughness.base + metal.abrasion * wear.roughness.abrasionGain, wear.roughness.oxidized, rust), rgba8.max * (1 - rust), rgba8.max], index)
       }
       else {
-        const gray = Math.round(brightness * 255)
-        color.set([gray, gray, gray, 255], index)
+        const gray = Math.round(brightness * rgba8.max)
+        color.set([gray, gray, gray, rgba8.max], index)
       }
     }
   }
@@ -136,12 +148,12 @@ function uploadTexture(scene: Scene, pixels: Uint8Array, size: number, scale: nu
   texture.wrapU = texture.wrapV = Texture.WRAP_ADDRESSMODE
   texture.uScale = scale
   texture.vScale = scale / lengthwise
-  texture.anisotropicFilteringLevel = 8
+  texture.anisotropicFilteringLevel = anisotropicSamples
   texture.gammaSpace = gammaSpace
   return texture
 }
 
-export function createRecipeTextures(scene: Scene, recipe: SurfaceRecipe, settings: SurfaceSettings, size: 128 | 256) {
+export function createRecipeTextures(scene: Scene, recipe: SurfaceRecipe, settings: SurfaceSettings, size: SurfaceTextureResolution) {
   const { color, normals, finish, emissive } = bakeSurfaceMaps(recipe, settings, size)
   const scale = 1 / surfaceRepeatMeters(recipe, settings)
   return {

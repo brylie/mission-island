@@ -36,7 +36,11 @@ test('authored numeric data and test cases have explicit exceptions', async () =
     'src/worlds/saltwind/layout/sites.ts',
     'src/worlds/saltwind/layout/terrain.ts',
     'src/worlds/starter/layout/places.ts',
+    'src/worlds/starter/layout/routes.ts',
+    'src/worlds/starter/layout/scenery.ts',
+    'src/worlds/starter/layout/sites.ts',
     'src/worlds/starter/layout/terrain.ts',
+    'src/worlds/starter/layout/wildlife.ts',
     'test/new-case.test.mjs',
   ]) {
     const config = await eslint.calculateConfigForFile(file)

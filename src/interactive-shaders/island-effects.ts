@@ -1,3 +1,5 @@
+import { interactiveWorldLook as look } from '../assets/recipes/interactive-world-effects'
+import { starterShaderSites } from '../worlds/starter/layout/places'
 import { streetLampGeometry } from '../assets/geometry/site-props'
 import type { MeshFactory } from '../island-meshes'
 import type { MarketRunoff } from '../market-runoff'
@@ -31,24 +33,42 @@ export interface StudyActors {
   inspection?: StudyInspection
 }
 
+const half = 0.5
+const wadingIdleStrength = 0.23
+const verticalViewRatio = 0.75
+const headlampReach = 2.22
+const headlampRise = 0.97
+const nearEffectRange = 46
+const trailViewRange = 43
+const tidePoolBlendRadius = 2.2
+const wadingViewRange = 37
+const wadingStartStrength = 0.13
+const wadingPreviousWeight = 0.79
+const wadingSpeedWeight = 0.21
+const wadingBaseStrength = 0.10
+const wadingVelocityGain = 0.15
+const moonViewRange = 70
+const minVisibleResponse = 0.001
+const minVisibleDroplets = 0.02
+
 const objectY: Partial<Record<StudyId, number>> = {
-  'skiff-wake': waterLevel + 0.022,
-  'wading-rings': waterLevel + 0.028,
+  'skiff-wake': waterLevel + look.interfaceLift.wake,
+  'wading-rings': waterLevel + look.interfaceLift.wading,
   'seabed-caustics': waterLevel,
-  'water-rain-rings': waterLevel + 0.031,
+  'water-rain-rings': waterLevel + look.interfaceLift.rain,
   'waterfall-shear': 0,
-  'timber-salt-bloom': (saltBloomPile.top + saltBloomPile.bottom) / 2,
-  'window-parallax': 2.074,
-  'rope-fiber-sheen': harborDock.top + 0.017,
+  'timber-salt-bloom': (saltBloomPile.top + saltBloomPile.bottom) * half,
+  'window-parallax': look.placementHeight.window,
+  'rope-fiber-sheen': harborDock.top + look.placementHeight.ropeLift,
   'streetlamp-droplets': streetLampGeometry.bulb.y,
-  'fernfall-rainbow': 2.1,
-  'moon-glitter': waterLevel + 0.027,
+  'fernfall-rainbow': look.placementHeight.rainbow,
+  'moon-glitter': waterLevel + look.interfaceLift.glitter,
 }
 
 const baseVisible = new Set<StudyId>(['ridge-lichen', 'closing-flowers', 'reed-transmission', 'timber-salt-bloom', 'awning-rain-load', 'window-parallax', 'road-retroreflector', 'rope-fiber-sheen', 'cooling-embers'])
 
 function sameSiteAsCamera(camera: EffectFrame['camera'], origin: Place, range: number) {
-  return Math.abs(camera.y - origin.y) < range * 0.75 && Math.hypot(camera.x - origin.x, camera.z - origin.z) < range
+  return Math.abs(camera.y - origin.y) < range * verticalViewRatio && Math.hypot(camera.x - origin.x, camera.z - origin.z) < range
 }
 
 function naturalResponses(frame: EffectFrame, { runoff, snapshot }: WorldSignals): Record<Exclude<StudyId, 'skiff-wake'>, number> {
@@ -56,40 +76,42 @@ function naturalResponses(frame: EffectFrame, { runoff, snapshot }: WorldSignals
   const day = daylight(hour)
   const night = nightLighting(hour)
   return {
-    'wading-rings': 0.23,
-    'seabed-caustics': day * (1 - rain * 0.93) * 0.74,
+    'wading-rings': wadingIdleStrength,
+    'seabed-caustics': day * (1 - rain * look.caustics.rainLoss) * look.caustics.peak,
     'water-rain-rings': rain,
-    'waterfall-shear': 0.55 + rain * 0.37,
-    'canopy-dapple': day * (1 - rain * 0.84) * 0.69,
-    'reed-transmission': day > 0 ? (1 - rain * 0.77) * 0.72 : 0,
-    'sand-footprints': 0.67,
-    'ridge-lichen': 0.76 * rain,
-    'closing-flowers': Math.min(1, day * 1.9) * (1 - rain * 0.54),
-    'timber-salt-bloom': 0.82 * (1 - rain * 0.86),
-    'awning-rain-load': Math.max(runoff.canvas * 0.73, runoff.puddle * 0.82),
-    'window-parallax': 0.36 + (1 - day) * 0.57,
+    'waterfall-shear': look.waterfall.base + rain * look.waterfall.rainRise,
+    'canopy-dapple': day * (1 - rain * look.canopy.rainLoss) * look.canopy.peak,
+    'reed-transmission': day > 0 ? (1 - rain * look.reeds.rainLoss) * look.reeds.peak : 0,
+    'sand-footprints': look.tracks,
+    'ridge-lichen': look.lichen * rain,
+    'closing-flowers': Math.min(1, day * look.petals.openingRate) * (1 - rain * look.petals.rainLoss),
+    'timber-salt-bloom': look.salt.peak * (1 - rain * look.salt.rainLoss),
+    'awning-rain-load': Math.max(runoff.canvas * look.canvas.fabric, runoff.puddle * look.canvas.puddle),
+    'window-parallax': look.window.daytime + (1 - day) * look.window.nightBoost,
     'road-retroreflector': night,
-    'rope-fiber-sheen': (1 - rain * 0.72) * day * 0.8,
-    'fernfall-rainbow': 0.73 * Math.max(0, 1 - Math.abs(hour - 7.5) / 2.05),
+    'rope-fiber-sheen': (1 - rain * look.rope.rainLoss) * day * look.rope.peak,
+    'fernfall-rainbow': look.rainbow.peak * Math.max(0, 1 - Math.abs(hour - look.rainbow.hour) / look.rainbow.halfWindowHours),
     'cooling-embers': snapshot?.mission === 'fire' ? snapshot.fire : 0,
     'streetlamp-droplets': rain,
-    'meadow-pollen': 0.59 * day * (1 - rain) * Math.max(0, 1 - Math.abs(hour - 15) / 4.2),
-    'moon-glitter': night * (1 - rain * 0.73) * 0.73,
+    'meadow-pollen': look.pollen.peak * day * (1 - rain) * Math.max(0, 1 - Math.abs(hour - look.pollen.hour) / look.pollen.halfWindowHours),
+    'moon-glitter': night * (1 - rain * look.moon.rainLoss) * look.moon.peak,
   }
 }
 
 function stampCandidate(player: Player) {
+  const beach = starterShaderSites.sand.footprints
   return player.connected && player.grounded && !player.sleeping && !player.seat && !player.truckSurface
-    && !onBeachTowel(player) && coastRadius(player) > 0.925 && waterDepth(player) < 0.028 && player.x > 24 && player.z < -26
+    && !onBeachTowel(player) && coastRadius(player) > beach.minCoastRadius && waterDepth(player) < beach.maxDepth
+    && player.x > beach.minX && player.z < beach.maxZ
 }
 
 function activeHeadlamp(snapshot: Snapshot | undefined): EffectFrame['lamp'] {
   const truck = snapshot?.truck
   if (!truck) return
   return {
-    x: truck.x + Math.sin(truck.heading) * 2.22,
-    z: truck.z + Math.cos(truck.heading) * 2.22,
-    y: truck.y + 0.97,
+    x: truck.x + Math.sin(truck.heading) * headlampReach,
+    z: truck.z + Math.cos(truck.heading) * headlampReach,
+    y: truck.y + headlampRise,
     heading: truck.heading,
   }
 }
@@ -122,7 +144,7 @@ export function createIslandShaderEffects(meshes: MeshFactory, includeCottage: b
     const vessel = demo ?? signals.snapshot?.skiff
     const pose = demo ?? signals.skiffPose ?? vessel
     const strength = vessel && pose && signals.quality !== 'off' ? wakeStrength(vessel, pose) : 0
-    const visible = Boolean(strength && pose && sameSiteAsCamera(frame.camera, { ...pose, y: wake.origin.y }, 46))
+    const visible = Boolean(strength && pose && sameSiteAsCamera(frame.camera, { ...pose, y: wake.origin.y }, nearEffectRange))
     wake.effect.root.setEnabled(visible)
     if (!visible || !pose || !vessel) return
     const heading = pose.heading + (vessel.speed < 0 ? Math.PI : 0)
@@ -139,8 +161,8 @@ export function createIslandShaderEffects(meshes: MeshFactory, includeCottage: b
     for (const [index, trail] of [tracks, secondTracks].entries()) {
       const scripted = index === 0 && demo
       if (!scripted) trail.step(players.find((player) => player.id === index), frame.time)
-      trail.root.setEnabled(live && sameSiteAsCamera(frame.camera, walkers.origin, 43))
-      if (trail.root.isEnabled()) trail.pose(frame, scripted ? signals.inspection!.value : 0.67, Number(scripted))
+      trail.root.setEnabled(live && sameSiteAsCamera(frame.camera, walkers.origin, trailViewRange))
+      if (trail.root.isEnabled()) trail.pose(frame, scripted ? signals.inspection!.value : look.tracks, Number(scripted))
     }
   }
 
@@ -156,22 +178,22 @@ export function createIslandShaderEffects(meshes: MeshFactory, includeCottage: b
         continue
       }
       const actor = scripted ? { ...first.origin, heading: 0 } : swimmer!
-      const level = Math.hypot(actor.x - tidePool.x, actor.z - tidePool.z) < 2.2
+      const level = Math.hypot(actor.x - tidePool.x, actor.z - tidePool.z) < tidePoolBlendRadius
         ? Math.max(waterLevel, signals.tideLevel)
         : waterLevel
-      setSurfaceOrigin(ripple.root, actor, level + 0.026)
+      setSurfaceOrigin(ripple.root, actor, level + look.interfaceLift.liveWader)
       let strength = signals.inspection?.value ?? 0
       if (swimmer && !scripted) {
         const time = signals.snapshot?.islandTime ?? frame.time
         const previous = lastWaders.get(index)
-        strength = previous?.strength ?? 0.13
+        strength = previous?.strength ?? wadingStartStrength
         if (previous && time > previous.time) {
           const velocity = Math.hypot(previous.point.x - swimmer.x, previous.point.z - swimmer.z) / (time - previous.time)
-          strength = strength * 0.79 + Math.min(1, 0.10 + velocity * 0.15) * 0.21
+          strength = strength * wadingPreviousWeight + Math.min(1, wadingBaseStrength + velocity * wadingVelocityGain) * wadingSpeedWeight
         }
         lastWaders.set(index, { point: swimmer, time, strength })
       }
-      ripple.root.setEnabled(signals.quality !== 'off' && strength > 0 && sameSiteAsCamera(frame.camera, ripple.root.position, 37))
+      ripple.root.setEnabled(signals.quality !== 'off' && strength > 0 && sameSiteAsCamera(frame.camera, ripple.root.position, wadingViewRange))
       if (ripple.root.isEnabled()) ripple.pose(frame, strength)
     }
   }
@@ -187,9 +209,9 @@ export function createIslandShaderEffects(meshes: MeshFactory, includeCottage: b
       const selected = signals.inspection?.id === id
       const response = live ? selected ? signals.inspection!.value : responses[id] : 0
       const detail = studyDetail(id, frame, signals, origin, selected)
-      const active = (response > 0.001 || baseVisible.has(id) || (id === 'streetlamp-droplets' && live && detail > 0.02))
+      const active = (response > minVisibleResponse || baseVisible.has(id) || (id === 'streetlamp-droplets' && live && detail > minVisibleDroplets))
         && studyIsPlaced(id, includeCottage, selected, signals)
-      const visible = id === 'timber-salt-bloom' || sameSiteAsCamera(frame.camera, effect.root.position, id === 'moon-glitter' ? 70 : 46)
+      const visible = id === 'timber-salt-bloom' || sameSiteAsCamera(frame.camera, effect.root.position, id === 'moon-glitter' ? moonViewRange : nearEffectRange)
       effect.root.setEnabled(active && visible)
       if (!effect.root.isEnabled()) continue
       const lighting = id === 'road-retroreflector'
@@ -205,7 +227,7 @@ function studyDetail(id: StudyId, frame: EffectFrame, signals: WorldSignals, ori
     case 'seabed-caustics': return Math.max(waterLevel, signals.tideLevel)
     case 'streetlamp-droplets': return selected ? 1 : nightLighting(frame.weather.hour)
     case 'water-rain-rings': return Number(signals.quality === 'low')
-    case 'timber-salt-bloom': return waterLevel + 0.028 * Math.sin(frame.time * 1.5 + origin.x)
+    case 'timber-salt-bloom': return waterLevel + look.salt.tideSway * Math.sin(frame.time * look.salt.tideRate + origin.x)
     default: return 0
   }
 }

@@ -5,6 +5,9 @@ import type { Snapshot } from '../protocol'
 import { groundHeight } from '../terrain'
 import type { Point } from '../world'
 import { edgingSections, materialSources, repairChoices, repairSite, sampleTray } from '../worlds/starter/materials'
+import { repairEdging, repairMarker, repairSampleTray, stoneSample, timberSample } from './geometry/materials-work'
+
+const half = 0.5
 
 function groupAt(meshes: MeshFactory, name: string, point: Point) {
   const root = new TransformNode(name, meshes.scene)
@@ -14,61 +17,67 @@ function groupAt(meshes: MeshFactory, name: string, point: Point) {
 }
 
 function markedPost(meshes: MeshFactory, root: TransformNode, x: number, height: number) {
-  meshes.box(x, height / 2, 0, 0.09, height, 0.09, '#625449', root)
-  const tag = meshes.box(x, height - 0.08, 0, 0.26, 0.26, 0.07, '#e1ac58', root)
-  tag.rotation.z = Math.PI / 4
+  const { post, tag } = repairMarker
+  meshes.box(x, height * half, 0, post.width, height, post.depth, post.finish, root)
+  meshes.box(x, height - tag.margin, 0, ...tag.size, tag.finish, root).rotation.z = tag.tilt
 }
 
 function sample(meshes: MeshFactory, root: TransformNode, material: RepairMaterial, y: number) {
   if (material === 'timber') {
-    const bark = meshes.paintSurface('wood', '#765142')
-    meshes.cylinder(0, y + 0.07, 0, 0.09, 0.19, 0.69, 7, bark, root).rotation.z = 1.48
-    meshes.cylinder(0.08, y + 0.095, 0.1, 0.035, 0.09, 0.32, 6, bark, root).rotation.set(1.1, 0, -0.48)
-    meshes.cylinder(-0.34, y + 0.045, 0, 0.12, 0.12, 0.025, 6, '#d5ad7a', root).rotation.z = 1.48
+    const { branch, twig, end } = timberSample
+    const bark = meshes.paintSurface('wood', timberSample.bark)
+    meshes.cylinder(0, y + branch.y, 0, ...branch.shape, bark, root).rotation.z = branch.tilt
+    meshes.cylinder(twig.center[0], y + twig.center[1], twig.center[2], ...twig.shape, bark, root).rotation.set(...twig.rotation)
+    meshes.cylinder(end.center[0], y + end.center[1], end.center[2], ...end.shape, end.finish, root).rotation.z = branch.tilt
   }
   else {
-    meshes.sphere(0, y + 0.072, 0, 0.34, 0.21, 0.28, '#827f74', root, true, 3).rotation.y = 0.4
-    meshes.sphere(-0.07, y + 0.025, 0.05, 0.24, 0.09, 0.21, '#a29b87', root, true, 3)
+    const { main, chip, segments } = stoneSample
+    meshes.sphere(0, y + main.y, 0, ...main.size, main.finish, root, true, segments).rotation.y = main.turn
+    meshes.sphere(chip.center[0], y + chip.center[1], chip.center[2], ...chip.size, chip.finish, root, true, segments)
   }
 }
 
 function edging(meshes: MeshFactory, section: Point, material: RepairMaterial) {
   const root = groupAt(meshes, `${material} edging`, section)
   if (material === 'timber') {
-    meshes.box(0, 0.11, 0, 0.18, 0.23, 1.17, meshes.paintSurface('wood', '#ac855c'), root)
-    for (const z of [-0.44, 0.44]) meshes.box(0.086, 0.14, z, 0.1, 0.28, 0.1, '#745d46', root)
+    const { beam, stakes } = repairEdging.timber
+    meshes.box(0, beam.y, 0, ...beam.size, meshes.paintSurface('wood', beam.finish), root)
+    for (const z of stakes.z) meshes.box(stakes.x, stakes.y, z, ...stakes.size, stakes.finish, root)
   }
   else {
-    for (const [index, z] of [-0.42, 0, 0.42].entries()) {
-      const rock = meshes.sphere(0, 0.085, z, 0.29, 0.25 + index * 0.024, 0.45, ['#89867b', '#a39e90', '#96968b'][index], root, true, 4)
-      rock.rotation.y = index * 0.37
+    const { rocks, y, width, height, heightStep, depth, segments, turnStep } = repairEdging.stone
+    for (const [index, { z, finish }] of rocks.entries()) {
+      const rock = meshes.sphere(0, y, z, width, height + index * heightStep, depth, finish, root, true, segments)
+      rock.rotation.y = index * turnStep
     }
   }
   return root
 }
 
 export function createMaterialsWorkView(meshes: MeshFactory) {
+  const { source, choice: option } = repairMarker
   const sources = repairMaterials.map((material) => {
     const marker = groupAt(meshes, materialSources[material].name, materialSources[material])
-    markedPost(meshes, marker, 0.4, 0.63)
-    marker.rotation.y = -0.25
+    markedPost(meshes, marker, source.x, source.height)
+    marker.rotation.y = source.facing
     const pickup = new TransformNode(`${material} pickup`, meshes.scene)
     pickup.parent = marker
     sample(meshes, pickup, material, 0)
     return { material, marker, pickup }
   })
   const tray = groupAt(meshes, 'Wren’s sample tray', sampleTray)
-  for (const x of [-0.22, 0.22]) meshes.box(x, 0.31, 0, 0.09, 0.62, 0.1, '#604838', tray)
-  meshes.box(0, 0.63, 0, 0.67, 0.09, 0.47, '#a88667', tray)
-  for (const z of [-0.21, 0.21]) meshes.box(0, 0.7, z, 0.67, 0.08, 0.055, '#6e5240', tray)
+  const { legs, shelf, rails } = repairSampleTray
+  for (const x of legs.x) meshes.box(x, legs.y, 0, ...legs.size, legs.finish, tray)
+  meshes.box(0, shelf.y, 0, ...shelf.size, shelf.finish, tray)
+  for (const z of rails.z) meshes.box(0, rails.y, z, ...rails.size, rails.finish, tray)
 
   const site = groupAt(meshes, repairSite.name, repairSite)
-  markedPost(meshes, site, 0, 0.75)
+  markedPost(meshes, site, 0, repairMarker.site.height)
   const choices = repairMaterials.map((material) => {
     const choice = groupAt(meshes, `${material} option`, repairChoices[material])
-    markedPost(meshes, choice, 0, 0.89)
-    meshes.box(0, 0.62, 0, 0.64, 0.07, 0.35, '#736354', choice)
-    sample(meshes, choice, material, 0.65)
+    markedPost(meshes, choice, 0, option.height)
+    meshes.box(0, option.shelf.y, 0, ...option.shelf.size, option.shelf.finish, choice)
+    sample(meshes, choice, material, option.sampleY)
     return choice
   })
   const sections = edgingSections.map((section) => ({ timber: edging(meshes, section, 'timber'), stone: edging(meshes, section, 'stone') }))

@@ -1,0 +1,18 @@
+export const interactiveWorldLook = {
+  interfaceLift: { wake: 0.022, wading: 0.028, rain: 0.031, glitter: 0.027, liveWader: 0.026 },
+  placementHeight: { window: 2.074, ropeLift: 0.017, rainbow: 2.1 },
+  caustics: { rainLoss: 0.93, peak: 0.74 },
+  waterfall: { base: 0.55, rainRise: 0.37 },
+  canopy: { rainLoss: 0.84, peak: 0.69 },
+  reeds: { rainLoss: 0.77, peak: 0.72 },
+  tracks: 0.67,
+  lichen: 0.76,
+  petals: { openingRate: 1.9, rainLoss: 0.54 },
+  salt: { peak: 0.82, rainLoss: 0.86, tideSway: 0.028, tideRate: 1.5 },
+  canvas: { fabric: 0.73, puddle: 0.82 },
+  window: { daytime: 0.36, nightBoost: 0.57 },
+  rope: { rainLoss: 0.72, peak: 0.8 },
+  rainbow: { peak: 0.73, hour: 7.5, halfWindowHours: 2.05 },
+  pollen: { peak: 0.59, hour: 15, halfWindowHours: 4.2 },
+  moon: { peak: 0.73, rainLoss: 0.73 },
+} as const

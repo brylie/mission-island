@@ -1,3 +1,5 @@
+import { saltwindPlaceLooks as looks, saltwindWalkingLooks as steps } from '../assets/recipes/saltwind-world-effects'
+import { saltwindEffectSites as anchors } from '../worlds/saltwind/layout/scenery'
 import { createMillVent, createTimberSaw } from '../assets/effect-props'
 import { longAcrePollenHeight } from '../assets/long-acre-flowers'
 import { saltwindWindowRain, saltwindWindowRow } from '../assets/saltwind-window'
@@ -14,46 +16,60 @@ import { fallsWidth, fallsX, fallsY, groundHeight, surfaceHeight, waterHeight } 
 import type { placeWalker, ScenerySolids } from './walking'
 type Walker = ReturnType<typeof placeWalker>
 
+const workStartsHour = 8
+const workEndsHour = 17
+const workRainCutoff = 0.4
+const half = 0.5
+const sawdustFloorLift = 0.04
+const steamOpacity = 0.81
+const cuttingPeriod = 4
+const cuttingSeconds = 0.91
+const millDustOpacity = 0.89
+const eddyBaseOpacity = 0.76
+const eddyRainBoost = 0.21
+const beeRainCutoff = 0.25
+const maxContinuousStep = 2
+const strideDistance = 0.78
+const wadingDepthMax = 0.74
+const wadingDepthMin = 0.05
+const rainVisibleAt = 0.075
+
 const daylightDry = ({ weather }: WildlifeFrame) => daylight(weather.hour) * (1 - weather.rain)
-const working = ({ weather }: WildlifeFrame) => weather.hour >= 8 && weather.hour < 17 && weather.rain < 0.4
+const working = ({ weather }: WildlifeFrame) => weather.hour >= workStartsHour && weather.hour < workEndsHour && weather.rain < workRainCutoff
 const fromGround = ({ x, z }: MapPoint, lift: number) => ({ x, z, y: surfaceHeight(x, z) + lift })
 
 function addMill(meshes: MeshFactory, solids: ScenerySolids) {
   const lot = buildings.find((building) => building.site === 'timber')!
-  const x = lot.x + 3.25, z = lot.z + 0.82
-  const roofY = groundHeight(lot.x, lot.z) + lot.height + 1.64
+  const mount = anchors.mill.ventFromLot
+  const x = lot.x + mount.x, z = lot.z + mount.z
+  const roofY = groundHeight(lot.x, lot.z) + lot.height + mount.roofLift
   const vent = createMillVent(meshes)
   vent.root.position.set(x, roofY, z)
   const saw = createTimberSaw(meshes)
-  const base = fromGround({ x: -234, z: 167.8 }, 0.012)
+  const base = fromGround(anchors.mill.saw, anchors.mill.saw.lift)
   saw.root.position.set(base.x, base.y, base.z)
   solids.capture(saw.root.getChildMeshes())
-  const dust = { x: base.x + saw.dustOffset.x, y: base.y + saw.dustOffset.y, z: base.z + saw.dustOffset.z, floor: base.y + 0.04 }
+  const dust = { x: base.x + saw.dustOffset.x, y: base.y + saw.dustOffset.y, z: base.z + saw.dustOffset.z, floor: base.y + sawdustFloorLift }
   const placements: LocalEffect[] = [
     {
       id: 'workshop-vent-steam',
       anchor: { x, y: roofY + vent.outletHeight, z },
-      range: 58,
-      tuning: { strength: 0.55, footprint: 1.03, wind: 0.34 },
-      opacity: (frame) => working(frame) ? 0.81 : 0,
+      ...looks.steam,
+      opacity: (frame) => working(frame) ? steamOpacity : 0,
     },
     {
       id: 'sawdust-fan',
       anchor: dust,
-      cycle: 8,
-      range: 20,
-      tuning: { strength: 0.65, footprint: 0.88 },
-      origin: (time) => time % 4 < 0.91 ? dust : undefined,
+      ...looks.dustFan,
+      origin: (time) => time % cuttingPeriod < cuttingSeconds ? dust : undefined,
       opacity: (frame) => working(frame) ? 1 : 0,
     },
     {
       id: 'mill-dust',
       anchor: dust,
-      cycle: 8,
-      range: 20,
-      tuning: { strength: 0.57, footprint: 0.85 },
-      origin: (time) => time % 4 < 0.91 ? dust : undefined,
-      opacity: (frame) => working(frame) ? 0.89 : 0,
+      ...looks.millDust,
+      origin: (time) => time % cuttingPeriod < cuttingSeconds ? dust : undefined,
+      opacity: (frame) => working(frame) ? millDustOpacity : 0,
     },
   ]
   return { placements, pose(frame: WildlifeFrame) {
@@ -62,32 +78,31 @@ function addMill(meshes: MeshFactory, solids: ScenerySolids) {
 }
 
 function eddy(): LocalEffect {
-  const z = 170.7
-  const anchor = { x: fallsX(z) + 0.63 * fallsWidth(z), y: fallsY(z) + 0.039, z: z - 1.61 }
+  const { fallsZ: z, sideRatio, lift, downstream } = anchors.eddy
+  const orbit = looks.eddyOrbit
+  const anchor = { x: fallsX(z) + sideRatio * fallsWidth(z), y: fallsY(z) + lift, z: z - downstream }
   return {
     id: 'eddy-foam-flecks',
     anchor,
-    range: 34,
-    tuning: { strength: 0.54, footprint: 0.84 },
-    opacity: (frame) => 0.76 + 0.21 * frame.weather.rain,
-    origin: (time, i) => ({ ...anchor, x: anchor.x - 0.92 + Math.sin(time * 2.7) * 0.33, z: anchor.z - 0.21 + (i % 4) * 0.15, orbit: { x: anchor.x, z: anchor.z, angularSpeed: -1.43, peelAfter: 1.17 } }),
+    ...looks.eddy,
+    opacity: (frame) => eddyBaseOpacity + eddyRainBoost * frame.weather.rain,
+    origin: (time, i) => ({ ...anchor, x: anchor.x - orbit.xOffset + Math.sin(time * orbit.swayRate) * orbit.sway, z: anchor.z - orbit.zOffset + (i % orbit.lanes) * orbit.spacing, orbit: { x: anchor.x, z: anchor.z, angularSpeed: orbit.angularSpeed, peelAfter: orbit.peelAfter } }),
   }
 }
 
 function longAcre(): LocalEffect[] {
   return [
     ...hiveEntrances.map((point): LocalEffect => {
-      const anchor = fromGround(point, 0.40)
-      return { id: 'hive-entrance-traffic', anchor, range: 15, tuning: { strength: 0.33, footprint: 0.59 }, opacity: (frame) => daylightDry(frame) * (frame.weather.rain < 0.25 ? 1 : 0), origin: (_, i) => {
-        const inbound = i % 3 === 0
-        return { ...anchor, z: anchor.z - (inbound ? 0.63 : 0), yaw: inbound ? 0 : Math.PI, y: anchor.y + (inbound ? 0.2 : 0), pitch: inbound ? -0.19 : 0.09 }
+      const anchor = fromGround(point, looks.hiveApproach.lift)
+      return { id: 'hive-entrance-traffic', anchor, ...looks.hive, opacity: (frame) => daylightDry(frame) * (frame.weather.rain < beeRainCutoff ? 1 : 0), origin: (_, i) => {
+        const inbound = i % looks.hiveApproach.inboundEvery === 0
+        return { ...anchor, z: anchor.z - (inbound ? looks.hiveApproach.inset : 0), yaw: inbound ? 0 : Math.PI, y: anchor.y + (inbound ? looks.hiveApproach.inboundLift : 0), pitch: inbound ? looks.hiveApproach.inboundPitch : looks.hiveApproach.outboundPitch }
       } }
     }),
     ...flowerBeds.map((bed): LocalEffect => ({
       id: 'pollen-motes',
       anchor: fromGround(bed, longAcrePollenHeight),
-      range: 18,
-      tuning: { strength: 0.33, footprint: 1 },
+      ...looks.pollen,
       opacity: daylightDry,
     })),
   ]
@@ -99,8 +114,8 @@ function rainyWindows(): LocalEffect[] {
   return [-1, 1].map((side) => {
     const x = lot.x + side * lot.width * saltwindWindowRow.edgeFraction
     const { y, z, floor } = saltwindWindowRain
-    const anchor = { x, y: base + y, z: lot.z + lot.depth / 2 + z, floor: base + floor }
-    return { id: 'window-spatter', anchor, range: 14, tuning: { strength: 0.63, footprint: 0.57 }, opacity: (frame) => frame.weather.rain }
+    const anchor = { x, y: base + y, z: lot.z + lot.depth * half + z, floor: base + floor }
+    return { id: 'window-spatter', anchor, ...looks.window, opacity: (frame) => frame.weather.rain }
   })
 }
 
@@ -113,19 +128,19 @@ function createWalkingEffects(meshes: MeshFactory) {
     effects.begin(frame.time, frame.camera, !overview && !frozen)
     const stride = previous ? Math.hypot(point.x - previous.x, point.z - previous.z) : 0
     previous = { ...point }
-    if (stride < 2 && !frozen) traveled += stride
+    if (stride < maxContinuousStep && !frozen) traveled += stride
     else traveled = 0
-    if (traveled > 0.78) {
-      traveled %= 0.78
+    if (traveled > strideDistance) {
+      traveled %= strideDistance
       const depth = waterHeight(point.x, point.z)
-      if (point.y >= depth - 0.74 && point.y < depth - 0.05 && point.grounded) {
-        effects.burst('wading-crescents', { x: point.x, z: point.z, y: depth + 0.023 }, 0.76, 0.83, 0.095)
+      if (point.y >= depth - wadingDepthMax && point.y < depth - wadingDepthMin && point.grounded) {
+        effects.burst('wading-crescents', { x: point.x, z: point.z, y: depth + steps.wading.rise }, ...steps.wading.emission)
       }
-      if (point.grounded && Math.hypot(point.x - mine.stop.x, point.z - (mine.stop.z + 13.4)) < 9) {
-        effects.burst('loose-slate-tumble', { x: point.x, z: point.z, y: point.y + 0.082, floor: point.y + 0.012 }, 0.48, 0.7, 0.11)
+      if (point.grounded && Math.hypot(point.x - mine.stop.x, point.z - (mine.stop.z + anchors.mineSlate.zFromStop)) < anchors.mineSlate.radius) {
+        effects.burst('loose-slate-tumble', { x: point.x, z: point.z, y: point.y + steps.slate.rise, floor: point.y + steps.slate.floor }, ...steps.slate.emission)
       }
     }
-    if (frame.weather.rain > 0.075) effects.emit('rain-streaks', 'walker', { x: point.x, z: point.z, y: point.y + 4.1, floor: point.y + 0.03 }, { strength: frame.weather.rain * 0.47, footprint: 1.35 })
+    if (frame.weather.rain > rainVisibleAt) effects.emit('rain-streaks', 'walker', { x: point.x, z: point.z, y: point.y + steps.rain.height, floor: point.y + steps.rain.floor }, { strength: frame.weather.rain * steps.rain.strength, footprint: steps.rain.footprint })
     effects.finish()
   }
 }
@@ -140,9 +155,8 @@ export function createSaltwindEffects(meshes: MeshFactory, solids: ScenerySolids
     ...rainyWindows(),
     {
       id: 'ground-mist',
-      anchor: fromGround({ x: picnicLedge.x - 4.1, z: picnicLedge.z - 4.4 }, 0.24),
-      range: 43,
-      tuning: { strength: 0.72, footprint: 1.5, wind: 0.25 },
+      anchor: fromGround({ x: picnicLedge.x + anchors.picnicMist.x, z: picnicLedge.z + anchors.picnicMist.z }, anchors.picnicMist.lift),
+      ...looks.picnicMist,
       opacity: (frame) => phenomenonStrength('mist', frame.weather),
     },
   ])

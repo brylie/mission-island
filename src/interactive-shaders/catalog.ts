@@ -12,13 +12,15 @@ import { market } from '../farm.ts'
 import { harborDock, harborDockPiles, lookout } from '../world.ts'
 import { lampPosts, ridgeLichenSite } from '../worlds/starter/sites.ts'
 import type { Point } from '../world.ts'
+import { harborDockPileLayout, starterShaderSites as sites } from '../worlds/starter/layout/places.ts'
 
 export const shaderGroups = ['Water and shore', 'Vegetation and terrain', 'Built surfaces', 'Weather and light'] as const
 type ShaderGroup = typeof shaderGroups[number]
 
-const saltBloomPileDockOffset = 1.6
-const saltBloomPileZ = -34
-export const saltBloomPile = harborDockPiles.find((pile) => pile.x === harborDock.x - saltBloomPileDockOffset && pile.z === saltBloomPileZ)!
+const [westPileX] = harborDockPileLayout.lateralOffsets
+const [, middlePileDepth] = harborDockPileLayout.distanceAlongDock
+export const saltBloomPile = harborDockPiles.find((pile) =>
+  pile.x === harborDock.x + westPileX && pile.z === harborDock.firstZ - middlePileDepth)!
 
 const families = [
   { group: shaderGroups[0], source: 'water', entries: waterShaderPresets },
@@ -29,28 +31,30 @@ const families = [
 
 export type StudyId = keyof typeof waterShaderPresets | keyof typeof vegetationShaderPresets | keyof typeof surfaceShaderPresets | keyof typeof lightShaderPresets
 
+const beside = (point: Point, offset: Point) => ({ x: point.x + offset.x, z: point.z + offset.z })
+
 // Resolve previews against the same landmarks and channel as the live island.
 const fieldTargets: Record<StudyId, Point> = {
-  'skiff-wake': { x: -48, z: -41 },
-  'wading-rings': { x: 46.2, z: -33.05 },
-  'seabed-caustics': { x: tidePool.x + 0.2, z: tidePool.z - 0.6 },
-  'water-rain-rings': { x: pool.x - 2, z: pool.z },
-  'waterfall-shear': { x: streamX(87), z: 86.6 },
-  'canopy-dapple': { x: juniperCenter.x + 2, z: juniperCenter.z - 3 },
-  'reed-transmission': { x: pool.x - 13, z: pool.z - 3 },
-  'sand-footprints': { x: 36.7, z: -36.8 },
+  'skiff-wake': sites.wake,
+  'wading-rings': sites.wading,
+  'seabed-caustics': beside(tidePool, sites.caustics),
+  'water-rain-rings': beside(pool, sites.poolRain),
+  'waterfall-shear': { x: streamX(sites.fernfall.centerAtZ), z: sites.fernfall.z },
+  'canopy-dapple': beside(juniperCenter, sites.canopy),
+  'reed-transmission': beside(pool, sites.reeds),
+  'sand-footprints': { x: sites.sand.x, z: sites.sand.z },
   'ridge-lichen': { x: ridgeLichenSite.x, z: ridgeLichenSite.z },
-  'closing-flowers': { x: meadowHill.x - 2.2, z: meadowHill.z - 1 },
+  'closing-flowers': beside(meadowHill, sites.flowers),
   'timber-salt-bloom': { x: saltBloomPile.x, z: saltBloomPile.z },
-  'awning-rain-load': { x: market.x - 3.9, z: market.z + 1.1 },
-  'window-parallax': { x: -43.605, z: -6.765 },
-  'road-retroreflector': { x: -33.5, z: -11 },
-  'rope-fiber-sheen': { x: harborDock.x + 1.12, z: -32.45 },
-  'fernfall-rainbow': { x: falls.x + 2, z: 89.3 },
-  'cooling-embers': { x: lookout.x + 0.4, z: lookout.z + 0.2 },
+  'awning-rain-load': beside(market, sites.awning),
+  'window-parallax': sites.blueCottageWindow,
+  'road-retroreflector': sites.reflectors,
+  'rope-fiber-sheen': { x: harborDock.x + sites.ropeAtDock.x, z: sites.ropeAtDock.z },
+  'fernfall-rainbow': { x: falls.x + sites.rainbow.x, z: sites.rainbow.z },
+  'cooling-embers': beside(lookout, sites.embers),
   'streetlamp-droplets': { x: lampPosts[0].x, z: lampPosts[0].z + streetLampGeometry.bulb.z },
-  'meadow-pollen': { x: meadowHill.x - 0.4, z: meadowHill.z + 1.6 },
-  'moon-glitter': { x: -44, z: -45 },
+  'meadow-pollen': beside(meadowHill, sites.pollen),
+  'moon-glitter': sites.moon,
 }
 
 interface StudyEntry extends ShaderStudyPreset {
