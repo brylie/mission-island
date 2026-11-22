@@ -428,7 +428,7 @@
   title: Glaciation (Mapzone geography resource)
   publisher: Ordnance Survey
   url: https://www.ordnancesurvey.co.uk/mapzone/assets/doc/geography/Glaciation-en.pdf
-  archived:            # save with Wayback when adding
+  archived:            # not saved yet: archiving sends the URL to an outside service, so it waits for the maintainer's go-ahead (see open questions)
   accessed: 2026-11-23
   opened: true
   tier: 1
@@ -438,7 +438,7 @@
     - claim: A glacier deepens and widens an earlier V-shaped valley into a U-shaped trough.
       quote: "The glacier flows through an earlier 'V' shaped valley, scouring the sides and the floor as it does so."
       used-in: design/island-story.md#2-ice-carves-the-valleys
-    - claim: Tributary valleys are left hanging above the main glacial valley, often with waterfalls.
+    - claim: A waterfall flowing into the main glacial valley is a good sign of a hanging valley.
       quote: "A good sign of a hanging valley is a waterfall or several waterfalls flowing into the main glacial valley."
       used-in: design/island-story.md#2-ice-carves-the-valleys
 

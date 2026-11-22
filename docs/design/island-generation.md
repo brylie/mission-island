@@ -1,6 +1,6 @@
 # Island generation: land first, coast emerges
 
-**Proposed.** This is the technical companion to [the island's deep history](island-story.md). That story is the rationale for every parameter here.
+**Proposed. Last tended 2026-11-23.** This is the technical companion to [the island's deep history](island-story.md). That story is the rationale for every parameter here.
 
 ## Why the old approach made strange shapes
 
@@ -15,7 +15,7 @@ Starter Island's coast is stored as a radius for each bearing around an ellipse 
 Every layer is seeded and deterministic.
 
 1. **Base mass.** A few low-frequency "continent" shapes for the main blocks: the southern block, the Windstone upland, and the Highwood upland. A gentle falloff toward the edge of the map keeps the island surrounded by sea. No ellipse.
-2. **Fractal detail.** fBm noise with lacunarity 2. The coastline of an fBm surface with Hurst exponent H has a fractal dimension of about 2 − H, and an octave gain of 2^(−H) sets H (Mandelbrot; Voss). A gain of 0.5 gives H = 1 and a smooth coast near 1; the 1.2–1.3 of real rocky coasts needs a gain of about 0.57–0.62. Highwood's fine roughness uses 0.6, strongest near sea level and on hard rock so the interior stays walkable. The relation assumes a homogeneous field; here the coast is the contour of a broad dome plus noise, so the finest scales still read near 1.
+2. **Fractal detail.** fBm noise with lacunarity 2. The coastline of an fBm surface with Hurst exponent H has a fractal dimension of about 2 − H, and an octave gain of 2^(−H) sets H (`mandelbrot-1967`, `mandelbrot-1975`, `voss-1988`; recorded unopened, so unsourced). A gain of 0.5 gives H = 1 and a smooth coast near 1; the 1.2–1.3 of real rocky coasts needs a gain of about 0.57–0.62. Highwood's fine roughness uses 0.6, strongest near sea level and on hard rock so the interior stays walkable. The relation assumes a homogeneous field; here the coast is the contour of a broad dome plus noise, so the finest scales still read near 1.
 3. **Hard-rock uplands.** Ridged multifractal noise, weighted by an uplift field placed where the story puts granite: Windstone, Cairn Summit and Fallow Ridge. It gives sharp crests and rock bands.
 4. **Domain warping.** Displace the noise coordinates with another noise field, so ridges and valleys fold and flow instead of lining up on a grid.
 
@@ -23,8 +23,8 @@ Every layer is seeded and deterministic.
 
 Erosion is what makes the land read as shaped, rather than as bumps.
 
-- **Hydraulic.** Simulated raindrops (Beyer's droplet model) carve the drainage. Each drop speeds up downhill, up to a cap, and picks up sediment where it can carry more. It sets the load down where it slows, as a fan when it dries out, and partly as a delta where it meets the sea. Sediment never builds on the seabed, and cutting stops above the waterline, so coves keep the shape the land gave them. The two glacial valleys are carved deep enough (13–16 m) to gather the drainage.
-- **Thermal.** Slopes steeper than the rock can hold shed material downhill. Soft ground rests near a 35° scree slope. Granite holds far steeper, and it weathers in layers 6 m thick, so hard ground breaks into benches and rock bands.
+- **Hydraulic.** Simulated raindrops (Beyer's droplet model, `beyer-2015`, unopened) carve the drainage. Each drop speeds up downhill, up to a cap, and picks up sediment where it can carry more. It sets the load down where it slows, as a fan when it dries out, and partly as a delta where it meets the sea. Sediment never builds on the seabed, and cutting stops above the waterline, so coves keep the shape the land gave them. The two glacial valleys are carved deep enough (13–16 m) to gather the drainage.
+- **Thermal.** Slopes steeper than the rock can hold shed material downhill. Soft ground rests near a 35° scree slope (`selby-1993`, unopened; unsourced). Granite holds far steeper, and it weathers in layers 6 m thick, so hard ground breaks into benches and rock bands.
 - **Coastal.** Each coastal cell measures the share of directions that run to open sea, starting past its own distance from the shore. Wave energy gathers on headlands and spreads in bays, so a cell that stands out from the shore around it, sits on granite or is steep keeps bare rock. Sand settles only at sheltered bay heads, above the water. This sorts the surface layer; it does not yet cut cliffs into the height field.
 
 ## Keeping the settled south
