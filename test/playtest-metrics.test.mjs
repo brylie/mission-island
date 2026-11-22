@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { platform, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { openPlaytestMetrics } from '../server/multiplayer.ts'
@@ -8,6 +8,12 @@ import { createPlaytestMetrics } from '../server/playtest-metrics.ts'
 import { secondsAtIslandHour } from '../src/residents/schedule.ts'
 import { weatherAt } from '../src/weather.ts'
 import { door, player, setup, tokens } from './support/game-harness.mjs'
+
+function assertPrivateLog(path) {
+  const stat = statSync(path)
+  if (platform() === 'win32') assert.ok(stat.isFile())
+  else assert.equal(stat.mode & 0o777, 0o600)
+}
 
 test('a two-seat sleep skip logs the observed night and dawn in a private host file', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'mission-island-playtest-metrics-'))
@@ -17,7 +23,7 @@ test('a two-seat sleep skip logs the observed night and dawn in a private host f
   const files = readdirSync(directory)
   assert.equal(files.length, 1)
   const path = join(directory, files[0])
-  assert.equal(statSync(path).mode & 0o777, 0o600)
+  assertPrivateLog(path)
   const h = setup(t, {
     metrics: run(),
     players: [player(0, door(0)), player(1, door(1))],
@@ -58,7 +64,7 @@ test('a two-seat sleep skip logs the observed night and dawn in a private host f
   renameSync(path, path + '.old')
   b.close()
   h.advance()
-  assert.equal(statSync(path).mode & 0o777, 0o600)
+  assertPrivateLog(path)
   rejoined.close()
 })
 
