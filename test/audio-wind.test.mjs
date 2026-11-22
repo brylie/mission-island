@@ -9,7 +9,7 @@ import { canopyGain, nearestCanopies, windExposure } from '../src/audio/wind-mod
 import { renderWind, windCue } from '../src/audio/wind-recipes.ts'
 import { islandTrees } from '../src/scenery.ts'
 import { coastPoint, grove, headland } from '../src/terrain.ts'
-import { gustAt } from '../src/wind.ts'
+import { breezeAt, gustAt } from '../src/wind.ts'
 import { town } from '../src/world.ts'
 import { FakeContext } from './support/fake-audio.mjs'
 
@@ -24,8 +24,12 @@ test('the ridge and the shore are exposed, the woods are sheltered', () => {
 })
 
 test('wind sound and windblown particles follow the same gust, flattened by rain', () => {
-  const samples = Array.from({ length: 200 }, (_, i) => gustAt(i * 0.1, 0))
-  assert.ok(Math.max(...samples) > 0.9 && Math.min(...samples) < 0.3, 'gusts swell and ease')
+  const samples = Array.from({ length: 3000 }, (_, i) => gustAt(i * 0.1, 0))
+  assert.ok(Math.max(...samples) > 0.8, 'gusts swell')
+  assert.ok(Math.min(...samples) < 0.1, 'and the breeze falls still between windy spells')
+  const lulls = Array.from({ length: 300 }, (_, i) => breezeAt(i))
+  assert.ok(Math.min(...lulls) < 0.2 && Math.max(...lulls) > 0.9, 'over minutes the breeze comes and goes')
+  for (let i = 1; i < lulls.length; i++) assert.ok(Math.abs(lulls[i] - lulls[i - 1]) < 0.15, 'without sudden changes')
   assert.ok(gustAt(2.5, 1) < gustAt(2.5, 0))
 })
 

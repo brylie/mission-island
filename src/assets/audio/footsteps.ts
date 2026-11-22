@@ -81,5 +81,6 @@ export const footstepRecipe = {
     squelch: { cutoffHz: 620, startSeconds: 0.01, envelopeSeconds: [0.012, 0.07], gain: 0.42 },
   },
   durationSeconds: 0.2,
-  playback: { baseGain: 0.55, strengthGain: 0.45 },
+  // Audible steps per walker are at least this far apart, so a brisk gait sounds like about 3.8 steps a second.
+  playback: { baseGain: 0.55, strengthGain: 0.45, minimumIntervalSeconds: 0.26 },
 } as const

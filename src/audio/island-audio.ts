@@ -1,6 +1,7 @@
 import type { Player, ServerMessage, Snapshot, Weather } from '../protocol.ts'
 import { createAudioEngine, type Point3 } from './engine.ts'
 import { createImpactInbox } from './impact-inbox.ts'
+import { footstepRecipe } from '../assets/audio/footsteps.ts'
 import type { SoundSettings } from './mix.ts'
 import { crateCue, footstepCue, swellCue, type Rendered } from './recipes.ts'
 import { footGround } from './surface.ts'
@@ -77,13 +78,30 @@ function islandVariants(rain: number) {
   return cues
 }
 
+// Sound must never stop the game. A failing audio step is reported once and skipped, and the render
+// loop that called it carries on.
+function guardAudio() {
+  let reported = false
+  return <A extends unknown[]>(step: (...args: A) => void) => (...args: A) => {
+    try {
+      step(...args)
+    }
+    catch (error) {
+      if (!reported) console.error('Island audio skipped a step', error)
+      reported = true
+    }
+  }
+}
+
 // Starter Island's client mix: owns the audio context, its gesture and visibility lifecycle,
 // and turns host notices and local world state into cues.
 export function createIslandAudio(target: Window = window, plants: readonly UnderstoryPlant[] = []) {
   const engine = createAudioEngine()
+  const guarded = guardAudio()
   const inbox = createImpactInbox(() => performance.now())
   let revision: number | undefined
   const steps = new Map<number, number>()
+  const lastStep = new Map<number, number>()
   const surf = createSurfPlayer(engine)
   const truck = createTruckEngine(engine)
   const wind = createWindPlayer(engine)
@@ -120,24 +138,28 @@ export function createIslandAudio(target: Window = window, plants: readonly Unde
         revision = current
       }
     },
-    impact(notice: CrateImpactNotice) {
+    impact: guarded((notice: CrateImpactNotice) => {
       if (!inbox.accept(notice.id, engine.state() === 'running')) return
       const seed = Number.parseInt(notice.id.split(':').pop() ?? '0', 10) % variants
       engine.play(crateCue(notice, seed), { position: notice })
-    },
+    }),
     // Called each frame with the feet that landed in the visible gait; speed sets how firmly they land.
-    footsteps(footfalls: number, player: Player, point: Point3, speed: number, own: boolean) {
+    footsteps: guarded((footfalls: number, player: Player, point: Point3, speed: number, own: boolean) => {
       const brush = engine.state() === 'running' ? foliage.step(player.id, point, speed, engine.now()) : null
       if (brush) engine.play(foliageCue(brush, ++brushes % variants), { position: { ...point, x: brush.x, z: brush.z }, gain: own ? localFootstepGain : 1 })
-      const ground = footfalls > 0 ? footGround(point, player, rain) : null
-      if (!ground || engine.state() !== 'running') return
+      // Every sound lands on a real footfall, but a brisk gait is thinned so steps do not rattle.
+      const now = engine.now()
+      if (footfalls <= 0 || engine.state() !== 'running' || now - (lastStep.get(player.id) ?? -Infinity) < footstepRecipe.playback.minimumIntervalSeconds) return
+      const ground = footGround(point, player, rain)
+      if (!ground) return
+      lastStep.set(player.id, now)
       const count = (steps.get(player.id) ?? 0) + 1
       steps.set(player.id, count)
       const cue = footstepCue({ ...ground, strength: Math.min(1, speed / brisk) }, count % variants)
       engine.play(cue, { position: { x: point.x, y: point.y + footfallEmitterLiftMetres, z: point.z }, gain: own ? localFootstepGain : 1 })
-    },
+    }),
     // Per frame: the listener follows the camera, rain raises the surf, and the truck's motion drives its engine.
-    frame({ listener, forward, weather, weatherAt, time, delta, state, truckAt }: AudioFrame) {
+    frame: guarded(({ listener, forward, weather, weatherAt, time, delta, state, truckAt }: AudioFrame) => {
       engine.setListener(listener, forward)
       rain = weather.rain
       surf.frame(listener, { strength: surfStrength(rain), spacing: 1 }, delta)
@@ -149,7 +171,7 @@ export function createIslandAudio(target: Window = window, plants: readonly Unde
         truckSpeed = speed
         truck.frame(engineInputs(state, acceleration), truckAt, delta)
       }
-    },
+    }),
     setSound(settings: SoundSettings) {
       engine.setSettings(settings)
     },

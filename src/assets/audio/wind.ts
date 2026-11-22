@@ -12,8 +12,10 @@ export const windRecipe = {
 } as const
 
 export const windMix = {
-  open: { lowLevel: 0.5, lowGustShare: 0.65, highLevel: 0.34, highGustCurve: 1.6 },
-  canopy: { level: 0.55, reachMetres: 18, fullMetres: 4, voices: 3, gustOffsetSeconds: [0, 0.9, 1.7], loopOffsetSeconds: [0, 2.1, 4.3], crownHeightShare: 0.7, retargetSeconds: 0.5 },
+  // The roar falls nearly silent in a lull; the hiss only rises on the stronger gusts.
+  open: { lowLevel: 0.32, lowGustShare: 0.85, highLevel: 0.2, highGustCurve: 1.8 },
+  // Two gentle crowns close by: present under the gusts, never a wall of rustle.
+  canopy: { level: 0.22, reachMetres: 14, fullMetres: 3, voices: 2, gustOffsetSeconds: [0, 1.3], loopOffsetSeconds: [0, 3.1], crownHeightShare: 0.7, retargetSeconds: 0.5 },
   // Exposure: open near the shore and on high ground, sheltered among trees.
   exposure: {
     base: 0.25,
