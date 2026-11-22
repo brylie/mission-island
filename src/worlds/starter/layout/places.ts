@@ -35,11 +35,15 @@ export interface StarterBuilding {
   roof: string
 }
 
+export const bramHome = { x: -50, z: -22, w: 8, d: 5, h: 4.65, wall: '#f3c78e', roof: '#a84632' }
+export const maraHome = { x: -38, z: -20, w: 6, d: 5, h: 4.1, wall: '#f7e3a1', roof: '#1b7773' }
+export const inesHome = { x: 43, z: 22, w: 6, d: 5, h: 5.25, wall: '#eb9973', roof: '#9e3c39' }
+
 export const publicBuildings: StarterBuilding[] = [
-  { x: -50, z: -22, w: 8, d: 5, h: 4.65, wall: '#f3c78e', roof: '#a84632' },
-  { x: -38, z: -20, w: 6, d: 5, h: 4.1, wall: '#f7e3a1', roof: '#1b7773' },
+  bramHome,
+  maraHome,
   { x: 35, z: 22, w: 6, d: 5, h: 4.8, wall: '#f4ce91', roof: '#b74635' },
-  { x: 43, z: 22, w: 6, d: 5, h: 5.25, wall: '#eb9973', roof: '#9e3c39' },
+  inesHome,
   { x: 50, z: 21.4, w: 4, d: 4, h: 4.1, wall: '#ffe8b7', roof: '#236b75' },
   { x: 39, z: 2.6, heading: Math.PI, w: 6, d: 5, h: 4.9, wall: '#f5e3b2', roof: '#b74e36' },
   { x: 48, z: 2.6, heading: Math.PI, w: 5, d: 5, h: 4.35, wall: '#76b7a3', roof: '#25585f' },

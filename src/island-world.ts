@@ -8,6 +8,8 @@ import { createClothingCounter, createHomeChest, createRock, createTree, createU
 import { createHouse } from './assets/buildings'
 import { createGardenGate } from './gate-scene'
 import { createResidentFigures } from './resident-scene'
+import type { ResidentWorld } from './residents/definition'
+import { residentAt } from './residents/schedule'
 import { starterResidents } from './worlds/starter/residents'
 import { createRoad, createSidewalk, createTrail } from './assets/routes'
 import { playerColors } from './assets/crew'
@@ -69,9 +71,16 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const { depotRoad, wardrobeZ, clothingCounterZ } = starterDecorationOffsets
   createRoad(meshes, depotLane, depotRoad.width, { lift: depotRoad.lift, marked: [depotLane[0], { x: depotJunction.x + depotRoad.markingEndX, z: depotJunction.z }] })
 
-  buildings.forEach((building, index) => {
-    if (index !== substitutions.replaceBuilding) meshes.batchModel(createHouse(meshes, building))
+  const households = buildings.flatMap((building, index) => {
+    if (index === substitutions.replaceBuilding) return []
+    const schedule = starterResidents.find((resident) => resident.schedule.household.building === building)?.schedule
+    const house = createHouse(meshes, building, schedule?.household)
+    meshes.batchModel(house.root)
+    return schedule ? [{ schedule, house }] : []
   })
+  function showHouseholds(state: ResidentWorld) {
+    for (const { schedule, house } of households) house.showWindows(residentAt(schedule, state).windowLit)
+  }
   const homeChests = crewHomes.map(({ chest }, i) => createHomeChest(meshes, chest, playerColors[i]))
   crewHomes.forEach(({ wardrobe }, i) => void createWardrobe(meshes, { ...wardrobe, z: wardrobe.z + wardrobeZ }, groundHeight(wardrobe), playerColors[i]))
   createClothingCounter(meshes, { ...clothingCounter, z: clothingCounter.z + clothingCounterZ }, groundHeight(clothingCounter))
@@ -176,5 +185,5 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     return tide
   }
 
-  return { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden, residents, ferry }
+  return { juniper, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, garden, residents, ferry }
 }

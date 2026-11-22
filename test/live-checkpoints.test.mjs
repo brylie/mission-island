@@ -7,7 +7,7 @@ import { carriedMaterial, initialMaterialsWork } from '../src/materials-work.ts'
 import { scenarioCatalog, checkpointSettings } from '../server/scenarios/catalog.ts'
 import { actionHint } from '../src/actions.ts'
 import { blankRecord } from '../src/residents/trust.ts'
-import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
+import { benchLunchFavor, repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
 import { player, tokens } from './support/game-harness.mjs'
 
 test('the launcher accepts only known checkpoints and one or two crew members', () => {
@@ -87,6 +87,16 @@ for (const { id: checkpoint } of scenarioCatalog) {
         assert.equal(game.tick().residents.wren.checked, 'fault')
         assert.equal(interactions(state, state.players[0])[0]?.action, 'plane', 'the toolbox is already at the gate')
       }
+      else if (checkpoint === 'wren-trust') {
+        assert.deepEqual(state.residents.wren.kept, [gateFavor, repairSupplyFavor.id])
+        assert.equal(state.players[0].goods.carrots, 3)
+        a.dispatch({ type: 'interact', choice: { action: 'accept-favor', subject: 1, favor: benchLunchFavor } })
+        assert.equal(game.tick().residents.wren.active, benchLunchFavor)
+        a.dispatch({ type: 'interact', choice: { action: 'hand-over', subject: 1, favor: benchLunchFavor } })
+        const trusted = game.tick()
+        assert.equal(trusted.residents.wren.trust, 3)
+        assert.ok(interactions(trusted, trusted.players[0]).some(({ label }) => label === 'Pick up the toolbox'))
+      }
       else if (checkpoint === 'wren-discover') {
         assert.equal(state.gateRepair.stage, 'sagging')
         assert.ok(onBench(toolboxItem(state)))
@@ -123,7 +133,7 @@ for (const { id: checkpoint } of scenarioCatalog) {
           assert.ok(interactions(state, player).some(({ action, subject }) => action === 'accept-favor' && subject === 3), 'Bram asks')
           assert.deepEqual(player.goods, { fish: 2, carrots: 2 })
         }
-        a.dispatch({ type: 'interact', choice: { action: 'accept-favor', subject: 3 } })
+        a.dispatch({ type: 'interact', choice: { action: 'accept-favor', subject: 3, favor: 'bram-staging' } })
         assert.equal(game.tick().residents.bram.active, 'bram-staging')
         assert.ok(state.items.some(({ kind, delivered }) => kind === 'crate' && !delivered), 'a crate waits in the yard')
       }

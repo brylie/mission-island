@@ -30,7 +30,7 @@ function handOver(resident: ResidentDefinition, state: Snapshot, player: Player,
   const { goods, quantity } = favor.kind
   if (player.goods[goods] < quantity) return undefined
   const noun = goods === 'carrots' && quantity === 1 ? 'carrot' : goods
-  return { action: 'hand-over', subject, key: 'E', label: `Give ${quantity} ${noun} to ${resident.identity.name}`, ...residentTarget(resident, state) }
+  return { action: 'hand-over', subject, favor: favor.id, key: 'E', label: `Give ${quantity} ${noun} to ${resident.identity.name}`, ...residentTarget(resident, state) }
 }
 
 // A resident never takes E away from a service: the reticle on a resident picks them, and a bare press
@@ -47,11 +47,12 @@ export function residentInteractions(registry: readonly ResidentDefinition[], st
     const give = handOver(resident, state, player, subject)
     if (give) options.talk.push(give)
     options.talk.push(talk)
-    if (offer && !isCustom(offer)) options.accept.push({ action: 'accept-favor', subject, key: 'E', label: `Agree to help ${name}`, name })
+    if (offer && !isCustom(offer)) options.accept.push({ action: 'accept-favor', subject, favor: offer.id, key: 'E', label: `Agree to help ${name}`, name })
     // Reporting back is a choice in the conversation too: both answers are always offered side by side.
     const waiting = pendingReport(resident, state)
     if (waiting) {
-      options.accept.push({ action: 'report-sound', subject, key: 'E', label: waiting.report.sound, name }, { action: 'report-fault', subject, key: 'E', label: waiting.report.fault, name })
+      const target = { subject, favor: waiting.favor.id, key: 'E', name }
+      options.accept.push({ ...target, action: 'report-sound', label: waiting.report.sound }, { ...target, action: 'report-fault', label: waiting.report.fault })
     }
   }
   return options

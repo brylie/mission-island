@@ -2,6 +2,7 @@ import type { Item, Player, Snapshot } from './protocol'
 import { market, marketTradeReach, nearbyPlot, seedPrice } from './farm.ts'
 import { distance, truckSeatSpeed } from './world.ts'
 import { heldItem } from './interactions/cargo.ts'
+import { interactionChoice } from './interactions/definition.ts'
 import { besideSubject, defaultInteraction } from './interaction-options.ts'
 import type { Interaction, InteractionChoice } from './interaction-options.ts'
 
@@ -88,5 +89,5 @@ export function interactRequest(state: Snapshot, player: Player, focus?: Interac
   const option = chosenInteraction(state, player, focus)
   if (!option) return { type: 'interact' }
   if (option.action === 'job-board') return 'open-job-board'
-  return { type: 'interact', choice: { action: option.action, ...(option.subject !== undefined && { subject: option.subject }) } }
+  return { type: 'interact', choice: interactionChoice(option) }
 }

@@ -4,6 +4,7 @@ import { jobs } from './jobs'
 import type { Player, Snapshot } from './protocol'
 import { createResidentConversation } from './resident-conversation-ui'
 import { favorGuides } from './residents/favors'
+import { residentVisitingHours } from './residents/schedule'
 import { crewHomes, jobPay, starterPay } from './world'
 import { starterResident, starterResidents } from './worlds/starter/residents'
 
@@ -17,6 +18,7 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   const conversation = dialog.querySelector<HTMLElement>('#resident-conversation')!
   const talk = createResidentConversation(dialog, act)
   const favors = dialog.querySelector<HTMLElement>('#guide-favors')!
+  const neighbors = dialog.querySelector<HTMLElement>('#guide-neighbors')!
   const home = dialog.querySelector<HTMLElement>('#guide-home')!
   const workTitle = dialog.querySelector<HTMLElement>('#guide-work-title')!
   const work = dialog.querySelector<HTMLElement>('#guide-work')!
@@ -24,6 +26,11 @@ export function createCrewGuide(dialog: HTMLDialogElement, setDismissed: (dismis
   const lead = dialog.querySelector<HTMLElement>('#guide-lead')!
   const toggle = dialog.querySelector<HTMLButtonElement>('#toggle-fisher-lead')!
   let shownFavors = ''
+  neighbors.replaceChildren(...starterResidents.map(({ identity, schedule }) => {
+    const entry = document.createElement('li')
+    entry.textContent = `${identity.name} · ${residentVisitingHours(schedule)}`
+    return entry
+  }))
 
   function showLead(visible: boolean) {
     lead.hidden = !visible

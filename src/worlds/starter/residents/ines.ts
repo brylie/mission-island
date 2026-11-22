@@ -1,7 +1,8 @@
 import { quarterTurnRadians } from '../../../math/angles.ts'
 import { farmOrderStatus, farmOffer } from '../../../farm-orders.ts'
 import type { ResidentDefinition } from '../../../residents/definition.ts'
-import { starterResidentSites } from '../layout/sites.ts'
+import { inesHome } from '../layout/places.ts'
+import { starterHouseholdHours, starterResidentSites } from '../layout/sites.ts'
 import { inesRemarks } from './remarks.ts'
 
 const marketOpensHour = 7.5
@@ -18,8 +19,9 @@ export const ines: ResidentDefinition = {
   identity: { name: 'Ines', role: 'Shopkeeper' },
   appearance: { look: { uniform: 'default', skin: 'medium', shirt: 'lagoon', hair: 'coils', hairColor: 'black', hat: 'none', trousers: 'slate' } },
   schedule: {
-    home: { ...porch, heading: Math.PI },
-    work: { ...stall, heading: quarterTurnRadians },
+    home: { ...porch, heading: Math.PI, name: 'coral house across Seabrook square' },
+    work: { ...stall, heading: quarterTurnRadians, name: 'Seabrook Market' },
+    household: { building: inesHome, ...starterHouseholdHours.ines },
     departs: marketOpensHour,
     returns: marketClosesHour,
     pace: marketWalkMetresPerHour,

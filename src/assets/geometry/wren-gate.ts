@@ -40,5 +40,4 @@ export const cottageBackModel = {
   door: { y: 1.2, outset: 0.04, size: [1.1, 2.3, 0.13], color: '#4f6f62' },
   knob: { x: 0.38, y: 1.15, outset: 0.12, size: [0.07, 0.07, 0.05] },
   step: { y: 0.09, outset: 0.42, size: [1.4, 0.18, 0.55], color: '#a9a294' },
-  sideWindow: { y: 2, glazingOutset: 0.12 },
 } as const

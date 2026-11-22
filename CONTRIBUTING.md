@@ -37,9 +37,11 @@ Press **O → Live playtest** or open **Live checkpoints** in the Workbench on t
 | `wren-discover` | The crew arrives outside the unrepaired garden. |
 | `wren-morning` | The repair is paid and Wren is about to leave home. |
 | `wren-swell` | Two days later, the crew has agreed to plane Wren's swollen gate. The toolbox is beside the gate and Wren is at the mending bench. To try a breach, swing the gate, see it catch, then tell Wren it swings clear before planing. To finish the repair, swing the gate and see it catch, plane the edge, swing it again and report honestly. Planing needs a swing that caught, and a false report clears the finding, so after one, swing the gate again before planing. |
+| `wren-trust` | The hinge and ferry edging are complete. One crewmate stands by Wren with carrots. The other waits at the gate with fish. Give Wren the lunch carrot, check the free toolbox loan, then accept the swollen-gate favor and try the full breach and recovery sequence. |
 | `ridge-checkout` | The crew is unqualified. The first player stands at the Windstone Ridge loan rack facing the meadow. In a pair, the second stands beside the landing sign to mark the meadow. Press **E** to launch the checkout. |
 | `ridge-soaring` | A dry 10:30 with the crew qualified and the Mirror Pool survey done. Both players stand at the rack. Press **E** for an island survey flight and climb in the rising air. |
 | `village-favors` | At 09:30 after the starter shift, the crew stands beside Bram at the depot. Each crewmate carries two fish and two carrots for Ines's and Mara's favors. |
+| `household-evening` | At 18:30, one crewmate stands at Mara's porch with two carrots and the other stands outside Wren's cottage. Watch both residents go indoors, then compare the windows at bedtime and before departure. |
 | `field-outing` | At 07:30, both players stand near Mara on the fishing dock with a fresh field journal. Follow her leads to Shellglass and Juniper, then look for sheltering hares during the first late-morning shower. |
 
 Agents can use the same scenario IDs from the shell. For example, to try fishing alone:

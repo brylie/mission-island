@@ -5,7 +5,9 @@ import { daySeconds, hoursPerDay } from '../../src/weather.ts'
 import { itemGroundClearance, updateHeldItems } from '../items.ts'
 import { swellFavor } from '../../src/gate-swell.ts'
 import { blankRecord } from '../../src/residents/trust.ts'
+import { repairQuantity } from '../../src/materials-work.ts'
 import { walkingHeight } from '../../src/terrain.ts'
+import { repairSupplyFavor, wren } from '../../src/worlds/starter/residents/wren.ts'
 import { standAt, type Scenario } from './scenario.ts'
 
 const firstCrewGateLateralM = -0.8
@@ -19,6 +21,10 @@ const gateRepairedAtSeconds = daySeconds * gateRepairDayFraction
 const swellingDayOffset = 2
 const swellingHoursAfterDawn = 4
 const swollenGateToolboxSetbackM = 1.2
+const trustBenchOffsetX = -0.8
+const trustBenchOffsetZ = -1.2
+const trustLunchAndSoupCarrots = 3
+const trustPieFish = 2
 
 function outsideGate(player: Player, setback: number) {
   standAt(player, { x: gateway.x + (player.id === 0 ? firstCrewGateLateralM : secondCrewGateLateralM), z: gateway.z - setback })
@@ -53,7 +59,15 @@ export const wrenScenarios: Scenario[] = [
       if (!players.every((player) => interactions(state, player)[0]?.action === 'fit')) throw new Error('Unreachable hinge in fit checkpoint')
     },
   },
-  { ...garden, id: 'wren-discover', title: 'Wren · Discover the problem' },
+  {
+    ...garden,
+    id: 'wren-discover',
+    title: 'Wren · Discover the problem',
+    prepareWorld(state) {
+      garden.prepareWorld(state)
+      state.islandTime = daySeconds * followupHoursAfterDawn / hoursPerDay
+    },
+  },
   {
     ...garden,
     id: 'wren-morning',
@@ -80,6 +94,32 @@ export const wrenScenarios: Scenario[] = [
       state.gateRepair = { stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: gateRepairedAtSeconds, swelling: 'swollen' }
       state.residents.wren = { ...blankRecord(), trust: 1, kept: [gateFavor], active: swellFavor }
       Object.assign(toolboxItem(state)!, { x: gateway.x + 1, z: gateway.z - swollenGateToolboxSetbackM, y: walkingHeight(gateway) + itemGroundClearance, holder: null })
+    },
+  },
+  {
+    ...garden,
+    id: 'wren-trust',
+    title: 'Wren · Earn, lose and rebuild Trust',
+    placePlayer(player, _state, seats) {
+      if (player.id === 0) {
+        const { work } = wren.schedule
+        standAt(player, { x: work.x + trustBenchOffsetX, z: work.z + trustBenchOffsetZ }, Math.atan2(-trustBenchOffsetX, -trustBenchOffsetZ))
+        player.goods.carrots = trustLunchAndSoupCarrots
+        if (seats === 1) player.goods.fish = trustPieFish
+      }
+      else {
+        outsideGate(player, repairGateSetbackM)
+        player.goods.fish = trustPieFish
+      }
+    },
+    prepareWorld(state) {
+      garden.prepareWorld(state)
+      state.islandTime = daySeconds * swellingDayOffset + daySeconds * swellingHoursAfterDawn / hoursPerDay
+      state.gateRepair = { stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: gateRepairedAtSeconds }
+      const kept = [gateFavor, repairSupplyFavor.id]
+      state.residents.wren = { ...blankRecord(), trust: kept.length, kept }
+      state.materialsWork.checkout = 'qualified'
+      state.materialsWork.request = { material: 'timber', delivered: repairQuantity }
     },
   },
 ]

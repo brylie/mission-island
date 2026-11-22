@@ -1,6 +1,7 @@
 import { starterBuildingReview } from '../assets/recipes/workbench-building-vehicle-studies'
 import { createHouse } from '../assets/buildings'
 import { buildings } from '../world'
+import { starterResidents } from '../worlds/starter/residents'
 import { control, type Entry } from './subject'
 
 export const houseStudy: Entry = {
@@ -15,5 +16,9 @@ export const houseStudy: Entry = {
   },
   description: 'Inspect the exterior, windows, roofline, and foundation of each building.',
   controls: [control('variant', 'Building', '0', Object.fromEntries(starterBuildingReview.names.entries()), true)],
-  create(meshes, values) { createHouse(meshes, { ...buildings[Number(values.variant)], x: 0, z: 0 }) },
+  create(meshes, values) {
+    const building = buildings[Number(values.variant)]
+    const household = starterResidents.find(({ schedule }) => schedule.household.building === building)?.schedule.household
+    createHouse(meshes, { ...building, x: 0, z: 0 }, household)
+  },
 }

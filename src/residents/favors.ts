@@ -2,6 +2,7 @@ import { activeJob } from '../jobs.ts'
 import type { Player, Snapshot } from '../protocol.ts'
 import { distance, type Point } from '../world.ts'
 import type { FavorDefinition, FavorGuide, ResidentDefinition } from './definition.ts'
+import { residentAt, residentAwayMessage } from './schedule.ts'
 import { blankRecord, standingOf, trustTier } from './trust.ts'
 
 type Registry = readonly ResidentDefinition[]
@@ -50,12 +51,20 @@ export function favorLine(resident: ResidentDefinition, state: Snapshot) {
   return active ? favor.reminder : favor.offer
 }
 
+export function residentFavorGuide(resident: ResidentDefinition, favor: FavorDefinition, state: Snapshot, player: Player): FavorGuide {
+  const guide = favor.guide?.(state, player) ?? { title: favor.title, detail: favor.detail, next: favor.next }
+  if (!('goods' in favor.kind) && !(favor.report && recordFor(state, resident).checked === 'sound')) return guide
+  const spot = residentAt(resident.schedule, state)
+  if (!spot.indoors || spot.stop !== 'home') return guide
+  return { ...guide, next: `${guide.next} ${residentAwayMessage(resident)}` }
+}
+
 // Crew guide entries for every favor under way. Built from the shared snapshot, so a crewmate who joins mid-favor sees it too.
 export function favorGuides(registry: Registry, state: Snapshot, player: Player): FavorGuide[] {
   return registry.flatMap((resident) => resident.favors.flatMap((favor) => {
     const listed = favor.listed?.(state) ?? recordFor(state, resident).active === favor.id
     if (!listed) return []
-    return [favor.guide?.(state, player) ?? { title: favor.title, detail: favor.detail, next: favor.next }]
+    return [residentFavorGuide(resident, favor, state, player)]
   }))
 }
 

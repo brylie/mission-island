@@ -1,5 +1,5 @@
 import { ferryDrop } from '../ferry-repair.ts'
-import { toolboxPickable } from '../gate-repair.ts'
+import { onBench, toolboxLoanForSwollenGate, toolboxPickable, wrenLendsToolbox } from '../gate-repair.ts'
 import { deliveryDrop, deliveryRadius, lookoutSprayReach } from '../jobs.ts'
 import type { Item, Player, Snapshot } from '../protocol.ts'
 import { stagingFavor, wantsCargo } from '../residents/favors.ts'
@@ -64,13 +64,20 @@ function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 're
   return eligible && !item.delivered && item.holder === null && distance(item, player) < itemPickupReach && Math.abs(item.y - player.y) < itemPickupVerticalReach
 }
 
+function pickupLabel(state: Snapshot, item: Item, name: string) {
+  if (item.onBed) return 'Unload crate'
+  if (item.kind !== 'toolbox') return `Pick up ${name.toLowerCase()}`
+  if (onBench(item) && toolboxLoanForSwollenGate(state) && !wrenLendsToolbox(state)) return 'Borrow the toolbox for the gate'
+  return 'Pick up the toolbox'
+}
+
 export function pickupOptions(state: Snapshot, player: Player): InteractionOption<CargoAction>[] {
   const cargoWanted = wantsCargo(starterResidents, state)
   return state.items.filter((item) => canPickUp(state, item, player, cargoWanted))
     .sort((a, b) => distance(a, player) - distance(b, player))
     .map((item) => {
       const name = item.kind === 'toolbox' ? 'Toolbox' : item.kind === 'crate' ? 'Crate' : 'Extinguisher'
-      const label = item.onBed ? 'Unload crate' : item.kind === 'toolbox' ? 'Pick up the toolbox' : `Pick up ${name.toLowerCase()}`
+      const label = pickupLabel(state, item, name)
       return { action: 'pick-up' as const, subject: item.id, key: 'E', label, name, at: { x: item.x, y: item.y + (item.kind === 'crate' ? 0 : toolTargetLift), z: item.z }, radius: item.kind === 'crate' ? crateTargetRadius : toolTargetRadius }
     })
 }

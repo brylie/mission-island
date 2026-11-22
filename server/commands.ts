@@ -1,6 +1,7 @@
 import { cleanCrewName, readAppearance } from '../src/crew-appearance.ts'
 import { isClothingId } from '../src/clothing-catalog.ts'
 import { isInteractionAction } from '../src/interaction-options.ts'
+import { interactionChoice } from '../src/interactions/definition.ts'
 import { starterTools } from '../src/inventory.ts'
 import { isJobId, type JobId } from '../src/jobs.ts'
 import type { ClientMessage, Input } from '../src/protocol.ts'
@@ -37,10 +38,11 @@ function readInput(raw: unknown): Input {
 // A malformed choice is dropped rather than read as a bare press, which would run the default interaction.
 function readChoice(raw: unknown) {
   if (!raw || typeof raw !== 'object') return null
-  const { action, subject } = raw as Record<string, unknown>
+  const { action, subject, favor } = raw as Record<string, unknown>
   if (!isInteractionAction(action)) return null
-  if (subject === undefined) return { action }
-  return Number.isSafeInteger(subject) && (subject as number) >= 0 ? { action, subject: subject as number } : null
+  if (subject !== undefined && (typeof subject !== 'number' || !Number.isSafeInteger(subject) || subject < 0)) return null
+  if (favor !== undefined && (typeof favor !== 'string' || !favor)) return null
+  return interactionChoice({ action, subject, favor })
 }
 
 export function readCrewCommand(message: Record<string, unknown>): CrewCommand | undefined {

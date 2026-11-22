@@ -55,9 +55,14 @@ export function swellGuide(state: Pick<Snapshot, 'gateRepair' | 'residents' | 'i
           : 'The toolbox was left away from the gate. Talk to Wren to have it put back on the mending bench.'
   if (finding === 'sound') return { title, detail: 'Your crew’s last swing went clear.', next: 'Tell Wren the gate is fixed.' }
   if (finding === 'fault') {
-    return { title, detail: 'Your crew’s last swing caught on the swollen edge.', next: `${holding} Plane the edge at the gate, then swing it again. You can also tell Wren it still catches.` }
+    const loan = toolbox && onBench(toolbox) && state.residents.wren?.breach
+      ? ' Borrow it for this repair.'
+      : ''
+    return { title, detail: 'Your crew’s last swing caught on the swollen edge.', next: `${holding}${loan} Plane the edge at the gate, then swing it again. You can also tell Wren it still catches.` }
   }
-  return { title, detail, next: state.gateRepair.swelling === 'planed'
-    ? 'Swing the gate to check the planed edge.'
-    : `${holding} Swing the gate to see where it catches.` }
+  if (state.gateRepair.swelling === 'planed') return { title, detail, next: 'Swing the gate to check the planed edge.' }
+  const loan = toolbox && onBench(toolbox) && state.residents.wren?.breach
+    ? ' Wren will loan it for this repair once the crew confirms the gate still catches.'
+    : ''
+  return { title, detail, next: `${holding} Swing the gate to see where it catches.${loan}` }
 }

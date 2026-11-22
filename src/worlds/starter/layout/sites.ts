@@ -62,6 +62,13 @@ export const starterResidentSites = {
   },
 }
 
+export const starterHouseholdHours = {
+  mara: { goesIn: 19, bedtime: 21, wakes: 5.25 },
+  wren: { goesIn: 18.75, bedtime: 21.5, wakes: 6.25, stepsOut: 6.6 },
+  ines: { goesIn: 19.75, bedtime: 22.5, wakes: 6.5 },
+  bram: { goesIn: 18, bedtime: 20.5, wakes: 5.75 },
+} as const
+
 // Small, marked pickups sit off the paths. The edging runs just outside the east shoulder of Harbor Depot road,
 // between Wren's mending bench and the ferry freight yard.
 export const materialSources = {

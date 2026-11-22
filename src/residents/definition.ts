@@ -2,6 +2,7 @@ import type { CrewAppearance } from '../crew-appearance.ts'
 import type { Goods } from '../farm.ts'
 import type { Player, Snapshot } from '../protocol.ts'
 import type { Point } from '../world.ts'
+import type { StarterBuilding } from '../worlds/starter/layout/places.ts'
 
 // A resident is assembled from traits, the way a vehicle is: identity and appearance for the
 // scene, a schedule the shared clock drives, a conversation built from the shared snapshot, and
@@ -15,8 +16,17 @@ export interface Leg { point: Point, indoors?: boolean }
 export type ResidentWorld = Pick<Snapshot, 'islandTime' | 'gateRepair'>
 
 export interface ScheduleTrait {
-  home: Stop
-  work: Stop
+  home: Stop & { name: string }
+  work: Stop & { name: string }
+  household: {
+    building: StarterBuilding
+    rearEntrance?: boolean
+    goesIn: number
+    bedtime: number
+    wakes: number
+    // Optional time to step outside and spend a few minutes at home before the commute.
+    stepsOut?: number
+  }
   // Island hours when the resident sets out for work and for home.
   departs: number
   returns: number

@@ -21,6 +21,11 @@ export function mergeDisjoint<const Tables extends readonly object[]>(...tables:
 export interface InteractionChoice<Action extends string> {
   action: Action
   subject?: number
+  favor?: string
+}
+
+export function interactionChoice<Action extends string>({ action, subject, favor }: InteractionChoice<Action>): InteractionChoice<Action> {
+  return { action, ...(subject !== undefined && { subject }), ...(favor !== undefined && { favor }) }
 }
 
 // The prompt and reticle describe the same interaction that the host can accept.

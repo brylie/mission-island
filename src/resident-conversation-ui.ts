@@ -1,8 +1,10 @@
-import { interactions } from './interaction-options'
+import { interactions, type InteractionChoice } from './interaction-options'
+import { interactionChoice } from './interactions/definition'
 import type { Player, Snapshot } from './protocol'
 import { conversationLines, favorLine } from './residents/favors'
 import type { ResidentAction } from './residents/interactions'
 import { chooseRemark, remarkContext } from './residents/remarks'
+import { residentAt, residentAwayMessage } from './residents/schedule'
 import { islandRemarks } from './worlds/starter/island-remarks'
 import { starterResidents } from './worlds/starter/residents'
 
@@ -14,7 +16,7 @@ type Choice = Extract<ResidentAction, 'accept-favor' | 'report-sound' | 'report-
 
 // The conversation half of the crew guide dialog. Each talk adds one remark chosen for the moment; the
 // count and the last remark are this client's own, so talking again gives a different line when one fits.
-export function createResidentConversation(dialog: HTMLDialogElement, act: (action: Choice, subject: number) => void) {
+export function createResidentConversation(dialog: HTMLDialogElement, act: (choice: InteractionChoice) => void) {
   const greeting = dialog.querySelector<HTMLElement>('#resident-line')!
   const remark = dialog.querySelector<HTMLElement>('#resident-remark')!
   const advice = dialog.querySelector<HTMLElement>('#resident-advice')!
@@ -26,12 +28,14 @@ export function createResidentConversation(dialog: HTMLDialogElement, act: (acti
     'report-fault': dialog.querySelector('#resident-report-fault')!,
   }
   const talks = new Map<string, { count: number, last?: string }>()
+  const choices = new Map<Choice, InteractionChoice>()
   let speaker = -1
 
   // Every choice goes back through the host, which checks the resident is still in reach and still waiting.
   for (const [action, button] of Object.entries(buttons) as [Choice, HTMLButtonElement][]) {
     button.addEventListener('click', () => {
-      if (speaker >= 0) act(action, speaker)
+      const choice = choices.get(action)
+      if (choice) act(choice)
       dialog.close()
     })
   }
@@ -40,6 +44,7 @@ export function createResidentConversation(dialog: HTMLDialogElement, act: (acti
     // A notice board read in the same dialog: plain lines, nobody to answer and nothing to choose.
     board(lines: readonly string[]) {
       speaker = -1
+      choices.clear()
       greeting.textContent = lines[0] ?? ''
       advice.textContent = lines.slice(1).join('\n')
       for (const element of [remark, favor, ...Object.values(buttons)]) element.hidden = true
@@ -64,6 +69,11 @@ export function createResidentConversation(dialog: HTMLDialogElement, act: (acti
     refresh(state: Snapshot, player: Player) {
       const resident = starterResidents[speaker]
       if (!resident) return
+      const spot = residentAt(resident.schedule, state)
+      if (spot.indoors && spot.stop === 'home') {
+        this.board([residentAwayMessage(resident)])
+        return
+      }
       const lines = conversationLines(resident, state)
       if (greeting.textContent !== lines[0]) greeting.textContent = lines[0]
       if (advice.textContent !== lines[1]) advice.textContent = lines[1]
@@ -76,8 +86,10 @@ export function createResidentConversation(dialog: HTMLDialogElement, act: (acti
         fieldNotes.replaceChildren(...notes.map((line) => Object.assign(document.createElement('p'), { textContent: line })))
       }
       const open = interactions(state, player).filter((option) => option.subject === speaker)
+      choices.clear()
       for (const [action, button] of Object.entries(buttons) as [Choice, HTMLButtonElement][]) {
         const option = open.find((entry) => entry.action === action)
+        if (option) choices.set(action, interactionChoice(option))
         button.hidden = !option
         if (button.textContent !== (option?.label ?? '')) button.textContent = option?.label ?? ''
       }

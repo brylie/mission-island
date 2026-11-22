@@ -1,6 +1,7 @@
 import { front, fenceZ, gateMendedStage, gateway } from '../../../gate-layout.ts'
 import type { Leg, ScheduleTrait } from '../../../residents/definition.ts'
 import { mendingBench, wrenCottage } from '../../../world.ts'
+import { starterHouseholdHours } from '../layout/sites.ts'
 
 // Wren's day: home in the garden, the mending bench by the ferry freight yard from 07:00 to 17:00.
 const gardenStandingDepth = 1.6
@@ -40,8 +41,9 @@ export const backPath = [backDoor, backCorner, backExit]
 const shortcut: Leg[] = [{ point: home }, { point: gateway }, { point: lane }, ...roadToFerry]
 
 export const wrenSchedule: ScheduleTrait = {
-  home: { ...home, heading: Math.PI },
-  work: { ...work, heading: Math.PI * half },
+  home: { ...home, heading: Math.PI, name: 'lilac-roofed cottage east of the Blue cottage' },
+  work: { ...work, heading: Math.PI * half, name: 'the mending bench by the ferry yard' },
+  household: { building: wrenCottage, ...starterHouseholdHours.wren },
   departs: shiftStartHour,
   returns: shiftEndHour,
   pace: walkingPace,

@@ -1,4 +1,4 @@
-import { gateFavor, gateMendedStage, gateRepairGuide, wrenLines } from '../../../gate-repair.ts'
+import { gateFavor, gateMendedStage, gateRepairGuide, wrenLendsToolbox, wrenLines } from '../../../gate-repair.ts'
 import { swellFavor, swellGuide } from '../../../gate-swell.ts'
 import { gatheringAdvice, materialsGuide, materialsOpen } from '../../../materials-work.ts'
 import type { ConversationContext, FavorDefinition, ResidentDefinition } from '../../../residents/definition.ts'
@@ -9,6 +9,7 @@ import { wrenRemarks } from './remarks.ts'
 
 const pathEdgingRewardCoins = 5
 const gateRepairRewardCoins = 5
+const benchLunchRewardCoins = 3
 const swollenGateRewardCoins = 5
 const fishFavorRewardCoins = 5
 const requestedFishCount = 2
@@ -18,7 +19,7 @@ const requestedCarrotCount = 2
 // A broken promise and a swollen gate come before anything else Wren has to say.
 function urgentLines({ state, standing }: ConversationContext): [string, string] | undefined {
   if (standing === 'wronged') {
-    return ['“You told me it swung clear. It caught halfway, and now I’m back to going round the back.”', '“If you mean to put it right, the plane is in the toolbox. I’ll take a look myself this time.”']
+    return ['“You told me it swung clear. It caught halfway and I had to go round the back again.”', '“If it still catches, you can borrow my toolbox just for this repair. Tell me how the final swing goes.”']
   }
   if (state.gateRepair.swelling) {
     return ['“I’m going round the back again until the gate’s sorted. Wet timber, there’s nothing for it.”', '“Take the plane slowly along the bottom edge. A little at a time, then try the swing.”']
@@ -82,6 +83,8 @@ export const repairSupplyFavor: FavorDefinition = {
 
 // The pie and the soup are the favors that rebuild trust after the swollen gate, so they wait for it.
 const afterSwell = (state: Snapshot) => Boolean(state.residents.wren?.kept.includes(swellFavor))
+const beforeSwell = (state: Snapshot) => Boolean(state.residents.wren?.kept.includes(repairSupplyFavor.id)) && !afterSwell(state)
+export const benchLunchFavor = 'wren-bench-lunch'
 
 // Wren mends things at the bench by the ferry freight yard and lives in the lilac-roofed cottage.
 // The garden gate is a custom favor: talking accepts it, and its steps live in the gate repair.
@@ -109,12 +112,23 @@ export const wren: ResidentDefinition = {
     listed: (state) => !state.gateRepair.swelling && !state.residents.wren?.kept.includes(swellFavor),
   // The edging needs the crew's materials checkout, so a crew that has worked for it hears about it first.
   }, repairSupplyFavor, {
+    id: benchLunchFavor,
+    title: 'A carrot for Wren’s bench lunch',
+    coins: benchLunchRewardCoins,
+    trust: 1,
+    kind: { goods: 'carrots', quantity: 1 },
+    available: beforeSwell,
+    offer: '“I packed bread and cheese for the bench today. Could you spare a carrot from Island Farm to go with it?”',
+    reminder: '“Just one carrot for my lunch, if you have one to spare.”',
+    detail: 'Wren would like a carrot to go with bread and cheese at the bench.',
+    next: 'Grow a carrot at Island Farm, then give it to Wren at the mending bench or outside the lilac-roofed cottage.',
+  }, {
     id: swellFavor,
     title: 'Wren’s swollen gate',
     coins: swollenGateRewardCoins,
     trust: 1,
     kind: { check: true },
-    available: (state) => gateMendedStage(state) === 'settled',
+    available: (state) => gateMendedStage(state) === 'settled' && wrenLendsToolbox(state),
     offer: '“All that rain has swollen the gate. It catches halfway again. Would you plane the edge down for me? Swing it first to see where it binds.”',
     reminder: '“Swing the gate to see where it catches, plane the edge with the toolbox, then tell me honestly how it goes.”',
     detail: '',

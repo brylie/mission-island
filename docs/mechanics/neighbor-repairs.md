@@ -12,11 +12,11 @@
 
 Before the repair, anyone can **Try the sagging gate**. The leaf opens about 17° and leaves less than a body's width, so walking into it shows that something is wrong without any message. After the repair, either player can open and close the gate. A close waits until nobody is standing in the opening.
 
-The day after the repair, grass grows over the groove. Wren leaves by the front door, opens the gate and takes the shortcut to work, then closes it once the opening is clear. Wren's greeting recognizes the crew. Put the toolbox back on the bench with **Return the toolbox to Wren**. A toolbox put back on the bench after the repair stays there.
+The day after the repair, grass grows over the groove. Wren leaves by the front door, opens the gate and takes the shortcut to work, then closes it once the opening is clear. Wren's greeting recognizes the crew. Use **Return the toolbox to Wren** to put it back on the bench. After the hinge, ferry edging and lunch favors, either crewmate can borrow it freely.
 
 ## The swollen gate
 
-Two days or more after the repair, Wren mentions that the wet spell has swollen the gate, so it catches halfway again. After either player agrees, the leaf stops short and Wren goes round the back. **Swing the gate to check it** shows both players whether it catches. With the toolbox at the gate, **Plane the swollen edge**, then swing again. Report back to Wren in the conversation. Saying it swings clear after it caught breaks a promise. See [Reporting back and broken promises](resident-favors.md#reporting-back-and-broken-promises). While the job is under way, a toolbox set down at the gate stays there when someone talks to Wren.
+Once Wren trusts the crew with the toolbox and the first repair has settled, Wren asks about a swollen gate. After either player agrees, the leaf stops short and Wren goes round the back. **Swing the gate to check it** shows both players whether it catches. With the toolbox at the gate, **Plane the swollen edge**, then swing again. Report back to Wren during [visiting hours](resident-favors.md#household-routines). Saying it swings clear after it caught breaks a promise and suspends the free loan. Either player can check the gate again and borrow the toolbox for that repair. While the job is under way, a toolbox set down at the gate stays there when someone talks to Wren. [Reporting back and broken promises](resident-favors.md#reporting-back-and-broken-promises)
 
 ## Prompts and input
 

@@ -5,15 +5,26 @@ Four residents live on Starter Island. Each one has a home, a walk to work, work
 | Resident | Home | Work | Hours | Favor | Pays |
 | --- | --- | --- | --- | --- | --- |
 | **Mara**, fisher | Porch of the teal-roofed house by the depot trail | Small fishing dock | 06:00–18:00 | **Carrots for Mara’s supper:** give 2 carrots | +5 coins, Mara trust +1 |
-| **Wren**, neighbor | Lilac-roofed cottage east of the Blue cottage | Mending bench by the ferry approach | 07:00–17:00 | **Wren’s gate:** mend the hinge ([Neighbor repairs](neighbor-repairs.md)). **Wren’s swollen gate:** plane the edge and report back ([below](#reporting-back-and-broken-promises)). Supply [Ferry Approach Edging](repair-materials.md) once the crew is checked out on materials. **Fish for Wren’s pie:** 2 fish, after the swollen gate. **Carrots for Wren’s soup:** 2 carrots | +5 coins and Wren trust +1 each |
+| **Wren**, neighbor | Lilac-roofed cottage east of the Blue cottage | Mending bench by the ferry approach | 07:00–17:00 | Mend the [gate hinge](neighbor-repairs.md), supply the [ferry approach edging](repair-materials.md), and bring one carrot for lunch. Then [plane the swollen gate](#reporting-back-and-broken-promises), bring two fish for pie and bring two carrots for soup. | +5 coins per favor (+3 for lunch) and Wren Trust +1 when kept |
 | **Ines**, shopkeeper | Coral house across the Seabrook square | West end of the Seabrook Market stall | 07:30–18:00 | **Fresh fish for the market display:** give 2 fish | +5 coins, Ines trust +1 |
 | **Bram**, harbor steward | Above the Harbor Depot office | Tally spot beside the job board | 06:30–16:30 | **Stage a load for Bram:** set one crate down in the yellow bay beside the depot, off Harbor Depot road. Offered after the starter shift | +5 coins, Bram trust +1 |
 
-Each resident sets out at the start of their hours and walks home at the end. The walk takes a few island minutes. Overnight they wait at their door. Indoor evenings and lit windows are planned in [#128](https://github.com/brylie/mission-island/issues/128). A resident's schedule never closes a service. The market, the clothing counter and the job board work whether or not their resident is there.
+## Household routines
+
+Each resident sets out at the start of their hours and walks home at the end. The walk takes a few island minutes. After a spell outside, they go inside and light their windows until bedtime. The windows light again when they wake and go dark when they step out. Street lights run independently. Open **Crew guide → Where to find neighbors** for the routes and visiting hours. The market, the clothing counter and the job board operate throughout the day and night.
+
+| Household | Evening visits until | Bedtime | Wakes |
+| --- | --- | --- | --- |
+| Mara | 19:00 | 21:00 | 05:15 |
+| Wren | 18:45 | 21:30 | 06:15 |
+| Ines | 19:45 | 22:30 | 06:30 |
+| Bram | 18:00 | 20:30 | 05:45 |
+
+Either crewmate can bring goods during the evening visit. After the resident heads indoors, the favor stays in the crew guide for the next visit.
 
 ## Talking and agreeing
 
-Aim at a resident and press **E** to talk. Either player can talk to anyone at any time, and talking never earns trust. While a resident has a favor to ask, the conversation includes the request and an **Agree to help** button. Agreeing makes the favor crew-wide: both players see a notice, and the favor appears in the crew guide and on the mission card when no crew order is on it. Walking away without agreeing carries no penalty, and the resident asks again next time. Wren's gate starts when either player talks to Wren, as before.
+Aim at an outdoor resident and press **E** to talk. Either player can start the conversation. While a resident has a favor to ask, the conversation includes the request and an **Agree to help** button. Agreeing makes the favor crew-wide. Both players see a notice, and the favor appears in the crew guide and on the mission card when no crew order is on it. Walking away without agreeing carries no penalty, and the resident asks again next time. Wren's gate starts when either player talks to Wren.
 
 A resident's prompt never takes **E** away from a service. Near the job board or the market stall, a bare **E** uses the service, and aiming at the resident talks to them.
 
@@ -36,13 +47,13 @@ Each favor counts once. Alongside the tier, each resident has a **standing**: *s
 
 ## Reporting back and broken promises
 
-Some favors are finished by reporting back. Wren's swollen gate is the first. After agreeing, the crew swings the gate to check it. A swing that catches is shown to both players (`The gate catches on its swollen edge`), and the crew guide records the finding. Planing the edge needs the toolbox at the gate, and then another swing. The conversation with Wren shows what the last swing found, next to two buttons: **Tell Wren it swings clear** and **Tell Wren it still catches**.
+Wren lends the toolbox freely to either crewmate after the hinge, edging and lunch favors. Wren then asks the crew to look at the swollen gate. After agreeing, the crew swings the gate to check it. A swing that catches is shown to both players (`The gate catches on its swollen edge`), and the crew guide records the finding. Planing the edge needs the toolbox at the gate, and then another swing. The conversation with Wren shows what the last swing found beside **Tell Wren it swings clear** and **Tell Wren it still catches**.
 
 - **Telling Wren it still catches** costs nothing. Wren waits, and both players see that the crew was honest.
 - **Telling Wren it swings clear after a clean swing** keeps the favor.
 - **Telling Wren it swings clear after it caught** breaks the promise. This is the only way to lose trust. Wren's trust drops by two (never below zero), and both players see `Your crewmate told Wren it was fixed, but it wasn’t · Wren trust −2`. Wren goes round the back again, and the next greeting says why, to either player, after a late join or a host restart. The finding is cleared, so the crew has to swing the gate again before saying anything more.
 
-**Making amends.** Either crewmate can put it right by planing the gate, swinging it clear and telling Wren. The work pays, but earns no trust. Wren thanks the crew and says they will check the next job in person.
+**Making amends.** Wren stops lending the toolbox freely. The next swing that catches lets either player borrow it from the bench for this repair. Either crewmate can plane the gate, swing it clear and tell Wren. The work pays and Trust stays where it was. Wren thanks the crew and says they will check the next job in person.
 
 **Rebuilding.** Any two more kept favors with Wren, such as the pie and the soup, or the ferry path edging, restore Wren's reliance on the crew. The second adds a point of trust, the receipt says `Wren relies on the crew again`, Wren says they have stopped checking the crew's work, and the toolbox on the bench is the crew's to borrow. A failed swing, a disconnect mid-job or a declined favor never costs trust. See [Shared crew Trust](../design/residents-and-destinations.md#shared-crew-trust).
 
@@ -71,4 +82,6 @@ Start `MISSION_ISLAND_CHECKPOINT=village-favors npm run playtest`. Both crewmate
 - Sleep through a night and find each resident again by the clock.
 - Talk to the same resident several times, in rain and sun and at different hours. Do the remarks feel like this person, and does any line jar with the moment?
 
-For the breach, start `MISSION_ISLAND_CHECKPOINT=wren-swell npm run playtest`. One player swings the gate and sees it catch. The other walks to Wren and must choose what to say. Afterwards, can the player who wasn't there explain what happened from Wren's next greeting alone?
+For the Trust arc, start `MISSION_ISLAND_CHECKPOINT=wren-trust MISSION_ISLAND_CREW_SIZE=2 npm run playtest`. Give Wren the lunch carrot, try the toolbox and return it to the bench. One player swings the swollen gate and sees it catch. The other chooses what to say. Switch roles for amends, share the next two favors and try borrowing again.
+
+For the household circuit, use `household-evening`. One player can hand in Mara's carrots while the other watches Wren. Compare the homes after entry, at bedtime, and before departure. Use the **Resident routines** Workbench study to replay individual times.
