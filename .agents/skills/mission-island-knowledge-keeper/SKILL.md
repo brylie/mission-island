@@ -13,7 +13,7 @@ Start from the [design handbook](../../../docs/README.md), which maps the docs b
 
 ## What to look for
 
-Read the diff, the linked issue or PR, and the review notes from other reviewers. List each piece of knowledge the change created or relied on, and check that it has a home:
+Read the diff, the linked issue or PR, and every reviewer's **knowledge handover**: each expert reviewer reports the techniques, facts and lessons its review used. Treat those handovers as your richest source. An explanation a reviewer gave once is lost unless it reaches a page. List each piece of knowledge the change created or relied on, and check that it has a home:
 
 | Kind of knowledge | Where it belongs |
 | --- | --- |
@@ -21,6 +21,7 @@ Read the diff, the linked issue or PR, and the review notes from other reviewers
 | How a mechanic works for the player, who owns its state, what survives a restart | The page under `docs/mechanics/` |
 | How the code is organised, a contract another feature will build on, a performance budget | [Architecture](../../../docs/architecture.md), the owning module's comments, or a hand-over note linked from the PR |
 | How to use or review something in the Workbench or a playtest | [Workbench guide](../../../docs/workbench.md) or `docs/playtests/` |
+| A technique or algorithm and why it works: procedural generation, synthesis, simulation, shading, level of detail, performance. Include what failed. | The [craft pages](../../../docs/craft/README.md). Start a new page when a topic has none. |
 | A real-world fact the game draws on, such as a species, habitat, landform, weather or seasonal pattern, a first-aid step or a practical technique | The [field guide](../../../docs/field-guide/README.md), including what the game simplifies |
 | A term a newcomer would not know | The [glossary](../../../docs/field-guide/glossary.md) |
 | Something we learned but did not build | The relevant page, marked **planned** or **open question**, with the follow-up issue linked |

@@ -57,7 +57,12 @@ Start one subagent per chosen reviewer in a single message so they run at the sa
 - what the user asked to focus on, if anything
 - that the review is read-only: report findings, do not edit files
 
-Ask each reviewer to return a verdict of **ready**, **revise** or **rethink**, findings ranked by severity with a file and line or a reproducible view, and a list of what it checked in the running game versus only read in code. A reviewer that cannot observe its claim should name the control, seed or readout that would let it.
+Ask each reviewer to return:
+
+- a verdict of **ready**, **revise** or **rethink**;
+- findings ranked by severity, with a file and line or a reproducible view;
+- a list of what it checked in the running game versus only read in code. A reviewer that cannot observe its claim should name the control, seed or readout that would let it;
+- a short **knowledge handover**: the techniques, real-world facts, design reasons and lessons its review used or discovered, with sources where it has them. Each reviewer is an expert, and this is how its expertise reaches the [craft pages](../../../docs/craft/README.md), the [field guide](../../../docs/field-guide/README.md) and the design docs. Pass every handover to the Knowledge Keeper.
 
 ## 5. Apply findings and repeat
 

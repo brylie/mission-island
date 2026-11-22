@@ -1,6 +1,6 @@
 # Mission Island field guide
 
-The field guide is the real-world part of the project's [knowledge base](../README.md#learn-from-mission-island). Design decisions, mechanics and architecture have their own pages in the handbook.
+The field guide is the real-world part of the project's [knowledge base](../README.md#learn-from-mission-island). The [craft pages](../craft/README.md) explain how the game simulates these subjects. Design decisions, mechanics and architecture have their own pages in the handbook.
 
 The field guide records what we learn about the real world while building the island: species, habitats, landforms, weather, seasons, and the practical knowledge behind island work, such as first aid. Design docs say what we are building. This guide records **why the world looks and behaves the way it does**.
 
