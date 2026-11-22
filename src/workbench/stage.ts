@@ -18,7 +18,7 @@ import type { Entry, Values } from './subject'
 import { lightingPresets } from './lighting'
 import type { LightingPreset } from './lighting'
 import { findZFightCandidates } from './z-fighting'
-import { framingWithFigure, scaleFigureFor } from './scale-figure'
+import { framingWithFigure, measureShown, scaleFigureFor, trackSubjectSize, writeBounds } from './scale-figure'
 import { createLandscapeLayout } from './landscape-layout'
 import type { createLandscapeDraft } from './landscape-draft'
 import type { Point } from '../world'
@@ -69,8 +69,6 @@ function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Ent
   const biome = entry.id === 'biome'
   let min = new Vector3(Infinity, Infinity, Infinity)
   let max = new Vector3(-Infinity, -Infinity, -Infinity)
-  let shownMin = new Vector3(Infinity, Infinity, Infinity)
-  let shownMax = new Vector3(-Infinity, -Infinity, -Infinity)
   let triangles = 0
   let meshCount = 0
   for (const mesh of subject) {
@@ -82,14 +80,9 @@ function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Ent
       meshCount++
       triangles += mesh.getTotalIndices() / indicesPerTriangle
     }
-    // Hidden parts, such as cargo not yet loaded, stay out of the measured size.
-    if (mesh.isVisible && mesh.isEnabled()) {
-      shownMin = Vector3.Minimize(shownMin, boundingBox.minimumWorld)
-      shownMax = Vector3.Maximize(shownMax, boundingBox.maximumWorld)
-    }
   }
 
-  const shown = shownMin.x <= shownMax.x ? { min: shownMin, max: shownMax } : { min: min.clone(), max: max.clone() }
+  const shown = measureShown(subject) ?? { min: min.clone(), max: max.clone() }
   max.y += entry.headroom ?? 0
   const span = max.subtract(min)
   const groundHeight = (entry.ground?.height ?? 0) + (field?.offset.y ?? 0)
@@ -157,9 +150,9 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     const subject = surroundings?.surfaceMeshes ?? scene.meshes.slice(firstSubjectMesh)
     const { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount, shown }
       = createPreviewCamera(scene, canvas, entry, values, subject, field)
-    const extent = shown.max.subtract(shown.min)
-    const scaleFigure = scaleFigureFor(meshes, entry, field, { min: shown.min, extent, ground: groundHeight })
-    const fitFigure = (visible: boolean) => framingWithFigure({ ...shown, center, size, ground: groundHeight }, scaleFigure?.(visible))
+    const scaleFigure = scaleFigureFor(meshes, entry, field, { min: shown.min, extent: shown.max.subtract(shown.min), ground: groundHeight })
+    const subjectSize = entry.landscape || field ? undefined : trackSubjectSize(subject, shown, scaleFigure)
+    const fitFigure = (visible: boolean) => framingWithFigure({ ...subjectSize?.bounds() ?? shown, center, size, ground: groundHeight }, scaleFigure?.show(visible))
     let figureFrame = fitFigure(showFigure)
     const subjectZoomLimit = camera.upperRadiusLimit ?? Infinity
     let focusHeight = Number(values.focusHeight ?? studioCamera.landscapeFocusHeight)
@@ -270,6 +263,11 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         subject.forEach(applyWireframe)
         layout?.meshes().forEach(applyWireframe)
         scene.render()
+        // Measured after the render, which brings every parent's world matrix up to date.
+        if (subjectSize?.refresh(settings)) {
+          if (figureFrame) figureFrame = fitFigure(true)
+          writeBounds(subjectSize.dimensions(), figureFrame && scaleFigure?.show(true)?.height)
+        }
       },
       setLighting(preset: LightingPreset) {
         lighting = preset
@@ -282,10 +280,10 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         const before = Boolean(figureFrame)
         figureFrame = fitFigure(visible)
         if (before !== Boolean(figureFrame)) frame(camera.alpha, camera.beta, camera.fov)
-        return scaleFigure(visible)
+        return scaleFigure.show(visible)
       }),
       // Width (x), depth (z) and height of the shown subject's bounds, in metres.
-      dimensions: entry.landscape || field ? undefined : [extent.x, extent.z, extent.y] as const,
+      get dimensions() { return subjectSize?.dimensions() },
       setView,
       setLandscapeView({ alpha, beta, radius }: Omit<CameraState, 'target'>) {
         updateLandscapeFocus(values)

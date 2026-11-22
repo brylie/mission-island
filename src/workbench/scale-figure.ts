@@ -2,9 +2,10 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { createCrew } from '../assets/crew'
 import { studioCamera, studioScaleFigure } from '../assets/recipes/workbench-stage'
-import type { MeshFactory } from '../island-meshes'
+import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
+import { createMeshFactory, type MeshFactory } from '../island-meshes'
 import type { FieldSite } from './field-site'
-import type { Entry } from './subject'
+import type { Entry, Values } from './subject'
 
 const halves = 2
 
@@ -20,24 +21,81 @@ export function scaleFigureFor(meshes: MeshFactory, entry: Entry, field: FieldSi
 
 // The production crew member stands to the viewer's left of the subject, square to the entry's own
 // camera, so it is beside the subject from that view rather than in front of or behind it.
-// It is built the first time it is shown, so subjects that never ask for it pay nothing.
-function createScaleFigure(meshes: MeshFactory, { min, extent, ground, alpha }: Footprint) {
+// It is built the first time it is shown, so subjects that never ask for it pay nothing, and it has
+// its own mesh factory, so wireframe on the subject's shared materials never reaches the figure.
+function createScaleFigure(meshes: MeshFactory, footprint: Footprint) {
   let root: TransformNode | undefined
   let figure: ScaleFigure | undefined
-  return (visible: boolean) => {
-    if (!visible && !root) return
-    if (!root) {
-      const side = [Math.sin(alpha), -Math.cos(alpha)]
-      const reach = (Math.abs(side[0]) * extent.x + Math.abs(side[1]) * extent.z) / halves + studioScaleFigure.clearance
-      root = createCrew(meshes, 0).root
-      root.position.set(min.x + extent.x / halves + side[0] * reach, ground, min.z + extent.z / halves + side[1] * reach)
-      // In profile, facing the subject: a clean height reference that reads as someone inspecting it.
-      root.rotation.y = -alpha
-      const bounds = root.getHierarchyBoundingVectors(true)
-      figure = { height: bounds.max.y - bounds.min.y, ...bounds }
-    }
-    root.setEnabled(visible)
-    return visible ? figure : undefined
+  let { min, extent } = footprint
+  function stand() {
+    if (!root) return
+    const { ground, alpha } = footprint
+    const side = [Math.sin(alpha), -Math.cos(alpha)]
+    const reach = (Math.abs(side[0]) * extent.x + Math.abs(side[1]) * extent.z) / halves + studioScaleFigure.clearance
+    root.position.set(min.x + extent.x / halves + side[0] * reach, ground, min.z + extent.z / halves + side[1] * reach)
+    // In profile, facing the subject: a clean height reference that reads as someone inspecting it.
+    root.rotation.y = -alpha
+    const bounds = root.getHierarchyBoundingVectors(true)
+    figure = { height: bounds.max.y - bounds.min.y, ...bounds }
+  }
+  return {
+    show(visible: boolean) {
+      if (!visible && !root) return
+      if (!root) {
+        root = createCrew(createMeshFactory(meshes.scene, meshes.shadows), 0).root
+        stand()
+      }
+      root.setEnabled(visible)
+      return visible ? figure : undefined
+    },
+    // Moves the figure when the shown subject changes size without a rebuild.
+    place(next: Bounds) {
+      min = next.min
+      extent = next.max.subtract(next.min)
+      stand()
+    },
+  }
+}
+
+interface Bounds { min: Vector3, max: Vector3 }
+
+// The bounds of the subject meshes that are shown and enabled; hidden parts, such as cargo not yet loaded, stay out.
+export function measureShown(subject: readonly AbstractMesh[]): Bounds | undefined {
+  let min = new Vector3(Infinity, Infinity, Infinity)
+  let max = new Vector3(-Infinity, -Infinity, -Infinity)
+  for (const mesh of subject) {
+    if (!mesh.isVisible || !mesh.isEnabled()) continue
+    mesh.computeWorldMatrix(true)
+    const { boundingBox } = mesh.getBoundingInfo()
+    min = Vector3.Minimize(min, boundingBox.minimumWorld)
+    max = Vector3.Maximize(max, boundingBox.maximumWorld)
+  }
+  return min.x <= max.x ? { min, max } : undefined
+}
+
+// Live controls such as a growth slider rescale the subject without a rebuild. After each update, the
+// bounds are measured again whenever the settings changed (including the first frame), and the
+// figure follows them. Animation alone never triggers a measurement.
+export function trackSubjectSize(subject: readonly AbstractMesh[], start: Bounds, figure?: ReturnType<typeof createScaleFigure>) {
+  let bounds = start
+  let measuredFor = ''
+  return {
+    bounds: () => bounds,
+    // Width (x), depth (z) and height, in metres.
+    dimensions() {
+      const extent = bounds.max.subtract(bounds.min)
+      return [extent.x, extent.z, extent.y] as const
+    },
+    refresh(settings: Values) {
+      const key = JSON.stringify(settings)
+      if (key === measuredFor) return false
+      measuredFor = key
+      const next = measureShown(subject)
+      if (!next || (next.min.equals(bounds.min) && next.max.equals(bounds.max))) return false
+      bounds = next
+      figure?.place(bounds)
+      return true
+    },
   }
 }
 
@@ -64,16 +122,19 @@ interface ScaleStage {
   setScaleFigure?: (visible: boolean) => ScaleFigure | undefined
 }
 
-// Shows the crew figure and writes the footer's bounds, with a spoken version for screen readers.
+// Shows the crew figure and writes the footer's bounds.
 // Views where the figure cannot help (landscapes, on-island sites, fixed-focus studies, the crew itself) hide the toggle.
 export function showScaleTools(stage: ScaleStage | undefined, visible: boolean) {
-  const toggle = document.getElementById('scale-figure-option')!
+  document.getElementById('scale-figure-option')!.hidden = !stage?.setScaleFigure
+  writeBounds(stage?.dimensions, stage?.setScaleFigure?.(visible)?.height)
+}
+
+// The footer's bounds, with a spoken version for screen readers.
+export function writeBounds(dimensions?: readonly [number, number, number], crew?: number) {
   const size = document.getElementById('subject-size')!
-  toggle.hidden = !stage?.setScaleFigure
   size.replaceChildren()
-  if (!stage?.dimensions) return
-  const crew = stage.setScaleFigure?.(visible)?.height
-  const [width, depth, height] = stage.dimensions.map(metres)
+  if (!dimensions) return
+  const [width, depth, height] = dimensions.map(metres)
   const shown = document.createElement('span')
   shown.ariaHidden = 'true'
   shown.textContent = `bounds ${width} × ${depth} × ${height} m (w × d × h)${crew ? ` · crew ${metres(crew)} m` : ''}`
