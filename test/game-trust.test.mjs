@@ -286,7 +286,7 @@ test('version 4 records gain an empty trust history, and inconsistent breaches o
   v4.world.residents = { mara: { trust: 1, kept: ['mara-supper'], active: null } }
   file.write(v4)
   const migrated = file.load()
-  assert.equal(migrated.version, 6)
+  assert.equal(migrated.version, 7)
   assert.deepEqual(migrated.world.residents.mara, { ...blankRecord(), trust: 1, kept: ['mara-supper'] })
 
   const swollen = { gateRepair: { stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: 0, swelling: 'swollen' } }

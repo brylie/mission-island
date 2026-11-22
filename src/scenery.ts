@@ -2,6 +2,7 @@ import { islandRockGeometry, islandTreeGeometry, northernRockGeometry, northernT
 import { seededRandom } from './seeded-random.ts'
 import { ridgeViewpoint } from './worlds/starter/sites.ts'
 import { starterPropTop } from './worlds/starter/colliders.ts'
+import { nearFireWatch } from './fire-watch.ts'
 import { distanceToRoads, distanceToRoute, footpaths, shellglassPoint, splitstone } from './routes.ts'
 import { inFerryYard } from './worlds/starter/ferry-terminal.ts'
 import { northernScatter, starterScatter } from './worlds/starter/layout/scenery.ts'
@@ -79,7 +80,7 @@ export const islandTrees = Array.from({ length: trees.count }, (_, variant) => {
   const { x, z } = tree
   return coastRadius(tree) <= treeMaxCoastRadius && !(x < trees.harborClear.x && z < trees.harborClear.z)
     && !(x > trees.townClear.x && z > trees.townClear.z) && !(x > trees.beachClear.x && z < trees.beachClear.z)
-    && distance(tree, lookout) >= lookoutTreeClearance && distanceToRoads(tree) >= roadTreeClearance && !inFerryYard(tree, ferryTreeClearance)
+    && distance(tree, lookout) >= lookoutTreeClearance && !nearFireWatch(tree) && distanceToRoads(tree) >= roadTreeClearance && !inFerryYard(tree, ferryTreeClearance)
     && footpaths.every(({ points }) => distanceToRoute(tree, points) >= pathTreeClearance)
 })
 
@@ -94,7 +95,7 @@ export const islandRocks = Array.from({ length: rocks.count }, (_, index) => {
   return { x, z, size, angle, light: index % rocks.lightEvery === 0, ground }
 }).filter((rock) =>
   distance(rock, harbor) >= harborRockClearance && distance(rock, town) >= townRockClearance && distance(rock, beach) >= beachRockClearance
-  && distance(rock, lookout) >= lookoutRockClearance && distanceToRoads(rock) >= roadRockClearance + rock.size * islandRockHalfDepthRatio
+  && distance(rock, lookout) >= lookoutRockClearance && !nearFireWatch(rock) && distanceToRoads(rock) >= roadRockClearance + rock.size * islandRockHalfDepthRatio
   && !inFerryYard(rock, 1 + rock.size * half)
   && footpaths.every(({ points, width }) => distanceToRoute(rock, points) >= width * half + rock.size * pathRockRadiusRatio + pathRockClearance))
 

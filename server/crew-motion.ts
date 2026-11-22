@@ -1,5 +1,6 @@
 import { chargePower } from '../src/charged-actions.ts'
 import { canSpray } from '../src/actions.ts'
+import { extinguisherCharge } from '../src/wildfire.ts'
 import { heldItem } from '../src/interactions/cargo.ts'
 import { lookoutSprayReach } from '../src/jobs.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
@@ -16,6 +17,13 @@ import { stepPlayer } from '../src/simulation/movement.ts'
 import { millisecondsPerSecond } from './host-time.ts'
 
 const fireExtinguishSeconds = 5
+// A full extinguisher sprays for this long before it needs a refill at a fire station.
+const extinguisherSpraySeconds = 16
+
+interface SprayTargets {
+  completeFire: () => void
+  wildfire: (player: Snapshot['players'][number], tickSeconds: number) => boolean
+}
 
 export function prepareCrewMotion(member: CrewMember, active: boolean, now: number) {
   const { player } = member
@@ -47,7 +55,7 @@ export function walkCrew(
   connected: boolean,
   now: number,
   tickSeconds: number,
-  completeFire: () => void,
+  spray: SprayTargets,
   explore: (player: Snapshot['players'][number]) => void,
 ) {
   const { player, input } = member
@@ -66,7 +74,7 @@ export function walkCrew(
   player.reaching = !item && (member.primary?.kind === 'reach' || now < member.reachUntil)
   player.rightHandRaised = !pushing && input.raiseRightHand === true && !player.swimming && !player.sleeping
     && item?.kind !== 'crate' && !player.throwing
-  sprayExtinguisher(state, member, item, tickSeconds, completeFire)
+  sprayExtinguisher(state, member, item, tickSeconds, spray)
 }
 
 function sprayExtinguisher(
@@ -74,14 +82,22 @@ function sprayExtinguisher(
   member: CrewMember,
   item: Item | undefined,
   tickSeconds: number,
-  completeFire: () => void,
+  targets: SprayTargets,
 ) {
   const { player, input, primary } = member
-  if (!item || !canSpray(state, player, item)) return
+  if (!item || !canSpray(player, item)) return
   if (!input.spray && !(primary?.kind === 'spray' && primary.itemId === item.id)) return
   item.spraying = true
-  if (distance(player, lookout) >= lookoutSprayReach) return
-  player.heading = Math.atan2(lookout.x - player.x, lookout.z - player.z)
-  state.fire = Math.max(0, state.fire - tickSeconds / fireExtinguishSeconds)
-  if (state.fire === 0) completeFire()
+  // Contents drain only while the spray reaches a fire, so a practice burst costs nothing.
+  const drain = () => {
+    item.charge = Math.max(0, extinguisherCharge(item) - tickSeconds / extinguisherSpraySeconds)
+  }
+  if (state.mission === 'fire' && distance(player, lookout) < lookoutSprayReach) {
+    drain()
+    player.heading = Math.atan2(lookout.x - player.x, lookout.z - player.z)
+    state.fire = Math.max(0, state.fire - tickSeconds / fireExtinguishSeconds)
+    if (state.fire === 0) targets.completeFire()
+    return
+  }
+  if (targets.wildfire(player, tickSeconds)) drain()
 }

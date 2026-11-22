@@ -3,7 +3,8 @@ import { FreeCamera } from '@babylonjs/core/Cameras/freeCamera'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { Scene } from '@babylonjs/core/scene'
-import { groundHeight, waterLevel } from './terrain'
+import { fireWatchRoofBounds } from './fire-watch'
+import { fireWatchBaseHeight, groundHeight, waterLevel } from './terrain'
 import { buildings, houseRoofRise } from './world'
 import type { LookSettings } from './look-options-ui'
 import { ridgeHeading } from './worlds/starter/ridge-scout'
@@ -55,10 +56,13 @@ const followFogEnd = 155
 type RidgeView = 'preflight' | 'flight'
 
 // Include each roof overhang so the camera retracts before it reaches a wall or roof.
-const cameraObstacles = buildings.map(({ x, z, w, h, d }) => ({
-  min: [x - w / halfWidthDivisor - wallOrbitPadding, buildingFloor, z - d / halfWidthDivisor - wallOrbitPadding],
-  max: [x + w / halfWidthDivisor + wallOrbitPadding, h + houseRoofRise + roofOrbitPadding, z + d / halfWidthDivisor + wallOrbitPadding],
-}))
+const cameraObstacles = [
+  ...buildings.map(({ x, z, w, h, d }) => ({
+    min: [x - w / halfWidthDivisor - wallOrbitPadding, buildingFloor, z - d / halfWidthDivisor - wallOrbitPadding],
+    max: [x + w / halfWidthDivisor + wallOrbitPadding, h + houseRoofRise + roofOrbitPadding, z + d / halfWidthDivisor + wallOrbitPadding],
+  })),
+  fireWatchRoofBounds(fireWatchBaseHeight(), roofOrbitPadding),
+]
 
 function visibleArm(origin: Vector3, destination: Vector3) {
   const start = [origin.x, origin.y, origin.z]

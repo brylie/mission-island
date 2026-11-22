@@ -22,9 +22,8 @@ test('delivering all crates and spraying the fire unlocks repeatable jobs withou
   })
   const a = h.join(tokens[0])
   const b = h.join(tokens[1])
-  b.request('interact')
-  h.advance()
-  assert.equal(b.state.items[3].holder, null)
+  // Extinguishers are free to take at any time, even before the lookout fire.
+  assert.match(actionHint(b.state, b.player)[1], /Pick up extinguisher/)
   for (let i = 0; i < 3; i++) {
     a.request('interact')
     h.advance()
@@ -45,7 +44,8 @@ test('delivering all crates and spraying the fire unlocks repeatable jobs withou
   assert.equal(b.state.crewCoins, a.state.crewCoins)
   assert.equal(a.state.lastStarterPay, 'fire')
   assert.equal(b.state.lastStarterPay, 'fire')
-  assert.equal(a.state.items[3].holder, null)
+  // The crewmate who put the fire out keeps the extinguisher; it is island equipment, not a mission prop.
+  assert.equal(a.state.items[3].holder, 1)
   const before = a.player
   a.request('reset')
   h.advance()
@@ -120,7 +120,7 @@ test('an older completed shift pools legacy wallets and keeps its order and farm
   assert.equal(newcomer.state.crewCoins, 22)
   file.write(h.game.snapshotForSave())
   const migrated = file.load()
-  assert.equal(migrated.version, 6)
+  assert.equal(migrated.version, 7)
   assert.equal(migrated.lastStarterPay, 'fire')
   assert.ok(migrated.crew.every(({ player }) => !('coins' in player)))
   assert.equal(createGame({ save: migrated }).crewCoins, 22)

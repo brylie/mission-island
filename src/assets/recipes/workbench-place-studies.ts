@@ -23,6 +23,19 @@ export const lookoutReview = {
   incidentFire: 0.77,
 } as const
 
+// The Fire Watch study frames the tower with a test fire on Lookout ridge, west of it.
+export const fireWatchReview = {
+  duration: 8,
+  angle: -0.95,
+  beta: 1.12,
+  radius: 34,
+  focusHeight: 4.2,
+  hour: 10.5,
+  fireSite: 'lookout-ridge',
+  scarDawns: { ash: 0, shoots: 1, established: 3 },
+  heat: 0.85,
+} as const
+
 export const residentRehearsal = {
   duration: 6,
   hour: [10, 0, 23.75, 0.25],

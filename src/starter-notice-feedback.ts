@@ -7,6 +7,7 @@ import type { FishingResult, ServerMessage, Snapshot } from './protocol'
 import { neighborFeedback } from './resident-notices'
 import { shellglassTideAt } from './shellglass-tide'
 import { starterPay } from './world'
+import { wildfireFeedback } from './wildfire-card'
 
 const fishingFeedbackDurationMs = 1900
 const farmFeedbackDurationMs = 4200
@@ -49,6 +50,8 @@ export function starterNoticeFeedback(incoming: ServerMessage, localId: number, 
       return { key: '', label: materialsFeedback(incoming), until: performance.now() + materialsFeedbackDurationMs }
     case 'order-pay':
       return { key: `+${incoming.coins} coins`, label: `${jobs[incoming.id].title} complete · Crew bank`, until: performance.now() + jobPaymentDurationMs }
+    case 'wildfire':
+      return wildfireFeedback(incoming, localId)
     case 'starter-seed':
       return { key: '+1 seed', label: 'Plant it at Island Farm', until: performance.now() + seedPurchaseDurationMs }
     default: return neighborly

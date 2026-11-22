@@ -17,6 +17,7 @@ import { updateHeldItems } from './items.ts'
 import { createFreight } from './freight.ts'
 import { createJournal } from './journal.ts'
 import { createOrders } from './orders.ts'
+import { burningHotspots } from '../src/wildfire.ts'
 import { toggleSeat, updateRiders } from './riders.ts'
 import type { IslandSave } from './save.ts'
 import { farmingQualified } from '../src/farm-orders.ts'
@@ -78,7 +79,7 @@ function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoP
 export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest }: GameOptions = {}) {
   const physics = createCargoPhysics()
   const juniper = createJuniperHabitat(), driftwood = createDriftwoodSchool(clock() >>> 0)
-  const world = restoreIsland(physics, juniper, driftwood.frame(), save)
+  const world = restoreIsland(physics, juniper, driftwood.frame(), save, random)
   const { state, growth } = world
   const trial = playtest && settleTrial(state, physics, prepareTrial(state, playtest))
   let wildlifeTick = 0
@@ -87,7 +88,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint)
   const journal = createJournal(state, checkpoint)
   const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint)
-  const { interactions, gate, residents, farm }
+  const { interactions, gate, residents, farm, wildfire }
     = createGameInteractions(world, physics, { crew, orders, freight, journal, clock, checkpoint })
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
 
@@ -117,14 +118,15 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         member.reachUntil = 0
         continue
       }
-      walkCrew(state, member, before, connected, now, tickSeconds, orders.completeFire, journal.explore)
+      walkCrew(state, member, before, connected, now, tickSeconds, { completeFire: orders.completeFire, wildfire: wildfire.spray }, journal.explore)
       farm.tick(player)
     }
+    wildfire.tick(tickSeconds)
     updateHeldItems(state)
     state.driftwood = driftwood.step(state.players, state.skiff)
     // Animal motion follows real simulation ticks, even when the crew sleeps through the night.
     if (++wildlifeTick % juniperUpdateIntervalTicks === 0) {
-      state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping))
+      state.juniper = juniper(wildlifeTick * tickSeconds, state.weather, state.players.filter((p) => p.connected && !p.sleeping), burningHotspots(state.events.fire))
     }
     return state
   }

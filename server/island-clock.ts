@@ -1,15 +1,17 @@
 import { growthSeconds } from '../src/farm.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { daylight, isNight, nextDawn, weatherAt } from '../src/weather.ts'
+import { restockExtinguishers } from './extinguishers.ts'
 
 const plantingRainThreshold = 0.35
 
 export function advanceIsland(
-  state: Pick<Snapshot, 'farm' | 'islandTime' | 'players' | 'weather'>,
+  state: Pick<Snapshot, 'farm' | 'islandTime' | 'players' | 'weather' | 'items'>,
   growth: number[],
   tickSeconds: number,
   checkpoint?: () => void,
 ) {
+  const before = state.islandTime
   state.islandTime += tickSeconds
   state.weather = weatherAt(state.islandTime)
   const connectedCrew = state.players.filter((player) => player.connected)
@@ -18,6 +20,7 @@ export function advanceIsland(
     state.weather = weatherAt(state.islandTime)
     checkpoint?.()
   }
+  restockExtinguishers(state, before)
   if (!isNight(state.weather.hour)) {
     for (const player of connectedCrew) player.sleeping = false
   }

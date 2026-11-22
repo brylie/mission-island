@@ -1,4 +1,5 @@
 import type { Item, Player, Snapshot } from './protocol'
+import { extinguisherCharge } from './wildfire.ts'
 import { market, marketTradeReach, nearbyPlot, seedPrice } from './farm.ts'
 import { distance, truckSeatSpeed } from './world.ts'
 import { heldItem } from './interactions/cargo.ts'
@@ -14,9 +15,9 @@ const daylightGrowthStartsHour = 6
 const daylightGrowthEndsHour = 18
 const truckBoardReach = 4.5
 
-export function canSpray(state: Snapshot, player: Player, item?: Item) {
-  return state.mission === 'fire' && !player.seat
-    && item?.kind === 'extinguisher'
+// An extinguisher sprays anywhere until it runs dry.
+export function canSpray(player: Player, item?: Item) {
+  return !player.seat && item?.kind === 'extinguisher' && extinguisherCharge(item) > 0
 }
 
 export function inSkiff(seat: Player['seat']) {

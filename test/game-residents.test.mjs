@@ -206,7 +206,7 @@ test('Bram’s staged crate completes his favor, and during a delivery order the
   const bram = byId('bram')
   const { h, a } = startAfterShift(t, 'bram', { arrange: allCratesDelivered })
   assert.equal(openOffer(bram, a.state)?.id, 'bram-staging')
-  assert.ok(!interactions(a.state, a.player).some(({ action }) => action === 'pick-up'), 'no crate is cargo before Bram asks')
+  assert.ok(!interactions(a.state, a.player).some(({ action, subject }) => action === 'pick-up' && a.state.items[subject].kind === 'crate'), 'no crate is cargo before Bram asks')
   choose(a, 'accept-favor', 'bram')
   h.advance()
   const crate = a.state.items[0]
@@ -281,7 +281,7 @@ test('version 3 saves carry Wren’s trust into the resident records, and malfor
   }
   file.write(v3({ stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: 0 }, 1, { resident: 'wren', coins: 5 }))
   const mended = file.load()
-  assert.equal(mended.version, 6)
+  assert.equal(mended.version, 7)
   assert.deepEqual(mended.world.residents, { ...initialResidents(starterResidents), wren: { ...blankRecord(), trust: 1, kept: ['wren-gate'], active: null } })
   assert.deepEqual(mended.world.lastFavorPay, { resident: 'wren', favor: 'wren-gate', coins: 5 })
   file.write(v3({ stage: 'inspected', pinHolder: null, acceptedAt: 0 }, 0))

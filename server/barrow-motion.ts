@@ -1,3 +1,4 @@
+import { fireWatchFloor } from '../src/fire-watch.ts'
 import { barrowClearance, barrowContains, pushedBarrowPose } from '../src/barrow.ts'
 import { gateBlockers, solidTop } from '../src/gate-repair.ts'
 import type { Player, Snapshot } from '../src/protocol.ts'
@@ -17,7 +18,8 @@ export function canPushBarrow(state: Snapshot, player: Player, destination: Pose
   const gate = gateBlockers(state)
   return barrowClearance.every(({ x, z, radius }) => {
     const point = offset(cart, x, z)
-    return canOccupyGround(point, radius, 0) && waterDepth(point) < maxWadingDepth
+    // The barrow stays off the Fire Watch stairs and deck.
+    return canOccupyGround(point, radius, 0) && waterDepth(point) < maxWadingDepth && fireWatchFloor(point) === undefined
       && Math.abs(walkingHeight(point) - ground) < maxGroundStep
       && !isInsideTruck(state.truck, point, radius)
       && solidTop(gate, point, radius) === -Infinity && looseCargoTop(state.items, point, radius) === -Infinity

@@ -64,6 +64,7 @@ const authoredWorldLayouts = [
   'src/worlds/saltwind/layout/signs.ts',
   'src/worlds/saltwind/layout/sites.ts',
   'src/worlds/saltwind/layout/terrain.ts',
+  'src/worlds/starter/layout/fire-sites.ts',
   'src/worlds/starter/layout/places.ts',
   'src/worlds/starter/layout/routes.ts',
   'src/worlds/starter/layout/scenery.ts',

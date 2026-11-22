@@ -10,6 +10,7 @@ import { createFarmOrderView } from './farm-order-view'
 import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutIncident } from './lookout-recovery-art'
+import { createWildfireView } from './wildfire-view'
 import { moveTo, waterActors } from './island-render-pose'
 import { createCrewPresentation } from './crew-presentation'
 import { createIslandCamera } from './island-camera'
@@ -88,9 +89,9 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     return { node, cargoTag }
   })
 
-  const extinguisherIds = itemStarts.flatMap(({ kind }, id) => kind === 'extinguisher' ? [id] : [])
-  const sprays = extinguisherIds.map((_, index) => createExtinguisherSpray(scene, rendering.spraySeed + index))
+  const sprays = new Map(itemStarts.flatMap(({ kind }, id) => kind === 'extinguisher' ? [[id, createExtinguisherSpray(scene, rendering.spraySeed + id)] as const] : []))
   const showLookout = createLookoutIncident(meshes)
+  const showWildfire = createWildfireView(meshes, scene)
   const placesFx = createStarterPlaces(meshes)
   const actionFx = createStarterActionEffects(scene, { boat, crew, farmTools, paddles: skiffGear.map(({ gear }) => gear), ferns })
 
@@ -145,9 +146,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         if (job?.kind === 'delivery') cargoTag.material = meshes.paint(job.color)
       }
       const holder = state.players.find((player) => player.id === item.holder)
-      const spray = sprays[extinguisherIds.indexOf(item.id)]
-      const locked = item.kind === 'extinguisher' && state.mission !== 'fire'
-      if (item.delivered || holder?.seat || locked) {
+      const spray = sprays.get(item.id)
+      if (item.delivered || holder?.seat) {
         node.setEnabled(false)
         spray?.(time, node, false)
         continue
@@ -197,6 +197,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       firePad.setEnabled(state.mission === 'fire')
       equipmentPad.setEnabled(state.mission === 'fire')
       showLookout(state, time)
+      showWildfire(state, time)
     }
     else {
       marketPad.setEnabled(false)

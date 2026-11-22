@@ -70,6 +70,8 @@ test('both crew see extinguishing, retain the ash after loading, and see shoots 
   t.after(() => rmSync(folder, { recursive: true, force: true }))
   const file = islandSaveFile(folder, 5173)
   const saved = h.game.snapshotForSave()
+  // The crew set their extinguishers down before turning in.
+  for (const item of saved.world.items) if (item.kind === 'extinguisher') item.holder = null
   for (const member of saved.crew) {
     const point = door(member.player.id)
     Object.assign(member.player, point, { y: groundHeight(point), grounded: true })

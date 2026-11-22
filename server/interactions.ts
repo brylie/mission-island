@@ -4,7 +4,7 @@ import { heldItem } from '../src/interactions/cargo.ts'
 import type { Snapshot } from '../src/protocol.ts'
 import { crateHalfSize, type createCargoPhysics } from '../src/simulation/cargo.ts'
 import { canOccupyGround } from '../src/simulation/movement.ts'
-import { groundHeight, maxWadeDepth, waterDepth } from '../src/terrain.ts'
+import { groundHeight, maxWadeDepth, walkingHeight, waterDepth } from '../src/terrain.ts'
 import { itemStarts, spawns } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
 import { itemGroundClearance, restingY, updateHeldItems } from './items.ts'
@@ -51,7 +51,7 @@ export function createInteractions(
       else if (item.kind === 'crate') physics.relocate(item, itemStarts[item.id].start)
       else {
         const point = safe ? player : itemStarts[item.id].start
-        Object.assign(item, { x: point.x, z: point.z, y: safe ? groundHeight(point) + itemGroundClearance : restingY(item.id), spraying: false })
+        Object.assign(item, { x: point.x, z: point.z, y: safe ? walkingHeight(point) + itemGroundClearance : restingY(item.id), spraying: false })
       }
     }
     const home = spawns[player.id]
