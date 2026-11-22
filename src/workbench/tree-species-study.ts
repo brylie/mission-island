@@ -76,13 +76,13 @@ function describe(placed: Placed[]) {
   const groups = new Map<string, { name: string, budget: string, triangles: number[] }>()
   for (const name of treeTiers) for (const { options, template } of placed) {
     if (options.tier !== name) continue
-    const budget = template.budget.join('–')
+    const budget = `${template.budgetClass} budget ${template.budget.join('–')}`
     const group = groups.get(name + budget) ?? { name, budget, triangles: [] }
     group.triangles.push(template.triangles)
     groups.set(name + budget, group)
   }
   const tiers = [...groups.values()].map(({ name, budget, triangles }) =>
-    `${name} ${Math.min(...triangles).toLocaleString()}–${Math.max(...triangles).toLocaleString()} (budget ${budget})`).join(' · ')
+    `${name} ${Math.min(...triangles).toLocaleString()}–${Math.max(...triangles).toLocaleString()} (${budget})`).join(' · ')
   return `${tiers} triangles per template · ${placed.length} templates · first: ${size}`
 }
 

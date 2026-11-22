@@ -2,7 +2,7 @@ import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import type { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../../island-meshes'
-import { generateTreeGeometry, templateBudget, type SwayHooks } from './tree-geometry'
+import { generateTreeGeometry, templateBudget, type SwayHooks, type TreeGeometry } from './tree-geometry'
 import type { TreeCollision, TreeTemplateOptions } from './tree-catalog'
 import type { MeshData } from './tree-mesh'
 
@@ -26,6 +26,8 @@ export interface TreeTemplate {
   triangles: number
   // The [lowest, highest] triangle count this species and tier should land in.
   budget: readonly [number, number]
+  // Which budget table the template answers to, so mixed rows can say which limit applies.
+  budgetClass: TreeGeometry['budget']
   sway: SwayHooks
 }
 
@@ -57,6 +59,7 @@ export function buildTreeTemplate(meshes: MeshFactory, options: TreeTemplateOpti
     crownRadius: geometry.crownRadius,
     triangles: geometry.triangles,
     budget: templateBudget(geometry, options.tier),
+    budgetClass: geometry.budget,
     sway: geometry.sway,
   }
 }
