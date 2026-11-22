@@ -1,7 +1,8 @@
 import { blend, valueNoise } from '../../math/noise.ts'
 import { smoothstep } from '../../math/smoothstep.ts'
 import type { Point } from '../../world.ts'
-import { shoreStations, starterBeachLandforms } from './layout/terrain.ts'
+import { createStarterBeachWidth } from './coastline.ts'
+import { beachWidthLayout, shoreStations, starterBeachLandforms } from './layout/terrain.ts'
 
 type Footprint = Point & { alongM: number, acrossM: number, heading: number }
 
@@ -17,6 +18,7 @@ const wetSandReachM = 0.073
 const saltGrassDryClearanceM = 0.14
 const sandDominance = 0.5
 const submergedRockFadeM = 0.24
+const beachWidthAt = createStarterBeachWidth(beachWidthLayout.seed)
 
 function oriented({ heading, ...footprint }: Footprint) {
   return { ...footprint, cos: Math.cos(heading), sin: Math.sin(heading) }
@@ -63,7 +65,7 @@ function edgeNoise({ x, z }: Point) {
 const meadow = { sand: 0, rock: 0, wet: 0, duneGrass: 0 }
 const seabed = { sand: 1, rock: 0, wet: 1, duneGrass: 0 }
 
-export function sampleBeach(point: Point, radius: number, rayLengthM: number, height: number, slope: number) {
+export function sampleBeach(point: Point, { bearing, radius, rayLengthM }: { bearing: number, radius: number, rayLengthM: number }, height: number, slope: number) {
   if (radius < minimumCoastalRadius) return meadow
   if (radius > shoreStations.shoal.radius) return seabed
   const inlandM = (1 - radius) * rayLengthM
@@ -71,7 +73,8 @@ export function sampleBeach(point: Point, radius: number, rayLengthM: number, he
   const exposed = influence(point, rockShore)
   const noise = edgeNoise(point)
   const dune = influence(point, duneSand)
-  const widthM = blend((1 - shoreStations.sandEdge.radius) * rayLengthM + broad * starterBeachLandforms.driftwood.extraWidthM
+  const baseWidthM = beachWidthAt(bearing, (1 - shoreStations.sandEdge.radius) * rayLengthM)
+  const widthM = blend(baseWidthM + broad * starterBeachLandforms.driftwood.extraWidthM
     - slope * steepSlopeWidthLossM, exposedSandWidthM, exposed) + noise
   const beachCover = 1 - smoothstep((inlandM - widthM + fringeHalfWidthM) / (fringeHalfWidthM + fringeHalfWidthM))
   const duneCover = smoothstep(dune * shelteredSandStrength + noise / starterBeachLandforms.duneSand.acrossM)

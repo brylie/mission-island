@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { sandpiperPose } from '../src/sandpiper-motion.ts'
 import { boundaryBuoys, buoyBoundaryPoint, coastPoint, coastRadius, coastalSurface, groundHeight, waterLevel, withinSkiffBoundary } from '../src/terrain.ts'
-import { createStarterCoast, starterCoastSeed } from '../src/worlds/starter/coastline.ts'
+import { createStarterBeachWidth, createStarterCoast, starterCoastSeed } from '../src/worlds/starter/coastline.ts'
+import { beachWidthLayout } from '../src/worlds/starter/layout/terrain.ts'
 import { onBeachTowel } from '../src/worlds/starter/sites.ts'
 import { driftwoodSandpipers } from '../src/worlds/starter/layout/wildlife.ts'
 
@@ -37,6 +38,45 @@ test('landform waterlines and visible buoys agree with terrain and navigation', 
     assert.ok(withinSkiffBoundary({ x: buoy.x * 0.999, z: buoy.z * 0.999 }))
     assert.ok(!withinSkiffBoundary({ x: buoy.x * 1.001, z: buoy.z * 1.001 }))
   }
+})
+
+test('seeded beach widths vary smoothly around the island and preserve protected margins', () => {
+  const widthAt = createStarterBeachWidth(beachWidthLayout.seed)
+  const replay = createStarterBeachWidth(beachWidthLayout.seed)
+  const alternate = createStarterBeachWidth(beachWidthLayout.seed + 1)
+  const turn = Math.PI * 2
+  const bearings = Array.from({ length: 1_440 }, (_, i) => i * turn / 1_440)
+  const widths = bearings.map((bearing) => widthAt(bearing, 5))
+  assert.deepEqual(widths, bearings.map((bearing) => replay(bearing, 5)))
+  assert.ok(bearings.some((bearing) => Math.abs(widthAt(bearing, 5) - alternate(bearing, 5)) > 2))
+  for (const [i, width] of widths.entries()) {
+    assert.ok(Math.abs(width - widths[(i + 1) % widths.length]) < 0.8)
+    assert.ok(Math.abs(width - widthAt(bearings[i] + turn, 5)) < 1e-9)
+  }
+  for (const bearing of [231, 314]) {
+    assert.equal(widthAt(bearing * Math.PI / 180, 5), 5)
+    assert.equal(alternate(bearing * Math.PI / 180, 7), 7)
+  }
+})
+
+test('exposed points and sheltered coves have different sand widths on the production coast', () => {
+  function sandWidth(bearing) {
+    const angle = bearing * Math.PI / 180
+    const waterline = coastPoint(angle)
+    const rayLengthM = Math.hypot(waterline.x, waterline.z)
+    let width = 0
+    for (let metres = 0.25; metres <= 20; metres += 0.25) {
+      const point = coastPoint(angle, 1 - metres / rayLengthM)
+      if (coastalSurface(point).sand < 0.5) break
+      width = metres
+    }
+    return width
+  }
+  assert.ok(sandWidth(40) > 12, 'the east cove holds a broad strand')
+  assert.ok(sandWidth(70) < 2, 'the Windstone point pinches out')
+  assert.ok(sandWidth(140) > 9, 'sand collects again in the northwestern indentation')
+  assert.ok(sandWidth(190) < 3, 'the west shoulder has a narrow strip')
+  assert.ok(sandWidth(255) > 8, 'the beach outside the southern harbor widens')
 })
 
 test('Driftwood has a broad sand shelf, inland vegetated dunes and a rock pinch at Splitstone', () => {

@@ -49,6 +49,19 @@ export const coastlineLayout = {
   ],
 } as const
 
+export const beachWidthLayout = {
+  seed: 2308,
+  meanM: 6.0,
+  minM: 0.75,
+  maxM: 13.5,
+  landformInfluence: 0.28,
+  noiseBands: [
+    { wavelength: 88, amplitude: 3.8 },
+    { wavelength: 41, amplitude: 1.75 },
+    { wavelength: 18, amplitude: 0.78 },
+  ],
+} as const
+
 export const tidePool = { x: 46, z: -33 }
 export const meadowHill = { x: -25, z: 23 }
 export const meadowFoot = { x: -26, z: 12 }

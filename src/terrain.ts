@@ -47,7 +47,7 @@ export function buoyBoundaryPoint(angle: number): Point {
 export const boundaryBuoys = Array.from({ length: buoyCount }, (_, i) => buoyBoundaryPoint(i * Math.PI / buoyAngleDivisor))
 
 export function withinSkiffBoundary(point: Point) {
-  const angle = Math.atan2(point.z / (island.length / halves), point.x / (island.width / halves))
+  const angle = coastBearing(point)
   const edge = buoyBoundaryPoint(angle)
   return Math.hypot(point.x, point.z) <= Math.hypot(edge.x, edge.z)
 }
@@ -67,10 +67,16 @@ export function fernfallSection(z: number) {
   return { z, y: a.y + (b.y - a.y) * ease, halfWidth: a.halfWidth + (b.halfWidth - a.halfWidth) * ease }
 }
 
+function coastBearing(point: Point) {
+  return Math.atan2(point.z / (island.length / halves), point.x / (island.width / halves))
+}
+
+function coastRadiusAt(point: Point, bearing: number) {
+  return Math.hypot(point.x / (island.width / halves), point.z / (island.length / halves)) / shoreShape(bearing)
+}
+
 export function coastRadius(point: Point) {
-  const x = point.x / (island.width / halves)
-  const z = point.z / (island.length / halves)
-  return Math.hypot(x, z) / shoreShape(Math.atan2(z, x))
+  return coastRadiusAt(point, coastBearing(point))
 }
 
 interface Landform { centre: Point, width: number, length: number, height: number }
@@ -142,10 +148,11 @@ function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {
 }
 
 export function coastalSurface(point: Point, height?: number) {
-  const radius = coastRadius(point)
+  const bearing = coastBearing(point)
+  const radius = coastRadiusAt(point, bearing)
   const rayLengthM = radius > 0 ? Math.hypot(point.x, point.z) / radius : 0
   const ground = height ?? baseGroundHeight(point, radius) + duneRelief(point)
-  return sampleBeach(point, radius, rayLengthM, ground, crossShoreSlope(point, radius, rayLengthM))
+  return sampleBeach(point, { bearing, radius, rayLengthM }, ground, crossShoreSlope(point, radius, rayLengthM))
 }
 
 export function waterDepth(point: Point) {

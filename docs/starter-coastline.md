@@ -24,6 +24,15 @@ The [shared noise functions](../src/math/noise.ts) layer periodic, centered valu
 
 The terrain, maps, depth texture and host sample the same contour. The skiff boundary remains 75 m farther out along each ray. The 24 visible buoys and the map boundary both use the same limit as the host's hull checks. A returning player inside the boundary can resume as a swimmer if the shore moved under them. The host moves an on-foot player outside the new boundary to their cottage and returns a stranded skiff to its harbor launch.
 
+## Beach widths around the island
+
+Beach width uses the alongshore survey with its own seed, **2308**. Periodic noise at roughly 88, 41, and 18 m varies the width from reach to reach. The authored points narrow it and the indentations widen it. World-space noise in 6.5 m and 2.7 m cells adds smaller breaks where sand meets meadow at walking distance. Those are static terrain rules inspired by the effect of coastal shape and wave exposure on where beach sand collects. [Pocket-beach field study](https://www.frontiersin.org/journals/marine-science/articles/10.3389/fmars.2020.00445/full)
+
+Measured inland along the terrain rays, the east cove has about 15 m of sand, the northwest indentation about 12 m, and the shore southeast of the ferry about 11 m. The exposed west shoulder has a strip about 1 m wide, and the sand pinches out near the tip of Windstone Point.
+
+- [Aerial survey](http://localhost:5173/workbench.html#ridge-glider-scout?stage=island). Focus the viewport and press **C** to look down at the coast.
+- [East cove](http://localhost:5173/workbench.html?view=1&focus=96,55&target=96,0,55&orbit=0.37,1.38,13,0.70&sky=13,0,8&display=0,0#landscape) · [West shoulder](http://localhost:5173/workbench.html?view=1&focus=-71,-12&target=-71,0,-12&orbit=3.28,1.33,13,0.7&sky=13,0,8&display=0,0#landscape) · [Windstone Point](http://localhost:5173/workbench.html?view=1&focus=92,173.5&target=92,0,173.5&orbit=0.95,1.37,13,0.68&sky=13,0,8&display=0,0#landscape)
+
 ## Driftwood dunes and Splitstone
 
 The parasols stand on a broad sandy shelf. Inland of the eastern parasol, sand reaches into a low group of dunes around (39.5, −25.7). Look for narrow blades of marram on the crests and a flock of six sandpipers running and probing on the damp beach below. Sand narrows against the exposed sandstone at Splitstone. The two worn trails fade into sand. Follow the dry landward rim past the Shellglass tide staff and use the southern opening into the Splitstone cleft.
