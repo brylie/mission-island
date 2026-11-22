@@ -86,9 +86,13 @@ export function createSchool(seed: number, nudge = false) {
   })
   if (nudge) fish[0].x += trialNudgeM
   const leaderTrail: Fish[] = []
-  return { fish, random, wander, leaderTrail, cruiseHeading, leader: -1, scattered: false, calm: 0, encounters: 0, time: 0 }
+  return { fish, random, wander, leaderTrail, cruiseHeading, leader: -1, scattered: false, calm: 0, encounters: 0, time: 0, regroupingUntil: 0 }
 }
 type School = ReturnType<typeof createSchool>
+
+export function schoolIsRegrouping(school: School) {
+  return school.fish.length > 1 && school.leader >= 0 && school.time < school.regroupingUntil
+}
 
 const spacingBehindLeaderM = 1.05
 const cruiseSpacingM = 0.85
@@ -278,6 +282,7 @@ function swim(fish: Fish, school: School, threats: readonly SchoolThreat[], habi
 
 const calmBeforeRegroupingS = 0.35
 const leaderClearanceLookAheadS = 0.25
+const regroupingObservationSeconds = 4
 
 export function advanceSchool(school: School, threats: readonly SchoolThreat[], habitat?: SwimHabitat) {
   school.time += schoolStep
@@ -309,6 +314,8 @@ export function advanceSchool(school: School, threats: readonly SchoolThreat[], 
       if (eligible.length) {
         school.leader = eligible[Math.floor(school.random() * eligible.length)].id
         school.scattered = false
+        // The followers are gathering again. Leave time for a watcher to jot a note.
+        school.regroupingUntil = school.time + regroupingObservationSeconds
       }
     }
   }

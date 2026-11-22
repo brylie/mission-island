@@ -90,7 +90,7 @@ The delivery and lookout fire missions unlock work outfits for both crewmates. E
 
 The island clock runs one day every eight real minutes. At night, press **E** at your cottage door. Dawn begins when every connected player turns in. Press **E** again or walk away to cancel while waiting.
 
-Both of you share one field journal, opened with **J**. It ticks off a fish when you land it and a place when you walk there. Aim at an animal, a plant or a landmark and press **E** to record it. Which fish you land depends on the hour, the weather and the water. See [field journal](mechanics/field-journal.md).
+Both of you share one field notebook, opened with **J**. It notes a fish when you land it and a place when you discover it. Aim at an animal, a plant, or a landmark and press **E** to jot a note. New subjects and behaviors earn shared observation XP. See [field journal](mechanics/field-journal.md).
 
 Follow the northern hills to discover landmarks. Their names fade with distance in the follow view and stay on your island overview after discovery. The minimap keeps the coastline, biomes, route lines, and a simpler set of symbols. One world unit is one metre. The buoy line sits 75 metres offshore.
 

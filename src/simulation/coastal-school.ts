@@ -1,5 +1,5 @@
 import type { Point } from '../world.ts'
-import { advanceSchool, createSchool, poolRadius, threatBuffer, type SchoolThreat, type SwimHabitat } from './fish-school.ts'
+import { advanceSchool, createSchool, poolRadius, schoolIsRegrouping, threatBuffer, type SchoolThreat, type SwimHabitat } from './fish-school.ts'
 
 const minimumSwimDepthM = 0.48
 const shoreProbeSeconds = 0.65
@@ -50,6 +50,7 @@ export function createCoastalSchool(seed: number, origin: Point, waterDepth: (po
   function frame() {
     return {
       leader: school.leader,
+      regrouping: schoolIsRegrouping(school),
       fish: school.fish.map((f) => {
         const { x, z } = toWorld(f)
         return { x: round(x), z: round(z), heading: round(f.heading), startled: f.alarm > 0 }

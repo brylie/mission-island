@@ -8,7 +8,7 @@ import { poolSand, roundedPebble } from '../assets/strand'
 import { schoolStage } from '../assets/geometry/workbench-school-stage'
 import { createSchoolFish } from '../assets/fish'
 import { createHarborBoat } from '../assets/waterfront'
-import { poolRadius } from '../simulation/fish-school'
+import { poolRadius, schoolIsRegrouping } from '../simulation/fish-school'
 import type { Point } from '../world'
 import { createSchoolTrial, schoolTrailSamples, trialSeconds } from './school-trial'
 import { control, type Entry } from './subject'
@@ -139,7 +139,7 @@ export const schoolStudy: Entry = {
       ring.setEnabled(Boolean(settings.leaderRing) && school.leader >= 0)
       if (school.leader >= 0) ring.position.copyFrom(fish[school.leader].position)
       const phase = school.leader >= 0
-        ? 'Following fish ' + (school.leader + 1)
+        ? (schoolIsRegrouping(school) ? 'Regrouping around fish ' : 'Following fish ') + (school.leader + 1)
         : startled ? 'Scattering' : school.scattered ? 'Waiting for calm' : 'Cruising'
       observe(routeFull
         ? 'Route full. Rewind to edit an earlier move or reset the trial.'

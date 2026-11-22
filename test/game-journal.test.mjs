@@ -116,7 +116,7 @@ test('a resting gull is noted with what it was doing, and a later watcher adds o
     save.world.journal = journalWith({ 'sight:gull': { t: 0, by: 1 } })
   } })
   const c = seen.join(tokens[0])
-  assert.ok(interactions(c.state, c.player).some(({ label }) => label === 'Add this behavior to the journal'))
+  assert.ok(interactions(c.state, c.player).some(({ label }) => label === 'Jot a behavior note'))
   record(c, gull)
   seen.advance()
   assert.deepEqual(c.state.journal.entries['sight:gull']?.first, { t: 0, by: 1 })

@@ -273,6 +273,8 @@ kbd {
 }
 .prompt {
   bottom: 16px;
+  width: max-content;
+  max-width: calc(100% - 32px);
   display: flex;
   align-items: center;
   gap: 9px;
@@ -283,9 +285,9 @@ kbd {
   box-shadow: 0 3px 12px #183e4c54;
   font-size: 12px;
   font-weight: 850;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
-.prompt kbd { min-width: 23px; padding: 4px 6px; }
+.prompt kbd { min-width: 23px; padding: 4px 6px; white-space: nowrap; }
 .notice {
   top: 48%;
   width: max-content;
@@ -439,7 +441,6 @@ kbd {
     left: 16px;
     transform: none;
     max-width: calc(100% - 252px);
-    white-space: normal;
   }
 }
 @media (max-width: 530px) {
