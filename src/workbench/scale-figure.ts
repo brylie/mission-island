@@ -76,10 +76,12 @@ export function measureShown(subject: readonly AbstractMesh[]): Bounds | undefin
 // Live controls such as a growth slider rescale the subject without a rebuild, and playback can move
 // parts of it, such as a crate in a cargo trial. The bounds are measured again whenever the settings
 // change (including the first frame) and whenever playback rests on a new pose, paused or scrubbed,
-// and the figure follows them. While playback runs they hold still, so the figure never shuffles.
+// and the figure follows them. While playback runs they hold still, so the figure never shuffles,
+// and the footer says the bounds come from the last resting pose.
 export function trackSubjectSize(subject: readonly AbstractMesh[], start: Bounds, figure?: ReturnType<typeof createScaleFigure>) {
   let bounds = start
   let measuredFor = ''
+  let held = false
   return {
     bounds: () => bounds,
     // Width (x), depth (z) and height, in metres.
@@ -87,13 +89,19 @@ export function trackSubjectSize(subject: readonly AbstractMesh[], start: Bounds
       const extent = bounds.max.subtract(bounds.min)
       return [extent.x, extent.z, extent.y] as const
     },
+    // True while playback runs, so the bounds are a snapshot of the last resting pose.
+    held: () => held,
     // `pose` is the clock time while playback is paused, and undefined while it runs.
+    // Returns whether the footer needs rewriting.
     refresh(settings: Values, pose?: number) {
-      const key = JSON.stringify(settings) + (pose === undefined ? '' : `@${pose}`)
-      if (key === measuredFor) return false
+      const holding = pose === undefined
+      const heldChanged = holding !== held
+      held = holding
+      const key = JSON.stringify(settings) + (holding ? '' : `@${pose}`)
+      if (key === measuredFor) return heldChanged
       measuredFor = key
       const next = measureShown(subject)
-      if (!next || (next.min.equals(bounds.min) && next.max.equals(bounds.max))) return false
+      if (!next || (next.min.equals(bounds.min) && next.max.equals(bounds.max))) return heldChanged
       bounds = next
       figure?.place(bounds)
       return true
@@ -121,6 +129,7 @@ const metres = (value: number) => value.toFixed(sizeDecimals)
 
 interface ScaleStage {
   dimensions?: readonly [number, number, number]
+  boundsHeld?: boolean
   setScaleFigure?: (visible: boolean) => ScaleFigure | undefined
 }
 
@@ -128,20 +137,21 @@ interface ScaleStage {
 // Views where the figure cannot help (landscapes, on-island sites, fixed-focus studies, the crew itself) hide the toggle.
 export function showScaleTools(stage: ScaleStage | undefined, visible: boolean) {
   document.getElementById('scale-figure-option')!.hidden = !stage?.setScaleFigure
-  writeBounds(stage?.dimensions, stage?.setScaleFigure?.(visible)?.height)
+  writeBounds(stage?.dimensions, stage?.setScaleFigure?.(visible)?.height, stage?.boundsHeld)
 }
 
 // The footer's bounds, with a spoken version for screen readers.
-export function writeBounds(dimensions?: readonly [number, number, number], crew?: number) {
+export function writeBounds(dimensions?: readonly [number, number, number], crew?: number, held = false) {
   const size = document.getElementById('subject-size')!
   size.replaceChildren()
   if (!dimensions) return
   const [width, depth, height] = dimensions.map(metres)
+  const when = held ? ', last paused pose' : ''
   const shown = document.createElement('span')
   shown.ariaHidden = 'true'
-  shown.textContent = `bounds ${width} × ${depth} × ${height} m (w × d × h)${crew ? ` · crew ${metres(crew)} m` : ''}`
+  shown.textContent = `bounds ${width} × ${depth} × ${height} m (w × d × h${when})${crew ? ` · crew ${metres(crew)} m` : ''}`
   const spoken = document.createElement('span')
   spoken.className = 'sr-only'
-  spoken.textContent = `Bounds of everything shown: width ${width} m, depth ${depth} m, height ${height} m.${crew ? ` Crew member ${metres(crew)} m tall.` : ''}`
+  spoken.textContent = `Bounds of everything shown${held ? ' at the last paused pose' : ''}: width ${width} m, depth ${depth} m, height ${height} m.${crew ? ` Crew member ${metres(crew)} m tall.` : ''}`
   size.append(shown, spoken)
 }

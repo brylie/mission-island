@@ -264,9 +264,9 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         layout?.meshes().forEach(applyWireframe)
         scene.render()
         // Measured after the render, which brings every parent's world matrix up to date.
-        if (subjectSize?.refresh(settings, rate ? undefined : time)) {
+        if (subjectSize?.refresh(settings, rate && entry.duration ? undefined : time)) {
           if (figureFrame) figureFrame = fitFigure(true)
-          writeBounds(subjectSize.dimensions(), figureFrame && scaleFigure?.show(true)?.height)
+          writeBounds(subjectSize.dimensions(), figureFrame && scaleFigure?.show(true)?.height, subjectSize.held())
         }
       },
       setLighting(preset: LightingPreset) {
@@ -284,6 +284,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       }),
       // Width (x), depth (z) and height of the shown subject's bounds, in metres.
       get dimensions() { return subjectSize?.dimensions() },
+      get boundsHeld() { return subjectSize?.held() },
       setView,
       setLandscapeView({ alpha, beta, radius }: Omit<CameraState, 'target'>) {
         updateLandscapeFocus(values)
