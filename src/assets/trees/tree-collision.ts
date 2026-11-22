@@ -1,4 +1,4 @@
-import type { FrondForm, LogForm, MoundForm, SnagForm } from '../geometry/shrub-species.ts'
+import { shrubGrowth, type FrondForm, type LogForm, type MoundForm, type SnagForm } from '../geometry/shrub-species.ts'
 import { treeGrowth, type TreeForm } from '../geometry/tree-species.ts'
 import { authoredAge, between, seedStreams, treeSpecies, type Stream, type TreeCollision, type TreeTemplateOptions } from './tree-catalog.ts'
 
@@ -26,12 +26,22 @@ export function moundSize(form: MoundForm, options: TreeTemplateOptions, random:
   return { vase, height, spread, collision }
 }
 
+const parabolaVertex = 2
+const halfWidth = 0.5
+
 // Fronds draw their lengths frond by frond, so the patch reports its largest possible extent.
 export function frondSize(form: FrondForm, options: TreeTemplateOptions): TreeCollision {
   const exposed = options.exposure === 'exposed'
   const longest = form.length[authoredAge(options.age)][1] * (exposed ? form.exposure.height : 1)
   const reach = form.patch[1] + longest * (exposed ? form.exposure.spread : 1)
-  return { shape: 'upright', solid: false, radius: reach, height: longest * form.arc.stipe * form.blade.start }
+  // growFronds lifts the blade above the stipe by rise·t − droop·t²; its peak tops the frond.
+  const { stipe, rise, droop } = form.arc
+  const peak = Math.min(1 - form.blade.start, Math.max(0, rise / (parabolaVertex * droop)))
+  const lift = rise * peak - droop * peak * peak
+  // A frond tilted across its run raises one blade edge by up to half the widest blade.
+  const tilt = shrubGrowth.frondTilt / Math.hypot(1, shrubGrowth.frondTilt)
+  const edge = Math.max(form.blade.width * longest, shrubGrowth.stipeWidth) * halfWidth * tilt
+  return { shape: 'upright', solid: false, radius: reach, height: longest * (stipe * form.blade.start + lift) + edge }
 }
 
 export function snagSize(form: SnagForm, options: TreeTemplateOptions, random: Stream) {

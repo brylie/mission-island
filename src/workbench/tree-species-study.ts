@@ -67,16 +67,23 @@ function placeRow(meshes: MeshFactory, slots: TreeTemplateOptions[][]): Placed[]
 }
 
 function describe(placed: Placed[]) {
-  const { collision, budget } = placed[0].template
+  const { collision } = placed[0].template
   const solid = collision.solid ? 'trunk' : 'soft cover'
   const size = collision.shape === 'upright'
     ? `${solid} r ${collision.radius.toFixed(decimals)} m, ${collision.height.toFixed(1)} m tall`
     : `log r ${collision.radius.toFixed(decimals)} m, ${collision.length.toFixed(1)} m long`
-  const tiers = treeTiers.map((name) => {
-    const group = placed.filter(({ options }) => options.tier === name).map(({ template }) => template.triangles)
-    return group.length ? `${name} ${Math.min(...group).toLocaleString()}–${Math.max(...group).toLocaleString()}` : ''
-  }).filter(Boolean).join(' · ')
-  return `${tiers} triangles per template (budget ${budget.join('–')}) · ${placed.length} templates · first: ${size}`
+  // Group by tier and budget class, so near beside far and mixed species each show their own budget.
+  const groups = new Map<string, { name: string, budget: string, triangles: number[] }>()
+  for (const name of treeTiers) for (const { options, template } of placed) {
+    if (options.tier !== name) continue
+    const budget = template.budget.join('–')
+    const group = groups.get(name + budget) ?? { name, budget, triangles: [] }
+    group.triangles.push(template.triangles)
+    groups.set(name + budget, group)
+  }
+  const tiers = [...groups.values()].map(({ name, budget, triangles }) =>
+    `${name} ${Math.min(...triangles).toLocaleString()}–${Math.max(...triangles).toLocaleString()} (budget ${budget})`).join(' · ')
+  return `${tiers} triangles per template · ${placed.length} templates · first: ${size}`
 }
 
 function applyLook(meshes: MeshFactory, placed: Placed[], look: Look) {

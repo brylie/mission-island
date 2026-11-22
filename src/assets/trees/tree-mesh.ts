@@ -121,14 +121,18 @@ export function addTube(mesh: MeshData, spine: readonly SpinePoint[], style: Tub
 
 function addCap(mesh: MeshData, spine: readonly SpinePoint[], basis: ReturnType<typeof frames>, ring: number, sides: number, cap: NonNullable<TubeStyle['cap']>) {
   const end = spine[spine.length - 1]
-  const { tangent } = basis[basis.length - 1]
+  const { tangent, normal, binormal } = basis[basis.length - 1]
   const center = vertex(mesh, add(end.point, scale(tangent, cap.rise(sides) * end.radius)), tangent, 0, 0, cap.color)
   const rim: number[] = []
   for (let side = 0; side < sides; side++) {
     const at = ring + side
     const p: Vec3 = [mesh.positions[at * vertexStride], mesh.positions[at * vertexStride + 1], mesh.positions[at * vertexStride + zComponent]]
     const lifted = add(p, scale(tangent, cap.rise(side) * end.radius))
-    rim.push(vertex(mesh, lifted, tangent, sub(lifted, end.point)[0], sub(lifted, end.point)[2], cap.color))
+    // The tube's last ring rises with the ragged rim, so the bark meets the cap without a gap.
+    for (const index of side ? [at] : [at, ring + sides]) mesh.positions.splice(index * vertexStride, zComponent + 1, ...lifted)
+    // Map the cap across the end in the tube's own frame, so bowed logs and upright snags texture alike.
+    const offset = sub(lifted, end.point)
+    rim.push(vertex(mesh, lifted, tangent, dot(offset, normal), dot(offset, binormal), cap.color))
   }
   for (let side = 0; side < sides; side++) mesh.indices.push(rim[side], center, rim[(side + 1) % sides])
 }

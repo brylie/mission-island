@@ -215,3 +215,14 @@ test('a pinned template keeps its shape, so placed trees never reroll unnoticed'
   // Seeds are whole numbers: a fraction grows the same tree as its integer part.
   assert.deepEqual(generateTreeGeometry({ species: 'birch', age: 'young', exposure: 'exposed', seed: 4.6, tier: 'far' }), generateTreeGeometry({ species: 'birch', age: 'young', exposure: 'exposed', seed: 4, tier: 'far' }))
 })
+
+test('frond collision covers the whole grown patch', () => {
+  for (const species of treeSpeciesIds.filter((id) => treeSpecies[id].habit === 'fronds')) for (const age of ['young', 'mature']) for (const exposure of ['sheltered', 'exposed']) {
+    for (const seed of seeds) {
+      const options = { species, age, exposure, seed, tier: 'near' }
+      const { bark, foliage, collision } = generateTreeGeometry(options)
+      const top = Math.max(...[bark, foliage].flatMap((part) => part.positions.filter((_, i) => i % 3 === 1)))
+      assert.ok(top <= collision.height + 1e-6, `${JSON.stringify(options)} top ${top} above ${collision.height}`)
+    }
+  }
+})
