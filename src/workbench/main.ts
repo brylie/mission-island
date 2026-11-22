@@ -21,7 +21,7 @@ import { readStorage, writeStorage } from '../browser-storage'
 import { entries as initialEntries } from './catalog'
 import { restoreOptions, type Control, type Values } from './subject'
 import type { FieldSite } from './field-site'
-import { createStage } from './stage'
+import { createStage, describeSize } from './stage'
 import type { Angle, CameraState } from './stage'
 import { landscapeViews, openFieldView, scenicChoices } from './landscape-views'
 import { createLandscapeDraft, draftLabels, draftStorageKey } from './landscape-draft'
@@ -61,6 +61,7 @@ const scenicView = element<HTMLSelectElement>('landscape-view')
 const grid = element<HTMLInputElement>('grid')
 const wireframe = element<HTMLInputElement>('wireframe')
 const turntable = element<HTMLInputElement>('turntable')
+const scaleFigure = element<HTMLInputElement>('scale-figure')
 const status = element('stage-error')
 const checkZFighting = element<HTMLButtonElement>('check-z-fighting')
 const zFightingResult = element('z-fighting-result')
@@ -79,6 +80,7 @@ interface SavedView {
   grid: boolean
   wireframe: boolean
   turntable: boolean
+  scaleFigure?: boolean
 }
 
 function readSavedView(): Partial<SavedView> {
@@ -131,6 +133,7 @@ lightSelect.value = saved.lighting && saved.lighting in lightingPresets ? saved.
 grid.checked = saved.grid ?? true
 wireframe.checked = saved.wireframe ?? false
 turntable.checked = saved.turntable ?? false
+scaleFigure.checked = saved.scaleFigure ?? false
 scenicView.append(...scenicChoices.map(([id, label]) => new Option(label, id)))
 
 function reportError(text: string) {
@@ -151,6 +154,7 @@ function remember() {
     grid: grid.checked,
     wireframe: wireframe.checked,
     turntable: turntable.checked,
+    scaleFigure: scaleFigure.checked,
   }
   writeStorage('sessionStorage', storeKey, JSON.stringify(view))
   if (asset.id === 'biome' && new URLSearchParams(location.search).has('recipe')) {
@@ -206,6 +210,7 @@ function applyDisplay() {
   stage?.setLighting(lightSelect.value as LightingPreset)
   stage?.setGrid(grid.checked)
   stage?.setWireframe(wireframe.checked)
+  stage?.setScaleFigure(scaleFigure.checked)
   element('grid-size').textContent = grid.checked && stage ? `Grid ${stage.step} m` : ''
 }
 
@@ -227,7 +232,7 @@ function rebuild(camera?: CameraState, reframeOnResize = false) {
     checkZFighting.disabled = false
     if (camera) stage.keepCamera(camera, reframeOnResize)
     applyDisplay()
-    element('geometry').textContent = `${stage.meshCount} ${stage.meshCount === 1 ? 'mesh' : 'meshes'} · ${stage.triangles.toLocaleString()} triangles`
+    element('geometry').textContent = `${stage.meshCount} ${stage.meshCount === 1 ? 'mesh' : 'meshes'} · ${stage.triangles.toLocaleString()} triangles${describeSize(stage.dimensions)}`
   }
   catch (error) {
     reportError(error instanceof Error ? error.message : 'Could not open the selected preview.')
@@ -495,7 +500,7 @@ checkZFighting.addEventListener('click', () => {
   }
   zFightingResult.append(list)
 })
-for (const control of [grid, wireframe, turntable, rateSelect, lightSelect]) {
+for (const control of [grid, wireframe, turntable, scaleFigure, rateSelect, lightSelect]) {
   control.addEventListener('change', () => {
     applyDisplay()
     remember()

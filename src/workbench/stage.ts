@@ -18,6 +18,7 @@ import type { Entry, Values } from './subject'
 import { lightingPresets } from './lighting'
 import type { LightingPreset } from './lighting'
 import { findZFightCandidates } from './z-fighting'
+import { createScaleFigure } from './scale-figure'
 import { createLandscapeLayout } from './landscape-layout'
 import type { createLandscapeDraft } from './landscape-draft'
 import type { Point } from '../world'
@@ -33,6 +34,13 @@ export interface CameraState {
 }
 
 export type Angle = 'perspective' | 'front' | 'side' | 'top'
+
+const sizeDecimals = 2
+
+// Width × depth × height for the stage footer, so a generated asset can be checked against its brief.
+export function describeSize(dimensions?: readonly [number, number, number]) {
+  return dimensions ? ` · ${dimensions.map((value) => value.toFixed(sizeDecimals)).join(' × ')} m (w × d × h)` : ''
+}
 
 const halves = 2
 const indicesPerTriangle = 3
@@ -81,6 +89,7 @@ function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Ent
     }
   }
 
+  const extent = max.subtract(min)
   max.y += entry.headroom ?? 0
   const span = max.subtract(min)
   const groundHeight = (entry.ground?.height ?? 0) + (field?.offset.y ?? 0)
@@ -115,7 +124,7 @@ function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Ent
   camera.panningSensibility = orbit.panSensitivity / Math.max(1, size / orbit.panSpan)
   camera.attachControl(canvas, false)
   scene.activeCamera = camera
-  return { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount }
+  return { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount, min, extent }
 }
 
 export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values, reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>, field?: FieldSite) {
@@ -146,8 +155,9 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     }
     meshes.finishScenery({ merge: false })
     const subject = surroundings?.surfaceMeshes ?? scene.meshes.slice(firstSubjectMesh)
-    const { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount }
+    const { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount, min, extent }
       = createPreviewCamera(scene, canvas, entry, values, subject, field)
+    const scaleFigure = entry.landscape || field ? undefined : createScaleFigure(meshes, { maxX: min.x + extent.x, minZ: min.z, ground: groundHeight })
     let focusHeight = Number(values.focusHeight ?? studioCamera.landscapeFocusHeight)
     const layout = entry.landscape
       ? createLandscapeLayout(meshes, canvas, draft, () => ({
@@ -260,6 +270,9 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       },
       setGrid(visible: boolean) { grid.setEnabled(visible) },
       setWireframe(visible: boolean) { wireframe = visible },
+      setScaleFigure(visible: boolean) { scaleFigure?.(visible) },
+      // Width (x), depth (z) and height of the subject's bounds, in metres.
+      dimensions: entry.landscape || field ? undefined : [extent.x, extent.z, extent.y] as const,
       setView,
       setLandscapeView({ alpha, beta, radius }: Omit<CameraState, 'target'>) {
         updateLandscapeFocus(values)
