@@ -7,7 +7,9 @@ const maxSubjectRadius = 10_000
 
 export function subjectLink(base: string, id: string, field: boolean, shot: LandscapeShot, lighting: LightingPreset) {
   const url = new URL('workbench.html', base)
-  const params = new URLSearchParams({ setup: JSON.stringify(shot), light: lighting })
+  // The framing anchor only matters within one session; a reopened link frames from the subject it opens.
+  const { alpha, beta, radius, fov, target } = shot.camera
+  const params = new URLSearchParams({ setup: JSON.stringify({ ...shot, camera: { alpha, beta, radius, fov, target } }), light: lighting })
   if (field) params.set('stage', 'island')
   url.username = url.password = ''
   url.hash = id + '?' + params.toString()

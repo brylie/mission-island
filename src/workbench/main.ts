@@ -189,7 +189,7 @@ function setOption(control: Control, value: Values[string], save = true) {
   zFightingResult.replaceChildren()
   seek = true
   if (control.rebuild) {
-    rebuild(!onIsland && control.key === 'shape' ? undefined : cameraAtSameSite(oldSite), stage?.frameRadius)
+    rebuild(!onIsland && control.key === 'shape' ? undefined : cameraAtSameSite(oldSite), true)
     showFieldSwitch()
   }
   if (save) remember()
@@ -210,8 +210,8 @@ function applyDisplay() {
 }
 
 // A kept camera carries the user's orbit and zoom across a rebuild of the same subject.
-// Given the old stage's `frameRadius`, a subject whose bounds grew or shrank a lot is framed afresh.
-function rebuild(camera?: CameraState, previousRadius?: number) {
+// With `reframeOnResize`, a subject whose bounds grew or shrank a lot is framed afresh from the same angle.
+function rebuild(camera?: CameraState, reframeOnResize = false) {
   if (!engine) {
     studies.setScene(Boolean(asset.landscape), false)
     landscapeMap.setScene(Boolean(asset.landscape), false)
@@ -225,7 +225,7 @@ function rebuild(camera?: CameraState, previousRadius?: number) {
   try {
     stage = createPreviewStage(engine, canvas, asset, values, reportError, draft, fieldSite())
     checkZFighting.disabled = false
-    if (camera) stage.keepCamera(camera, previousRadius)
+    if (camera) stage.keepCamera(camera, reframeOnResize)
     applyDisplay()
     element('geometry').textContent = `${stage.meshCount} ${stage.meshCount === 1 ? 'mesh' : 'meshes'} · ${stage.triangles.toLocaleString()} triangles`
   }
@@ -513,7 +513,7 @@ element('reset').addEventListener('click', () => {
   values = restoreOptions(asset.controls)
   if (asset.landscape && typeof clockStart === 'number') values.clockStart = clockStart
   optionsByAsset[asset.id] = values
-  rebuild(asset.landscape ? undefined : cameraAtSameSite(oldSite), stage?.frameRadius)
+  rebuild(asset.landscape ? undefined : cameraAtSameSite(oldSite), true)
   showFieldSwitch()
   inspector.render()
   remember()

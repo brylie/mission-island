@@ -28,6 +28,8 @@ export interface CameraState {
   radius: number
   fov?: number
   target: number[]
+  // The default radius of the subject this view was framed for. Kept views carry it, so growth in small steps still reframes.
+  framed?: number
 }
 
 export type Angle = 'perspective' | 'front' | 'side' | 'top'
@@ -177,6 +179,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     sunlight.position.set(center.x + studioSunlight.x, Math.max(studioSunlight.minimumHeight, size), center.z + (studioCrew ? studioCrewLighting.lightZ : studioSunlight.z))
     sunlight.shadowMaxZ = Math.max(biome ? studioSunlight.biomeShadowRange : studioSunlight.shadowRange, size * studioSunlight.shadowSpanScale)
     let lighting: LightingPreset = 'daylight'
+    let framed = radius
     let wireframe = false
     function applyWireframe(mesh: AbstractMesh) {
       if (mesh.material && mesh.material.wireframe !== wireframe) mesh.material.wireframe = wireframe
@@ -198,13 +201,18 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       camera.fov = saved.fov ?? studioCamera.fov
       camera.inertialAlphaOffset = camera.inertialBetaOffset = camera.inertialRadiusOffset = 0
       camera.inertialPanningX = camera.inertialPanningY = 0
+      framed = saved.framed ?? radius
+    }
+
+    function frame(alpha: number, beta: number, fov?: number) {
+      const aspect = engine.getAspectRatio(camera)
+      setCamera({ alpha, beta, fov, radius: radius * Math.max(1, studioCamera.fit.aspect / Math.max(studioCamera.fit.minAspect, aspect)), target: center.asArray() })
     }
 
     function setView(angle: Angle = entry.topView ? 'top' : 'perspective', settings?: Values) {
       if (entry.landscape && settings) updateLandscapeFocus(settings)
       const [alpha, beta] = pointOfView[angle]
-      const aspect = engine.getAspectRatio(camera)
-      setCamera({ alpha, beta, radius: radius * Math.max(1, studioCamera.fit.aspect / Math.max(studioCamera.fit.minAspect, aspect)), target: center.asArray() })
+      frame(alpha, beta)
     }
 
     function updateLandscapeFocus(settings: Values) {
@@ -222,8 +230,6 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     return {
       meshCount,
       triangles: Math.round(triangles),
-      // The default orbit radius, which grows with the subject's bounds.
-      frameRadius: radius,
       step,
       supportsSunShafts: atmosphere?.supportsSunShafts ?? false,
       mapFocus: () => ({ x: camera.target.x, z: camera.target.z }),
@@ -260,12 +266,15 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         setCamera({ alpha, beta, radius, target: center.asArray() })
       },
       getCamera(): CameraState {
-        return { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, fov: camera.fov, target: camera.target.asArray() }
+        return { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, fov: camera.fov, target: camera.target.asArray(), framed }
       },
       setCamera,
-      // Restores a saved view of the same subject, unless its default radius changed from `previousRadius` by more than the reframe ratio.
-      keepCamera(saved: CameraState, previousRadius?: number) {
-        if (!previousRadius || Math.max(previousRadius, radius) / Math.min(previousRadius, radius) <= studioCamera.reframeRatio) setCamera(saved)
+      // Restores a view of the same subject. With `reframe`, a subject that grew or shrank past the reframe ratio
+      // since the view was framed is framed afresh from the same angle.
+      keepCamera(saved: CameraState, reframe: boolean) {
+        const anchor = saved.framed ?? radius
+        if (!reframe || Math.max(anchor, radius) / Math.min(anchor, radius) <= studioCamera.reframeRatio) setCamera(saved)
+        else frame(saved.alpha, saved.beta, saved.fov)
       },
       dispose() {
         layout?.dispose()
