@@ -126,6 +126,16 @@ export const capturePresets = {
     hour: 16.5,
     weather: 'clear',
   },
+  // The landmark from the side: Cairn Summit's long shoulder and steep north-west face.
+  'highwood-cairn-southwest': {
+    label: 'Cairn Summit from the south-west shore',
+    kind: 'landscape',
+    eye: { x: -212, z: 129, height: 1.7 },
+    look: { x: -92, z: 219, height: 12 },
+    fov: 0.8,
+    hour: 15,
+    weather: 'clear',
+  },
   'specimen-tussock': {
     label: 'Grass tussock specimen',
     kind: 'specimen',

@@ -7,7 +7,7 @@
 export const highwoodPlaces = {
   // The summit pin's centre, and the crown the bake raises there (the pin is warped with the land).
   cairnSummit: { x: -95, z: 215 },
-  cairnCrown: { x: -95, z: 226 },
+  cairnCrown: { x: -92, z: 219 },
   fallowRidge: { x: -220, z: 380 },
   bracken: { x: -175, z: 285 },
   birchFlats: { x: -420, z: 300 },
@@ -80,9 +80,12 @@ export const highwoodGeneration = {
     ridged: { wavelength: 210, octaves: 6, lacunarity: 2.1, gain: 0.6 },
     height: 22,
   },
-  // Cairn Summit's crown is pinned so the Fire Watch sees over Fallow Ridge.
-  // `shield` is how much of the crown erosion leaves alone.
-  pins: [{ ...highwoodPlaces.cairnSummit, height: 50, radius: 22, shield: 0.3 }],
+  // Cairn Summit's crown is pinned so the Fire Watch sees over Fallow Ridge. The
+  // crag is lopsided: a steep face toward Fallow Ridge (`faceRadius`), a long
+  // shoulder the other way (`shoulderRadius`), and `radius` across. `plateau` is
+  // the share of the crag that stays near the top. `shield` is how much of the
+  // crown erosion leaves alone.
+  pins: [{ ...highwoodPlaces.cairnSummit, height: 50, toward: highwoodPlaces.fallowRidge, faceRadius: 16, shoulderRadius: 80, radius: 30, plateau: 0.25, shield: 0.15 }],
 
   // Era 2: glaciers carved broad U-shaped valleys toward the sea. Each valley has
   // a flat floor of `floorWidth` and walls rising over `wallWidth`.

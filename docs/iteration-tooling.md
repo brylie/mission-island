@@ -54,9 +54,15 @@ Presets are declarative data in [`src/assets/recipes/capture-presets.ts`](../src
 | `pale-grove-evening` | Into the Juniper grove trunks at evening. |
 | `ridge-to-harbor` | From the Windstone survey scope back to the harbor. |
 | `fire-watch-overview` | High view of the tower and fire sites with sightline, wildfire and protected-area overlays. |
+| `highwood-tower-north` | From Cairn Summit north over Highwood at dawn, in mist. |
+| `highwood-fire-road` | Along the fire road into the Highwood forest at midday. |
+| `highwood-creek-ford` | Alder Creek under an overcast sky after rain. |
+| `highwood-birch-flats` | Birch Flats in low evening sun. |
+| `highwood-ridge-home` | From Fallow Ridge back toward the settled south in late afternoon. |
+| `highwood-cairn-southwest` | Cairn Summit from the south-west shore, a landmark check of the crag's outline rather than a hero view. |
 | `specimen-tussock` | A grass tussock specimen. Use `--grid` for a four-seed turntable. |
 
-These are the current island's equivalents of the Highwood hero views. When the backcountry lands, move the eye and look points rather than adding near-duplicates.
+The `highwood-*` presets are the [Highwood hero views](backcountry.md#hero-views), plus the Cairn landmark check. Playtest events' **Go to** lists them too, so a tester can stand at each eye. The older landscape presets were the current island's nearest equivalents before Highwood existed. Move a preset's eye and look points rather than adding near-duplicates.
 
 ### Compare two revisions
 

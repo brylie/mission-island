@@ -11,7 +11,7 @@ export const beachAttribute = 'beachCover'
 export const beachAttributeSize = 4
 const beachPriority = environmentalMaterialPriority + 1
 const varyings = 'varying vec4 shoreCover;'
-const { sand, rock, wetSandTint, shellglass } = starterShoreFinish
+const { sand, rock, granite, triplanar, wetSandTint, shellglass } = starterShoreFinish
 
 export function beachVertex({ x, z }: Point, surface: ReturnType<typeof coastalSurface>) {
   const bed = Math.max(0, 1 - Math.hypot((x - tidePool.x) / shellglass.toneRadiusX, (z - tidePool.z) / shellglass.toneRadiusZ) ** shellglass.falloffPower)
@@ -23,21 +23,24 @@ export function beachVertex({ x, z }: Point, surface: ReturnType<typeof coastalS
 class BeachMaterial extends MaterialPluginBase {
   private readonly grains
   private readonly stone
+  private readonly granite
   constructor(material: Material, meshes: MeshFactory) {
     super(material, 'Starter beach surface', beachPriority)
     this.grains = meshes.paintRecipe('dry-beach').albedoTexture
     this.stone = meshes.paintRecipe('sandstone').albedoTexture
+    this.granite = meshes.paintRecipe('granite').albedoTexture
     this._enable(true)
   }
 
   override getClassName() { return 'BeachMaterial' }
 
   override getAttributes(attributes: string[]) { attributes.push(beachAttribute) }
-  override getSamplers(samplers: string[]) { samplers.push('shoreGrains', 'shoreStone') }
+  override getSamplers(samplers: string[]) { samplers.push('shoreGrains', 'shoreStone', 'shoreGranite') }
 
   override bindForSubMesh(buffer: UniformBuffer) {
     buffer.setTexture('shoreGrains', this.grains)
     buffer.setTexture('shoreStone', this.stone)
+    buffer.setTexture('shoreGranite', this.granite)
   }
 
   override getCustomCode(type: string): Record<string, string> {
@@ -50,16 +53,27 @@ class BeachMaterial extends MaterialPluginBase {
     return {
       CUSTOM_FRAGMENT_DEFINITIONS: `${varyings}
         uniform sampler2D shoreGrains;
-        uniform sampler2D shoreStone;`,
+        uniform sampler2D shoreStone;
+        uniform sampler2D shoreGranite;
+        // Samples a texture from above and from both sides, weighted by the surface's facing.
+        vec3 shoreTriplanar(sampler2D map, vec3 position, vec3 facing, mat2 turn, float repeats) {
+          vec3 top = texture2D(map, turn * position.xz * repeats).rgb;
+          vec3 side = texture2D(map, position.zy * repeats).rgb;
+          vec3 front = texture2D(map, position.xy * repeats).rgb;
+          return toLinearSpace(top * facing.y + side * facing.x + front * facing.z);
+        }`,
       CUSTOM_FRAGMENT_BEFORE_LIGHTS: `
         float coastAmount = shoreCover.x + shoreCover.y;
         if (coastAmount > 0.) {
           vec3 wetTint = 1. + shoreCover.z * vec3(-${wetSandTint.redLoss}, -${wetSandTint.greenLoss}, ${wetSandTint.blueGain});
           vec3 basinTint = 1. - shoreCover.w * vec3(${shellglass.redLoss}, ${shellglass.greenLoss}, ${shellglass.blueLoss});
           vec3 grains = toLinearSpace(texture2D(shoreGrains, vPositionW.xz * ${sand.repeatsPerMetre}).rgb);
-          vec2 bedding = mat2(${rock.cos}, -${rock.sin}, ${rock.sin}, ${rock.cos}) * vPositionW.xz;
-          vec3 stone = toLinearSpace(texture2D(shoreStone, bedding * ${rock.repeatsPerMetre}).rgb);
-          stone *= vec3(${rock.red}, ${rock.green}, ${rock.blue});
+          vec3 facing = pow(abs(normalize(vNormalW)), vec3(${triplanar.sharpness.toFixed(1)}));
+          facing /= facing.x + facing.y + facing.z;
+          mat2 bedding = mat2(${rock.cos}, -${rock.sin}, ${rock.sin}, ${rock.cos});
+          vec3 sandstone = shoreTriplanar(shoreStone, vPositionW, facing, bedding, ${rock.repeatsPerMetre}) * vec3(${rock.red}, ${rock.green}, ${rock.blue});
+          vec3 granite = shoreTriplanar(shoreGranite, vPositionW, facing, mat2(1.), ${granite.repeatsPerMetre}) * vec3(${granite.red}, ${granite.green}, ${granite.blue});
+          vec3 stone = mix(sandstone, granite, smoothstep(${granite.heightStart.toFixed(1)}, ${granite.heightFull.toFixed(1)}, vPositionW.y));
           surfaceAlbedo = surfaceAlbedo * (1. - coastAmount)
             + grains * wetTint * basinTint * shoreCover.x
             + stone * wetTint * shoreCover.y;

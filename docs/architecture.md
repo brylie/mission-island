@@ -82,6 +82,26 @@ To add a villager, write a definition file and append it to the registry. A visi
 - **Animals.** In [Juniper Hollow](../src/juniper-habitat.ts), hares and foxes can share locomotion and [obstacle navigation](../src/biome-navigation.ts) with different speeds and clearances. A hare's threat response can send it toward cover, while a fox can give a nearby player space and then resume its patrol. Position and current behavior belong to each animal.
 - **Plants.** A habitat trait can guide where an island places reeds or clover. A regrowth trait can let clover replenish forage after grazing, with the patch's remaining forage tracked by the [biome simulation](../src/biome-model.ts). Wind sway can stay in presentation when it only affects appearance. The [Highwood species generator](highwood-species.md#how-the-generator-is-built) bakes trees and shrubs into templates for thin instancing, with near and far tiers, host-safe collision from `treeCollision`, and a sway weight in vertex alpha.
 
+### Terrain and coast
+
+Starter Island's north-west, Highwood, is a baked height field. The [design note](design/island-generation.md) explains why and lists the measured results; this section follows the data.
+
+- **The asset.** [`src/assets/geometry/highwood-heightmap.ts`](../src/assets/geometry/highwood-heightmap.ts) holds base64 heights every 2 m, sand, rock, moisture and shore layers every 4 m, and the reach: the distance from the island's centre to the farthest shore at each coast angle. [`scripts/generate-island.mjs`](../scripts/generate-island.mjs) writes it (`npm run island:generate`) from the parameters in [`src/worlds/starter/layout/island-generation.ts`](../src/worlds/starter/layout/island-generation.ts). Never edit it by hand.
+- **Stale bakes.** The asset records a `sourceHash` of every file listed in [`bake-sources.ts`](../src/worlds/starter/generation/bake-sources.ts): the generator, its parameters and the authored terrain. [`test/highwood-terrain.test.mjs`](../test/highwood-terrain.test.mjs) fails until the island is baked again. The asset must stay under the 500 KB pre-commit file limit.
+- **Who owns the join.** The generated land meets the authored island across the sector from bearing 86° to 165°. The bake owns the join: the higher of the authored and generated ground wins. At runtime, `groundHeight` in [`src/terrain.ts`](../src/terrain.ts) uses the baked height beyond protected ground, and blends to the exact authored ground only in the last tenth of the join's fade.
+- **Who reads it.**
+  - Walking, scenery placement and the camera sample `groundHeight`. `coastalSurface` mixes the baked sand and rock layers into the beach surface.
+  - `coastPoint(angle)` stays a radius per bearing, for bounds and the skiff buoys. On Highwood it reads the baked reach, so it gives the farthest shore along the ray.
+  - Host physics builds a Cannon heightfield in [`src/simulation/cargo.ts`](../src/simulation/cargo.ts). It pads the east edge with open sea until the field is at least as wide as it is long, because cannon-es clamps both ray-test index ranges to the heightfield's first dimension. Without the padding, wheel raycasts miss the far rows.
+  - The map paints its land raster from `groundHeight` in [`src/island-map.ts`](../src/island-map.ts), so coves, straits and islets show.
+  - [`src/shoreline.ts`](../src/shoreline.ts) traces the real shoreline once at load by marching squares, as ordered loops. The surf in [`src/audio/shore.ts`](../src/audio/shore.ts) slides along those loops by distance with the listener.
+  - The landscape tints wet ground from the baked moisture layer.
+- **Saves made before Highwood.** Old north-west water is now land, and saves load without migration:
+  - A saved crewmate inside the skiff buoys resumes there, and the normal movement step handles the changed depth, so a swimmer over new ground stands on it. One beyond the buoys respawns.
+  - A saved skiff whose hull is no longer afloat resets to its start (`restoreSkiff` in `server/skiff.ts`).
+  - Crates go back into physics as saved. The physics step returns any crate in deep water, or below the recovery depth, to its start.
+  - Loose gear saved below the ground that has risen is lifted back onto it (`restoreItems` in [`server/island-state.ts`](../server/island-state.ts)).
+
 ## Static checks
 
 `npm run quality` runs lint, type checking, tests, unused-code checks, and the build. CI runs coverage separately. First-party TypeScript modules have a 350-line file limit, a 140-line function limit, and a cyclomatic complexity ceiling of 24. Line limits exclude comments and blank lines. Test files have the same file limit. The [ESLint config](../eslint.config.mjs) records per-file ceilings for existing hotspots, including modules that grew through formatting. Lower an exception or remove it when the relevant code is split.

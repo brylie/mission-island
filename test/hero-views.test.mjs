@@ -6,8 +6,8 @@ import { groundHeight } from '../src/terrain.ts'
 
 const heroes = Object.entries(capturePresets).filter(([id, preset]) => id.startsWith('highwood-') && preset.kind === 'landscape')
 
-test('Highwood has five hero views, each seeing its subject within the Workbench orbit range', () => {
-  assert.equal(heroes.length, 5)
+test('Highwood\'s five hero views and its landmark view each see their subject within the Workbench orbit range', () => {
+  assert.equal(heroes.length, 6)
   for (const [id, { eye, look }] of heroes) {
     const from = { ...eye, y: groundHeight(eye) + eye.height }, to = { ...look, y: groundHeight(look) + look.height }
     const reach = Math.hypot(from.x - to.x, from.y - to.y, from.z - to.z)

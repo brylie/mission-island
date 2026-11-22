@@ -137,7 +137,7 @@ const beachRockChannel = 1
 // beach shader's stone texture, not a tint, so it reads as rock), heath where it
 // is high, green where water gathers and paler on dry low shoulders.
 function tintByForm(positions: number[], colors: number[], beach: number[], steps: number) {
-  const { rock, heath, wet, dry } = highwoodGroundFinish
+  const { rock, heath, wet, dry, aspect } = highwoodGroundFinish
   const row = steps + 1
   const ramp = (value: number, start: number, full: number) => Math.max(0, Math.min(1, (value - start) / (full - start)))
   for (let j = 0; j <= steps; j++) {
@@ -152,6 +152,9 @@ function tintByForm(positions: number[], colors: number[], beach: number[], step
       blendTint(colors, o, wet.tint, bakedSurface(point).moisture)
       blendTint(colors, o, dry.tint, ramp(height, dry.heightStart, dry.heightFull) * (1 - ramp(height, heath.heightStart, heath.heightFull)))
       blendTint(colors, o, heath.tint, ramp(height, heath.heightStart, heath.heightFull))
+      // Ground rising to the north faces south, toward the sun.
+      const steep = Math.hypot(dx, dz), facing = steep > 0 ? dz / steep * ramp(steep, aspect.slopeStart, aspect.slopeFull) : 0
+      blendTint(colors, o, facing > 0 ? aspect.sunny : aspect.shaded, Math.abs(facing))
       const stone = beach.length / beachStride > v ? v * beachStride + beachRockChannel : -1
       if (stone >= 0) beach[stone] = Math.max(beach[stone], rock.cover * ramp(Math.hypot(dx, dz), rock.slopeStart, rock.slopeFull))
     }

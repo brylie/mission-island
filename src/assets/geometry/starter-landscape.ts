@@ -2,6 +2,10 @@ export const starterShoreFinish = {
   sand: { repeatsPerMetre: 1.45 },
   wetSandTint: { redLoss: 0.33, greenLoss: 0.25, blueGain: 0.05 },
   rock: { repeatsPerMetre: 0.67, cos: 0.89, sin: 0.456, red: 0.62, green: 0.69, blue: 0.88 },
+  // Upland rock is granite: sandstone on the low coast gives way to it with height.
+  granite: { repeatsPerMetre: 0.45, heightStart: 7, heightFull: 15, red: 0.86, green: 0.89, blue: 0.95 },
+  // Stone is projected from three sides, so steep faces aren't streaked; higher sharpness narrows the blend.
+  triplanar: { sharpness: 4 },
   shellglass: {
     toneRadiusX: 4.2,
     toneRadiusZ: 3.5,
@@ -27,10 +31,13 @@ export const starterMeadowFinish = {
 // Highwood's generated ground. Steep ground shows bare stone (`cover` of the beach
 // shader's stone texture); the tints over the turf are red, green and blue
 // multipliers, kept gentle so turf never turns to clay: high ground leans to
-// heath, wet hollows where water gathers stay green.
+// heath, wet hollows where water gathers stay green, and slopes differ by aspect.
 export const highwoodGroundFinish = {
   rock: { slopeStart: 0.55, slopeFull: 1.0, cover: 0.9 },
   heath: { heightStart: 16, heightFull: 40, tint: [1.07, 0.92, 0.97] },
+  // Aspect: sun-facing south slopes dry to straw, shaded north slopes stay cool
+  // and mossy, at full strength once a slope rises `slopeFull` per metre.
+  aspect: { slopeStart: 0.08, slopeFull: 0.5, sunny: [1.08, 1.0, 0.84], shaded: [0.84, 0.97, 1.02] },
   wet: { tint: [0.82, 1.1, 0.9] },
   dry: { heightStart: 4, heightFull: 12, tint: [1.1, 1.0, 0.82] },
 } as const

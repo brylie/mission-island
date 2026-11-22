@@ -39,6 +39,18 @@ function polylineDistance(p: Point, points: readonly Point[]) {
   return best
 }
 
+type Pin = (typeof highwoodGeneration.pins)[number]
+
+// How much of a pinned crag's height reaches an offset from its centre: steep
+// toward the face, a long shoulder behind, and a flat top inside `plateau`.
+function cragShare(pin: Pin, dx: number, dz: number) {
+  const fx = pin.toward.x - pin.x, fz = pin.toward.z - pin.z
+  const length = Math.hypot(fx, fz)
+  const along = (dx * fx + dz * fz) / length, across = (dz * fx - dx * fz) / length
+  const reach = along > 0 ? pin.faceRadius : pin.shoulderRadius
+  return smooth((1 - Math.hypot(along / reach, across / pin.radius)) / (1 - pin.plateau))
+}
+
 // Metres above sea level before erosion, and how hard the rock is (0 to 1).
 function rawLand(p: Point) {
   const { seed, masses, continent, warp, detail, roughness, edgeMargin, edgeSink, grid, uplift, valleys, pins } = highwoodGeneration
@@ -65,8 +77,8 @@ function rawLand(p: Point) {
     land -= depth * (1 - smooth((polylineDistance(p, points) - floorWidth * half) / wallWidth))
   }
   for (const pin of pins) {
-    // Measured in warped space, so the crown leans and lobes instead of forming a cone.
-    const crown = smooth(1 - Math.hypot(q.x - pin.x - (q.x - p.x), q.z - pin.z - (q.z - p.z) * half) / pin.radius)
+    // Measured half in warped space, so the crown leans and lobes.
+    const crown = cragShare(pin, p.x - pin.x, (p.z + q.z) * half - pin.z)
     land = Math.max(land, land + (pin.height - land) * crown)
   }
   return { land, hardness }
@@ -247,7 +259,7 @@ export function generateIsland(authored: AuthoredIsland): GeneratedIsland {
   const shield = Float32Array.from(owned, (own, i) => {
     const p = nodePoint(i)
     let keep = 0
-    for (const pin of highwoodGeneration.pins) keep = Math.max(keep, pin.shield * smooth(1 - Math.hypot(p.x - pin.x, p.z - pin.z) / pin.radius))
+    for (const pin of highwoodGeneration.pins) keep = Math.max(keep, pin.shield * cragShare(pin, p.x - pin.x, p.z - pin.z))
     return own * (1 - keep)
   })
   const strength = (i: number) => shield[i]

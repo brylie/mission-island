@@ -1,6 +1,6 @@
 # Highwood backcountry
 
-**In progress.** Highwood is the wild country north of Starter Island's settled south: forest, meadow, ridge and creek, with a fire access road and the Fire Watch on Cairn Summit. It is where the crew watches for smoke and drives out to fight it. The land comes from [the island's deep history](design/island-story.md), and it is generated as described in [island generation](design/island-generation.md).
+**In progress. Last tended 2026-11-23.** Highwood is the wild country north of Starter Island's settled south: forest, meadow, ridge and creek, with a fire access road and the Fire Watch on Cairn Summit. It is where the crew watches for smoke and drives out to fight it. The land comes from [the island's deep history](design/island-story.md), and it is generated as described in [island generation](design/island-generation.md).
 
 ## Experience goal
 
@@ -22,15 +22,19 @@ Capture these at every phase with the same camera, hour, weather and quality. Th
 | Birch Flats | Evening, low sun | Beauty: pale trunks glowing amber, long shadows |
 | Ridge crest looking back south | Late afternoon | Belonging: Harbor, Seabrook and the farm small in the distance |
 
-The views are defined in `src/worlds/starter/layout/hero-views.ts` and open as Workbench landscape views, for example `workbench.html?view=hero-tower-north#landscape`. A test keeps every view's line of sight clear of terrain and within the Workbench's orbit range.
+The five views are `highwood-*` capture presets in [`src/assets/recipes/capture-presets.ts`](../src/assets/recipes/capture-presets.ts), each an eye, a look point, an hour and a sky. A test keeps every view's line of sight clear of terrain and within the Workbench's orbit range.
 
-To capture all five at a fixed window size, start the game (`npm run dev` or `npm run playtest`), then run:
+A sixth preset, `highwood-cairn-southwest`, looks at Cairn Summit's crown from the south-west shore at 15:00 in clear weather. It is a landmark check for Cairn's outline, not a hero view, so it isn't held to the experience goal's feelings. **Go to** lists it with the hero views.
+
+Capture the views with the shared [iteration tooling](iteration-tooling.md#captures):
 
 ```sh
-npm run capture:heroes -- --base http://localhost:5173
+npm run capture -- --preset highwood-tower-north,highwood-fire-road,highwood-creek-ford,highwood-birch-flats,highwood-ridge-home
 ```
 
-PNGs land in `.mission-island/captures/<time>/`. Add `--view hero-creek-ford` to capture a single view, or `--out DIR` to choose the folder. The script drives a headless Chrome or Chromium over the DevTools protocol, so it needs no extra packages: it finds Google Chrome, Chrome for Testing from a Playwright install, or the path in `CHROME_PATH` or `--browser`. The Workbench's `?capture` mode shows only the 3D view and marks the page ready once the scene has settled.
+Add `highwood-cairn-southwest` to the list for the landmark check.
+
+The command starts its own host, so no game needs to be running. It writes colour, greyscale and silhouette images for the silhouette test, and `--compare` makes before-and-after sheets between two revisions. [Iteration tooling](iteration-tooling.md) lists every flag.
 
 To stand at a hero view's spot in a live playtest, press **O**, then use **Playtest events → Go to**. It lists the hero views, the Fire Watch deck and Highwood's named places.
 
@@ -82,16 +86,16 @@ These apply at every phase, beyond the technical tests.
 
 | Phase | Work |
 | --- | --- |
-| 0 | Branch, baseline and hero-view captures at their nearest current equivalents |
+| 0 | Branch, baseline and hero-view captures at their nearest current equivalents. **Not done as planned:** no baseline captures were made before the land changed. In the Art Director's reviews, the hero views passed the silhouette test in 1 of 5 in round 1, and 2 passed, 2 partly passed and 1 failed in round 2. |
 | 1 | Design and bake the island: the generated height field, erosion, masks for the settled south, then the world bounds (camera, fog, map, ocean, physics). Review the bare land from the hero views first. |
 | 2 | Tree and shrub species, habitats from the baked moisture, slope and exposure layers, forest placement and groundcover |
 | 3 | The fire access road, its fallen logs (0.25–0.30 m, rounded, for the Fire and Rescue pickup) and the Alder Creek ford |
-| 4 | The Fire Watch on Cairn Summit, backcountry fire sites, hidden ground and sightlines, snag burn scars |
+| 4 | The Fire Watch on Cairn Summit, backcountry fire sites, hidden ground and sightlines, snag burn scars. Highwood's places are 222–520 m from the Fire Watch, against 26–102 m for today's fire sites, so a backcountry callout needs the fire road or a role on the way. See [open questions](open-questions.md#questions-to-answer). |
 | 5 | Docs, verification and a two-player playtest |
 
 ## Performance
 
-Baseline on main `7a838c0`, in the `fire-watch` playtest, read with `?perf` in the game address. Compare the frame time and the draw calls; the browser pane's FPS is throttled.
+Baseline on main `7a838c0`, in the `fire-watch` playtest, read with `?dev=1&perf=1` in the game address (see [the dev view URL](iteration-tooling.md#the-dev-view-url)). Compare the frame time and the draw calls; the browser pane's FPS is throttled.
 
 | View | Frame ms | Draw calls | Triangles | Load ms |
 | --- | --- | --- | --- | --- |

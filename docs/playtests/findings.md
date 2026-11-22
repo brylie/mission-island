@@ -18,6 +18,15 @@ For each session, copy the block below. Give each distinct observation a short t
 - Retest — setup, observable pass condition, owner if assigned, and result/build when repeated.
 ```
 
+### 2026-11-23 · Highwood review · Labels, the Crew guide and Go to in the backcountry
+
+- Starting point — Agent reviewers checked the Highwood backcountry branch ([PR #197](https://github.com/brylie/mission-island/pull/197)) in the `fire-watch` playtest, solo, using Playtest events. This was a review, not a session with players.
+- Island view — The island view framed about 303 m either side of the centre, and the crew tags overlapped the place labels.
+- Crew guide — The guide pointed players to the wrong "north end" of the minimap.
+- Go to — Go to didn't clear its status after a move, and didn't turn the crewmate toward a hero view's target.
+- Decision — Change. Crew tags now stack above place labels and Highwood has region labels. The Crew guide no longer points at the minimap's north end. Go to clears its status when it succeeds, faces a hero view toward its target, shares the respawn reset, and refuses while the crewmate is pushing the barrow. Whether the wider island view frames well at 303 m is still to observe.
+- Retest — In `fire-watch`, open the island view and check that no label hides another. Use **Go to** for each hero view and check the facing and that the status clears. Ask a new player to follow the Crew guide's directions. Unverified with players.
+
 ### 2026-11-21 · shared journal · Mara’s outing through a host restart
 
 - Starting point — Two isolated Brave sessions joined a disposable disk-backed island save at Mara’s dock. The scripted walkers followed the two routes using normal host movement input. Both read Mara’s clues in the same journal, and her carrot offer stayed available.

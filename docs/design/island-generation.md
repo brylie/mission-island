@@ -35,7 +35,7 @@ Erosion is what makes the land read as shaped, rather than as bumps.
   - Pinewoods, Juniper Hollow, Fernfall and Mirror Pool;
   - the Windstone launch, landing meadow and flight envelope;
   - the beach and dune shaping from #167.
-- **Pinned control points.** These include the summit height, the creek's course, the harbor's depth, and Windstone staying a sea-facing headland. The generator fills in around them.
+- **Pinned control points.** These include the summit height, the creek's course, the harbor's depth, and Windstone staying a sea-facing headland. The generator fills in around them. Cairn Summit's pin is a lopsided crag rather than a round dome: a steep face toward Fallow Ridge (a 16 m face radius), a long shoulder to the south-east (80 m), 30 m across, with a flat top over its inner quarter. Erosion leaves 0.15 of the crown alone, down from 0.3, so the crag weathers like the rest of the granite.
 - **Compatibility.** Existing coordinates, saves, and the glider, landing and coastline tests must still hold. Only tests that pinned the old ellipse formula are rewritten.
 
 ## Bake, don't compute live
@@ -68,7 +68,9 @@ Tested automatically where possible:
   - About 0.16 km² of land in the generated grid, roughly 0.2 km² for the whole island.
   - A shoreline development index of 2.2. A box-counting dimension of 1.09, fitted over the noise's scaling range of 8–64 m.
   - Under a fifth of the land is steep.
-  - Cairn Summit's crown, at 49.8 m, is the highest point; Fallow Ridge hides Pine Draw from it.
+  - Cairn Summit's crown, at 49.9 m at (−92, 219), is the highest point; Fallow Ridge hides Pine Draw from it.
+- **Stone.** Upland stone renders as granite above about 7–15 m, blending from the coastal sandstone below. It is projected from three sides, so steep faces aren't streaked.
+- **Aspect.** Slopes facing south, toward the midday sun, are tinted drier and straw-coloured; slopes facing north stay cooler and mossier. In the northern hemisphere, south-facing slopes get more direct sun, so they are warmer and drier (unsourced). The tint is a hue shift, so hillsides differ at every hour without baking in a light direction that would disagree with the evening sun.
 - **Still to tune.** The coast dimension is below the 1.2–1.3 target: the dome-plus-noise shape reads near 1 at fine scales. Gully density is still even on most slopes, and the old island's smooth hills sit beside the eroded land in a different style.
 
 ## Workbench study
