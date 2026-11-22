@@ -16,7 +16,7 @@ export const town = { x: 40, z: 13 }
 export const lookout = { x: 7, z: 29 }
 export const beach = { x: 32, z: -35.5 }
 export const forest = { x: -27, z: 22 }
-export const houseRoofRise = 1.65
+export { houseRoofRise } from './assets/geometry/starter-house.ts'
 export const jobPay = { crate: 2, delivery: 3, fire: 4 }
 export const starterPay = {
   crate: { label: 'Crate delivered', coins: jobPay.crate },
@@ -50,7 +50,7 @@ export const truckTailLip = {
   z: truckBed.center - (truckBed.length + tailLipThickness) / 2,
 }
 export const cargoSlots = [-0.46, -1.46, -2.46]
-export const crateSize = 0.89
+export { crateSize } from './assets/geometry/supply-props.ts'
 export const crewHomes = [
   { name: 'Amber cottage', building: { x: -52, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#f2d5a4', roof: '#a85d36' }, chest: { x: -50.65, z: -7.52 }, wardrobe: { x: -53.35, z: -7.27 } },
   { name: 'Blue cottage', building: { x: -45, z: -4.65, w: 4.5, d: 3.9, h: 3.4, wall: '#d5e9dc', roof: '#477986' }, chest: { x: -43.65, z: -7.52 }, wardrobe: { x: -46.35, z: -7.27 } },
@@ -60,7 +60,7 @@ export function cottageDoor(home: typeof crewHomes[number]) {
   const { x, z, d } = home.building
   return { x, z: z - d / 2 - 0.55 }
 }
-export const chestSize = { width: 0.92, depth: 0.64, height: 0.66 }
+export { chestSize } from './assets/geometry/starter-furniture.ts'
 export const spawns: Point[] = crewHomes.map(({ chest }) => ({ x: chest.x, z: chest.z - 1.34 }))
 export const crateStarts: Point[] = [
   { x: -49, z: -15 },

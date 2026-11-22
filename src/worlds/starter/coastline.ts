@@ -1,49 +1,42 @@
 import { blend, clamp, fractalNoise1D, wrap } from '../../math/noise.ts'
 import { island } from '../../world.ts'
+import { coastlineLayout } from './layout/terrain.ts'
 
-const turn = 2 * Math.PI
+export { starterCoastSeed } from './layout/terrain.ts'
+
+const halves = 2
+const northStretchExponent = 2
+const turn = halves * Math.PI
+const degreesPerTurn = 360
 const resolution = 4096
 const step = turn / resolution
-export const starterCoastSeed = 101
-
-const features = [
-  { bearing: 210, halfWidth: 34, displacement: 12 }, // The outside shoulder of the harbor.
-  { bearing: 248, halfWidth: 30, displacement: -9 }, // The sheltered water beyond the terminals.
-  { bearing: 275, halfWidth: 29, displacement: 11 },
-  { bearing: 70, halfWidth: 65, displacement: 24 }, // Windstone's seaward point.
-  { bearing: 43, halfWidth: 53, displacement: -14 },
-  { bearing: 100, halfWidth: 70, displacement: -12 },
-  { bearing: 142, halfWidth: 76, displacement: -15 },
-]
-
-const noiseBands = [
-  { wavelength: 64, amplitude: 4.2 },
-  { wavelength: 24, amplitude: 1.6 },
-  { wavelength: 9, amplitude: 0.45 },
-]
+const smoothstepQuadraticWeight = 3
+const smoothstepCubicWeight = 2
 
 function baselineScale(angle: number) {
   const northern = Math.max(0, Math.sin(angle))
-  return (1 + 2.85 * northern ** 2) * (1 + Math.sin(angle * 5 + 0.2) * 0.018 + Math.cos(angle * 9) * 0.013)
+  const { northStretch, swells, ripples } = coastlineLayout
+  return (1 + northStretch * northern ** northStretchExponent)
+    * (1 + Math.sin(angle * swells.frequency + swells.phase) * swells.amplitude + Math.cos(angle * ripples.frequency) * ripples.amplitude)
 }
 
 function rayLength(angle: number) {
-  return Math.hypot(Math.cos(angle) * island.width / 2, Math.sin(angle) * island.length / 2)
+  return Math.hypot(Math.cos(angle) * island.width / halves, Math.sin(angle) * island.length / halves)
 }
 
 const distances = [0]
-let previous = { x: island.width / 2 * baselineScale(0), z: 0 }
+let previous = { x: island.width / halves * baselineScale(0), z: 0 }
 for (let i = 1; i <= resolution; i++) {
   const angle = i * step
   const scale = baselineScale(angle)
-  const point = { x: Math.cos(angle) * island.width / 2 * scale, z: Math.sin(angle) * island.length / 2 * scale }
+  const point = { x: Math.cos(angle) * island.width / halves * scale, z: Math.sin(angle) * island.length / halves * scale }
   distances.push(distances[i - 1] + Math.hypot(point.x - previous.x, point.z - previous.z))
   previous = point
 }
 const perimeter = distances[resolution]
 
 function coastDistance(bearing: number) {
-  const sample = bearing * resolution / 360
+  const sample = bearing * resolution / degreesPerTurn
   const index = Math.floor(sample)
   return blend(distances[index], distances[index + 1], sample - index)
 }
@@ -55,17 +48,14 @@ function distanceAlongCoast(a: number, b: number) {
 
 function smooth(value: number) {
   const t = clamp(value)
-  return t * t * (3 - 2 * t)
+  return t * t * (smoothstepQuadraticWeight - smoothstepCubicWeight * t)
 }
 
 // Keep the dock, ferry apron and the quiet Driftwood–Shellglass shore on their
 // surveyed shelves. Fade back into the shaped coast over the next metres.
-const protectedShore = [
-  { along: coastDistance(231), halfWidth: 13, fade: 9 },
-  { along: coastDistance(314), halfWidth: 21, fade: 13 },
-]
-const landforms = features.map((feature) => ({ ...feature, along: coastDistance(feature.bearing) }))
-const bands = noiseBands.map(({ wavelength, amplitude }) => ({ cells: Math.round(perimeter / wavelength), amplitude }))
+const protectedShore = coastlineLayout.protectedShelves.map(({ bearing, halfWidth, fade }) => ({ along: coastDistance(bearing), halfWidth, fade }))
+const landforms = coastlineLayout.landforms.map((feature) => ({ ...feature, along: coastDistance(feature.bearing) }))
+const bands = coastlineLayout.noiseBands.map(({ wavelength, amplitude }) => ({ cells: Math.round(perimeter / wavelength), amplitude }))
 
 export function createStarterCoast(seed: number) {
   const offsets = distances.map((along) => {

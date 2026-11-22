@@ -201,8 +201,30 @@ export const streetLampGeometry = {
   supportBoxes: [[lampPole.baseDiameter, lampPole.baseDiameter, lampPole.height]],
 } as const
 
-const umbrellaPole = { baseDiameter: 0.16, topDiameter: 0.12, height: 2.5, centreY: 1.25 } as const
-export const beachUmbrellaGeometry = { pole: umbrellaPole, supportBoxes: [[umbrellaPole.baseDiameter, umbrellaPole.baseDiameter, 2.27]] } as const
+const umbrellaPole = { baseDiameter: 0.16, topDiameter: 0.12, height: 2.5, centreY: 1.25, sides: 6, color: '#8c6545' } as const
+export const beachUmbrellaGeometry = {
+  pole: umbrellaPole,
+  canopy: { centreY: 2.6, topDiameter: 0.15, baseDiameter: 3, height: 0.67, sides: 8, colors: ['#e97a59', '#ffce64', '#4faba4'] },
+  towel: {
+    x: [0.35, 1.45],
+    firstZ: -1.15,
+    bands: [
+      { endZ: -0.99, stripe: false },
+      { endZ: -0.92, stripe: true },
+      { endZ: -0.84, stripe: false },
+      { endZ: 0.84, stripe: false },
+      { endZ: 0.92, stripe: false },
+      { endZ: 0.99, stripe: true },
+      { endZ: 1.15, stripe: false },
+    ],
+    lift: 0.022,
+    color: '#f4e2b6',
+    triangles: [0, 1, 2, 0, 2, 3],
+    // Keep scatter and tracks clear of the woven edges.
+    exclusion: { centerX: 0.9, halfWidth: 0.7, halfDepth: 1.32 },
+  },
+  supportBoxes: [[umbrellaPole.baseDiameter, umbrellaPole.baseDiameter, 2.27]],
+} as const
 
 export const shellRockProfile = { depthRatio: 0.65, height: 0.23, centreHeight: 0.055, supportHeight: 0.17 } as const
 export const lichenStoneProfile = { depthRatio: 0.91, heightRatio: 0.74, centreHeightRatio: 0.23, headingPerMetre: 0.62 } as const

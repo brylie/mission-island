@@ -1,5 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { saltwindFlockColors, saltwindHareColor, saltwindMallardModel, saltwindRoostTree } from '../assets/geometry/saltwind-wildlife'
+import { islandTreeGeometry } from '../assets/geometry/starter-scenery'
 import { createTree } from '../assets/props'
 import { createGullFlock } from '../gull-flock'
 import { saltwindGullStops } from '../gull-sites'
@@ -46,16 +47,17 @@ const hareHopHeight = 0.25
 export function createSaltwindWildlife(meshes: MeshFactory, solids: ScenerySolids) {
   const { alderCrownRoost, reedwaterBats, mirrorLakeSchool, meadowHares, forestHares } = saltwindWildlifeSites
   const { x: roostX, z: roostZ } = alderCrownRoost.tree
-  const { height: roostHeight, support, perchHeightRatio } = saltwindRoostTree
+  const { height: roostHeight, perchHeightRatio } = saltwindRoostTree
+  const { trunk, trunkHeightRatio } = islandTreeGeometry
   const roostGround = groundHeight(roostX, roostZ)
   createTree(meshes, roostX, roostZ, roostHeight, 0, roostGround)
   solids.add({
     x: roostX,
     z: roostZ,
     bottom: roostGround,
-    top: roostGround + roostHeight * support.heightRatio,
-    width: support.width,
-    depth: support.depth,
+    top: roostGround + roostHeight * trunkHeightRatio,
+    width: trunk.baseDiameter,
+    depth: trunk.baseDiameter,
     heading: 0,
   })
   const roost = { x: roostX, y: roostGround + roostHeight * perchHeightRatio, z: roostZ }

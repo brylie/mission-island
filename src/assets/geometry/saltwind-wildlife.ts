@@ -10,7 +10,6 @@ type Ellipsoid = readonly [
 
 export const saltwindRoostTree = {
   height: 6.4,
-  support: { width: 0.53, depth: 0.53, heightRatio: 0.5 },
   perchHeightRatio: 1.015,
 } as const
 

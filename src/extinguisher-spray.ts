@@ -1,12 +1,13 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { Scene } from '@babylonjs/core/scene'
-import { extinguisherNozzle } from './assets/props'
+import { extinguisherModel } from './assets/geometry/supply-props'
 import { createParticleEffect } from './particle-effect'
 import { particleRecipes } from './assets/recipes/particle-recipes'
 
-const { height, center, length } = extinguisherNozzle
-const nozzleTip = new Vector3(0, height, center + length / 2)
+const { height, center, length } = extinguisherModel.nozzle
+const half = 0.5
+const nozzleTip = new Vector3(0, height, center + length * half)
 const nozzleForward = new Vector3(0, 0, 1)
 
 export function extinguisherSource(tool: TransformNode) {

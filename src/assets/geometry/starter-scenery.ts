@@ -1,5 +1,24 @@
 // Walking and cargo use simpler shapes around the same trunks and rocks.
-export const islandTreeGeometry = { trunkRadius: 0.265, trunkHeightRatio: 0.5 } as const
+const trunkRadius = 0.265
+const trunkDiameter = trunkRadius * 2
+export const islandTreeGeometry = {
+  trunkRadius,
+  trunkHeightRatio: 0.5,
+  trunk: { baseDiameter: trunkDiameter, tipDiameter: 0.31, embedDepth: 0.16, sides: 6 },
+  canopy: {
+    colors: ['#44784b', '#558953', '#366d4c'],
+    broadleafEvery: 3,
+    broadleaf: {
+      crown: { yRatio: 0.64, sizeRatios: [0.8, 0.8, 0.77] },
+      branch: { xRatio: 0.23, yRatio: 0.54, z: 0.27, sizeRatios: [0.58, 0.57, 0.54], color: '#619553' },
+    },
+    conifer: {
+      sides: 7,
+      lower: { yRatio: 0.55, tipDiameter: 0.1, baseRatio: 0.67, heightRatio: 0.63 },
+      upper: { yRatio: 0.76, tipDiameter: 0.04, baseRatio: 0.48, heightRatio: 0.61, colors: ['#3e7852', '#55894e'] },
+    },
+  },
+} as const
 
 export const islandRockGeometry = {
   centerHeightRatio: 0.12,

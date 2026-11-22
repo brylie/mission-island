@@ -1,6 +1,7 @@
 import { MultiMaterial } from '@babylonjs/core/Materials/multiMaterial'
 import { SubMesh } from '@babylonjs/core/Meshes/subMesh'
 import { airstripMarkings, saltwindLandscapePalette, saltwindRoads, saltwindWalkFinish, terrainFinish, waterSurface, windsock } from '../assets/geometry/saltwind-landscape'
+import { wetSandTint } from '../assets/geometry/shore-finish'
 import { createTrail } from '../assets/routes'
 import { dressStrand } from '../assets/strand'
 import type { ScenerySolids } from './walking'
@@ -66,10 +67,10 @@ function createTerrain(meshes: MeshFactory) {
       const rgb = terrainColor(px, y, pz)
       const byPier = px >= beachBounds.minX && px <= beachBounds.maxX && pz < beachBounds.maxZ
       if (byPier && y < 0) {
-        const wet = Math.min(1, -y / beachFinish.wetDepth)
-        rgb[0] *= 1 - beachFinish.redLoss * wet
-        rgb[1] *= 1 - beachFinish.greenLoss * wet
-        rgb[2] *= 1 + beachFinish.blueGain * wet
+        const wet = Math.min(1, -y / wetSandTint.depth)
+        rgb[0] *= 1 - wetSandTint.redLoss * wet
+        rgb[1] *= 1 - wetSandTint.greenLoss * wet
+        rgb[2] *= 1 + wetSandTint.blueGain * wet
       }
       colors.push(rgb[0] / rgbChannelMax, rgb[1] / rgbChannelMax, rgb[2] / rgbChannelMax, 1)
       if (x === ex || z === ez) continue

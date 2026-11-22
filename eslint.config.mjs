@@ -58,6 +58,7 @@ const authoredWorldLayouts = [
   'src/worlds/saltwind/layout/signs.ts',
   'src/worlds/saltwind/layout/sites.ts',
   'src/worlds/saltwind/layout/terrain.ts',
+  'src/worlds/starter/layout/terrain.ts',
 ]
 
 const independentAuthoredData = ['src/assets/{audio,effects,geometry}/*.ts', ...authoredWorldLayouts]

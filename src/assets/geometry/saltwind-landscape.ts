@@ -14,7 +14,7 @@ export const terrainFinish = {
   tarnstepBank: { maxZ: 200, zBlend: 5, extension: 10, sideBlend: 6 },
   picnicShelf: { radiusX: 9, radiusZ: 5, centerOffsetZ: -3 },
   slate: { color: [125, 133, 125], base: 0.93, amplitude: 0.07, yFrequency: 2.1, xFrequency: 0.11 },
-  sand: { uvScale: 3.5, uvSkew: 0.72, wetDepth: 0.65, redLoss: 0.43, greenLoss: 0.11, blueGain: 0.24 },
+  sand: { uvScale: 3.5, uvSkew: 0.72 },
 } as const
 
 export const waterSurface = {

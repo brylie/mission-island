@@ -2,6 +2,7 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { poseCrew } from '../assets/crew'
 import { fishingFloatRestHeight } from '../assets/fishing'
 import { createFlatbed, poseFlatbed } from '../assets/flatbed'
+import { bobberStage, bootTrailStage, hullDrainStage, mooringStage, slipwayStage } from '../assets/geometry/workbench-water-fixtures'
 import { createDockDeck, createDockPile, createHarborBoat } from '../assets/waterfront'
 import { aimFishingRod, createFishingGear, poseCastLine } from '../fishing-line-view'
 import type { MeshFactory } from '../island-meshes'
@@ -9,34 +10,43 @@ import { flatbedGroundDrive } from '../vehicles/flatbed'
 import { harborDockPiles } from '../world'
 import { contactAge, crewAt, type Fixture } from './effect-fixtures'
 
-const dockWood = '#9e7951'
-const water = '#44848d'
+const half = 0.5
+const stepsPerStride = 2
 
 export function bobberFixture(meshes: MeshFactory): Fixture {
-  const dockX = -2.5, firstBoardZ = 1.47, deckTop = 0.1, boardCount = 7
-  meshes.box(0, -0.12, 0, 4.35, 0.24, 3.52, water, undefined, false)
-  createDockDeck(meshes, dockX, firstBoardZ, deckTop, boardCount)
-  const crew = crewAt(meshes, -1.17, -0.08)
+  const { water, deck } = bobberStage
+  const [, , deckTop] = deck
+  meshes.box(...water.box, water.color, undefined, false)
+  createDockDeck(meshes, ...deck)
+  const anglerXM = -1.17, anglerZM = -0.08, rodReach = 0.85
+  const crew = crewAt(meshes, anglerXM, anglerZM)
   crew.root.position.y = deckTop
-  const facing = { heading: Math.PI * 0.5, casting: null }
+  const facing = { heading: Math.PI * half, casting: null }
   crew.root.rotation.y = facing.heading
-  poseCrew(crew, 0, 0, false, 'tool', 0.85)
+  poseCrew(crew, 0, 0, false, 'tool', rodReach)
   const [kit] = createFishingGear(meshes.scene, meshes, [crew])
   const [hand] = kit.gear
   hand.grip.setEnabled(true)
   hand.paddle.setEnabled(false)
   kit.bobber.isVisible = kit.line.isVisible = true
   aimFishingRod(facing, kit, 0)
-  const tug = (time: number) => contactAge(time, 0.39, 0.94, 0.41) ?? 0
-  const tugDistance = (age: number) => Math.sin(age / 0.41 * Math.PI)
+  const tugStartS = 0.39, tugPeriodS = 0.94, tugDurationS = 0.41
+  const floatRestXM = 0.32, floatZM = 0.02, floatPullXM = 0.19
+  const dipM = 0.126, bobM = 0.012, bobRadPerSecond = 6.2
+  const rippleStartS = 0.413, rippleDurationS = 0.14, rippleYM = 0.018, ripplePullXM = 0.16
+  const tugDistance = (age: number) => Math.sin(age / tugDurationS * Math.PI)
   return {
     sourceAt(time) {
-      const age = contactAge(time, 0.413, 0.94, 0.14)
-      if (age !== undefined) return { x: 0.32 + tugDistance(age) * 0.16, y: 0.018, z: 0.02 }
+      const age = contactAge(time, rippleStartS, tugPeriodS, rippleDurationS)
+      if (age !== undefined) return { x: floatRestXM + tugDistance(age) * ripplePullXM, y: rippleYM, z: floatZM }
     },
     pose(time) {
-      const pull = tugDistance(tug(time))
-      kit.bobber.position.set(0.32 + 0.19 * pull, fishingFloatRestHeight - 0.126 * pull + 0.012 * Math.sin(time * 6.2), 0.02)
+      const pull = tugDistance(contactAge(time, tugStartS, tugPeriodS, tugDurationS) ?? 0)
+      kit.bobber.position.set(
+        floatRestXM + floatPullXM * pull,
+        fishingFloatRestHeight - dipM * pull + bobM * Math.sin(time * bobRadPerSecond),
+        floatZM,
+      )
       poseCastLine(kit, 0)
     },
   }
@@ -44,102 +54,130 @@ export function bobberFixture(meshes: MeshFactory): Fixture {
 
 export function slipwayFixture(meshes: MeshFactory): Fixture {
   const truck = createFlatbed(meshes)
-  const apron = meshes.paintSurface('concrete', '#778681')
-  meshes.box(0, -0.061, -0.15, 4.7, 0.122, 9, apron).receiveShadows = true
-  meshes.box(0.94, 0.013, 0.15, 1.25, 0.023, 2.5, '#508f98', undefined, false)
-  meshes.box(-0.94, 0.013, 0.15, 1.25, 0.023, 2.5, '#508f98', undefined, false)
-  for (const side of [-1, 1]) meshes.box(side * 2.2, 0.005, -0.12, 0.08, 0.018, 8.7, '#c2c3ad', undefined, false)
-  const travel = (time: number) => -2.85 + Math.min(time, 3.16) * 1.18
+  const { apron, puddles, edgeStripes } = slipwayStage
+  meshes.box(...apron.box, meshes.paintSurface('concrete', apron.color)).receiveShadows = true
+  for (const x of puddles.x) meshes.box(x, puddles.y, puddles.z, ...puddles.size, puddles.color, undefined, false)
+  for (const x of edgeStripes.x) meshes.box(x, edgeStripes.y, edgeStripes.z, ...edgeStripes.size, edgeStripes.color, undefined, false)
+  const { axles: [, frontAxle], halfTrack } = flatbedGroundDrive.wheels
+  const startZM = -2.85, driveDurationS = 3.16, paceMps = 1.18
+  const truckYM = 0.013, wheelRadPerSecond = 3.4
+  const sprayStartZM = -0.91, sprayEndZM = 1.28, leftSprayInterval = 3
+  const sprayYM = 0.071, rightSprayYawRad = 0.17, leftSprayYawRad = -1.35, waterFloorYM = 0.031
+  const spraySpeedScale = 0.85, spraySpeedRisePerSecond = 0.14
+  const travel = (time: number) => startZM + Math.min(time, driveDurationS) * paceMps
   return {
     sourceAt(time, index) {
-      const z = travel(time) + flatbedGroundDrive.wheels.axles[1]
-      if (z < -0.91 || z > 1.28) return
-      const side = index % 3 ? 1 : -1
-      return { x: flatbedGroundDrive.wheels.halfTrack * side, y: 0.071, z, yaw: side > 0 ? 0.17 : -1.35, speed: 0.85 + time * 0.14, floor: 0.031 }
+      const z = travel(time) + frontAxle
+      if (z < sprayStartZM || z > sprayEndZM) return
+      const side = index % leftSprayInterval ? 1 : -1
+      return {
+        x: halfTrack * side,
+        y: sprayYM,
+        z,
+        yaw: side > 0 ? rightSprayYawRad : leftSprayYawRad,
+        speed: spraySpeedScale + time * spraySpeedRisePerSecond,
+        floor: waterFloorYM,
+      }
     },
     pose(time) {
-      truck.root.position.set(0, 0.013, travel(time))
-      poseFlatbed(truck, Math.min(time, 3.16) * 3.4, 0)
+      truck.root.position.set(0, truckYM, travel(time))
+      poseFlatbed(truck, Math.min(time, driveDurationS) * wheelRadPerSecond, 0)
     },
   }
 }
 
 export function hullDrainFixture(meshes: MeshFactory): Fixture {
   const boat = createHarborBoat(meshes)
-  boat.position.set(0, 1.02, -0.28)
-  boat.rotation.set(0.175, Math.PI, 0)
-  for (const z of [-1.45, 0.91]) {
-    meshes.box(0, 0.51, z, 2.57, 0.17, 0.25, dockWood)
-    for (const x of [-0.98, 0.98]) meshes.box(x, 0.235, z, 0.21, 0.47, 0.22, '#7f6b4d')
+  const { hull, cradle: { z: cradleZ, rail, feet }, floor, puddle } = hullDrainStage
+  boat.position.set(...hull.position)
+  boat.rotation.set(hull.pitchRad, Math.PI, 0)
+  for (const z of cradleZ) {
+    meshes.box(0, rail.y, z, ...rail.size, rail.color)
+    for (const x of feet.x) meshes.box(x, feet.y, z, ...feet.size, feet.color)
   }
-  meshes.box(0, -0.056, 0, 3.95, 0.112, 6.65, '#818b79').receiveShadows = true
-  meshes.cylinder(0, 0.015, 2.36, 0.94, 0.94, 0.025, 14, '#527b7b', undefined, false)
-  const crew = crewAt(meshes, 1.7, 1.69, 1)
-  crew.root.rotation.y = -1.7
-  const bung = new Vector3(0, -0.245, -2.23)
+  meshes.box(...floor.box, floor.color).receiveShadows = true
+  meshes.cylinder(...puddle.position, puddle.diameter, puddle.diameter, puddle.height, puddle.sides, puddle.color, undefined, false)
+  const workerXM = 1.7, workerZM = 1.69, workerHeadingRad = -1.7
+  const crew = crewAt(meshes, workerXM, workerZM, 1)
+  crew.root.rotation.y = workerHeadingRad
+  const bung = new Vector3(...hull.drainOutlet)
+  const streamEndS = 2.38, dripStartS = 2.4, dripPeriodS = 0.22, dripDurationS = 0.079
+  const decelerationEndS = 2.9, drainSpeedScale = 1.18, drainSpeedDecayPerSecond = 0.2, floorYM = 0.026
   return {
     sourceAt(time) {
-      if (time > 2.38 && contactAge(time, 2.4, 0.22, 0.079) === undefined) return
+      if (time > streamEndS && contactAge(time, dripStartS, dripPeriodS, dripDurationS) === undefined) return
       const { x, y, z } = Vector3.TransformCoordinates(bung, boat.computeWorldMatrix(true))
-      return { x, y, z, speed: 1.18 - Math.min(time, 2.9) * 0.2, floor: 0.026 }
+      return { x, y, z, speed: drainSpeedScale - Math.min(time, decelerationEndS) * drainSpeedDecayPerSecond, floor: floorYM }
     },
   }
 }
 
 export function mooringShakeFixture(meshes: MeshFactory): Fixture {
-  meshes.box(0, -0.096, 0, 5.55, 0.193, 3.28, water, undefined, false)
-  const firstBoardZ = -0.63, deckTop = 0.11, boardCount = 2
-  createDockDeck(meshes, 0, firstBoardZ, deckTop, boardCount)
-  const pileZ = -0.18, pileTop = 0.75
+  const { water, deck, piles, rope } = mooringStage
+  const [, , deckTop] = deck
+  meshes.box(...water.box, water.color, undefined, false)
+  createDockDeck(meshes, ...deck)
   const [pile] = harborDockPiles
-  const pileBottom = pileTop - (pile.top - pile.bottom)
-  for (const x of [-1.65, 1.65]) createDockPile(meshes, { ...pile, x, z: pileZ, top: pileTop, bottom: pileBottom })
-  const crew = crewAt(meshes, -1.44, -0.95)
+  const bottom = piles.top - (pile.top - pile.bottom)
+  for (const x of piles.x) createDockPile(meshes, { ...pile, x, z: piles.z, top: piles.top, bottom })
+  const workerXM = -1.44, workerZM = -0.95
+  const crew = crewAt(meshes, workerXM, workerZM)
   crew.root.position.y = deckTop
-  const rope = Array.from({ length: 12 }, () => meshes.box(0, 0, 0, 0.28, 0.035, 0.041, '#d0ac76', undefined, false))
-  const wave = (time: number) => contactAge(time, 0.37, 0.98, 0.63)
+  const { segment: { width, height, depth, color } } = rope
+  const segments = Array.from({ length: rope.segments }, () => meshes.box(0, 0, 0, width, height, depth, color, undefined, false))
+  const span = rope.endX - rope.startX, segmentSpan = span / segments.length
+  const shakeStartS = 0.37, shakePeriodS = 0.98, shakeDurationS = 0.63, sprayDurationS = 0.17
+  const shakeRadPerSecond = 25, phaseAlongRopeRad = 7, shakeDecayPerSecond = 6, shakeHeightM = 0.145
+  const firstSprayFraction = 0.12, sprayStations = 13, sprayStationSpacing = 0.063, floorYM = 0.018
+  const wave = (time: number) => contactAge(time, shakeStartS, shakePeriodS, shakeDurationS)
   function lineHeight(time: number, along: number) {
-    const t = wave(time)
-    const snap = t === undefined ? 0 : Math.sin(t * 25 - along * 7) * Math.exp(-t * 6) * 0.145
-    return 0.67 + Math.sin(along * Math.PI) * (snap - 0.235)
+    const age = wave(time)
+    const snap = age === undefined ? 0 : Math.sin(age * shakeRadPerSecond - along * phaseAlongRopeRad) * Math.exp(-age * shakeDecayPerSecond) * shakeHeightM
+    return rope.endY + Math.sin(along * Math.PI) * (snap - rope.sagM)
   }
   return {
     sourceAt(time, index) {
-      const t = wave(time)
-      if (t === undefined || t > 0.17) return
-      const along = 0.12 + index % 13 * 0.063
-      return { x: -1.65 + along * 3.3, y: lineHeight(time, along), z: -0.15, floor: 0.018 }
+      const age = wave(time)
+      if (age === undefined || age > sprayDurationS) return
+      const along = firstSprayFraction + index % sprayStations * sprayStationSpacing
+      return { x: rope.startX + along * span, y: lineHeight(time, along), z: rope.z, floor: floorYM }
     },
     pose(time) {
-      for (const [index, segment] of rope.entries()) {
-        const a = index / rope.length, b = (index + 1) / rope.length
-        const rise = lineHeight(time, b) - lineHeight(time, a)
-        segment.position.set(-1.65 + 3.3 * (a + b) / 2, (lineHeight(time, a) + lineHeight(time, b)) / 2, -0.15)
-        segment.rotation.z = Math.atan2(rise, 3.3 / rope.length)
-        segment.scaling.x = Math.hypot(3.3 / rope.length, rise) / 0.28
+      for (const [index, segment] of segments.entries()) {
+        const a = index / segments.length, b = (index + 1) / segments.length
+        const start = lineHeight(time, a), end = lineHeight(time, b), rise = end - start
+        segment.position.set(rope.startX + span * (a + b) * half, (start + end) * half, rope.z)
+        segment.rotation.z = Math.atan2(rise, segmentSpan)
+        segment.scaling.x = Math.hypot(segmentSpan, rise) / width
       }
     },
   }
 }
 
 export function bootTrailFixture(meshes: MeshFactory): Fixture {
-  meshes.box(0, -0.079, 0, 4.05, 0.158, 4.2, water, undefined, false)
-  const firstBoardZ = 1.96, deckTop = 0.067, boardCount = 9
-  createDockDeck(meshes, 0, firstBoardZ, deckTop, boardCount)
+  const { water, deck } = bootTrailStage
+  const [, , deckTop] = deck
+  meshes.box(...water.box, water.color, undefined, false)
+  createDockDeck(meshes, ...deck)
   const crew = crewAt(meshes, 0, 0, 1)
-  const stride = (time: number) => -1.38 + 0.89 * Math.min(3, time)
-  const footClearance = 0.005, stampClearance = 0.007
+  const startZM = -1.38, walkMps = 0.89, walkDurationS = 3
+  const firstStepS = 0.34, stepPeriodS = 0.49, stepContactS = 0.09
+  const footClearanceM = 0.005, stampClearanceM = 0.007
+  const stampOutsetM = 0.175, stampLeadM = 0.21, stampYawRad = 0.14
+  const stridePeriodS = stepPeriodS * stepsPerStride, startCycle = 0.25, strideAmount = 0.54
+  const stride = (time: number) => startZM + walkMps * Math.min(walkDurationS, time)
   return {
     sourceAt(time) {
-      const age = contactAge(time, 0.34, 0.49, 0.09)
+      const age = contactAge(time, firstStepS, stepPeriodS, stepContactS)
       if (age === undefined) return
-      const step = Math.floor((time - 0.34) / 0.49)
-      const side = step % 2 ? -1 : 1
-      return { x: 0.175 * side, y: deckTop + stampClearance, z: stride(time - age) + 0.21, yaw: side * 0.14 }
+      const step = Math.floor((time - firstStepS) / stepPeriodS)
+      const side = step % stepsPerStride ? -1 : 1
+      return { x: stampOutsetM * side, y: deckTop + stampClearanceM, z: stride(time - age) + stampLeadM, yaw: side * stampYawRad }
     },
     pose(time) {
-      crew.root.position.set(0, deckTop + footClearance, stride(time))
-      poseCrew(crew, (Math.min(time, 3) - 0.34) / 0.98 + 0.25, time > 3 ? 0 : 0.54, false)
+      crew.root.position.set(0, deckTop + footClearanceM, stride(time))
+      const cycle = (Math.min(time, walkDurationS) - firstStepS) / stridePeriodS + startCycle
+      poseCrew(crew, cycle, time > walkDurationS ? 0 : strideAmount, false)
     },
   }
 }

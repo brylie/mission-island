@@ -86,7 +86,7 @@ Name gameplay thresholds, timeouts, and other numeric settings in the module tha
 
 - `src/assets/geometry/*.ts` for dimensions, support volumes, and vertex or placement tuples in local model coordinates.
 - `src/assets/audio/*.ts`, `src/assets/effects/*.ts`, and `src/assets/recipes/*.ts` for authored sound, particle, shader, and lighting data.
-- The Saltwind layout files listed in `eslint.config.mjs` for authored terrain profiles, scenery locations, and routes.
+- The island layout files listed in `eslint.config.mjs` for authored terrain profiles, scenery locations, and routes.
 - `test/` for test inputs and expected values.
 
 Keep the approved production modules to constants and types. ESLint rejects functions, calls, and mutations there. Geometry, audio, effects, and world layouts have no imports. Recipe modules can import types and compose values from neighboring recipe files. Runtime code imports the data and names its own settings. ESLint uses the repository configuration for all source files, including exceptions.

@@ -139,11 +139,6 @@
       "count": 129
     }
   },
-  "src/assets/buildings.ts": {
-    "no-magic-numbers": {
-      "count": 70
-    }
-  },
   "src/assets/coastal-profiles.ts": {
     "no-magic-numbers": {
       "count": 2
@@ -194,11 +189,6 @@
       "count": 110
     }
   },
-  "src/assets/market-awning.ts": {
-    "no-magic-numbers": {
-      "count": 155
-    }
-  },
   "src/assets/materials-work.ts": {
     "no-magic-numbers": {
       "count": 89
@@ -217,16 +207,6 @@
   "src/assets/particle-texture.ts": {
     "no-magic-numbers": {
       "count": 162
-    }
-  },
-  "src/assets/props.ts": {
-    "no-magic-numbers": {
-      "count": 168
-    }
-  },
-  "src/assets/quarry.ts": {
-    "no-magic-numbers": {
-      "count": 159
     }
   },
   "src/assets/ridge-flight-orbs.ts": {
@@ -264,11 +244,6 @@
       "count": 28
     }
   },
-  "src/assets/stockpile-profile.ts": {
-    "no-magic-numbers": {
-      "count": 24
-    }
-  },
   "src/assets/stone-facets.ts": {
     "no-magic-numbers": {
       "count": 2
@@ -302,11 +277,6 @@
   "src/assets/wayfinding-sign.ts": {
     "no-magic-numbers": {
       "count": 28
-    }
-  },
-  "src/assets/wren-garden.ts": {
-    "no-magic-numbers": {
-      "count": 158
     }
   },
   "src/assets/wren-gate.ts": {
@@ -414,11 +384,6 @@
       "count": 3
     }
   },
-  "src/extinguisher-spray.ts": {
-    "no-magic-numbers": {
-      "count": 1
-    }
-  },
   "src/field-interactions.ts": {
     "no-magic-numbers": {
       "count": 19
@@ -517,11 +482,6 @@
   "src/island-landmarks.ts": {
     "no-magic-numbers": {
       "count": 30
-    }
-  },
-  "src/island-landscape.ts": {
-    "no-magic-numbers": {
-      "count": 149
     }
   },
   "src/island-map.ts": {
@@ -919,11 +879,6 @@
       "count": 6
     }
   },
-  "src/terrain.ts": {
-    "no-magic-numbers": {
-      "count": 125
-    }
-  },
   "src/truck-pose.ts": {
     "no-magic-numbers": {
       "count": 3
@@ -1044,11 +999,6 @@
       "count": 53
     }
   },
-  "src/workbench/effect-water-fixtures.ts": {
-    "no-magic-numbers": {
-      "count": 169
-    }
-  },
   "src/workbench/expanded-effect-studies.ts": {
     "no-magic-numbers": {
       "count": 81
@@ -1072,11 +1022,6 @@
   "src/workbench/gameplay-land-fixtures.ts": {
     "no-magic-numbers": {
       "count": 152
-    }
-  },
-  "src/workbench/gameplay-water-fixtures.ts": {
-    "no-magic-numbers": {
-      "count": 160
     }
   },
   "src/workbench/gull-study.ts": {
@@ -1261,12 +1206,7 @@
   },
   "src/world.ts": {
     "no-magic-numbers": {
-      "count": 142
-    }
-  },
-  "src/worlds/starter/coastline.ts": {
-    "no-magic-numbers": {
-      "count": 49
+      "count": 139
     }
   },
   "src/worlds/starter/island-remarks.ts": {
@@ -1316,7 +1256,7 @@
   },
   "src/worlds/starter/sites.ts": {
     "no-magic-numbers": {
-      "count": 90
+      "count": 87
     }
   }
 }

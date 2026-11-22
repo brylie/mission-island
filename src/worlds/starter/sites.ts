@@ -52,5 +52,8 @@ export const shellRocks = [[0.63, -0.98, 0.68, 0.9], [1.14, -1.55, 0.41, 1.6], [
   })
 
 export function onBeachTowel(point: { x: number, z: number }) {
-  return beachUmbrellas.some(({ x, z }) => Math.abs(point.x - x - 0.9) <= 0.7 && Math.abs(point.z - z) <= 1.32)
+  return beachUmbrellas.some(({ x, z, geometry }) => {
+    const { centerX, halfWidth, halfDepth } = geometry.towel.exclusion
+    return Math.abs(point.x - x - centerX) <= halfWidth && Math.abs(point.z - z) <= halfDepth
+  })
 }
