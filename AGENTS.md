@@ -8,7 +8,7 @@ Use named constants for settings in the runtime module that owns them. Put autho
 
 # Document what we learn
 
-Treat the docs as a knowledge base for students, teachers, parents, researchers, scientists, developers and players. When a change adds or alters a design choice, mechanic, contract, tool, or anything drawn from the real world, update the matching page in the same change. Real-world topics include species, habitats, geology, weather, seasons, first aid and practical skills. Documentation may be larger than the code. The knowledge is often the more lasting contribution. The [Knowledge Keeper](.agents/skills/mission-island-knowledge-keeper/SKILL.md) reviews this in every verify loop, and the [field guide](docs/field-guide/README.md) holds real-world entries.
+Treat the docs as a knowledge base for students, teachers, parents, researchers, scientists, developers and players. When a change adds or alters a design choice, mechanic, contract, tool, or anything drawn from the real world, update the matching page in the same change. Real-world topics include species, habitats, geology, weather, seasons, natural phenomena, physical sciences, first aid, and practical skills. Documentation may be larger than the code. The knowledge is often the more lasting contribution. The [Knowledge Keeper](.agents/skills/mission-island-knowledge-keeper/SKILL.md) reviews this in every verify loop, and the [field guide](docs/field-guide/README.md) holds real-world entries.
 
 # Verify before handoff
 
