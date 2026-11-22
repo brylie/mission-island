@@ -13,7 +13,8 @@ export function createLookoutFire(scene: Scene, x: number, z: number, visitPrevi
   const { emitter, lifetime, emitPower, gravity, sizeGradients, colorGradients, angularSpeed, emission } = lookoutFlame
   const flame = new ParticleSystem('Lookout flames', lookoutFlame.capacity, scene)
   flame.particleTexture = createParticleTexture(scene, 'flame')
-  flame.emitter = new Vector3(x, y + emitter.height, z)
+  const emitterOrigin = new Vector3(x, y + emitter.height, z)
+  flame.emitter = emitterOrigin
   flame.createBoxEmitter(new Vector3(...emitter.minDirection), new Vector3(...emitter.maxDirection), new Vector3(...emitter.minPoint), new Vector3(...emitter.maxPoint))
   flame.minLifeTime = lifetime[0]
   flame.maxLifeTime = lifetime[1]
@@ -33,6 +34,12 @@ export function createLookoutFire(scene: Scene, x: number, z: number, visitPrevi
 
   let burning = false
   return {
+    // Moves the fire to a new patch of ground, for wildfire hotspots that change between events.
+    move(nextX: number, nextZ: number, ground = groundHeight({ x: nextX, z: nextZ })) {
+      emitterOrigin.set(nextX, ground + emitter.height, nextZ)
+      Object.assign(smokeSource, { x: nextX, y: ground + lookoutParticleHeights.smoke, z: nextZ })
+      Object.assign(emberSource, { x: nextX, y: ground + lookoutParticleHeights.embers, z: nextZ })
+    },
     pose(time: number, intensity: number) {
       flame.emitRate = intensity * (emission.baseRate + emission.pulseAmplitude * Math.sin(time * emission.pulseSpeed))
       const active = intensity > 0

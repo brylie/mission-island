@@ -8,6 +8,7 @@ import { activeFavor, isCustom, residentFavorGuide } from './residents/favors'
 import { distance } from './world'
 import { careerUnlockXp, drivingCareers, learnerVehicles, practiceStop, practiceStopXp } from './learner-vehicles'
 import { starterResidents } from './worlds/starter/residents'
+import { wildfireCard } from './wildfire-card'
 
 const deliveryHintReach = 11
 const sampleCheckoutSteps = 2
@@ -99,19 +100,26 @@ export function missionCard(state: Snapshot, id: number) {
       instruction: 'Hold left click near the fire to put it out.',
     }
   }
-  if (job?.kind === 'market') {
-    const value = state.jobs.active?.progress ?? 0
-    return {
-      label: 'CREW ORDER',
-      title: job.title,
-      detail: jobDescription(job),
-      progress: 'Goods contributed',
-      value,
-      max: job.quantity,
-      text: `${value} / ${job.quantity} ${job.goods}`,
-      instruction: 'Press E at the market awning to contribute.',
-    }
+  // An order the crew already took keeps its card. A fire then shows in notices and on the map.
+  if (job?.kind === 'market') return marketCard(job, state.jobs.active?.progress ?? 0)
+  return wildfireCard(state) ?? serviceCard(state, id)
+}
+
+function marketCard(job: Extract<NonNullable<ReturnType<typeof activeJob>>, { kind: 'market' }>, value: number) {
+  return {
+    label: 'CREW ORDER',
+    title: job.title,
+    detail: jobDescription(job),
+    progress: 'Goods contributed',
+    value,
+    max: job.quantity,
+    text: `${value} / ${job.quantity} ${job.goods}`,
+    instruction: 'Press E at the market awning to contribute.',
   }
+}
+
+// Neighbor favors, repairs, and the job board between them.
+function serviceCard(state: Snapshot, id: number) {
   const local = state.players.find((entry) => entry.id === id)
   if (local && state.gateRepair.stage !== 'sagging' && !materialsOpen(state)) {
     const favor = gateRepairGuide(state, local), value = favorProgress(state.gateRepair)

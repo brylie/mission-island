@@ -20,4 +20,5 @@ export interface FieldSite {
   replaceBuilding?: number
   replaceFeature?: SiteFeature
   replaceFarm?: boolean
+  replaceFireWatch?: boolean
 }

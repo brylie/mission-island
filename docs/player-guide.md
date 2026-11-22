@@ -15,7 +15,7 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | **Right click** | Hold to raise your right hand while on foot with that hand free. Your crewmate can see the gesture. |
 | **B** | Buy one carrot seed at Seabrook Market. |
 | **1 / 2 / 3** | Equip or stow your fishing rod, hoe, or watering can. |
-| **R** | Keyboard shortcut for spraying the extinguisher. |
+| **R** | Keyboard shortcut for spraying a held extinguisher. |
 | **C** | Switch between the island overview and the close third-person view. |
 | **Mouse** | Look around your character or vehicle. The first gameplay keypress captures the mouse. Aim the reticle at something you can use to choose it: it turns gold and a tooltip names the thing and the key. With nothing under the reticle, **E** uses whatever is nearest. |
 | **Esc** | Release the mouse. Press a gameplay key to capture it again. |
@@ -64,6 +64,8 @@ The gear is the start of family-friendly wilderness fire and rescue missions: it
 ## Repeatable orders
 
 After the lookout fire, press **E** at the Harbor Depot job board to take the next crew order. You can read the board from the mission panel anywhere on the island. Deliver seed crates to Island Farm, take beach gear to Driftwood Beach, or fill fish and carrot orders at Seabrook Market. Either player can contribute to an order. You can keep fishing, farming, or exploring while the order is open.
+
+Wildfires break out now and then once the starter shift is done. When smoke is reported, climb the Fire Watch tower beside Fire Supplies and press **E** at the fire finder for a bearing, or look for the smoke column. Red fire stations at the depot, Seabrook, the farm, the tower and Pinewoods each hold an extinguisher you can take at any time. Hold left click near the flames to spray, and press **E** at any station to refill. Larger fires spread if left alone, pay less the more they spread, and need more than one extinguisher. [Fire watch](mechanics/fire-watch.md)
 
 Each completed order deposits its posted reward once in the crew bank. Both islands show the same balance. Either player can use it to buy seeds or a uniform. Four completed orders open the ferry terminal repair. Coins are available to spend along the way. See the [crew orders specification](mechanics/crew-orders.md) for payouts and rules.
 

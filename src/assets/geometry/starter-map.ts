@@ -16,6 +16,9 @@ export const starterMapLook = {
     road: { width: 4, color: '#c7bb9a' },
   },
   fire: { color: '#f7a17d', radius: 6 },
+  // A located wildfire: a pale ring around the fire dot, so it does not rely on colour alone.
+  wildfire: { color: '#f7a17d', radius: 5, ring: '#fff3d0', ringRadius: 8, ringWidth: 2 },
+  north: { text: 'N', color: '#fff3d0', font: '700 11px system-ui, sans-serif', inset: 10 },
   delivery: { color: jobHighlight, radius: 5 },
   harbor: { color: '#fff0ae', radius: 5 },
   market: { color: '#f2d3bc', radius: locationRadius, activeColor: jobHighlight, activeRadius: 6 },

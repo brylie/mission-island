@@ -49,3 +49,17 @@ export function daylight(hour: number) {
 export function nightLighting(hour: number) {
   return 1 - Math.min(1, daylight(hour) * nightLightFade)
 }
+
+const dryRainThreshold = 0.35
+const drySampleSeconds = 5
+const dryLookbackHours = 48
+
+// Hours since the last rain heavier than a light drizzle, looking back at most two days.
+export function dryHoursAt(seconds: number) {
+  const secondsPerHour = daySeconds / hoursPerDay
+  for (let back = 0; back <= dryLookbackHours * secondsPerHour; back += drySampleSeconds) {
+    if (weatherAt(Math.max(0, seconds - back)).rain > dryRainThreshold) return back / secondsPerHour
+    if (seconds - back <= 0) return back / secondsPerHour
+  }
+  return dryLookbackHours
+}

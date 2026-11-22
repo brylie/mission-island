@@ -7,6 +7,7 @@ import { cargoInteractions } from './cargo-interactions.ts'
 import type { CrewBroadcast } from './crew.ts'
 import { createFarmOrders } from './farm-orders.ts'
 import { createFerryRepair } from './ferry-repair.ts'
+import { fireWatchInteractions } from './fire-watch-interactions.ts'
 import type { createFreight } from './freight.ts'
 import { createGateRepair } from './gate-repair.ts'
 import { createGateSwell } from './gate-swell.ts'
@@ -18,6 +19,7 @@ import { createMaterialsWork } from './materials-work.ts'
 import type { createOrders } from './orders.ts'
 import { plotInteractions } from './plot-interactions.ts'
 import { createResidents } from './residents.ts'
+import { createWildfire } from './wildfire.ts'
 
 interface Options {
   notifyCrew: CrewBroadcast
@@ -41,6 +43,7 @@ export function createGameInteractions(
     ...swell.hooks,
   }, checkpoint)
   const farm = createFarmOrders(state, notifyCrew, clock, checkpoint, metrics)
+  const wildfire = createWildfire(state, notifyCrew, checkpoint)
   const materials = createMaterialsWork(state, notifyCrew, () => residents.keep(wren, repairSupplyFavor))
   const ferry = createFerryRepair(state, physics, notifyCrew, freight.creditCrate)
   const cargo = cargoInteractions(state, physics, {
@@ -56,10 +59,17 @@ export function createGameInteractions(
     farm.interactions,
     materials.interactions,
     cargo,
+    fireWatchInteractions(state, wildfire),
     homeInteractions,
     orders.interactions,
     plotInteractions(state, growth),
     journal.interactions,
   ), physics, checkpoint, metrics)
-  return { interactions, gate, residents, farm }
+  return {
+    interactions,
+    gate,
+    residents,
+    farm,
+    wildfire,
+  }
 }

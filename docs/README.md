@@ -6,13 +6,17 @@ Mission Island is a third-person co-op game about two people making a home on a 
 
 | If you are asking… | Start here |
 | --- | --- |
-| What are we making, and what should a session feel like? | [Game design](game-design.md) and [creative direction and inspirations](design/creative-direction.md) |
+| What are we making, and what should a session feel like? | [Product and game design](game-design.md) and [creative direction and inspirations](design/creative-direction.md) |
 | How do jobs teach practical skills and lead to later careers? | [Learning through island work](design/learning-and-careers.md) and the [Co-op Gameplay Designer skill](../.agents/skills/mission-island-coop-gameplay/SKILL.md) |
+| How do jobs, favors and incidents share the crew’s attention? | [Island activity scheduler](design/island-activity-scheduler.md) |
 | What can we play today, and where is the crew going next? | [Playable features and roadmap](roadmap.md) and [the crew’s progression](design/progression.md) |
 | Where should a feature, asset, or world edit go? | [Architecture and contribution guide](architecture.md) |
 | How do I plan or review a feature across systems? | [Game Architect skill](../.agents/skills/mission-island-game-architect/SKILL.md) |
-| What exactly happens when a player uses something? | [Starter chests and tools](mechanics/inventory.md), [charged throws](mechanics/throwing.md), [fishing](mechanics/fishing.md), [swimming and the shallows](mechanics/swimming.md), [farming and sales](mechanics/farming-and-market.md), [orders and pay](mechanics/crew-orders.md), [neighbor repairs](mechanics/neighbor-repairs.md), [the ferry terminal project](mechanics/ferry-terminal.md), and [the field journal](mechanics/field-journal.md) |
+| What exactly happens when a player uses something? | [Starter chests and tools](mechanics/inventory.md), [charged throws](mechanics/throwing.md), [fishing](mechanics/fishing.md), [swimming and the shallows](mechanics/swimming.md), [farming and sales](mechanics/farming-and-market.md), [orders and pay](mechanics/crew-orders.md), [neighbor repairs](mechanics/neighbor-repairs.md), [the fire watch and wildfires](mechanics/fire-watch.md), [the ferry terminal project](mechanics/ferry-terminal.md), and [the field journal](mechanics/field-journal.md) |
 | What belongs at this location? | [Inhabited places](game-design.md#an-inhabited-island), [the two-island destination survey](living-world-qa.md), and [Saltwind’s site inventory](saltwind-island.md) |
+| What gives the crew a reason to stay for a season? | [Starter Island story and cadence](design/starter-island-story-and-cadence.md) |
+| Where should the first Starter Island world-building pass begin? | [Starter Island world-building brief](design/starter-island-worldbuilding-brief.md) |
+| How do habitats fit together across Starter Island? | [Starter Island biome plan](design/starter-island-biomes.md) |
 | How should a place change with latitude, exposure, or time of year? | [Island climates and seasons](design/climate-and-seasons.md) |
 | How do I review or improve the look of a model, place, or seasonal scene? | [Creative direction](design/creative-direction.md) and [Art Director skill](../.agents/skills/mission-island-art-director/SKILL.md) |
 | Which color should a new asset use, and how do light and color fit together? | [Color direction](design/color-direction.md) (proposal) |

@@ -8,8 +8,10 @@ import { cargoSlots, crateSize, distance, lookout, truckBed } from '../world.ts'
 import { starterResidents } from '../worlds/starter/residents.ts'
 import type { InteractionOption, InteractionPolicies } from './definition.ts'
 import { canStow, canTakeStowed, floats, isRescueGear, isVehicleGear, itemName, rescueGear } from '../rescue-gear.ts'
+import { atExtinguisherHome, extinguisherCharge, nearWildfire } from '../wildfire.ts'
 
 const half = 2
+const percentScale = 100
 
 const occupiedBedSlotRadius = 0.93
 const truckBedReach = 3.5
@@ -58,9 +60,11 @@ export function putDownOption(state: Snapshot, player: Player, item: Item): Inte
   if (item.kind === 'toolbox') return { ...option, label: 'Set toolbox down' }
   if (isVehicleGear(item)) return gearPutDownOption(state, player, item, option)!
   if (item.kind === 'extinguisher') {
-    return state.mission === 'fire' && distance(player, lookout) < lookoutSprayReach
-      ? { ...option, key: 'Left click', label: 'Hold to spray' }
-      : { ...option, label: 'Set extinguisher down' }
+    if (extinguisherCharge(item) > 0 && ((state.mission === 'fire' && distance(player, lookout) < lookoutSprayReach) || nearWildfire(state, player))) {
+      return { ...option, key: 'Left click', label: `Hold to spray · ${Math.round(extinguisherCharge(item) * percentScale)}% left` }
+    }
+    if (atExtinguisherHome(item, player)) return { ...option, label: 'Return extinguisher to its stand' }
+    return { ...option, label: extinguisherCharge(item) > 0 ? 'Set extinguisher down' : 'Set empty extinguisher down · Refill at any fire station' }
   }
   if (ferryDrop(state, player, item)) return { ...option, label: 'Stack timber for the ferry repair' }
   const drop = deliveryDrop(state)
@@ -72,13 +76,13 @@ export function putDownOption(state: Snapshot, player: Player, item: Item): Inte
 }
 
 // Crates are cargo while a delivery is open, a resident has asked the crew to move one, or ferry timber is on the way.
-// Pickup gear is always free to use, but only leaves the bed while the pickup is stopped.
+// Extinguishers are always free to take. Vehicle gear only leaves its bed while the vehicle is stopped.
 function canPickUp(state: Pick<Snapshot, 'gateRepair' | 'mission' | 'jobs' | 'residents' | 'ferryRepair' | 'vehicles'>, item: Item, player: Player, cargoWanted: boolean) {
   const eligible = isVehicleGear(item)
     ? !item.stowed || canTakeStowed(state, item, player)
     : item.kind === 'crate'
       ? deliveryDrop(state) !== undefined || cargoWanted || state.ferryRepair.haul > 0
-      : item.kind === 'toolbox' ? toolboxPickable(state, item) : state.mission === 'fire'
+      : item.kind === 'toolbox' ? toolboxPickable(state, item) : true
   return eligible && !item.delivered && item.holder === null && distance(item, player) < itemPickupReach && Math.abs(item.y - player.y) < itemPickupVerticalReach
 }
 

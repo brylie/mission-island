@@ -2,7 +2,7 @@ import { aerialSighting, aviationInteraction, nextOuting, type AviationState, ty
 import type { Player, Snapshot } from '../src/protocol.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
 import { landingFootRadiusM, startRidgeFlight, stepRidgeFlight } from '../src/simulation/ridge-flight.ts'
-import { groundHeight } from '../src/terrain.ts'
+import { groundHeight, walkingHeight } from '../src/terrain.ts'
 import { distance, localPoint, offset, spawns, truckRoof, type Point, type Pose } from '../src/world.ts'
 import { ridgeApproach, ridgeHeading, ridgeLandingRadius, ridgeLaunch, ridgeMeadow, ridgeReturn } from '../src/worlds/starter/ridge-scout.ts'
 import { mirrorPoolWillow } from '../src/worlds/starter/sites.ts'
@@ -20,7 +20,7 @@ const recoveryPoints = [ridgeLaunch, offset({ ...ridgeLaunch, heading: ridgeHead
 const meadowPose = { ...ridgeMeadow, heading: ridgeHeading }
 
 function landedPose({ x, z, heading }: Pose) {
-  return { x, z, heading, y: groundHeight({ x, z }), grounded: true, seat: null, swimming: false, onBed: false, truckSurface: undefined, reaching: false, rightHandRaised: false, throwing: false }
+  return { x, z, heading, y: walkingHeight({ x, z }), grounded: true, seat: null, swimming: false, onBed: false, truckSurface: undefined, reaching: false, rightHandRaised: false, throwing: false }
 }
 
 function landingResult(record: NonNullable<AviationState['flight']>, outcome: 'field' | 'early' | 'missed'): FlightResult {

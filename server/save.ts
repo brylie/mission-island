@@ -11,6 +11,7 @@ import type { Player, Snapshot } from '../src/protocol'
 import { gateStages, initialGateRepair } from '../src/gate-repair.ts'
 import { materialRefillSeconds, repairMaterials, repairQuantity } from '../src/materials-work.ts'
 import { repairSupplyFavor } from '../src/worlds/starter/residents/wren.ts'
+import { isSavedEvents, isSavedExtinguisher, migrateFireWatch } from './events-save.ts'
 import { isFavorReceipt, isResidentRecords, migrateResidents, migrateTrust } from './resident-save.ts'
 import { initialFerryRepair, isFerryRepair } from '../src/ferry-repair.ts'
 import { makeItems } from './items.ts'
@@ -18,7 +19,8 @@ import { readJournal } from './journal-save.ts'
 import { crateStarts, itemStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
 import { currentSaveVersion, saveVersions } from './save-version.ts'
-import { drivingCareers, learnerVehicleIds, seatOffset, type LearnerVehicleId } from '../src/learner-vehicles.ts'
+import type { LearnerVehicleId } from '../src/learner-vehicles.ts'
+import { isSavedGear, isSavedLearnerFleet, isSavedLearnerPlayer, migrateRescueGear } from './learner-save.ts'
 
 const privateDirectoryMode = 0o700
 const privateSaveFileMode = 0o600
@@ -29,7 +31,7 @@ export type IslandSave = {
   lastStarterPay?: Snapshot['lastStarterPay']
   islandTime: number
   growth: number[]
-  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay' | 'ferryRepair'>
+  world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'events' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay' | 'ferryRepair'>
     & { truck: Pose, vehicles?: Partial<Record<LearnerVehicleId, Pose>>, practice?: Partial<Snapshot['practice']>, jobs?: JobBoardState, aviation?: AviationProgress, journal?: Journal, produce?: FarmProgress, materialsWork?: Snapshot['materialsWork'] }
   crew: { token: string, player: Player, reserved: boolean }[]
 }
@@ -83,16 +85,8 @@ function migrateFerry(value: unknown): unknown {
   return { ...value, version: saveVersions.ferryRepair, world: { ...initialFerryRepair(), ...value.world } }
 }
 
-// The Fire and Rescue pickup's gear joins the item list, stowed in its bed.
-function migrateRescueGear(value: unknown): unknown {
-  if (!isRecord(value) || value.version !== saveVersions.residentStanding || !isRecord(value.world) || !Array.isArray(value.world.items)) return value
-  const saved: unknown[] = value.world.items
-  const items = [...saved, ...makeItems().slice(saved.length)]
-  return { ...value, version: saveVersions.rescueGear, world: { ...value.world, items } }
-}
-
 function migrateSave(value: unknown) {
-  return migrateRescueGear(migrateTrust(migrateFerry(migrateResidents(migrateGate(migrateWallets(value))))))
+  return migrateRescueGear(migrateFireWatch(migrateTrust(migrateFerry(migrateResidents(migrateGate(migrateWallets(value)))))))
 }
 
 function isGateRepair(world: Record<string, unknown>, islandTime: number) {
@@ -122,29 +116,9 @@ function isJobBoard(value: unknown, mission: unknown) {
     && isNumber(active.progress) && Number.isInteger(active.progress) && active.progress >= 0 && active.progress < jobs[active.id].quantity)
 }
 
-// Learner fleet records are optional, so saves from before the fleet still load.
-function isLearnerFleet(world: Record<string, unknown>) {
-  const { vehicles, practice } = world
-  return (vehicles === undefined || (isRecord(vehicles) && Object.entries(vehicles).every(([id, pose]) => learnerVehicleIds.some((known) => known === id) && isPose(pose))))
-    && (practice === undefined || (isRecord(practice) && Object.entries(practice).every(([id, stop]) =>
-      learnerVehicleIds.some((known) => known === id) && isNumber(stop) && Number.isSafeInteger(stop) && stop >= 0)))
-}
-
-function isDrivingXp(value: unknown) {
-  return value === undefined || (isRecord(value) && Object.entries(value).every(([career, xp]) => Object.hasOwn(drivingCareers, career) && isCoinBalance(xp)))
-}
-
-// A learner vehicle only goes with a seat that vehicle has.
-function isLearnerSeat(vehicle: unknown, seat: unknown) {
-  if (vehicle === undefined) return true
-  const id = learnerVehicleIds.find((known) => known === vehicle)
-  return id !== undefined && (seat === 'driver' || seat === 'passenger') && seatOffset(id, seat) !== undefined
-}
-
 function validDrivingRecord(player: Record<string, unknown>) {
   return (player.deliveryXp === undefined || isCoinBalance(player.deliveryXp))
-    && isDrivingXp(player.drivingXp)
-    && isLearnerSeat(player.vehicle, player.seat)
+    && isSavedLearnerPlayer(player)
     && (player.freightTicket === undefined || isFreightTicket(player.freightTicket))
     && (player.drivenCrates === undefined || (Array.isArray(player.drivenCrates) && player.drivenCrates.length === crateStarts.length
       && player.drivenCrates.every((metres) => isNumber(metres) && metres >= 0)))
@@ -177,7 +151,7 @@ function hasValidProgress(world: Record<string, unknown>) {
   return (world.jobs === undefined || isJobBoard(world.jobs, world.mission))
     && (world.aviation === undefined || isSavedAviation(world.aviation))
     && (world.produce === undefined || isSavedFarmWork(world.produce))
-    && isLearnerFleet(world)
+    && isSavedLearnerFleet(world)
 }
 
 function isSavedMaterials(world: Record<string, unknown>, islandTime: number) {
@@ -220,9 +194,9 @@ function isSavedCrewMember(entry: unknown): entry is IslandSave['crew'][number] 
     && isRecord(player.goods) && [player.goods.fish, player.goods.carrots].every(isNumber)
 }
 
-// Shared repair work: Wren's materials checkout and the ferry terminal.
+// Shared repair work and island events: Wren's materials checkout, the ferry terminal and any wildfire.
 function isSavedProjects(world: Record<string, unknown>, islandTime: number) {
-  return isSavedMaterials(world, islandTime) && isFerryRepair(world.ferryRepair, islandTime)
+  return isSavedMaterials(world, islandTime) && isFerryRepair(world.ferryRepair, islandTime) && isSavedEvents(world.events, islandTime)
 }
 
 type SaveFields = Omit<IslandSave, 'world'> & { world: Omit<IslandSave['world'], 'journal'> & { journal?: unknown } }
@@ -242,8 +216,8 @@ function isSave(value: unknown): value is SaveFields {
     && Array.isArray(world.items) && world.items.length === itemStarts.length
     && world.items.every((item: unknown, id) => isPose(item) && item.id === id && isNumber(item.y)
       && (item.holder === null || (isNumber(item.holder) && reservedIds.has(item.holder)))
-      && (item.stowed === undefined || (item.stowed === true && 'slot' in itemStarts[id]))
-      && item.kind === itemStarts[id].kind)
+      && isSavedGear(item, id)
+      && item.kind === itemStarts[id].kind && isSavedExtinguisher(item, id))
 }
 
 export function islandSaveFile(root: string, port: number, slot = `island-${port}`) {

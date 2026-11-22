@@ -1,3 +1,4 @@
+import { fireWatch, fireWatchFloor } from './fire-watch.ts'
 import { harborDock, island, onDock } from './world.ts'
 import type { Point } from './world.ts'
 import { duneRelief, sampleBeach } from './worlds/starter/beach-landforms.ts'
@@ -159,6 +160,16 @@ export function waterDepth(point: Point) {
   return Math.max(0, waterLevel - groundHeight(point))
 }
 
+let fireWatchBase: number | undefined
+
+// The ground under the tower, which its stairs and deck rise from.
+export function fireWatchBaseHeight() {
+  fireWatchBase ??= groundHeight(fireWatch)
+  return fireWatchBase
+}
+
 export function walkingHeight(point: Point) {
-  return onDock(point) ? harborDock.top : groundHeight(point)
+  if (onDock(point)) return harborDock.top
+  const tower = fireWatchFloor(point)
+  return tower === undefined ? groundHeight(point) : Math.max(groundHeight(point), fireWatchBaseHeight() + tower)
 }

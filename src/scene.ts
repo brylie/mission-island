@@ -10,6 +10,7 @@ import { createFarmOrderView } from './farm-order-view'
 import { market } from './farm'
 import { createExtinguisherSpray } from './extinguisher-spray'
 import { createLookoutIncident } from './lookout-recovery-art'
+import { createWildfireView } from './wildfire-view'
 import { moveTo, waterActors } from './island-render-pose'
 import { createCrewPresentation } from './crew-presentation'
 import { createIslandCamera } from './island-camera'
@@ -30,7 +31,7 @@ import { createIslandWorld } from './island-world'
 import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'
 import { createObjectiveMarker } from './objective-marker'
 import { createLearnerFleetView } from './learner-fleet-view'
-import { isVehicleGear, itemScale } from './rescue-gear'
+import { itemScale } from './rescue-gear'
 import { createFlashlightBeams } from './rescue-gear-view'
 import type { Player, Snapshot } from './protocol'
 import { groundHeight, waterLevel } from './terrain'
@@ -105,10 +106,10 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const { farmTools, skiffGear, update: updateCrew } = createCrewPresentation(meshes, crew, boat, (...args) => aviation.pose(...args), (...args) => audio.footsteps(...args))
   const items = createItemNodes(meshes)
 
-  const extinguisherIds = itemStarts.flatMap(({ kind }, id) => kind === 'extinguisher' ? [id] : [])
-  const sprays = extinguisherIds.map((_, index) => createExtinguisherSpray(scene, rendering.spraySeed + index))
+  const sprays = new Map(itemStarts.flatMap(({ kind }, id) => kind === 'extinguisher' ? [[id, createExtinguisherSpray(scene, rendering.spraySeed + id)] as const] : []))
   const flashlights = createFlashlightBeams(scene, items, itemStarts.map(({ kind }) => kind))
   const showLookout = createLookoutIncident(meshes)
+  const showWildfire = createWildfireView(meshes, scene)
   const placesFx = createStarterPlaces(meshes)
   const actionFx = createStarterActionEffects(scene, { boat, crew, farmTools, paddles: skiffGear.map(({ gear }) => gear), ferns })
 
@@ -159,9 +160,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
         if (job?.kind === 'delivery') cargoTag.material = meshes.paint(job.color)
       }
       const holder = state.players.find((player) => player.id === item.holder)
-      const spray = sprays[extinguisherIds.indexOf(item.id)]
-      const locked = item.kind === 'extinguisher' && state.mission !== 'fire' && !isVehicleGear(item)
-      if (item.delivered || holder?.seat || locked) {
+      const spray = sprays.get(item.id)
+      if (item.delivered || holder?.seat) {
         node.setEnabled(false)
         spray?.(time, node, false)
         continue
@@ -212,6 +212,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       firePad.setEnabled(state.mission === 'fire')
       equipmentPad.setEnabled(state.mission === 'fire')
       showLookout(state, time)
+      showWildfire(state, time)
     }
     else {
       marketPad.setEnabled(false)

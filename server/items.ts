@@ -1,6 +1,6 @@
 import type { Item, Snapshot } from '../src/protocol.ts'
 import type { Point } from '../src/world.ts'
-import { groundHeight, waterLevel } from '../src/terrain.ts'
+import { groundHeight, walkingHeight, waterLevel } from '../src/terrain.ts'
 import { crateHalfSize } from '../src/simulation/cargo.ts'
 import { itemStarts, localPoint, offset } from '../src/world.ts'
 import { carryPose, floats, isVehicleGear, stowedPose, uprightAtSide } from '../src/rescue-gear.ts'
@@ -49,7 +49,7 @@ export function makeItems(): Item[] {
 
 // A set-down item rests on the ground; a ring buoy or throw bag floats on water.
 export function restingHeight(item: Pick<Item, 'kind' | 'x' | 'z'>) {
-  const ground = groundHeight(item) + itemGroundClearance
+  const ground = walkingHeight(item) + itemGroundClearance
   return floats(item.kind) ? Math.max(ground, waterLevel) : ground
 }
 

@@ -49,8 +49,9 @@ export const juniperSolids = habitatObstacles(juniperLayout.patches).flatMap((o)
 export function createJuniperHabitat() {
   // Keep a few feeding bouts long enough to watch from the trail after the crew walks here.
   const biome = createBiome(recipe, juniperLayout, { bite: bitePerUpdate, regrowth: regrowthRate })
-  return (time: number, weather: Weather, players: readonly Point[]) => {
-    const visitors = players.filter((p) => distance(p, juniperCenter) < visitorRadius)
+  // Burning ground counts as a visitor too, so hares bolt from it and foxes keep their distance.
+  return (time: number, weather: Weather, players: readonly Point[], fires: readonly Point[] = []) => {
+    const visitors = [...players, ...fires].filter((p) => distance(p, juniperCenter) < visitorRadius)
       .map((p) => ({ x: p.x - juniperCenter.x, z: p.z - juniperCenter.z }))
     return biomeFrame(biome.seek(time, visitors, { hour: weather.hour, rain: weather.rain * percentScale }))
   }

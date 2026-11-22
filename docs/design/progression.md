@@ -13,6 +13,8 @@ Each career can teach a practical skill through useful work. Start by noticing a
 | Become familiar | Walk to named discoveries, watch Juniper’s hares seek cover, and return in different weather. | Follow a resident’s clue, record an observation together, and hear someone recognize the discovery back in town. [Field outing](https://github.com/brylie/mission-island/issues/51) |
 | Improve the harbor | Four completed board orders open the ferry terminal repair at the tally board by the barrier. Three stages each take crew coins and timber hauled from Seabrook, and the terminal changes after each one. The last stage opens the ramp to the flatbed. Saltwind can be inspected separately in a browser preview. | Tune the stage costs against both earning routes, add a harbor steward, then the first crossing and return delivery. [Ferry terminal](../mechanics/ferry-terminal.md) · [Balance](https://github.com/brylie/mission-island/issues/52) · [Crossing](https://github.com/brylie/mission-island/issues/20) |
 
+The [Starter Island story and cadence](starter-island-story-and-cadence.md) proposes a few island weeks of local work, relationships and visible repairs before the wharf opens. The fresh-save playtest will compare that pace with the current four-order rule.
+
 ## What belongs to whom
 
 | Record | Owner and status | What advances it |

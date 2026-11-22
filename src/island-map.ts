@@ -12,6 +12,7 @@ import { footpaths, roads, walkways } from './routes'
 import { northernRegions, starterDiscoveries } from './scenery'
 import { boundaryBuoys, buoyBoundaryPoint, coastBounds, coastPoint, coastSegments, offshoreLimitMetres } from './terrain'
 import { crewHomes, ferryTerminal, harbor, lookout } from './world'
+import { fireCentre } from './wildfire'
 
 type MapDot = (x: number, z: number, color: string, radius: number) => void
 
@@ -26,7 +27,13 @@ const rings = Array.from({ length: coastSegments }, (_, i) => {
   return { shore: coastPoint(angle), grass: coastPoint(angle, look.grassRing), boundary: buoyBoundaryPoint(angle) }
 })
 
-function drawShift(state: Snapshot, dot: MapDot) {
+function drawShift(state: Snapshot, dot: MapDot, ring: MapDot) {
+  const wildfire = state.events.fire
+  if (wildfire?.located) {
+    const centre = fireCentre(wildfire)
+    ring(centre.x, centre.z, look.wildfire.ring, look.wildfire.ringRadius)
+    dot(centre.x, centre.z, look.wildfire.color, look.wildfire.radius)
+  }
   if (state.mission === 'fire') dot(lookout.x, lookout.z, look.fire.color, look.fire.radius)
   else {
     const drop = deliveryDrop(state)
@@ -143,8 +150,20 @@ export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapsh
     }
     ink.stroke()
   })
+  ink.fillStyle = look.north.color
+  ink.font = look.north.font
+  ink.textAlign = 'center'
+  ink.textBaseline = 'top'
+  ink.fillText(look.north.text, width * half, look.north.inset)
   if (!state) return
-  drawShift(state, dot)
+  const ring = (x: number, z: number, color: string, radius: number) => {
+    ink.strokeStyle = color
+    ink.lineWidth = look.wildfire.ringWidth
+    ink.beginPath()
+    ink.arc(mx(x), mz(z), radius, 0, fullTurn)
+    ink.stroke()
+  }
+  drawShift(state, dot, ring)
   ink.fillStyle = look.truck.color
   ink.fillRect(mx(state.truck.x) - look.truck.width * half, mz(state.truck.z) - look.truck.height * half, look.truck.width, look.truck.height)
   drawLearners(ink, state, local, mx, mz)

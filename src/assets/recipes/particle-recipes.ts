@@ -1,3 +1,4 @@
+import { wildfireParticleRecipes } from './particle-wildfire-recipes.ts'
 import { gameplayParticleRecipes } from './particle-gameplay-recipes.ts'
 import { shelfParticleRecipes } from './particle-shelf-recipes.ts'
 import type { ParticleShape } from '../particle-texture.ts'
@@ -234,6 +235,7 @@ export const particleRecipes = {
   },
   ...shelfParticleRecipes,
   ...gameplayParticleRecipes,
+  ...wildfireParticleRecipes,
 } satisfies Record<string, Recipe>
 
 export const lookoutParticleHeights = { embers: 0.31, smoke: 0.745 }

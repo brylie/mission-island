@@ -18,6 +18,20 @@ The four completed board orders that already mark the crew ready ([crew orders](
 
 The amounts are trial values for the [balance playtest #52](https://github.com/brylie/mission-island/issues/52), not settled prices. A stage finishes the moment its last coin or crate arrives. Both screens then announce it, and the next stage opens.
 
+## Planned one-day construction and visible stages
+
+When the crew delivers the last timber crate for a funded stage, start construction. It completes **24 island hours later**. If the timber arrives before the funds, mark it as staged and start the clock when the last coins arrive. For example, a funded hand-in on Day 8 at 15:00 finishes on Day 9 at 15:00. Use a shared island timestamp so a skipped night advances the clock normally and a restart restores the same completion time.
+
+Show the current work and the estimated finish on the tally board and crew guide. Keep regular jobs available while the wharf is under construction. Each stage gets a readable scene change at the start and an outcome on completion.
+
+| Stage | While work is underway | What players see when it finishes |
+| --- | --- | --- |
+| Brace the landing | Staged braces, a work trestle and temporary scaffolding at the damaged landing. The road barrier is still down. | Capped steel piles and timber stringers surround the cleared landing. The crew can see where the deck will go. |
+| Lay the new deck | Bundles of planks and uninstalled rails beside the yard, with the braced structure visible. | A continuous deck and side rails reach the berth. An *Opening soon* sign makes the next step clear. |
+| Open the ramp | The new deck is visible behind the barrier. The gantry lamps and sign are being fitted. | The barrier lifts, scaffolding comes down, the gantry lamps light, and the service board shows **Ramp open**. The driveable surface opens with that visual change. |
+
+Save the stage and its finish time on the host. Apply the completed scene and collision once when the island clock reaches the finish time. Both crewmates see the same result, including after sleep, reconnect, or restart. Keep older saves’ finished stages and staged supplies. In [#52](https://github.com/brylie/mission-island/issues/52), test delivery and funding in both orders. Return the next morning and again at the measured finish time to compare the site from the yard and the truck approach. Have a crewmate rejoin while work is underway and check the same estimate and scene from both screens.
+
 ## At the tally board
 
 Three things on the board can be aimed at with **E**:

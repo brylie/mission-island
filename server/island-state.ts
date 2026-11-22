@@ -1,5 +1,4 @@
 import type { DriftwoodFrame } from '../src/simulation/driftwood-school.ts'
-import { isVehicleGear } from '../src/rescue-gear.ts'
 import { restoreFarmWork } from '../src/farm-orders.ts'
 import { farmPlots } from '../src/farm.ts'
 import { initialMaterialsWork } from '../src/materials-work.ts'
@@ -15,6 +14,7 @@ import { initialFerryRepair } from '../src/ferry-repair.ts'
 import { initialResidents } from '../src/residents/trust.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { makeItems, updateStowedItems } from './items.ts'
+import { initialEvents } from './wildfire.ts'
 import { restoreJournal } from './journal.ts'
 import type { IslandSave } from './save.ts'
 import { currentSaveVersion } from './save-version.ts'
@@ -35,6 +35,7 @@ export function restoreIsland(
   juniper: ReturnType<typeof createJuniperHabitat>,
   driftwood: DriftwoodFrame,
   save?: IslandSave,
+  random?: () => number,
 ) {
   const islandTime = save?.islandTime ?? 0
   // Place the barrier or the restored deck before parking, so a truck saved on the ramp parks on it.
@@ -51,6 +52,7 @@ export function restoreIsland(
     ...initialGateRepair(),
     ...initialFerryRepair(),
     ...structuredClone(save?.world),
+    events: structuredClone(save?.world.events ?? initialEvents(random)),
     skiff: restoreSkiff(save?.world.skiff),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
     vehicles: learnerRecord((id) => physics.parkLearner(id, save?.world.vehicles?.[id] ?? learnerVehicles[id].park)),
@@ -73,7 +75,6 @@ export function restoreIsland(
   const growth = save?.growth.slice() ?? farmPlots.map(() => 0)
   for (const item of state.items) {
     item.spraying = false
-    if (state.mission === 'complete' && item.kind === 'extinguisher' && !isVehicleGear(item)) item.holder = null
     if (save) physics.restore(item)
     else physics.relocate(item, item)
   }
@@ -81,7 +82,7 @@ export function restoreIsland(
 }
 
 export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['crew']): IslandSave {
-  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residents, lastFavorPay, journal, materialsWork, ferryRepair } = state
+  const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residents, lastFavorPay, journal, materialsWork, ferryRepair, events } = state
   const { x, z, heading } = truck
   const vehicles = learnerRecord((id) => {
     const { x, z, heading } = state.vehicles[id]
@@ -94,7 +95,7 @@ export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['
     islandTime: state.islandTime,
     growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
-    world: structuredClone({ truck: { x, z, heading }, vehicles, practice: state.practice, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial }, gate, gateRepair, residents, journal, materialsWork, ferryRepair, produce: state.farmWork.progress, ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
+    world: structuredClone({ truck: { x, z, heading }, vehicles, practice: state.practice, skiff, items, mission, fire, events, farm, jobs, aviation: { qualified, surveyed, aerial }, gate, gateRepair, residents, journal, materialsWork, ferryRepair, produce: state.farmWork.progress, ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }
 }

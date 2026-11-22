@@ -107,16 +107,16 @@ test('pickup extinguishers spray anywhere, and spraying the lookout after the fi
   assert.equal(crew.state.mission, 'complete')
 })
 
-test('a save from before the rescue gear gains every piece, stowed in the pickup', (t) => {
+test('a Fire Watch save from before the rescue gear gains every piece, stowed in the pickup', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'mission-island-gear-save-'))
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const file = islandSaveFile(root, 5173)
   const current = createGame().snapshotForSave()
-  const legacy = { ...JSON.parse(JSON.stringify(current)), version: 6 }
+  const legacy = { ...JSON.parse(JSON.stringify(current)), version: 7 }
   legacy.world.items = legacy.world.items.filter((_, id) => !('slot' in itemStarts[id]))
   file.write(legacy)
   const migrated = file.load()
-  assert.equal(migrated.version, 7)
+  assert.equal(migrated.version, 8)
   assert.equal(migrated.world.items.length, itemStarts.length)
   assert.ok(migrated.world.items.filter((_, id) => 'slot' in itemStarts[id]).every((item) => item.stowed === true))
 })

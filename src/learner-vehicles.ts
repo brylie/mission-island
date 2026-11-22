@@ -1,4 +1,5 @@
 import { compactTractorColliders, compactTractorSpec } from './assets/geometry/compact-tractor.ts'
+import type { CrewSignal } from './rescue-gear.ts'
 import { responsePickupColliders, responsePickupSpec } from './assets/geometry/response-pickup.ts'
 import { compactTractorDrive, responsePickupDrive } from './vehicles/learner-drives.ts'
 import { distance, offset, type Point, type Pose } from './world.ts'
@@ -23,6 +24,12 @@ export const drivingCareers = {
 } as const
 export type DrivingCareer = keyof typeof drivingCareers
 export type DrivingXp = Partial<Record<DrivingCareer, number>>
+
+// Host notices about practice runs and rescue gear.
+export type LearnerNotice =
+  | { type: 'crew-signal', signal: CrewSignal, playerId: number, x: number, z: number, place?: string }
+  | { type: 'first-aid-check', helperId: number, patientId: number | null }
+  | { type: 'practice-run', vehicle: LearnerVehicleId, career: DrivingCareer, stop: string, playerId: number, xp: number, qualified: boolean }
 
 export const practiceStopXp = 10
 export const careerUnlockXp = 100

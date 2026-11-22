@@ -4,10 +4,12 @@ import { deliveryDrop, deliveryRadius } from '../src/jobs.ts'
 import type { Item, Snapshot } from '../src/protocol.ts'
 import { crateHalfSize, type createCargoPhysics } from '../src/simulation/cargo.ts'
 import { canOccupyGround, isInsideTruck } from '../src/simulation/movement.ts'
+import { atExtinguisherHome } from '../src/wildfire.ts'
 import { distance, type Point } from '../src/world.ts'
 import { stopPrimary, stowTool, type CrewMember } from './crew.ts'
 import type { InteractionHandlers } from './interactions.ts'
 import { restingHeight, updateStowedItems } from './items.ts'
+import { returnToStand } from './extinguishers.ts'
 import { canStow } from '../src/rescue-gear.ts'
 
 const crateDropMinimumY = -0.10
@@ -50,6 +52,9 @@ export function cargoInteractions(
       else {
         physics.load(item, state.truck, slot)
       }
+    }
+    else if (atExtinguisherHome(item, player)) {
+      returnToStand(item)
     }
     else {
       item.y = restingHeight(item)

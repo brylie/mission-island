@@ -1,5 +1,6 @@
 import { harborDockGeometry, harborDockPile } from './assets/geometry/waterfront.ts'
 import { responsePickupGear } from './assets/geometry/response-pickup.ts'
+import { fireStationGeometry } from './assets/geometry/fire-station.ts'
 import { mendingBenchGeometry } from './assets/geometry/wren-garden.ts'
 import {
   crateStarts,
@@ -7,6 +8,7 @@ import {
   crewSpawnSetback,
   doorApproach,
   extinguisherStarts,
+  extinguisherStations,
   harborDockAnchor,
   harborDockPileLayout,
   learnerVehicleLayout,
@@ -18,7 +20,7 @@ import {
 } from './worlds/starter/layout/places.ts'
 
 export { beach, ferryTerminal, forest, harbor, island, lookout, skiffStart, town, truckStart } from './worlds/starter/layout/places.ts'
-export { crateStarts, crewHomes, extinguisherStarts, wrenCottage }
+export { crateStarts, crewHomes, extinguisherStarts, extinguisherStations, wrenCottage }
 export { crewHipHeight } from './assets/geometry/crew-clothing.ts'
 
 export interface Point {
@@ -68,6 +70,8 @@ export const itemStarts = [
   ...crateStarts.map((start) => ({ kind: 'crate' as const, start })),
   ...extinguisherStarts.map((start) => ({ kind: 'extinguisher' as const, start })),
   { kind: 'toolbox' as const, start: toolboxHome, lift: mendingBench.geometry.surface.top },
+  // Fire stations come after the toolbox so older saves keep their item IDs.
+  ...extinguisherStations.map(({ x, z }) => ({ kind: 'extinguisher' as const, start: { x, z }, lift: fireStationGeometry.restTop })),
   // Rescue gear rides in the Fire and Rescue pickup's bed, one item per slot.
   ...responsePickupGear.map(({ kind }, slot) => ({ kind, start: learnerVehicleLayout.pickup.park, vehicle: 'pickup' as const, slot })),
 ]

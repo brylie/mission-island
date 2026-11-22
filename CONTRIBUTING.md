@@ -26,6 +26,8 @@ Run `npm run playtest` and open the printed **Network** URL on both computers. *
 
 Press **O → Live playtest** or open **Live checkpoints** in the Workbench on the same host. Select a scenario and crew size. **Start checkpoint** sets up the world, places each player and waits for the requested crew. **Restart checkpoint** restores that scenario’s baseline for everyone. Refreshing a browser rejoins the current run. To change to solo, leave one browser connected.
 
+**Playtest events** in the same menu start an island event without waiting for the host's schedule. **Start wildfire** lights a fire of the chosen size, site and heat, or a random one for each choice left on **Random**. **Start it already located** skips the search. **End wildfire** ends the current fire as a burnout, with no pay and a burn scar. Events start only after the checkpoint has started and the starter shift is complete. The host refuses them in a regular game.
+
 | Scenario ID | Starting condition |
 | --- | --- |
 | `dock-fishing` | Each angler stands at the end of the fishing dock, facing open water with a rod equipped. Cast immediately to test the current fishing mechanic. |
@@ -45,6 +47,7 @@ Press **O → Live playtest** or open **Live checkpoints** in the Workbench on t
 | `village-favors` | At 09:30 after the starter shift, the crew stands beside Bram at the depot. Each crewmate carries two fish and two carrots for Ines's and Mara's favors. |
 | `household-evening` | At 18:30, one crewmate stands at Mara's porch with two carrots and the other stands outside Wren's cottage. Watch both residents go indoors, then compare the windows at bedtime and before departure. |
 | `field-outing` | At 07:30, both players stand near Mara on the fishing dock with a fresh field journal. Follow her leads to Shellglass and Juniper, then look for sheltering hares during the first late-morning shower. |
+| `fire-watch` | Smoke is reported on a morning that stays dry; a grass fire burns on Windstone meadow slope. One crewmate stands at the foot of the Fire Watch stairs and the other by its fire station. Climb the tower, sight the fire finder, then take an extinguisher west and put the fire out. |
 
 Agents can use the same scenario IDs from the shell. For example, to try fishing alone:
 

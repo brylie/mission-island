@@ -195,7 +195,7 @@ test('both PR save formats load and rewrite as the same journal version', (t) =>
   for (const { stored, expected } of legacy) {
     file.write({ ...base, version: 4, islandTime: 100, world: { ...legacyWorld, journal: stored } })
     const migrated = file.load()
-    assert.equal(migrated.version, 7)
+    assert.equal(migrated.version, 8)
     assert.deepEqual(migrated.world.ferryRepair, ferryRepair)
     assert.deepEqual(migrated.world.journal, expected)
     file.write(createGame({ save: migrated }).snapshotForSave())

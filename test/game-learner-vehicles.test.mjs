@@ -147,12 +147,12 @@ test('a save file keeps learner seats and XP, and rejects a seat the vehicle doe
 })
 
 test('a crewmate boards a free learner vehicle when the nearer flatbed is full', (t) => {
-  const pickupPose = offset(truckStart, 4.2, 0)
+  const pickupPose = offset(truckStart, 4.2, 3.5)
   const { join, advance } = setup(t, {
     players: [
       player(0, truckStart, { seat: 'driver' }),
       player(1, truckStart, { seat: 'passenger' }),
-      player(2, offset(truckStart, 2, 0)),
+      player(2, offset(truckStart, 2.1, 1.6)),
     ],
     arrange: (save) => { save.world.vehicles = { ...save.world.vehicles, pickup: { ...pickupPose, heading: truckStart.heading } } },
   })

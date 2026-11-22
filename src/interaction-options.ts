@@ -5,6 +5,7 @@ import { gateActions, gateInteractions } from './gate-repair.ts'
 import { swellActions, swellInteractions } from './gate-swell.ts'
 import { cargoActions, heldItem, floatingPickupOptions, pickupOptions, putDownOption } from './interactions/cargo.ts'
 import { mergeDisjoint } from './interactions/definition.ts'
+import { fireWatchActions, fireWatchInteractions } from './interactions/fire-watch.ts'
 import type { InteractionChoice as Choice, InteractionOption } from './interactions/definition.ts'
 import { homeActions, homeInteractions, welcomeNote } from './interactions/home.ts'
 import { orderActions, orderInteractions, plotActions, plotInteractions } from './interactions/work.ts'
@@ -23,6 +24,7 @@ const actionPolicies = mergeDisjoint(
   farmActions,
   materialsActions,
   cargoActions,
+  fireWatchActions,
   homeActions,
   orderActions,
   plotActions,
@@ -62,6 +64,7 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
   return [
     ...swellInteractions(state, player),
     ...gate.primary,
+    ...fireWatchInteractions(state, player),
     ...(held ? [putDownOption(state, player, held)] : []),
     ...homeInteractions(state, player),
     ...farm,

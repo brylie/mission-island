@@ -1,5 +1,5 @@
 import type { Item, Player, Snapshot } from './protocol'
-import { isVehicleGear } from './rescue-gear.ts'
+import { extinguisherCharge } from './wildfire.ts'
 import { market, marketTradeReach, nearbyPlot, seedPrice } from './farm.ts'
 import { distance, truckSeatSpeed } from './world.ts'
 import { heldItem } from './interactions/cargo.ts'
@@ -16,9 +16,9 @@ const daylightGrowthStartsHour = 6
 const daylightGrowthEndsHour = 18
 const truckBoardReach = 4.5
 
-export function canSpray(state: Snapshot, player: Player, item?: Item) {
-  // Pickup extinguishers spray anywhere; the Fire Supplies pair only during the lookout fire.
-  return !player.seat && item?.kind === 'extinguisher' && (state.mission === 'fire' || isVehicleGear(item))
+// An extinguisher sprays anywhere until it runs dry.
+export function canSpray(player: Player, item?: Item) {
+  return !player.seat && item?.kind === 'extinguisher' && extinguisherCharge(item) > 0
 }
 
 export function inSkiff(seat: Player['seat']) {
