@@ -37,7 +37,7 @@ Mission Island is a third-person co-op game about two people making a home on a 
 These docs are also a knowledge base. Every mechanic, design choice and piece of the natural world we build is written down with its reasoning, so the project is useful beyond the game itself.
 
 The [knowledge framework](knowledge-framework.md) explains how it's organised:
-- game design documents, plus [tutorials](craft/first-tree-species.md), [how-to guides](craft/add-tree-species.md), reference such as the [field guide](field-guide/README.md), and explanation such as [process and place pages](field-guide/README.md) and [craft](craft/README.md);
+- game design documents, beside a knowledge base organised by subject: the [field guide](field-guide/README.md) for the real world, [craft](craft/README.md) for how we build it, with a [tutorial](craft/first-tree-species.md) and a [how-to](craft/add-tree-species.md), and design decisions for why;
 - every statement marked as true of the real world, the island, our build, or our reasoning.
 
 | If you are… | Start with |

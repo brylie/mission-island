@@ -1,6 +1,7 @@
 # Sources register for the Mission Island knowledge base.
 # One entry per source. Pages link to entries by id. Rules: .agents/skills/mission-island-knowledge-keeper/references/sources.md
-# opened: false means the link is cited but no one has yet read it to check the claim. Treat those claims as unsourced.
+# opened: false means no one has yet read the source to check the claim. Claims resting only on it are unsourced.
+# Claim status: unsourced, then sourced (an agent opened the source and recorded a quote), then checked (a person checked the quote against the page).
 # tier: 1 recognised body or peer-reviewed · 2 primary · 3 reputable secondary · 4 community or encyclopedia
 
 - id: wikipedia-osborne-fire-finder
@@ -14,9 +15,59 @@
   region: United States
   note: Read by an agent, which summarised it. The article cites US Forest Service technical notes, which returned an error and still need checking as the primary source.
   supports:
-    - claim: A single lookout's fire finder gives a bearing; the fire's position is normally fixed by crossing bearings from two or more towers, with a single-tower distance estimate as a rough fallback.
+    - claim: A lookout's fire finder gives a bearing and a rough distance from one tower; crossing bearings from two or more towers fixes the position precisely.
       quote: To add on the next read; the agent's summary is not a quote.
       used-in: field-guide/processes/wildfire.md#fighting-a-fire
+
+- id: usfs-osborne-firefinder
+  title: The Osborne Firefinder
+  publisher: US Forest Service
+  url: https://www.fs.usda.gov/t-d/pubs/html/03511311/03511311.html
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: United States
+  note: Returned an error (403) to automated reading on 2026-11-22. Reported to describe a lookout estimating distance with the instrument's tape.
+  supports:
+    - claim: A single lookout can estimate the distance to a smoke.
+      used-in: field-guide/processes/wildfire.md#fighting-a-fire
+
+- id: ny-dec-adirondack-fire-tower-study
+  title: Fire Tower Study for the Adirondack Park
+  publisher: New York State Department of Environmental Conservation
+  url: https://extapps.dec.ny.gov/docs/lands_forests_pdf/ftowerstudy.pdf
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: United States (New York)
+  note: The PDF timed out twice on 2026-11-22. Reported to describe fixing a fire by crossing azimuth readings from two towers.
+  supports:
+    - claim: Crossing bearings of the same smoke from two towers fixes a fire's exact position.
+      used-in: field-guide/processes/wildfire.md#fighting-a-fire
+
+- id: sfrs-report-wildfires
+  title: How to report wildfires
+  publisher: Scottish Fire and Rescue Service
+  url: https://www.firescotland.gov.uk/outdoors/wildfires/how-to-report-wildfires/
+  archived:
+  accessed: 2026-11-22
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: Scotland
+  note: The page says it was last updated on 28 October 2026. Safety advice; a person must check it before the wildfire page is verified.
+  supports:
+    - claim: Someone who finds a wildfire should move away from the fire, smoke and vegetation, and call 999 for the fire service.
+      quote: "Position yourself away from the fire, smoke, and any vegetation."
+      used-in: field-guide/processes/wildfire.md#if-you-find-a-fire
+    - claim: Members of the public shouldn't try to fight a wildfire.
+      quote: "Leave the firefighting to us, it's what we are trained to do."
+      used-in: field-guide/processes/wildfire.md#if-you-find-a-fire
+    - claim: A wildfire can keep smouldering or spread underground.
+      quote: "The fire can smoulder or spread underground."
+      used-in: field-guide/processes/wildfire.md#if-you-find-a-fire
 
 - id: naturescot-caledonian-pinewood
   title: Caledonian pinewood
@@ -71,7 +122,7 @@
       used-in: field-guide/processes/wildfire.md#sources
 
 # Added 2026-11-22 by the Knowledge Keeper's first sourcing run. Quotes came back through a summarising
-# fetcher (quote-via: fetcher), so a person should check each against its page before marking claims verified.
+# fetcher (quote-via: fetcher), so a person should check each against its page before marking claims checked.
 
 - id: wt-caledonian-forest
   title: "Caledonian forest"
@@ -257,13 +308,13 @@
   supports:
     - claim: "Alder roots have nitrogen-fixing nodules that condition the soil."
       quote: "The roots have nitrogen-fixing nodules, conditioning the soil"
-      used-in: field-guide/highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks
+      used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
     - claim: "Siskin, redpoll and goldfinch eat alder seeds."
       quote: "the seeds are eaten by the siskin, redpoll and goldfinch"
-      used-in: field-guide/highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks
+      used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
     - claim: "Otters nest among alder roots."
       quote: "Alder roots make the perfect nest sites for otters."
-      used-in: field-guide/highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks
+      used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
 
 - id: wt-wet-woodland
   title: "Wet woodland"
@@ -278,7 +329,7 @@
   supports:
     - claim: "Wet, decaying wood is good habitat for invertebrates."
       quote: "Wet, decaying wood and seepages make good habitat for invertebrates"
-      used-in: field-guide/highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks
+      used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
 
 - id: tfl-bracken
   title: "Bracken species profile"
@@ -293,10 +344,10 @@
   supports:
     - claim: "Bracken fronds contain toxic compounds."
       quote: "fronds contain toxic compounds"
-      used-in: field-guide/highwood-habitats.md#bracken-slopes
+      used-in: field-guide/places/bracken-slopes.md
     - claim: "Bracken and dog violets growing together on sunny hillsides are important habitat for the pearl-bordered fritillary."
       quote: "The combination of bracken and dog violets growing together"
-      used-in: field-guide/highwood-habitats.md#bracken-slopes
+      used-in: field-guide/places/bracken-slopes.md
 
 - id: scotgov-bracken-2025
   title: "Bracken presence and management practices on Scottish grassland farms, 2025"
@@ -311,7 +362,7 @@
   supports:
     - claim: "Bracken is directly toxic to livestock."
       quote: "direct toxicity from bracken"
-      used-in: field-guide/highwood-habitats.md#bracken-slopes
+      used-in: field-guide/places/bracken-slopes.md#bracken-and-people
 
 - id: lakedistrict-lyme
   title: "Lyme disease"
@@ -326,7 +377,7 @@
   supports:
     - claim: "People are most at risk of picking up ticks brushing through tall vegetation, especially bracken."
       quote: "most at risk of picking up ticks when brushing through tall vegetation, especially bracken"
-      used-in: field-guide/highwood-habitats.md#bracken-slopes
+      used-in: field-guide/places/bracken-slopes.md#bracken-and-people
 
 - id: bto-whinchat
   title: "Whinchat BirdFacts"
@@ -341,4 +392,4 @@
   supports:
     - claim: "Whinchats nest in grass tussocks and use bracken as perches."
       quote: "tussocks for nest sites"
-      used-in: field-guide/highwood-habitats.md#bracken-slopes, field-guide/places/bracken-slopes.md#how-bracken-changes-a-place
+      used-in: field-guide/places/bracken-slopes.md#how-bracken-changes-a-place

@@ -1,6 +1,6 @@
 # Highwood habitats
 
-**Status: planned. Last tended 2026-11-22.** The Highwood isn't on the island yet. These cards describe the habitats the placement work will build.
+**Type: reference (place cards). Status: planned. Last tended 2026-11-22.** The Highwood isn't on the island yet. These cards describe the habitats the placement work will build.
 
 **New here?** Read the pinewood interior and the exposed ridge first: they're the Highwood's two extremes, and every other habitat sits between them. For processes that cross every habitat, see the explainers on [wildfire](processes/wildfire.md), [bracken slopes](places/bracken-slopes.md) and [wet woodland](places/wet-woodland.md).
 
@@ -14,7 +14,7 @@ Each card uses the framework's [place shape](../knowledge-framework.md#entry-sha
 - **In the game**, which is what a player will see
 - **Notice this**, an observation to make
 
-**Sources.** Each Life line names its sources by id in the [sources register](../sources.yaml). The sources were opened and quoted by the Knowledge Keeper on 2026-11-22, so the lines are **sourced**. They become verified once a person spot-checks the quotes. Anything still marked *unsourced* or *partial* is listed at the end of the page.
+**Sources.** Each Life line names its sources by id in the [sources register](../sources.yaml). The sources were opened and quoted by the Knowledge Keeper on 2026-11-22, so the lines are **sourced**. They become *checked* once a person checks each quote against its page. Anything still marked *unsourced* or *partial* is listed at the end of the page.
 
 Plants are described in [Highwood plants](highwood-plants.md), and terms in *italics* are in the [glossary](glossary.md).
 
@@ -59,7 +59,7 @@ Plants are described in [Highwood plants](highwood-plants.md), and terms in *ita
 - **What you see.** Alder and grey willow along water and in soggy hollows, with mosses, sedges and rushes beneath.
 - **Why here.** Waterlogged soil, which pines can't tolerate. See the [wet woodland explainer](places/wet-woodland.md).
 - **What changes it.** The water level. Wet woodland on permanently waterlogged ground is called *carr*.
-- **Life (real).** Alder roots carry nitrogen-fixing nodules that enrich the soil. Siskins, redpolls and goldfinches eat its seeds, otters make nests among its roots, and wet, decaying wood is good habitat for invertebrates. *Sources: woodtrust-alder, wt-wet-woodland.*
+- **Life (real).** Alder enriches waterlogged soil, and otters, seed-eating finches and many invertebrates live in wet woods. Details and sources are on the [wet woodland](places/wet-woodland.md) page.
 - **In the game.** Alder and grey willow by the water, with no pine.
 - **Notice this.** Follow the stream and watch where the alders stop. Their edge shows how far the wet ground reaches.
 
@@ -68,7 +68,7 @@ Plants are described in [Highwood plants](highwood-plants.md), and terms in *ita
 - **What you see.** Dense bracken on deeper, well-drained hillsides: green in summer, bronze in autumn, and flattened brown in winter.
 - **Why here.** Deep soil and light. Bracken spreads underground by *rhizomes* and shades out smaller plants. See the [bracken slopes explainer](places/bracken-slopes.md).
 - **What changes it.** Grazing, cutting and fire. Bracken spreads where management eases off.
-- **Life (real).** Bracken is poisonous to livestock, and brushing through it is when people are most at risk of picking up ticks. Whinchats breed where bracken mixes with grassland, nesting in tussocks and perching on the fronds. Pearl-bordered fritillary butterflies breed where violets grow among bracken. *Sources: tfl-bracken, scotgov-bracken-2025, lakedistrict-lyme (England), bto-whinchat.*
+- **Life (real).** Bracken is toxic to livestock and harbours ticks, and whinchats and pearl-bordered fritillaries use bracken slopes. Details and sources are on the [bracken slopes](places/bracken-slopes.md) page.
 - **In the game.** Bracken patches on gentle slopes and in clearings. You can walk through them.
 - **Notice this.** Look for where bracken gives way to heather uphill and to rushes downhill. It's a rough map of the soil.
 
@@ -87,6 +87,4 @@ Fire is a process that crosses every habitat, not a habitat itself. See the [wil
 **Still unsourced or partial.**
 - Moths and bees on heath specifically: no opened page names them.
 - That juniper needs *lightly grazed* ground: the sources support open, disturbed ground and browsing damage.
-- That alder's nodules hold *bacteria* (*Frankia*): a tier 1 source is needed.
-- That bracken litter shelters violets: the Butterfly Conservation bracken factsheet is a PDF that couldn't be read.
 - Caledonian pinewood from NatureScot itself: its site blocked automated reading.

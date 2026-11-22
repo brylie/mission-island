@@ -1,8 +1,16 @@
 # Wildfire
 
-**Real world: draft. On the island: playable**, see [Fire watch](../../mechanics/fire-watch.md). Last tended 2026-11-22. Model purpose: **illustrate** fire as a crew job, not predict spread.
+**Type: explanation (process). Real world: draft. On the island: playable**, see [Fire watch](../../mechanics/fire-watch.md). Last tended 2026-11-22. Model purpose: **illustrate** fire as a crew job, not predict spread. This page is behind the safety gate. It uses its own headings rather than the framework's process shape; see [open questions](../../open-questions.md).
 
-Wildfire is fire burning through vegetation outside anyone's control. On a cool, wet island it can seem unlikely, yet moorland and woodland fires are a familiar spring hazard in places like the Scottish Highlands. This explainer covers why fires start and spread, how people fight them, why land is sometimes burned on purpose, and how ground recovers. It then compares the island's fires with the real thing.
+Wildfire is fire burning through vegetation outside anyone's control. On a cool, wet island it can seem unlikely, yet moorland and woodland fires are a familiar spring hazard in places like the Scottish Highlands. This page covers why fires start and spread, how people fight them, why land is sometimes burned on purpose, and how ground recovers. It then compares the island's fires with the real thing.
+
+## If you find a fire
+
+> **Safety: review pending.** A person must check this box against the source before the page is verified.
+>
+> If you see a wildfire, move well away from the fire, its smoke and any vegetation, and call 999 (or your local emergency number) to ask for the fire service. Don't try to fight it yourself: firefighting is for trained crews. A fire can keep smouldering underground, so stay well away even when the flames seem out. This is the Scottish Fire and Rescue Service's advice (`sfrs-report-wildfires` in the [sources register](../../sources.yaml)).
+>
+> The *Fighting a fire* section below describes what trained crews do. It is not advice to tackle a fire.
 
 ## What a fire needs
 
@@ -36,7 +44,7 @@ Crews work from the edges. The safest place to start is the *anchor point*: an e
 - **Water or backpack sprayers** for hotspots.
 - **Firebreaks.** Strips cleared of fuel.
 
-Fires are spotted by people watching from high ground, from towers or by aircraft. A lookout's fire finder, a sighting instrument over a map, gives only the bearing (direction) from the tower to the smoke. The fire's position is usually fixed where bearings from two or more towers cross. A single tower can only estimate distance roughly from the map and the terrain.
+Fires are spotted by people watching from high ground, from towers or by aircraft. A lookout's fire finder, a sighting instrument over a map, gives the bearing (direction) from the tower to the smoke, and a lookout can estimate the distance roughly from the map and the terrain. The position is fixed precisely where bearings from two or more towers cross.
 
 ## Burning on purpose: muirburn
 
@@ -83,7 +91,7 @@ The island's fires are a crew job: spot the smoke, fix the position, bring the r
 | Recovery takes seasons to decades. | Scars recover over three dawns. | Players see the change within a play session. | How fast land really recovers. The game compresses time on purpose, as the [learning brief](../../design/learning-and-careers.md) allows, but should say so. |
 | Crown and peat fires exist. | Only surface fires on grass and scrub. | Out of scope for now. | That a fire is always out once the flames stop. |
 | Fires start from lightning or, far more often in Britain, people. Weather makes ignition and spread more or less likely. | A host schedule starts a fire about once an island week. Weather only gates and hastens the start. | Spaces fires out as crew jobs, rather than random disasters. | That a dry spell itself starts a fire. Something has to ignite it. |
-| One tower gives a bearing; crossing bearings from two or more towers fixes the position. | One fire finder gives a place name, bearing and distance. | One tower, and a quick answer for a new crew. | That one sighting is enough to locate a fire. |
+| One tower gives a bearing and a rough distance; crossing bearings from two or more towers fixes the position precisely. | One fire finder gives a place name, bearing and distance, with no cross-check. | One tower, and a quick answer for a new crew. | That one tower gives an exact location. |
 | Fires burn until fuel, weather or crews stop them. Crews are organised services or volunteers, not paid per fire. | A fire burns out after 1.5 island days, and pay depends on its size. | A clear end state and a reward fit a crew job. | That firefighting is piecework. How real fire crews are organised is a gap to fill with a *practice* entry. |
 
 ## Sources
@@ -92,7 +100,8 @@ The island's fires are a crew job: spot the smoke, fix the position, bring the r
 - Game and Wildlife Conservation Trust, [muirburn 2026–27 season and licences](https://www.gwct.org.uk/blogs/news/2026/september/muirburn-2026-27-season-and-licences/).
 - NatureScot, [Caledonian pinewood](https://www.nature.scot/landscapes-and-habitats/habitat-types/woodland-habitats/caledonian-pinewood), for pine and fire.
 
-- Wikipedia, [Osborne Fire Finder](https://en.wikipedia.org/wiki/Osborne_Fire_Finder), for how lookouts take and cross bearings. It cites US Forest Service technical notes that weren't checked directly.
+- Scottish Fire and Rescue Service, [How to report wildfires](https://www.firescotland.gov.uk/outdoors/wildfires/how-to-report-wildfires/), for the safety advice.
+- Wikipedia, [Osborne Fire Finder](https://en.wikipedia.org/wiki/Osborne_Fire_Finder), tier 4, for how lookouts take bearings, estimate distance and cross bearings. Its primary sources, a US Forest Service account and a New York State fire tower study, couldn't be opened, so they're recorded as unopened in the register.
 
 **Unsourced, to add before this page leaves draft:**
 - a fire-behaviour source, such as a fire and rescue service's wildfire guidance, for the fire triangle, fuel, weather and topography, and fighting tactics;

@@ -1,6 +1,6 @@
 # Bracken slopes
 
-**Real world: draft. On the island: planned**, as part of the Highwood. Last tended 2026-11-22. Model purpose: **illustrate** a habitat as scenery.
+**Type: explanation (place). Real world: draft. On the island: planned**, as part of the Highwood. Last tended 2026-11-22. Model purpose: **illustrate** a habitat as scenery. It uses its own headings rather than the framework's place shape. This page owns the bracken claims, and the [habitat card](../highwood-habitats.md#bracken-slopes) summarises them.
 
 Walk up many hillsides in Britain and Ireland in late summer and you wade through waist-high green fronds, all one plant: bracken. In autumn the whole slope turns bronze. This explainer covers how a single fern can take over a hillside, why it grows where it does, and what that means for wildlife and for the people who work the land.
 
@@ -27,13 +27,13 @@ So on a hillside, bracken often marks the deeper, drier soils, with heather on t
 - **Spread.** Where grazing or management eases off, bracken can creep into grassland and heath and replace it.
 - **Wildlife.** Bracken isn't a desert:
   - Whinchats breed where bracken mixes with grassland, nesting in tussocks and perching on the fronds. The British Trust for Ornithology's whinchat account (`bto-whinchat` in the [sources register](../../sources.yaml)) describes tussock nests and bracken perches. An earlier draft said whinchats nest *in* bracken, which the source doesn't support.
-  - Some butterflies of woodland edges and hillsides breed where bracken litter shelters violets, their caterpillars' food plant.
+  - Bracken and dog violets growing together on sunny hillsides are important habitat for the pearl-bordered fritillary butterfly, whose caterpillars feed on violets (`tfl-bracken`). Whether the bracken litter shelters the violets is still unsourced.
   - The mix of bracken with open patches matters more than bracken alone.
 
 ## Bracken and people
 
-- **Livestock.** Bracken is poisonous to grazing animals, especially in quantity. It contains compounds that destroy vitamin B1 and others linked to cancer, so farmers keep animals off dense stands.
-- **Ticks.** The shaded, humid bracken floor suits ticks. Walkers and workers are advised to check for ticks after passing through bracken. Ticks can carry Lyme disease.
+- **Livestock.** Bracken is directly toxic to livestock (`tfl-bracken`, `scotgov-bracken-2025`). The compounds involved, which destroy vitamin B1 and are linked to cancer, are still unsourced, and one unopened source suggests the risk may be low, so this may become contested.
+- **Ticks.** People are most at risk of picking up ticks when brushing through tall vegetation, especially bracken (`lakedistrict-lyme`), and ticks can carry Lyme disease. Check for ticks after walking through it.
 - **Uses, past and present.** People once cut bracken for animal bedding, thatch and burning to potash. Today it's mostly a land-management problem. It's controlled by repeated cutting, crushing (*rolling*) or herbicides, each with costs and side effects.
 
 ## On the island
@@ -50,13 +50,14 @@ Bracken is one of the [Highwood plants](../highwood-plants.md#bracken-pteridium-
 
 ## Sources
 
+- Source ids in the text point to the [sources register](../../sources.yaml).
 - Woodland Trust, [A–Z of British trees and plants](https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/), general background.
 
 **Unsourced, to add before this page leaves draft:** the Woodland Trust index above gives general background only. These claims each need a specific source:
 - rhizome spread, and resistance to cutting and fire;
 - soil, exposure and frost preferences;
 - shading and litter effects;
-- toxicity to livestock (thiamine-destroying and carcinogenic compounds);
+- the toxic compounds (thiamine-destroying and carcinogenic);
 - violet-feeding butterflies and bracken litter, from the Butterfly Conservation factsheet;
-- ticks and Lyme disease, from a public-health source;
+- a public-health source for tick-borne Lyme disease;
 - historical uses and control methods.

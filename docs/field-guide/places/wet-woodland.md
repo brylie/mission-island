@@ -1,6 +1,6 @@
 # Wet woodland
 
-**Real world: draft. On the island: planned**, as the Highwood's Mirror Pool and stream-bank woods. Last tended 2026-11-22. Model purpose: **illustrate** a habitat as scenery.
+**Type: explanation (place). Real world: draft. On the island: planned**, as the Highwood's Mirror Pool and stream-bank woods. Last tended 2026-11-22. Model purpose: **illustrate** a habitat as scenery. It uses its own headings rather than the framework's place shape. This page owns the wet-woodland claims, and the [habitat card](../highwood-habitats.md#wet-woodland-mirror-pool-and-stream-banks) summarises them.
 
 Most trees die if their roots sit in water for long: the soil runs out of air, and roots need oxygen. Yet along rivers, around lochs and in boggy hollows there are woods that live with wet feet all year. In the UK and Ireland they are mostly alder, willow and downy birch. This explainer covers how those trees cope, how a wet wood forms, and why these small, tangled woods are so rich in life.
 
@@ -12,7 +12,7 @@ Waterlogged soil quickly runs out of oxygen: water fills the spaces where air wo
 - **Willows** grow new roots readily from their stems when flooded. A fallen willow branch stuck in mud will often take root.
 - **Downy birch** tolerates wetter, more acid ground than its cousin silver birch.
 
-Alder has another trick. Swellings on its roots, called *nodules*, hold bacteria (*Frankia*) that take nitrogen from the air and turn it into a form the tree can use. Waterlogged soils are often short of usable nitrogen, so alder can thrive where other trees starve. Its fallen leaves then enrich the ground for everything else.
+Alder has another trick. Swellings on its roots, called *nodules*, fix nitrogen and condition the soil (`woodtrust-alder`). They hold bacteria (*Frankia*, still unsourced) that take nitrogen from the air and turn it into a form the tree can use. Waterlogged soils are often short of usable nitrogen, so alder can thrive where other trees starve. Its fallen leaves then enrich the ground for everything else.
 
 ## How a wet wood forms
 
@@ -28,7 +28,7 @@ Many wet woods stay as carr for a very long time, held by a high water table, re
 
 ## Why wet woods matter
 
-- **Life.** Deadwood stays damp and rots slowly, which suits many beetles, flies, mosses and fungi. Otters make their dens among alder roots on riverbanks. In winter, siskins and redpolls feed on alder seeds.
+- **Life.** Wet, decaying wood is good habitat for invertebrates (`wt-wet-woodland`). Alder roots make nest sites for otters, and siskins, redpolls and goldfinches eat alder seed (`woodtrust-alder`).
 - **Water.** Wet woods slow floodwater, trap silt and filter water flowing into streams and lochs.
 - **Banks.** Alder roots bind riverbanks against erosion.
 
@@ -48,11 +48,11 @@ The Highwood's wet ground, around Mirror Pool and along the stream, is planned f
 
 ## Sources
 
+- Source ids in the text point to the [sources register](../../sources.yaml).
 - Woodland Trust, [A–Z of British trees](https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/british-trees/a-z-of-british-trees/), for alder and willow.
 
 **Unsourced, to add before this page leaves draft:** the Woodland Trust index above gives general background only. These claims each need a specific source:
 - how waterlogged soil loses oxygen, and how alder, willow and downy birch cope;
-- alder's *Frankia* root nodules and nitrogen fixation;
+- that alder's root nodules hold *Frankia* bacteria. The nitrogen-fixing nodules themselves are sourced (`woodtrust-alder`);
 - the hydrosere sequence from open water to carr;
-- otters among alder roots, and siskins and redpolls on alder seed;
 - wet woodland's role in flood buffering, water quality and bank stability, and its losses to drainage.

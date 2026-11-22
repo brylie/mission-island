@@ -1,6 +1,6 @@
 # Grow your first tree species
 
-**Status: run by its author on 2026-11-22, at commit `bad36da`.** Not yet completed by someone who didn't write it. That's what makes a tutorial verified, under the [knowledge framework](../knowledge-framework.md). If you're the first, note anything that tripped you up and update this line.
+**Type: tutorial. Status: run by its author on 2026-11-22, at commit `bad36da`.** Not yet completed by someone who didn't write it. That's what makes a tutorial verified, under the [knowledge framework](../knowledge-framework.md). If you're the first, note anything that tripped you up and update this line.
 
 In this tutorial you'll add **hazel**, a multi-stemmed shrubby tree of woodland edges, to the Highwood species generator. You'll watch it grow in the Workbench, check that it reads as its own species, and write its field guide entry. It takes about an hour. You don't need to know how the generator works inside; [Procedural flora](procedural-flora.md) explains that when you're curious.
 

@@ -15,7 +15,12 @@ One list of everything we know we don't know: research to do, sources to find, a
 
 - **Bracken toxicity.** A search summary suggested the risk to livestock may be low, but its page couldn't be opened. "Bracken is poisonous to livestock" may turn out contested once that source is read.
 - **Field guide species entries.** These still make real claims with no individual sources. Several are now sourced on the habitats page, such as juniper's decline, alder's nodules, siskins and otters. Link those source ids from the species entries.
-- **Quote checks.** A person needs to check each `quote-via: fetcher` quote in the sources register against its page, before those claims can be marked verified.
+- **Fire-finder primary sources.** The US Forest Service account (403 error) and the New York State fire tower study (the PDF timed out) are recorded as unopened in the register. Read them to replace the tier 4 Wikipedia source.
+- **Wildfire safety box.** A person must check the box against the Scottish Fire and Rescue Service page before the wildfire page can be verified.
+- **Archive failures.** Four Wildlife Trusts pages couldn't be saved to the Wayback Machine. Try again later or from a browser.
+- **Moved pages' shapes.** The wildfire, bracken slopes and wet woodland pages still use their own headings, not the framework's process and place shapes. Reshape them in a later edit, and fix any anchors that change.
+- **A broken link from before this work.** `docs/roadmap.md` links to `architecture.md#flatbed-and-future-fire-truck`, a heading that no longer exists. `node scripts/check-doc-links.mjs` reports it.
+- **Quote checks.** A person needs to check each `quote-via: fetcher` quote in the sources register against its page, before those claims can be marked checked.
 - **Archiving.** No source has an archived copy yet. Saving pages to the Wayback Machine sends their URLs to an outside service, so it needs the maintainer's go-ahead.
 
 ## Planned, not built

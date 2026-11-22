@@ -10,25 +10,27 @@ This page sets out how the two are organised, so a reader knows what kind of pag
 
 ## Three questions for every page
 
-### 1. What does the reader need right now?
+### 1. What is this page for?
 
-We use [Diátaxis](https://diataxis.fr/), which sorts documents by the reader's need:
+Each page has one job: to **teach** a newcomer, **walk through** a task, be **looked up**, or **explain**. Its status line records which, as `type:`. The type also sets what *verified* means for the page (see the [Knowledge Keeper](../.agents/skills/mission-island-knowledge-keeper/SKILL.md#verified-by-document-type)).
 
-| Type | The reader wants to… | Mission Island examples | Folder |
-| --- | --- | --- | --- |
-| **Tutorial** | learn by doing, guided step by step | [Grow your first tree species](craft/first-tree-species.md) | `docs/tutorials/` |
-| **How-to guide** | get a task done they already understand | [Add a tree species or variation](craft/add-tree-species.md) | `docs/how-to/` |
-| **Reference** | look something up | [Field guide](field-guide/README.md) entries, [glossary](field-guide/glossary.md), budgets and data tables, [Workbench guide](workbench.md) | `docs/field-guide/`, and pages beside the code they describe |
-| **Explanation** | understand why | Field guide [process and place pages](field-guide/README.md) on deep topics, and the [craft pages](craft/README.md) on techniques | `docs/field-guide/processes/`, `docs/field-guide/places/`, `docs/craft/` |
+| Job | The reader wants to… | Examples |
+| --- | --- | --- |
+| **Teach** (tutorial) | learn by doing, guided step by step | [Grow your first tree species](craft/first-tree-species.md) |
+| **Walk through** (how-to) | get a task done they already understand | [Add a tree species or variation](craft/add-tree-species.md) |
+| **Look up** (reference) | find a fact | [Conventions](conventions.md), the [glossary](field-guide/glossary.md), [mechanic specs](mechanics/) |
+| **Explain** (explanation) | understand why | The [wildfire](field-guide/processes/wildfire.md) process page and the [craft pages](craft/README.md) |
 
-The game design documents sit alongside these four:
+- **Organise by subject, not by job.** Pages live where their subject and register put them (see the [routing](../.agents/skills/mission-island-knowledge-keeper/references/routing.md)). Don't create folders by page type.
+- **Field-guide entries are a fixed mix.** They combine looking up and explaining the same way every time, and that's intended.
+- **Split any other page that does two jobs**, such as a tutorial that branches or a reference page that argues a case.
+
+The game design documents sit alongside the knowledge base:
 - [product and game design](game-design.md) and the [design pages](design/);
 - [mechanic specs](mechanics/);
 - [design decisions](design/decisions.md).
 
 They are the team's working plan, and the knowledge base explains and teaches from them.
-
-A field guide entry mixes reference and explanation on purpose. It is organised by subject (a species, a habitat) rather than by task. Every entry uses the same headings, so a reader learns its shape once.
 
 ### 2. Whose truth is this?
 
@@ -68,9 +70,12 @@ Use one shape per kind of subject. Don't invent a new one per topic.
 
 - **Place:** a habitat, site or landform. Headings: *What you see · Why here · What changes it · Life · In the game · Notice this · Sources.* A place card is shorter than an entity entry, because its plants and animals have their own entries.
 - **Entity:** a species, weather pattern or season. Headings: *Recognise it · Where it lives · How it changes · Life around it · In the game · Notice this · A resident might say · Sources.*
-- **Process:** fire, succession, grazing, windthrow, hydrology, erosion. Headings: *What drives it · Where it shows on the island · Timescale · What it leaves behind · Who deals with it · In the game · Sources.* Processes get explainers, because they cut across habitats.
+- **Process:** fire, succession, grazing, windthrow, hydrology, erosion. Headings: *What drives it · Where it shows on the island · Timescale · What it leaves behind · Who deals with it · In the game · Sources.* Processes get their own pages in `field-guide/processes/`, because they cut across habitats. A process page explains, using these headings.
 - **Practice:** firefighting, farming, first aid, knot-tying, building. Headings: *What the job is · Skills and kit · What goes wrong · How it's organised · In the game · Notice this · Sources.* *How it's organised* covers crews, training, licences and mutual aid. It's where a skill becomes a job.
 - **Social pattern:** trust, reputation, dispute, division of labour. Headings: *The pattern · Why it happens · What you'd observe · In the game · What we flatten · Sources.* Mark claims **uncertain** unless a strong source supports them. Contested social science needs a stricter honesty test than ecology.
+- **Tutorial:** one path, a pinned commit and seed, and an expected result after every step. No choices.
+- **How-to:** starts from a real goal, lists the steps, and links to explanations instead of teaching.
+- **Divergence:** a row or note beside the entry it qualifies. Columns: *Real · On the island · Why we simplified · What a player might wrongly learn.* It also lists real patterns the model misses.
 - **Craft:** an algorithm or technique. Headings: *Goal · Technique · Why it works · What failed · Cost and limits · Where it lives · How to check it.*
 - **Decision:** a row in [decisions](design/decisions.md). Columns: *Context and choice · Reason and consequence · What we rejected · Where to follow it.*
 
@@ -110,6 +115,7 @@ Each piece of this framework borrows from an established practice. The combinati
 | Divergence notes, model purpose, listing missed patterns | The [ODD protocol](https://www.jasss.org/23/2/7.html) for describing agent-based models, whose motto is to describe what the program does, not what you think the model does. [ODD+D](https://www.sciencedirect.com/science/article/abs/pii/S1364815213001394) extends it to human decisions. |
 | Craft pages that record testing and failed attempts | [TRACE](https://www.sciencedirect.com/science/article/abs/pii/S0304380014000611), a framework for documenting model development, testing and analysis. |
 | Append-only decision records, superseded rather than edited | Architecture decision records, as in the [GDS Way](https://gds-way.digital.cabinet-office.gov.uk/standards/architecture-decisions.html). |
+| One job per page, and a type stamp that sets what *verified* means | [Diátaxis](https://diataxis.fr/), whose four reader needs we use as a check on each page, not as a folder structure. |
 | Status and last-tended dates | Digital gardens, which label notes by maturity and date ([Maggie Appleton](https://maggieappleton.com/garden-history)). |
 | Species entries organised by recognition, ecology and fire | The US Forest Service [Fire Effects Information System](https://research.fs.usda.gov/feis/about/tutorial). |
 | Saying what a model is for and where it misleads | [Model cards](https://arxiv.org/abs/1810.03993) for machine-learning models. |
