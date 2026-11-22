@@ -13,9 +13,6 @@ const daylightGrowthStartsHour = 6
 const daylightGrowthEndsHour = 18
 const truckBoardReach = 4.5
 
-export { heldItem }
-export { atClothingCounter, atHomeDoor } from './interactions/home.ts'
-
 export function canSpray(state: Snapshot, player: Player, item?: Item) {
   return state.mission === 'fire' && !player.seat
     && item?.kind === 'extinguisher'

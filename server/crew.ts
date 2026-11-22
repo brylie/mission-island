@@ -1,4 +1,5 @@
-import { heldItem, inSkiff } from '../src/actions.ts'
+import { inSkiff } from '../src/actions.ts'
+import { heldItem } from '../src/interactions/cargo.ts'
 import type { ChargeKind } from '../src/charged-actions.ts'
 import { cleanCrewName } from '../src/crew-appearance.ts'
 import type { Input, Player, ServerMessage, Snapshot } from '../src/protocol.ts'

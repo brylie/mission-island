@@ -7,6 +7,7 @@
     "dev": "vite",
     "playtest": "vite --mode playtest --host 0.0.0.0 --port 5194 --strictPort",
     "workbench:reference": "node --experimental-strip-types scripts/workbench-reference.mjs",
+    "dyes:generate": "node --experimental-strip-types scripts/dye-swatches.mjs",
     "check": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0 --cache --cache-location node_modules/.cache/eslint/",
     "lint:full": "eslint . --max-warnings 0",

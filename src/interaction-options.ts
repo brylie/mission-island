@@ -4,6 +4,7 @@ import { fieldActions, fieldInteractions } from './field-interactions.ts'
 import { gateActions, gateInteractions } from './gate-repair.ts'
 import { swellActions, swellInteractions } from './gate-swell.ts'
 import { cargoActions, heldItem, pickupOptions, putDownOption } from './interactions/cargo.ts'
+import { mergeDisjoint } from './interactions/definition.ts'
 import type { InteractionChoice as Choice, InteractionOption } from './interactions/definition.ts'
 import { homeActions, homeInteractions, welcomeNote } from './interactions/home.ts'
 import { orderActions, orderInteractions, plotActions, plotInteractions } from './interactions/work.ts'
@@ -14,20 +15,20 @@ import { residentActions, residentInteractions } from './residents/interactions.
 import { distance } from './world.ts'
 import { starterResidents } from './worlds/starter/residents.ts'
 
-const actionPolicies = {
-  ...gateActions,
-  ...swellActions,
-  ...ferryActions,
-  ...residentActions,
-  ...farmActions,
-  ...materialsActions,
-  ...cargoActions,
-  ...homeActions,
-  ...orderActions,
-  ...plotActions,
-  ...fieldActions,
-  ...sightingActions,
-}
+const actionPolicies = mergeDisjoint(
+  gateActions,
+  swellActions,
+  ferryActions,
+  residentActions,
+  farmActions,
+  materialsActions,
+  cargoActions,
+  homeActions,
+  orderActions,
+  plotActions,
+  fieldActions,
+  sightingActions,
+)
 
 export type InteractionAction = keyof typeof actionPolicies
 export type InteractionChoice = Choice<InteractionAction>

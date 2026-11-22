@@ -60,6 +60,20 @@ function legPalette(appearance: CrewAppearance) {
   return { trouserColor, shoeColor, cuff }
 }
 
+// A dye is a fabric color, or a dye swatch's color and trim.
+type CrewDye = string | { color: string, trim: string }
+
+// A plain color dyes the cloth; a swatch also brings its trim for the rolled cuffs, buttons and cap brim.
+function readDye(fabric?: CrewDye) {
+  const color = typeof fabric === 'string' ? fabric : fabric?.color
+  const trim = typeof fabric === 'string' ? undefined : fabric?.trim
+  return { color, trim, key: color && `${color}/${trim ?? ''}` }
+}
+
+function crewBrowColor(hairColor: CrewAppearance['hairColor']) {
+  return Color3.FromHexString(hairColors[hairColor ?? 'chestnut']).scale(browShade).toHexString()
+}
+
 export function createCrew(meshes: MeshFactory, id: number) {
   const root = new TransformNode(`Crew ${id + 1}`, meshes.scene)
   const kit = createCrewClothes(meshes, root)
@@ -123,12 +137,12 @@ export function createCrew(meshes: MeshFactory, id: number) {
     }
     dressFeet(shoeColor, skin, swim || short || Boolean(bottom && shopBottoms[bottom].short), bare || Boolean(footwear && shopShoes[footwear].open), Boolean(footwear))
   }
-  function dress(appearance: CrewAppearance, base: number, dye?: string) {
+  function dress(appearance: CrewAppearance, base: number, dye?: string, dyeTrim?: string) {
     const everyday = isEveryday(appearance.uniform)
     const swim = wearsSwimsuit(appearance)
     const bare = everyday && (appearance.shoes === 'bare' || (swim && !appearance.shoes))
     const shirt = shirtColor(appearance, base)
-    const cloth = paint(dye ?? shirt.color), trim = paint(shirt.trim)
+    const cloth = paint(dye ?? shirt.color), trim = paint(dyeTrim ?? shirt.trim)
     const tone = skinTones[appearance.skin === 'default' ? (base === 0 ? 'light' : 'medium') : appearance.skin].color
     const skin = paint(tone)
     const complexion = Color3.FromHexString(tone)
@@ -173,22 +187,22 @@ export function createCrew(meshes: MeshFactory, id: number) {
       mesh.setEnabled(sleeveless)
     }
   }
-  function setAppearance(appearance = defaultAppearance, { dye, base = id }: { dye?: string, base?: number } = {}) {
+  function setAppearance(appearance = defaultAppearance, { dye: fabric, base = id }: { dye?: CrewDye, base?: number } = {}) {
+    const { color: dye, trim: dyeTrim, key: dyeKey } = readDye(fabric)
     if (worn?.uniform === appearance.uniform && worn.skin === appearance.skin && lastBase === base
-      && lastDye === dye && appearancePartKeys.every((key) => worn?.[key] === appearance[key])) return
+      && lastDye === dyeKey && appearancePartKeys.every((key) => worn?.[key] === appearance[key])) return
     worn = appearance
     lastBase = base
-    lastDye = dye
+    lastDye = dyeKey
     shop.sync(appearance, dye)
-    dress(appearance, base, dye)
+    dress(appearance, base, dye, dyeTrim)
     const hat = isEveryday(appearance.uniform) ? appearance.hat ?? (wearsSwimsuit(appearance) ? 'none' : undefined) : undefined
     const palette = (hat === 'blue' || hat === 'amber') ? everydayColors[hat] : uniformPalette(appearance.uniform, base)
     head.cap.material = paint(dye ?? palette.color)
-    head.brim.material = paint(palette.trim)
+    head.brim.material = paint(dyeTrim ?? palette.trim)
     hatEquipped = hat !== 'none'
     fitHat()
-    const browColor = Color3.FromHexString(hairColors[appearance.hairColor ?? 'chestnut'])
-    const brow = paint(browColor.scale(browShade).toHexString())
+    const brow = paint(crewBrowColor(appearance.hairColor))
     for (const mesh of head.brows) mesh.material = brow
     const noseSize = appearance.nose === 'small' ? smallNoseScale : 1
     head.nose.scaling.set(noseSize, noseSize * noseHeightRatio, noseSize)

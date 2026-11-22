@@ -18,8 +18,6 @@ export const islandAtmosphere = {
     day: '#c0dfe1',
     night: '#172842',
     rain: '#657c88',
-    lowSun: '#ffad7b',
-    highSun: '#fff3d7',
     twilightBlend: 0.73,
     horizonRainBlend: 0.76,
     zenithRainBlend: 0.64,
