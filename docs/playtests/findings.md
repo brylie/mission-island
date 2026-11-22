@@ -82,6 +82,10 @@ For each session, copy the block below. Give each distinct observation a short t
 - Decision — Keep. Next, test with two people: one swings, the other reports without talking to the first.
 - Retest — Two people. Pass: the reporting player can say, before choosing, what the last swing showed, and afterward the swinger can explain what happened from Wren's greeting alone.
 
+### 2026-11-21 · Starter Island crew feedback
+
+The crew reported traversal, flight, fishing, collectable readability, and world art concerns on the `79faeda` build. See the [provisional findings and backlog cross-check](starter-island-follow-up-2026-11-21.md) for the full record and suggested retests.
+
 ## Triage after the session
 
 Give joining failures, lost progress and incorrect bank entries first attention. If a passenger misses a payment, record the two displayed balances before filing. Different balances call for a synchronization or save test. Matching balances and a surprised passenger call for a feedback test. Hear each player’s explanation before sharing the other person’s answer.
