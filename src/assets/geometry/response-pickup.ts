@@ -103,13 +103,10 @@ export const responsePickupBody = {
     headboard: { center: [0, (beltline + bedLip) * half, bedFront + 0.03], size: [1.72, bedLip - beltline, 0.06] },
     tailgate: { center: [0, (beltline + bedLip) * half, tail + 0.025], size: [1.71, bedLip - beltline + 0.04, 0.06] },
     tailgateHandle: { center: [0, 1.34, tail - 0.005], size: [0.28, 0.05, 0.03] },
-    // A response locker spans the bed behind the cab; two spare extinguishers ride beside it.
+    // A response locker spans the bed behind the cab; the crew's rescue gear rides in front of it.
     locker: { center: [0, 1.36, -1.0], size: [1.66, 0.5, 0.56] },
     lockerLid: { center: [0, 1.62, -1.0], size: [1.72, 0.03, 0.58] },
     lockerLatch: { x: [-0.4, 0.4], center: [0, 1.42, -1.29], size: [0.12, 0.08, 0.02] },
-    extinguishers: { x: [-0.55, 0.55], y: 1.4, z: -1.62, diameter: 0.17, height: 0.56, segments: 10 },
-    extinguisherCap: { diameter: 0.07, height: 0.08 },
-    strap: { center: [0, 1.46, -1.62], size: [1.72, 0.04, 0.2] },
   },
   rear: {
     bumper: { center: [0, 0.58, tail - 0.06], size: [1.9, 0.16, 0.16] },
@@ -122,6 +119,32 @@ export const responsePickupLights = {
   head: { x: 0.66, y: 1.0, z: nose + 0.035, size: [0.24, 0.13, 0.03] },
   tail: { x: 0.86, y: tailLightY + 0.05, z: tail - 0.04, size: [0.11, 0.18, 0.03] },
 } as const
+
+const bedFloorTop = beltline + 0.02
+const lidTop = 1.635
+const lockerFront = -1.31
+const quarterTurn = Math.PI / 2
+// Where each piece of rescue gear rides, in pickup coordinates. Extinguishers
+// lie lengthwise with their base toward the tailgate; `lift` raises a lying
+// tank's axis to its radius, and `yaw` turns a piece within the bed. The radio,
+// whistle and flashlight stand against the locker front, where the crew can see
+// them; the ring buoy and throw bag ride on the locker lid.
+export const responsePickupGear = [
+  { kind: 'extinguisher', x: -0.55, y: bedFloorTop, z: -2.3, lie: true, lift: 0.175, yaw: 0 },
+  { kind: 'extinguisher', x: 0.55, y: bedFloorTop, z: -2.3, lie: true, lift: 0.175, yaw: 0 },
+  { kind: 'first-aid', x: 0, y: bedFloorTop, z: -1.66, lie: false, lift: 0, yaw: 0 },
+  { kind: 'radio', x: -0.32, y: bedFloorTop, z: lockerFront, lie: false, lift: 0, yaw: 0 },
+  { kind: 'whistle', x: 0, y: bedFloorTop, z: lockerFront, lie: false, lift: 0, yaw: 0 },
+  { kind: 'flashlight', x: 0.32, y: bedFloorTop, z: lockerFront - 0.04, lie: false, lift: 0, yaw: quarterTurn },
+  { kind: 'ring-buoy', x: -0.42, y: lidTop, z: -1.05, lie: false, lift: 0, yaw: 0 },
+  { kind: 'throw-bag', x: 0.45, y: lidTop, z: -1.0, lie: false, lift: 0, yaw: 0 },
+] as const
+
+// Each learner vehicle's gear table; only the pickup carries gear so far.
+export const learnerVehicleGear = { pickup: responsePickupGear } as const
+
+// The pickup carries vehicle-size extinguishers, drawn smaller than the Fire Supplies pair.
+export const pickupExtinguisherScale = 0.62
 
 // Physics shapes, centered on the model origin. The driver sits on the left.
 export const responsePickupColliders = [

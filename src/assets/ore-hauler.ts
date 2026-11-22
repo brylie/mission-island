@@ -79,7 +79,11 @@ function buildTipper({ box, panel }: VehicleBodywork, metal: Material) {
     box(tailLights.amberLens, fleetPaint.tailAmber, side)
   }
   // Pale quarry chevrons also identify the truck from the chase camera.
-  for (const side of sides) box(tailgate.chevron, roof, side).rotation.set(tailgate.rake, 0, side * tailgate.chevron.slant)
+  // The two chevron bars meet at the point; one stands a few millimetres proud so they never share a face.
+  for (const side of sides) {
+    const { center: [x, y, z], size, slant, stagger } = tailgate.chevron
+    box({ center: [x, y, z - (side > 0 ? stagger : 0)], size }, roof, side).rotation.set(tailgate.rake, 0, side * slant)
+  }
   box(tailgate.crossbar, ribPaint).rotation.x = tailgate.rake
   box(rearCrossmember, frame)
   for (const side of sides) box(rearBracket, frame, side)

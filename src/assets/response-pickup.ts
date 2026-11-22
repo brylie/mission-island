@@ -13,11 +13,9 @@ import {
 } from './vehicle-kit'
 
 const sides = [-1, 1] as const
-const half = 0.5
 const frontAxleIndex = 1
 // The light bar splits red and blue, as on the Saltwind crews, so it reads against the red paint.
 const beaconColors = { left: '#d65847', right: '#498bc2' } as const
-const extinguisherRed = '#d0473a'
 
 function buildBody({ box, panel }: VehicleBodywork) {
   const { finish, frame, upperBody, underbody, rocker, frontCorner, rearCorner, archLip, cab, roof, runningBoard } = responsePickupBody
@@ -75,7 +73,7 @@ function buildFrontAndRear({ box }: VehicleBodywork) {
   }
 }
 
-function buildBed({ box, panel }: VehicleBodywork, meshes: MeshFactory, root: TransformNode) {
+function buildBed({ box, panel }: VehicleBodywork, meshes: MeshFactory) {
   const { finish, bed } = responsePickupBody
   const treadPlate = meshes.paintSurface('metal', fleetPaint.tread)
   box(bed.floor, treadPlate)
@@ -89,12 +87,6 @@ function buildBed({ box, panel }: VehicleBodywork, meshes: MeshFactory, root: Tr
   box(bed.locker, fleetPaint.bumper)
   box(bed.lockerLid, treadPlate)
   for (const x of bed.lockerLatch.x) box({ center: [x, bed.lockerLatch.center[1], bed.lockerLatch.center[2]], size: bed.lockerLatch.size }, fleetPaint.brightTrim)
-  const { extinguishers: tank, extinguisherCap: cap } = bed
-  for (const x of tank.x) {
-    meshes.cylinder(x, tank.y, tank.z, tank.diameter, tank.diameter, tank.height, tank.segments, extinguisherRed, root)
-    meshes.cylinder(x, tank.y + (tank.height + cap.height) * half, tank.z, cap.diameter, cap.diameter, cap.height, tank.segments, fleetPaint.frame, root)
-  }
-  box(bed.strap, fleetPaint.frame)
 }
 
 // Moving vehicles merge their rigid parts by finish; Workbench inspection can keep them apart.
@@ -104,7 +96,7 @@ export function createResponsePickup(meshes: MeshFactory, { merge = true } = {})
   buildBody(body)
   buildCabDetails(body)
   buildFrontAndRear(body)
-  buildBed(body, meshes, root)
+  buildBed(body, meshes)
   const lamps = vehicleLamps(meshes, root, responsePickupLights.head, responsePickupLights.tail)
   const { wheelRadius: radius, halfTrack, axles, tireDepth } = responsePickupSpec
   const wheels = sides.flatMap((side) => axles.map((z, index) => {

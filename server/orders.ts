@@ -1,4 +1,5 @@
 import { heldItem } from '../src/interactions/cargo.ts'
+import { isVehicleGear } from '../src/rescue-gear.ts'
 import { atClothingCounter } from '../src/interactions/home.ts'
 import type { OrderAction } from '../src/interactions/work.ts'
 import { clothingCatalog, ownsClothing, type ClothingId } from '../src/clothing-catalog.ts'
@@ -94,7 +95,8 @@ export function createOrders(
     state.mission = 'complete'
     state.lookoutFireClearedAt = state.islandTime
     payCrew({ type: 'job-pay', job: 'fire', coins: starterPay.fire.coins })
-    for (const tool of state.items.filter(({ kind }) => kind === 'extinguisher')) {
+    // The Fire Supplies extinguishers go back to their stand; pickup gear stays with its holder.
+    for (const tool of state.items.filter((item) => item.kind === 'extinguisher' && !isVehicleGear(item))) {
       tool.holder = null
       tool.spraying = false
     }

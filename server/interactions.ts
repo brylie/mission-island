@@ -8,7 +8,8 @@ import { groundHeight, maxWadeDepth, waterDepth } from '../src/terrain.ts'
 import { itemStarts, spawns } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
 import type { GameplayPlaytestMetrics } from './gameplay-playtest-metrics.ts'
-import { itemGroundClearance, restingY, updateHeldItems } from './items.ts'
+import { restingHeight, restingY, updateHeldItems, updateStowedItems } from './items.ts'
+import { isVehicleGear } from '../src/rescue-gear.ts'
 
 export type InteractionHandlers<Action extends InteractionAction = InteractionAction>
   = Record<Action, (member: CrewMember, subject: number) => void>
@@ -53,9 +54,15 @@ export function createInteractions(
       // A crate carried into danger returns to its start quietly; one set down where the crewmate stands is a real drop.
       if (item.kind === 'crate' && safe) physics.release(item, player)
       else if (item.kind === 'crate') physics.relocate(item, itemStarts[item.id].start)
+      // Vehicle gear carried into danger goes back into its slot, wherever the vehicle is now.
+      else if (!safe && isVehicleGear(item)) {
+        Object.assign(item, { stowed: true, spraying: false })
+        updateStowedItems(state)
+      }
       else {
         const point = safe ? player : itemStarts[item.id].start
-        Object.assign(item, { x: point.x, z: point.z, y: safe ? groundHeight(point) + itemGroundClearance : restingY(item.id), spraying: false })
+        Object.assign(item, { x: point.x, z: point.z, spraying: false })
+        item.y = safe ? restingHeight(item) : restingY(item.id)
       }
     }
     const home = spawns[player.id]

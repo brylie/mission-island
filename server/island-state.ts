@@ -1,4 +1,5 @@
 import type { DriftwoodFrame } from '../src/simulation/driftwood-school.ts'
+import { isVehicleGear } from '../src/rescue-gear.ts'
 import { restoreFarmWork } from '../src/farm-orders.ts'
 import { farmPlots } from '../src/farm.ts'
 import { initialMaterialsWork } from '../src/materials-work.ts'
@@ -13,7 +14,7 @@ import { initialGateRepair } from '../src/gate-repair.ts'
 import { initialFerryRepair } from '../src/ferry-repair.ts'
 import { initialResidents } from '../src/residents/trust.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
-import { makeItems } from './items.ts'
+import { makeItems, updateStowedItems } from './items.ts'
 import { restoreJournal } from './journal.ts'
 import type { IslandSave } from './save.ts'
 import { currentSaveVersion } from './save-version.ts'
@@ -66,12 +67,13 @@ export function restoreIsland(
     farmWork: restoreFarmWork(save?.world.produce),
     materialsWork: structuredClone(save?.world.materialsWork ?? initialMaterialsWork()),
   }
+  updateStowedItems(state)
   // A carried hinge pin goes back to the mending bench when the host stops.
   state.gateRepair.pinHolder = null
   const growth = save?.growth.slice() ?? farmPlots.map(() => 0)
   for (const item of state.items) {
     item.spraying = false
-    if (state.mission === 'complete' && item.kind === 'extinguisher') item.holder = null
+    if (state.mission === 'complete' && item.kind === 'extinguisher' && !isVehicleGear(item)) item.holder = null
     if (save) physics.restore(item)
     else physics.relocate(item, item)
   }

@@ -46,6 +46,21 @@ While you ride, the prompt, the objective card and the map name the practice sto
 
 Career XP is personal to the driver and is saved with your crew profile. The crew guide shows your progress on each path.
 
+### Fire and Rescue gear
+
+The pickup carries a wilderness rescue kit in its bed: two compact extinguishers and a first aid kit, with a radio, whistle and flashlight against the locker, and a ring buoy and rope throw bag on the locker lid. Aim at a piece to choose it. While the pickup is stopped, stand at the bed and press **E** to take a piece. Carry one at a time, press **E** to set it down anywhere, or press **E** at the bed to stow it again. Stowed gear rides along wherever the pickup goes, and gear carried into danger returns to the bed when you respawn.
+
+| Gear | Left click |
+| --- | --- |
+| Extinguisher | Hold to spray foam. At the Forest Lookout fire it helps put the fire out, like the Fire Supplies pair. |
+| First aid kit | Check on the nearest crewmate within a couple of metres. The crew sees that all is well. |
+| Flashlight | No click needed: it shines a beam ahead while held, from dusk until dawn. |
+| Radio | Tells the whole crew where you are. Partners see the place and how far and which way to go, such as "radioed in near Forest Lookout · 60 m north-east". |
+| Whistle | Lets the crew know where you are, with the same distance and direction. |
+| Ring buoy and throw bag | Hold and release to throw, like a crate. They stop short of walls, float on water, and a swimmer can grab them with **E**. |
+
+The gear is the start of family-friendly wilderness fire and rescue missions: it has uses today, and future callouts will give each piece a job.
+
 ## Repeatable orders
 
 After the lookout fire, press **E** at the Harbor Depot job board to take the next crew order. You can read the board from the mission panel anywhere on the island. Deliver seed crates to Island Farm, take beach gear to Driftwood Beach, or fill fish and carrot orders at Seabrook Market. Either player can contribute to an order. You can keep fishing, farming, or exploring while the order is open.

@@ -8,6 +8,7 @@ import type { Snapshot } from '../src/protocol.ts'
 import { createCargoPhysics, type LearnerFleet } from '../src/simulation/cargo.ts'
 import type { CrewCommand } from './commands.ts'
 import { createDrivingPractice } from './driving-practice.ts'
+import { createRescueGearUse } from './rescue-gear.ts'
 import { learnerVehicleIds, type LearnerVehicleId } from '../src/learner-vehicles.ts'
 import { createCrewRoster, disconnect, stopped, type CrewBroadcast, type CrewMember, type CrewNotice } from './crew.ts'
 import { jump, prepareCrewMotion, walkCrew } from './crew-motion.ts'
@@ -15,7 +16,7 @@ import { createEquipment, setAppearance } from './equipment.ts'
 import { advanceIsland } from './island-clock.ts'
 import { createGameInteractions } from './game-interactions.ts'
 import { restoreIsland, saveIsland } from './island-state.ts'
-import { updateHeldItems } from './items.ts'
+import { updateHeldItems, updateStowedItems } from './items.ts'
 import { createFreight } from './freight.ts'
 import { createJournal } from './journal.ts'
 import { createOrders } from './orders.ts'
@@ -71,6 +72,7 @@ function stepVehicles(
   physics.placeBarrow(state.farmWork.barrow)
   state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds, { vehicles: state.vehicles, inputs })
   practice.tick(drivers)
+  updateStowedItems(state)
   for (const impact of physics.drainImpacts()) notifyAll({ type: 'crate-impact', id: `${impactSession}:${++impactCount}`, ...impact })
   if (driver && active(driver)) freight.recordDrive(driver.player, state.items, Math.hypot(state.truck.x - before.x, state.truck.z - before.z))
   const rowers = members.filter((member) => inSkiff(member.player.seat) && active(member))
@@ -96,6 +98,7 @@ function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoP
   physics.placeFerry(state)
   state.truck = physics.parkTruck(state.truck)
   for (const id of learnerVehicleIds) state.vehicles[id] = physics.parkLearner(id, state.vehicles[id])
+  updateStowedItems(state)
   for (const item of state.items) physics.restore(item)
   return trial
 }
@@ -118,7 +121,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const freight = createFreight(crew, state, clock, checkpoint)
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint, metrics?.gameplay)
   const journal = createJournal(state, checkpoint, metrics?.gameplay)
-  const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint, metrics?.gameplay)
+  const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint, metrics?.gameplay, createRescueGearUse(state, crew.notifyAll))
   const { interactions, gate, residents, farm }
     = createGameInteractions({ state, growth }, physics, { notifyCrew: observeCrewNotices(state, crew.notifyAll, metrics), orders, freight, journal, clock, checkpoint, metrics: metrics?.gameplay })
   const aviation = createAviation(state, crew.notifyAll, checkpoint, metrics?.gameplay)

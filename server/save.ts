@@ -83,8 +83,16 @@ function migrateFerry(value: unknown): unknown {
   return { ...value, version: saveVersions.ferryRepair, world: { ...initialFerryRepair(), ...value.world } }
 }
 
+// The Fire and Rescue pickup's gear joins the item list, stowed in its bed.
+function migrateRescueGear(value: unknown): unknown {
+  if (!isRecord(value) || value.version !== saveVersions.residentStanding || !isRecord(value.world) || !Array.isArray(value.world.items)) return value
+  const saved: unknown[] = value.world.items
+  const items = [...saved, ...makeItems().slice(saved.length)]
+  return { ...value, version: saveVersions.rescueGear, world: { ...value.world, items } }
+}
+
 function migrateSave(value: unknown) {
-  return migrateTrust(migrateFerry(migrateResidents(migrateGate(migrateWallets(value)))))
+  return migrateRescueGear(migrateTrust(migrateFerry(migrateResidents(migrateGate(migrateWallets(value))))))
 }
 
 function isGateRepair(world: Record<string, unknown>, islandTime: number) {
@@ -234,6 +242,7 @@ function isSave(value: unknown): value is SaveFields {
     && Array.isArray(world.items) && world.items.length === itemStarts.length
     && world.items.every((item: unknown, id) => isPose(item) && item.id === id && isNumber(item.y)
       && (item.holder === null || (isNumber(item.holder) && reservedIds.has(item.holder)))
+      && (item.stowed === undefined || (item.stowed === true && 'slot' in itemStarts[id]))
       && item.kind === itemStarts[id].kind)
 }
 

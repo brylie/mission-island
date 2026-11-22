@@ -11,7 +11,7 @@ import { gateBlockers, solidTop } from '../src/gate-repair.ts'
 import { learnerSolids } from '../src/learner-vehicles.ts'
 import { ferrySolids } from '../src/ferry-repair.ts'
 import type { IslandSave } from './save.ts'
-import { itemGroundClearance } from './items.ts'
+import { restingHeight } from './items.ts'
 
 const disconnectedSkiffReservationMs = 120_000
 const disconnectedCrewReservationMs = 12_000
@@ -153,7 +153,7 @@ export function createCrewRoster(
       if (item) {
         item.holder = null
         if (item.kind === 'crate') physics.release(item, item)
-        else item.y = groundHeight(item) + itemGroundClearance
+        else item.y = restingHeight(item)
       }
       member.player.seat = null
       member.player.vehicle = undefined

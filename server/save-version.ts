@@ -4,6 +4,7 @@ const gateRepair = 3
 const residentFavor = 4
 const ferryRepair = 5
 const residentStanding = 6
+const rescueGear = 7
 
-export const saveVersions = { sharedCrewBank, gateRepair, residentFavor, ferryRepair, residentStanding } as const
-export const currentSaveVersion = saveVersions.residentStanding
+export const saveVersions = { sharedCrewBank, gateRepair, residentFavor, ferryRepair, residentStanding, rescueGear } as const
+export const currentSaveVersion = saveVersions.rescueGear

@@ -289,7 +289,7 @@ test('version 3 saves carry Wren’s trust into the resident records, and malfor
   }
   file.write(v3({ stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: 0 }, 1, { resident: 'wren', coins: 5 }))
   const mended = file.load()
-  assert.equal(mended.version, 6)
+  assert.equal(mended.version, 7)
   assert.deepEqual(mended.world.residents, { ...initialResidents(starterResidents), wren: { ...blankRecord(), trust: 1, kept: ['wren-gate'], active: null } })
   assert.deepEqual(mended.world.lastFavorPay, { resident: 'wren', favor: 'wren-gate', coins: 5 })
   file.write(v3({ stage: 'inspected', pinHolder: null, acceptedAt: 0 }, 0))

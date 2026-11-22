@@ -30,6 +30,8 @@ import { createIslandWorld } from './island-world'
 import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'
 import { createObjectiveMarker } from './objective-marker'
 import { createLearnerFleetView } from './learner-fleet-view'
+import { isVehicleGear, itemScale } from './rescue-gear'
+import { createFlashlightBeams } from './rescue-gear-view'
 import type { Player, Snapshot } from './protocol'
 import { groundHeight, waterLevel } from './terrain'
 import { flatbedGroundDrive } from './vehicles/flatbed'
@@ -50,6 +52,18 @@ function placeTag(scene: Scene, element: HTMLElement, viewport: Viewport, x: num
   element.style.left = `${point.x / viewport.width * rendering.percentScale}%`
   element.style.top = `${point.y / viewport.height * rendering.percentScale}%`
   element.style.visibility = point.z >= 0 && point.z <= 1 ? 'visible' : 'hidden'
+}
+
+// One mesh per host item, built from the same table the host uses.
+function createItemNodes(meshes: ReturnType<typeof createMeshFactory>) {
+  return itemStarts.map(({ kind }, id) => {
+    const node = createSupply(meshes, kind)
+    node.scaling.setAll(itemScale({ id }))
+    const cargoTag = kind === 'crate' ? meshes.box(...cargoTagShape.box, cargoTagShape.color, node, false) : undefined
+    cargoTag?.setEnabled(false)
+    node.setEnabled(false)
+    return { node, cargoTag }
+  })
 }
 
 export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) {
@@ -89,17 +103,11 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const showDeliveryRoute = createDeliveryWayfindingView(meshes)
   const showFarmOrder = createFarmOrderView(meshes, crew.map((character) => character.root))
   const { farmTools, skiffGear, update: updateCrew } = createCrewPresentation(meshes, crew, boat, (...args) => aviation.pose(...args), (...args) => audio.footsteps(...args))
-  // One mesh per host item, built from the same table the host uses.
-  const items = itemStarts.map(({ kind }) => {
-    const node = createSupply(meshes, kind)
-    const cargoTag = kind === 'crate' ? meshes.box(...cargoTagShape.box, cargoTagShape.color, node, false) : undefined
-    cargoTag?.setEnabled(false)
-    node.setEnabled(false)
-    return { node, cargoTag }
-  })
+  const items = createItemNodes(meshes)
 
   const extinguisherIds = itemStarts.flatMap(({ kind }, id) => kind === 'extinguisher' ? [id] : [])
   const sprays = extinguisherIds.map((_, index) => createExtinguisherSpray(scene, rendering.spraySeed + index))
+  const flashlights = createFlashlightBeams(scene, items, itemStarts.map(({ kind }) => kind))
   const showLookout = createLookoutIncident(meshes)
   const placesFx = createStarterPlaces(meshes)
   const actionFx = createStarterActionEffects(scene, { boat, crew, farmTools, paddles: skiffGear.map(({ gear }) => gear), ferns })
@@ -152,7 +160,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       }
       const holder = state.players.find((player) => player.id === item.holder)
       const spray = sprays[extinguisherIds.indexOf(item.id)]
-      const locked = item.kind === 'extinguisher' && state.mission !== 'fire'
+      const locked = item.kind === 'extinguisher' && state.mission !== 'fire' && !isVehicleGear(item)
       if (item.delivered || holder?.seat || locked) {
         node.setEnabled(false)
         spray?.(time, node, false)
@@ -236,6 +244,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const strength = nightLighting(weather.hour)
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
     learnerFleet.setLights(strength, last)
+    flashlights(last, strength)
     const light = atmosphere.update(field?.time ?? time, weather, camera.position, close)
     audio.frame(camera.position, camera.getDirection(Vector3.Forward()), weather.rain, delta)
     updateEnvironment(frame, light, close, runoff, {

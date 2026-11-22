@@ -127,7 +127,7 @@ export function missionCard(state: Snapshot, id: number) {
   return {
     label: 'ISLAND SERVICE',
     title: 'Choose your next job',
-    detail: 'Visit the job board at Harbor Depot. You can fish, farm, explore, or learn to drive the Fire and Rescue pickup by Fire Supplies and the farm tractor between orders.',
+    detail: 'Visit the job board at Harbor Depot. Between orders you can fish, farm, explore, or learn to drive the farm tractor and the Fire and Rescue pickup by Fire Supplies, whose bed carries rescue gear.',
     progress: 'Second island progress',
     value: completed,
     max: secondIslandGoal,

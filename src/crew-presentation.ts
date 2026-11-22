@@ -1,4 +1,5 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
+import { carryPose } from './rescue-gear'
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { inSkiff } from './actions'
 import { createFarmTools, poseCrew, poseSkiffCrew, poseSwimming, skiffCrewSeats, swimmingHeight, type createCrew } from './assets/crew'
@@ -52,7 +53,7 @@ export function createCrewPresentation(meshes: MeshFactory, crew: CrewRig[], boa
     footsteps(footfalls, player, node.position, step / Math.max(delta, rendering.minimumSpeedSampleSeconds), id === viewer)
     const winding = player.charge?.kind === 'throw' ? player.charge.power : 0
     if (player.swimming) poseSwimming(character, time + id, Math.min(1, step / Math.max(rendering.minimumSpeedSampleSeconds, delta * rendering.swimStrokeSpeed)), factor)
-    else poseCrew(character, cycles[id], gait.stride, !player.grounded, held?.kind ?? (pushing ? 'barrow' : player.equipped ? 'tool' : undefined), Number(Boolean(player.reaching || held?.spraying || player.casting)), wasVisible ? 1 - Math.exp(-delta * rendering.crewPoseResponse) : 1, winding, player.throwing, player.rightHandRaised)
+    else poseCrew(character, cycles[id], gait.stride, !player.grounded, (held && carryPose(held.kind)) ?? (pushing ? 'barrow' : player.equipped ? 'tool' : undefined), Number(Boolean(player.reaching || held?.spraying || player.casting)), wasVisible ? 1 - Math.exp(-delta * rendering.crewPoseResponse) : 1, winding, player.throwing, player.rightHandRaised)
   }
 
   function update(state: Snapshot, frame: CrewFrame) {

@@ -95,7 +95,7 @@ export const oreHaulerTipper = {
     stiffener: { center: [0.80, 1.91, rear + 0.122], size: [0.105, 1.10, 0.10] },
     hinge: { center: [0.81, lip + 0.02, rear - 0.07], size: [0.34, 0.15, 0.17] },
     latch: { center: [0.88, 1.32, rear + 0.16], size: [0.18, 0.27, 0.16] },
-    chevron: { center: [0.19, 1.97, rear + 0.053], size: [0.34, 0.085, 0.025], slant: 0.40 },
+    chevron: { center: [0.19, 1.97, rear + 0.053], size: [0.48, 0.085, 0.025], slant: 0.40, stagger: 0.006 },
     crossbar: { center: [0, 1.52, rear + 0.14], size: [1.98, 0.11, 0.10] },
   },
   headboard: { center: [0, 2.25, front - 0.025], size: [2.19, 1.99, 0.13] },

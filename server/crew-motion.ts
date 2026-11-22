@@ -81,7 +81,8 @@ function sprayExtinguisher(
   if (!item || !canSpray(state, player, item)) return
   if (!input.spray && !(primary?.kind === 'spray' && primary.itemId === item.id)) return
   item.spraying = true
-  if (distance(player, lookout) >= lookoutSprayReach) return
+  // Only the lookout fire responds; spraying elsewhere or after it is out is just foam.
+  if (state.mission !== 'fire' || distance(player, lookout) >= lookoutSprayReach) return
   player.heading = Math.atan2(lookout.x - player.x, lookout.z - player.z)
   state.fire = Math.max(0, state.fire - tickSeconds / fireExtinguishSeconds)
   if (state.fire === 0) completeFire()
