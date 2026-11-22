@@ -63,6 +63,7 @@ MISSION_ISLAND_CHECKPOINT=fire-watch MISSION_ISLAND_CREW_SIZE=2 npm run playtest
 
 - **Ordinary:** climb the tower, sight the fire finder, then follow the bearing west with an extinguisher and put the fire out. Both players should see the same pay once.
 - **Revealing:** wait without acting until a second hotspot catches and the pay drops, run one extinguisher dry, and refill it at the Pinewoods station.
+- **Any fire:** press **O** and use **Playtest events** to end the current fire and start another. Choose the size, the site and the heat: a mild fire's hotspots peak in the lower half of the heat range and a fierce fire's in the upper half, so each fierce hotspot takes longer to spray out and burns with taller flames. Ending a fire leaves a burn scar, so the same menu sets up a scar to watch through the dawns.
 
 The [wildfire tests](../../test/game-wildfire.test.mjs) cover the schedule, the finder, spraying and pay, burnout, refills, dawn restocking, restarts and the version 6 migration. The [Fire Watch tests](../../test/fire-watch.test.mjs) walk the stairs, check that the rails hold and that a crate set down on the deck rests there. Cargo physics, glider landings and dropped items use the tower's walking surfaces; the wheelbarrow stays off them. The **Fire Watch and wildfire** Workbench study shows the tower with a test fire of each size.
 

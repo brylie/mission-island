@@ -15,6 +15,7 @@ import {
   type Wildfire,
   type WildfireSize,
 } from '../src/wildfire.ts'
+import type { FireIntensity, WildfireChoice } from '../src/playtest-events.ts'
 import type { CrewNotice } from './crew.ts'
 
 // Fires wait at least this long after the last one, then a random share of the window more.
@@ -86,11 +87,15 @@ export function wildfirePay(fire: Wildfire) {
   return Math.max(1, wildfireSizes[fire.size].coins - spread)
 }
 
-export function igniteFire(events: IslandEvents, islandTime: number, choice?: { site?: Wildfire['site'], size?: WildfireSize }): Wildfire {
+// A playtest can ask for a mild or fierce fire: its hotspots then peak in the lower or upper half of the range.
+const intensityShare = { mild: 0, fierce: half } as const satisfies Record<FireIntensity, number>
+
+export function igniteFire(events: IslandEvents, islandTime: number, choice?: Omit<WildfireChoice, 'located'>): Wildfire {
   const site = choice?.site ? fireSite(choice.site) : starterFireSites[Math.floor(draw(events) * starterFireSites.length)]
   const size = choice?.size ?? chooseSize(draw(events))
   const hotspots = site.hotspots.slice(0, wildfireSizes[size].hotspots).map(([dx, dz], index) => {
-    const peak = minimumPeak + draw(events) * peakRange
+    const share = choice?.intensity ? intensityShare[choice.intensity] + draw(events) * half : draw(events)
+    const peak = minimumPeak + share * peakRange
     return { x: site.x + dx, z: site.z + dz, peak, heat: index ? 0 : peak * firstHeatShare, caught: !index }
   })
   const fire = { id: events.firesOut + 1, site: site.id, size, startedAt: islandTime, located: false, hotspots }
@@ -243,5 +248,24 @@ export function createWildfire(
     else locate(fire, player)
   }
 
-  return { tick, spray, sightFireFinder }
+  // A playtest starts a fire on demand, skipping the schedule, the hour and the weather checks.
+  function start(choice: WildfireChoice) {
+    if (state.mission !== 'complete') return { ok: false, text: 'Finish the starter shift before starting a wildfire.' }
+    if (state.events.fire) return { ok: false, text: 'A wildfire is already burning. End it first.' }
+    const lit = igniteFire(state.events, state.islandTime, choice)
+    const place = fireSite(lit.site).name
+    notifyAll({ type: 'wildfire', event: 'smoke', place, size: lit.size })
+    if (choice.located) locate(lit)
+    checkpoint?.()
+    return { ok: true, text: `${wildfireSizes[lit.size].label} started at ${place}.` }
+  }
+
+  // Ends the current fire as if it burned out: no pay, and it leaves a scar.
+  function end() {
+    if (!state.events.fire) return { ok: false, text: 'No wildfire is burning.' }
+    finish('burned-out')
+    return { ok: true, text: 'The wildfire burned out.' }
+  }
+
+  return { tick, spray, sightFireFinder, start, end }
 }

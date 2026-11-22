@@ -329,6 +329,13 @@ kbd {
 .options-dialog .lan-invite button { margin: 0; }
 #lan-status:not(:empty) { display: block; margin-top: 5px; font-size: 12px; }
 .options-dialog .appearance { margin-top: 12px; }
+#playtest-events { margin-top: 12px; }
+#playtest-events label { justify-content: space-between; }
+#playtest-events select { flex: 0 1 190px; min-width: 0; padding: 4px; font: inherit; font-size: 12px; }
+#playtest-events label:has(input) { justify-content: flex-start; }
+.playtest-event-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+.options-dialog .playtest-event-actions button { margin: 0; }
+#playtest-events [role="status"]:not(:empty) { display: block; margin-top: 6px; font-size: 12px; }
 .appearance label { justify-content: space-between; }
 .options-dialog .respawn { float: left; color: #28473d; background: #e8d9b4; }
 .options-dialog .respawn:disabled { opacity: 0.55; }

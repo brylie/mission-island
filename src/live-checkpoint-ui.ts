@@ -1,4 +1,5 @@
 import type { LiveTrial, ScenarioSummary } from './live-checkpoints'
+import { bindPlaytestEvents } from './playtest-events-ui'
 
 export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => string) {
   const panel = dialog.querySelector<HTMLFieldSetElement>('#live-checkpoint')!
@@ -8,6 +9,7 @@ export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => s
   const message = panel.querySelector('[role="status"]')!
   const banner = document.querySelector<HTMLButtonElement>('#checkpoint-banner')!
   const options = document.querySelector<HTMLButtonElement>('#options-button')!
+  const events = bindPlaytestEvents(dialog, token)
   let current: LiveTrial | undefined
   let activeTitle = ''
   let pending = false
@@ -46,6 +48,7 @@ export function bindCheckpointControls(dialog: HTMLDialogElement, token: () => s
     if (!trial) return
     if (current?.revision !== trial.revision) {
       panel.hidden = banner.hidden = false
+      events.show()
       current = trial
       select.value = trial.checkpoint
       const option = select.selectedOptions[0]

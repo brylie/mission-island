@@ -26,6 +26,8 @@ Run `npm run playtest` and open the printed **Network** URL on both computers. *
 
 Press **O → Live playtest** or open **Live checkpoints** in the Workbench on the same host. Select a scenario and crew size. **Start checkpoint** sets up the world, places each player and waits for the requested crew. **Restart checkpoint** restores that scenario’s baseline for everyone. Refreshing a browser rejoins the current run. To change to solo, leave one browser connected.
 
+**Playtest events** in the same menu start an island event without waiting for the host's schedule. **Start wildfire** lights a fire of the chosen size, site and heat, or a random one for each choice left on **Random**. **Start it already located** skips the search. **End wildfire** ends the current fire as a burnout, with no pay and a burn scar. Events start only after the checkpoint has started and the starter shift is complete. The host refuses them in a regular game.
+
 | Scenario ID | Starting condition |
 | --- | --- |
 | `dock-fishing` | Each angler stands at the end of the fishing dock, facing open water with a rod equipped. Cast immediately to test the current fishing mechanic. |

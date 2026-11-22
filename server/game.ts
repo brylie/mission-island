@@ -24,6 +24,7 @@ import { farmingQualified } from '../src/farm-orders.ts'
 import { stepSkiff } from './skiff.ts'
 import { crewInputTimeoutMs } from './host-time.ts'
 import type { PlaytestMetricsRun } from './playtest-metrics.ts'
+import type { PlaytestEvent } from '../src/playtest-events.ts'
 
 const hostTicksPerSecond = 30
 const juniperUpdateIntervalTicks = 3
@@ -84,6 +85,13 @@ function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoP
   state.truck = physics.parkTruck(state.truck)
   for (const item of state.items) physics.restore(item)
   return trial
+}
+
+// Live playtests can start an island event on demand. Ordinary games refuse.
+function runPlaytestEvent(state: Snapshot, wildfire: ReturnType<typeof createGameInteractions>['wildfire'], event: PlaytestEvent) {
+  if (!state.playtest) return { ok: false, text: 'Island events start on demand only in a live playtest.' }
+  if (!state.playtest.started) return { ok: false, text: 'Start the checkpoint before starting an event.' }
+  return event.type === 'wildfire' ? wildfire.start(event) : wildfire.end()
 }
 
 function observeCrewNotices(state: Snapshot, notifyCrew: CrewBroadcast, metrics?: PlaytestMetricsRun): CrewBroadcast {
@@ -235,6 +243,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     tick,
     join,
     freight,
+    playtestEvent: (event: PlaytestEvent) => runPlaytestEvent(state, wildfire, event),
     snapshotForSave: () => saveIsland(state, growth, aviation.groundSavedPilot(crew.savedProfiles())),
     get crewCoins() { return state.crewCoins },
   }
