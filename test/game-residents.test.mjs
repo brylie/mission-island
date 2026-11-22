@@ -7,6 +7,7 @@ import { createGame } from '../server/game.ts'
 import { islandSaveFile } from '../server/save.ts'
 import { actionHint } from '../src/actions.ts'
 import { interactions } from '../src/interaction-options.ts'
+import { interactionChoice } from '../src/interactions/definition.ts'
 import { favorFeedback } from '../src/resident-notices.ts'
 import { conversationLines, favorGuides, favorLine, openOffer } from '../src/residents/favors.ts'
 import { atResident, residentAt } from '../src/residents/schedule.ts'
@@ -17,14 +18,18 @@ import { dawnsBetween, daySeconds } from '../src/weather.ts'
 import { crateStarts, distance } from '../src/world.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { stagingBay } from '../src/worlds/starter/residents/bram.ts'
-import { player, setup, tokens } from './support/game-harness.mjs'
+import { door, player, setup, tokens } from './support/game-harness.mjs'
 
 const at = (hour, day = 0) => day * daySeconds + ((hour - 6 + 24) % 24) * daySeconds / 24
 const subject = (id) => starterResidents.findIndex((resident) => resident.id === id)
 const byId = (id) => starterResidents[subject(id)]
 const sagging = { stage: 'sagging', pinHolder: null }
 const settled = { stage: 'mended', pinHolder: null, acceptedAt: 0, mendedAt: 0 }
-const choose = (client, action, id) => client.request('interact', { choice: { action, subject: subject(id) } })
+function choose(client, action, id) {
+  const index = subject(id)
+  const option = interactions(client.state, client.player).find((entry) => entry.action === action && entry.subject === index)
+  client.request('interact', { choice: interactionChoice(option ?? { action, subject: index }) })
+}
 const count = (client, type) => client.messages.filter((message) => message.type === type).length
 
 // Two crewmates standing a step from a resident at work, mid-morning after the starter shift.
@@ -34,7 +39,7 @@ function beside(id, hour = 10) {
 }
 
 function startAfterShift(t, id, { hour = 10, arrange, goods = [] } = {}) {
-  const players = beside(id).map((entry, index) => ({ ...entry, goods: { fish: 0, carrots: 0, ...goods[index] } }))
+  const players = beside(id, hour).map((entry, index) => ({ ...entry, goods: { fish: 0, carrots: 0, ...goods[index] } }))
   const h = setup(t, {
     players,
     arrange(save) {
@@ -59,11 +64,78 @@ test('every resident walks a clear route, works through the day and is home at n
     assert.equal(residentAt(resident.schedule, world(12)).stop, 'work', `${resident.id} works at noon`)
     assert.ok(distance(residentAt(resident.schedule, world(12)), work) < 0.01)
     assert.equal(residentAt(resident.schedule, world(23)).stop, 'home')
-    assert.ok(distance(residentAt(resident.schedule, world(3)), home) < 0.01)
+    const night = residentAt(resident.schedule, world(3))
+    assert.ok(night.indoors)
+    assert.equal(night.windowLit, false)
+    assert.ok(distance(night, home) < 2)
     // Sleeping through the night lands everyone on the 06:00 point of their schedule, the same on every client.
     assert.deepEqual(residentAt(resident.schedule, { islandTime: daySeconds * 3, gateRepair: sagging }), residentAt(resident.schedule, world(6, 3)))
   }
   assert.equal(new Set(starterResidents.map(({ id }) => id)).size, starterResidents.length)
+})
+
+test('each household has predictable porch, entry, bedtime, waking and departure boundaries', () => {
+  const bedtimes = new Set()
+  for (const { id, schedule } of starterResidents) {
+    const { household: { goesIn, bedtime, wakes, stepsOut = schedule.departs } } = schedule
+    const spot = (hour) => residentAt(schedule, { islandTime: at(hour, 2), gateRepair: sagging })
+    bedtimes.add(bedtime)
+    assert.deepEqual([spot(goesIn - 0.01).stop, spot(goesIn - 0.01).indoors], ['home', false], id)
+    assert.equal(spot(goesIn + 0.001).walking, true, id)
+    assert.deepEqual([spot(goesIn + 0.1).indoors, spot(goesIn + 0.1).windowLit], [true, true], id)
+    assert.equal(spot(bedtime - 0.01).windowLit, true, id)
+    assert.equal(spot(bedtime + 0.01).windowLit, false, id)
+    assert.equal(spot(wakes - 0.01).windowLit, false, id)
+    assert.deepEqual([spot(wakes + 0.01).indoors, spot(wakes + 0.01).windowLit], [true, true], id)
+    assert.deepEqual([spot(stepsOut + 0.001).indoors, spot(stepsOut + 0.001).windowLit], [false, false], id)
+  }
+  assert.ok(bedtimes.size > 1)
+})
+
+test('Mara takes a porch hand-in, then a late crewmate cannot talk to her through the wall after a restart', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'mission-island-household-'))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const file = islandSaveFile(root, 5173)
+  const { h, a, b } = startAfterShift(t, 'mara', { hour: 18.5, goods: [{}, { carrots: 2 }] })
+  choose(a, 'accept-favor', 'mara')
+  h.advance()
+  const save = h.game.snapshotForSave()
+  save.islandTime = at(19.1)
+  file.write(save)
+  choose(b, 'hand-over', 'mara')
+  h.advance()
+  assert.equal(a.state.residents.mara.trust, 1)
+  const resumed = setup(t, { saved: file.load() })
+  const late = resumed.join(tokens[1])
+  const spot = residentAt(byId('mara').schedule, late.state)
+  assert.deepEqual([spot.indoors, spot.windowLit], [true, true])
+  assert.ok(distance(spot, late.player) < 2.4, 'near enough to talk if Mara were outside')
+  choose(late, 'talk', 'mara')
+  late.request('interact', { choice: { action: 'hand-over', subject: subject('mara'), favor: 'mara-supper' } })
+  resumed.advance()
+  assert.equal(count(late, 'resident-chat'), 0)
+  assert.ok(!atResident(byId('mara'), late.state, late.player))
+  assert.equal(late.player.goods.carrots, 2)
+  assert.equal(late.state.residents.mara.trust, 0)
+  const notHome = /Mara is inside.*small fishing dock from 06:00/
+  assert.match(favorGuides(starterResidents, late.state, late.player).find(({ title }) => title === 'Carrots for Mara’s supper').next, notHome)
+})
+
+test('both crewmates turn in and see households resume from the same dawn', (t) => {
+  const h = setup(t, {
+    players: [player(0, door(0)), player(1, door(1))],
+    arrange: (save) => { save.islandTime = at(23) },
+  })
+  const crew = tokens.slice(0, 2).map((token) => h.join(token))
+  for (const member of crew) member.request('interact', { choice: { action: 'sleep' } })
+  h.advance()
+  for (const member of crew) {
+    assert.equal(member.state.weather.hour, 6)
+    const atDawn = (id) => residentAt(byId(id).schedule, member.state)
+    assert.equal(atDawn('mara').walking, true)
+    assert.equal(atDawn('wren').windowLit, false)
+    assert.equal(atDawn('bram').windowLit, true)
+  }
 })
 
 test('a resident asks, either crewmate agrees in the conversation, and the partner keeps the favor once', (t) => {

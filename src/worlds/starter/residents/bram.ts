@@ -2,7 +2,8 @@ import { quarterTurnRadians } from '../../../math/angles.ts'
 import type { ResidentDefinition } from '../../../residents/definition.ts'
 import { bramRemarks } from './remarks.ts'
 import { jobBoard } from '../../../jobs.ts'
-import { starterResidentSites } from '../layout/sites.ts'
+import { bramHome } from '../layout/places.ts'
+import { starterHouseholdHours, starterResidentSites } from '../layout/sites.ts'
 
 const tallyShiftStartHour = 6.5
 const tallyShiftEndHour = 16.5
@@ -22,8 +23,9 @@ export const bram: ResidentDefinition = {
   identity: { name: 'Bram', role: 'Harbor steward' },
   appearance: { look: { uniform: 'courier', skin: 'light', hair: 'short', hairColor: 'chestnut', hat: 'none' } },
   schedule: {
-    home: { ...officeDoor, heading: 0 },
-    work: { ...tally, heading: -quarterTurnRadians },
+    home: { ...officeDoor, heading: 0, name: 'rear door of the depot office' },
+    work: { ...tally, heading: -quarterTurnRadians, name: 'the Harbor Depot tally spot' },
+    household: { building: bramHome, rearEntrance: true, ...starterHouseholdHours.bram },
     departs: tallyShiftStartHour,
     returns: tallyShiftEndHour,
     pace: depotWalkMetresPerHour,

@@ -26,6 +26,8 @@ export const lookoutReview = {
 export const residentRehearsal = {
   duration: 6,
   hour: [10, 0, 23.75, 0.25],
+  houseAngle: -0.9,
+  houseApproachRadius: 3.5,
   trust: { 0: 'Stranger', 1: 'Familiar', 3: 'Trusted' },
   remarkMaxSeed: 999,
   avatarId: 4,

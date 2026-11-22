@@ -88,5 +88,5 @@ export function besideSubject(state: Snapshot, player: Player) {
 }
 
 export function sameChoice(a: InteractionChoice, b: InteractionChoice) {
-  return a.action === b.action && (a.subject ?? null) === (b.subject ?? null)
+  return a.action === b.action && a.subject === b.subject && a.favor === b.favor
 }

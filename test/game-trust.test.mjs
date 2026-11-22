@@ -5,17 +5,20 @@ import { join } from 'node:path'
 import test from 'node:test'
 import { createGame } from '../server/game.ts'
 import { islandSaveFile } from '../server/save.ts'
-import { fenceZ, gateway, toolboxItem, wrenAt, wrenLendsToolbox } from '../src/gate-repair.ts'
+import { interactRequest } from '../src/actions.ts'
+import { fenceZ, gateFavor, gateway, onBench, toolboxItem, wrenAt, wrenLendsToolbox } from '../src/gate-repair.ts'
 import { interactions } from '../src/interaction-options.ts'
+import { interactionChoice } from '../src/interactions/definition.ts'
 import { swellGuide } from '../src/gate-swell.ts'
 import { favorFeedback } from '../src/resident-notices.ts'
-import { conversationLines, favorLine } from '../src/residents/favors.ts'
+import { conversationLines, favorLine, openOffer } from '../src/residents/favors.ts'
 import { blankRecord, breakPromise, keepFavor, standingOf } from '../src/residents/trust.ts'
 import { walkingHeight } from '../src/terrain.ts'
 import { daySeconds } from '../src/weather.ts'
+import { repairQuantity } from '../src/materials-work.ts'
 import { distance, itemStarts, mendingBench } from '../src/world.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
-import { wren } from '../src/worlds/starter/residents/wren.ts'
+import { benchLunchFavor, repairSupplyFavor, wren } from '../src/worlds/starter/residents/wren.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
 const at = (hour, day = 0) => day * daySeconds + ((hour - 6 + 24) % 24) * daySeconds / 24
@@ -23,17 +26,25 @@ const WREN = starterResidents.indexOf(wren)
 const toolboxId = itemStarts.findIndex(({ kind }) => kind === 'toolbox')
 const byWren = { x: mendingBench.x - 2.1, z: mendingBench.z + 0.8 }
 const atTheGate = { x: gateway.x, z: fenceZ - 0.9 }
-const choose = (client, action, subject) => client.request('interact', { choice: { action, ...subject !== undefined && { subject } } })
+const establishedFavors = [gateFavor, repairSupplyFavor.id, benchLunchFavor]
+function choose(client, action, subject) {
+  const option = interactions(client.state, client.player).find((entry) => entry.action === action && entry.subject === subject)
+  client.request('interact', { choice: interactionChoice(option ?? { action, subject }) })
+}
 const has = (client, action) => interactions(client.state, client.player).some((option) => option.action === action)
 const notices = (client, type) => client.messages.filter((message) => message.type === type)
 
 // Two days after the first repair: the gate has settled, Wren trusts the crew once and is at the bench.
 // One crewmate waits by Wren, the other at the gate with the toolbox set down beside it.
-function afterFirstRepair(save, { record = {}, swelling } = {}) {
+function afterFirstRepair(save, { record = {}, swelling, established = false } = {}) {
   save.islandTime = at(10, 2)
   Object.assign(save.world, { mission: 'complete', fire: 0 })
   Object.assign(save.world.gateRepair, { stage: 'mended', acceptedAt: 0, mendedAt: at(9), ...swelling && { swelling } })
-  save.world.residents.wren = { ...blankRecord(), trust: 1, kept: ['wren-gate'], ...record }
+  save.world.residents.wren = { ...blankRecord(), trust: established ? establishedFavors.length : 1, kept: established ? [...establishedFavors] : [gateFavor], ...record }
+  if (established) {
+    save.world.materialsWork.checkout = 'qualified'
+    save.world.materialsWork.request = { material: 'timber', delivered: repairQuantity }
+  }
   Object.assign(save.world.items[toolboxId], { x: gateway.x + 1, z: fenceZ - 1.2, holder: null })
 }
 
@@ -49,7 +60,7 @@ function act(h, client, action, subject) {
 }
 
 test('Wren asks about the swollen gate, and the crew checks, planes and reports it honestly', (t) => {
-  const { h, a, b } = crew(t)
+  const { h, a, b } = crew(t, { established: true })
   assert.ok(distance(wrenAt(a.state), mendingBench) < 2, 'Wren is at work')
   assert.match(favorLine(wren, a.state), /swollen the gate/)
   act(h, a, 'accept-favor', WREN)
@@ -66,7 +77,7 @@ test('Wren asks about the swollen gate, and the crew checks, planes and reports 
 
   // Owning up costs nothing.
   act(h, a, 'report-fault', WREN)
-  assert.equal(a.state.residents.wren.trust, 1)
+  assert.equal(a.state.residents.wren.trust, 3)
   assert.equal(standingOf(a.state.residents.wren), 'steady')
   assert.match(favorFeedback(notices(b, 'favor-report')[0], 1).label, /^Your crewmate told Wren the work still needs fixing · No penalty/)
 
@@ -80,7 +91,7 @@ test('Wren asks about the swollen gate, and the crew checks, planes and reports 
   const coins = a.state.crewCoins
   act(h, a, 'report-sound', WREN)
   assert.equal(a.state.crewCoins, coins + 5)
-  assert.deepEqual(a.state.residents.wren, { ...blankRecord(), trust: 2, kept: ['wren-gate', 'wren-swell'] })
+  assert.deepEqual(a.state.residents.wren, { ...blankRecord(), trust: 4, kept: [...establishedFavors, 'wren-swell'] })
   assert.equal(a.state.gateRepair.swelling, undefined, 'the gate swings clear again')
   assert.match(favorLine(wren, a.state), /fish pie/, 'Wren moves on to the next favor')
 })
@@ -89,7 +100,7 @@ test('a false report breaks the promise once, both players learn of it, and it s
   const root = mkdtempSync(join(tmpdir(), 'mission-island-trust-'))
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const file = islandSaveFile(root, 5173)
-  const { h, a, b } = crew(t, { record: { active: 'wren-swell', trust: 3 }, swelling: 'swollen' })
+  const { h, a, b } = crew(t, { established: true, record: { active: 'wren-swell' }, swelling: 'swollen' })
   act(h, b, 'check-swing')
   act(h, a, 'report-sound', WREN)
   const record = a.state.residents.wren
@@ -145,16 +156,114 @@ test('either crewmate makes amends, Wren stays wary, and two kept favors later W
 })
 
 test('a declined favor, a disconnect mid-job and a failed swing never cost trust', (t) => {
-  const { h, a, b } = crew(t)
+  const { h, a, b } = crew(t, { established: true })
   act(h, b, 'open')
-  assert.equal(a.state.residents.wren.trust, 1, 'walking away from the offer')
+  assert.equal(a.state.residents.wren.trust, 3, 'walking away from the offer')
   act(h, a, 'accept-favor', WREN)
   act(h, b, 'check-swing')
   b.close()
   h.elapse(15_000)
-  assert.equal(a.state.residents.wren.trust, 1)
+  assert.equal(a.state.residents.wren.trust, 3)
   assert.equal(standingOf(a.state.residents.wren), 'steady')
   assert.equal(a.state.residents.wren.checked, 'fault', 'the crew still knows what it saw')
+})
+
+test('normal favors earn Wren’s loan, a breach revokes it, and both players can earn it back', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'mission-island-trust-arc-'))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const file = islandSaveFile(root, 5173)
+  const bench = { x: -24.3, z: -17.2 }
+  const players = [
+    player(0, bench, { goods: { fish: 0, carrots: 3 }, materials: { timber: repairQuantity, stone: 0 } }),
+    player(1, atTheGate, { goods: { fish: 2, carrots: 2 } }),
+  ]
+  let h = setup(t, { players, arrange(save) {
+    const toolbox = { ...save.world.items[toolboxId] }
+    afterFirstRepair(save)
+    save.world.items[toolboxId] = toolbox
+    save.world.materialsWork.checkout = 'qualified'
+  } })
+  let a = h.join(tokens[0]), b = h.join(tokens[1])
+  const step = (client, action, subject) => act(h, client, action, subject)
+  const pickup = (client) => interactions(client.state, client.player).find(({ action, subject }) => action === 'pick-up' && subject === toolboxId)
+  const readStanding = (client) => standingOf(client.state.residents.wren)
+  const route = [{ x: -31.6, z: -11.8 }, { x: -26.4, z: -13.4 }, { x: -24.3, z: -14.2 }]
+  function walk(client, points) {
+    for (const point of points) {
+      for (let i = 0; i < 160 && distance(client.player, point) > 0.2; i++) {
+        const gap = distance(client.player, point)
+        h.input(client, { x: (point.x - client.player.x) / gap, z: (point.z - client.player.z) / gap })
+        h.advance()
+      }
+      h.input(client)
+      h.advance()
+      assert.ok(distance(client.player, point) < 0.3, `Reached ${point.x}, ${point.z}`)
+    }
+  }
+  assert.ok(onBench(toolboxItem(a.state)))
+  assert.equal(pickup(a), undefined)
+  step(a, 'choose-repair-material', 0)
+  for (let i = 0; i < repairQuantity; i++) step(a, 'deliver-repair-material', 0)
+  assert.equal(openOffer(wren, a.state)?.id, benchLunchFavor)
+  step(a, 'accept-favor', WREN)
+  const beforeLunch = a.state.crewCoins
+  choose(a, 'hand-over', WREN)
+  step(a, 'hand-over', WREN)
+  assert.equal(a.state.crewCoins, beforeLunch + 3)
+  assert.deepEqual(a.state.residents.wren.kept, establishedFavors)
+  assert.equal(a.state.residents.wren.trust, 3)
+  assert.equal(a.player.goods.carrots, 2)
+  assert.equal(pickup(a)?.label, 'Pick up the toolbox')
+  step(a, 'pick-up', toolboxId)
+  assert.equal(toolboxItem(b.state).holder, a.player.id)
+  step(a, 'return-toolbox')
+  assert.ok(onBench(toolboxItem(a.state)))
+
+  step(a, 'accept-favor', WREN)
+  step(b, 'check-swing')
+  step(a, 'report-sound', WREN)
+  assert.equal(a.state.residents.wren.trust, 1)
+  assert.equal(pickup(a), undefined)
+  step(a, 'pick-up', toolboxId)
+  assert.ok(onBench(toolboxItem(b.state)), 'the host rejects a stale free pickup')
+  file.write(h.game.snapshotForSave())
+  h = setup(t, { saved: file.load() })
+  b = h.join(tokens[1])
+  assert.match(conversationLines(wren, b.state)[0], /You told me it swung clear/)
+  a = h.join(tokens[0])
+  assert.equal(readStanding(a), 'wronged')
+
+  step(b, 'check-swing')
+  assert.equal(pickup(a)?.label, 'Borrow the toolbox for the gate')
+  step(a, 'pick-up', toolboxId)
+  walk(a, [...route].reverse().concat(atTheGate))
+  step(a, 'plane')
+  step(a, 'check-swing')
+  walk(b, [...route, bench])
+  step(b, 'report-sound', WREN)
+  assert.equal(readStanding(b), 'wary')
+  assert.equal(b.state.residents.wren.trust, 1)
+  walk(a, [...route, bench])
+  step(a, 'return-toolbox')
+  assert.equal(pickup(a), undefined)
+  assert.equal(pickup(b), undefined)
+  step(b, 'accept-favor', WREN)
+  const pie = interactions(b.state, b.player).find(({ action }) => action === 'hand-over')
+  const pieRequest = interactRequest(b.state, b.player, pie)
+  assert.deepEqual(pieRequest, { type: 'interact', choice: { action: 'hand-over', subject: WREN, favor: 'wren-pie' } })
+  step(b, 'hand-over', WREN)
+  assert.equal(readStanding(a), 'wary')
+  assert.equal(pickup(b), undefined)
+  step(b, 'accept-favor', WREN)
+  b.request(pieRequest.type, { choice: pieRequest.choice })
+  h.advance()
+  assert.equal(b.player.goods.carrots, 2, 'replaying the pie cannot hand over the soup ingredients')
+  assert.equal(readStanding(b), 'wary')
+  step(a, 'hand-over', WREN)
+  assert.equal(readStanding(b), 'steady')
+  for (const client of [a, b]) assert.equal(pickup(client)?.label, 'Pick up the toolbox')
+  step(b, 'pick-up', toolboxId)
+  assert.equal(toolboxItem(a.state).holder, b.player.id)
 })
 
 test('the ledger rules hold on their own: one breach at a time, amends only on the broken favor', () => {

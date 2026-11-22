@@ -80,7 +80,7 @@ const guideDialog = element<HTMLDialogElement>('crew-guide-dialog')
 const guide = createCrewGuide(guideDialog, (dismissed) => {
   leadDismissed = dismissed
   writeStorage('localStorage', leadKey(), dismissed ? 'yes' : null)
-}, (action, subject) => send({ type: 'interact', choice: { action, subject } }))
+}, (choice) => send({ type: 'interact', choice }))
 const respawn = element<HTMLButtonElement>('respawn')
 bindControlsToggle(element<HTMLButtonElement>('controls-toggle'), element('game-controls'))
 const spray = element('spray-control')

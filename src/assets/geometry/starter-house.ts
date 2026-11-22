@@ -16,7 +16,7 @@ export const starterHouseModel = {
     sideFraction: 0.31,
     heightRatio: 0.61,
     frame: { outset: 0.04, size: [1.24, 1.03, 0.15], color: cream },
-    glazing: { outset: 0.13, size: [0.96, 0.77, 0.06], color: '#4c7a83' },
+    glazing: { outset: 0.13, size: [0.96, 0.77, 0.06], color: '#4c7a83', litColor: '#ffc37a' },
     mullion: { outset: 0.17, size: [0.075, 0.8, 0.045], color: cream },
   },
   chimney: { houseMinimumWidth: 5, xRatio: 0.26, rise: 1.08, z: 0.6, size: [0.55, 1.55, 0.52], color: '#925c4b' },

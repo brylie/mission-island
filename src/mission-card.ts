@@ -4,7 +4,7 @@ import { jobDescription, secondIslandProgress } from './job-board-ui'
 import { activeJob, deliveryDrop, secondIslandGoal } from './jobs'
 import { materialsGuide, materialsOpen, repairQuantity } from './materials-work'
 import type { Player, Snapshot } from './protocol'
-import { activeFavor, isCustom } from './residents/favors'
+import { activeFavor, isCustom, residentFavorGuide } from './residents/favors'
 import { distance } from './world'
 import { starterResidents } from './worlds/starter/residents'
 
@@ -18,7 +18,7 @@ function residentFavorCard(state: Snapshot, local: Player) {
   for (const resident of starterResidents) {
     const favor = activeFavor(resident, state)
     if (!favor || isCustom(favor)) continue
-    const guide = favor.guide?.(state, local) ?? favor
+    const guide = residentFavorGuide(resident, favor, state, local)
     return { label: 'NEIGHBOR FAVOR', title: guide.title, detail: guide.detail, progress: `${resident.identity.name} is waiting`, value: 0, max: 1, text: 'Not yet done', instruction: guide.next }
   }
 }

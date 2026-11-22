@@ -87,16 +87,21 @@ export function onBench(item: Pick<Item, 'x' | 'z' | 'holder'>) {
   return item.holder === null && distance(item, toolboxHome) < toolboxShelfRadius
 }
 
-// The toolbox is on loan from the moment Wren asks. Once it is back on the bench after the repair, it stays there.
 // Once Wren relies on the crew without checking their work, the toolbox is theirs to borrow whenever they like.
 export function wrenLendsToolbox(state: Pick<Snapshot, 'residents'>) {
   const wren = state.residents.wren
   return Boolean(wren && trustTier(wren.trust) === 'trusted' && !wren.breach)
 }
 
+export function toolboxLoanForSwollenGate(state: Pick<Snapshot, 'gateRepair' | 'residents'>) {
+  const { breach, checked } = state.residents.wren ?? {}
+  return state.gateRepair.swelling === 'swollen' && (!breach || checked === 'fault')
+}
+
 export function toolboxPickable(state: Pick<Snapshot, 'gateRepair' | 'residents'>, item: Item) {
-  const { stage, swelling } = state.gateRepair
-  return stage !== 'sagging' && !(stage === 'mended' && onBench(item) && !swelling && !wrenLendsToolbox(state))
+  const { stage } = state.gateRepair
+  if (stage === 'sagging') return false
+  return stage !== 'mended' || !onBench(item) || wrenLendsToolbox(state) || toolboxLoanForSwollenGate(state)
 }
 
 function connectedAt(state: GateWorld, id: number | null) {

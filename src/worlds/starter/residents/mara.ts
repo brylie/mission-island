@@ -4,7 +4,8 @@ import { maraFieldLines } from '../../../journal/outing.ts'
 import { ferryServiceRestored } from '../../../ferry-repair.ts'
 import { maraRemarks } from './remarks.ts'
 import { distance, harborDock } from '../../../world.ts'
-import { starterResidentSites } from '../layout/sites.ts'
+import { maraHome } from '../layout/places.ts'
+import { starterHouseholdHours, starterResidentSites } from '../layout/sites.ts'
 
 const fishingStartsAtHour = 6
 const fishingEndsAtHour = 18
@@ -23,8 +24,9 @@ export const mara: ResidentDefinition = {
   identity: { name: 'Mara', role: 'Fisher' },
   appearance: { look: { uniform: 'angler', skin: 'warm' }, dye: '#b9664a' },
   schedule: {
-    home: { ...porch, heading: Math.PI },
-    work: { ...dock, heading: -quarterTurnRadians },
+    home: { ...porch, heading: Math.PI, name: 'teal-roofed house by the depot trail' },
+    work: { ...dock, heading: -quarterTurnRadians, name: 'the small fishing dock' },
+    household: { building: maraHome, ...starterHouseholdHours.mara },
     departs: fishingStartsAtHour,
     returns: fishingEndsAtHour,
     pace: (distance(porch, landing) + distance(landing, dock)) / commuteHours,

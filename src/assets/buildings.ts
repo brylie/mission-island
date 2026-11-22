@@ -6,12 +6,16 @@ import { houseRoofRise, starterHouseModel } from './geometry/starter-house'
 const half = 0.5
 const sides = [-1, 1] as const
 
-export function createHouse(meshes: MeshFactory, building: typeof buildings[number]) {
+export function createHouse(meshes: MeshFactory, building: typeof buildings[number], household?: { rearEntrance?: boolean }) {
   const { scene, box, surface, shadows, paintSurface } = meshes
   const root = new TransformNode('House', scene)
   const { x, z, w, d, h, wall } = building
   root.position.set(x, 0, z)
   root.rotation.y = building.heading ?? 0
+  // Occupied panes switch material independently of the batched exterior.
+  const lightable = household ? new TransformNode('Household windows', scene) : undefined
+  lightable?.position.copyFrom(root.position)
+  lightable?.rotation.copyFrom(root.rotation)
 
   const { roof, foundation, door, windows, chimney } = starterHouseModel
   const { frame, glazing, mullion } = windows
@@ -51,12 +55,36 @@ export function createHouse(meshes: MeshFactory, building: typeof buildings[numb
   box(0, h * half, 0, w, h, d, wall, root)
   buildRoof()
   box(0, door.centerY, frontWall - door.outset, ...door.size, door.color, root)
-  for (const side of sides) {
-    const windowX = side * w * windows.sideFraction, windowY = h * windows.heightRatio
-    box(windowX, windowY, frontWall - frame.outset, ...frame.size, frame.color, root)
-    box(windowX, windowY, frontWall - glazing.outset, ...glazing.size, glazing.color, root)
-    box(windowX, windowY, frontWall - mullion.outset, ...mullion.size, mullion.color, root)
+  if (household?.rearEntrance) box(0, door.centerY, -frontWall + door.outset, ...door.size, door.color, root)
+  const windowY = h * windows.heightRatio
+  const windowWalls = household?.rearEntrance ? sides : [-1] as const
+  const panes = windowWalls.flatMap((facing) => sides.map((side) => {
+    const windowX = side * w * windows.sideFraction
+    const wallZ = facing * d * half
+    box(windowX, windowY, wallZ + facing * frame.outset, ...frame.size, frame.color, root)
+    box(windowX, windowY, wallZ + facing * mullion.outset, ...mullion.size, mullion.color, root)
+    return box(windowX, windowY, wallZ + facing * glazing.outset, ...glazing.size, glazing.color, lightable ?? root, !lightable)
+  }))
+  if (lightable) {
+    const sideWall = w * half
+    const [frameWidth, frameHeight, frameDepth] = frame.size
+    const [paneWidth, paneHeight, paneDepth] = glazing.size
+    const [mullionWidth, mullionHeight, mullionDepth] = mullion.size
+    for (const side of sides) {
+      box(side * (sideWall + frame.outset), windowY, 0, frameDepth, frameHeight, frameWidth, frame.color, root)
+      box(side * (sideWall + mullion.outset), windowY, 0, mullionDepth, mullionHeight, mullionWidth, mullion.color, root)
+      panes.push(box(side * (sideWall + glazing.outset), windowY, 0, paneDepth, paneHeight, paneWidth, glazing.color, lightable, false))
+    }
   }
   if (w > chimney.houseMinimumWidth) box(w * chimney.xRatio, h + chimney.rise, chimney.z, ...chimney.size, chimney.color, root)
-  return root
+  let lit = false
+  return {
+    root,
+    showWindows: (next: boolean) => {
+      if (!lightable || lit === next) return
+      lit = next
+      const material = lit ? meshes.paint(glazing.litColor, true) : meshes.paint(glazing.color)
+      for (const pane of panes) pane.material = material
+    },
+  }
 }

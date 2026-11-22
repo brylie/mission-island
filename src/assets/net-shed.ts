@@ -8,7 +8,7 @@ const twineAngle = Math.PI * quarter
 
 // The net dries on the sunny gable. Both families of diagonal strands end at the timber frame.
 export function createNetShed(meshes: MeshFactory) {
-  const root = createHouse(meshes, netShedHouse)
+  const { root } = createHouse(meshes, netShedHouse)
   root.name = 'Harbor net shed'
   const { box, cylinder, sphere } = meshes
   const { x, bottom, height, width, timber, posts, braces, rails, twine, corks } = netDryingFrame

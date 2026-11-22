@@ -55,7 +55,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
-  const { juniper, updateEnvironment, homeChests, showFarm, boat, buoys, ferns, garden, residents, ferry } = createIslandWorld(meshes, { liveParticles: true })
+  const { juniper, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, garden, residents, ferry } = createIslandWorld(meshes, { liveParticles: true })
   const showMaterialsWork = createMaterialsWorkView(meshes)
 
   const pickupPad = createObjectiveMarker(meshes, harbor, starterObjectiveDiameters.pickup, sun)
@@ -118,6 +118,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   let time = 0, ambientTime = 0
   function updateScenery(state: Snapshot, factor: number, delta: number) {
     showFarm(state.farm)
+    showHouseholds(state)
     residents.update(state, factor, delta, time)
     garden.update(state, factor)
     showMaterialsWork(state)

@@ -4,13 +4,11 @@ import type { MeshFactory } from '../island-meshes'
 import { groundHeight } from '../terrain'
 import { distance, mendingBench, wrenCottage } from '../world'
 import type { Point } from '../world'
-import { starterHouseModel } from './geometry/starter-house'
 import { cottageBackModel, gardenFenceModel, wrenGateFinish, wrenGateGeometry } from './geometry/wren-gate'
 import { createWrenGarden } from './wren-garden'
 
 const half = 0.5
 const quarterTurn = Math.PI * half
-const sides = [-1, 1] as const
 const { timber, cap, iron, brass } = wrenGateFinish
 
 function fenceRun(meshes: MeshFactory, from: Point, to: Point) {
@@ -34,22 +32,14 @@ function fenceRun(meshes: MeshFactory, from: Point, to: Point) {
   meshes.batchModel(root)
 }
 
-function cottageBackAndSides({ box }: MeshFactory) {
-  const { x, z, w, d } = wrenCottage
+function cottageBack({ box }: MeshFactory) {
+  const { x, z, d } = wrenCottage
   const y = groundHeight(wrenCottage)
   const back = z + d * half
-  const { door, knob, step, sideWindow } = cottageBackModel
+  const { door, knob, step } = cottageBackModel
   box(x, y + door.y, back + door.outset, ...door.size, door.color)
   box(x + knob.x, y + knob.y, back + knob.outset, ...knob.size, brass)
   box(x, y + step.y, back + step.outset, ...step.size, step.color)
-  const { frame, glazing } = starterHouseModel.windows
-  const [frameWidth, frameHeight, frameDepth] = frame.size
-  const [paneWidth, paneHeight, paneDepth] = glazing.size
-  const sideWall = w * half
-  for (const side of sides) {
-    box(x + side * (sideWall + frame.outset), y + sideWindow.y, z, frameDepth, frameHeight, frameWidth, frame.color)
-    box(x + side * (sideWall + sideWindow.glazingOutset), y + sideWindow.y, z, paneDepth, paneHeight, paneWidth, glazing.color)
-  }
 }
 
 export const wrenGateTopRail = wrenGateGeometry.topRail
@@ -92,7 +82,7 @@ function buildMendingBench({ scene, box, cylinder }: MeshFactory) {
 export function createWrenGateModel(meshes: MeshFactory, sagAngle: number) {
   const { box, cylinder, scene } = meshes
   for (const { from, to } of fenceRuns) fenceRun(meshes, from, to)
-  cottageBackAndSides(meshes)
+  cottageBack(meshes)
   createWrenGarden(meshes)
   const floor = groundHeight(hingePost)
   const gate = createWrenGateAssembly(meshes, { ...hingePost, y: floor })
