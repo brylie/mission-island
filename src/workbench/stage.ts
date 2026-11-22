@@ -18,7 +18,7 @@ import type { Entry, Values } from './subject'
 import { lightingPresets } from './lighting'
 import type { LightingPreset } from './lighting'
 import { findZFightCandidates } from './z-fighting'
-import { createScaleFigure } from './scale-figure'
+import { framingWithFigure, scaleFigureFor } from './scale-figure'
 import { createLandscapeLayout } from './landscape-layout'
 import type { createLandscapeDraft } from './landscape-draft'
 import type { Point } from '../world'
@@ -69,6 +69,8 @@ function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Ent
   const biome = entry.id === 'biome'
   let min = new Vector3(Infinity, Infinity, Infinity)
   let max = new Vector3(-Infinity, -Infinity, -Infinity)
+  let shownMin = new Vector3(Infinity, Infinity, Infinity)
+  let shownMax = new Vector3(-Infinity, -Infinity, -Infinity)
   let triangles = 0
   let meshCount = 0
   for (const mesh of subject) {
@@ -80,9 +82,14 @@ function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Ent
       meshCount++
       triangles += mesh.getTotalIndices() / indicesPerTriangle
     }
+    // Hidden parts, such as cargo not yet loaded, stay out of the measured size.
+    if (mesh.isVisible && mesh.isEnabled()) {
+      shownMin = Vector3.Minimize(shownMin, boundingBox.minimumWorld)
+      shownMax = Vector3.Maximize(shownMax, boundingBox.maximumWorld)
+    }
   }
 
-  const extent = max.subtract(min)
+  const shown = shownMin.x <= shownMax.x ? { min: shownMin, max: shownMax } : { min: min.clone(), max: max.clone() }
   max.y += entry.headroom ?? 0
   const span = max.subtract(min)
   const groundHeight = (entry.ground?.height ?? 0) + (field?.offset.y ?? 0)
@@ -117,10 +124,10 @@ function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Ent
   camera.panningSensibility = orbit.panSensitivity / Math.max(1, size / orbit.panSpan)
   camera.attachControl(canvas, false)
   scene.activeCamera = camera
-  return { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount, min, extent }
+  return { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount, shown }
 }
 
-export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values, reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>, field?: FieldSite) {
+export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values, reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>, field?: FieldSite, showFigure = false) {
   const scene = new Scene(engine)
   const biome = entry.id === 'biome'
   try {
@@ -148,9 +155,12 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
     }
     meshes.finishScenery({ merge: false })
     const subject = surroundings?.surfaceMeshes ?? scene.meshes.slice(firstSubjectMesh)
-    const { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount, min, extent }
+    const { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount, shown }
       = createPreviewCamera(scene, canvas, entry, values, subject, field)
-    const scaleFigure = entry.landscape || field ? undefined : createScaleFigure(meshes, { maxX: min.x + extent.x, minZ: min.z, ground: groundHeight })
+    const extent = shown.max.subtract(shown.min)
+    const scaleFigure = scaleFigureFor(meshes, entry, field, { min: shown.min, extent, ground: groundHeight })
+    const fitFigure = (visible: boolean) => framingWithFigure({ ...shown, center, size, ground: groundHeight }, scaleFigure?.(visible))
+    let figureFrame = fitFigure(showFigure)
     let focusHeight = Number(values.focusHeight ?? studioCamera.landscapeFocusHeight)
     const layout = entry.landscape
       ? createLandscapeLayout(meshes, canvas, draft, () => ({
@@ -209,7 +219,9 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
 
     function frame(alpha: number, beta: number, fov?: number) {
       const aspect = engine.getAspectRatio(camera)
-      setCamera({ alpha, beta, fov, radius: radius * Math.max(1, studioCamera.fit.aspect / Math.max(studioCamera.fit.minAspect, aspect)), target: center.asArray() })
+      const fit = radius * (figureFrame?.scale ?? 1) * Math.max(1, studioCamera.fit.aspect / Math.max(studioCamera.fit.minAspect, aspect))
+      camera.upperRadiusLimit = Math.max(camera.upperRadiusLimit ?? fit, fit)
+      setCamera({ alpha, beta, fov, radius: fit, target: (figureFrame?.center ?? center).asArray() })
     }
 
     function setView(angle: Angle = entry.topView ? 'top' : 'perspective', settings?: Values) {
@@ -263,9 +275,14 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
       },
       setGrid(visible: boolean) { grid.setEnabled(visible) },
       setWireframe(visible: boolean) { wireframe = visible },
-      // Returns the crew member's height while it is shown.
-      setScaleFigure: (visible: boolean) => scaleFigure?.(visible),
-      // Width (x), depth (z) and height of the subject's bounds, in metres.
+      // Shows or hides the crew figure, reframing when that changes, and returns it while shown.
+      setScaleFigure: scaleFigure && ((visible: boolean) => {
+        const before = Boolean(figureFrame)
+        figureFrame = fitFigure(visible)
+        if (before !== Boolean(figureFrame)) frame(camera.alpha, camera.beta, camera.fov)
+        return scaleFigure(visible)
+      }),
+      // Width (x), depth (z) and height of the shown subject's bounds, in metres.
       dimensions: entry.landscape || field ? undefined : [extent.x, extent.z, extent.y] as const,
       setView,
       setLandscapeView({ alpha, beta, radius }: Omit<CameraState, 'target'>) {

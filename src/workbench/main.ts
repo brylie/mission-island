@@ -228,7 +228,7 @@ function rebuild(camera?: CameraState, reframeOnResize = false) {
   checkZFighting.disabled = true
   reportError('')
   try {
-    stage = createPreviewStage(engine, canvas, asset, values, reportError, draft, fieldSite())
+    stage = createPreviewStage(engine, canvas, asset, values, reportError, draft, fieldSite(), scaleFigure.checked)
     checkZFighting.disabled = false
     if (camera) stage.keepCamera(camera, reframeOnResize)
     applyDisplay()
@@ -351,6 +351,7 @@ function openSubjectSetup() {
   const { shot, lighting } = setup
   optionsByAsset[asset.id] = shot.options
   grid.checked = shot.grid
+  scaleFigure.checked = shot.scaleFigure ?? false
   wireframe.checked = shot.wireframe
   lightSelect.value = lighting
   playing = turntable.checked = false
@@ -544,6 +545,7 @@ function currentSetupLink() {
     options: values,
     grid: grid.checked,
     wireframe: wireframe.checked,
+    ...(scaleFigure.checked && { scaleFigure: true }),
   }, lightSelect.value as LightingPreset)
   return landscapeLink(location.href, { focus: [Number(values.x), Number(values.z)], camera: { ...camera, fov: camera.fov ?? studioCamera.fov }, hour: Number(values.hour), rain: Number(values.rain), marketRainAge: Number(values.marketRainAge), time: Number(values.clockStart ?? 0) + time, grid: grid.checked, wireframe: wireframe.checked })
 }
