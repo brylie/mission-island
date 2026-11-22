@@ -8,7 +8,7 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | --- | --- |
 | **W A S D** or **arrow keys** | Walk relative to the camera. In the truck or skiff, W/S move forward or reverse and A/D steer. |
 | **E** | Use the action shown in the prompt. Pick up or deliver cargo, work a farm plot, contribute to a market order, open the job board, or work on a neighbor's repair. |
-| **F** | Board or leave a stopped truck or skiff. The first player takes the truck wheel. Both skiff seats can paddle. |
+| **F** | Board or leave a stopped truck, learner vehicle or skiff. The first player takes the wheel. Both skiff seats can paddle. |
 | **Shift** | Hold to sprint on foot or drive slowly and steer gently. |
 | **Space** | Jump on foot or hold to brake while driving. |
 | **Left click** | Reach or use an equipped tool. Hold and release to throw a crate or cast the fishing line. |
@@ -31,6 +31,20 @@ Jump onto or over low rocks and crates. The bed or hood gives you a second jump 
 Each starter crate delivered pays two coins into the shared crew bank. Completing the delivery pays three more, and clearing the lookout fire pays four. The truck's headlights and taillights come on around dusk, along with street lamps in the settlements.
 
 The truck has four-wheel suspension and follows the terrain under each wheel. **W** accelerates, **S** brakes when moving forward and then reverses, and **Space** applies the brake without changing direction. Brake lights work in daylight and at night. Cargo and players riding on the bed move with the truck, so slowing down before sharp corners and rough ground helps keep the crates aboard.
+
+## Learning to drive
+
+Two learner vehicles teach the first driving for careers on Saltwind. The red Fire and Rescue pickup waits beside Fire Supplies, and the green Island Farm tractor waits north of the farm plots. Walk up and press **F** to take the wheel; a crewmate can ride in the pickup's passenger seat. The tractor seats only its operator.
+
+While you ride, the prompt, the objective card and the map name the practice stop. A gold ring with orange cones marks it on the ground, and the map shows it as a hollow gold ring. Pull up inside the ring and brake to a full stop with **Space**; the prompt tells you when to pull forward or finish stopping. The driver earns 10 career XP, the passenger sees the result, and the vehicle's next stop comes up for the whole crew, so partners can take turns at the wheel. The pickup's runs visit the Forest Lookout trailhead, Harbor Depot, the beach trail, the ferry approach and Seabrook square. The tractor's slower runs go to Seabrook Market, the meadow slope and back to the farm.
+
+| Vehicle | Career XP | At 100 XP |
+| --- | --- | --- |
+| Fire and Rescue pickup | Emergency driving | Qualified for the Saltwind ambulance, fire engine and patrol car once their driving jobs open |
+| Island Farm tractor | Farm machinery | Qualified for a Saltwind farm tractor once its driving jobs open |
+| Flatbed | Driver XP from hauled crates | Slatecliff ore truck certification |
+
+Career XP is personal to the driver and is saved with your crew profile. The crew guide shows your progress on each path.
 
 ## Repeatable orders
 

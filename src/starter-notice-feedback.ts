@@ -2,6 +2,7 @@ import { farmFeedback } from './farm-order-ui'
 import { ferryFeedback } from './ferry-repair-ui'
 import { catchLabel } from './journal-ui'
 import { jobs } from './jobs'
+import { careerUnlockXp, drivingCareers, practiceStopXp } from './learner-vehicles'
 import { materialsFeedback } from './materials-work'
 import type { FishingResult, ServerMessage, Snapshot } from './protocol'
 import { neighborFeedback } from './resident-notices'
@@ -16,6 +17,8 @@ const tideFeedbackDurationMs = 3900
 const retryObservationDurationMs = 1900
 const materialsFeedbackDurationMs = 4800
 const seedPurchaseDurationMs = 3200
+const practiceRunDurationMs = 3600
+const qualificationDurationMs = 6000
 
 const feedbackText: Record<FishingResult, [string, string]> = {
   'caught': ['+1 fish', 'Caught a fish'],
@@ -49,6 +52,18 @@ export function starterNoticeFeedback(incoming: ServerMessage, localId: number, 
       return { key: '', label: materialsFeedback(incoming), until: performance.now() + materialsFeedbackDurationMs }
     case 'order-pay':
       return { key: `+${incoming.coins} coins`, label: `${jobs[incoming.id].title} complete · Crew bank`, until: performance.now() + jobPaymentDurationMs }
+    case 'practice-run': {
+      const { name } = drivingCareers[incoming.career]
+      // The crewmate who was not driving still sees the run finish and the stop move on.
+      if (incoming.playerId !== localId) {
+        const driver = snapshot?.players.find((player) => player.id === incoming.playerId)
+        const who = driver?.name || `Crew ${incoming.playerId + 1}`
+        return { key: '', label: `${who} stopped at ${incoming.stop} · +${practiceStopXp} ${name}`, until: performance.now() + practiceRunDurationMs }
+      }
+      return incoming.qualified
+        ? { key: `+${practiceStopXp} XP`, label: `${name} qualified · ready for Saltwind driving jobs`, until: performance.now() + qualificationDurationMs }
+        : { key: `+${practiceStopXp} XP`, label: `${incoming.stop} · ${name} ${incoming.xp}/${careerUnlockXp}`, until: performance.now() + practiceRunDurationMs }
+    }
     case 'starter-seed':
       return { key: '+1 seed', label: 'Plant it at Island Farm', until: performance.now() + seedPurchaseDurationMs }
     default: return neighborly

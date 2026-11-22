@@ -6,6 +6,7 @@ import { materialsGuide, materialsOpen, repairQuantity } from './materials-work'
 import type { Player, Snapshot } from './protocol'
 import { activeFavor, isCustom, residentFavorGuide } from './residents/favors'
 import { distance } from './world'
+import { careerUnlockXp, drivingCareers, learnerVehicles, practiceStop, practiceStopXp } from './learner-vehicles'
 import { starterResidents } from './worlds/starter/residents'
 
 const deliveryHintReach = 11
@@ -43,23 +44,48 @@ function materialsCard(state: Snapshot, player: Player) {
 }
 
 // The mission panel: the current shift, order or neighbor favor, with its progress and next step.
-export function missionCard(state: Snapshot, id: number) {
+// While aboard a learner vehicle the card follows the practice run.
+function learnerCard(state: Snapshot, local: Player) {
+  const id = local.vehicle!
+  const { name, career } = learnerVehicles[id]
+  const stop = practiceStop(id, state.practice[id])
+  const value = Math.min(local.drivingXp?.[career] ?? 0, careerUnlockXp)
+  return {
+    label: 'LEARNER DRIVING',
+    title: name,
+    detail: `Drive to ${stop.name} and stop inside the ring of cones. The driver earns ${practiceStopXp} ${drivingCareers[career].name} XP per stop.`,
+    progress: `${drivingCareers[career].name} XP`,
+    value,
+    max: careerUnlockXp,
+    text: `${value} / ${careerUnlockXp} XP`,
+    instruction: `Qualifies for the ${drivingCareers[career].qualifies} once their Saltwind driving jobs open.`,
+  }
+}
+
+function deliveryCard(state: Snapshot) {
   const job = activeJob(state)
   const drop = deliveryDrop(state)
-  if (drop) {
-    const quantity = job?.quantity ?? initialDeliveryQuota
-    const value = state.jobs.active?.progress ?? state.items.filter((item) => item.delivered).length
-    return {
-      label: job ? 'CREW ORDER' : 'MISSION 01 / 02',
-      title: job?.title ?? 'Harbor delivery',
-      detail: job ? jobDescription(job) : 'Bring three supply crates from Harbor Depot to Seabrook.',
-      progress: 'Crates delivered',
-      value,
-      max: quantity,
-      text: `${value} / ${quantity} delivered`,
-      instruction: deliveryInstruction(state, drop, quantity),
-    }
+  if (!drop) return
+  const quantity = job?.quantity ?? initialDeliveryQuota
+  const value = state.jobs.active?.progress ?? state.items.filter((item) => item.delivered).length
+  return {
+    label: job ? 'CREW ORDER' : 'MISSION 01 / 02',
+    title: job?.title ?? 'Harbor delivery',
+    detail: job ? jobDescription(job) : 'Bring three supply crates from Harbor Depot to Seabrook.',
+    progress: 'Crates delivered',
+    value,
+    max: quantity,
+    text: `${value} / ${quantity} delivered`,
+    instruction: deliveryInstruction(state, drop, quantity),
   }
+}
+
+export function missionCard(state: Snapshot, id: number) {
+  const aboard = state.players.find((entry) => entry.id === id && entry.seat && entry.vehicle)
+  if (aboard) return learnerCard(state, aboard)
+  const job = activeJob(state)
+  const delivery = deliveryCard(state)
+  if (delivery) return delivery
   if (state.mission === 'fire') {
     const value = Math.round((1 - state.fire) * percentScale)
     return {
@@ -101,7 +127,7 @@ export function missionCard(state: Snapshot, id: number) {
   return {
     label: 'ISLAND SERVICE',
     title: 'Choose your next job',
-    detail: 'Visit the job board at Harbor Depot. You can fish, farm, or explore between orders.',
+    detail: 'Visit the job board at Harbor Depot. You can fish, farm, explore, or learn to drive the Fire and Rescue pickup by Fire Supplies and the farm tractor between orders.',
     progress: 'Second island progress',
     value: completed,
     max: secondIslandGoal,

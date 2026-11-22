@@ -8,6 +8,7 @@ import { distance, jumpSpeed, lookout, type Point } from '../src/world.ts'
 import { stopPrimary, stopped, type CrewMember } from './crew.ts'
 import { looseCargoTop } from './items.ts'
 import { gateBlockers, solidTop } from '../src/gate-repair.ts'
+import { learnerSolids } from '../src/learner-vehicles.ts'
 import { ferrySolids } from '../src/ferry-repair.ts'
 import { barrowWalk } from '../src/barrow-gait.ts'
 import { barrowTop } from '../src/barrow.ts'
@@ -53,7 +54,7 @@ export function walkCrew(
   const { player, input } = member
   const { truck } = state
   const item = heldItem(state, player)
-  const solids = [...gateBlockers(state), ...ferrySolids(state)]
+  const solids = [...gateBlockers(state), ...ferrySolids(state), ...learnerSolids(state.vehicles)]
   const { barrow, progress } = state.farmWork
   const pushing = barrow?.handler === player.id
   const walkingInput = pushing ? { ...input, sprint: false } : input

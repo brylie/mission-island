@@ -8,6 +8,7 @@ import { stopPrimary, stowTool, type CrewMember } from './crew.ts'
 import { updateHeldItems } from './items.ts'
 import { canOccupyGround } from '../src/simulation/movement.ts'
 import { skiffExit } from './skiff.ts'
+import { learnerVehicles, nearestBoardableLearner, openLearnerSeat, seatOffset, type LearnerSeat } from '../src/learner-vehicles.ts'
 
 const cabDoorExitLateralM = 2.1
 const cabDoorExitForwardM = 0.9
@@ -22,18 +23,44 @@ const driverSeatLateralM = -0.65
 const passengerSeatLateralM = 0.65
 const cabSeatHeightM = 1.05
 
+// Where a seated rider can step out, or nothing while the ride is still moving.
+function seatExit(state: Snapshot, player: Snapshot['players'][number]) {
+  if (inSkiff(player.seat)) return skiffExit(state.skiff, player.seat)
+  const learner = player.vehicle
+  const ride = learner ? state.vehicles[learner] : state.truck
+  if (Math.abs(ride.speed) > truckSeatSpeed) return
+  const side = player.seat === 'driver' ? -1 : 1
+  const doors = learner
+    ? learnerVehicles[learner].exits.map(({ x, z }) => offset(ride, x, z))
+    : [offset(state.truck, side * cabDoorExitLateralM, cabDoorExitForwardM), offset(state.truck, 0, truckRearExitM)]
+  // Each rider leaves a learner vehicle by their own door first: driver left, passenger right.
+  if (learner && side > 0) [doors[0], doors[1]] = [doors[1], doors[0]]
+  return doors.find((point) => canOccupyGround(point, cabExitClearanceRadiusM, cabExitMinimumGroundY))
+}
+
+// Board whichever road vehicle in reach is closest: a learner vehicle or the flatbed.
+function boardRoadVehicle(state: Snapshot, player: Snapshot['players'][number]) {
+  const learner = nearestBoardableLearner(state.vehicles, state.players, player)
+  const truckInReach = distance(state.truck, player) < truckBoardingRangeM && Math.abs(state.truck.speed) <= truckSeatSpeed
+  if (learner && (!truckInReach || distance(state.vehicles[learner], player) < distance(state.truck, player))) {
+    const seat = openLearnerSeat(state.players, learner)
+    if (seat) Object.assign(player, { seat, vehicle: learner })
+    return
+  }
+  if (!truckInReach) return
+  const flatbedSeat = (seat: LearnerSeat) => state.players.some((entry) => entry.seat === seat && !entry.vehicle)
+  player.vehicle = undefined
+  if (!flatbedSeat('driver')) player.seat = 'driver'
+  else if (!flatbedSeat('passenger')) player.seat = 'passenger'
+}
+
 export function toggleSeat(state: Snapshot, member: CrewMember) {
   const { player } = member
   if (player.seat) {
-    const boating = inSkiff(player.seat)
-    if (!boating && Math.abs(state.truck.speed) > truckSeatSpeed) return
-    const side = player.seat === 'driver' ? -1 : 1
-    const exit = boating
-      ? skiffExit(state.skiff, player.seat)
-      : [offset(state.truck, side * cabDoorExitLateralM, cabDoorExitForwardM), offset(state.truck, 0, truckRearExitM)]
-          .find((point) => canOccupyGround(point, cabExitClearanceRadiusM, cabExitMinimumGroundY))
+    const exit = seatExit(state, player)
     if (!exit) return
     player.seat = null
+    player.vehicle = undefined
     stopPrimary(member)
     player.casting = null
     player.rowing = false
@@ -48,10 +75,8 @@ export function toggleSeat(state: Snapshot, member: CrewMember) {
     updateRiders(state)
     return
   }
-  if (distance(state.truck, player) >= truckBoardingRangeM || Math.abs(state.truck.speed) > truckSeatSpeed || !player.grounded || player.onBed || player.truckSurface
-    || heldItem(state, player)?.kind === 'crate') return
-  if (!state.players.some((entry) => entry.seat === 'driver')) player.seat = 'driver'
-  else if (!state.players.some((entry) => entry.seat === 'passenger')) player.seat = 'passenger'
+  if (!player.grounded || player.onBed || player.truckSurface || heldItem(state, player)?.kind === 'crate') return
+  boardRoadVehicle(state, player)
   if (player.seat) {
     stopPrimary(member)
     stowTool(member)
@@ -73,8 +98,12 @@ export function updateRiders(state: Snapshot) {
       player.swimming = false
       continue
     }
-    Object.assign(player, truckPoint(state.truck, player.seat === 'driver' ? driverSeatLateralM : passengerSeatLateralM, 0, cabSeatHeightM))
-    player.heading = state.truck.heading
+    const learner = player.vehicle
+    const seat = learner && seatOffset(learner, player.seat)
+    const ride = learner ? state.vehicles[learner] : state.truck
+    if (seat) Object.assign(player, truckPoint(ride, seat.x, seat.y, seat.z))
+    else Object.assign(player, truckPoint(state.truck, player.seat === 'driver' ? driverSeatLateralM : passengerSeatLateralM, 0, cabSeatHeightM))
+    player.heading = ride.heading
     player.grounded = true
     player.onBed = false
     player.truckSurface = undefined

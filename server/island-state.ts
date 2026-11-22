@@ -8,6 +8,7 @@ import type { Snapshot } from '../src/protocol.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { weatherAt } from '../src/weather.ts'
 import { truckStart } from '../src/world.ts'
+import { learnerVehicleIds, learnerVehicles, type LearnerVehicleId } from '../src/learner-vehicles.ts'
 import { initialGateRepair } from '../src/gate-repair.ts'
 import { initialFerryRepair } from '../src/ferry-repair.ts'
 import { initialResidents } from '../src/residents/trust.ts'
@@ -24,8 +25,12 @@ function restoreAviation(saved: AviationProgress | undefined): Snapshot['aviatio
 
 const savedFerry = (save?: IslandSave) => save?.world ?? initialFerryRepair()
 
+function learnerRecord<T>(value: (id: LearnerVehicleId) => T) {
+  return Object.fromEntries(learnerVehicleIds.map((id) => [id, value(id)])) as Record<LearnerVehicleId, T>
+}
+
 export function restoreIsland(
-  physics: Pick<ReturnType<typeof createCargoPhysics>, 'parkTruck' | 'restore' | 'relocate' | 'placeFerry'>,
+  physics: Pick<ReturnType<typeof createCargoPhysics>, 'parkTruck' | 'parkLearner' | 'restore' | 'relocate' | 'placeFerry'>,
   juniper: ReturnType<typeof createJuniperHabitat>,
   driftwood: DriftwoodFrame,
   save?: IslandSave,
@@ -47,6 +52,8 @@ export function restoreIsland(
     ...structuredClone(save?.world),
     skiff: restoreSkiff(save?.world.skiff),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
+    vehicles: learnerRecord((id) => physics.parkLearner(id, save?.world.vehicles?.[id] ?? learnerVehicles[id].park)),
+    practice: learnerRecord((id) => save?.world.practice?.[id] ?? 0),
     weather: weatherAt(islandTime),
     islandTime,
     driftwood,
@@ -74,6 +81,10 @@ export function restoreIsland(
 export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['crew']): IslandSave {
   const { truck, skiff, items, mission, fire, farm, jobs, lookoutFireClearedAt, gate, gateRepair, residents, lastFavorPay, journal, materialsWork, ferryRepair } = state
   const { x, z, heading } = truck
+  const vehicles = learnerRecord((id) => {
+    const { x, z, heading } = state.vehicles[id]
+    return { x, z, heading }
+  })
   const { qualified, surveyed, aerial } = state.aviation
   return {
     version: currentSaveVersion,
@@ -81,7 +92,7 @@ export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['
     islandTime: state.islandTime,
     growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
-    world: structuredClone({ truck: { x, z, heading }, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial }, gate, gateRepair, residents, journal, materialsWork, ferryRepair, produce: state.farmWork.progress, ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
+    world: structuredClone({ truck: { x, z, heading }, vehicles, practice: state.practice, skiff, items, mission, fire, farm, jobs, aviation: { qualified, surveyed, aerial }, gate, gateRepair, residents, journal, materialsWork, ferryRepair, produce: state.farmWork.progress, ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }
 }

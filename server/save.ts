@@ -18,6 +18,7 @@ import { readJournal } from './journal-save.ts'
 import { crateStarts, itemStarts, spawns, starterPay } from '../src/world.ts'
 import type { Pose } from '../src/world.ts'
 import { currentSaveVersion, saveVersions } from './save-version.ts'
+import { drivingCareers, learnerVehicleIds, seatOffset, type LearnerVehicleId } from '../src/learner-vehicles.ts'
 
 const privateDirectoryMode = 0o700
 const privateSaveFileMode = 0o600
@@ -29,7 +30,7 @@ export type IslandSave = {
   islandTime: number
   growth: number[]
   world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay' | 'ferryRepair'>
-    & { truck: Pose, jobs?: JobBoardState, aviation?: AviationProgress, journal?: Journal, produce?: FarmProgress, materialsWork?: Snapshot['materialsWork'] }
+    & { truck: Pose, vehicles?: Partial<Record<LearnerVehicleId, Pose>>, practice?: Partial<Snapshot['practice']>, jobs?: JobBoardState, aviation?: AviationProgress, journal?: Journal, produce?: FarmProgress, materialsWork?: Snapshot['materialsWork'] }
   crew: { token: string, player: Player, reserved: boolean }[]
 }
 
@@ -113,8 +114,29 @@ function isJobBoard(value: unknown, mission: unknown) {
     && isNumber(active.progress) && Number.isInteger(active.progress) && active.progress >= 0 && active.progress < jobs[active.id].quantity)
 }
 
+// Learner fleet records are optional, so saves from before the fleet still load.
+function isLearnerFleet(world: Record<string, unknown>) {
+  const { vehicles, practice } = world
+  return (vehicles === undefined || (isRecord(vehicles) && Object.entries(vehicles).every(([id, pose]) => learnerVehicleIds.some((known) => known === id) && isPose(pose))))
+    && (practice === undefined || (isRecord(practice) && Object.entries(practice).every(([id, stop]) =>
+      learnerVehicleIds.some((known) => known === id) && isNumber(stop) && Number.isSafeInteger(stop) && stop >= 0)))
+}
+
+function isDrivingXp(value: unknown) {
+  return value === undefined || (isRecord(value) && Object.entries(value).every(([career, xp]) => Object.hasOwn(drivingCareers, career) && isCoinBalance(xp)))
+}
+
+// A learner vehicle only goes with a seat that vehicle has.
+function isLearnerSeat(vehicle: unknown, seat: unknown) {
+  if (vehicle === undefined) return true
+  const id = learnerVehicleIds.find((known) => known === vehicle)
+  return id !== undefined && (seat === 'driver' || seat === 'passenger') && seatOffset(id, seat) !== undefined
+}
+
 function validDrivingRecord(player: Record<string, unknown>) {
   return (player.deliveryXp === undefined || isCoinBalance(player.deliveryXp))
+    && isDrivingXp(player.drivingXp)
+    && isLearnerSeat(player.vehicle, player.seat)
     && (player.freightTicket === undefined || isFreightTicket(player.freightTicket))
     && (player.drivenCrates === undefined || (Array.isArray(player.drivenCrates) && player.drivenCrates.length === crateStarts.length
       && player.drivenCrates.every((metres) => isNumber(metres) && metres >= 0)))
@@ -147,6 +169,7 @@ function hasValidProgress(world: Record<string, unknown>) {
   return (world.jobs === undefined || isJobBoard(world.jobs, world.mission))
     && (world.aviation === undefined || isSavedAviation(world.aviation))
     && (world.produce === undefined || isSavedFarmWork(world.produce))
+    && isLearnerFleet(world)
 }
 
 function isSavedMaterials(world: Record<string, unknown>, islandTime: number) {

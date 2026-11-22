@@ -5,13 +5,12 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import type { MeshFactory } from '../island-meshes'
-import { surfaces } from '../materials'
-import { flatbedBody, flatbedDeck, flatbedLights, flatbedWheelLayout, flatbedWheelTrim, truckBed, truckSideRails, truckTailLip } from './geometry/flatbed'
+import { flatbedBody, flatbedDeck, flatbedLights, flatbedTireDepth, flatbedWheelLayout, truckBed, truckSideRails, truckTailLip } from './geometry/flatbed'
+import { batchRigidParts, dressFleetWheel, fleetPaint, vehicleBodywork, type VehicleBodywork } from './vehicle-kit'
 
 const sides = [-1, 1] as const
 const half = 0.5
 const quarterTurn = Math.PI * half
-const diameterPerRadius = 2
 const frontAxleIndex = 1
 const headlightEnableThreshold = 0.04
 const headlightIntensityGain = 2.3
@@ -44,7 +43,7 @@ function buildDeck({ box, paintSurface }: MeshFactory, truck: TransformNode) {
   for (const side of sides) {
     const x = side * railX
     for (const along of posts) {
-      box(x, deckTop + railHeight * half, center + along, thickness + post.extraWidth, railHeight, post.depth, post.finish, truck)
+      box(x, deckTop + railHeight * half, center + along, thickness + post.extraWidth, railHeight, post.depth, fleetPaint.frame, truck)
     }
     for (let i = 1; i < posts.length; i++) {
       const start = posts[i - 1] + joint
@@ -57,11 +56,69 @@ function buildDeck({ box, paintSurface }: MeshFactory, truck: TransformNode) {
   box(0, deckTop + truckTailLip.height * half, truckTailLip.z, width, truckTailLip.height, truckTailLip.thickness, planks, truck)
 }
 
-export function createFlatbed(meshes: MeshFactory) {
-  const { scene, box, cylinder, paint, paintSurface } = meshes
+function buildCab({ box, panel }: VehicleBodywork, treadPlate: Material) {
+  const { finish, bonnet, nose, cab, roof, windows, door, mirror, steps, roofMarker, grille, headlightHousing, indicator, frontFender, frontBumper } = flatbedBody
+  panel('Flatbed bonnet and sill', bonnet.halfWidth, bonnet.profile, finish)
+  panel('Flatbed nose', nose.halfWidth, nose.profile, finish)
+  panel('Flatbed raked cab', cab.halfWidth, cab.profile, finish)
+  panel('Flatbed cream roof', roof.halfWidth, roof.profile, fleetPaint.roofCream)
+  box(windows.rear, fleetPaint.windshield)
+  for (const side of sides) {
+    box(windows.front, fleetPaint.windshield, side).rotation.x = windows.rake
+    box(windows.wiper, fleetPaint.frame, side).rotation.set(windows.rake, 0, side * windows.wiper.sweep)
+    panel('Flatbed door glass', windows.door.halfWidth, windows.door.profile, fleetPaint.doorGlass, side * windows.door.centerX)
+    box(door.handle, fleetPaint.frame, side)
+    box(door.coachline, fleetPaint.roofCream, side)
+    const { emblem } = door
+    panel('Harbor Depot sun', emblem.halfWidth, emblem.sun, fleetPaint.roofCream, side * emblem.centerX)
+    box(emblem.horizon, fleetPaint.roofCream, side)
+    box(mirror.mount, fleetPaint.frame, side)
+    box(mirror.housing, fleetPaint.frame, side)
+    box(mirror.glass, fleetPaint.brightTrim, side)
+    box(steps.tread, treadPlate, side)
+    box(steps.bracket, fleetPaint.frame, side)
+    for (const z of steps.hanger.z) box({ center: [steps.hanger.x, steps.hanger.y, z], size: steps.hanger.size }, fleetPaint.frame, side)
+    box(roofMarker, fleetPaint.roofMarker, side)
+    box(headlightHousing, fleetPaint.frame, side)
+    box(indicator, fleetPaint.indicator, side)
+    box(frontFender, fleetPaint.frame, side)
+  }
+  box(grille.surround, fleetPaint.frame)
+  for (const y of grille.bar.heights) box({ center: [0, y, grille.bar.z], size: grille.bar.size }, fleetPaint.brightTrim)
+  box(frontBumper, fleetPaint.bumper)
+}
+
+function buildRunningGear({ box }: VehicleBodywork, meshes: MeshFactory, truck: TransformNode, treadPlate: Material) {
+  const { frame, rear, rearFender, fuelTank, toolLocker, cabGuard } = flatbedBody
+  box(frame, fleetPaint.frame)
+  box(rear.crossmember, fleetPaint.frame)
+  box(rear.bumper, fleetPaint.bumper)
+  for (const side of sides) {
+    box(rear.bracket, fleetPaint.frame, side)
+    box(rear.lightHousing, fleetPaint.frame, side)
+    box(rear.amberLens, fleetPaint.tailAmber, side)
+    box(rearFender.top, fleetPaint.frame, side)
+    box(rearFender.frontWing, fleetPaint.frame, side).rotation.x = rearFender.frontWing.rake
+    box(rearFender.rearWing, fleetPaint.frame, side).rotation.x = rearFender.rearWing.rake
+    box(rearFender.mudFlap, fleetPaint.rubber, side)
+  }
+  const [x, y, z] = fuelTank.center
+  const { diameter, length, segments, straps } = fuelTank
+  meshes.cylinder(x, y, z, diameter, diameter, length, segments, fleetPaint.tank, truck).rotation.x = quarterTurn
+  for (const strapZ of straps.z) {
+    meshes.cylinder(x, y, strapZ, straps.diameter, straps.diameter, straps.width, segments, fleetPaint.frame, truck).rotation.x = quarterTurn
+  }
+  box(toolLocker.body, fleetPaint.bumper)
+  box(toolLocker.latch, treadPlate)
+  for (const postX of cabGuard.posts.x) box({ center: [postX, cabGuard.posts.center[1], cabGuard.posts.center[2]], size: cabGuard.posts.size }, fleetPaint.frame)
+  for (const railY of cabGuard.rails.heights) box({ center: [0, railY, cabGuard.rails.center[2]], size: cabGuard.rails.size }, fleetPaint.frame)
+}
+
+// Merging is on by default. Workbench inspection keeps parts separate so the
+// z-fighting check can name each one.
+export function createFlatbed(meshes: MeshFactory, { merge = true } = {}) {
+  const { scene, box, paint } = meshes
   const { radius, halfTrack, axles } = flatbedWheelLayout
-  const { tire, hub } = flatbedWheelTrim
-  const { chassis, hood, cab, windshield, sideWindow, mirror, bumpers } = flatbedBody
   const { head, tail } = flatbedLights
   const truck = new TransformNode('Flatbed', scene)
   const beam = createBeam(truck, 'Flatbed headlights', head.beam)
@@ -71,18 +128,14 @@ export function createFlatbed(meshes: MeshFactory) {
   brakeBeam.setEnabled(false)
   const lamps: { mesh: Mesh, lit: Material, unlit: Material, braking?: Material }[] = []
   const wheels: { axle: TransformNode, spin: TransformNode, steering: boolean }[] = []
-  // The deck overhang keeps the joined side faces at distinct depths.
-  box(0, chassis.y, 0, truckBed.width - chassis.sideInset, chassis.height, chassis.length, chassis.finish, truck).name = 'Chassis'
-  box(...hood.center, ...hood.size, hood.finish, truck)
-  box(...cab.center, ...cab.size, cab.finish, truck)
-  box(...windshield.center, ...windshield.size, windshield.finish, truck)
-  const tireDiameter = radius * diameterPerRadius
+  const body = vehicleBodywork(meshes, truck)
+  const treadPlate = meshes.paintSurface('metal', fleetPaint.tread)
+  buildCab(body, treadPlate)
+  buildRunningGear(body, meshes, truck, treadPlate)
+  const headPaint = paint(fleetPaint.headlamp)
+  const tailPaint = paint(fleetPaint.tailRed)
   for (const side of sides) {
-    box(side * sideWindow.x, sideWindow.y, sideWindow.z, ...sideWindow.size, sideWindow.finish, truck)
-    box(side * mirror.x, mirror.y, mirror.z, ...mirror.size, mirror.finish, truck)
     const front = head.lens, rear = tail.lens
-    const headPaint = paint(front.unlit)
-    const tailPaint = paint(rear.unlit)
     lamps.push(
       { mesh: box(side * front.x, front.y, front.z, ...front.size, headPaint, truck), unlit: headPaint, lit: paint(front.lit, true) },
       {
@@ -98,14 +151,16 @@ export function createFlatbed(meshes: MeshFactory) {
       axle.position.set(side * halfTrack, radius, z)
       const spin = new TransformNode('Wheel spin', scene)
       spin.parent = axle
-      cylinder(0, 0, 0, tireDiameter, tireDiameter, tire.thickness, tire.segments, tire.finish, spin).rotation.z = quarterTurn
-      cylinder(side * hub.x, 0, 0, hub.diameter, hub.diameter, hub.thickness, hub.segments, hub.finish, spin).rotation.z = quarterTurn
+      dressFleetWheel(meshes, spin, side, radius, flatbedTireDepth)
       wheels.push({ axle, spin, steering: index === frontAxleIndex })
     }
   }
   buildDeck(meshes, truck)
-  for (const { center: [x, y, z], size: [width, height, length] } of bumpers) {
-    box(x, y, z, width, height, length, paintSurface('metal', surfaces.metal.color), truck)
+  // Rigid parts merge by finish. Lamps keep their own meshes because they
+  // swap materials when lit.
+  if (merge) {
+    batchRigidParts(meshes, truck, new Set(lamps.map(({ mesh }) => mesh)))
+    for (const { spin } of wheels) batchRigidParts(meshes, spin)
   }
   return {
     root: truck,

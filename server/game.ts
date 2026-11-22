@@ -5,8 +5,10 @@ import { createAviation } from './aviation.ts'
 import { inSkiff } from '../src/actions.ts'
 import { createJuniperHabitat } from '../src/juniper-habitat.ts'
 import type { Snapshot } from '../src/protocol.ts'
-import { createCargoPhysics } from '../src/simulation/cargo.ts'
+import { createCargoPhysics, type LearnerFleet } from '../src/simulation/cargo.ts'
 import type { CrewCommand } from './commands.ts'
+import { createDrivingPractice } from './driving-practice.ts'
+import { learnerVehicleIds, type LearnerVehicleId } from '../src/learner-vehicles.ts'
 import { createCrewRoster, disconnect, stopped, type CrewMember, type CrewNotice } from './crew.ts'
 import { jump, prepareCrewMotion, walkCrew } from './crew-motion.ts'
 import { createEquipment, setAppearance } from './equipment.ts'
@@ -49,12 +51,24 @@ function stepVehicles(
   active: (member: CrewMember) => boolean,
   physics: ReturnType<typeof createCargoPhysics>,
   freight: ReturnType<typeof createFreight>,
+  practice: ReturnType<typeof createDrivingPractice>,
   notifyAll: (notice: CrewNotice) => void,
 ) {
-  const driver = members.find((member) => member.player.seat === 'driver')
+  const driving = (member: CrewMember) => member.player.seat === 'driver' && active(member)
+  const driver = members.find((member) => member.player.seat === 'driver' && !member.player.vehicle)
+  const inputs: LearnerFleet['inputs'] = {}
+  const drivers: Partial<Record<LearnerVehicleId, CrewMember['player']>> = {}
+  // A parked driver sends no input but still finishes a run by stopping in the ring.
+  for (const member of members) {
+    const { vehicle, seat, connected } = member.player
+    if (!vehicle || seat !== 'driver' || !connected) continue
+    if (driving(member)) inputs[vehicle] = member.input
+    drivers[vehicle] = member.player
+  }
   const before = state.truck
   physics.placeBarrow(state.farmWork.barrow)
-  state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds)
+  state.truck = physics.step(state.items, before, driver && active(driver) ? driver.input : stopped, tickSeconds, { vehicles: state.vehicles, inputs })
+  practice.tick(drivers)
   for (const impact of physics.drainImpacts()) notifyAll({ type: 'crate-impact', id: `${impactSession}:${++impactCount}`, ...impact })
   if (driver && active(driver)) freight.recordDrive(driver.player, state.items, Math.hypot(state.truck.x - before.x, state.truck.z - before.z))
   const rowers = members.filter((member) => inSkiff(member.player.seat) && active(member))
@@ -71,6 +85,7 @@ function stepVehicles(
 function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>, trial: T) {
   physics.placeFerry(state)
   state.truck = physics.parkTruck(state.truck)
+  for (const id of learnerVehicleIds) state.vehicles[id] = physics.parkLearner(id, state.vehicles[id])
   for (const item of state.items) physics.restore(item)
   return trial
 }
@@ -90,6 +105,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const { interactions, gate, residents, farm }
     = createGameInteractions(world, physics, { crew, orders, freight, journal, clock, checkpoint })
   const aviation = createAviation(state, crew.notifyAll, checkpoint)
+  const practice = createDrivingPractice(state, crew.notifyAll, checkpoint)
 
   function tick(): Readonly<Snapshot> {
     const now = clock()
@@ -104,7 +120,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     for (const place of [physics.placeGateLeaf, physics.placeFerry]) place(state)
     const members = crew.members()
     const active = (member: CrewMember) => member.player.connected && member.lastInput >= now - crewInputTimeoutMs
-    const { before, still } = stepVehicles(state, members, active, physics, freight, crew.notifyAll)
+    const { before, still } = stepVehicles(state, members, active, physics, freight, practice, crew.notifyAll)
     for (const item of state.items) item.spraying = false
     for (const member of members) {
       const { player } = member

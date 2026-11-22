@@ -70,6 +70,7 @@ The roles below come from the look-alike groups in the audit. Each anchor is the
 | Stone | harbor stone, slate | `#a39c86`, `#71857f` | `#8a9185` (`saltwindSceneryPalette.slateGrey`) | Walls, quays, quarry, kerbs |
 | Harbor teal | dock teal, roof teal | `#798c82`, `#3f5d5a` | — | Sheds, roofs, boats, trim |
 | Brick and rust | rust brick, barn red | `#a95239` | — | Brick, rusted steel, a barn |
+| Fleet trim | chassis frame, tire rubber, bright trim, slate bumper, cream roof, glass, lamps | `fleetPaint` in `src/assets/geometry/vehicle-kit.ts` | Same roles | Every road vehicle's chassis, wheels, glass, lamps and bumpers. Each vehicle keeps its own body paint. The roof cream `#f1dfb3` is a vehicle role, warmer and more saturated than cottage cream so a cab roof reads as paint, not plaster. |
 
 Each island can keep its own values for a shared role, as Saltwind already does for cream and slate.
 

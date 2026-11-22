@@ -14,20 +14,6 @@ export const haulerSpec = {
 // The walking volume covers the body below the forward cab roof.
 export const oreHaulerWalkingVolume = { bottom: 0.25, top: 2.65, width: haulerSpec.width, depth: haulerSpec.length } as const
 
-export type HaulerBox = {
-  center: readonly [x: number, y: number, z: number]
-  size: readonly [width: number, height: number, depth: number]
-}
-
-export type HaulerProfile = readonly (readonly [z: number, y: number])[]
-
-export interface HaulerWheelRing {
-  offset: number
-  outerDiameter: number
-  innerDiameter: number
-  depth: number
-}
-
 export const oreHaulerCab = {
   sill: {
     halfWidth: 1.15,
@@ -146,16 +132,8 @@ export const oreHaulerChassis = {
   rearBumper: { center: [0, 0.51, -4.19], size: [2.18, 0.14, 0.22] },
 } as const
 
-const tireDiameter = haulerSpec.wheel * 2
-
 export const oreHaulerWheel = {
   steeringAxle,
   halfTrack: haulerSpec.track / 2,
-  segments: 16,
-  tire: { offset: 0, outerDiameter: tireDiameter, innerDiameter: tireDiameter, depth: 0.33 },
-  shoulder: { offset: 0.185, outerDiameter: 0.95, innerDiameter: tireDiameter, depth: 0.055 },
-  rim: { offset: 0.215, outerDiameter: 0.61, innerDiameter: 0.67, depth: 0.035 },
-  hub: { offset: 0.236, outerDiameter: 0.46, innerDiameter: 0.51, depth: 0.03 },
-  cap: { offset: 0.253, outerDiameter: 0.22, innerDiameter: 0.29, depth: 0.036 },
-  lug: { offset: 0.256, boltCircleRadius: 0.173, count: 6, size: [0.028, 0.053, 0.056] },
+  tireDepth: 0.33,
 } as const

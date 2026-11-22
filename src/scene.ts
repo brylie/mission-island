@@ -29,6 +29,7 @@ import { createIslandLighting, createMeshFactory } from './island-meshes'
 import { createIslandWorld } from './island-world'
 import { activeJob, deliveryDrop, deliveryRadius, jobBoard } from './jobs'
 import { createObjectiveMarker } from './objective-marker'
+import { createLearnerFleetView } from './learner-fleet-view'
 import type { Player, Snapshot } from './protocol'
 import { groundHeight, waterLevel } from './terrain'
 import { flatbedGroundDrive } from './vehicles/flatbed'
@@ -42,6 +43,14 @@ import { extinguisherStock } from './worlds/starter/layout/places'
 import * as rendering from './island-render-settings'
 
 const sun = '#ffd56b'
+
+// Pin an HTML tag over a world point.
+function placeTag(scene: Scene, element: HTMLElement, viewport: Viewport, x: number, y: number, z: number) {
+  const point = Vector3.Project(new Vector3(x, y, z), Matrix.IdentityReadOnly, scene.getTransformMatrix(), viewport)
+  element.style.left = `${point.x / viewport.width * rendering.percentScale}%`
+  element.style.top = `${point.y / viewport.height * rendering.percentScale}%`
+  element.style.visibility = point.z >= 0 && point.z <= 1 ? 'visible' : 'hidden'
+}
 
 export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) {
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
@@ -68,6 +77,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const truck = flatbed.root
   truck.setEnabled(false)
   let wheelRotation = 0
+  const learnerFleet = createLearnerFleetView(meshes)
 
   const crew = playerColors.map((_, id) => {
     const character = createCrew(meshes, id)
@@ -101,12 +111,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     return tag
   })
   const labels = createPlaceLabels(markers, residents.labels)
-  function locate(element: HTMLElement, viewport: Viewport, x: number, y: number, z: number) {
-    const point = Vector3.Project(new Vector3(x, y, z), Matrix.IdentityReadOnly, scene.getTransformMatrix(), viewport)
-    element.style.left = `${point.x / viewport.width * rendering.percentScale}%`
-    element.style.top = `${point.y / viewport.height * rendering.percentScale}%`
-    element.style.visibility = point.z >= 0 && point.z <= 1 ? 'visible' : 'hidden'
-  }
+  const locate = (element: HTMLElement, viewport: Viewport, x: number, y: number, z: number) => placeTag(scene, element, viewport, x, y, z)
 
   let last: Snapshot | undefined
   let tip: { element: HTMLElement, at: { x: number, y: number, z: number } } | undefined
@@ -134,6 +139,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     truck.rotation.z += (pose.roll - truck.rotation.z) * blend
     if (!snap) wheelRotation += pose.speed * delta / flatbedGroundDrive.wheels.radius
     poseFlatbed(flatbed, wheelRotation, pose.steering, pose.suspension, blend)
+    learnerFleet.update(state, state.players.find((player) => player.id === viewer), factor, delta)
   }
 
   function updateEquipment(state: Snapshot, factor: number) {
@@ -177,12 +183,13 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
       if (!visible) continue
       tag.textContent = actor.name || `Crew ${id + 1}`
       const boating = inSkiff(actor.seat)
-      const position = boating || !actor.seat ? crew[id].root.position : truck.position
+      const position = boating || !actor.seat ? crew[id].root.position : (actor.vehicle ? learnerFleet.node(actor.vehicle) : truck).position
+      const seatedHeight = actor.vehicle ? learnerFleet.labelHeight(actor.vehicle) : rendering.truckLabelHeight
       const spread = !close && actor.seat && last?.players.every((player) => player.seat
-        && inSkiff(player.seat) === boating)
+        && inSkiff(player.seat) === boating && player.vehicle === actor.vehicle)
         ? (id - rendering.skiffSeatMidpoint) * rendering.skiffLabelSpread
         : 0
-      locate(tag, viewport, position.x + spread, position.y + (boating ? rendering.skiffLabelHeight : actor.seat ? rendering.truckLabelHeight : rendering.standingLabelHeight), position.z)
+      locate(tag, viewport, position.x + spread, position.y + (boating ? rendering.skiffLabelHeight : actor.seat ? seatedHeight : rendering.standingLabelHeight), position.z)
     }
   }
 
@@ -228,6 +235,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     actionFx.draw(time, camera.position, livePlayer, last)
     const strength = nightLighting(weather.hour)
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
+    learnerFleet.setLights(strength, last)
     const light = atmosphere.update(field?.time ?? time, weather, camera.position, close)
     audio.frame(camera.position, camera.getDirection(Vector3.Forward()), weather.rain, delta)
     updateEnvironment(frame, light, close, runoff, {
@@ -255,7 +263,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     showFarmOrder(last, factor)
     aviation.update(last, time)
     const local = last?.players.find((player) => player.id === viewer && player.connected)
-    const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? truck : crew[local.id].root) : undefined
+    const ride = local?.vehicle ? learnerFleet.node(local.vehicle) : truck
+    const subject = follow && local ? (inSkiff(local.seat) ? boat : local.seat ? ride : crew[local.id].root) : undefined
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
     const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta, ridgeCameraMode(last, local))
     const field = review?.view(time)
