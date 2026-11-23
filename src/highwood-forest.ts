@@ -66,6 +66,8 @@ function mergeFar(meshes: MeshFactory, tile: Tile, template: (plant: Planting) =
 }
 
 export function createHighwoodForest(meshes: MeshFactory) {
+  // Detail ranges; the graphics setting pulls them in on older computers.
+  const ranges = { nearM: look.nearM, understoryM: look.understoryM }
   const templates = new Map<string, TreeTemplate>()
   function template(plant: Planting, tier: TreeTier = 'far') {
     const key = comboKey(plant, tier)
@@ -142,8 +144,8 @@ export function createHighwoodForest(meshes: MeshFactory) {
       let changed = false
       for (const tile of tiles.values()) {
         const range = Math.hypot(camera.x - tile.centre.x, camera.z - tile.centre.z)
-        const near = close && range < (tile.near ? look.nearM + look.bandM : look.nearM)
-        const understory = close && range < (tile.close ? look.understoryM + look.understoryBandM : look.understoryM)
+        const near = close && range < (tile.near ? ranges.nearM + look.bandM : ranges.nearM)
+        const understory = close && range < (tile.close ? ranges.understoryM + look.understoryBandM : ranges.understoryM)
         if (near !== tile.near || understory !== tile.close) {
           tile.near = near
           tile.close = understory
@@ -152,6 +154,9 @@ export function createHighwoodForest(meshes: MeshFactory) {
         }
       }
       if (changed) rebuild()
+    },
+    setDetail(nearM: number, understoryM: number) {
+      Object.assign(ranges, { nearM, understoryM })
     },
     stats() {
       let near = 0

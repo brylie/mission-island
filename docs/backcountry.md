@@ -88,7 +88,7 @@ These apply at every phase, beyond the technical tests.
 | --- | --- |
 | 0 | Branch, baseline and hero-view captures at their nearest current equivalents. **Not done as planned:** no baseline captures were made before the land changed. In the Art Director's reviews, the hero views passed the silhouette test in 1 of 5 in round 1, and 2 passed, 2 partly passed and 1 failed in round 2. |
 | 1 | Design and bake the island: the generated height field, erosion, masks for the settled south, then the world bounds (camera, fog, map, ocean, physics). Review the bare land from the hero views first. |
-| 2 | Tree and shrub species, habitats from the baked moisture, slope and exposure layers, forest placement and groundcover. **In progress:** fog is shared by every material ([#219](https://github.com/brylie/mission-island/issues/219)), the [habitat classifier](#habitats) is built, and [the forest](#forest) is planted, drawn and solid to walkers. Still to come: groundcover, trails and footsteps, and the low quality tier. |
+| 2 | Tree and shrub species, habitats from the baked moisture, slope and exposure layers, forest placement and groundcover. **In progress:** fog is shared by every material ([#219](https://github.com/brylie/mission-island/issues/219)), the [habitat classifier](#habitats) is built, and [the forest](#forest) is planted, drawn and solid to walkers. Graphics detail (Automatic, High, Low) is in Options. Still to come: groundcover, trails and footsteps. |
 | 3 | The fire access road, its fallen logs (0.25–0.30 m, rounded, for the Fire and Rescue pickup) and the Alder Creek ford |
 | 4 | The Fire Watch on Cairn Summit, backcountry fire sites, hidden ground and sightlines, snag burn scars. Highwood's places are 222–520 m from the Fire Watch, against 26–102 m for today's fire sites, so a backcountry callout needs the fire road or a role on the way. See [open questions](open-questions.md#questions-to-answer). |
 | 5 | Docs, verification and a two-player playtest |
@@ -126,7 +126,7 @@ Highwood is planted in three layers from the [stand tables](../src/worlds/starte
 | Draw calls | One template per species and age, drawn as thin instances, one call per template per 63 m terrain tile. Off-screen tiles are culled whole. |
 | Detail | The near tree (600–1,500 triangles) switches to the far tree (60–160) by tile distance, with a dead band so trees don't flicker. Shrubs and groundcover stop beyond about 150 m, where fog and the ground texture take over. |
 | Culling | Frustum culling per tile, and nothing past the fog's end. Babylon's occlusion queries answer a frame late and cost one query per mesh, so a ridge mask from known viewpoints comes first, and only if the numbers ask for it. |
-| Older computers | A quality tier thins the forest, pulls in the far-tree distance and drops shadows and grass, and is chosen automatically when frame time stays high. |
+| Older computers | **Options → Graphics → Detail**: Low renders at two-thirds resolution (about 44% of the pixels), turns off shadows, and pulls the detailed-tree range in from 110 m to 55 m and the understory from 60 m to 25 m. Automatic starts at High and drops to Low once, for the session, when frames average slower than 33 ms for 4 s after a 6 s settle. Tiers are in `src/assets/recipes/graphics-quality.ts`. |
 | Guard rails | Draw calls, triangles and frame time per hero view, from `npm run capture`'s perf numbers. #198 tracks checking them in CI. |
 
 **With the forest** (development machine, headless capture, `npm run capture`):
@@ -139,7 +139,7 @@ Highwood is planted in three layers from the [stand tables](../src/worlds/starte
 | Fallow Ridge, looking home | 7.3 | 1,429 | 2.19M |
 | Alder Creek ford | 4.3 | 708 | 1.43M |
 
-All hold 60 fps here. The fire road and ridge views reach 2.2 million triangles, mostly near-tier crowns and their shadows, so the low tier must cut the near distance and the understory before older computers can hold 30 fps.
+All hold 60 fps here. The fire road and ridge views reach 2.2 million triangles, mostly near-tier crowns and their shadows, so older computers rely on the Low tier. Its savings are not yet measured on an older computer; that belongs to the two-player playtest.
 
 
 Baseline on main `7a838c0`, in the `fire-watch` playtest, read with `?dev=1&perf=1` in the game address (see [the dev view URL](iteration-tooling.md#the-dev-view-url)). Compare the frame time and the draw calls; the browser pane's FPS is throttled.

@@ -1,3 +1,4 @@
+import { createGraphicsQuality } from './graphics-quality'
 import type { Camera } from '@babylonjs/core/Cameras/camera'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
@@ -90,7 +91,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const { shadows } = lighting
   const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
   const meshes = createMeshFactory(scene, shadows)
-  const { juniper, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, plants, garden, residents, ferry } = createIslandWorld(meshes, { liveParticles: true })
+  const { juniper, forest, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, plants, garden, residents, ferry } = createIslandWorld(meshes, { liveParticles: true })
   const audio = createIslandAudio(window, plants)
   const showMaterialsWork = createMaterialsWorkView(meshes)
 
@@ -115,6 +116,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const truckStep = { x: 0, z: 0 }
   const aviation = createRidgeAviationView(meshes, crew)
   const showDeliveryRoute = createDeliveryWayfindingView(meshes)
+  const graphics = createGraphicsQuality(engine, lighting.sunlight, forest)
   const showFarmOrder = createFarmOrderView(meshes, crew.map((character) => character.root))
   const { farmTools, skiffGear, update: updateCrew } = createCrewPresentation(meshes, crew, boat, (...args) => aviation.pose(...args), (...args) => audio.footsteps(...args))
   const items = createItemNodes(meshes)
@@ -273,6 +275,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const delta = Math.min(engine.getDeltaTime() / rendering.millisecondsPerSecond, rendering.maxFrameSeconds)
     const factor = 1 - Math.exp(-delta * rendering.worldPoseResponse)
     time += delta
+    graphics.frame(delta)
     if (last?.skiff) moveTo(boat, last.skiff, waterLevel, factor)
     poseFloating(boat, time, rendering.skiffBobPhase, rendering.skiffBobHeight)
     buoys.forEach((buoy, index) => void poseFloating(buoy, time, index * rendering.buoyPhaseStep))

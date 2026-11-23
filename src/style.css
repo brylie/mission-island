@@ -93,6 +93,8 @@ button:focus-visible { outline: 2px solid #ffc560; outline-offset: 4px; }
 .target-tip strong { font-weight: 850; }
 .target-tip kbd[hidden] { display: none; }
 .look-speed input { width: 100%; }
+.graphics-status { margin: 0.4em 0 0; font-size: 0.85em; }
+.graphics-status:empty { display: none; }
 .charge-meter {
   position: absolute;
   top: calc(50% + 23px);
