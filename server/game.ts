@@ -33,7 +33,7 @@ const hostTicksPerSecond = 30
 const juniperUpdateIntervalTicks = 3
 
 export const tickSeconds = 1 / hostTicksPerSecond
-const barrowBlockedCommands = new Set<CrewCommand['type']>(['primary', 'equip', 'jump', 'seat', 'buy-seed', 'take-job'])
+const barrowBlockedCommands = new Set<CrewCommand['type']>(['primary', 'equip', 'jump', 'seat', 'buy-seed', 'take-job', 'mark'])
 
 type GameOptions = {
   clock?: () => number
@@ -119,6 +119,14 @@ function runPlaytestEvent(state: Snapshot, { wildfire, crew }: { wildfire: Retur
   return event.type === 'wildfire' ? wildfire.start(event) : wildfire.end()
 }
 
+// A crewmate who leaves puts down what only they could hold: the hinge pin, the barrow, a flight and their mark.
+function releaseCrewmate(member: CrewMember, held: Pick<ReturnType<typeof createGameInteractions>, 'gate' | 'farm' | 'marks'> & { aviation: ReturnType<typeof createAviation> }) {
+  held.gate.releasePin(member.player.id)
+  held.farm.recover(member.player.id)
+  held.aviation.interrupt(member)
+  held.marks.drop(member.player.id)
+}
+
 function observeCrewNotices(state: Snapshot, notifyCrew: CrewBroadcast, metrics?: PlaytestMetricsRun): CrewBroadcast {
   if (!metrics) return notifyCrew
   return (notice, slot) => {
@@ -138,7 +146,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
   const orders = createOrders(state, physics, crew.notifyAll, freight.creditCrate, checkpoint, metrics?.gameplay)
   const journal = createJournal(state, checkpoint, metrics?.gameplay)
   const equipment = createEquipment(state, physics, tickSeconds, random, journal.landed, checkpoint, metrics?.gameplay, fleet.gear)
-  const { interactions, gate, residents, farm, wildfire }
+  const { interactions, gate, residents, farm, wildfire, marks }
     = createGameInteractions({ state, growth }, physics, { notifyCrew: observeCrewNotices(state, crew.notifyAll, metrics), orders, freight, journal, clock, checkpoint, metrics: metrics?.gameplay })
   const aviation = createAviation(state, crew.notifyAll, checkpoint, metrics?.gameplay)
 
@@ -178,7 +186,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
     return state
   }
 
-  function handleAction(member: CrewMember, message: CrewCommand) {
+  function handleAction(member: CrewMember, message: Exclude<CrewCommand, { type: 'mark' | 'clear-mark' }>) {
     switch (message.type) {
       case 'input':
         member.input = message.input
@@ -239,7 +247,8 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       if (message.type !== 'input' && message.type !== 'appearance' && message.type !== 'crew-name') return
     }
     else if (message.type === 'interact' && !pushing && aviation.interact(member)) return
-    handleAction(member, message)
+    if (message.type === 'mark' || message.type === 'clear-mark') marks.command(member, message)
+    else handleAction(member, message)
   }
 
   function join(token: string, notify: (message: CrewNotice) => void) {
@@ -256,9 +265,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
       disconnect() {
         if (member.notify !== notify) return
         disconnect(member, clock())
-        gate.releasePin(member.player.id)
-        farm.recover(member.player.id)
-        aviation.interrupt(member)
+        releaseCrewmate(member, { gate, farm, aviation, marks })
         if (!trial || state.playtest?.started) metrics?.sample(state)
       },
     }
