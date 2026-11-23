@@ -28,6 +28,8 @@ import { createIslandConnection } from './island-connection'
 import { starterNoticeFeedback } from './starter-notice-feedback'
 import { isNight } from './weather'
 import { createClothingCounter, createWardrobe } from './wardrobe-ui'
+import { showCrewRoster } from './crew-roster-ui'
+import { bindBinoculars } from './binoculars-ui'
 
 const clientTokenBytes = 16
 const tokenHexRadix = 16
@@ -82,6 +84,13 @@ const joinNameDialog = element<HTMLDialogElement>('join-name-dialog')
 const joinName = element<HTMLInputElement>('join-name')
 const editCrewName = element<HTMLButtonElement>('edit-crew-name')
 const lookSettings = bindLookOptions((settings) => renderer?.setLook(settings))
+// Registered before the game's own key and mouse listeners, so the binoculars take input first while raised.
+const binoculars = bindBinoculars({ playfield, send, look: lookSettings, ready: () => live && follow && !modalOpen() && !renderer?.isReviewing(), crew: () => snapshot && { state: snapshot, id }, heading: () => renderer?.aimHeading(), raise: () => {
+  keys.clear()
+  cancelMouseActions()
+  sendInput()
+  renderer?.captureMouse()
+} })
 const soundSettings = bindSoundOptions((settings) => renderer?.setSound(settings))
 const reticle = createReticleFocus(playfield, document.querySelector('.reticle'))
 const openWardrobe = element<HTMLButtonElement>('open-wardrobe')
@@ -150,7 +159,7 @@ function showNotice() {
 }
 try {
   bootMessage.textContent = 'Building the island scenery…'
-  renderer = createRenderer(canvas, markers)
+  renderer = createRenderer(canvas, markers, binoculars.view)
   renderer.setLook(lookSettings())
   renderer.setSound(soundSettings())
   bootMessage.textContent = 'Connecting to the host…'
@@ -217,23 +226,7 @@ function update(state: Snapshot) {
   renderer?.update(state, id, follow)
   drawIslandMap(map, id, state)
   const connected = state.players.filter((player) => player.connected)
-  crewCount.textContent = `${connected.length} / 2`
-  crewRows.forEach((row, index) => {
-    const player = connected.find((entry) => entry.id === index)
-    row.dataset.online = String(Boolean(player))
-    const title = row.querySelector('span')
-    if (title) title.textContent = player?.name || `Crew ${index + 1}`
-    const role = row.querySelector('small')
-    if (role) role.textContent = player
-      ? player.sleeping
-        ? 'Turning in'
-        : player.seat === 'driver'
-          ? 'Driving'
-          : player.seat === 'passenger'
-            ? 'Riding'
-            : inSkiff(player.seat) ? 'Afloat' : index === id ? 'You' : 'Online'
-      : 'Open'
-  })
+  showCrewRoster(crewRows, crewCount, connected, id)
 
   updateMission(state, id)
   const player = connected.find((entry) => entry.id === id)
@@ -618,7 +611,7 @@ if (import.meta.hot) {
     renderer?.dispose()
     renderer = undefined
     try {
-      renderer = module.createRenderer(canvas, markers)
+      renderer = module.createRenderer(canvas, markers, binoculars.view)
       renderer.setLook(lookSettings())
       renderer.setSound(soundSettings())
       if (modalOpen()) renderer.releaseMouse()

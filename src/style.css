@@ -519,6 +519,95 @@ kbd {
   display: none;
 }
 
+/* Crew marks: a tag over each beacon in the placer's crew colour, with the distance from the viewer. */
+.crew-mark-tag {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  padding: 3px 7px 3px 18px;
+  border: 1px solid #173332;
+  border-radius: 10px;
+  background: #142625e6;
+  color: var(--cream);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.crew-mark-tag::before {
+  position: absolute;
+  left: 6px;
+  top: calc(50% - 4px);
+  content: "";
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--crew-color);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--crew-color) 55%, transparent);
+}
+
+/* Binoculars: two overlapping round fields, a fine reticle and the rangefinder readout under it. */
+.binoculars { position: absolute; inset: 0; pointer-events: none; --field: min(46vh, 31vw); --gap: calc(var(--field) * 0.52); }
+.binoculars-field {
+  position: absolute;
+  inset: 0;
+  background: #040807;
+  -webkit-mask:
+    radial-gradient(circle at calc(50% - var(--gap)) 50%, transparent calc(var(--field) - 14px), #000 calc(var(--field) + 10px)),
+    radial-gradient(circle at calc(50% + var(--gap)) 50%, transparent calc(var(--field) - 14px), #000 calc(var(--field) + 10px));
+  -webkit-mask-composite: source-in;
+  mask:
+    radial-gradient(circle at calc(50% - var(--gap)) 50%, transparent calc(var(--field) - 14px), #000 calc(var(--field) + 10px)),
+    radial-gradient(circle at calc(50% + var(--gap)) 50%, transparent calc(var(--field) - 14px), #000 calc(var(--field) + 10px));
+  mask-composite: intersect;
+}
+.binoculars-reticle { position: absolute; inset: 50% auto auto 50%; width: 0; height: 0; }
+.binoculars-reticle::before {
+  position: absolute;
+  left: -13px;
+  top: -13px;
+  content: "";
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid #fff2cfd0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #0d1c1b80;
+}
+.binoculars-reticle i { position: absolute; background: #fff2cfd0; box-shadow: 0 0 0 1px #0d1c1b70; }
+.binoculars-reticle i:first-child { left: -46px; top: -0.75px; width: 92px; height: 1.5px; clip-path: polygon(0 0, 37% 0, 37% 100%, 63% 100%, 63% 0, 100% 0, 100% 100%, 0 100%); }
+.binoculars-reticle i:last-child { left: -0.75px; top: -46px; width: 1.5px; height: 92px; clip-path: polygon(0 0, 100% 0, 100% 37%, 0 37%, 0 63%, 100% 63%, 100% 100%, 0 100%); }
+.binoculars-readout {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 34px);
+  transform: translateX(-50%);
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: #0b1716b8;
+  color: #ffd98a;
+  font: 800 15px/1.2 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.binoculars[data-ranged="false"] .binoculars-readout { color: #d3dccf; }
+.binoculars-help {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #d5e4d8;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.binoculars-help span { margin: 0 9px 0 3px; }
+body[data-binoculars] .playfield > :is(.mission, .crew, .controls, .controls-toggle, .reticle, .charge-meter) { display: none; }
+body[data-binoculars] #markers > .place { display: none; }
+body[data-binoculars] .prompt { bottom: 44px; }
+
 .shader-study-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 5px; }
 #shader-workbench { color: #bce8d5; }
 #shader-site { max-width: 240px; }

@@ -7,7 +7,7 @@ import { buildings, distance, localPoint, type Point } from './world.ts'
 // Spotting is how a lookout fixes a place from far off: a compass bearing and a distance.
 // The fire finder and the crew's binoculars both read through these helpers, on the host and in the browser.
 
-export interface Spot extends Point {
+interface Spot extends Point {
   y: number
 }
 
@@ -18,8 +18,8 @@ const half = 0.5
 const halfSector = compassSector * half
 
 // Every crewmate carries 8×42 binoculars: eight times magnification through 42 mm objective lenses.
+// The objective size sets how much light they gather, which the game does not model.
 export const binocularMagnification = 8
-export const binocularObjectiveMm = 42
 // The built-in laser rangefinder reads out to this far. Ground beyond it shows a dash.
 export const rangefinderReachM = 800
 // The binoculars look out from the crewmate's eyes, taken from the crew head model.
