@@ -91,3 +91,20 @@ test('surf fades smoothly inland and its voices glide along the shore', async ()
     previous = { listener, voices }
   }
 })
+
+test('surf follows Highwood’s real shoreline, coves and all', async () => {
+  const { createShoreFollower } = await import('../src/audio/shore.ts')
+  const { shorelineLoops } = await import('../src/shoreline.ts')
+  let checked = 0
+  for (const loop of shorelineLoops()) {
+    for (let i = 0; i < loop.points.length; i += 9) {
+      const shore = loop.points[i]
+      if (shore.z < 150) continue
+      checked++
+      const voices = createShoreFollower().update(shore, 1 / 60)
+      const loudest = Math.max(...voices.map(({ gain }) => gain))
+      assert.ok(loudest > 0.9, `surf ${loudest.toFixed(2)} at the shore near ${shore.x.toFixed(0)}, ${shore.z.toFixed(0)}`)
+    }
+  }
+  assert.ok(checked > 40, `checked ${checked} Highwood shore points`)
+})

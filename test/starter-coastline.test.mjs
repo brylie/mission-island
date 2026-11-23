@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { Buffer } from 'node:buffer'
 import test from 'node:test'
 import { sandpiperPose } from '../src/sandpiper-motion.ts'
 import { boundaryBuoys, buoyBoundaryPoint, coastPoint, coastRadius, coastalSurface, groundHeight, waterLevel, withinSkiffBoundary } from '../src/terrain.ts'
@@ -6,6 +7,11 @@ import { createStarterBeachWidth, createStarterCoast, starterCoastSeed } from '.
 import { beachWidthLayout } from '../src/worlds/starter/layout/terrain.ts'
 import { onBeachTowel } from '../src/worlds/starter/sites.ts'
 import { driftwoodSandpipers } from '../src/worlds/starter/layout/wildlife.ts'
+import { joinShare } from '../src/worlds/starter/generation/protection.ts'
+import { highwoodHeightmap } from '../src/assets/geometry/highwood-heightmap.ts'
+
+// Highwood's generated land replaces the original coast across the join sector.
+const authoredCoast = (angle) => joinShare((angle * 180 / Math.PI + 360) % 360) === 0
 
 test('the seeded coast closes smoothly and preserves the silhouettes of its site shelves', () => {
   const coast = createStarterCoast(starterCoastSeed)
@@ -22,12 +28,14 @@ test('the seeded coast closes smoothly and preserves the silhouettes of its site
   for (const angle of samples) {
     assert.ok(Math.abs(coast(angle) - coast(angle + turn)) < 1e-12)
     assert.ok(Math.abs(coast(angle - 1e-5) - coast(angle + 1e-5)) < 0.001)
-    assert.ok(Math.abs(coastRadius(coastPoint(angle)) - 1) < 1e-12)
+    if (authoredCoast(angle)) assert.ok(Math.abs(coastRadius(coastPoint(angle)) - 1) < 1e-12)
+    // On Highwood the coast point is the farthest generated shore along the ray.
+    else assert.ok(Math.abs(groundHeight(coastPoint(angle)) - waterLevel) < 1, `generated shore at ${angle}`)
   }
 })
 
 test('landform waterlines and visible buoys agree with terrain and navigation', () => {
-  for (const bearing of [43, 70, 142, 210, 248, 275, 300]) {
+  for (const bearing of [43, 70, 210, 248, 275, 300]) {
     const angle = bearing * Math.PI / 180
     assert.ok(Math.abs(groundHeight(coastPoint(angle)) - waterLevel) < 1e-10)
     assert.ok(groundHeight(coastPoint(angle, 0.996)) > waterLevel)
@@ -74,7 +82,9 @@ test('exposed points and sheltered coves have different sand widths on the produ
   }
   assert.ok(sandWidth(40) > 12, 'the east cove holds a broad strand')
   assert.ok(sandWidth(70) < 2, 'the Windstone point pinches out')
-  assert.ok(sandWidth(140) > 9, 'sand collects again in the northwestern indentation')
+  // Highwood's generated coast sorts into sandy bay heads and bare rock on headlands.
+  const cells = (layer) => [...Buffer.from(highwoodHeightmap.layers[layer], 'base64')].filter((value) => value > 128).length
+  assert.ok(cells('sand') > 30 && cells('rock') > 100, `sand ${cells('sand')}, rock ${cells('rock')}`)
   assert.ok(sandWidth(190) < 3, 'the west shoulder has a narrow strip')
   assert.ok(sandWidth(255) > 8, 'the beach outside the southern harbor widens')
 })

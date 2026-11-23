@@ -13,7 +13,8 @@ import { initialGateRepair } from '../src/gate-repair.ts'
 import { initialFerryRepair } from '../src/ferry-repair.ts'
 import { initialResidents } from '../src/residents/trust.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
-import { makeItems, updateStowedItems } from './items.ts'
+import { makeItems, restingHeight, updateStowedItems } from './items.ts'
+import { walkingHeight } from '../src/terrain.ts'
 import { initialEvents } from './wildfire.ts'
 import { restoreJournal } from './journal.ts'
 import type { IslandSave } from './save.ts'
@@ -73,12 +74,18 @@ export function restoreIsland(
   // A carried hinge pin goes back to the mending bench when the host stops.
   state.gateRepair.pinHolder = null
   const growth = save?.growth.slice() ?? farmPlots.map(() => 0)
+  restoreItems(state, physics, Boolean(save))
+  return { state, growth }
+}
+
+function restoreItems(state: Snapshot, physics: Pick<ReturnType<typeof createCargoPhysics>, 'restore' | 'relocate'>, saved: boolean) {
   for (const item of state.items) {
     item.spraying = false
-    if (save) physics.restore(item)
+    if (saved) physics.restore(item)
     else physics.relocate(item, item)
+    // Ground that has risen since the save (Highwood) lifts loose gear back onto it.
+    if (saved && item.kind !== 'crate' && item.holder === null && !item.stowed && item.y < walkingHeight(item)) item.y = restingHeight(item)
   }
-  return { state, growth }
 }
 
 export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['crew']): IslandSave {

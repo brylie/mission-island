@@ -6,7 +6,7 @@ import { nearFireWatch } from './fire-watch.ts'
 import { distanceToRoads, distanceToRoute, footpaths, shellglassPoint, splitstone } from './routes.ts'
 import { inFerryYard } from './worlds/starter/ferry-terminal.ts'
 import { northernScatter, starterScatter } from './worlds/starter/layout/scenery.ts'
-import { coastRadius, falls, grove, groundHeight, headland, pool, waterDepth } from './terrain.ts'
+import { coastRadius, falls, grove, groundHeight, headland, originalCoastRadius, pool, waterDepth } from './terrain.ts'
 import { beach, distance, forest, harbor, island, lookout, town } from './world.ts'
 import type { Point } from './world.ts'
 
@@ -78,7 +78,8 @@ export const islandTrees = Array.from({ length: trees.count }, (_, variant) => {
   return { x, z, height, variant }
 }).filter((tree) => {
   const { x, z } = tree
-  return coastRadius(tree) <= treeMaxCoastRadius && !(x < trees.harborClear.x && z < trees.harborClear.z)
+  // The old island's scatter stays on the old island; Highwood gets its own stands.
+  return originalCoastRadius(tree) <= treeMaxCoastRadius && !(x < trees.harborClear.x && z < trees.harborClear.z)
     && !(x > trees.townClear.x && z > trees.townClear.z) && !(x > trees.beachClear.x && z < trees.beachClear.z)
     && distance(tree, lookout) >= lookoutTreeClearance && !nearFireWatch(tree) && distanceToRoads(tree) >= roadTreeClearance && !inFerryYard(tree, ferryTreeClearance)
     && footpaths.every(({ points }) => distanceToRoute(tree, points) >= pathTreeClearance)

@@ -1,6 +1,6 @@
 # Fire watch: stations, the tower and wildfires
 
-**Playable.** After the starter shift, wildfires break out now and then somewhere on Starter Island. The crew finds each one from the Fire Watch tower or on foot, takes extinguishers from the red fire stations and puts it out before it spreads. The loop practices the parts of a search and rescue callout: spot it, fix its position, bring the right equipment and work together.
+**Playable.** After the starter shift, wildfires break out now and then somewhere on Starter Island. The crew finds each one from the Fire Watch tower or on foot, takes extinguishers from the red fire stations and puts it out before it spreads. The loop practices the parts of a search and rescue callout: spot it, fix its position, bring the right equipment and work together. The [creative direction](../design/creative-direction.md#what-we-take-from-our-references) names its references, Firewatch and Stormworks: Build and Rescue.
 
 ## Fire stations
 

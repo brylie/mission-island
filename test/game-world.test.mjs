@@ -5,7 +5,7 @@ import { juniperCenter, juniperLayout } from '../src/juniper-habitat.ts'
 import { actionHint } from '../src/actions.ts'
 import { footpaths, shellglassPoint } from '../src/routes.ts'
 import { northernRegions } from '../src/scenery.ts'
-import { groundHeight, maxWadeDepth, waterDepth, waterLevel, withinSkiffBoundary } from '../src/terrain.ts'
+import { groundHeight, maxWadeDepth, walkingHeight, waterDepth, waterLevel, withinSkiffBoundary } from '../src/terrain.ts'
 import { skiffStart, spawns } from '../src/world.ts'
 import { tokens, player, setup } from './support/game-harness.mjs'
 
@@ -36,10 +36,12 @@ test('a player who resumes in deep water can swim or respawn without losing prog
 })
 
 test('pre-coastline crew and skiff positions recover through normal save and reconnect', (t) => {
-  // Fixed positions from the old shoreline at 79faeda. One was dry ground, the
-  // other usable swimming water near the old limit. The skiff was afloat south of the island.
-  const oldShore = { x: -106.14, z: 56.93 }
-  const oldLimit = { x: -170, z: 91 }
+  // Fixed positions off the south-west shore, which the Highwood backcountry did
+  // not move. One is swimming water inside the buoys, the other is beyond them.
+  // The north-west points this test used before are now Highwood's dry land.
+  // The skiff was afloat south of the island.
+  const oldShore = { x: -81, z: -24 }
+  const oldLimit = { x: -150, z: -50 }
   assert.ok(waterDepth(oldShore) > maxWadeDepth && withinSkiffBoundary(oldShore))
   assert.equal(withinSkiffBoundary(oldLimit), false)
   const host = setup(t, {
@@ -124,4 +126,21 @@ test('a save made mid-jump inside the relocated market restores to walkable grou
   assert.ok(canWalkAt(restored, 0.4, waterLevel))
   assert.equal(restored.grounded, true)
   assert.equal(restored.y, groundHeight(restored))
+})
+
+test('gear saved in water that Highwood has since raised rests back on the new ground', (t) => {
+  // Old north-west water, now Highwood land.
+  const raised = { x: -43, z: 167.4 }
+  assert.ok(groundHeight(raised) > waterLevel + 5)
+  let gear
+  const host = setup(t, {
+    players: [player(0)],
+    arrange(save) {
+      gear = save.world.items.findIndex(({ kind }) => kind === 'extinguisher')
+      Object.assign(save.world.items[gear], { x: raised.x, z: raised.z, y: -2, holder: null, stowed: false })
+    },
+  })
+  const crew = host.join(tokens[0])
+  const item = crew.state.items[gear]
+  assert.ok(Math.abs(item.y - walkingHeight(raised)) < 0.5, `extinguisher at ${item.y} on ground ${walkingHeight(raised)}`)
 })

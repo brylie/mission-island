@@ -38,6 +38,17 @@ export function stopPrimary(member: CrewMember) {
   member.player.charge = null
 }
 
+// Stands a crewmate at a spot as if they had just arrived on foot: out of any
+// seat, off the truck bed and the water, awake, hands empty of actions, still.
+export function standCrewmate(member: CrewMember, spot: { x: number, y: number, z: number, heading: number }) {
+  Object.assign(member.player, { ...spot, seat: null, vehicle: undefined, grounded: true, onBed: false, truckSurface: undefined, swimming: false, sleeping: false, casting: null, reaching: false, rightHandRaised: false, throwing: false, rowing: false })
+  stopPrimary(member)
+  member.input = stopped
+  member.verticalSpeed = 0
+  member.reachUntil = 0
+  member.throwUntil = 0
+}
+
 export function stowTool(member: CrewMember) {
   member.player.equipped = null
   member.player.casting = null

@@ -23,7 +23,8 @@ export const islandAtmosphere = {
     zenithRainBlend: 0.64,
   },
   zenith: { minimum: [0.035, 0.068, 0.16], lightGain: [0.25, 0.46, 0.57] },
-  fog: { start: 36, end: 135, rainStartLoss: 20, rainEndLoss: 63 },
+  // Clear air carries across Highwood: far ridges step lighter rather than vanish, and rain closes the view.
+  fog: { start: 45, end: 900, rainStartLoss: 25, rainEndLoss: 640 },
   skyFill: { minimum: 0.29, daylightGain: 0.41, rainLoss: 0.05 },
   visualLight: { minimum: 0.24, daylightGain: 0.76 },
   rain: {

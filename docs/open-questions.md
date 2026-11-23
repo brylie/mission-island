@@ -1,6 +1,6 @@
 # Open questions
 
-**Status: index. Last tended 2026-11-22.**
+**Status: index. Last tended 2026-11-23.**
 
 One list of everything we know we don't know: research to do, sources to find, and things learned but not built. Each line links to the page or issue that owns it. Close a line by doing the work and removing it.
 
@@ -12,6 +12,9 @@ One list of everything we know we don't know: research to do, sources to find, a
 - **Highwood habitats.** Every *Life* line. See [Highwood habitats](field-guide/highwood-habitats.md).
 - **Species figures.** Lifespans, flowering months and the heather life cycle, before any reaches game text. See [Highwood plants](field-guide/highwood-plants.md#sources).
 - **Unopened sources.** Every `opened: false` entry in [`sources.yaml`](sources.yaml).
+- **Sea-level rise since the ice age.** [The island's deep history](design/island-story.md#3-the-sea-rises-and-drowns-the-valley-mouths) says around 120 m. A search summary of Lambeck and others (2014, `lambeck-2014-pnas`) gives about 134 m at the glacial maximum, but the paper couldn't be opened. A person should read it before the figure is reworded.
+- **Deep-history claims.** Most real-world claims in [the island's deep history](design/island-story.md#unsourced-to-add-before-this-page-leaves-draft) are unsourced: granite and sandstone weathering, erratics, raised beaches, fjards, coastal sorting, snags, and the real size of glacial troughs. Only the U-shaped and hanging valley sentences are sourced. Several candidate sources are recorded unopened.
+- **Terrain technique sources.** The fBm coastline dimension, Beyer's droplet erosion and the scree angle in [island generation](design/island-generation.md) cite works recorded unopened in the register. The aspect claim there, that south-facing slopes are warmer and drier, has no source yet.
 
 - **Bracken toxicity.** A search summary suggested the risk to livestock may be low, but its page couldn't be opened. "Bracken is poisonous to livestock" may turn out contested once that source is read.
 - **Field guide species entries.** These still make real claims with no individual sources. Several are now sourced on the habitats page, such as juniper's decline, alder's nodules, siskins and otters. Link those source ids from the species entries.
@@ -19,7 +22,6 @@ One list of everything we know we don't know: research to do, sources to find, a
 - **Wildfire safety box.** A person must check the box against the Scottish Fire and Rescue Service page before the wildfire page can be verified.
 - **Archive failures.** Four Wildlife Trusts pages couldn't be saved to the Wayback Machine. Try again later or from a browser.
 - **Moved pages' shapes.** The wildfire, bracken slopes and wet woodland pages still use their own headings, not the framework's process and place shapes. Reshape them in a later edit, and fix any anchors that change.
-- **A broken link from before this work.** `docs/roadmap.md` links to `architecture.md#flatbed-and-future-fire-truck`, a heading that no longer exists. `node scripts/check-doc-links.mjs` reports it.
 - **Two alder quotes not found.** `node scripts/check-source-quotes.mjs` couldn't find the Woodland Trust alder quotes about siskins and otters on the page; the fetcher probably paraphrased them. Check them on the page, or find the actual wording.
 - **Quote checks.** A person needs to check each `quote-via: fetcher` quote in the sources register against its page, before those claims can be marked checked.
 - **Archiving.** No source has an archived copy yet. Saving pages to the Wayback Machine sends their URLs to an outside service, so it needs the maintainer's go-ahead.
@@ -31,10 +33,13 @@ One list of everything we know we don't know: research to do, sources to find, a
 - Graded wind exposure: [#213](https://github.com/brylie/mission-island/issues/213).
 - Old forms for shrubs and deadwood: [#214](https://github.com/brylie/mission-island/issues/214).
 - Craft pages for procedural audio, procedural landscape and wildlife behaviour. See [craft](craft/README.md#pages).
+- Reference photos for the procedural terrain model: granite tors, U-shaped valleys, fjards and scree, with licence and author, stored beside the generation parameters as `tree-references.ts` is for the Highwood trees.
 
 ## Questions to answer
 
 - Where should the Highwood near-to-far tree switch sit with the game camera's field of view? The Workbench suggests about 100 m. See [rendering and detail](craft/rendering-and-detail.md#hiding-the-switch).
 - Should the fire model add slope, a second lookout for cross-bearings, or fuel types? Each would reduce a [misconception](misconceptions.md).
+- How should a crew reach a backcountry fire? Highwood's places are 222–520 m from the Fire Watch, against 26–102 m for the current fire sites, so a callout there needs the fire road or a role on the way. See [Highwood backcountry](backcountry.md#phases).
+- Can the generated coast reach a real rocky coast's fractal dimension? [The current bake](design/island-generation.md#the-current-bake) measures 1.09 against a 1.2–1.3 target, because a dome plus noise reads near 1 at fine scales.
 - How are real fire crews organised? That's the first *practice* entry, and it starts the knowledge base's social side.
 - Should the knowledge base have a misconceptions debrief for teachers after a play session, as research on the game *Eco* suggests?
