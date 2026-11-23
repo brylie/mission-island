@@ -4,16 +4,15 @@ import { bendToward, stretchMiddle } from '../road-shape'
 import { createRoadGrading } from '../road-grading'
 import { naturalGroundHeight, previewRoadLayouts } from '../terrain'
 import type { Point } from '../world'
-import { readStorage, writeStorage } from '../browser-storage'
 import { starterRoads } from '../worlds/starter/layout/roads'
-import { roadSavePath, workbenchSaveHeader } from '../workbench-save-contract'
 import { downloadJsonFile } from './file-download'
 import { createLandscapeMapCanvas } from './landscape-map-canvas'
-import { fullMapView, panMap, pointInWorld, roundedPoint, viewPointOnMap, zoomMap, type MapView } from './landscape-map-projection'
+import { fullMapView, panMap, pointInWorld, pointOnMap, roundedPoint, viewPointOnMap, zoomMap, type MapView } from './landscape-map-projection'
 import { analyseRoad, type RoadAnalysis, type RoadWarning } from './road-analysis'
 import { createRoadDraft, type RoadDraftRoad } from './road-draft'
 import { alongAt, paintLongSection, paintRoads, screenPoint } from './road-paint'
 import { roadDesignerMarkup } from './road-designer-markup'
+import { cancelOverwrite, sayPendingNotice, saveRoads } from './road-save'
 import { keepFocus, renderInspector, setText } from './road-inspector'
 import { suggestRoute } from './road-suggest'
 
@@ -33,8 +32,6 @@ const hash = '#road-designer'
 const percent = 100
 const jsonIndent = 2
 const downloadName = 'mission-island-roads.json'
-// The save notice outlives the dev server restart a save causes, and the page reload after it.
-const noticeKey = 'mission-island-road-save-notice'
 const mapMiddle = 0.5
 const viewCenter = { u: mapMiddle, v: mapMiddle }
 const panKeys: Readonly<Record<string, { u: number, v: number }>> = {
@@ -104,8 +101,6 @@ let markedWarning: string | undefined
 let pendingStart: Point | undefined
 let drawing = false
 let dragging = false
-// Save asks twice when roads.ts has changed under the draft; any other action resets it.
-let confirmOverwrite = false
 
 function say(text: string) {
   if (panel) setText(panel.status, text)
@@ -197,6 +192,12 @@ function bindMap(canvas: HTMLCanvasElement) {
     if (!done || done.moved || done.kind !== 'pan') return
     click(mapPoint(canvas, event))
   })
+  // A cancelled touch drag never sends pointerup; without this the summary would stay frozen.
+  canvas.addEventListener('pointercancel', () => {
+    drag = undefined
+    dragging = false
+    render()
+  })
   canvas.addEventListener('dblclick', (event) => {
     const road = draft.road()
     const current = road && analysis(road)
@@ -247,11 +248,47 @@ function click(point: Point) {
 
 function deleteDot() {
   const road = draft.road(), dot = draft.selectedDot()
-  if (!road || dot === undefined) return
+  if (!road || dot === undefined) {
+    say('Pick a dot from the Dot list first.')
+    return
+  }
   draft.deleteDot()
   say(draft.roads().includes(road)
     ? `Deleted dot ${dot + 1}. Ctrl+Z to undo.`
     : `Deleted dot ${dot + 1}, and with it ${road.name}, since a road needs two dots. Ctrl+Z to undo.`)
+}
+
+// Undo or redo one step, and say so only if there was one.
+function history(forward: boolean) {
+  if (forward ? !draft.canRedo() : !draft.canUndo()) {
+    say(forward ? 'Nothing to redo.' : 'Nothing to undo.')
+    return
+  }
+  if (forward) draft.redo()
+  else draft.undo()
+  say(forward ? 'Redone.' : 'Undone.')
+}
+
+// Brings a dot picked from the Dot list into view when the map is zoomed in.
+function showDot(point: Point) {
+  const at = pointOnMap(point)
+  view = panMap(view, { u: (view.u - (at.u - mapMiddle / view.zoom)) * view.zoom, v: (view.v - (at.v - mapMiddle / view.zoom)) * view.zoom })
+}
+
+// Sets the selected stretch's grade limit from the field, within the field's own range.
+function setStretchLimit(text: string) {
+  const road = draft.road(), dot = draft.selectedDot()
+  if (!road || dot === undefined) return
+  const stretch = Math.min(dot, road.bends.length - 1)
+  const value = Number(text)
+  if (!text.trim() || !Number.isFinite(value)) {
+    draft.setStretchGrade(stretch, null)
+    say(`Dot ${stretch + 1} to the next uses the ${road.kind.replace('-', ' ')} limit, ${Math.round(roadKinds[road.kind].maxGrade * percent)}%.`)
+    return
+  }
+  const limit = Math.round(Math.min(look.stretchLimitPercent.max, Math.max(look.stretchLimitPercent.min, value)))
+  draft.setStretchGrade(stretch, limit / percent)
+  say(`Dot ${stretch + 1} to the next: limit set to ${limit}%.`)
 }
 
 function moveRoad(step: number) {
@@ -263,15 +300,17 @@ function moveRoad(step: number) {
 function bindControls(root: HTMLElement) {
   const on = (selector: string, event: string, handler: (target: HTMLInputElement) => void) =>
     element(root, selector).addEventListener(event, (e) => {
-      if (selector !== '.road-save') confirmOverwrite = false
+      if (selector !== '.road-save') cancelOverwrite()
       handler(e.target as HTMLInputElement)
       render()
       if (panel) keepFocus(e.target, panel.overlay)
     })
   on('.road-select', 'change', (target) => draft.select(target.value))
   on('.road-dot', 'change', (target) => {
-    draft.select(draft.road()?.id, target.value === '' ? undefined : Number(target.value))
+    const road = draft.road(), dot = target.value === '' ? undefined : Number(target.value)
+    draft.select(road?.id, dot)
     hoverAlong = undefined
+    if (road && dot !== undefined) showDot(road.points[dot])
   })
   on('.road-move-up', 'click', () => moveRoad(-1))
   on('.road-move-down', 'click', () => moveRoad(1))
@@ -282,12 +321,7 @@ function bindControls(root: HTMLElement) {
   })
   on('.road-name', 'change', (target) => draft.setRoad({ name: target.value.trim() || 'Road' }))
   on('.road-kind', 'change', (target) => draft.setRoad({ kind: target.value as RoadDraftRoad['kind'] }))
-  on('.road-grade', 'change', (target) => {
-    const road = draft.road(), dot = draft.selectedDot()
-    if (!road || dot === undefined) return
-    const value = Number(target.value)
-    draft.setStretchGrade(Math.min(dot, road.bends.length - 1), target.value && value > 0 ? value / percent : null)
-  })
+  on('.road-grade', 'change', (target) => setStretchLimit(target.value))
   on('.road-suggest', 'click', () => suggest())
   on('.road-delete-dot', 'click', () => deleteDot())
   on('.road-delete', 'click', () => {
@@ -295,14 +329,8 @@ function bindControls(root: HTMLElement) {
     draft.deleteRoad()
     if (road) say(`Deleted ${road.name}. Ctrl+Z to undo.`)
   })
-  on('.road-undo', 'click', () => {
-    draft.undo()
-    say('Undone.')
-  })
-  on('.road-redo', 'click', () => {
-    draft.redo()
-    say('Redone.')
-  })
+  on('.road-undo', 'click', () => history(false))
+  on('.road-redo', 'click', () => history(true))
   on('.road-discard', 'click', () => {
     draft.discard()
     say('Back to the roads in roads.ts. Ctrl+Z brings the draft back.')
@@ -311,7 +339,7 @@ function bindControls(root: HTMLElement) {
     downloadJsonFile(downloadName, JSON.stringify(draft.roads(), null, jsonIndent))
     say(`Downloaded the layout as ${downloadName}.`)
   })
-  on('.road-save', 'click', () => void save())
+  on('.road-save', 'click', () => void saveRoads(draft, say))
   const chart = element<HTMLCanvasElement>(root, '.road-section')
   chart.addEventListener('pointermove', (event) => {
     const road = draft.road()
@@ -322,9 +350,7 @@ function bindControls(root: HTMLElement) {
   root.addEventListener('keydown', (event) => {
     if (event.target instanceof HTMLInputElement) return
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
-      if (event.shiftKey) draft.redo()
-      else draft.undo()
-      say(event.shiftKey ? 'Redone.' : 'Undone.')
+      history(event.shiftKey)
     }
     else if (event.key === 'Escape' && drawing) {
       drawing = false
@@ -351,31 +377,6 @@ function suggest() {
   say(`Suggested ${route.dots.length} dots within ${Math.round(limit * percent)}%.`)
 }
 
-const savedNotice = 'Saved to src/worlds/starter/layout/roads.ts. The dev server restarts to load it, which drops connected crews; the island is checkpointed, so they can rejoin. Next, run npm run island:plant to re-plant Highwood clear of the roads, and commit both files.'
-
-async function save() {
-  if (draft.sourceChanged() && !confirmOverwrite) {
-    confirmOverwrite = true
-    say('roads.ts has changed since this draft began, so saving would overwrite newer roads. Press Save to source again to overwrite them, or Discard draft to start from the new roads.')
-    return
-  }
-  confirmOverwrite = false
-  say('Saving…')
-  try {
-    const response = await fetch(roadSavePath, { method: 'POST', headers: { 'content-type': 'application/json', [workbenchSaveHeader]: 'save' }, body: JSON.stringify(draft.roads()) })
-    if (!response.ok) {
-      say(`Not saved: ${await response.text()}`)
-      return
-    }
-    draft.markSaved()
-    writeStorage('sessionStorage', noticeKey, savedNotice)
-    say(savedNotice)
-  }
-  catch {
-    say('Not saved: the dev server is not running. Use Download instead.')
-  }
-}
-
 // Shows the designer while its study is open, and puts the game's roads back when it closes.
 export function openRoadDesigner() {
   if (!panel) {
@@ -389,10 +390,6 @@ export function openRoadDesigner() {
     })
   }
   panel.root.hidden = false
-  const notice = readStorage('sessionStorage', noticeKey)
-  if (notice) {
-    writeStorage('sessionStorage', noticeKey, null)
-    say(notice)
-  }
+  sayPendingNotice(say)
   render()
 }

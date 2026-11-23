@@ -34,9 +34,11 @@ export const roadDesignerLook = {
   // Map strokes in screen pixels; an over-limit stretch is dashed `overDash` on and off.
   road: { width: 4, selectedWidth: 6, outline: '#1c2622', outlineWidth: 8, overDash: [7, 5] },
   dot: { radius: 4.5, selectedRadius: 6.5, fill: '#fff7e0', stroke: '#1c2622', selectedFill: '#ffd166' },
-  middle: { radius: 3, fill: '#c9e7ff', stroke: '#1c2622' },
+  middle: { radius: 3.5, fill: '#c9e7ff', stroke: '#1c2622' },
   // The spot a warning or the long section points at: a white ring over a dark one, unlike any grade colour.
   marker: { radius: 9, width: 3, color: '#ffffff', outline: '#1c2622', outlineWidth: 6 },
+  // The Stretch limit field's range, in percent; the save endpoint refuses limits over 40%.
+  stretchLimitPercent: { min: 1, max: 40 },
   // Arrow keys pan the map by this share of its width; + and − zoom by `zoomStep`.
   keyPanShare: 0.1,
   zoomStep: 1.25,

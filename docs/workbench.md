@@ -32,8 +32,8 @@ Open **World → Road designer** (`workbench.html#road-designer`) to lay out the
 - Double-click a road to add a dot there. **Delete dot** (or Delete with the map focused) removes the selected dot, and Cmd or Ctrl+Z undoes. **Undo** and **Redo** are greyed out when there is nothing to undo or redo.
 - Drag empty ground to pan, and scroll to zoom.
 
-**By keyboard.** Every step except placing new dots works without a mouse.
-- **Road** picks the road, and **Dot** picks one of its dots, listed with how many metres along the road it sits. With a dot picked, **Suggest route**, **Delete dot** and **Stretch limit** work. Stretch limit stays greyed out, with a hint beside it, until a dot is picked.
+**By keyboard.** Choosing roads and dots, suggesting routes, deleting, limits, reordering, undo, panning and zooming all work without a mouse. Placing, moving and bending dots, and New road's two points, still need the pointer.
+- **Road** picks the road, and **Dot** picks one of its dots, listed with how many metres along the road it sits; a zoomed-in map pans to it. With a dot picked, **Suggest route**, **Delete dot** and **Stretch limit** work. Stretch limit stays greyed out, with a hint beside it, until a dot is picked.
 - Tab to the map, then use the arrow keys to pan and + and − to zoom. Delete or Backspace removes the selected dot only while the map has focus, so they never fire from a list or a button.
 - The status line at the foot of the panel says what each action did, for example "Deleted dot 14. Ctrl+Z to undo." It stays in view with **Save to source**, however far the panel scrolls.
 
@@ -48,10 +48,10 @@ Open **World → Road designer** (`workbench.html#road-designer`) to lay out the
 **Order matters.** Roads are graded in list order, each over the ground the earlier ones shaped. A road that branches from another must come after it, and its end dot should sit on a dot of that road, so the branch starts level with it. **Move up** and **Move down** change a road's place in the list.
 
 **Check it in 3D and save it.**
-- **Preview roads in 3D** in the inspector rebuilds the island with the draft's roads cut in. **Hide** folds the designer panel into the top-right corner, clear of the Island map panel, so you can see the stage.
+- **Preview roads in 3D** in the inspector rebuilds the island with the draft's roads cut in. **Hide** folds the designer panel into the top-right corner (the bottom right on a phone), clear of the Island map panel's controls, so you can see the stage.
 - The draft is kept in this browser until you save. **Download** saves the layout as JSON. **Discard draft** goes back to the roads in `roads.ts`; it is one more step in the undo history, so Cmd or Ctrl+Z brings the draft back.
 - **Save to source** writes the layout to [`src/worlds/starter/layout/roads.ts`](../src/worlds/starter/layout/roads.ts) and nothing else. It works only on the development server, from this computer, and from the Workbench page that server serves.
-- The draft remembers which `roads.ts` it started from. If the file has changed since, for example after a pull, the first press of Save says so, and a second press overwrites it. Discard draft starts again from the new roads instead.
+- The draft remembers which `roads.ts` it started from. If the file has changed since, for example after a pull, the first press of Save says so, and a second press overwrites it. Discard draft starts again from the new roads instead. A draft saved by an older Workbench, before it kept this, warns once on its first save too.
 - `roads.ts` feeds the terrain the dev server bakes into its config, so a save restarts the dev server. Crews connected to it drop and can rejoin, because the island is checkpointed. The page reloads, and the status line still shows the save notice.
 - Then run `npm run island:plant`, because the Highwood planting keeps clear of roads, and commit both files. You don't need `npm run island:generate`, which also rebuilds the terrain.
 

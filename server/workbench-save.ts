@@ -12,7 +12,8 @@ import { roadSaveDecimals as decimals, roadSavePath, workbenchSaveHeader } from 
 // the LAN out. The Workbench's own header makes a browser preflight the request,
 // but Vite's dev CORS middleware grants preflights to any localhost page, so the
 // header alone does not stop another local site. The same-origin check does: a
-// browser sets `Origin` and `Sec-Fetch-Site` itself, and no page can forge them.
+// browser sets `Origin` and `Sec-Fetch-Site` itself, and no page can change them,
+// and the Host must be a loopback name, which keeps DNS-rebinding pages out.
 
 const roadsFile = 'src/worlds/starter/layout/roads.ts'
 const maxBodyBytes = 262_144
@@ -118,11 +119,19 @@ export const starterRoads: readonly StarterRoadLayout[] = [${roads.length ? `\n$
 }
 
 // A browser names the page that sent a request in `Origin` and, in current browsers,
-// says whether it is this site in `Sec-Fetch-Site`. Either must say it is this server.
+// says whether it is this site in `Sec-Fetch-Site`. Either must say it is this server,
+// and the server must have been reached by a loopback name. A page on another domain
+// that rebinds its DNS to 127.0.0.1 is "same-origin" with itself, so the Host check is
+// what refuses it here; Vite's own host check refuses it too, but only while the config
+// leaves `allowedHosts` and `https` unset.
+const loopbackNames = new Set(['localhost', '127.0.0.1', '[::1]'])
+// The name part of a Host header, without its port: `[::1]:5173` gives `[::1]`.
+const hostName = (host: string) => host.startsWith('[') ? host.slice(0, host.indexOf(']') + 1) : host.split(':')[0]
 export function fromThisSite({ headers }: Pick<IncomingMessage, 'headers'>) {
-  if (headers['sec-fetch-site'] === 'same-origin') return true
   const { origin, host } = headers
-  return Boolean(origin && host) && (origin === `http://${host}` || origin === `https://${host}`)
+  if (!host || !loopbackNames.has(hostName(host))) return false
+  if (headers['sec-fetch-site'] === 'same-origin') return true
+  return origin === `http://${host}` || origin === `https://${host}`
 }
 
 export function fromThisComputer(request: Pick<IncomingMessage, 'socket'>) {

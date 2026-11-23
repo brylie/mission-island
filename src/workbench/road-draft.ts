@@ -96,13 +96,10 @@ function removeDot(road: RoadDraftRoad, i: number) {
   road.maxGrade?.splice(stretch, 1)
 }
 
-// Moves a road `step` places along the list, or returns false when that leaves the list.
-function reorder(roads: RoadDraftRoad[], road: RoadDraftRoad, step: number) {
-  const from = roads.indexOf(road), to = from + step
-  if (from < 0 || to < 0 || to >= roads.length) return false
-  roads.splice(from, 1)
+// Moves a road to place `to` in the list.
+function reorder(roads: RoadDraftRoad[], road: RoadDraftRoad, to: number) {
+  roads.splice(roads.indexOf(road), 1)
   roads.splice(to, 0, road)
-  return true
 }
 
 export function createRoadDraft() {
@@ -229,7 +226,7 @@ export function createRoadDraft() {
     moveRoad(step: number) {
       const current = road()
       const to = current ? roads.indexOf(current) + step : -1
-      if (current && to >= 0 && to < roads.length) edit(() => reorder(roads, current, step))
+      if (current && to >= 0 && to < roads.length) edit(() => reorder(roads, current, to))
     },
     setRoad(changes: Partial<Pick<RoadDraftRoad, 'name' | 'kind'>>) {
       const current = road()

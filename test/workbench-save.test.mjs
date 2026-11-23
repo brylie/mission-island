@@ -77,6 +77,9 @@ test('the same-origin check reads the headers the browser sets', () => {
   assert.ok(fromThisSite({ headers: { host, origin: `https://${host}` } }))
   assert.ok(!fromThisSite({ headers: { host, origin: 'http://evil.localhost:5173' } }))
   assert.ok(!fromThisSite({ headers: { origin: `http://${host}` } }))
+  assert.ok(fromThisSite({ headers: { 'host': '127.0.0.1:5173', 'sec-fetch-site': 'same-origin' } }))
+  // A page whose own domain was rebound to 127.0.0.1 is same-origin with itself.
+  assert.ok(!fromThisSite({ headers: { 'host': 'evil.test:5173', 'origin': 'http://evil.test:5173', 'sec-fetch-site': 'same-origin' } }), 'a rebound domain is refused')
 })
 
 test('only this computer, from the Workbench page, with the Workbench header, can save, and only the road layout file', async () => {

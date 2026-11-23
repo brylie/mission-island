@@ -8,7 +8,7 @@ const percent = 100
 // The grade legend under the map, from the same colours and thresholds the map uses.
 function legend() {
   const swatch = (band: 'easy' | 'steady' | 'limit' | 'over', text: string) =>
-    `<span class="road-legend-item"><span class="road-swatch road-swatch-${band}" style="--swatch: ${look.grade[band]}" aria-hidden="true"></span>${text}</span>`
+    `<span class="road-legend-item"><span class="road-swatch road-swatch-${band}" style="--swatch: ${look.grade[band]}; --dash-on: ${look.road.overDash[0]}px; --dash-gap: ${look.road.overDash[1]}px" aria-hidden="true"></span>${text}</span>`
   const nearLimit = Math.round((1 - look.grade.nearLimitShare) * percent)
   return `<p class="road-legend">Grade:
     ${swatch('easy', `easy, under ${Math.round(look.grade.easyBelow * percent)}%`)}
@@ -40,7 +40,7 @@ export function roadDesignerMarkup(kinds: readonly string[]) {
     </div>
     <div class="road-toolbar">
       <label>Dot <select class="road-dot" data-needs-road></select></label>
-      <label>Stretch limit (%) <input class="road-grade" type="number" min="1" max="40" step="1" aria-describedby="road-grade-hint" /></label>
+      <label>Stretch limit (%) <input class="road-grade" type="number" min="${look.stretchLimitPercent.min}" max="${look.stretchLimitPercent.max}" step="1" aria-describedby="road-grade-hint" /></label>
       <span class="road-hint" id="road-grade-hint"></span>
     </div>
     <div class="road-map-surface">
@@ -56,7 +56,7 @@ export function roadDesignerMarkup(kinds: readonly string[]) {
       <button type="button" class="road-redo">Redo</button>
     </div>
     <figure class="road-section-figure">
-      <canvas class="road-section" aria-label="Long section: natural ground and road height along the selected road, with cut in orange and fill in blue"></canvas>
+      <canvas class="road-section" role="img" aria-label="Long section: natural ground and road height along the selected road, with cut in orange and fill in blue"></canvas>
       <figcaption>Long section: ground (brown line), road (black line), cut (orange), fill (blue). Hover it to mark the spot on the map.</figcaption>
       <p class="road-readout"></p>
     </figure>
