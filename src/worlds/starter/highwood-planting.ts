@@ -25,6 +25,7 @@ export interface Planting extends Point {
 const fullTurn = Math.PI + Math.PI
 const speciesByte = 4, packedByte = 5, headingByte = 6, scaleByte = 7
 const zOffset = 2
+const byteMax = 255
 
 function bits(value: number, shift: number, count: number) {
   return (value >> shift) & ((1 << count) - 1)
@@ -54,4 +55,22 @@ export function highwoodPlanting(): readonly Planting[] {
   }
   decoded = out
   return decoded
+}
+
+let groundBytes: Uint8Array | undefined
+
+// How much needle litter, heath, moss and bracken cover the ground at a point, 0 to 1 each.
+export function highwoodGroundCover({ x, z }: Point) {
+  groundBytes ??= Uint8Array.from(atob(highwoodPlants.ground), (char) => char.charCodeAt(0))
+  const { groundCellM, groundChannels } = encoding
+  const gx = (x - highwoodPlants.west) / groundCellM, gz = (z - highwoodPlants.south) / groundCellM
+  const cover = [0, 0, 0, 0]
+  if (gx < 0 || gz < 0 || gx >= highwoodPlants.groundColumns - 1 || gz >= highwoodPlants.groundRows - 1) return { litter: 0, heath: 0, moss: 0, bracken: 0 }
+  const i = Math.floor(gx), j = Math.floor(gz), fx = gx - i, fz = gz - j
+  const corners = [[i, j, (1 - fx) * (1 - fz)], [i + 1, j, fx * (1 - fz)], [i, j + 1, (1 - fx) * fz], [i + 1, j + 1, fx * fz]] as const
+  for (const [ci, cj, weight] of corners) {
+    const at = (cj * highwoodPlants.groundColumns + ci) * groundChannels
+    for (let channel = 0; channel < groundChannels; channel++) cover[channel] += groundBytes[at + channel] * weight / byteMax
+  }
+  return { litter: cover[0], heath: cover[1], moss: cover[2], bracken: cover[3] }
 }

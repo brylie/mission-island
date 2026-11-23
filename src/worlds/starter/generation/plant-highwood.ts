@@ -101,6 +101,20 @@ function plantLayer(layer: PlantingLayer, out: Planting[]) {
   }
 }
 
+// How much of each ground layer covers a point, from its habitat weights:
+// needle litter under pine, heather on heath and the exposed ridge, moss in wet
+// woodland, bracken on its slopes. Sea and the authored south carry none.
+export function groundCoverAt(point: Point) {
+  if (!onHighwoodLand(point)) return { litter: 0, heath: 0, moss: 0, bracken: 0 }
+  const habitat = highwoodHabitatAt(point)
+  return {
+    litter: Math.min(1, habitat.pinewood + habitat.edge * half + habitat.birch * half),
+    heath: Math.min(1, habitat.heath + habitat.ridge),
+    moss: habitat.wet,
+    bracken: habitat.bracken,
+  }
+}
+
 export function plantHighwood(): Planting[] {
   const out: Planting[] = []
   for (const layer of plantingLayers) plantLayer(layer, out)

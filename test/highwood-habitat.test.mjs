@@ -12,7 +12,8 @@ import { highwoodPlants } from '../src/assets/geometry/highwood-plants.ts'
 import { plantingSources } from '../src/worlds/starter/generation/bake-sources.ts'
 import { plantHighwood } from '../src/worlds/starter/generation/plant-highwood.ts'
 import { dominantHabitat, highwoodHabitatAt } from '../src/worlds/starter/highwood-habitat.ts'
-import { highwoodPlanting } from '../src/worlds/starter/highwood-planting.ts'
+import { highwoodGroundCover, highwoodPlanting } from '../src/worlds/starter/highwood-planting.ts'
+import { groundSurface } from '../src/audio/surface.ts'
 import { highwoodHabitatIds } from '../src/worlds/starter/layout/highwood-habitats.ts'
 import { highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
 
@@ -22,6 +23,8 @@ const positionToleranceM = 0.02
 const minimumCanopy = 1000
 const half = 2
 const walkerPaddingM = 0.35
+const coverShare = 0.6
+const litterFootsteps = 0.6
 const standingHeightM = 2
 
 function highwoodShares() {
@@ -87,4 +90,13 @@ test('Highwood trunks block walking and soft plants do not', () => {
   const bracken = plants.find((plant) => plant.species === 'bracken' && highwoodSolidTop(plant, 0) === -Infinity)
   assert.ok(bracken, 'bracken is soft cover')
   assert.equal(propTop(pine, walkerPaddingM), highwoodSolidTop(pine, walkerPaddingM))
+})
+
+test('Highwood ground cover follows the habitats and sounds like litter under pine', () => {
+  const pines = highwoodPlanting().filter((plant) => plant.layer === 'canopy' && plant.species === 'scots-pine')
+  const underPine = pines.filter((plant) => highwoodGroundCover(plant).litter > half / (half + half)).length
+  assert.ok(underPine > pines.length * coverShare, `only ${underPine} of ${pines.length} pines stand on needle litter`)
+  const pine = pines.find((plant) => highwoodGroundCover(plant).litter > litterFootsteps)
+  assert.equal(groundSurface(pine), 'litter')
+  assert.deepEqual(highwoodGroundCover({ x: 0, z: 0 }), { litter: 0, heath: 0, moss: 0, bracken: 0 }, 'the authored south has no Highwood cover')
 })

@@ -32,6 +32,16 @@ export const starterMeadowFinish = {
 // shader's stone texture); the tints over the turf are red, green and blue
 // multipliers, kept gentle so turf never turns to clay: high ground leans to
 // heath, wet hollows where water gathers stay green, and slopes differ by aspect.
+// Highwood's ground cover over the turf, weighted by the baked habitat raster:
+// pine needle litter as the pine-duff texture, and tints (red, green, blue
+// multipliers) for heather, moss and bracken. `strength` is the most each takes over.
+export const highwoodGroundCover = {
+  litter: { repeatsPerMetre: 0.9, strength: 0.85, tint: [0.95, 0.9, 0.82] },
+  heath: { strength: 0.75, tint: [0.98, 0.72, 0.8] },
+  moss: { strength: 0.7, tint: [0.72, 1.02, 0.7] },
+  bracken: { strength: 0.65, tint: [1.12, 0.94, 0.66] },
+} as const
+
 export const highwoodGroundFinish = {
   rock: { slopeStart: 0.55, slopeFull: 1.0, cover: 0.9 },
   heath: { heightStart: 16, heightFull: 40, tint: [1.07, 0.92, 0.97] },

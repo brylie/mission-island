@@ -1,3 +1,4 @@
+import { highwoodGroundCover } from './worlds/starter/highwood-planting'
 import type { Material } from '@babylonjs/core/Materials/material'
 import { fernfallSheet, highwoodGroundFinish, starterMeadowFinish, starterOcean } from './assets/geometry/starter-landscape'
 import { meadowGroundTone } from './assets/surface-patterns'
@@ -21,7 +22,7 @@ import { buildings, distance, harbor, island, lookout, town } from './world'
 import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
 import { createOceanMaterial } from './ocean'
-import { beachAttribute, beachAttributeSize, beachVertex, useBeachMaterial } from './beach-material'
+import { beachAttribute, beachAttributeSize, beachVertex, groundCoverAttribute, useBeachMaterial } from './beach-material'
 import { createMeadowBlades, createMeadowSurface } from './meadow-shaders'
 import { shoreDefaults, type ShoreSettings } from './shader-studies'
 
@@ -168,7 +169,7 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
   const steps = Math.round(tileMetres / tileCell)
   for (let tz = map.south; tz < north; tz += tileMetres) {
     for (let tx = map.west; tx < east; tx += tileMetres) {
-      const positions: number[] = [], uvs: number[] = [], colors: number[] = [], beach: number[] = [], indices: number[] = []
+      const positions: number[] = [], uvs: number[] = [], colors: number[] = [], beach: number[] = [], cover: number[] = [], indices: number[] = []
       const keep: boolean[] = []
       let wet = false
       for (let j = 0; j <= steps; j++) {
@@ -182,6 +183,8 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
           uvs.push(point.x, point.z)
           appendMeadowColor(colors, point, wear)
           beach.push(...beachVertex(point, coastalSurface(point, height)))
+          const layers = highwoodGroundCover(point)
+          cover.push(layers.litter, layers.heath, layers.moss, 1 - layers.bracken)
         }
       }
       tintByForm(positions, colors, beach, steps)
@@ -195,6 +198,7 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
       const mesh = meshes.surface('Highwood terrain', positions, indices, material, undefined, uvs)
       mesh.setVerticesData(VertexBuffer.ColorKind, colors)
       mesh.setVerticesData(beachAttribute, beach, false, beachAttributeSize)
+      mesh.setVerticesData(groundCoverAttribute, cover, false, beachAttributeSize)
       mesh.freezeWorldMatrix()
     }
   }

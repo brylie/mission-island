@@ -58,4 +58,8 @@ export const plantingEncoding = {
   layerBits: 2,
   ageBits: 2,
   exposureBits: 1,
+  // The ground raster: one cell every `groundCellM` metres, `groundChannels` bytes each
+  // (needle litter, heath, moss, bracken from 0 to 255).
+  groundCellM: 8,
+  groundChannels: 4,
 } as const

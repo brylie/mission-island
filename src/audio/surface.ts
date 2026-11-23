@@ -5,6 +5,7 @@ import { islandTrees, northernRegions } from '../scenery.ts'
 import { coastalSurface, waterDepth } from '../terrain.ts'
 import { beachHasSand } from '../worlds/starter/beach-landforms.ts'
 import { onDock, type Point } from '../world.ts'
+import { highwoodGroundCover } from '../worlds/starter/highwood-planting.ts'
 import type { FootSurface } from './footstep-recipes.ts'
 
 const halfWidthDivisor = 2
@@ -18,7 +19,8 @@ const paved = (point: Point) =>
   onPath(point, 'pavement') || walkways.some((path) => within(point, path)) || distanceToRoads(point) < groundSurfaces.roadHalfWidthMetres
 
 function wooded(point: Point) {
-  const { treeReachMetres, nearbyTrees } = groundSurfaces.litter
+  const { treeReachMetres, nearbyTrees, highwoodCover } = groundSurfaces.litter
+  if (highwoodGroundCover(point).litter > highwoodCover) return true
   if (northernRegions.some((region) => region.trees && Math.hypot(point.x - region.at.x, point.z - region.at.z) < region.spread)) return true
   let near = 0
   for (const tree of islandTrees) {
