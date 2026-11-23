@@ -29,9 +29,12 @@ jobs:
       - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
       - name: Install locked dependencies
         run: npm ci --no-audit
-      - name: Run repository checks, lint, type check, and tests
+      - name: Run repository checks, lint, and type check
+        # The coverage step below runs the tests, so they run once per build.
+        env:
+          SKIP: mission-island-tests
         run: mise exec -- prek run --all-files --hook-stage pre-commit --verbose --show-diff-on-failure
       - name: Check unused code, build, and audit dependencies
         run: mise exec -- prek run --all-files --hook-stage pre-push --verbose
-      - name: Check test coverage
+      - name: Run tests with coverage
         run: npm run coverage
