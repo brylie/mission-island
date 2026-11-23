@@ -26,26 +26,34 @@ Changing a setting keeps your orbit and zoom while the subject stays about the s
 Open **World → Road designer** (`workbench.html#road-designer`) to lay out the island's graded roads. Each road runs through dots on the island map and finds its own height through the terrain: it cuts into rises and fills hollows only where its grade limit needs it. The [forest roads](field-guide/practices/forest-roads.md) entry explains the real-world practice behind it.
 
 **Draw a road.**
-- **New road** starts one: click two points on the map.
+- **New road** starts one: click two points on the map. Escape cancels it.
 - Click near either end of the selected road to extend it from that end.
 - Drag a dot to move it. Drag the small handle in the middle of a stretch to bend that stretch; there are no Bézier handles to manage.
-- Double-click a road to add a dot there. **Delete** removes the selected dot, and Cmd or Ctrl+Z undoes.
+- Double-click a road to add a dot there. **Delete dot** (or Delete with the map focused) removes the selected dot, and Cmd or Ctrl+Z undoes. **Undo** and **Redo** are greyed out when there is nothing to undo or redo.
 - Drag empty ground to pan, and scroll to zoom.
+
+**By keyboard.** Every step except placing new dots works without a mouse.
+- **Road** picks the road, and **Dot** picks one of its dots, listed with how many metres along the road it sits. With a dot picked, **Suggest route**, **Delete dot** and **Stretch limit** work. Stretch limit stays greyed out, with a hint beside it, until a dot is picked.
+- Tab to the map, then use the arrow keys to pan and + and − to zoom. Delete or Backspace removes the selected dot only while the map has focus, so they never fire from a list or a button.
+- The status line at the foot of the panel says what each action did, for example "Deleted dot 14. Ctrl+Z to undo." It stays in view with **Save to source**, however far the panel scrolls.
 
 **Suggest route to next dot** fills in the dots between the selected dot and the next one along a route within the grade limit. It suggests a road a builder would make: straight where a straight road holds the grade, curving only along contours or in switchbacks. Treat it as a first draft, then drag and bend.
 
 **Read the road.**
-- The road is coloured by grade: green below 6%, yellow below 10%, orange up to the limit, red over it.
-- The long section under the map shows natural ground (green) and the road (dark), with cut in orange and fill in blue. Hover it to find that spot on the map.
-- Warnings name what a road builder would query and where: grade over the limit, a bend tighter than the pickup can turn, a crossing of open water, and cut or fill deeper than 4 m.
-- **Kind** sets the road's width and limits (fire road or track). **Stretch limit** overrides the grade limit for the stretch after the selected dot, as on the Cairn Summit spur.
+- The legend under the map gives the grade colours. Green is easy, under 6%. Yellow is steady. Orange is near the stretch's own limit, in its top fifth, so it starts at 9.6% on a 12% fire road and at 12% on a 15% stretch. Red is over the limit, and is drawn dashed so it reads without colour.
+- The long section under the map shows natural ground as a brown line and the road as a black one, with cut in orange and fill in blue. The line under it reads the steepest point, or the grade, heights and cut or fill at the spot you hover. That spot shows on the map as a white ring.
+- Warnings name what a road builder would query and where: grade over the limit, a bend tighter than the pickup can turn, a crossing of open water, and cut or fill deeper than 4 m. Repeats of one kind closer than 25 m count once. The list shows the first 12 along the road, and the summary says "12 shown of 30 problems" when there are more. Activating a warning marks it on the map and the long section, and says so in the status line.
+- **Kind** sets the road's width and limits (fire road or track). **Stretch limit** overrides the grade limit for the stretch after the selected dot, as on the Cairn Summit spur. The last dot sets the stretch before it.
 
-**Order matters.** Roads are graded in list order, each over the ground the earlier ones shaped. A road that branches from another must come after it, and its end dot should sit on a dot of that road, so the branch starts level with it.
+**Order matters.** Roads are graded in list order, each over the ground the earlier ones shaped. A road that branches from another must come after it, and its end dot should sit on a dot of that road, so the branch starts level with it. **Move up** and **Move down** change a road's place in the list.
 
 **Check it in 3D and save it.**
-- **Preview roads in 3D** in the inspector rebuilds the island with the draft's roads cut in. **Hide** folds the designer panel away so you can see the stage.
-- The draft is kept in this browser until you save. **Discard draft** goes back to the saved roads, and **Download** saves the layout as JSON.
-- **Save to source** writes the layout to [`src/worlds/starter/layout/roads.ts`](../src/worlds/starter/layout/roads.ts) and nothing else. It works only on the development server, from this computer. Then run `npm run island:plant`, because the Highwood planting keeps clear of roads, and commit both files.
+- **Preview roads in 3D** in the inspector rebuilds the island with the draft's roads cut in. **Hide** folds the designer panel into the top-right corner, clear of the Island map panel, so you can see the stage.
+- The draft is kept in this browser until you save. **Download** saves the layout as JSON. **Discard draft** goes back to the roads in `roads.ts`; it is one more step in the undo history, so Cmd or Ctrl+Z brings the draft back.
+- **Save to source** writes the layout to [`src/worlds/starter/layout/roads.ts`](../src/worlds/starter/layout/roads.ts) and nothing else. It works only on the development server, from this computer, and from the Workbench page that server serves.
+- The draft remembers which `roads.ts` it started from. If the file has changed since, for example after a pull, the first press of Save says so, and a second press overwrites it. Discard draft starts again from the new roads instead.
+- `roads.ts` feeds the terrain the dev server bakes into its config, so a save restarts the dev server. Crews connected to it drop and can rejoin, because the island is checkpointed. The page reloads, and the status line still shows the save notice.
+- Then run `npm run island:plant`, because the Highwood planting keeps clear of roads, and commit both files. You don't need `npm run island:generate`, which also rebuilds the terrain.
 
 ## Procedural surfaces
 
