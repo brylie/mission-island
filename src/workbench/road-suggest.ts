@@ -10,7 +10,7 @@ import type { Point } from '../world.ts'
 
 interface Grid { west: number, south: number, columns: number, rows: number, heights: Float32Array, wet: Uint8Array }
 
-const { cellM, marginM, smoothPasses, gradeCostWeight, overGradeWeight, hardGradeShare, turnCostM, straightenTurnRad, waterMarginM, maxDotSpacingM, minDotSpacingM } = roadSuggestion
+const { cellM, marginM, smoothPasses, gradeCostWeight, overGradeWeight, hardGradeShare, turnCostM, straightenTurnRad, waterMarginM, maxDotSpacingM, minDotSpacingM, hairpin } = roadSuggestion
 // Steps to the eight neighbours and the eight knight's moves (one cell across, two along),
 // sorted by direction, so the path is not tied to the grid's angles. Each step may turn
 // only to a neighbouring direction, as a vehicle turns gradually: with 4 m cells that holds
@@ -18,6 +18,7 @@ const { cellM, marginM, smoothPasses, gradeCostWeight, overGradeWeight, hardGrad
 // has to be a real hairpin loop.
 const knight = 2
 const half = 0.5
+const square = 2
 // Bends are kept to a tenth of a metre.
 const bendRounding = 10
 const signs = [1, -1]
@@ -45,14 +46,14 @@ function blur(source: Float32Array, columns: number, rows: number) {
   return out
 }
 
-function groundGrid(a: Point, b: Point): Grid {
+function groundGrid(a: Point, b: Point, ground: (point: Point) => number): Grid {
   const west = Math.min(a.x, b.x) - marginM, south = Math.min(a.z, b.z) - marginM
   const columns = Math.ceil((Math.max(a.x, b.x) + marginM - west) / cellM) + 1, rows = Math.ceil((Math.max(a.z, b.z) + marginM - south) / cellM) + 1
   let heights = new Float32Array(columns * rows)
   const wet = new Uint8Array(columns * rows)
   for (let j = 0; j < rows; j++) {
     for (let i = 0; i < columns; i++) {
-      const height = naturalGroundHeight({ x: west + i * cellM, z: south + j * cellM })
+      const height = ground({ x: west + i * cellM, z: south + j * cellM })
       heights[j * columns + i] = height
       wet[j * columns + i] = Number(height < waterLevel + waterMarginM)
     }
@@ -97,30 +98,71 @@ class Queue {
   }
 }
 
+// One point of the found path, and the hairpin that leads from it to the next, if one does.
+interface PathPoint { point: Point, heading: number, hairpin?: number }
+
+const degreesPerHalfTurn = 180
+// Every hairpin the search may take: to the left (+) or right (−), through each sweep.
+const hairpinTurns = [1, -1].flatMap((side) => hairpin.sweepsDeg.map((degrees) => side * degrees * Math.PI / degreesPerHalfTurn))
+const headingAngles = moves.map(([dx, dz]) => Math.atan2(dz, dx))
+
+// A hairpin from `start`, heading at `angle`, turning through `turn` radians on a circle of the
+// hairpin radius: where it ends, its exit angle, the dots round it and its length.
+function hairpinArc(start: Point, angle: number, turn: number) {
+  const r = hairpin.radiusM, side = Math.sign(turn)
+  const centre = { x: start.x - side * Math.sin(angle) * r, z: start.z + side * Math.cos(angle) * r }
+  const at = (t: number) => {
+    const a = Math.atan2(start.z - centre.z, start.x - centre.x) + turn * t
+    return { x: centre.x + Math.cos(a) * r, z: centre.z + Math.sin(a) * r }
+  }
+  const quarters = hairpin.dotShares.map(at)
+  return { centre, end: at(1), exitAngle: angle + turn, dots: quarters, length: Math.abs(turn) * r }
+}
+
+const nearestHeading = (angle: number) => headingAngles.reduce((best, a, k) => Math.abs(Math.atan2(Math.sin(angle - a), Math.cos(angle - a))) < Math.abs(Math.atan2(Math.sin(angle - headingAngles[best]), Math.cos(angle - headingAngles[best]))) ? k : best, 0)
+
 // A* over (cell, heading) states: turning costs extra in proportion to how sharply the
 // heading changes, so the path sweeps round bends a vehicle can take rather than zigzagging.
+// A hairpin turns the path back on itself across the slope in one move, as a switchback does.
 function search(grid: Grid, a: Point, b: Point, maxGrade: number) {
   const { west, south, columns, rows, heights, wet } = grid
   const headings = moves.length
+  // Each state also remembers how many steps it has come since a hairpin, up to `settled`, so
+  // the legs of a switchback have length.
+  const settled = Math.ceil(hairpin.minLegM / cellM), memories = settled + 1
+  const stateOf = (c: number, h: number, m: number) => (c * headings + h) * memories + m
   const cell = (p: Point) => Math.round((p.z - south) / cellM) * columns + Math.round((p.x - west) / cellM)
   const start = cell(a), goal = cell(b), gx = goal % columns, gz = Math.floor(goal / columns)
-  const cost = new Float64Array(columns * rows * headings).fill(Infinity)
-  const from = new Int32Array(columns * rows * headings).fill(-1)
+  const cost = new Float64Array(columns * rows * headings * memories).fill(Infinity)
+  const from = new Int32Array(cost.length).fill(-1)
+  const viaHairpin = new Uint8Array(cost.length)
   const lengths = moves.map(([dx, dz]) => Math.hypot(dx, dz))
+  const stepCost = (run: number, grade: number) => run * (1 + gradeCostWeight * grade * grade + overGradeWeight * Math.max(0, grade - maxGrade))
   const open = new Queue()
+  // The road runs a leg before its first hairpin, too.
   for (let h = 0; h < headings; h++) {
-    cost[start * headings + h] = 0
-    open.push(0, start * headings + h)
+    cost[stateOf(start, h, 0)] = 0
+    open.push(0, stateOf(start, h, 0))
+  }
+  // `hairpinChoice` is 0 for an ordinary step, or one more than the hairpin turn taken.
+  const relax = (state: number, to: number, next: number, hairpinChoice: number) => {
+    if (next >= cost[to]) return
+    cost[to] = next
+    from[to] = state
+    viaHairpin[to] = hairpinChoice
+    const n = Math.floor(to / memories / headings)
+    open.push(next + Math.hypot(n % columns - gx, Math.floor(n / columns) - gz) * cellM, to)
   }
   let reached = -1
   while (open.size) {
     const state = open.pop()
-    const c = Math.floor(state / headings), h = state % headings
+    const m = state % memories, h = Math.floor(state / memories) % headings, c = Math.floor(state / memories / headings)
     if (c === goal) {
       reached = state
       break
     }
     const cx = c % columns, cz = Math.floor(c / columns)
+    const [hx, hz] = moves[h]
     for (const k of turnsFrom(h)) {
       const [dx, dz] = moves[k]
       const nx = cx + dx, nz = cz + dz
@@ -131,25 +173,33 @@ function search(grid: Grid, a: Point, b: Point, maxGrade: number) {
       // Small bumps are cut and filled, so the limit is soft: steeper steps cost heavily, and only
       // ground far beyond the limit is refused.
       if (grade > maxGrade * hardGradeShare) continue
-      const [hx, hz] = moves[h]
       const turn = 1 - (hx * dx + hz * dz) / (lengths[h] * lengths[k])
-      const over = Math.max(0, grade - maxGrade)
-      const next = cost[state] + run * (1 + gradeCostWeight * grade * grade + overGradeWeight * over) + turnCostM * turn
-      const to = n * headings + k
-      if (next >= cost[to]) continue
-      cost[to] = next
-      from[to] = state
-      open.push(next + Math.hypot(nx - gx, nz - gz) * cellM, to)
+      relax(state, stateOf(n, k, Math.min(settled, m + Math.round(lengths[k]))), cost[state] + stepCost(run, grade) + turnCostM * turn, 0)
     }
+    if (m < settled) continue
+    // A hairpin to either side, turning the road back up the slope.
+    const here = { x: west + cx * cellM, z: south + cz * cellM }
+    hairpinTurns.forEach((turn, choice) => {
+      const arc = hairpinArc(here, headingAngles[h], turn)
+      const nx = Math.round((arc.end.x - west) / cellM), nz = Math.round((arc.end.z - south) / cellM)
+      if (nx < 0 || nz < 0 || nx >= columns || nz >= rows) return
+      const n = nz * columns + nx
+      if (wet[n] || wet[c] || n === goal) return
+      const rise = Math.abs(heights[n] - heights[c]), grade = rise / arc.length
+      if (grade > maxGrade * hardGradeShare || rise / Math.hypot(arc.end.x - here.x, arc.end.z - here.z) > hairpin.maxSlope) return
+      relax(state, stateOf(n, nearestHeading(arc.exitAngle), 0), cost[state] + stepCost(arc.length, grade) + hairpin.costM, choice + 1)
+    })
   }
   if (reached < 0) return undefined
-  const path: Point[] = []
-  for (let state = reached; state >= 0; state = from[state]) {
-    const c = Math.floor(state / headings)
-    const point = { x: west + (c % columns) * cellM, z: south + Math.floor(c / columns) * cellM }
-    if (!path.length || path[path.length - 1].x !== point.x || path[path.length - 1].z !== point.z) path.push(point)
-  }
-  return path.reverse()
+  const states: number[] = []
+  for (let state = reached; state >= 0; state = from[state]) states.push(state)
+  states.reverse()
+  return states.map((state, i): PathPoint => {
+    const c = Math.floor(state / memories / headings)
+    // A point starts a hairpin when the move out of it was one.
+    const choice = viaHairpin[states[i + 1]]
+    return { point: { x: west + (c % columns) * cellM, z: south + Math.floor(c / columns) * cellM }, heading: Math.floor(state / memories) % headings, hairpin: choice ? choice - 1 : undefined }
+  })
 }
 
 // The smoothed ground at a point, between grid nodes.
@@ -179,15 +229,20 @@ function turnBetween(a: Point, b: Point, c: Point) {
 }
 
 // Pulls the path straight: from each kept point, on to the furthest later point a straight
-// road reaches within the grade without turning sharply from the run before it.
-function straighten(grid: Grid, path: readonly Point[], maxGrade: number) {
+// road reaches within the grade without turning sharply from the run before it. `entry` and
+// `exit` are points just before and after the path, where it meets a hairpin, so the straight
+// runs leave and join the hairpin along its tangent.
+function straighten(grid: Grid, path: readonly Point[], maxGrade: number, entry?: Point, exit?: Point) {
   const kept = [path[0]]
+  const joinTurn = straightenTurnRad * half
   for (let i = 0; i < path.length - 1;) {
-    // The run before this one: the kept point before the last, if there is one.
-    const previous = kept.at(-1 - 1)
+    // The run before this one: the kept point before the last, or the hairpin's tangent.
+    const previous = kept.at(-1 - 1) ?? entry
+    const limit = kept.length > 1 ? straightenTurnRad : joinTurn
     let next = i + 1
     for (let j = next + 1; j < path.length; j++) {
-      if (previous && turnBetween(previous, path[i], path[j]) > straightenTurnRad) continue
+      if (previous && turnBetween(previous, path[i], path[j]) > limit) continue
+      if (exit && j === path.length - 1 && turnBetween(path[i], path[j], exit) > joinTurn) continue
       if (straightFits(grid, path[i], path[j], maxGrade)) next = j
     }
     kept.push(path[next])
@@ -212,17 +267,13 @@ function bowBetween(path: readonly Point[], from: Point, to: Point) {
   return Math.round(best * bendRounding) / bendRounding
 }
 
-// The dots between `a` and `b` (not including them) along a road no steeper than `maxGrade`,
-// with a bend for each stretch (one more than the dots) so the road follows the path, or
-// undefined if no route exists.
-export function suggestRoute(a: Point, b: Point, maxGrade: number): { dots: Point[], bends: number[] } | undefined {
-  const grid = groundGrid(a, b)
-  const found = search(grid, a, b, maxGrade)
-  if (!found) return undefined
-  // The road runs from the dots themselves, not the grid cells nearest them.
-  const kept = straighten(grid, [a, ...found.slice(1, -1), b], maxGrade)
-  const path = kept
-  // Long straight runs get extra dots, so every stretch can still be bent.
+// One leg's dots, from its first point to its last: pulled straight, with long runs split
+// so every stretch can still be bent, and the short steps of a bend found on the grid thinned
+// to dots at least the minimum spacing apart. The dot where the next straight run begins is
+// always kept, so the road's curve takes the bend and its straight runs stay straight.
+function legDots(grid: Grid, leg: readonly Point[], maxGrade: number, entry?: Point, exit?: Point) {
+  const kept = straighten(grid, leg, maxGrade, entry, exit)
+  const first = kept[0], last = kept[kept.length - 1]
   const dots: Point[] = []
   for (let i = 1; i < kept.length; i++) {
     const from = kept[i - 1], to = kept[i]
@@ -230,18 +281,66 @@ export function suggestRoute(a: Point, b: Point, maxGrade: number): { dots: Poin
     for (let k = 1; k <= pieces; k++) dots.push({ x: from.x + (to.x - from.x) * k / pieces, z: from.z + (to.z - from.z) * k / pieces })
   }
   dots.pop()
-  // A bend found on the grid is a run of short steps. Thin each run to dots at least the
-  // minimum spacing apart, always keeping the dot where the next straight run begins, so the
-  // road's curve takes the bend and its straight runs stay straight.
   const far = (p: Point, q: Point) => Math.hypot(p.x - q.x, p.z - q.z) >= minDotSpacingM
   const spaced: Point[] = []
   dots.forEach((dot, i) => {
-    const next = dots[i + 1] ?? b
-    if (far(dot, spaced.at(-1) ?? a)) spaced.push(dot)
+    const next = dots[i + 1] ?? last
+    if (far(dot, spaced.at(-1) ?? first)) spaced.push(dot)
     // The start of a straight run replaces a dot crowding it.
     else if (far(dot, next) && spaced.length) spaced[spaced.length - 1] = dot
   })
-  while (spaced.length && !far(spaced[spaced.length - 1], b)) spaced.pop()
-  const chain = [a, ...spaced, b]
-  return { dots: spaced, bends: chain.slice(1).map((to, i) => bowBetween(path, chain[i], to)) }
+  while (spaced.length && !far(spaced[spaced.length - 1], last)) spaced.pop()
+  return { dots: [first, ...spaced, last], kept }
+}
+
+// The bend that puts the middle of a stretch between two points of a circle onto the circle:
+// its sagitta, away from the centre (+ is left of travel).
+function arcBend(from: Point, to: Point, centre: Point) {
+  const radius = Math.hypot(from.x - centre.x, from.z - centre.z)
+  const chord = Math.hypot(to.x - from.x, to.z - from.z) || 1
+  const sagitta = radius - Math.sqrt(Math.max(0, radius * radius - chord * chord * half * half))
+  const leftOfTravel = (centre.x - from.x) * -(to.z - from.z) + (centre.z - from.z) * (to.x - from.x)
+  return Math.round((leftOfTravel > 0 ? -sagitta : sagitta) * bendRounding) / bendRounding
+}
+
+// The dots between `a` and `b` (not including them) along a road no steeper than `maxGrade`,
+// with a bend for each stretch (one more than the dots) so the road follows the path, or
+// undefined if no route exists. `ground` is the natural ground unless a test gives its own.
+export function suggestRoute(a: Point, b: Point, maxGrade: number, ground: (point: Point) => number = naturalGroundHeight): { dots: Point[], bends: number[] } | undefined {
+  const grid = groundGrid(a, b, ground)
+  const found = search(grid, a, b, maxGrade)
+  if (!found) return undefined
+  // The road runs from the dots themselves, not the grid cells nearest them; a leg after a
+  // hairpin starts where the hairpin's arc ends.
+  const points = found.map((entry, i) => i === 0 ? a : i === found.length - 1 ? b : entry.point)
+  const arcs = found.map((entry, i) => entry.hairpin === undefined ? undefined : hairpinArc(points[i], headingAngles[entry.heading], hairpinTurns[entry.hairpin]))
+  arcs.forEach((arc, i) => {
+    if (arc && i + 1 < found.length - 1) points[i + 1] = arc.end
+  })
+  // Legs run between hairpins; each is straightened on its own and the hairpins keep their shape.
+  const chain: Point[] = [], shape: Point[] = [], round = new Map<number, number>()
+  let legStart = 0
+  // A point a step along the tangent the road leaves a hairpin on, and one ahead where it enters one.
+  const tangentPoint = (point: Point, angle: number, sign: number) => ({ x: point.x + sign * Math.cos(angle), z: point.z + sign * Math.sin(angle) })
+  found.forEach((entry, i) => {
+    const arc = arcs[i]
+    if (!arc && i < found.length - 1) return
+    const before = arcs[legStart - 1]
+    const legEntry = before && tangentPoint(points[legStart], before.exitAngle, -1)
+    const legExit = arc && tangentPoint(points[i], headingAngles[entry.heading], 1)
+    const legPoints = points.slice(legStart, i + 1)
+    if (legPoints.length < square) return
+    const leg = legDots(grid, legPoints, maxGrade, legEntry, legExit)
+    chain.push(...(chain.length ? leg.dots.slice(1) : leg.dots))
+    shape.push(...leg.kept)
+    if (arc) {
+      // Each stretch round a hairpin bows out onto its circle, so its middle lies on it too.
+      const round3 = [points[i], ...arc.dots, points[i + 1]]
+      for (let k = 1; k < round3.length; k++) round.set(chain.length - 1 + k - 1, arcBend(round3[k - 1], round3[k], arc.centre))
+      chain.push(...arc.dots, points[i + 1])
+      shape.push(...arc.dots)
+      legStart = i + 1
+    }
+  })
+  return { dots: chain.slice(1, -1), bends: chain.slice(1).map((to, i) => round.get(i) ?? bowBetween(shape, chain[i], to)) }
 }

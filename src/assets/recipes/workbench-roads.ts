@@ -22,6 +22,14 @@ export const roadSuggestion = {
   hardGradeShare: 1.6,
   turnCostM: 14,
   straightenTurnRad: 0.6,
+  // A switchback: the search may turn back on itself in a hairpin of `radiusM`, coming back
+  // twice that across the slope, for `costM` metres on top of the loop's length. A hairpin
+  // is built ground, so its climb is judged over the loop, not as one steep step; it is
+  // refused where the slope across it is steeper than `maxSlope`. Each leg between hairpins runs
+  // at least `minLegM`. A hairpin sweeps through one of `sweepsDeg`: legs climbing across a slope
+  // in mirror image meet at less or more than a straight about-turn. Its dots sit at `dotShares`
+  // of the way round.
+  hairpin: { radiusM: 12, costM: 40, maxSlope: 0.5, minLegM: 24, sweepsDeg: [135, 157.5, 180, 202.5, 225], dotShares: [0.25, 0.5, 0.75] },
   minDotSpacingM: 14,
   waterMarginM: 0.05,
   maxDotSpacingM: 40,

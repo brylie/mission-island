@@ -62,3 +62,18 @@ test('Suggest route keeps a road straight where a straight road holds the grade'
   assert.ok(length < straightLine * slack, `${length.toFixed(0)} m against ${straightLine.toFixed(0)} m in a straight line`)
   assert.deepEqual(suggestion.bends.filter((bend) => bend !== 0), [], 'no stretch is bent')
 })
+
+test('Suggest route switches back up a slope too steep to climb straight, in hairpins the pickup can take', () => {
+  // A 35 % plane, 31.5 m to climb at no more than 15 %: at least 210 m of road.
+  const plane = ({ z }) => z * 0.35 + 5
+  const from = { x: 0, z: 0 }, to = { x: 0, z: 90 }
+  const suggestion = suggestRoute(from, to, 0.15, plane)
+  assert.ok(suggestion, 'a switchback route exists')
+  const points = [from, ...suggestion.dots, to]
+  const [road] = createRoadGrading([{ id: 'switchback', name: 'Switchback', kind: 'fire-road', points, bends: suggestion.bends, maxGrade: suggestion.bends.map(() => 0.15) }], plane, []).roads()
+  const length = road.profile.at(-1).along, least = 31.5 / 0.15
+  assert.ok(length >= least * 0.95 && length < least * 1.35, `${length.toFixed(0)} m of road for ${least} m of climb`)
+  const { radii } = analyseRoad(road)
+  assert.ok(Math.min(...radii) >= roadKinds['fire-road'].minTurnRadiusM, `tightest bend ${Math.min(...radii).toFixed(1)} m`)
+  assert.ok(Math.max(...road.profile.map((sample) => Math.abs(sample.grade))) <= 0.15 + 0.005, 'the road holds its grade')
+})
