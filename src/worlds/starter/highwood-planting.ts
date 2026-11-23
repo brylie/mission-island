@@ -1,5 +1,6 @@
 import { highwoodPlants } from '../../assets/geometry/highwood-plants.ts'
 import { plantingEncoding as encoding } from '../../assets/geometry/island-preview.ts'
+import { groundHeight } from '../../terrain.ts'
 import type { Point } from '../../world.ts'
 import { highwoodPlantingLayers, plantingAges, plantingExposures } from './layout/highwood-planting.ts'
 
@@ -73,4 +74,11 @@ export function highwoodGroundCover({ x, z }: Point) {
     for (let channel = 0; channel < groundChannels; channel++) cover[channel] += groundBytes[at + channel] * weight / byteMax
   }
   return { litter: cover[0], heath: cover[1], moss: cover[2], bracken: cover[3] }
+}
+
+// A fallen log runs along (cos heading, -sin heading) from its root. It follows the
+// ground from its root to its far end: this is how far it rises per metre.
+export function logRise(plant: Planting, lengthM: number) {
+  const end = { x: plant.x + Math.cos(plant.heading) * lengthM, z: plant.z - Math.sin(plant.heading) * lengthM }
+  return (groundHeight(end) - groundHeight(plant)) / lengthM
 }

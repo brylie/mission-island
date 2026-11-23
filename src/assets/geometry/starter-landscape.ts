@@ -36,8 +36,10 @@ export const starterMeadowFinish = {
 // pine needle litter as the pine-duff texture, and tints (red, green, blue
 // multipliers) for heather, moss and bracken. `strength` is the most each takes over.
 export const highwoodGroundCover = {
-  litter: { repeatsPerMetre: 0.9, strength: 0.85, tint: [0.95, 0.9, 0.82] },
-  heath: { strength: 0.75, tint: [0.98, 0.72, 0.8] },
+  // Needles are 48 mm in the pine-duff recipe: about 2.6 tiles per metre shows them at
+  // true size. A second, coarser sample turned against the first hides the repeat.
+  litter: { repeatsPerMetre: 2.6, breakupRepeatsPerMetre: 0.37, breakupShare: 0.35, strength: 0.85, tint: [0.95, 0.9, 0.82] },
+  heath: { strength: 0.7, tint: [0.96, 0.8, 0.84] },
   moss: { strength: 0.7, tint: [0.72, 1.02, 0.7] },
   bracken: { strength: 0.65, tint: [1.12, 0.94, 0.66] },
 } as const

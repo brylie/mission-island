@@ -18,7 +18,7 @@ export const highwoodHabitatRules = {
   // Thin, stony, open ground below the ridge: heather and juniper.
   heath: { exposure: [0.3, 0.6], rock: [0.1, 0.45] },
   // Deep, well-drained, gentle slopes take bracken where the canopy opens.
-  bracken: { slope: [0.08, 0.2], steepest: [0.35, 0.55], patch: [0.56, 0.74] },
+  bracken: { slope: [0.08, 0.2], steepest: [0.35, 0.55], patch: [0.56, 0.74], wetness: [0.6, 0.85] },
   // Birch and aspen groves, strongest on Birch Flats and in a few scattered stands.
   birch: { patch: [0.6, 0.78], placeRadiusM: 110, placeShare: 0.8 },
   // Openings in the pinewood: windthrow gaps and clearings that become edge habitat.

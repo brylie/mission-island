@@ -7,7 +7,7 @@ import type { Point } from '../../../world.ts'
 import { authoredShare } from './protection.ts'
 import { highwoodExposure, highwoodHabitatAt, type HighwoodHabitat } from '../highwood-habitat.ts'
 import { bakedSurface } from '../highwood-terrain.ts'
-import { highwoodClumping, highwoodExposedAbove, highwoodMaximumCover, highwoodPlantingLayers, highwoodSightlines, highwoodPlantingLimits, highwoodPlantingSeed, highwoodRouteClearanceM, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
+import { highwoodAuthoredLimit, highwoodSightlineEyeClearM, highwoodClumping, highwoodExposedAbove, highwoodLeanJitter, highwoodLogLie, highwoodMaximumCover, highwoodPlantingLayers, highwoodSightlines, highwoodPlantingLimits, highwoodPlantingSeed, highwoodRouteClearanceM, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
 import { highwoodGeneration } from '../layout/island-generation.ts'
 import { ridgeWind } from '../ridge-scout.ts'
 
@@ -39,24 +39,33 @@ function slope({ x, z }: Point) {
 
 // Cheap checks first: most cells in the grid are sea or the authored south.
 function onHighwoodLand(point: Point) {
-  return groundHeight(point) > waterLevel + landMarginM && authoredShare(point, originalCoastRadius(point)) < 1
+  return groundHeight(point) > waterLevel + landMarginM && authoredShare(point, originalCoastRadius(point)) < highwoodAuthoredLimit
     && bakedSurface(point).sand <= highwoodPlantingLimits.sand
 }
 
-// Whether a point falls in a kept-open sight line's corridor.
-export function inSightline(point: Point) {
-  return highwoodSightlines.some(({ eye, look, reachM, halfWidthM, spread }) => {
+// How far along a kept-open sight line's corridor a point lies, or undefined outside every corridor.
+export function sightlineAlong(point: Point) {
+  let nearest: number | undefined
+  for (const { eye, look, reachM, halfWidthM, spread } of highwoodSightlines) {
     const dx = look.x - eye.x, dz = look.z - eye.z
     const length = Math.hypot(dx, dz)
     const along = ((point.x - eye.x) * dx + (point.z - eye.z) * dz) / length
-    if (along < 0 || along > reachM) return false
+    if (along < 0 || along > reachM) continue
     const across = Math.abs((point.x - eye.x) * dz - (point.z - eye.z) * dx) / length
-    return across < halfWidthM + along * spread
-  })
+    if (across < halfWidthM + along * spread) nearest = Math.min(nearest ?? along, along)
+  }
+  return nearest
 }
 
-function clearOfRoutes(point: Point, layer: PlantingLayer) {
-  if (layer !== 'understory' && (slope(point) > highwoodPlantingLimits.treeSlope || inSightline(point))) return false
+export const inSightline = (point: Point) => sightlineAlong(point) !== undefined
+
+function clearOfRoutes(point: Point, layer: PlantingLayer, habitat: HighwoodHabitat) {
+  if (layer !== 'understory' && slope(point) > highwoodPlantingLimits.treeSlope) return false
+  // Nothing stands in a corridor right by the viewpoint. Further along, low plants may, and so
+  // may a creek bank's alders and willows.
+  const along = sightlineAlong(point)
+  if (along !== undefined && along <= highwoodSightlineEyeClearM) return false
+  if (along !== undefined && layer !== 'understory' && !(habitat === 'wet' && layer === 'canopy')) return false
   return routes.every((route) => distanceToRoute(point, route) > highwoodRouteClearanceM)
 }
 
@@ -72,6 +81,28 @@ function scaleSpread(layer: PlantingLayer) {
   return layer === 'deadwood' ? highwoodScaleSpread : highwoodClumping[layer].scaleSpread
 }
 
+// The heading that lays a log (along its template's +x) across the slope at a point,
+// or undefined where the ground along it rises or falls too far.
+function logHeading(point: Point, roll: number) {
+  const dx = groundHeight({ x: point.x + slopeSpanM, z: point.z }) - groundHeight({ x: point.x - slopeSpanM, z: point.z })
+  const dz = groundHeight({ x: point.x, z: point.z + slopeSpanM }) - groundHeight({ x: point.x, z: point.z - slopeSpanM })
+  // Along the contour, either way; on flat ground any way.
+  const flat = Math.hypot(dx, dz) === 0
+  // A log runs along (cos h, -sin h); across the gradient (dx, dz) that is (-dz, dx).
+  const along = flat ? roll * fullTurn : Math.atan2(-dx, -dz) + (roll < half ? 0 : Math.PI)
+  const direction = { x: Math.cos(along), z: -Math.sin(along) }
+  // The log tilts to the ground at its far end; reject ground that bulges or dips away from that line.
+  const root = groundHeight(point)
+  const { lengthM, samples, reliefM } = highwoodLogLie
+  const end = groundHeight({ x: point.x + direction.x * lengthM, z: point.z + direction.z * lengthM })
+  for (let i = 1; i < samples; i++) {
+    const share = i / samples
+    const at = { x: point.x + direction.x * lengthM * share, z: point.z + direction.z * lengthM * share }
+    if (Math.abs(groundHeight(at) - (root + (end - root) * share)) > reliefM) return
+  }
+  return along
+}
+
 function plantLayer(layer: PlantingLayer, out: Planting[]) {
   const { cellM, stands } = highwoodPlantingLayers[layer]
   const { west, south, cell, columns, rows } = highwoodGeneration.grid
@@ -84,9 +115,11 @@ function plantLayer(layer: PlantingLayer, out: Planting[]) {
       if (!onHighwoodLand(point)) continue
       const habitat = pick<HighwoodHabitat>(() => rolls.habitat, highwoodHabitatAt(point))
       const stand = stands[habitat]
-      if (rolls.cover >= Math.min(highwoodMaximumCover, stand.cover * clumpCover(layer, point)) || !stand.mix.length || !clearOfRoutes(point, layer)) continue
+      if (rolls.cover >= Math.min(highwoodMaximumCover, stand.cover * clumpCover(layer, point)) || !stand.mix.length || !clearOfRoutes(point, layer, habitat)) continue
       const choice = stand.mix[Number(pick(() => rolls.species, Object.fromEntries(stand.mix.map((entry, index) => [index, entry.weight]))))]
       const exposed = highwoodExposure(point) > highwoodExposedAbove
+      const lying = choice.species === highwoodLogLie.species ? logHeading(point, rolls.heading) : undefined
+      if (choice.species === highwoodLogLie.species && lying === undefined) continue
       out.push({
         ...point,
         layer,
@@ -94,7 +127,7 @@ function plantLayer(layer: PlantingLayer, out: Planting[]) {
         age: pick<Planting['age']>(() => rolls.age, choice.ages),
         exposure: exposed ? 'exposed' : 'sheltered',
         variant: Math.floor(rolls.variant * highwoodTemplateVariants),
-        heading: exposed ? downwind : rolls.heading * fullTurn,
+        heading: lying ?? (exposed ? downwind + (rolls.heading - half) * (highwoodLeanJitter + highwoodLeanJitter) : rolls.heading * fullTurn),
         scale: 1 + (rolls.scale - half) * (scaleSpread(layer) + scaleSpread(layer)),
       })
     }

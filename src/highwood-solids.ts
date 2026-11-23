@@ -2,7 +2,7 @@ import type { TreeSpecies } from './assets/trees/tree-catalog.ts'
 import { treeCollision } from './assets/trees/tree-collision.ts'
 import { groundHeight } from './terrain.ts'
 import type { Point } from './world.ts'
-import { highwoodPlanting } from './worlds/starter/highwood-planting.ts'
+import { highwoodPlanting, logRise } from './worlds/starter/highwood-planting.ts'
 import { highwoodTemplateSeedBase } from './worlds/starter/layout/highwood-planting.ts'
 
 // Highwood's solid trunks, snags and fallen logs for walking, indexed by a grid
@@ -11,7 +11,7 @@ import { highwoodTemplateSeedBase } from './worlds/starter/layout/highwood-plant
 // The canopy trees are indexed the same way for wind shelter and crown rustle.
 
 interface Trunk { kind: 'upright', x: number, z: number, radius: number, top: number }
-interface Log { kind: 'lying', x: number, z: number, dx: number, dz: number, length: number, radius: number, top: number }
+interface Log { kind: 'lying', x: number, z: number, dx: number, dz: number, length: number, radius: number, top: number, rise: number }
 type Solid = Trunk | Log
 
 const cellM = 4
@@ -50,14 +50,17 @@ for (const plant of highwoodPlanting()) {
   else {
     // A lying log runs along the template's +x, turned by the plant's heading.
     const dx = Math.cos(plant.heading), dz = -Math.sin(plant.heading)
-    file({ kind: 'lying', x: plant.x, z: plant.z, dx, dz, length: collision.length * plant.scale, radius, top: ground + (collision.axisHeight + collision.radius) * plant.scale }, radius)
+    const length = collision.length * plant.scale
+    // The log follows the ground from its root to its far end, so its top rises along it.
+    file({ kind: 'lying', x: plant.x, z: plant.z, dx, dz, length, radius, top: ground + (collision.axisHeight + collision.radius) * plant.scale, rise: logRise(plant, length) }, radius)
   }
 }
 
-function reachOf(solid: Solid, point: Point) {
-  if (solid.kind === 'upright') return Math.hypot(point.x - solid.x, point.z - solid.z)
+// Distance from a point to a solid, and the solid's top there.
+function contact(solid: Solid, point: Point) {
+  if (solid.kind === 'upright') return { reach: Math.hypot(point.x - solid.x, point.z - solid.z), top: solid.top }
   const along = Math.max(0, Math.min(solid.length, (point.x - solid.x) * solid.dx + (point.z - solid.z) * solid.dz))
-  return Math.hypot(point.x - solid.x - solid.dx * along, point.z - solid.z - solid.dz * along)
+  return { reach: Math.hypot(point.x - solid.x - solid.dx * along, point.z - solid.z - solid.dz * along), top: solid.top + solid.rise * along }
 }
 
 // The highest Highwood solid under a walker of the given padding, or -Infinity.
@@ -68,7 +71,8 @@ export function highwoodSolidTop(point: Point, padding: number) {
   for (let di = -reach; di <= reach; di++) {
     for (let dj = -reach; dj <= reach; dj++) {
       for (const solid of cells.get(key(i + di, j + dj)) ?? []) {
-        if (reachOf(solid, point) < solid.radius + padding) top = Math.max(top, solid.top)
+        const { reach, top: here } = contact(solid, point)
+        if (reach < solid.radius + padding) top = Math.max(top, here)
       }
     }
   }

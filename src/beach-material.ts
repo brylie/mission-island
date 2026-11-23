@@ -72,7 +72,9 @@ class BeachMaterial extends MaterialPluginBase {
         }`,
       CUSTOM_FRAGMENT_BEFORE_LIGHTS: `
         if (groundLayers.x + groundLayers.y + groundLayers.z + groundLayers.w > 0.) {
-          vec3 duff = toLinearSpace(texture2D(groundDuff, vPositionW.xz * ${litter.repeatsPerMetre}).rgb) * vec3(${litter.tint.join(', ')});
+          vec3 fine = texture2D(groundDuff, vPositionW.xz * ${litter.repeatsPerMetre}).rgb;
+          vec3 coarse = texture2D(groundDuff, mat2(${rock.cos}, -${rock.sin}, ${rock.sin}, ${rock.cos}) * vPositionW.xz * ${litter.breakupRepeatsPerMetre}).rgb;
+          vec3 duff = toLinearSpace(mix(fine, coarse, ${litter.breakupShare})) * vec3(${litter.tint.join(', ')});
           surfaceAlbedo = mix(surfaceAlbedo, duff, groundLayers.x * ${litter.strength});
           surfaceAlbedo *= mix(vec3(1.), vec3(${heath.tint.join(', ')}), groundLayers.y * ${heath.strength});
           surfaceAlbedo *= mix(vec3(1.), vec3(${moss.tint.join(', ')}), groundLayers.z * ${moss.strength});

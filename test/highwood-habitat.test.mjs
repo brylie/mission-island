@@ -19,6 +19,8 @@ import { highwoodHabitatIds } from '../src/worlds/starter/layout/highwood-habita
 import { highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
 
 const sampleStepM = 8
+// Off the bake's 2 m grid, so the shares don't depend on where samples land between nodes.
+const sampleOffsetM = 1.37
 const landMarginM = 0.2
 const positionToleranceM = 0.02
 const minimumCanopy = 1000
@@ -27,13 +29,18 @@ const walkerPaddingM = 0.35
 const coverShare = 0.6
 const litterFootsteps = 0.6
 const shelteredBelow = 0.4
+const logSampleStartM = 0.3
+const logSampleEndM = 5.5
+const logSampleStepM = 0.5
+const logLowestM = 0.1
+const logHighestM = 0.6
 const standingHeightM = 2
 
 function highwoodShares() {
   const counts = Object.fromEntries(highwoodHabitatIds.map((id) => [id, 0]))
   let total = 0
-  for (let z = -20; z <= 560; z += sampleStepM) {
-    for (let x = -560; x <= 120; x += sampleStepM) {
+  for (let z = -20 + sampleOffsetM; z <= 560; z += sampleStepM) {
+    for (let x = -560 + sampleOffsetM; x <= 120; x += sampleStepM) {
       const point = { x, z }
       if (groundHeight(point) <= waterLevel + landMarginM || authoredShare(point, originalCoastRadius(point)) >= 1) continue
       counts[dominantHabitat(highwoodHabitatAt(point))]++
@@ -117,4 +124,18 @@ test('Highwood footsteps follow the strongest ground cover and its canopy shelte
   const sheltered = pines.filter((plant) => windExposure(plant) < shelteredBelow).length
   assert.ok(sheltered > pines.length * half / (half + half), `only ${sheltered} of ${pines.length} pines stand in sheltered air`)
   assert.ok(pines.some((pine) => nearestCanopies(pine, 1)[0]?.leafy === false), 'pine crowns hush as needles')
+})
+
+test('Highwood logs follow the ground, low enough to jump and never floating or buried', () => {
+  const logs = highwoodPlanting().filter((plant) => plant.species === 'deadfall-log')
+  assert.ok(logs.length > 0)
+  for (const log of logs) {
+    for (let along = logSampleStartM; along < logSampleEndM; along += logSampleStepM) {
+      const at = { x: log.x + Math.cos(log.heading) * along, z: log.z - Math.sin(log.heading) * along }
+      const top = highwoodSolidTop(at, 0)
+      if (top === -Infinity) continue
+      const rise = top - groundHeight(at)
+      assert.ok(rise > logLowestM && rise < logHighestM, `log at ${log.x.toFixed(0)}, ${log.z.toFixed(0)} stands ${rise.toFixed(2)} m proud ${along} m along`)
+    }
+  }
 })

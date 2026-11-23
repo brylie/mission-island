@@ -6,11 +6,12 @@ import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData'
 import '@babylonjs/core/Meshes/thinInstanceMesh'
 import { highwoodForestLook as look } from './assets/recipes/highwood-forest'
 import type { TreeSpecies, TreeTier } from './assets/trees/tree-catalog'
+import { treeCollision } from './assets/trees/tree-collision'
 import { buildTreeTemplate, type TreeTemplate } from './assets/trees/tree-template'
 import type { MeshFactory } from './island-meshes'
 import { groundHeight } from './terrain'
 import type { Point } from './world'
-import { highwoodPlanting, type Planting } from './worlds/starter/highwood-planting'
+import { highwoodPlanting, logRise, type Planting } from './worlds/starter/highwood-planting'
 import { highwoodTemplateSeedBase } from './worlds/starter/layout/highwood-planting'
 
 // Draws Highwood's forest so it costs little however many plants it holds:
@@ -26,15 +27,22 @@ const colorStride = 4
 const vec3Stride = 3
 const uvStride = 2
 const half = 0.5
+const halfTile = 0.5
 
 interface Tile { key: string, centre: Point, canopy: Planting[], understory: Planting[], far: Mesh[], near: boolean, close: boolean }
 
 const comboKey = (plant: Planting, tier: TreeTier) => `${plant.species} ${plant.age} ${plant.exposure} ${plant.variant} ${tier}`
 const tileKey = (x: number, z: number) => `${Math.floor(x / look.tileM)},${Math.floor(z / look.tileM)}`
 
+// A fallen log tilts to follow the ground from its root to its far end, as the walking solids do.
+function logTilt(plant: Planting) {
+  const collision = treeCollision({ species: plant.species as TreeSpecies, age: plant.age, exposure: plant.exposure, seed: highwoodTemplateSeedBase + plant.variant, tier: 'near' })
+  return collision.shape === 'lying' ? Math.atan(logRise(plant, collision.length * plant.scale)) : 0
+}
+
 function plantMatrix(plant: Planting) {
   const y = groundHeight(plant) - look.sinkM
-  return Matrix.Compose(new Vector3(plant.scale, plant.scale, plant.scale), Quaternion.RotationYawPitchRoll(plant.heading, 0, 0), new Vector3(plant.x, y, plant.z))
+  return Matrix.Compose(new Vector3(plant.scale, plant.scale, plant.scale), Quaternion.RotationYawPitchRoll(plant.heading, 0, logTilt(plant)), new Vector3(plant.x, y, plant.z))
 }
 
 // Far silhouettes draw with their own copies of the tree materials. A material
@@ -103,7 +111,10 @@ export function createHighwoodForest(meshes: MeshFactory) {
     }
     ;(plant.layer === 'understory' ? tile.understory : tile.canopy).push(plant)
   }
-  for (const tile of tiles.values()) tile.far = mergeFar(meshes, tile, (plant) => template(plant))
+  // Exposed crest trees stand on skylines, where a switch between tiers would show; they
+  // always draw detailed. There are few of them.
+  const alwaysNear = (plant: Planting) => plant.exposure === 'exposed'
+  for (const tile of tiles.values()) tile.far = mergeFar(meshes, { ...tile, canopy: tile.canopy.filter((plant) => !alwaysNear(plant)) }, (plant) => template(plant))
 
   // One thin-instance mesh per detailed template, shared by every near tile.
   const batches = new Map<string, Mesh[]>()
@@ -129,7 +140,7 @@ export function createHighwoodForest(meshes: MeshFactory) {
   function rebuild() {
     const matrices = new Map<string, number[]>()
     for (const tile of tiles.values()) {
-      const plants = [...(tile.near ? tile.canopy : []), ...(tile.close ? tile.understory : [])]
+      const plants = [...(tile.near ? tile.canopy : tile.canopy.filter(alwaysNear)), ...(tile.close ? tile.understory : [])]
       for (const plant of plants) {
         const key = comboKey(plant, 'near')
         batchFor(plant)
@@ -150,12 +161,17 @@ export function createHighwoodForest(meshes: MeshFactory) {
     }
   }
 
+  // Crest trees draw from the start, before any tile turns near.
+  rebuild()
+
   return {
     // Switch tiles between tiers as the camera moves; rebuilds only when a tile changes.
     update(camera: Point, close: boolean) {
       let changed = false
       for (const tile of tiles.values()) {
-        const range = Math.hypot(camera.x - tile.centre.x, camera.z - tile.centre.z)
+        // Distance to the nearest point of the tile, so a corner near the camera counts as near.
+        const half = look.tileM * halfTile
+        const range = Math.hypot(Math.max(0, Math.abs(camera.x - tile.centre.x) - half), Math.max(0, Math.abs(camera.z - tile.centre.z) - half))
         const near = close && range < (tile.near ? ranges.nearM + look.bandM : ranges.nearM)
         const understory = close && range < (tile.close ? ranges.understoryM + look.understoryBandM : ranges.understoryM)
         if (near !== tile.near || understory !== tile.close) {

@@ -21,6 +21,9 @@ const brackenSeed = 1
 const birchSeed = 2
 const gapSeed = 3
 const crestDirections = 8
+const bankRings = 4
+// Each ring turns by this share of a sector against the one inside it.
+const ringTurn = 0.37
 const fullTurn = Math.PI + Math.PI
 const windLength = Math.hypot(ridgeWind.x, ridgeWind.z)
 const wind = { x: ridgeWind.x / windLength, z: ridgeWind.z / windLength }
@@ -36,11 +39,16 @@ function gradient(point: Point) {
 }
 
 // The wettest ground within a bank's width, so a creek's banks read as wet woodland.
+// Drainage lines are one bake cell wide; rings at several radii, turned off the grid
+// axes, keep the reading the same wherever the point falls between bake nodes.
 function wetness(point: Point) {
   let wettest = bakedSurface(point).moisture
-  for (let i = 0; i < crestDirections; i++) {
-    const angle = i * fullTurn / crestDirections
-    wettest = Math.max(wettest, bakedSurface({ x: point.x + Math.cos(angle) * rules.wet.bankM, z: point.z + Math.sin(angle) * rules.wet.bankM }).moisture)
+  for (let ring = 1; ring <= bankRings; ring++) {
+    const radius = rules.wet.bankM * ring / bankRings
+    for (let i = 0; i < crestDirections; i++) {
+      const angle = (i + ring * ringTurn) * fullTurn / crestDirections
+      wettest = Math.max(wettest, bakedSurface({ x: point.x + Math.cos(angle) * radius, z: point.z + Math.sin(angle) * radius }).moisture)
+    }
   }
   return wettest
 }
@@ -81,11 +89,13 @@ export function highwoodHabitatAt(point: Point): HabitatWeights {
     return taken
   }
   const shore = claim(1 - rise(bakedShoreMetres(point), rules.shore.inland))
-  const wet = claim(rise(wetness(point), rules.wet.moisture) * (1 - rise(height, rules.wet.highest)))
+  const soil = wetness(point)
+  const wet = claim(rise(soil, rules.wet.moisture) * (1 - rise(height, rules.wet.highest)))
   const ridge = claim(Math.max(rise(exposure, rules.ridge.exposure), rise(rock, rules.ridge.rock)))
   const heath = claim(Math.max(rise(exposure, rules.heath.exposure), rise(rock, rules.heath.rock)))
   const gentle = rise(slope, rules.bracken.slope) * (1 - rise(slope, rules.bracken.steepest))
-  const bracken = claim(gentle * rise(patch(point, brackenSeed, noise.bracken), rules.bracken.patch))
+  // Bracken wants deep, well-drained soil and keeps off waterlogged banks.
+  const bracken = claim(gentle * rise(patch(point, brackenSeed, noise.bracken), rules.bracken.patch) * (1 - rise(soil, rules.bracken.wetness)))
   const grove = Math.max(0, 1 - Math.hypot(point.x - highwoodPlaces.birchFlats.x, point.z - highwoodPlaces.birchFlats.z) / rules.birch.placeRadiusM) * rules.birch.placeShare
   const birch = claim(Math.min(1, grove + rise(patch(point, birchSeed, noise.birch), rules.birch.patch)))
   const edge = claim(rise(patch(point, gapSeed, noise.gaps), rules.gaps.patch))
