@@ -73,6 +73,8 @@ test('clearing removes only your own mark and tells the crew once', (t) => {
   h.advance()
   assert.deepEqual(b.state.marks.map(({ playerId }) => playerId), [1])
   assert.deepEqual(notices(b, 'cleared').map(({ playerId }) => playerId), [0])
+  assert.deepEqual(notices(a, 'refused').map(({ reason }) => reason), ['no-mark'], 'Only the one who asked hears there is nothing to clear')
+  assert.deepEqual(notices(b, 'refused'), [])
 })
 
 test('a crewmate who leaves takes their mark, so the next crewmate in that slot starts without one', (t) => {
@@ -125,4 +127,5 @@ test('crewmates read who marked a spot and where it lies from them, and the plac
   assert.equal(crewMarkFeedback(placed, 2, snapshot).label, 'Ana marked a spot')
   assert.equal(crewMarkFeedback({ type: 'crew-mark', event: 'cleared', playerId: 0 }, 1, snapshot).label, 'Ana cleared their mark')
   assert.equal(crewMarkFeedback({ type: 'crew-mark', event: 'refused', reason: 'reach' }, 0, snapshot).label, 'Too far for the rangefinder to mark')
+  assert.equal(crewMarkFeedback({ type: 'crew-mark', event: 'refused', reason: 'no-mark' }, 0, snapshot).label, 'No mark to clear')
 })

@@ -4,6 +4,12 @@ import { distance } from './world.ts'
 
 const noticeDurationMs = 3600
 
+const refusals = {
+  'reach': 'Too far for the rangefinder to mark',
+  'busy': 'Marks are placed on foot',
+  'no-mark': 'No mark to clear',
+} as const satisfies Record<Extract<CrewMarkNotice, { event: 'refused' }>['reason'], string>
+
 function crewName(snapshot: Snapshot | undefined, playerId: number) {
   return snapshot?.players.find((player) => player.id === playerId)?.name || `Crew ${playerId + 1}`
 }
@@ -16,7 +22,7 @@ function ownLabel(notice: Exclude<CrewMarkNotice, { event: 'refused' }>) {
 // What a crewmate reads when anyone marks or clears a spot. A mark on a burning fire says so, after the fire's own notice.
 export function crewMarkFeedback(notice: CrewMarkNotice, localId: number, snapshot: Snapshot | undefined) {
   const until = performance.now() + noticeDurationMs
-  if (notice.event === 'refused') return { key: '', label: notice.reason === 'reach' ? 'Too far for the rangefinder to mark' : 'Marks are placed on foot', until }
+  if (notice.event === 'refused') return { key: '', label: refusals[notice.reason], until }
   if (notice.playerId === localId) return { key: '', label: ownLabel(notice), until }
   const name = crewName(snapshot, notice.playerId)
   if (notice.event === 'cleared') return { key: '', label: `${name} cleared their mark`, until }

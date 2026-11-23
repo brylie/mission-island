@@ -41,8 +41,10 @@ export function createCrewMarks(
     notifyAll({ type: 'crew-mark', event: 'placed', playerId: player.id, x: mark.x, z: mark.z, ...(fire && { fire }) })
   }
 
+  // The browser always asks, so a mark still on its way is cleared; the host answers when there is nothing to clear.
   function clear(member: CrewMember) {
     if (remove(member.player.id)) notifyAll({ type: 'crew-mark', event: 'cleared', playerId: member.player.id })
+    else member.notify?.({ type: 'crew-mark', event: 'refused', reason: 'no-mark' })
   }
 
   return {

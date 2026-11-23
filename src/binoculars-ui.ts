@@ -22,8 +22,6 @@ const longestFrameSeconds = 0.1
 // The rangefinder updates its readout ten times a second, like a scanning laser rangefinder.
 const readoutIntervalMs = 100
 const statusDurationMs = 2400
-// How long after sending a mark it may still be on its way to the host and back.
-const pendingMarkMs = 2000
 // The view tilts no further than this above or below the horizon.
 const pitchLimit = 1.25
 // Movement keys pan the view by this share of its width each second, and Shift sweeps faster to swing round.
@@ -160,12 +158,9 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     statusUntil = performance.now() + statusDurationMs
   }
 
-  // A mark sent moments ago may not be in a snapshot yet, so it still counts as one to clear.
+  // Always asks the host, which knows about a mark the snapshot has not shown yet and answers when there is none.
   function clearMark() {
-    const current = crewmate()
-    const shown = current?.state.marks.some((each) => each.playerId === current.player.id)
-    if (shown || performance.now() - lastMarkSent < pendingMarkMs) send({ type: 'clear-mark' })
-    else say('No mark to clear')
+    send({ type: 'clear-mark' })
   }
 
   // Ranges again at the click, so the mark is always where the reticle is now, not at the last readout.
