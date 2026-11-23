@@ -7,7 +7,7 @@ import { RaycastVehicle } from 'cannon-es'
 import { fireWatchGeometry } from '../src/assets/geometry/fire-watch.ts'
 import { highwoodHeightmap } from '../src/assets/geometry/highwood-heightmap.ts'
 import { createCargoPhysics } from '../src/simulation/cargo.ts'
-import { authoredGroundHeight, coastBounds, coastRadius, groundHeight, originalCoastRadius, waterLevel } from '../src/terrain.ts'
+import { authoredGroundHeight, coastBounds, coastRadius, groundHeight, naturalGroundHeight, originalCoastRadius, waterLevel } from '../src/terrain.ts'
 import { authoredShare } from '../src/worlds/starter/generation/protection.ts'
 import { highwoodGeneration, highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
 import { coastlineDimension, shorelineStatistics, slopeShares } from '../src/worlds/starter/generation/island-metrics.ts'
@@ -120,7 +120,7 @@ test('beyond the seam, the ground is the baked terrain', () => {
       const keep = authoredShare(point, originalCoastRadius(point))
       if (keep <= 0 || keep >= 0.9) continue
       checked++
-      assert.ok(Math.abs(groundHeight(point) - Math.max(bakedHeight(point), highwoodGeneration.seabed)) < 0.01, JSON.stringify(point))
+      assert.ok(Math.abs(naturalGroundHeight(point) - Math.max(bakedHeight(point), highwoodGeneration.seabed)) < 0.01, JSON.stringify(point))
     }
   }
   assert.ok(checked > 20, `checked ${checked} join-band nodes`)
@@ -128,19 +128,20 @@ test('beyond the seam, the ground is the baked terrain', () => {
 
 test('the shipped terrain drains: no closed hollow holds water inland', () => {
   // Steepest descent from a grid of Highwood land points must reach the sea or a flat spill.
+  // This checks the baked land; graded roads have sags that real roads drain with culverts.
   const { west, south, cell, columns, rows } = highwoodHeightmap
   let stuck = 0, traced = 0
   for (let z = 4; z < rows - 4; z += 9) {
     for (let x = 4; x < columns - 4; x += 9) {
       let point = { x: west + x * cell, z: south + z * cell }
-      if (groundHeight(point) < waterLevel + 0.5 || authoredShare(point, originalCoastRadius(point)) > 0) continue
+      if (naturalGroundHeight(point) < waterLevel + 0.5 || authoredShare(point, originalCoastRadius(point)) > 0) continue
       traced++
       for (let step = 0; step < 600; step++) {
-        const here = groundHeight(point)
+        const here = naturalGroundHeight(point)
         let best = point, lowest = here
         for (let a = 0; a < 8; a++) {
           const next = { x: point.x + Math.cos(a * Math.PI / 4) * cell, z: point.z + Math.sin(a * Math.PI / 4) * cell }
-          const h = groundHeight(next)
+          const h = naturalGroundHeight(next)
           if (h < lowest) [best, lowest] = [next, h]
         }
         if (lowest < waterLevel) break

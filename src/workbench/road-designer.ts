@@ -1,7 +1,8 @@
 import { roadKinds } from '../assets/geometry/route-profiles'
 import { roadDesignerLook as look } from '../assets/recipes/workbench-roads'
 import { bendToward, stretchMiddle } from '../road-shape'
-import { previewRoadLayouts } from '../terrain'
+import { createRoadGrading } from '../road-grading'
+import { naturalGroundHeight, previewRoadLayouts } from '../terrain'
 import type { Point } from '../world'
 import { starterRoads } from '../worlds/starter/layout/roads'
 import { roadSavePath, workbenchSaveHeader } from '../workbench-save-contract'
@@ -61,12 +62,17 @@ function buildPanel() {
   return { root, base, overlay, chart, map: createLandscapeMapCanvas(base, overlay), status: element<HTMLElement>(root, '.road-status') }
 }
 
+// Each road is analysed over the ground the roads before it in the draft have shaped,
+// as the island grades them, so a branch is judged where it really meets its road.
 const analyses = new Map<string, { key: string, analysis: RoadAnalysis }>()
 function analysis(road: RoadDraftRoad) {
-  const key = JSON.stringify(road)
+  const roads = draft.roads()
+  const before = roads.slice(0, Math.max(0, roads.findIndex((other) => other.id === road.id)))
+  const key = JSON.stringify([before, road])
   const cached = analyses.get(road.id)
   if (cached?.key === key) return cached.analysis
-  const fresh = analyseRoad(road)
+  const earlier = createRoadGrading(before, naturalGroundHeight)
+  const fresh = analyseRoad(road, (point) => naturalGroundHeight(point) + earlier.delta(point))
   analyses.set(road.id, { key, analysis: fresh })
   return fresh
 }

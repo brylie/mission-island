@@ -12,4 +12,34 @@ export interface StarterRoadLayout {
   maxGrade?: readonly (number | null)[]
 }
 
-export const starterRoads: readonly StarterRoadLayout[] = []
+export const starterRoads: readonly StarterRoadLayout[] = [
+  {
+    id: 'fire-road',
+    name: 'Highwood fire road',
+    kind: 'fire-road',
+    points: [{ x: 12, z: 17 }, { x: -4, z: 17 }, { x: -36, z: 33 }, { x: -68, z: 49 }, { x: -92, z: 73 }, { x: -108, z: 105 }, { x: -124, z: 121 }, { x: -140, z: 137 }, { x: -156, z: 169 }, { x: -172, z: 201 }, { x: -197.3, z: 226.3 }, { x: -222.7, z: 251.7 }, { x: -248, z: 277 }, { x: -264, z: 301 }, { x: -280, z: 325 }],
+    bends: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2.2, -3.3],
+  },
+  {
+    id: 'summit-spur',
+    name: 'Cairn Summit spur',
+    kind: 'fire-road',
+    points: [{ x: -156, z: 169 }, { x: -160, z: 205 }, { x: -144, z: 237 }, { x: -126, z: 251 }, { x: -108, z: 265 }, { x: -84, z: 265 }, { x: -68, z: 257 }, { x: -48, z: 229 }, { x: -48, z: 199 }, { x: -48, z: 169 }, { x: -56, z: 157 }, { x: -84, z: 161 }, { x: -104, z: 181 }, { x: -124, z: 201 }, { x: -120, z: 221 }, { x: -92, z: 241 }],
+    bends: [2.2, 0, 1.4, 1.8, 0, 0, 2.8, 0, 0, 1.1, 5.7, 0, 2.8, 2.4, 2.8],
+    maxGrade: [0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15],
+  },
+  {
+    id: 'pine-draw-road',
+    name: 'Pine Draw road',
+    kind: 'fire-road',
+    points: [{ x: -280, z: 325 }, { x: -306, z: 321 }, { x: -332, z: 317 }, { x: -348, z: 337 }, { x: -328, z: 365 }, { x: -308, z: 393 }, { x: -280, z: 409 }, { x: -252, z: 425 }, { x: -225, z: 440 }],
+    bends: [-1.8, 1.8, 4.4, 2.8, 2.8, -1, -2.5, 1.2],
+  },
+  {
+    id: 'fallow-ridge-road',
+    name: 'Fallow Ridge road',
+    kind: 'fire-road',
+    points: [{ x: -225, z: 440 }, { x: -201, z: 442 }, { x: -181, z: 432 }, { x: -161, z: 422 }, { x: -133, z: 422 }, { x: -105, z: 422 }, { x: -89, z: 406 }, { x: -89, z: 386 }, { x: -106.3, z: 351.3 }, { x: -123.7, z: 316.7 }, { x: -141, z: 282 }, { x: -169, z: 254 }, { x: -197.3, z: 226.3 }],
+    bends: [1, 0, 0, 0, 0, 2.8, 0, 0, 0, 0, 0, 0],
+  },
+]

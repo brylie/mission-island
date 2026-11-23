@@ -33,7 +33,7 @@ function roadKind(layout: Pick<StarterRoadLayout, 'kind'>) {
   return roadKinds[layout.kind]
 }
 
-// A road's profile through the natural ground: grade-limited, held to the ground at both ends.
+// A road's profile through the ground: grade-limited, held to the ground at both ends.
 export function gradeRoad(layout: StarterRoadLayout, natural: GroundFunction): GradedRoad {
   const kind = roadKind(layout)
   const samples = sampleRoad(layout)
@@ -78,13 +78,22 @@ function roadSurfaceHeight(road: GradedRoad, nearest: (point: Point) => number, 
   // Sideways distance from the centreline, and the road's height level with the point.
   const offset = (point.x - sample.x) * sample.dx + (point.z - sample.z) * sample.dz
   const across = Math.abs((point.x - sample.x) * sample.dz - (point.z - sample.z) * sample.dx)
-  const y = sample.y + sample.grade * offset
+  // Past either end the road fades into the ground it meets over its formation's half
+  // width, so a branch blends into the road it joins and a dead end ramps to the ground.
+  const pastEnd = (k === 0 && offset < 0) || (k === road.profile.length - 1 && offset > 0)
+  const fade = pastEnd ? Math.min(1, Math.abs(offset) / road.halfFormation) : 0
+  if (fade >= 1) return
+  const y = pastEnd ? sample.y : sample.y + sample.grade * offset
   const kind = roadKind(road.layout)
-  if (across <= road.halfFormation) return y - kind.crown * Math.min(1, (across / road.halfWidth) ** square)
-  const beyond = across - road.halfFormation
-  // A cut bank rises toward the ground at the cut slope; an embankment falls toward it at the fill slope.
-  const target = ground > y ? Math.min(ground, y + beyond / kind.cutSlope) : Math.max(ground, y - beyond / kind.fillSlope)
-  return target === ground ? undefined : target
+  let height: number
+  if (across <= road.halfFormation) height = y - kind.crown * Math.min(1, (across / road.halfWidth) ** square)
+  else {
+    const beyond = across - road.halfFormation
+    // A cut bank rises toward the ground at the cut slope; an embankment falls toward it at the fill slope.
+    height = ground > y ? Math.min(ground, y + beyond / kind.cutSlope) : Math.max(ground, y - beyond / kind.fillSlope)
+    if (height === ground) return
+  }
+  return height + (ground - height) * fade
 }
 
 function rasterise(road: GradedRoad, natural: GroundFunction): RoadRaster {
@@ -114,12 +123,22 @@ function sampleRaster({ west, south, columns, rows, delta }: RoadRaster, { x, z 
 }
 
 // The island's graded roads, worked out once from the natural ground the first time they are needed.
+// A road joining another should come after it in the layout.
 export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural: GroundFunction) {
   let built: { roads: GradedRoad[], rasters: RoadRaster[], nearest: ((point: Point) => number)[] } | undefined
   const build = () => {
     if (built) return built
-    const roads = layouts.filter((layout) => layout.points.length > 1).map((layout) => gradeRoad(layout, natural))
-    built = { roads, rasters: roads.map((road) => rasterise(road, natural)), nearest: roads.map((road) => sampleIndex(road.profile, road.halfFormation + batterReachM)) }
+    // Roads are graded in order, each over the ground the earlier ones shaped, so a branch
+    // starts level with the road it leaves and overlapping corridors are cut only once.
+    const roads: GradedRoad[] = [], rasters: RoadRaster[] = []
+    const shaped = (point: Point) => rasters.reduce((height, raster) => height + sampleRaster(raster, point), natural(point))
+    for (const layout of layouts.filter((road) => road.points.length > 1)) {
+      const road = gradeRoad(layout, shaped)
+      const raster = rasterise(road, shaped)
+      roads.push(road)
+      rasters.push(raster)
+    }
+    built = { roads, rasters, nearest: roads.map((road) => sampleIndex(road.profile, road.halfFormation + batterReachM)) }
     return built
   }
   return {

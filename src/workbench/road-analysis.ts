@@ -3,6 +3,7 @@ import { roadDesignerLook as look } from '../assets/recipes/workbench-roads.ts'
 import { gradeRoad, type GradedRoad } from '../road-grading.ts'
 import { turnRadii } from '../road-shape.ts'
 import { naturalGroundHeight, waterLevel } from '../terrain.ts'
+import type { Point } from '../world.ts'
 import type { RoadDraftRoad } from './road-draft.ts'
 
 // What the road designer shows about a draft road: its graded profile through the
@@ -27,9 +28,10 @@ function spaced(warnings: RoadWarning[], candidate: RoadWarning) {
   warnings.push(candidate)
 }
 
-export function analyseRoad(road: RoadDraftRoad): RoadAnalysis {
+// `ground` is the island as the roads before this one left it.
+export function analyseRoad(road: RoadDraftRoad, ground: (point: Point) => number = naturalGroundHeight): RoadAnalysis {
   const kind = roadKinds[road.kind]
-  const graded = gradeRoad(road, naturalGroundHeight)
+  const graded = gradeRoad(road, ground)
   const limits = graded.profile.map((sample) => road.maxGrade?.[sample.stretch] ?? kind.maxGrade)
   const radii = turnRadii(graded.profile)
   const warnings: RoadWarning[] = []
