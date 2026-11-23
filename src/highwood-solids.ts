@@ -8,6 +8,7 @@ import { highwoodTemplateSeedBase } from './worlds/starter/layout/highwood-plant
 // Highwood's solid trunks, snags and fallen logs for walking, indexed by a grid
 // so each step checks only the few nearby, not every tree in the forest. Soft
 // plants (shrubs, saplings' leaves, bracken) are left out: you walk through them.
+// The canopy trees are indexed the same way for wind shelter and crown rustle.
 
 interface Trunk { kind: 'upright', x: number, z: number, radius: number, top: number }
 interface Log { kind: 'lying', x: number, z: number, dx: number, dz: number, length: number, radius: number, top: number }
@@ -15,6 +16,10 @@ type Solid = Trunk | Log
 
 const cellM = 4
 const cells = new Map<string, Solid[]>()
+// Crowns for sound: pines hush, broadleaves flutter.
+interface Crown { x: number, z: number, height: number, leafy: boolean }
+const crowns = new Map<string, Crown[]>()
+const needleSpecies = new Set(['scots-pine', 'pine-sapling', 'pine-snag'])
 const key = (i: number, j: number) => `${i},${j}`
 
 function file(solid: Solid, reach: number) {
@@ -34,6 +39,11 @@ for (const plant of highwoodPlanting()) {
   if (plant.layer === 'understory') continue
   const collision = treeCollision({ species: plant.species as TreeSpecies, age: plant.age, exposure: plant.exposure, seed: highwoodTemplateSeedBase + plant.variant, tier: 'near' })
   if (!collision.solid) continue
+  if (plant.layer === 'canopy' && collision.shape === 'upright') {
+    const list = crowns.get(key(Math.floor(plant.x / cellM), Math.floor(plant.z / cellM))) ?? []
+    list.push({ x: plant.x, z: plant.z, height: collision.height * plant.scale, leafy: !needleSpecies.has(plant.species) })
+    crowns.set(key(Math.floor(plant.x / cellM), Math.floor(plant.z / cellM)), list)
+  }
   const ground = groundHeight(plant)
   const radius = collision.radius * plant.scale
   if (collision.shape === 'upright') file({ kind: 'upright', x: plant.x, z: plant.z, radius, top: ground + collision.height * plant.scale }, radius)
@@ -63,4 +73,16 @@ export function highwoodSolidTop(point: Point, padding: number) {
     }
   }
   return top
+}
+
+// Highwood's canopy trees within `reach` metres of a point, from the grid cells around it.
+export function highwoodCrownsWithin(point: Point, reach: number) {
+  const found: Crown[] = []
+  const i = Math.floor(point.x / cellM), j = Math.floor(point.z / cellM), span = Math.ceil(reach / cellM)
+  for (let di = -span; di <= span; di++) {
+    for (let dj = -span; dj <= span; dj++) {
+      for (const crown of crowns.get(key(i + di, j + dj)) ?? []) if (Math.hypot(crown.x - point.x, crown.z - point.z) < reach) found.push(crown)
+    }
+  }
+  return found
 }

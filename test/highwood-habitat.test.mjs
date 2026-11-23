@@ -14,6 +14,7 @@ import { plantHighwood } from '../src/worlds/starter/generation/plant-highwood.t
 import { dominantHabitat, highwoodHabitatAt } from '../src/worlds/starter/highwood-habitat.ts'
 import { highwoodGroundCover, highwoodPlanting } from '../src/worlds/starter/highwood-planting.ts'
 import { groundSurface } from '../src/audio/surface.ts'
+import { nearestCanopies, windExposure } from '../src/audio/wind-model.ts'
 import { highwoodHabitatIds } from '../src/worlds/starter/layout/highwood-habitats.ts'
 import { highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
 
@@ -25,6 +26,7 @@ const half = 2
 const walkerPaddingM = 0.35
 const coverShare = 0.6
 const litterFootsteps = 0.6
+const shelteredBelow = 0.4
 const standingHeightM = 2
 
 function highwoodShares() {
@@ -99,4 +101,20 @@ test('Highwood ground cover follows the habitats and sounds like litter under pi
   const pine = pines.find((plant) => highwoodGroundCover(plant).litter > litterFootsteps)
   assert.equal(groundSurface(pine), 'litter')
   assert.deepEqual(highwoodGroundCover({ x: 0, z: 0 }), { litter: 0, heath: 0, moss: 0, bracken: 0 }, 'the authored south has no Highwood cover')
+})
+
+test('Highwood footsteps follow the strongest ground cover and its canopy shelters the wind', () => {
+  const plants = highwoodPlanting()
+  const birches = plants.filter((plant) => plant.layer === 'canopy' && plant.species === 'birch')
+  const birchLitter = birches.filter((plant) => groundSurface(plant) === 'litter').length
+  assert.ok(birchLitter > birches.length * coverShare, `only ${birchLitter} of ${birches.length} birches stand on litter`)
+  for (const kind of ['heath', 'moss', 'bracken']) {
+    const spot = plants.find((plant) => highwoodGroundCover(plant)[kind] > litterFootsteps)
+    assert.ok(spot, `some ground is mostly ${kind}`)
+    assert.notEqual(groundSurface(spot), 'litter', `${kind} ground is not litter`)
+  }
+  const pines = plants.filter((plant) => plant.layer === 'canopy' && plant.species === 'scots-pine')
+  const sheltered = pines.filter((plant) => windExposure(plant) < shelteredBelow).length
+  assert.ok(sheltered > pines.length * half / (half + half), `only ${sheltered} of ${pines.length} pines stand in sheltered air`)
+  assert.ok(pines.some((pine) => nearestCanopies(pine, 1)[0]?.leafy === false), 'pine crowns hush as needles')
 })

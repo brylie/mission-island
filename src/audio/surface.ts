@@ -20,7 +20,9 @@ const paved = (point: Point) =>
 
 function wooded(point: Point) {
   const { treeReachMetres, nearbyTrees, highwoodCover } = groundSurfaces.litter
-  if (highwoodGroundCover(point).litter > highwoodCover) return true
+  // Litter wins only where it is the strongest cover, so birch and edge ground doesn't flicker at a cut-off.
+  const cover = highwoodGroundCover(point)
+  if (cover.litter > highwoodCover && cover.litter >= Math.max(cover.heath, cover.moss, cover.bracken)) return true
   if (northernRegions.some((region) => region.trees && Math.hypot(point.x - region.at.x, point.z - region.at.z) < region.spread)) return true
   let near = 0
   for (const tree of islandTrees) {
