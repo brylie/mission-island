@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { roadKinds } from '../src/assets/geometry/route-profiles.ts'
+import { roadSuggestion } from '../src/assets/recipes/workbench-roads.ts'
+import { analyseRoad } from '../src/workbench/road-analysis.ts'
 import { createRoadDraft } from '../src/workbench/road-draft.ts'
 import { suggestRoute } from '../src/workbench/road-suggest.ts'
 import { naturalGroundHeight } from '../src/terrain.ts'
@@ -35,10 +38,14 @@ test('the road draft adds, extends, splits, deletes and undoes', () => {
 
 test('Suggest route finds a grade-limited way up toward Cairn Summit', () => {
   const from = { x: 12, z: 20 }, to = { x: -60, z: 170 }
-  const dots = suggestRoute(from, to, 0.12)
-  assert.ok(dots && dots.length > 2, 'a route exists within 12%')
-  const route = [from, ...dots, to]
-  for (let i = 1; i < route.length; i++) assert.ok(Math.hypot(route[i].x - route[i - 1].x, route[i].z - route[i - 1].z) <= 40 + 1e-6, 'no stretch longer than the dot spacing')
+  const suggestion = suggestRoute(from, to, 0.12)
+  assert.ok(suggestion && suggestion.dots.length > 2, 'a route exists within 12%')
+  assert.equal(suggestion.bends.length, suggestion.dots.length + 1, 'a bend for every stretch')
+  const route = [from, ...suggestion.dots, to]
+  for (let i = 1; i < route.length; i++) assert.ok(Math.hypot(route[i].x - route[i - 1].x, route[i].z - route[i - 1].z) <= roadSuggestion.maxDotSpacingM + roadSuggestion.minDotSpacingM + 1e-6, 'no stretch much longer than the dot spacing')
   assert.ok(naturalGroundHeight(to) > naturalGroundHeight(from))
+  // The suggested road bends no tighter than the Fire and Rescue pickup can turn.
+  const { radii } = analyseRoad({ id: 'suggested', name: 'Suggested', kind: 'fire-road', points: route, bends: suggestion.bends, maxGrade: suggestion.bends.map(() => 0.12) })
+  assert.ok(Math.min(...radii) >= roadKinds['fire-road'].minTurnRadiusM, `tightest bend ${Math.min(...radii).toFixed(1)} m`)
   assert.equal(suggestRoute(from, { x: -92, z: 219 }, 0.02), undefined, 'no route up the summit at 2%')
 })

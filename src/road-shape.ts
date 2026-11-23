@@ -59,16 +59,25 @@ function knots(plan: RoadPlan) {
   return out
 }
 
-// Points along a Catmull-Rom curve through the knots, as cubic Hermite pieces.
+// Points along a Catmull-Rom curve through the knots, as cubic Hermite pieces. Tangents
+// follow the chord lengths either side of each knot (non-uniform Catmull-Rom), so a short
+// piece next to a long one never overshoots into a loop or a cusp.
 function curvePoints(plan: RoadPlan) {
   const k = knots(plan)
-  const tangentAt = (i: number) => {
-    const before = k[Math.max(0, i - 1)], after = k[Math.min(k.length - 1, i + 1)]
-    return { x: (after.x - before.x) * half, z: (after.z - before.z) * half }
+  const span = (i: number) => Math.hypot(k[i + 1].x - k[i].x, k[i + 1].z - k[i].z) || 1
+  // The curve's direction at a knot, per metre of chord.
+  const slopeAt = (i: number) => {
+    if (i === 0) return { x: (k[1].x - k[0].x) / span(0), z: (k[1].z - k[0].z) / span(0) }
+    const last = k.length - 1
+    if (i === last) return { x: (k[last].x - k[last - 1].x) / span(last - 1), z: (k[last].z - k[last - 1].z) / span(last - 1) }
+    const run = span(i - 1) + span(i)
+    return { x: (k[i + 1].x - k[i - 1].x) / run, z: (k[i + 1].z - k[i - 1].z) / run }
   }
   const out: (Point & { stretch: number })[] = [k[0]]
   for (let i = 0; i < k.length - 1; i++) {
-    const p0 = k[i], p1 = k[i + 1], m0 = tangentAt(i), m1 = tangentAt(i + 1)
+    const p0 = k[i], p1 = k[i + 1], length = span(i)
+    const s0 = slopeAt(i), s1 = slopeAt(i + 1)
+    const m0 = { x: s0.x * length, z: s0.z * length }, m1 = { x: s1.x * length, z: s1.z * length }
     for (let step = 1; step <= hermiteSteps; step++) {
       const t = step / hermiteSteps, t2 = t * t, t3 = t2 * t
       const h00 = cubicA * t3 - cubicB * t2 + 1, h10 = t3 - cubicA * t2 + t, h01 = -cubicA * t3 + cubicB * t2, h11 = t3 - t2

@@ -256,13 +256,13 @@ function suggest() {
   const road = draft.road(), dot = draft.selectedDot()
   if (!road || dot === undefined || dot >= road.points.length - 1) return
   const limit = road.maxGrade?.[dot] ?? roadKinds[road.kind].maxGrade
-  const dots = suggestRoute(road.points[dot], road.points[dot + 1], limit)
-  if (!dots) {
+  const route = suggestRoute(road.points[dot], road.points[dot + 1], limit)
+  if (!route) {
     say(`No route within ${Math.round(limit * percent)}% between these dots. Raise the stretch's grade limit or move a dot.`)
     return
   }
-  draft.replaceBetween(dot, dot + 1, dots.map(roundedPoint))
-  say(`Suggested ${dots.length} dots within ${Math.round(limit * percent)}%.`)
+  draft.replaceBetween(dot, dot + 1, route.dots.map(roundedPoint), route.bends)
+  say(`Suggested ${route.dots.length} dots within ${Math.round(limit * percent)}%.`)
 }
 
 async function save() {

@@ -121,13 +121,13 @@ export function createRoadDraft() {
       })
       selectedDot = stretch + 1
     },
-    // Replaces the dots between two dots of the selected road, for Suggest route.
-    replaceBetween(from: number, to: number, points: Point[]) {
+    // Replaces the dots between two dots of the selected road, and their stretches' bends, for Suggest route.
+    replaceBetween(from: number, to: number, points: Point[], bends: number[]) {
       const current = road()
       if (!current || to <= from) return
       edit(() => {
         current.points.splice(from + 1, to - from - 1, ...points)
-        current.bends.splice(from, to - from, ...new Array<number>(points.length + 1).fill(0))
+        current.bends.splice(from, to - from, ...bends)
         if (current.maxGrade) current.maxGrade.splice(from, to - from, ...new Array<number | null>(points.length + 1).fill(current.maxGrade[from] ?? null))
       })
     },

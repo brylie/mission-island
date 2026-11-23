@@ -9,17 +9,24 @@ import type { Point } from '../world.ts'
 
 interface Grid { west: number, south: number, columns: number, rows: number, heights: Float32Array, wet: Uint8Array }
 
-const { cellM, marginM, smoothPasses, gradeCostWeight, waterMarginM, simplifyToleranceM, maxDotSpacingM } = roadSuggestion
-// Steps to the eight neighbours and the eight knight's moves (one cell across, two along), so the
-// path is not tied to the grid's angles.
+const { cellM, marginM, smoothPasses, gradeCostWeight, overGradeWeight, hardGradeShare, turnCostM, waterMarginM, simplifyToleranceM, maxDotSpacingM, minDotSpacingM } = roadSuggestion
+// Steps to the eight neighbours and the eight knight's moves (one cell across, two along),
+// sorted by direction, so the path is not tied to the grid's angles. Each step may turn
+// only to a neighbouring direction, as a vehicle turns gradually: with 4 m cells that holds
+// bends to about a 9 m radius, wide enough for the Fire and Rescue pickup, and a switchback
+// has to be a real hairpin loop.
 const knight = 2
+const half = 0.5
+// Bends are kept to a tenth of a metre.
+const bendRounding = 10
+const signs = [1, -1]
 // A line of two points is already as simple as it gets.
 const minimumLine = 2
-const signs = [1, -1]
 const moves: readonly (readonly [number, number])[] = [
   ...signs.flatMap((a) => [[a, 0], [0, a]] as const),
   ...signs.flatMap((a) => signs.flatMap((b) => [[a, b], [knight * a, b], [a, knight * b]] as const)),
-]
+].sort((p, q) => Math.atan2(p[1], p[0]) - Math.atan2(q[1], q[0]))
+const turnsFrom = (h: number) => [h - 1, h, h + 1].map((k) => (k + moves.length) % moves.length)
 
 // One pass of a three-by-three box blur.
 function blur(source: Float32Array, columns: number, rows: number) {
@@ -91,36 +98,58 @@ class Queue {
   }
 }
 
+// A* over (cell, heading) states: turning costs extra in proportion to how sharply the
+// heading changes, so the path sweeps round bends a vehicle can take rather than zigzagging.
 function search(grid: Grid, a: Point, b: Point, maxGrade: number) {
   const { west, south, columns, rows, heights, wet } = grid
+  const headings = moves.length
   const cell = (p: Point) => Math.round((p.z - south) / cellM) * columns + Math.round((p.x - west) / cellM)
   const start = cell(a), goal = cell(b), gx = goal % columns, gz = Math.floor(goal / columns)
-  const cost = new Float64Array(columns * rows).fill(Infinity)
-  const from = new Int32Array(columns * rows).fill(-1)
+  const cost = new Float64Array(columns * rows * headings).fill(Infinity)
+  const from = new Int32Array(columns * rows * headings).fill(-1)
+  const lengths = moves.map(([dx, dz]) => Math.hypot(dx, dz))
   const open = new Queue()
-  cost[start] = 0
-  open.push(0, start)
+  for (let h = 0; h < headings; h++) {
+    cost[start * headings + h] = 0
+    open.push(0, start * headings + h)
+  }
+  let reached = -1
   while (open.size) {
-    const c = open.pop()
-    if (c === goal) break
+    const state = open.pop()
+    const c = Math.floor(state / headings), h = state % headings
+    if (c === goal) {
+      reached = state
+      break
+    }
     const cx = c % columns, cz = Math.floor(c / columns)
-    for (const [dx, dz] of moves) {
+    for (const k of turnsFrom(h)) {
+      const [dx, dz] = moves[k]
       const nx = cx + dx, nz = cz + dz
       if (nx < 0 || nz < 0 || nx >= columns || nz >= rows) continue
       const n = nz * columns + nx
       if (wet[n] && n !== goal) continue
-      const run = Math.hypot(dx, dz) * cellM, grade = Math.abs(heights[n] - heights[c]) / run
-      if (grade > maxGrade) continue
-      const next = cost[c] + run * (1 + gradeCostWeight * grade * grade)
-      if (next >= cost[n]) continue
-      cost[n] = next
-      from[n] = c
-      open.push(next + Math.hypot(nx - gx, nz - gz) * cellM, n)
+      const run = lengths[k] * cellM, grade = Math.abs(heights[n] - heights[c]) / run
+      // Small bumps are cut and filled, so the limit is soft: steeper steps cost heavily, and only
+      // ground far beyond the limit is refused.
+      if (grade > maxGrade * hardGradeShare) continue
+      const [hx, hz] = moves[h]
+      const turn = 1 - (hx * dx + hz * dz) / (lengths[h] * lengths[k])
+      const over = Math.max(0, grade - maxGrade)
+      const next = cost[state] + run * (1 + gradeCostWeight * grade * grade + overGradeWeight * over) + turnCostM * turn
+      const to = n * headings + k
+      if (next >= cost[to]) continue
+      cost[to] = next
+      from[to] = state
+      open.push(next + Math.hypot(nx - gx, nz - gz) * cellM, to)
     }
   }
-  if (from[goal] < 0) return undefined
+  if (reached < 0) return undefined
   const path: Point[] = []
-  for (let c = goal; c >= 0; c = from[c]) path.push({ x: west + (c % columns) * cellM, z: south + Math.floor(c / columns) * cellM })
+  for (let state = reached; state >= 0; state = from[state]) {
+    const c = Math.floor(state / headings)
+    const point = { x: west + (c % columns) * cellM, z: south + Math.floor(c / columns) * cellM }
+    if (!path.length || path[path.length - 1].x !== point.x || path[path.length - 1].z !== point.z) path.push(point)
+  }
   return path.reverse()
 }
 
@@ -138,8 +167,26 @@ function simplify(points: readonly Point[], tolerance: number): Point[] {
   return [...simplify(points.slice(0, at + 1), tolerance).slice(0, -1), ...simplify(points.slice(at), tolerance)]
 }
 
-// The dots between `a` and `b` (not including them) along a road no steeper than `maxGrade`, or undefined if none exists.
-export function suggestRoute(a: Point, b: Point, maxGrade: number): Point[] | undefined {
+// How far the path bows to the left of the straight line between two of its points: the
+// bend that makes the road's curve follow the path rather than cut the corner.
+function bowBetween(path: readonly Point[], from: Point, to: Point) {
+  const length = Math.hypot(to.x - from.x, to.z - from.z) || 1
+  const left = { x: -(to.z - from.z) / length, z: (to.x - from.x) / length }
+  const middle = { x: (from.x + to.x) * half, z: (from.z + to.z) * half }
+  // The path point nearest the perpendicular through the middle of the stretch.
+  let best = 0, bestAlong = Infinity
+  for (const point of path) {
+    const along = Math.abs((point.x - middle.x) * (to.x - from.x) + (point.z - middle.z) * (to.z - from.z)) / length
+    const across = (point.x - middle.x) * left.x + (point.z - middle.z) * left.z
+    if (along < bestAlong && Math.abs(across) < length * half) [best, bestAlong] = [across, along]
+  }
+  return Math.round(best * bendRounding) / bendRounding
+}
+
+// The dots between `a` and `b` (not including them) along a road no steeper than `maxGrade`,
+// with a bend for each stretch (one more than the dots) so the road follows the path, or
+// undefined if no route exists.
+export function suggestRoute(a: Point, b: Point, maxGrade: number): { dots: Point[], bends: number[] } | undefined {
   const path = search(groundGrid(a, b), a, b, maxGrade)
   if (!path) return undefined
   const kept = simplify(path, simplifyToleranceM)
@@ -151,5 +198,12 @@ export function suggestRoute(a: Point, b: Point, maxGrade: number): Point[] | un
     for (let k = 1; k <= pieces; k++) dots.push({ x: from.x + (to.x - from.x) * k / pieces, z: from.z + (to.z - from.z) * k / pieces })
   }
   dots.pop()
-  return dots
+  // Dots crowded closer than the minimum spacing make tight kinks; keep the first of each cluster.
+  const spaced: Point[] = []
+  for (const dot of dots) {
+    const previous = spaced[spaced.length - 1] ?? a
+    if (Math.hypot(dot.x - previous.x, dot.z - previous.z) >= minDotSpacingM && Math.hypot(dot.x - b.x, dot.z - b.z) >= minDotSpacingM) spaced.push(dot)
+  }
+  const chain = [a, ...spaced, b]
+  return { dots: spaced, bends: chain.slice(1).map((to, i) => bowBetween(path, chain[i], to)) }
 }
