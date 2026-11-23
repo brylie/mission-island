@@ -2,7 +2,7 @@ import type { Player, Snapshot } from '../src/protocol.ts'
 import { seededRandom } from '../src/seeded-random.ts'
 import { daySeconds, dryHoursAt, hoursPerDay } from '../src/weather.ts'
 import { windAt } from '../src/island-wind.ts'
-import { distance } from '../src/world.ts'
+import { distance, type Point } from '../src/world.ts'
 import { starterFireSites } from '../src/worlds/starter/layout/fire-sites.ts'
 import {
   burningHotspots,
@@ -240,6 +240,14 @@ export function createWildfire(
     else locate(fire, player)
   }
 
+  // A crew mark close to a burning hotspot fixes the fire, the same as walking up to it. Returns whether it marks a fire.
+  function sightMark(point: Point, player: Player) {
+    const fire = state.events.fire
+    if (!fire || !burningHotspots(fire).some((spot) => distance(spot, point) < fireSightRangeM)) return false
+    locate(fire, player)
+    return true
+  }
+
   // A playtest starts a fire on demand, skipping the schedule, the hour and the weather checks.
   function start(choice: WildfireChoice) {
     if (state.mission !== 'complete') return { ok: false, text: 'Finish the starter shift before starting a wildfire.' }
@@ -259,5 +267,5 @@ export function createWildfire(
     return { ok: true, text: 'The wildfire burned out.' }
   }
 
-  return { tick, spray, sightFireFinder, start, end }
+  return { tick, spray, sightFireFinder, sightMark, start, end }
 }

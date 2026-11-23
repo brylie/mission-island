@@ -16,6 +16,7 @@ import { moveTo, waterActors } from './island-render-pose'
 import { createCrewPresentation } from './crew-presentation'
 import { createIslandCamera } from './island-camera'
 import { useSceneFog } from './scene-fog'
+import { createBinocularView, type BinocularLook } from './binocular-view'
 import { createDevTools } from './dev-tools'
 import type { OverlayContext } from './debug-overlays/registry'
 import { createIslandAudio, type CrateImpactNotice } from './audio/island-audio'
@@ -79,7 +80,7 @@ function renderView(scene: Scene, review: ReturnType<typeof createShaderReview>,
   scene.render()
 }
 
-export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) {
+export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement, binoculars?: (drawn?: Vector3) => BinocularLook | undefined) {
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
   const scene = useSceneFog(new Scene(engine))
   const islandCamera = createIslandCamera(scene, canvas)
@@ -88,9 +89,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const pinned = (camera: Camera) => dev?.camera ?? camera
 
   const lighting = createIslandLighting(scene)
-  const { shadows } = lighting
-  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
-  const meshes = createMeshFactory(scene, shadows)
+  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, lighting.shadows)
+  const meshes = createMeshFactory(scene, lighting.shadows)
   const { juniper, forest, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, plants, garden, residents, ferry } = createIslandWorld(meshes, { liveParticles: true })
   const audio = createIslandAudio(window, plants)
   const showMaterialsWork = createMaterialsWorkView(meshes)
@@ -116,7 +116,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
   const truckStep = { x: 0, z: 0 }
   const aviation = createRidgeAviationView(meshes, crew)
   const showDeliveryRoute = createDeliveryWayfindingView(meshes)
-  const graphics = createGraphicsQuality(engine, lighting.sunlight, forest)
+  createGraphicsQuality(engine, lighting.sunlight, forest)
   const showFarmOrder = createFarmOrderView(meshes, crew.map((character) => character.root))
   const { farmTools, skiffGear, update: updateCrew } = createCrewPresentation(meshes, crew, boat, (...args) => aviation.pose(...args), (...args) => audio.footsteps(...args))
   const items = createItemNodes(meshes)
@@ -135,6 +135,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     return tag
   })
   const labels = createPlaceLabels(markers, residents.labels)
+  const binocularView = createBinocularView(meshes, markers)
   const locate = (element: HTMLElement, viewport: Viewport, x: number, y: number, z: number) => placeTag(scene, element, viewport, x, y, z)
 
   let last: Snapshot | undefined
@@ -261,7 +262,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     flatbed.setLights(truck.isEnabled() ? strength : 0, last?.truck.braking)
     learnerFleet.setLights(strength, last)
     flashlights(last, strength)
-    const light = atmosphere.update(field?.time ?? time, weather, camera.position, close)
+    const light = atmosphere.update(field?.time ?? time, weather, camera.position, close, { fogScale: binocularView.fogScale() })
     audio.frame({ listener: camera.position, forward: camera.getDirection(Vector3.Forward()), weather, weatherAt: frame.weatherAt, time: frame.time, delta, state: last, truckAt: truck.isEnabled() ? truck.position : undefined })
     updateEnvironment(frame, light, close, runoff, {
       driftwood: last?.driftwood,
@@ -275,7 +276,6 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const delta = Math.min(engine.getDeltaTime() / rendering.millisecondsPerSecond, rendering.maxFrameSeconds)
     const factor = 1 - Math.exp(-delta * rendering.worldPoseResponse)
     time += delta
-    graphics.frame(delta)
     if (last?.skiff) moveTo(boat, last.skiff, waterLevel, factor)
     poseFloating(boat, time, rendering.skiffBobPhase, rendering.skiffBobHeight)
     buoys.forEach((buoy, index) => void poseFloating(buoy, time, index * rendering.buoyPhaseStep))
@@ -294,13 +294,14 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) 
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
     const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta, ridgeCameraMode(last, local))
     const field = review?.view(time)
-    const camera = field?.camera ?? pinned(normalCamera)
+    const camera = binocularView.frame({ local, subject, review: field }, binoculars) ?? field?.camera ?? pinned(normalCamera)
     const close = Boolean(field || subject)
     drawEnvironment(delta, factor, { camera, close, field, livePlayer: !field && subject ? local : undefined })
     renderView(scene, review, dev, { islandTime: last?.islandTime ?? ambientTime, state: last }, time)
     const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
     labels.update(last, local, close, (element, x, y, z) => locate(element, viewport, x, y, z))
     updateCrewTags(close, viewport)
+    binocularView.show(last, local, (element, x, y, z) => locate(element, viewport, x, y, z))
     if (tip) locate(tip.element, viewport, tip.at.x, tip.at.y + rendering.targetLabelRise, tip.at.z)
   })
   const resize = new ResizeObserver(() => engine.resize())

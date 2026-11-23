@@ -17,7 +17,7 @@ export function wildfireCard(state: Pick<Snapshot, 'events'>) {
       value: 0,
       max: 1,
       text: 'Not yet found',
-      instruction: 'Climb the Fire Watch beside Fire Supplies and sight the fire finder, or search for the smoke column.',
+      instruction: 'Climb the Fire Watch beside Fire Supplies and sight the fire finder, or raise your binoculars with V and mark the flames under the smoke.',
     }
   }
   const reading = finderReading(fire)
@@ -38,7 +38,7 @@ export function wildfireCard(state: Pick<Snapshot, 'events'>) {
 
 function noticeLabel(notice: WildfireNotice, localId: number) {
   switch (notice.event) {
-    case 'smoke': return ['', 'Smoke reported · Climb the Fire Watch to find it']
+    case 'smoke': return ['', 'Smoke reported · Climb the Fire Watch or raise your binoculars to find it']
     case 'located': return ['', `Fire found at ${notice.place} · ${notice.degrees}° (${notice.direction}) from the Fire Watch`]
     case 'bearing': return notice.playerId === localId ? ['', `Fire finder · ${notice.place} · ${notice.degrees}° (${notice.direction}), about ${notice.metres} m`] : undefined
     case 'spread': return ['', `The fire spread at ${notice.place} · ${notice.burning} hotspots burning`]

@@ -20,6 +20,7 @@ import type { createOrders } from './orders.ts'
 import { plotInteractions } from './plot-interactions.ts'
 import { createResidents } from './residents.ts'
 import { createWildfire } from './wildfire.ts'
+import { createCrewMarks } from './crew-marks.ts'
 
 interface Options {
   notifyCrew: CrewBroadcast
@@ -44,6 +45,7 @@ export function createGameInteractions(
   }, checkpoint)
   const farm = createFarmOrders(state, notifyCrew, clock, checkpoint, metrics)
   const wildfire = createWildfire(state, notifyCrew, checkpoint)
+  const marks = createCrewMarks(state, clock, notifyCrew, wildfire.sightMark)
   const materials = createMaterialsWork(state, notifyCrew, () => residents.keep(wren, repairSupplyFavor))
   const ferry = createFerryRepair(state, physics, notifyCrew, freight.creditCrate)
   const cargo = cargoInteractions(state, physics, {
@@ -71,5 +73,6 @@ export function createGameInteractions(
     residents,
     farm,
     wildfire,
+    marks,
   }
 }

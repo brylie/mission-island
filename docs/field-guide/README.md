@@ -20,6 +20,7 @@ Different readers use it in different ways:
 | [Wildfire](processes/wildfire.md) | Process: how fire starts, spreads and is fought, why some land is burned on purpose, and how ground recovers |
 | [Bracken slopes](places/bracken-slopes.md) | Place: how one fern takes over a hillside, and what that means for people and wildlife |
 | [Wet woodland](places/wet-woodland.md) | Place: alder and willow carr, trees that live with their roots in water |
+| [Spotting and ranging](practices/spotting-and-ranging.md) | Practice: how binoculars, laser rangefinders and compass bearings work, and how fire lookouts report a smoke |
 | [Glossary](glossary.md) | Terms used in the guide, design docs and code, such as snag, root plate, whorl and phenology |
 
 Related design pages: [Starter Island biome plan](../design/starter-island-biomes.md), [Island climates and seasons](../design/climate-and-seasons.md), and the [Highwood species references](../highwood-species.md) for Workbench photo comparisons.

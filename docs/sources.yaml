@@ -24,14 +24,20 @@
   publisher: US Forest Service
   url: https://www.fs.usda.gov/t-d/pubs/html/03511311/03511311.html
   archived: https://web.archive.org/web/20261122210050/https://www.fs.usda.gov/t-d/pubs/html/03511311/03511311.html
-  accessed:
-  opened: false
+  accessed: 2026-11-23
+  opened: true
   tier: 1
   region: United States
-  note: Returned an error (403) to automated reading on 2026-11-22. Reported to describe a lookout estimating distance with the instrument's tape.
+  note: San Dimas Technology and Development Center tech tip 0351 1311-SDTDC, October 2003, by Joe Fleming and Rich G. Robertson. The routine quoted is a volunteer lookout's 1996 account that the note reprints. The live page returned 403 to automated reading on 2026-11-22 and 2026-11-23, so the quotes were read directly (not through a fetcher) from the archived copy.
   supports:
     - claim: A single lookout can estimate the distance to a smoke.
+      quote: "estimate the miles between the tower and the sight of the smoke using the metal tape on the Osborne Firefinder"
+      quote-match: unfetchable (2026-11-23)
       used-in: field-guide/processes/wildfire.md#fighting-a-fire
+    - claim: A lookout sights the base of the smoke with the fire finder and reads the horizontal angle in degrees and minutes, then the vertical angle.
+      quote: "Once the hair is properly aligned with the smoke you take the horizontal reading in degrees and minutes."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#how-its-organised
 
 - id: ny-dec-adirondack-fire-tower-study
   title: Fire Tower Study for the Adirondack Park
@@ -569,3 +575,461 @@
   supports:
     - claim: Granite weathers along its joints into rounded blocks and tors.
       used-in: design/island-story.md#1-an-old-block-of-granite-and-sandstone
+
+# Spotting and ranging: binoculars, laser rangefinders, compass bearings and fire lookouts. Added 2026-11-23.
+# Quotes marked quote-via: fetcher came through a summarising tool. Entries without it were read directly from the
+# page text (an archived copy where the live site refused automated reading), and say so in their note.
+
+- id: nikon-binocular-numbers
+  title: How to Read the Numbers on a Binocular
+  publisher: Nikon Inc. (Nikon Learn & Explore)
+  url: https://www.nikonusa.com/learn-and-explore/c/products-and-innovation/how-to-read-the-numbers-on-a-binocular
+  archived: https://web.archive.org/web/20261123062608/https://www.nikonusa.com/learn-and-explore/c/products-and-innovation/how-to-read-the-numbers-on-a-binocular
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 2
+  region: General
+  note: A manufacturer's explanation of its own product specifications.
+  supports:
+    - claim: In 8×42, 8 is the magnification.
+      quote: "In the case of an 8x42 binocular, the image is magnified eight times."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+    - claim: The second number is the diameter of each objective lens in millimetres.
+      quote: "The figure illustrates the horizontal diameter, in millimeters, of the two lenses farthest from the eyepiece."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+    - claim: Field of view is given in degrees or as a width at a set distance.
+      quote: "expressed as a width in feet at 1,000 yards or in degrees"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+    - claim: Higher magnification makes hand shake more noticeable.
+      quote: "higher levels of magnification are also more prone to the shakiness of your hands"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+
+- id: nikon-exit-pupil
+  title: Exit pupil (binoculars guide)
+  publisher: Nikon Corporation
+  url: https://imaging.nikon.com/sport-optics/guide/binoculars/basic/basic_05/
+  archived: https://web.archive.org/web/20261123062626/https://imaging.nikon.com/sport-optics/guide/binoculars/basic/basic_05/
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 2
+  region: General
+  supports:
+    - claim: The exit pupil is the bright disc seen in each eyepiece, and its width is the objective diameter divided by the magnification.
+      quote: "Exit pupil = The effective diameter of the objective lens"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+
+- id: nikon-field-of-view
+  title: Field of view (binoculars guide)
+  publisher: Nikon Corporation
+  url: https://imaging.nikon.com/sport-optics/guide/binoculars/basic/basic_08/
+  archived: https://web.archive.org/web/20261123062644/https://imaging.nikon.com/sport-optics/guide/binoculars/basic/basic_08/
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 2
+  region: General
+  supports:
+    - claim: The real field of view is the angle of scene seen without moving the binoculars.
+      quote: "Real field of view is the angle of the visible field, seen without moving the binoculars"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+    - claim: For an 8×42 with a 7.0° real field, the view is about 122 m wide at 1,000 m.
+      quote: "Field of view at 1,000m = 2 x 1000m tan (7.0"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+
+- id: nikon-prisms
+  title: Prisms of binoculars (binoculars guide)
+  publisher: Nikon Corporation
+  url: https://imaging.nikon.com/sport-optics/guide/binoculars/technologies/technologies_06/
+  archived: https://web.archive.org/web/20261123062703/https://imaging.nikon.com/sport-optics/guide/binoculars/technologies/technologies_06/
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 2
+  region: General
+  supports:
+    - claim: Prism binoculars use prisms to turn the objective's inverted image the right way up.
+      quote: "employ prisms in the optical system to rectify an inverted image projected by the objective"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+    - claim: Roof prisms keep a straight light path and a slim body.
+      quote: "Because the optical path of the roof prism binoculars is straight, a slim and compact body is realized."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+    - claim: Porro prisms bend the light path in a Z, making the binoculars larger.
+      quote: "However, the optical path is bent like the letter Z."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+
+- id: nikon-monarch-m5-8x42
+  title: MONARCH M5 8x42 binoculars, specifications
+  publisher: Nikon Inc.
+  url: https://www.nikonusa.com/p/monarch-m5-8x42/16767/overview
+  archived: https://web.archive.org/web/20261123062722/https://www.nikonusa.com/p/monarch-m5-8x42/16767/overview
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 2
+  region: General
+  note: A product specification table; the quotes are table values. Nikon's 2013 launch release gives 6.3° for the same model (not opened).
+  supports:
+    - claim: One 8×42 roof-prism binocular lists a real field of 6.4° (335 ft at 1,000 yards) and a 5.3 mm exit pupil.
+      quote: "6.4°"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+
+- id: celestron-atmosphere-blur
+  title: Why is the view through my high-power binoculars and spotting scope so blurry?
+  publisher: Celestron
+  url: https://www.celestron.com/blogs/knowledgebase/why-is-the-view-through-my-high-power-sport-optics-so-blurry
+  archived: https://web.archive.org/web/20261123062932/https://www.celestron.com/blogs/knowledgebase/why-is-the-view-through-my-high-power-sport-optics-so-blurry
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 2
+  region: General
+  note: About air turbulence (shimmer), not haze. The haze claim on the page stays unsourced.
+  supports:
+    - claim: Warm, moving air blurs distant views through binoculars, and more magnification makes it worse.
+      quote: "a weak lens that interferes with the light from a distant object"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#binoculars
+
+- id: rp-photonics-laser-rangefinders
+  title: Laser rangefinders (RP Photonics Encyclopedia)
+  publisher: RP Photonics
+  url: https://www.rp-photonics.com/laser_rangefinders.html
+  archived: https://web.archive.org/web/20251103074652/https://www.rp-photonics.com/laser_rangefinders.html
+  accessed: 2026-11-23
+  opened: true
+  tier: 3
+  region: General
+  note: Written by Rüdiger Paschotta. The live page returned 403 to WebFetch on 2026-11-23, so the quotes were read directly (not through a fetcher) from the archived copy of 2025-11-03 and then matched against the live page by the quote checker. The archived copy read "divided by the velocity of light"; the live page now reads "times", which is what is quoted.
+  supports:
+    - claim: A time-of-flight rangefinder times a laser pulse out and back, and the distance is half the round trip.
+      quote: "The distance can then simply be calculated as one half the measured round-trip time times the velocity of light"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: Many handheld rangefinders for moderate distances use the phase-shift method instead.
+      quote: "most handheld laser rangefinders for moderate object distances work based on the phase shift method"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: Leaves in the beam can give spurious echoes.
+      quote: "spurious signals from small objects flying through the air (e.g. leaves)"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+
+- id: wikipedia-laser-rangefinder
+  title: Laser rangefinder
+  publisher: Wikipedia
+  url: https://en.wikipedia.org/wiki/Laser_rangefinder
+  archived: https://web.archive.org/web/20261123063021/https://en.wikipedia.org/wiki/Laser_rangefinder
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 4
+  region: General
+  note: The article's calculation section cites no sources. Used only beside RP Photonics for D = ct/2; a physics textbook or agency source should replace it.
+  supports:
+    - claim: Distance is the speed of light times the round-trip time, divided by two.
+      quote: "t is the amount of time for the round-trip between A and B"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: Some of the beam can reflect off leaves or branches in front of the target.
+      quote: "Some of the laser light might reflect off leaves or branches which are closer than the object"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: Humidity, snow and dust scatter a rangefinder's signal.
+      quote: "Humidity, snow, dust, or other airborne particulates will diffuse the signal."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+
+- id: nasa-lunar-laser-ranging
+  title: Measuring the Moon's Distance
+  publisher: NASA Goddard Space Flight Center (reprinting LPI Bulletin No. 72, August 1994)
+  url: https://eclipse.gsfc.nasa.gov/help/ApolloLaser.html
+  archived: https://web.archive.org/web/20261123062855/https://eclipse.gsfc.nasa.gov/help/ApolloLaser.html
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: General
+  supports:
+    - claim: Laser pulses fired at reflectors on the Moon measure its distance by the round-trip travel time.
+      quote: "By beaming laser pulses at the reflector from Earth, scientists have been able to determine the round-trip travel time"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+
+- id: nasa-gedi-first-data
+  title: "Earth in the third dimension: first GEDI data available"
+  publisher: NASA Earthdata
+  url: https://www.earthdata.nasa.gov/news/feature-articles/earth-third-dimension-first-gedi-data-available
+  archived: https://web.archive.org/web/20261123062914/https://www.earthdata.nasa.gov/news/feature-articles/earth-third-dimension-first-gedi-data-available
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: General
+  supports:
+    - claim: A lidar pulse returns energy from plant material at different heights above the ground.
+      quote: "laser energy reflected by plant material"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+
+- id: nikon-forestry-pro-ii
+  title: Forestry Pro II laser rangefinder, specifications
+  publisher: Nikon Corporation
+  url: https://imaging.nikon.com/sport-optics/lineup/laser/forestryproii/
+  archived: https://web.archive.org/web/20261123062740/https://imaging.nikon.com/sport-optics/lineup/laser/forestryproii/
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 2
+  region: General
+  supports:
+    - claim: A handheld forestry rangefinder measures 7.5–1,600 m.
+      quote: "7.5-1,600m"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: It is accurate to about ±1 m beyond 1,000 m.
+      quote: "3.0 ft (1,000 m/1,000 yd./3,280 ft and over)"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: First Target Priority shows the closest subject; Distant Target Priority the farthest.
+      quote: "First Target Priority mode displays the distance of the closest subject"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: It reports horizontal distance, height and angle as well as actual distance.
+      quote: "In addition to actual distance, horizontal distance, height, angle and vertical separation"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: It is a Class 1M (IEC) laser product.
+      quote: "IEC60825-1: Class 1M/Laser Product"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+
+- id: nikon-laser-30
+  title: LASER 30 laser rangefinder, specifications
+  publisher: Nikon Corporation
+  url: https://imaging.nikon.com/sport-optics/lineup/laser/laser_30/
+  archived:
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 2
+  region: General
+  note: Save Page Now failed on 2026-11-23; see open questions.
+  supports:
+    - claim: A handheld rangefinder measures 7.3–1,460 m, to ±1.5 m beyond 1,000 m.
+      quote: "1.50m/yd. (1,000m/yd. and over)"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: Target, surface and weather can stop a rangefinder meeting its specification.
+      quote: "The specifications of the product may not be achieved depending on the target object's shape, surface texture and nature, and/or weather conditions."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: It is an FDA Class I laser product.
+      quote: "FDA/21 CFR Part 1040.10: Class I Laser Product"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+
+- id: vortex-rangefinder-modes
+  title: How laser rangefinder modes work
+  publisher: Vortex Optics
+  url: https://vortexoptics.com/blog/how-laser-rangefinder-modes-work.html
+  archived:
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 2
+  region: General
+  note: Save Page Now failed on 2026-11-23; see open questions.
+  supports:
+    - claim: A rangefinder can show line-of-sight distance or slope-compensated distance.
+      quote: "HCD Mode displays the slope angle compensated distance to the target."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: First mode shows the closest return.
+      quote: "First Mode displays the closest distance when ranging."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: Last mode shows the farthest return, for a target behind brush or trees.
+      quote: "Last Mode is ideal for ranging a specific target behind a group of objects like brush, trees, or rocks"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+    - claim: The default mode shows the strongest return.
+      quote: "provides the targets range with the strongest range result"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+
+- id: fda-laser-classes
+  title: Laser Products and Instruments
+  publisher: US Food and Drug Administration
+  url: https://www.fda.gov/radiation-emitting-products/home-business-and-entertainment-products/laser-products-and-instruments
+  archived:
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: United States
+  note: Save Page Now failed on 2026-11-23; see open questions.
+  supports:
+    - claim: Class I lasers are considered non-hazardous, but the hazard increases when viewed through binoculars or other optical aids.
+      quote: "Considered non-hazardous. Hazard increases if viewed with optical aids, including magnifiers, binoculars, or telescopes."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#laser-rangefinders
+
+- id: noaa-magnetic-declination
+  title: Magnetic declination
+  publisher: NOAA National Centers for Environmental Information
+  url: https://www.ncei.noaa.gov/products/magnetic-declination
+  archived: https://web.archive.org/web/20261123062805/https://www.ncei.noaa.gov/products/magnetic-declination
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: General
+  supports:
+    - claim: Declination is the angle between magnetic north and true north.
+      quote: "is the angle between magnetic north and true north"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#compass-bearings
+    - claim: Declination changes with time and place.
+      quote: "Magnetic declination changes over time, and with location."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#compass-bearings
+    - claim: A true bearing is the magnetic bearing plus the declination.
+      quote: "You can compute the true bearing from a magnetic bearing by adding the magnetic declination to the magnetic bearing."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#compass-bearings
+
+- id: os-three-norths
+  title: A tale of three norths
+  publisher: Ordnance Survey (OS Maps)
+  url: https://osmaps.com/discover/guides/a-tale-of-three-norths
+  archived:
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: Great Britain
+  note: Formerly at getoutside.ordnancesurvey.co.uk, which redirects here. Save Page Now failed on 2026-11-23; see open questions.
+  supports:
+    - claim: True north is the geographic North Pole, grid north is where the map grid points, and magnetic north is where a compass points.
+      quote: "The north to which your compass points."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#compass-bearings
+    - claim: The grid–magnetic angle printed on a map is correct only when it was printed, because magnetic north moves.
+      quote: "the GMA given for each map is correct only at the time of printing"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#compass-bearings
+
+- id: os-using-a-compass
+  title: A beginner's guide to using a compass
+  publisher: Ordnance Survey (OS Maps)
+  url: https://osmaps.com/discover/guides/beginners-guide-to-using-a-compass
+  archived: https://web.archive.org/web/20261123062832/https://osmaps.com/discover/guides/a-beginners-guide-to-using-a-compass/
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 1
+  region: Great Britain
+  note: By Jonathan Elder.
+  supports:
+    - claim: North is 0° or 360°, east 90°, south 180° and west 270°.
+      quote: "North is 0 or 360 degrees, east is 90 degrees, south is 180 degrees, and west is 270 degrees."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#compass-bearings
+
+- id: nwcg-firefighter-math-location
+  title: "Firefighter Math: 6.0 Location (6.2 Azimuths to 6.8 Intersection)"
+  publisher: National Wildfire Coordinating Group
+  url: https://nwcg.gov/book/export/html/32005
+  archived: https://web.archive.org/web/20260114193550/https://www.nwcg.gov/book/export/html/32005
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: United States
+  note: The printer-friendly export of the whole Location chapter. The live site returned 403 to automated reading on 2026-11-23, so the quotes were read directly (not through a fetcher) from the archived copy of 2026-01-14. Section 6.8 is also at https://www.nwcg.gov/course/ffm/location/68-intersection.
+  supports:
+    - claim: An azimuth is measured in degrees clockwise from north.
+      quote: "An azimuth is the direction measured in degrees clockwise from north on an azimuth circle."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#compass-bearings
+    - claim: Wildland fire services always read azimuths from north.
+      quote: "In wildland fire service, the azimuth is always read from the north point."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#compass-bearings
+    - claim: Wind direction is traditionally given as one of eight compass points.
+      quote: "Traditionally, wind direction is reported as one of eight compass point (N, NE, E, SE, S, SW, W, NW)."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#compass-bearings
+    - claim: A back azimuth is the bearing plus or minus 180°.
+      quote: "if an azimuth is 320°, the back azimuth would be 320° - 180° = 140°"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#compass-bearings
+    - claim: Lookouts adjust a compass reading for declination before plotting it.
+      quote: "Adjust for declination."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#compass-bearings
+    - claim: Crossing bearings from two or more points locates a fire where the lines cross; towers exchange azimuths by radio.
+      quote: "The object or fire is located where the individual lines cross."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#how-its-organised
+
+- id: nwcg-fire-lookout-position
+  title: Fire Lookout (AD position description)
+  publisher: National Wildfire Coordinating Group
+  url: https://www.nwcg.gov/committee/incident-business-committee/ad-positions/fire-lookout
+  archived: https://web.archive.org/web/20260112203323/https://www.nwcg.gov/committee/incident-business-committee/ad-positions/fire-lookout
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: United States
+  note: The live site returned 403 to automated reading on 2026-11-23, so the quotes were read directly (not through a fetcher) from the archived copy of 2026-01-12.
+  supports:
+    - claim: A fire lookout detects and reports fires from a lookout station.
+      quote: "Provides for the detection and reporting of fires from a lookout station."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#what-the-job-is
+    - claim: A lookout estimates the distance and size of a fire.
+      quote: "Estimates distance to and probable size and characteristics of fires."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#what-the-job-is
+    - claim: A lookout reports the smoke's azimuth, distance, location and appearance by radio or telephone.
+      quote: "Reports azimuth, distance, location, volume, color, behavior of smoke, and other pertinent information by radio or telephone."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#what-the-job-is
+    - claim: Lookouts also record weather observations.
+      quote: "Records and reports daily weather observations."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#how-its-organised
+
+- id: american-forests-haugen-lookout
+  title: Leif Haugen, Fire Lookout
+  publisher: American Forests
+  url: https://americanforests.org/article/leif-haugen-fire-lookout
+  archived: https://web.archive.org/web/20261123062958/https://www.americanforests.org/article/leif-haugen-fire-lookout/
+  accessed: 2026-11-23
+  opened: true
+  quote-via: fetcher
+  tier: 3
+  region: United States (Montana)
+  note: By Tom Persinger, 16 May 2013. A profile of one US Forest Service lookout.
+  supports:
+    - claim: During a fire a lookout works with a map, radio, binoculars and an Osborne fire finder.
+      quote: "riveted to a map, radio, binoculars and the incredibly accurate Osborne Fire Finder"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#what-the-job-is
+    - claim: A lookout reports a fire to dispatch by radio.
+      quote: "radioed dispatch with a report of a highly active fire"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/spotting-and-ranging.md#how-its-organised

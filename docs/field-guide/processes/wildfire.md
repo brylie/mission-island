@@ -1,6 +1,6 @@
 # Wildfire
 
-**Type: explanation (process). Real world: draft. On the island: playable**, see [Fire watch](../../mechanics/fire-watch.md). Last tended 2026-11-22. Model purpose: **illustrate** fire as a crew job, not predict spread. This page is behind the safety gate. It uses its own headings rather than the framework's process shape; see [open questions](../../open-questions.md).
+**Type: explanation (process). Real world: draft. On the island: playable**, see [Fire watch](../../mechanics/fire-watch.md). Last tended 2026-11-23. Model purpose: **illustrate** fire as a crew job, not predict spread. This page is behind the safety gate. It uses its own headings rather than the framework's process shape; see [open questions](../../open-questions.md).
 
 Wildfire is fire burning through vegetation outside anyone's control. On a cool, wet island it can seem unlikely, yet moorland and woodland fires are a familiar spring hazard in places like the Scottish Highlands. This page covers why fires start and spread, how people fight them, why land is sometimes burned on purpose, and how ground recovers. It then compares the island's fires with the real thing.
 
@@ -44,7 +44,7 @@ Crews work from the edges. The safest place to start is the *anchor point*: an e
 - **Water or backpack sprayers** for hotspots.
 - **Firebreaks.** Strips cleared of fuel.
 
-Fires are spotted by people watching from high ground, from towers or by aircraft. A lookout's fire finder, a sighting instrument over a map, gives the bearing (direction) from the tower to the smoke, and a lookout can estimate the distance roughly from the map and the terrain. The position is fixed precisely where bearings from two or more towers cross.
+Fires are spotted by people watching from high ground, from towers or by aircraft. A lookout's fire finder, a sighting instrument over a map, gives the bearing (direction) from the tower to the smoke, and a lookout can estimate the distance roughly from the map and the terrain. The position is fixed precisely where bearings from two or more towers cross. [Spotting and ranging](../practices/spotting-and-ranging.md) explains bearings, rangefinders and how a lookout reports a smoke.
 
 ## Burning on purpose: muirburn
 
@@ -73,7 +73,7 @@ A small, patchy fire can increase variety. A large, hot or repeated fire can str
 The island's fires are a crew job: spot the smoke, fix the position, bring the right equipment, put it out together. See [Fire watch](../../mechanics/fire-watch.md) for the rules.
 
 - **Where.** Fires start only in six dry, grassy places, in daylight, and only a while after the last rain. After more than 12 dry hours a fire comes sooner.
-- **Fire finder.** The crew finds a fire with the brass fire finder in the Fire Watch tower, which gives a place name, a bearing and a rough distance, or by smoke seen from high ground.
+- **Fire finder.** The crew finds a fire with the brass fire finder in the Fire Watch tower, which gives a place name, a bearing and a rough distance, by smoke seen from high ground, or by a crewmate marking the flames through the binoculars.
 - **When fires start.** A host schedule starts a fire about once an island week. Weather only decides when it may start (not within two hours of a shower) and can bring it forward after a dry spell.
 - **Pay and burnout.** A fire put out pays the crew by its size, less a coin for each hotspot that caught. One left alone burns itself out after 1.5 island days, with no pay.
 - **Notice this.** Watch the smoke column from the tower. It leans the way the fire will spread, and the island wind veers over a few days.
@@ -91,7 +91,7 @@ The island's fires are a crew job: spot the smoke, fix the position, bring the r
 | Recovery takes seasons to decades. | Scars recover over three dawns. | Players see the change within a play session. | How fast land really recovers. The game compresses time on purpose, as the [learning brief](../../design/learning-and-careers.md) allows, but should say so. |
 | Crown and peat fires exist. | Only surface fires on grass and scrub. | Out of scope for now. | That a fire is always out once the flames stop. |
 | Fires start from lightning or, far more often in Britain, people. Weather makes ignition and spread more or less likely. | A host schedule starts a fire about once an island week. Weather only gates and hastens the start. | Spaces fires out as crew jobs, rather than random disasters. | That a dry spell itself starts a fire. Something has to ignite it. |
-| One tower gives a bearing and a rough distance; crossing bearings from two or more towers fixes the position precisely. | One fire finder gives a place name, bearing and distance, with no cross-check. | One tower, and a quick answer for a new crew. | That one tower gives an exact location. |
+| One tower gives a bearing and a rough distance; crossing bearings from two or more towers fixes the position precisely. | One fire finder gives a place name, bearing and distance, and one binocular mark fixes a spot exactly, with no cross-check. | One tower, and a quick answer for a new crew. | That one tower gives an exact location. |
 | Fires burn until fuel, weather or crews stop them. Crews are organised services or volunteers, not paid per fire. | A fire burns out after 1.5 island days, and pay depends on its size. | A clear end state and a reward fit a crew job. | That firefighting is piecework. How real fire crews are organised is a gap to fill with a *practice* entry. |
 
 ## Sources
@@ -101,7 +101,7 @@ The island's fires are a crew job: spot the smoke, fix the position, bring the r
 - NatureScot, [Caledonian pinewood](https://www.nature.scot/landscapes-and-habitats/habitat-types/woodland-habitats/caledonian-pinewood), for pine and fire.
 
 - Scottish Fire and Rescue Service, [How to report wildfires](https://www.firescotland.gov.uk/outdoors/wildfires/how-to-report-wildfires/), for the safety advice.
-- Wikipedia, [Osborne Fire Finder](https://en.wikipedia.org/wiki/Osborne_Fire_Finder), tier 4, for how lookouts take bearings, estimate distance and cross bearings. Its primary sources, a US Forest Service account and a New York State fire tower study, couldn't be opened, so they're recorded as unopened in the register.
+- Wikipedia, [Osborne Fire Finder](https://en.wikipedia.org/wiki/Osborne_Fire_Finder), tier 4, for how lookouts take bearings, estimate distance and cross bearings. Its primary sources are a US Forest Service account and a New York State fire tower study. The Forest Service note (`usfs-osborne-firefinder`) was read from its archived copy on 2026-11-23 and supports a lookout estimating distance with the finder's tape. The New York study couldn't be opened and is recorded as unopened in the register. NWCG's intersection page (`nwcg-firefighter-math-location`, tier 1) supports crossing bearings, and could replace the Wikipedia source.
 
 **Unsourced, to add before this page leaves draft:**
 - a fire-behaviour source, such as a fire and rescue service's wildfire guidance, for the fire triangle, fuel, weather and topography, and fighting tactics;

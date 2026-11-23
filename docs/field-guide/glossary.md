@@ -4,15 +4,18 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 
 | Term | Meaning |
 | --- | --- |
+| **Azimuth, bearing** | A direction in degrees measured clockwise from north, from 0° to 360°: east is 90°, south 180°, west 270°. The game's bearings are measured from the island's single north. See [spotting and ranging](practices/spotting-and-ranging.md#compass-bearings). |
 | **Canopy** | The upper layer of a wood, formed by tree crowns. |
 | **Carr** | Wet woodland on waterlogged ground, usually alder or willow. |
 | **Catkin** | A slim, hanging cluster of tiny flowers, as on birch, alder and willow. Many catkins spread their pollen on the wind. |
 | **Clonal stand** | A group of stems that grew from one plant's roots, so they share the same genes, as in aspen. |
 | **Crown** | The branches and foliage of a tree above its trunk. In the code, a template's foliage mesh is its `crown`. |
 | **Crozier** | A young fern frond still curled like a shepherd's crook, also called a fiddlehead. |
+| **Declination** | The angle between magnetic north, where a compass points, and true north. It changes with place and over the years. The island has none. |
 | **Deadfall** | A fallen dead tree or limb lying on the ground. |
 | **Dioecious** | Having male and female flowers on separate plants, as in juniper, willow and aspen. |
 | **Duff, needle litter** | The layer of fallen needles, leaves and twigs on a forest floor, slowly rotting into soil. *Duff* often means the lower, partly rotted part. In the game, Highwood's ground shows needle litter under pine with the `pine-duff` texture. |
+| **Exit pupil** | The small bright disc seen in each eyepiece of binoculars held at arm's length. Its width is the objective diameter divided by the magnification: 5.25 mm for 8×42. |
 | **Exposure** | How much a site is open to the wind. The game has two levels, sheltered and exposed, and [#213](https://github.com/brylie/mission-island/issues/213) proposes a gradient. |
 | **Granny pine** | A Scottish name for a very old Scots pine, often broad-crowned with heavy limbs. |
 | **Heath** | Open ground of heather and other low shrubs on poor, acid soil. |
@@ -20,6 +23,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Lee, leeward** | The side sheltered from the wind. In the game, exposed forms stream toward +x, their lee side. |
 | **Lenticel** | A small breathing pore in bark, often seen as dark marks or dashes on birch and aspen. |
 | **Nitrogen fixation** | Turning nitrogen from the air into a form plants can use. Alder does it with the help of bacteria in its root nodules. |
+| **Objective lens** | The large front lens of binoculars or a telescope, which gathers the light. Its diameter in millimetres is the second number in a size such as 8×42. |
 | **Phenology** | The timing of seasonal events in nature, such as flowering, fruiting, leaf fall and bird migration. |
 | **Pinnate** | A leaf made of many leaflets on either side of a central stalk, as in rowan and bracken. |
 | **Pioneer species** | A plant that colonises open or disturbed ground first, such as birch. |
@@ -30,6 +34,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Snag** | A standing dead tree. |
 | **Sucker** | A shoot that grows up from a tree's roots, as in aspen. |
 | **Succession** | The gradual change in plants and animals at a place over time, for example open ground to birch, then pine. |
+| **Time of flight** | Measuring distance by timing light, or sound, out to a target and back. Distance is the speed times the time, halved. A laser rangefinder works this way. |
 | **Understory** | The plants growing beneath the canopy, from shrubs and young trees down to the ground layer. |
 | **Whorl** | Several branches or leaves growing from one point around a stem, as in a young Scots pine's tiers of branches. |
 | **Wind flagging** | A tree shape where branches grow mainly on the downwind side because wind damages shoots on the windward side. |

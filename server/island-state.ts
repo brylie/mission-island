@@ -69,6 +69,8 @@ export function restoreIsland(
     journal: restoreJournal(save),
     farmWork: restoreFarmWork(save?.world.produce),
     materialsWork: structuredClone(save?.world.materialsWork ?? initialMaterialsWork()),
+    // Marks belong to connected crewmates, so a restarted host starts with none.
+    marks: [],
   }
   updateStowedItems(state)
   // A carried hinge pin goes back to the mending bench when the host stops.
