@@ -55,7 +55,7 @@ The multiplayer host, which decides where players can walk, must not depend on g
 
 - **Far crowns vanished.** When the far merged meshes shared a foliage material with the near thin instances, with the scene fog plugin on, the far crowns disappeared once both tiers drew. The cause is still unknown. The far tier now uses its own copies of the tree materials, which works around it. See the [open question](../open-questions.md#questions-to-answer).
 - **Clones drop unregistered plugins.** Cloning a Babylon material keeps its GPU textures, but rebuilds its plugins by class name. A plugin not registered as `BABYLON.<className>` is silently dropped from the copy. The scene fog plugin is registered for this reason; see the [scene fog contract](../architecture.md#highwood-forest).
-- **Geometry kept twice.** Babylon's `Buffer` keeps the JavaScript array it is given (`@babylonjs/core` 9.37.1, `Buffers/buffer.pure.js` line 49). Geometry built as a plain `number[]` therefore stays in memory after upload at 8 bytes per number. The far merge builds `Float32Array`s, 4 bytes per number, and calls `clearCachedData()` on the geometry once it is uploaded.
+- **Geometry kept twice.** Babylon's `Buffer` keeps the JavaScript array it is given (`@babylonjs/core` 9.37.1, `Buffers/buffer.pure.js` line 49). Geometry built as a plain `number[]` therefore stays in memory after upload at 8 bytes per number. The far merge builds `Float32Array`s, 4 bytes per number. It keeps them rather than calling `clearCachedData()`, because Babylon rebuilds GPU buffers from them after a lost WebGL context.
 
 ## Measuring
 

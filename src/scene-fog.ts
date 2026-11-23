@@ -69,7 +69,7 @@ class SceneFog extends MaterialPluginBase {
 RegisterClass('BABYLON.SceneFog', SceneFog)
 
 // Gives every standard and PBR material made in the scene the shared fog, from now on.
-// A material that should not fog disables its plugin: material.pluginManager.getPlugin('Scene fog').isEnabled = false.
+// There is no per-material opt-out yet: every standard and PBR material fogs.
 export function useSceneFog(scene: Scene) {
   const attach = (material: Material) => {
     if ((material instanceof StandardMaterial || material instanceof PBRMaterial) && !material.pluginManager?.getPlugin(pluginName)) new SceneFog(material)

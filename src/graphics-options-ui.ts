@@ -27,8 +27,9 @@ export function bindGraphicsOptions(apply: (choice: GraphicsChoice) => void, sig
     // screen, so the softer picture isn't a mystery and a screen reader hears it.
     lowered: () => {
       status.textContent = optionsNote
+      // Never cover a connection or session message on the shared notice line; the note in Options remains.
       const notice = document.getElementById('notice')
-      if (!notice) return
+      if (!notice || !notice.hidden) return
       notice.textContent = hudNote
       notice.hidden = false
       setTimeout(() => {

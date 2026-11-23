@@ -83,7 +83,7 @@ function scaleSpread(layer: PlantingLayer) {
 
 // The heading that lays a log (along its template's +x) across the slope at a point,
 // or undefined where the ground along it rises or falls too far.
-function logHeading(point: Point, roll: number) {
+function logHeading(point: Point, roll: number, scale: number) {
   const dx = groundHeight({ x: point.x + slopeSpanM, z: point.z }) - groundHeight({ x: point.x - slopeSpanM, z: point.z })
   const dz = groundHeight({ x: point.x, z: point.z + slopeSpanM }) - groundHeight({ x: point.x, z: point.z - slopeSpanM })
   // Along the contour, either way; on flat ground any way.
@@ -93,7 +93,9 @@ function logHeading(point: Point, roll: number) {
   const direction = { x: Math.cos(along), z: -Math.sin(along) }
   // The log tilts to the ground at its far end; reject ground that bulges or dips away from that line.
   const root = groundHeight(point)
-  const { lengthM, samples, reliefM } = highwoodLogLie
+  // Check the whole length the scaled log will lie along.
+  const { samples, reliefM } = highwoodLogLie
+  const lengthM = highwoodLogLie.lengthM * scale
   const end = groundHeight({ x: point.x + direction.x * lengthM, z: point.z + direction.z * lengthM })
   for (let i = 1; i < samples; i++) {
     const share = i / samples
@@ -118,7 +120,8 @@ function plantLayer(layer: PlantingLayer, out: Planting[]) {
       if (rolls.cover >= Math.min(highwoodMaximumCover, stand.cover * clumpCover(layer, point)) || !stand.mix.length || !clearOfRoutes(point, layer, habitat)) continue
       const choice = stand.mix[Number(pick(() => rolls.species, Object.fromEntries(stand.mix.map((entry, index) => [index, entry.weight]))))]
       const exposed = highwoodExposure(point) > highwoodExposedAbove
-      const lying = choice.species === highwoodLogLie.species ? logHeading(point, rolls.heading) : undefined
+      const scale = 1 + (rolls.scale - half) * (scaleSpread(layer) + scaleSpread(layer))
+      const lying = choice.species === highwoodLogLie.species ? logHeading(point, rolls.heading, scale) : undefined
       if (choice.species === highwoodLogLie.species && lying === undefined) continue
       out.push({
         ...point,
@@ -128,7 +131,7 @@ function plantLayer(layer: PlantingLayer, out: Planting[]) {
         exposure: exposed ? 'exposed' : 'sheltered',
         variant: Math.floor(rolls.variant * highwoodTemplateVariants),
         heading: lying ?? (exposed ? downwind + (rolls.heading - half) * (highwoodLeanJitter + highwoodLeanJitter) : rolls.heading * fullTurn),
-        scale: 1 + (rolls.scale - half) * (scaleSpread(layer) + scaleSpread(layer)),
+        scale,
       })
     }
   }

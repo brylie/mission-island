@@ -46,7 +46,7 @@ function plantMatrix(plant: Planting) {
 interface FarGroup { parts: VertexData[], vertices: number, indices: number }
 
 // Bakes the far templates of a tile's trees into one mesh per material. Two passes
-// size typed arrays exactly, and the CPU copy is dropped once the GPU has the data.
+// size typed arrays exactly, at half the memory of plain number arrays.
 function mergeFar(meshes: MeshFactory, tile: Tile, template: (plant: Planting) => TreeTemplate, farMaterial: (material: Material) => Material) {
   const groups = new Map<Material, FarGroup>()
   for (const plant of tile.canopy) {
@@ -85,8 +85,8 @@ function mergeFar(meshes: MeshFactory, tile: Tile, template: (plant: Planting) =
     mesh.material = material
     mesh.isPickable = false
     mesh.receiveShadows = true
+    // The typed arrays stay with the geometry, so Babylon can rebuild the GPU buffers after a lost WebGL context.
     mesh.freezeWorldMatrix()
-    mesh.geometry?.clearCachedData()
     return mesh
   })
 }
@@ -172,9 +172,8 @@ export function createHighwoodForest(meshes: MeshFactory) {
       for (const part of parts) {
         part.setEnabled(Boolean(list?.length))
         if (!list?.length) continue
+        // Setting the matrices also refreshes the batch's bounds to cover every instance.
         part.thinInstanceSetBuffer('matrix', new Float32Array(list), matrixStride, true)
-        // Bounds must cover the instances, or the batch is culled as if it stood at the origin.
-        part.thinInstanceRefreshBoundingInfo(false)
       }
     }
   }
