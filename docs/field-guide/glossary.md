@@ -9,6 +9,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Canopy** | The upper layer of a wood, formed by tree crowns. |
 | **Carr** | Wet woodland on waterlogged ground, usually alder or willow. |
 | **Catkin** | A slim, hanging cluster of tiny flowers, as on birch, alder and willow. Many catkins spread their pollen on the wind. |
+| **Clitter** | A Dartmoor word for loose granite boulders strewn across a slope, usually below a tor. Many were prised off by frost in the Ice Age. See [granite uplands](places/granite-uplands.md#clitter-boulders-on-the-slopes). |
 | **Clonal stand** | A group of stems that grew from one plant's roots, so they share the same genes, as in aspen. |
 | **Crown** | The branches and foliage of a tree above its trunk. In the code, a template's foliage mesh is its `crown`. |
 | **Crozier** | A young fern frond still curled like a shepherd's crook, also called a fiddlehead. |
@@ -22,10 +23,13 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Ford** | A place where a road or path crosses a stream through the water, over a firm or stone-armoured bed, instead of on a bridge. See [forest roads](practices/forest-roads.md#fords). |
 | **Grade** | How steeply a road climbs, as rise per hundred metres: a 10% grade climbs 10 m in 100 m. See [forest roads](practices/forest-roads.md#grade). |
 | **Granny pine** | A Scottish name for a very old Scots pine, often broad-crowned with heavy limbs. |
+| **Grus, growan** | Coarse, gritty gravel of quartz and feldspar grains left where granite has weathered apart. *Growan* is the Dartmoor word. In the game, gentler granite ground is drawn as grus, with larger stones than real grus. |
 | **Heath** | Open ground of heather and other low shrubs on poor, acid soil. |
+| **Joint** | A crack in rock along which the rock has not slid. Granite usually has sets of joints crossing each other, and weathers into blocks along them. In the game, Highwood's bedrock shows a long set of joints and shorter cross joints. |
 | **Leader** | The main upward-growing shoot at the top of a tree. |
 | **Lee, leeward** | The side sheltered from the wind. In the game, exposed forms stream toward +x, their lee side. |
 | **Lenticel** | A small breathing pore in bark, often seen as dark marks or dashes on birch and aspen. |
+| **Lichen** | A partnership of a fungus with algae or bacteria that grows as a crust, leaf or tuft on rock, bark or soil. Many lichens need clean air. |
 | **Nitrogen fixation** | Turning nitrogen from the air into a form plants can use. Alder does it with the help of bacteria in its root nodules. |
 | **Objective lens** | The large front lens of binoculars or a telescope, which gathers the light. Its diameter in millimetres is the second number in a size such as 8×42. |
 | **Phenology** | The timing of seasonal events in nature, such as flowering, fruiting, leaf fall and bird migration. |
@@ -41,6 +45,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Succession** | The gradual change in plants and animals at a place over time, for example open ground to birch, then pine. |
 | **Switchback** | A hairpin turn where a road climbing across a steep slope turns back to climb across it the other way. See [forest roads](practices/forest-roads.md#grade). |
 | **Time of flight** | Measuring distance by timing light, or sound, out to a target and back. Distance is the speed times the time, halved. A laser rangefinder works this way. |
+| **Tor** | A tower or pile of solid rock blocks left standing on a hilltop, where joints were far apart and the rock around them wore away. |
 | **Understory** | The plants growing beneath the canopy, from shrubs and young trees down to the ground layer. |
 | **Whorl** | Several branches or leaves growing from one point around a stem, as in a young Scots pine's tiers of branches. |
 | **Wind flagging** | A tree shape where branches grow mainly on the downwind side because wind damages shoots on the windward side. |
