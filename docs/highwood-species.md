@@ -38,7 +38,7 @@ The [Workbench guide](workbench.md#compare-highwood-tree-species) describes the 
 - **Seeds.** Species salts come from a hash of the species id, so adding or reordering species never rerolls a placed tree. Seeds are whole numbers, and a pinned test catches accidental changes.
 - **Collision.** `treeCollision(options)` sizes a template from the same draws the mesh uses, without growing it or loading texture code. Trees, snags and logs are solid; shrubs and bracken are soft cover.
 - **Sway.** Vertex alpha holds a sway weight from 0 at the ground to 1 at the top, and each mesh is tagged as trunk or crown. Nothing drives motion yet; a sway shader should get its own tree material rather than change the shared ones.
-- **Placement.** Habitat rules for each species are in [Highwood habitats](field-guide/highwood-habitats.md). Exposed forms lean toward +x, so turn each instance to point downwind.
+- **Placement.** Habitat rules for each species are in [Highwood habitats](field-guide/highwood-habitats.md); the stand tables and how the forest is drawn are in [the backcountry forest notes](backcountry.md#forest). Exposed forms lean toward +x, so each placed plant turns to point downwind.
 
 **Triangle budgets** per template:
 

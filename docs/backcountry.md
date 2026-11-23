@@ -88,7 +88,7 @@ These apply at every phase, beyond the technical tests.
 | --- | --- |
 | 0 | Branch, baseline and hero-view captures at their nearest current equivalents. **Not done as planned:** no baseline captures were made before the land changed. In the Art Director's reviews, the hero views passed the silhouette test in 1 of 5 in round 1, and 2 passed, 2 partly passed and 1 failed in round 2. |
 | 1 | Design and bake the island: the generated height field, erosion, masks for the settled south, then the world bounds (camera, fog, map, ocean, physics). Review the bare land from the hero views first. |
-| 2 | Tree and shrub species, habitats from the baked moisture, slope and exposure layers, forest placement and groundcover. **In progress:** fog is shared by every material ([#219](https://github.com/brylie/mission-island/issues/219)), and the [habitat classifier](#habitats) is built. |
+| 2 | Tree and shrub species, habitats from the baked moisture, slope and exposure layers, forest placement and groundcover. **In progress:** fog is shared by every material ([#219](https://github.com/brylie/mission-island/issues/219)), the [habitat classifier](#habitats) is built, and [the forest](#forest) is planted, drawn and solid to walkers. Still to come: groundcover, trails and footsteps, and the low quality tier. |
 | 3 | The fire access road, its fallen logs (0.25–0.30 m, rounded, for the Fire and Rescue pickup) and the Alder Creek ford |
 | 4 | The Fire Watch on Cairn Summit, backcountry fire sites, hidden ground and sightlines, snag burn scars. Highwood's places are 222–520 m from the Fire Watch, against 26–102 m for today's fire sites, so a backcountry callout needs the fire road or a role on the way. See [open questions](open-questions.md#questions-to-answer). |
 | 5 | Docs, verification and a two-player playtest |
@@ -107,6 +107,15 @@ These apply at every phase, beyond the technical tests.
 
 The test (`test/highwood-habitat.test.mjs`) checks that pinewood covers the most ground, that every patch habitat appears, that Cairn's crown is ridge and that Birch Flats is birch. Today the dominant shares are about 43% pinewood, 12% birch, 10% bracken, 9% wet woodland, 6% edges, 4% heath, 2% ridge and 14% shore. Show the `highwood-habitat` [debug overlay](iteration-tooling.md) to see the mosaic on the ground. A sample costs about 11 µs, so placing a forest at load stays cheap.
 
+## Forest
+
+Highwood is planted in three layers from the [stand tables](../src/worlds/starter/layout/highwood-planting.ts): a canopy (one candidate per 5 m cell), an understory of shrubs, saplings and bracken (2.5 m) and deadwood (12 m). Each candidate rolls its habitat from the classifier's weights, then the habitat's cover, species and age. Plants keep off sand, steep ground and routes. Where wind exposure passes 0.5, trees and shrubs grow their exposed form and turn their lean downwind.
+
+`npm run island:generate` bakes the planting after the terrain (`scripts/plant-highwood.mjs`): 7,516 plants at 8 bytes each, 59 KB. The host and every screen decode it in about 6 ms instead of classifying for about 180 ms at load. A source-hash test catches a stale bake.
+
+- **Drawing.** `src/highwood-forest.ts`. Beyond 110 m, a tile's trees are merged far silhouettes, one mesh per 64 m tile and material. Within it they are detailed templates drawn as thin instances, one batch per template, rebuilt only when the set of near tiles changes; a 16 m dead band stops tiles flickering between tiers. Understory draws within 60 m.
+- **Walking.** `src/highwood-solids.ts` sizes trunks, snags and logs with the tree catalog's collision, from the same seeds as the drawn trees, and files them in a 4 m grid. A walking check reads the few cells around a walker, about 0.7 µs. Logs can be stepped onto; shrubs and bracken are soft. Trees add no physics bodies.
+
 ## Performance
 
 **Targets.** 60 fps on the development machine (an M1 Pro) in the tower, island and forest views, and 30 fps on older computers, such as a laptop with integrated graphics from about 2016, through a low quality tier. Players shouldn't notice the economies:
@@ -119,6 +128,18 @@ The test (`test/highwood-habitat.test.mjs`) checks that pinewood covers the most
 | Culling | Frustum culling per tile, and nothing past the fog's end. Babylon's occlusion queries answer a frame late and cost one query per mesh, so a ridge mask from known viewpoints comes first, and only if the numbers ask for it. |
 | Older computers | A quality tier thins the forest, pulls in the far-tree distance and drops shadows and grass, and is chosen automatically when frame time stays high. |
 | Guard rails | Draw calls, triangles and frame time per hero view, from `npm run capture`'s perf numbers. #198 tracks checking them in CI. |
+
+**With the forest** (development machine, headless capture, `npm run capture`):
+
+| View | Frame ms | Draw calls | Triangles |
+| --- | --- | --- | --- |
+| Cairn Summit, north at dawn | 4.1 | 584 | 636k |
+| Fire road, midday | 4.7 | 802 | 2.21M |
+| Birch Flats, evening | 4.0 | 639 | 661k |
+| Fallow Ridge, looking home | 7.3 | 1,429 | 2.19M |
+| Alder Creek ford | 4.3 | 708 | 1.43M |
+
+All hold 60 fps here. The fire road and ridge views reach 2.2 million triangles, mostly near-tier crowns and their shadows, so the low tier must cut the near distance and the understory before older computers can hold 30 fps.
 
 
 Baseline on main `7a838c0`, in the `fire-watch` playtest, read with `?dev=1&perf=1` in the game address (see [the dev view URL](iteration-tooling.md#the-dev-view-url)). Compare the frame time and the draw calls; the browser pane's FPS is throttled.
