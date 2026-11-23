@@ -3,7 +3,8 @@ import { FreeCamera } from '@babylonjs/core/Cameras/freeCamera'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { Scene } from '@babylonjs/core/scene'
-import { fireWatchRoofBounds } from './fire-watch'
+import { fireWatchRoofBounds, nearFireWatch } from './fire-watch'
+import { binocularEyeHeightM } from './spotting'
 import { coastBounds, fireWatchBaseHeight, groundHeight, waterLevel } from './terrain'
 import { buildings, houseRoofRise } from './world'
 import type { LookSettings } from './look-options-ui'
@@ -41,6 +42,14 @@ const skyBlue = 0.89
 export const lookYawSensitivity = 0.0034
 const lookMinimumPitch = -0.79
 const lookMaximumPitch = 0.92
+// Climbing the Fire Watch the view is the crewmate's own eyes: about 75° up to the sky and down to the
+// fire finder or the next step at their feet. The eye sits a little ahead of the face, so the head stays behind the view.
+const lookoutMinimumPitch = -1.3
+const lookoutMaximumPitch = 1.3
+const lookoutLensM = 0.3
+// The lookout view covers the whole climb, stairs and cab, once a crewmate stands this far above the ground.
+const towerClimbM = 0.25
+const climbingTower = (feet: Vector3) => nearFireWatch(feet, 0) && feet.y > groundHeight(feet) + towerClimbM
 export const lookPitchSensitivity = 0.0028
 const overviewFogStartReach = 2.3
 const overviewFogEndReach = 2.9
@@ -129,6 +138,20 @@ function frameOverview(camera: FreeCamera, aspect: number) {
 // Over-the-shoulder framing: the camera orbits a pivot just above and to the right of the head
 // and always looks through it, so the reticle sits over the shoulder rather than on the character.
 // Looking down tips the aim ray onto the ground just ahead. A vehicle keeps a lower, centred pivot.
+const clampPitch = (value: number, lookout: boolean) => lookout
+  ? Math.max(lookoutMinimumPitch, Math.min(lookoutMaximumPitch, value))
+  : Math.max(lookMinimumPitch, Math.min(lookMaximumPitch, value))
+
+// On the tower's stairs and under the cab's roof there is no room for a camera behind the crewmate,
+// so they look out with their own eyes.
+// Positive pitch looks down, as it does for the follow camera.
+function placeLookout(camera: FreeCamera, target: Vector3, feet: Vector3, heading: number, pitch: number) {
+  const ahead = new Vector3(Math.sin(heading) * Math.cos(pitch), -Math.sin(pitch), Math.cos(heading) * Math.cos(pitch))
+  camera.position.set(feet.x + ahead.x * lookoutLensM, feet.y + binocularEyeHeightM + ahead.y * lookoutLensM, feet.z + ahead.z * lookoutLensM)
+  target.copyFrom(camera.position).addInPlace(ahead.scale(aimDepth))
+  camera.setTarget(target)
+}
+
 function shoulderRig(vehicleBlend: number, pitch: number) {
   return { radius: followRadius + vehicleBlend * vehicleRadiusIncrease, elevation: followPitch - vehicleBlend * vehiclePitchDrop + pitch, shoulder: shoulderOffset * (1 - vehicleBlend), pivotHeight: vehiclePivotHeight + standingPivotLift * (1 - vehicleBlend) }
 }
@@ -157,6 +180,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
   let heading = 0
   let orbitYaw = 0
   let orbitPitch = 0
+  let lookout = false
   let pitch = 0
   let wasSeated = false
   let ridgeView: RidgeView | undefined
@@ -227,7 +251,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
     // Standard look turns right with the mouse and looks down as it moves down. The invert options flip
     // each axis. A gentler base rate than before; the Options slider scales it.
     orbitYaw += dx * lookYawSensitivity * look.speed * (look.invertHorizontal ? -1 : 1)
-    orbitPitch = Math.max(lookMinimumPitch, Math.min(lookMaximumPitch, orbitPitch + dy * lookPitchSensitivity * look.speed * (look.invertVertical ? -1 : 1)))
+    orbitPitch = clampPitch(orbitPitch + dy * lookPitchSensitivity * look.speed * (look.invertVertical ? -1 : 1), lookout)
   }, options)
 
   function aimHeading() {
@@ -266,20 +290,25 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
       vehicleBlend += (Number(seated) - vehicleBlend) * blend
       Vector3.LerpToRef(anchor, subject.position, blend, anchor)
 
-      const forwardX = Math.sin(heading)
-      const forwardZ = Math.cos(heading)
-      const { radius, elevation, shoulder, pivotHeight } = shoulderRig(vehicleBlend, pitch)
-      pivot.set(anchor.x + forwardZ * shoulder, anchor.y + pivotHeight, anchor.z - forwardX * shoulder)
-      desired.set(pivot.x - forwardX * radius * Math.cos(elevation), pivot.y + radius * Math.sin(elevation), pivot.z - forwardZ * radius * Math.cos(elevation))
-      const clear = terrainClearance(pivot, desired, visibleArm(pivot, desired))
-      arm = snap ? clear : Math.min(clear, arm + (clear - arm) * blend)
-      Vector3.LerpToRef(pivot, desired, arm, follow.position)
-      follow.position.y = Math.max(Math.max(groundHeight(follow.position), waterLevel) + followTerrainClearance, follow.position.y)
-      // Aim through the pivot from wherever the camera ended up, even when the ground lifted it.
-      pivot.subtractToRef(follow.position, target)
-      if (target.lengthSquared() < aimFallbackLengthSquared) target.set(forwardX, 0, forwardZ)
-      target.normalize().scaleInPlace(aimDepth + vehicleBlend * vehicleAimDepthIncrease).addInPlace(pivot)
-      follow.setTarget(target)
+      lookout = !seated && climbingTower(subject.position)
+      orbitPitch = clampPitch(orbitPitch, lookout)
+      if (lookout) placeLookout(follow, target, anchor, heading, pitch)
+      else {
+        const forwardX = Math.sin(heading)
+        const forwardZ = Math.cos(heading)
+        const { radius, elevation, shoulder, pivotHeight } = shoulderRig(vehicleBlend, pitch)
+        pivot.set(anchor.x + forwardZ * shoulder, anchor.y + pivotHeight, anchor.z - forwardX * shoulder)
+        desired.set(pivot.x - forwardX * radius * Math.cos(elevation), pivot.y + radius * Math.sin(elevation), pivot.z - forwardZ * radius * Math.cos(elevation))
+        const clear = terrainClearance(pivot, desired, visibleArm(pivot, desired))
+        arm = snap ? clear : Math.min(clear, arm + (clear - arm) * blend)
+        Vector3.LerpToRef(pivot, desired, arm, follow.position)
+        follow.position.y = Math.max(Math.max(groundHeight(follow.position), waterLevel) + followTerrainClearance, follow.position.y)
+        // Aim through the pivot from wherever the camera ended up, even when the ground lifted it.
+        pivot.subtractToRef(follow.position, target)
+        if (target.lengthSquared() < aimFallbackLengthSquared) target.set(forwardX, 0, forwardZ)
+        target.normalize().scaleInPlace(aimDepth + vehicleBlend * vehicleAimDepthIncrease).addInPlace(pivot)
+        follow.setTarget(target)
+      }
       if (!tracking) {
         tracking = true
         syncMouseLook()
@@ -306,6 +335,7 @@ export function createIslandCamera(scene: Scene, canvas: HTMLCanvasElement) {
     aimHeading: () => tracking ? aimHeading() : undefined,
     // The reticle's ray from the follow camera, cut short where it meets a building.
     aimRay: () => tracking && mouseLook ? reticleRay(follow.position, target) : undefined,
+    viewRay: () => tracking ? { origin: follow.position.clone(), direction: target.subtract(follow.position).normalize() } : undefined,
     captureMouse,
     releaseMouse,
     setLook(settings: LookSettings) { look = settings },
