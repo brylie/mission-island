@@ -6,6 +6,7 @@ import { groundHeight } from '../src/terrain.ts'
 import { clearOfRoutes, inSightline } from '../src/worlds/starter/highwood-clearings.ts'
 import { highwoodOutcropPlacement as placement } from '../src/worlds/starter/layout/highwood-outcrops.ts'
 import { highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
+import { starterRoads } from '../src/worlds/starter/layout/roads.ts'
 
 // Placement is live, so a rebake moves rocks; these bands catch a rule that empties or floods the hills.
 const outcropBand = [20, 150]
@@ -34,11 +35,13 @@ test('Highwood\'s granite carries outcrops, with clitter resting below them', ()
 
 test('granite rocks keep clear of routes, sight lines and Cairn\'s crown', () => {
   const crown = highwoodPlaces.cairnCrown
+  const pad = starterRoads.find((road) => road.id === 'summit-spur').points.at(-1)
   for (const rock of highwoodGraniteRocks()) {
     // Routes, and every graded road: fire road, summit spur, Pine Draw road and the Cairn ridge road.
     assert.ok(clearOfRoutes(rock, placement.routeClearanceM + rock.reach), `${where(rock)} crowds a route or road`)
     assert.ok(!inSightline(rock, rock.reach), `${where(rock)} stands in a sight line`)
-    assert.ok(Math.hypot(rock.x - crown.x, rock.z - crown.z) >= placement.keepFromCrownM + rock.reach, `${where(rock)} crowds the crown`)
+    assert.ok(Math.hypot(rock.x - crown.x, rock.z - crown.z) >= placement.keepClear.crownM + rock.reach, `${where(rock)} crowds the crown`)
+    assert.ok(Math.hypot(rock.x - pad.x, rock.z - pad.z) >= placement.keepClear.padM + rock.reach, `${where(rock)} crowds the summit pad`)
   }
 })
 

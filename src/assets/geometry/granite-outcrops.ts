@@ -28,7 +28,7 @@ export const graniteOutcropShape = {
   // half width, inward) the bevel round the top takes. Corners move up to `cornerJitter`
   // of their distance from the centre; the top tilts up to `tiltM` across.
   cornerCut: { outcrop: 0.15, clitter: 0.4 },
-  shoulder: { outcrop: 0.2, clitter: 0.35 },
+  shoulder: { outcrop: 0.3, clitter: 0.35 },
   cornerJitter: { outcrop: 0.12, clitter: 0.22 },
   tiltM: { outcrop: 0.18, clitter: 0.18 },
   // An outcrop stands this share of the way from the lowest to the highest ground under
@@ -41,7 +41,7 @@ export const graniteOutcropShape = {
 // (highwoodGranite.tint): weathered tops carry lichen, sides stay buff-grey.
 export const graniteOutcropFinish = {
   top: [0.95, 0.93, 0.78],
-  side: [1, 0.92, 0.78],
+  side: [0.92, 0.85, 0.72],
   // Each block's brightness varies up to this share either way.
   toneSpread: 0.07,
   // Crystals at the same size as the terrain's granite.

@@ -13,6 +13,7 @@ import { highwoodPlanting, plantTemplateOptions } from './worlds/starter/highwoo
 import { highwoodOutcropPlacement as placement } from './worlds/starter/layout/highwood-outcrops.ts'
 import { highwoodAuthoredLimit } from './worlds/starter/layout/highwood-planting.ts'
 import { highwoodGeneration, highwoodPlaces } from './worlds/starter/layout/island-generation.ts'
+import { starterRoads } from './worlds/starter/layout/roads.ts'
 
 // Highwood's granite outcrops and the clitter boulders below them, worked out once
 // from the terrain, so the host's walking solids and every screen's meshes agree.
@@ -53,6 +54,8 @@ const { granite } = starterShoreFinish
 // Joints, and so the long side of each block, follow Cairn Summit's granite core.
 const [cairnCore] = highwoodGeneration.uplift.cores
 const grain = Math.atan2(cairnCore.to.z - cairnCore.from.z, cairnCore.to.x - cairnCore.from.x)
+// The summit spur ends at the turning pad by Cairn Summit.
+const summitPad = starterRoads.find((road) => road.id === 'summit-spur')?.points.at(-1) ?? highwoodPlaces.cairnCrown
 const rectangleCorners = [[1, 1], [-1, 1], [-1, -1], [1, -1]] as const
 
 const ramp = (value: number, start: number, full: number) => Math.max(0, Math.min(1, (value - start) / (full - start)))
@@ -104,6 +107,14 @@ function onCrest(point: Point) {
   return true
 }
 
+const crownHeight = () => groundHeight(highwoodPlaces.cairnCrown)
+// On Cairn Summit's brow: near the crown and not far below it.
+function onBrow(point: Point) {
+  const { brow } = placement
+  const crown = highwoodPlaces.cairnCrown
+  return Math.hypot(point.x - crown.x, point.z - crown.z) < brow.reachM && groundHeight(point) > crownHeight() - brow.dropM
+}
+
 // Tree trunks and every metre along fallen logs, in a grid, so rocks don't stand on wood.
 const woodCellM = 8
 function woodGrid() {
@@ -128,7 +139,8 @@ function woodGrid() {
 
 function clearOf(point: Point, reach: number, wood: Map<string, Point[]>, placed: GraniteRock[]) {
   const crown = highwoodPlaces.cairnCrown
-  if (Math.hypot(point.x - crown.x, point.z - crown.z) < placement.keepFromCrownM + reach) return false
+  if (Math.hypot(point.x - crown.x, point.z - crown.z) < placement.keepClear.crownM + reach) return false
+  if (Math.hypot(point.x - summitPad.x, point.z - summitPad.z) < placement.keepClear.padM + reach) return false
   // Rocks stay out of the kept-open sight lines, as the canopy does, and off routes.
   if (inSightline(point, reach)) return false
   if (!clearOfRoutes(point, placement.routeClearanceM + reach)) return false
@@ -144,14 +156,15 @@ function clearOf(point: Point, reach: number, wood: Map<string, Point[]>, placed
 }
 
 // How a stack is built: crest tors follow the shape table; a steep face's crag uses its own
-// longer blocks, only a little smaller up the stack, each offset toward `slipToward`.
+// longer blocks, only a little smaller up the stack. `intoSlope` sets each upper slab back
+// into the hill (across the slab, toward its uphill side) rather than in a random direction.
 interface StackForm {
   widthM: readonly [number, number]
   lengthRatio: readonly [number, number]
   shrink: readonly [number, number]
   slip: readonly [number, number]
   twistRad: number
-  slipToward?: readonly number[]
+  intoSlope?: boolean
 }
 
 function slabStack(random: () => number, count: number, heading: number, form: StackForm) {
@@ -164,14 +177,21 @@ function slabStack(random: () => number, count: number, heading: number, form: S
     const height = between(random, outcrop.slabHeightM)
     slabs.push({ dx, dz, base, width, length, height, heading: heading + (random() - half) * (form.twistRad + form.twistRad) })
     base += height
-    const towards = form.slipToward
-    const slipAngle = towards ? towards[Math.floor(random() * towards.length)] : random() * Math.PI * square
-    const slip = between(random, form.slip) * width
-    dx += Math.cos(slipAngle) * slip
-    dz += Math.sin(slipAngle) * slip
     const shrink = between(random, form.shrink)
-    width *= shrink
-    length *= shrink
+    const nextWidth = width * shrink, nextLength = length * shrink
+    // The slip, in the slab's own frame: u along its length, v across it (+v is downhill
+    // on a steep face). The upper slab never overhangs the one below, except into the slope,
+    // where the rising ground meets it, so no block reads as a roofed box.
+    const slip = between(random, form.slip) * width
+    const angle = form.intoSlope ? Math.PI * (half + half + half) + (random() - half) : random() * Math.PI * square
+    const roomU = (length - nextLength) * half, roomV = (width - nextWidth) * half
+    const u = Math.max(-roomU, Math.min(roomU, Math.cos(angle) * slip))
+    const v = Math.max(form.intoSlope ? -Infinity : -roomV, Math.min(roomV, Math.sin(angle) * slip))
+    const turn = slabs[k].heading
+    dx += u * Math.cos(turn) - v * Math.sin(turn)
+    dz += u * Math.sin(turn) + v * Math.cos(turn)
+    width = nextWidth
+    length = nextLength
   }
   return slabs
 }
@@ -187,7 +207,7 @@ function outcropAt(point: Point, random: () => number, slabRange: readonly [numb
   const uphill = Math.atan2(fall.z, fall.x)
   const heading = crest ? grain : uphill + Math.PI * half
   const form: StackForm = steep
-    ? { ...placement.steep, slipToward: [heading, heading + Math.PI, uphill] }
+    ? { ...placement.steep, intoSlope: true }
     : { ...shape.outcrop, slip: [0, shape.outcrop.slip] }
   const slabs = slabStack(random, count, heading, form)
   const [foot] = slabs
@@ -196,7 +216,7 @@ function outcropAt(point: Point, random: () => number, slabRange: readonly [numb
   // Part way up the slope, but never so low that the uphill corner is buried.
   const ground = Math.max(low + (high - low) * shape.standShare, high - foot.height * (1 - shape.shoulder.outcrop))
   const stack = slabs.reduce((sum, slab) => sum + slab.height, 0)
-  if (ground - low > stack * placement.faceRatio) return undefined
+  if (ground - low > stack * (steep ? placement.steep.faceRatio : placement.faceRatio)) return undefined
   const top = ground + stack
   return { ...point, kind: 'outcrop', ground, slabs, reach: reachOf(slabs), top, tone: random() }
 }
@@ -236,10 +256,11 @@ function placeRocks() {
       const point = { x: x + (random() - half) * jitter * cellM, z: z + (random() - half) * jitter * cellM }
       const roll = random(), seed = random()
       const bedrock = bedrockAt(point)
-      const crest = bedrock < placement.bedrockFrom && onCrest(point)
+      const brow = onBrow(point)
+      const crest = brow || (bedrock < placement.bedrockFrom && onCrest(point))
       if ((bedrock < placement.bedrockFrom && !crest) || !onHighwood(point)) continue
       const grouping = ramp((fbm(point.x, point.z, placement.seed, cluster) / noiseRange + 1) * half, cluster.from, cluster.full)
-      const chance = crest ? placement.crest.chance : placement.outcropChance * ramp(bedrock, placement.bedrockFrom, placement.bedrockFull) * grouping
+      const chance = brow ? placement.brow.chance : crest ? placement.crest.chance : placement.outcropChance * ramp(bedrock, placement.bedrockFrom, placement.bedrockFull) * grouping
       if (roll >= chance) continue
       const own = seededRandom(Math.floor(seed * placement.streamSeeds))
       const crag = outcropAt(point, own, crest ? placement.crest.slabs : shape.outcrop.slabs, crest)
