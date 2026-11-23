@@ -111,9 +111,12 @@ The test (`test/highwood-habitat.test.mjs`) checks that pinewood covers the most
 
 Highwood is planted in three layers from the [stand tables](../src/worlds/starter/layout/highwood-planting.ts): a canopy (one candidate per 5 m cell), an understory of shrubs, saplings and bracken (2.5 m) and deadwood (12 m). Each candidate rolls its habitat from the classifier's weights, then the habitat's cover, species and age. Plants keep off sand, steep ground and routes. Where wind exposure passes 0.5, trees and shrubs grow their exposed form and turn their lean downwind.
 
+- **Clumps and glades.** Native pinewood grows in irregular clumps with open glades between, not in rows. Soft noise patches about 38 m across scale the canopy's cover by up to 85% either way, and 18 m patches do the same for the understory. Canopy trees vary in size by up to a quarter either way, and the pinewood mixes old, mature and young pines.
+- **Kept-open views.** Canopy and deadwood keep out of a widening corridor along the ridge-home and Cairn south-west sight lines, as gaps on a crest would, so players stopping there see what the capture presets show. A test keeps the corridors and the presets in step.
+
 `npm run island:generate` bakes the planting after the terrain (`scripts/plant-highwood.mjs`): 7,516 plants at 8 bytes each, 59 KB. The host and every screen decode it in about 6 ms instead of classifying for about 180 ms at load. A source-hash test catches a stale bake.
 
-- **Drawing.** `src/highwood-forest.ts`. Beyond 110 m, a tile's trees are merged far silhouettes, one mesh per 64 m tile and material. Within it they are detailed templates drawn as thin instances, one batch per template, rebuilt only when the set of near tiles changes; a 16 m dead band stops tiles flickering between tiers. Understory draws within 60 m.
+- **Drawing.** `src/highwood-forest.ts`. Beyond 110 m, a tile's trees are merged far silhouettes, one mesh per 64 m tile and material. Within it they are detailed templates drawn as thin instances, one batch per template, rebuilt only when the set of near tiles changes; a 16 m dead band stops tiles flickering between tiers. Understory draws within 60 m. Far silhouettes use their own copies of the tree materials: sharing a foliage material with the near thin instances made the far crowns vanish.
 - **Walking.** `src/highwood-solids.ts` sizes trunks, snags and logs with the tree catalog's collision, from the same seeds as the drawn trees, and files them in a 4 m grid. A walking check reads the few cells around a walker, about 0.7 µs. Logs can be stepped onto; shrubs and bracken are soft. Trees add no physics bodies.
 
 ## Performance
