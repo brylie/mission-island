@@ -1091,8 +1091,16 @@
       quote: "Common practice is to restrict fill slopes to 34"
       quote-match: exact (2026-11-23)
       used-in: field-guide/practices/forest-roads.md#cut-and-fill
-    - claim: A fill slope of about 34° is a rise-to-run ratio of 1:1.5, which is 1.5 horizontal to 1 vertical.
+    - claim: For common earth a fill slope should typically not exceed 33.6°, which the manual writes as a rise-to-run ratio of 1:1.5, that is 1.5 horizontal to 1 vertical.
+      quote: "Fill slope angle for common earth (a mixture of fragmented rock and soil) should typically not exceed 33.6"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+    - claim: The manual writes the 33.6° fill as a rise-to-run ratio of 1:1.5.
       quote: "which corresponds to a rise: run ratio of 1:1.5"
+      quote-match: exact (2026-11-23)
+      used-in: conventions.md#space
+    - claim: "The manual also writes the 34° fill as 1 : 1.5, calling it run over rise, so it gives the ratio in both orders."
+      quote: "This corresponds to a ratio of 1 : 1.5 (run over rise)"
       quote-match: exact (2026-11-23)
       used-in: conventions.md#space
     - claim: Fill slopes erode and slough more readily than cut slopes.
@@ -1117,6 +1125,14 @@
       used-in: field-guide/practices/forest-roads.md#what-goes-wrong
     - claim: Seepage at the toe of a fill can cause a slump failure.
       quote: "Rotational or Slump fill failure brought about by seepage at the toe of the fill"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+    - claim: Backward erosion of the toe leaves a face prone to slumping, which can end in complete fill failure.
+      quote: "will result in a vertical face or bank prone to slumping"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+    - claim: Published slope stability charts guide the design of cut and fill slopes by soil type.
+      quote: "slope stability charts for the design of cut and fill slopes"
       quote-match: exact (2026-11-23)
       used-in: field-guide/practices/forest-roads.md#what-goes-wrong
 
@@ -1175,7 +1191,11 @@
       quote: "Fords are a convenient way to provide waterway crossing in areas subject to flash floods"
       quote-match: exact (2026-11-23)
       used-in: field-guide/practices/forest-roads.md#fords
-    - claim: A ford's surface has to be hardened with concrete or large rock.
+    - claim: The manual's simple ford uses rock-filled gabions as a road bed through the channel.
+      quote: "a very simple ford construction where rock-filled gabions are used to provide a road bed through the stream channel"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#fords
+    - claim: For torrent-prone streams, a fill over a small culvert lets floods wash over, and its surface has to be hardened with concrete or large rock.
       quote: "The fill surface has to be hardened either by concrete or large rock"
       quote-match: exact (2026-11-23)
       used-in: field-guide/practices/forest-roads.md#fords
@@ -1195,6 +1215,10 @@
   region: International; the manual draws largely on research from the US Pacific Northwest
   note: Rome, 1998. Chapter 5 of the manual in fao-road-design-watersheds. Read directly with curl, not through a fetcher.
   supports:
+    - claim: Seeding alone may not stabilise disturbed slopes quickly; transplanting, fertilizing or mulching help.
+      quote: "merely seeding disturbed areas may not provide much relief"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#skills-and-kit
     - claim: Surface erosion on road fills is highest just after construction and falls quickly.
       quote: "surface erosion on severely disturbed soils such as road fills is highest immediately following disturbance and decreases rapidly over time"
       quote-match: exact (2026-11-23)
@@ -1247,6 +1271,10 @@
       quote: "Ditches and drains shall not lead directly into watercourses."
       quote-match: exact (2026-11-23)
       used-in: field-guide/practices/forest-roads.md#water
+    - claim: Grant-funded roads are only for reaching small, unmanaged woodlands under 50 ha.
+      quote: "only eligible for accessing small, unmanaged woodlands of less than 50 hectares in size"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
     - claim: The minimum specification is based on the Forestry Commission Standard Road Specification.
       quote: "is based on the Forestry Commission Standard Road Specification"
       quote-match: exact (2026-11-23)
@@ -1279,6 +1307,10 @@
   region: Scotland
   note: Published 7 October 2024. Read directly with curl. It gives no bell-mouth dimensions. Save Page Now returned an error (520) for this site on 2026-11-23. The newest existing snapshot, used as the archived link, is from 11 June 2024, before the current version was published, so it may differ from the quotes.
   supports:
+    - claim: Grant-funded bell-mouths are only for reaching small, unmanaged woodlands under 50 ha.
+      quote: "only eligible for accessing small, unmanaged woodlands of less than 50 hectares in size"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
     - claim: Road junctions should be at right angles where conditions permit.
       quote: "Road junctions should be right angles where conditions permit."
       quote-match: exact (2026-11-23)
@@ -1371,12 +1403,24 @@
       quote: "can remain as scars in the landscape for many years"
       quote-match: unfetchable (2026-11-23)
       used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+    - claim: The lower spill of a track should not exceed 1 in 2.
+      quote: "the gradient of the spill on the lower side should not exceed 1 in 2"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+    - claim: Tractor and forwarder tracks have a 5% cross fall.
+      quote: "with a cross fall of 5%"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#where-the-island-differs
+    - claim: An English forest road has a 3.2 m running width, wider on bends.
+      quote: "Running width 3.2m, wider on bends."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#where-the-island-differs
     - claim: Surfaced forest roads should be designed by a civil engineer.
       quote: "they should therefore be designed by a civil engineer"
       quote-match: unfetchable (2026-11-23)
       used-in: field-guide/practices/forest-roads.md#how-its-organised
-    - claim: The guidance was written to support woodland owners and managers in England.
-      quote: "to support woodland owners and managers in England"
+    - claim: The note aims to set minimum standards for building, repairing and maintaining woodland roads and tracks in England.
+      quote: "aims to define the minimum appropriate standards for their construction, repair and maintenance, in England"
       quote-match: unfetchable (2026-11-23)
       used-in: field-guide/practices/forest-roads.md#how-its-organised
     - claim: Routine maintenance should follow need, not a fixed schedule.

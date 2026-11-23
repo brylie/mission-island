@@ -12,7 +12,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Catkin** | A slim, hanging cluster of tiny flowers, as on birch, alder and willow. Many catkins spread their pollen on the wind. |
 | **Clonal stand** | A group of stems that grew from one plant's roots, so they share the same genes, as in aspen. |
 | **Crossfall** | The slope across a road, from one edge to the other, as a percentage. A crown, an outslope and an inslope are all kinds of crossfall. See [forest roads](practices/forest-roads.md#water). |
-| **Crown (road)** | The raised middle of a road, which falls to both sides so rain runs off. It is measured as a crossfall, a percentage. On the island the fire road's crown is 5 cm over each 2 m half, or 2.5%. See [forest roads](practices/forest-roads.md#water). |
+| **Crown (road)** | The raised middle of a road, which falls to both sides so rain runs off. It is measured as a crossfall, a percentage. On the island the fire road's crown rises 5 cm over each 2 m half in a curve: flat at the centre, 5% at the edge, averaging 2.5%. See [forest roads](practices/forest-roads.md#water). |
 | **Crown (tree)** | The branches and foliage of a tree above its trunk. In the code, a template's foliage mesh is its `crown`. |
 | **Crozier** | A young fern frond still curled like a shepherd's crook, also called a fiddlehead. |
 | **Culvert** | A pipe or channel that carries water under a road, from a ditch or a stream. See [forest roads](practices/forest-roads.md#water). |
