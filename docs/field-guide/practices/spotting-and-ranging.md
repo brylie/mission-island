@@ -140,4 +140,5 @@ All in the [sources register](../../sources.yaml). Quotes marked `quote-via: fet
 - that a bigger objective and a wider exit pupil give a brighter view in poor light, because the exit pupil fills more of a widened eye pupil;
 - that higher magnification narrows the field of view, and that bracing steadies binoculars;
 - that haze, smoke and rain scatter light and wash out a distant view;
-- how lookouts are trained and staffed.
+- how lookouts are trained and staffed;
+- **safety review pending:** never look at the sun through binoculars, and never aim a rangefinder at someone's eyes. This needs a current eye-health or laser-safety guideline from a recognised body and a human reviewer before it becomes a safety box.

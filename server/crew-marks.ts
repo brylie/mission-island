@@ -5,6 +5,9 @@ import type { Point } from '../src/world.ts'
 import type { CrewCommand } from './commands.ts'
 import type { CrewBroadcast, CrewMember } from './crew.ts'
 
+// The browser waits the full cooldown before sending; the host allows this much less, so network jitter never drops a mark.
+const networkLeewayMs = 250
+
 type MarkCommand = Extract<CrewCommand, { type: 'mark' | 'clear-mark' }>
 
 export function createCrewMarks(
@@ -27,7 +30,7 @@ export function createCrewMarks(
     if (!withinMarkReach(player, point)) return member.notify?.({ type: 'crew-mark', event: 'refused', reason: 'reach' })
     const now = clock()
     const last = lastMarkAt.get(player.id)
-    if (last !== undefined && now - last < markCooldownMs) return
+    if (last !== undefined && now - last < markCooldownMs - networkLeewayMs) return
     lastMarkAt.set(player.id, now)
     // The host sets the height from its own ground, so the beacon stands on the island wherever the click came from.
     const mark = { playerId: player.id, x: point.x, y: Math.max(walkingHeight(point), waterLevel), z: point.z }

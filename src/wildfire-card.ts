@@ -38,7 +38,7 @@ export function wildfireCard(state: Pick<Snapshot, 'events'>) {
 
 function noticeLabel(notice: WildfireNotice, localId: number) {
   switch (notice.event) {
-    case 'smoke': return ['', 'Smoke reported · Climb the Fire Watch to find it']
+    case 'smoke': return ['', 'Smoke reported · Climb the Fire Watch or raise your binoculars to find it']
     case 'located': return ['', `Fire found at ${notice.place} · ${notice.degrees}° (${notice.direction}) from the Fire Watch`]
     case 'bearing': return notice.playerId === localId ? ['', `Fire finder · ${notice.place} · ${notice.degrees}° (${notice.direction}), about ${notice.metres} m`] : undefined
     case 'spread': return ['', `The fire spread at ${notice.place} · ${notice.burning} hotspots burning`]

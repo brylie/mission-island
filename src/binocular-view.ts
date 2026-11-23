@@ -56,7 +56,7 @@ type ColumnLook = typeof look.core | typeof look.halo
 function createColumn({ scene }: MeshFactory, color: string, part: ColumnLook, additive: boolean) {
   const { height, rows, segments } = look
   const column = CreateCylinder('Crew mark column', { height, diameterBottom: part.diameterBottom, diameterTop: part.diameterTop, cap: 0, tessellation: segments, subdivisions: rows }, scene)
-  const tint = Color3.FromHexString(color)
+  const tint = Color3.FromHexString(color).scale(part.shade)
   const vertices = column.getVerticesData(VertexBuffer.PositionKind) ?? []
   const colors: number[] = []
   for (let i = 1; i < vertices.length; i += positionComponents) {

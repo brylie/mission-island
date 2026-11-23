@@ -589,6 +589,7 @@ kbd {
   white-space: nowrap;
 }
 .binoculars[data-ranged="false"] .binoculars-readout { color: #d3dccf; }
+.binoculars-status:empty { padding: 0; background: none; }
 .binoculars-status {
   position: absolute;
   left: 50%;

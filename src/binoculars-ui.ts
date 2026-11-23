@@ -122,7 +122,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     lastReading = -readoutIntervalMs
     readout.textContent = ''
     statusUntil = 0
-    status.hidden = true
+    status.textContent = ''
     overlay.hidden = false
     document.body.dataset.binoculars = 'raised'
     prepare()
@@ -150,10 +150,17 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
   }
 
   // Notices and refusals show under the readout while the binoculars are up, where the game's prompt is hidden.
+  // The status stays in the accessibility tree and is cleared before each line, so a screen reader announces every one.
   function say(text: string) {
+    status.textContent = ''
     status.textContent = text
     statusUntil = performance.now() + statusDurationMs
-    status.hidden = false
+  }
+
+  function clearMark() {
+    const current = crewmate()
+    if (current?.state.marks.some((each) => each.playerId === current.player.id)) send({ type: 'clear-mark' })
+    else say('No mark to clear')
   }
 
   // Ranges again at the click, so the mark is always where the reticle is now, not at the last readout.
@@ -187,7 +194,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
       view.yaw += yaw * step * (settings.invertHorizontal ? -1 : 1)
       view.pitch = clampPitch(view.pitch + pitch * step * (settings.invertVertical ? -1 : 1))
     }
-    if (now > statusUntil) status.hidden = true
+    if (now > statusUntil && status.textContent) status.textContent = ''
     if (now - lastReading >= readoutIntervalMs) {
       lastReading = now
       range(current.player, view)
@@ -220,7 +227,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     if (event.repeat) return
     if (event.code === 'KeyV' || event.code === 'Escape') lower()
     else if (event.code === 'Enter' || event.code === 'NumpadEnter') mark()
-    else if (event.code === 'KeyX') send({ type: 'clear-mark' })
+    else if (event.code === 'KeyX') clearMark()
   }, true)
   window.addEventListener('keyup', (event) => {
     sweeping = event.shiftKey
