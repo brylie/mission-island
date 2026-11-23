@@ -1,11 +1,14 @@
-import { corridorOverlay, habitatOverlay, protectedOverlay, slopeOverlay, solidsOverlay } from '../assets/recipes/debug-overlays.ts'
+import { corridorOverlay, habitatOverlay, highwoodHabitatOverlay, protectedOverlay, slopeOverlay, solidsOverlay } from '../assets/recipes/debug-overlays.ts'
 import { roadSurface } from '../assets/geometry/route-profiles.ts'
 import { barrierSolids, deckSolids } from '../ferry-repair.ts'
 import { juniperCenter, juniperLayout } from '../juniper-habitat.ts'
 import { footpaths, roads } from '../routes.ts'
-import { coastBounds, coastRadius, groundHeight } from '../terrain.ts'
+import { coastBounds, coastRadius, groundHeight, originalCoastRadius, waterLevel } from '../terrain.ts'
 import type { Point } from '../world.ts'
 import { starterSolids } from '../worlds/starter/colliders.ts'
+import { authoredShare } from '../worlds/starter/generation/protection.ts'
+import { dominantHabitat, highwoodHabitatAt } from '../worlds/starter/highwood-habitat.ts'
+import { highwoodHabitatIds } from '../worlds/starter/layout/highwood-habitats.ts'
 import { ridgeCourseLayout } from '../worlds/starter/layout/sites.ts'
 import { fieldLayer, type OverlayLayer, type OverlayPrimitive } from './registry.ts'
 
@@ -126,3 +129,17 @@ export const protectedLayer: OverlayLayer = {
     ]
   },
 }
+
+const highwoodLandMarginM = 0.2
+
+export const highwoodHabitatLayer = fieldLayer({
+  id: 'highwood-habitat',
+  label: 'Highwood habitats',
+  description: 'Dominant habitat on Highwood\'s generated ground: dark green pinewood, light green edges, purple heath, grey ridge, blue wet woodland, orange bracken, white birch, yellow shore.',
+  bounds: coastBounds(),
+  cellM: highwoodHabitatOverlay.cellM,
+  sample: (point) => groundHeight(point) > waterLevel + highwoodLandMarginM && authoredShare(point, originalCoastRadius(point)) < 1
+    ? highwoodHabitatIds.indexOf(dominantHabitat(highwoodHabitatAt(point)))
+    : undefined,
+  ramp: highwoodHabitatOverlay.ramp,
+})

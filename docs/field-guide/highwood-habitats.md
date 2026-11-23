@@ -1,6 +1,6 @@
 # Highwood habitats
 
-**Type: reference (place cards). Status: planned. Last tended 2026-11-22.** The Highwood isn't on the island yet. These cards describe the habitats the placement work will build.
+**Type: reference (place cards). Status: in progress. Last tended 2026-11-23.** Highwood's land is on the island, and the game now divides it into these habitats from its soil water, height, slope, rock and wind exposure ([how](../backcountry.md#habitats)). The plants that will grow in each are still to be placed.
 
 **New here?** Read the pinewood interior and the exposed ridge first: they're the Highwood's two extremes, and every other habitat sits between them. For processes that cross every habitat, see the explainers on [wildfire](processes/wildfire.md), [bracken slopes](places/bracken-slopes.md) and [wet woodland](places/wet-woodland.md).
 
