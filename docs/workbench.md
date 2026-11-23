@@ -21,6 +21,32 @@ Open **Construction → Site furnishings → Seabrook village bench**. Select **
 
 Changing a setting keeps your orbit and zoom while the subject stays about the same size, as with a new seed. When a setting makes the subject much larger or smaller than the view was framed for, such as another species or a wider comparison, the camera frames the new subject from the same angle. Several small steps in one direction count together. Select **Crew for scale** to stand the game's crew member beside the subject, and read the subject's width × depth × height in metres in the footer beside its triangle count. Landscape and on-island views leave both out. Use **Saved variations** to build a named, browser-local collection for a subject. Each variation restores its controls, viewport and clock. Use **Copy setup link** to share a specific model, context, parameter set, camera, lighting and paused time. Use a LAN address when sharing between computers. Landscape studies and biome recipes retain their specialized formats. The map’s **Save layout** and **Export JSON** manage additional placed objects. Scene drafts and setups run separately from multiplayer saves.
 
+## Design roads
+
+Open **World → Road designer** (`workbench.html#road-designer`) to lay out the island's graded roads. Each road runs through dots on the island map and finds its own height through the terrain: it cuts into rises and fills hollows only where its grade limit needs it. The [forest roads](field-guide/practices/forest-roads.md) entry explains the real-world practice behind it.
+
+**Draw a road.**
+- **New road** starts one: click two points on the map.
+- Click near either end of the selected road to extend it from that end.
+- Drag a dot to move it. Drag the small handle in the middle of a stretch to bend that stretch; there are no Bézier handles to manage.
+- Double-click a road to add a dot there. **Delete** removes the selected dot, and Cmd or Ctrl+Z undoes.
+- Drag empty ground to pan, and scroll to zoom.
+
+**Suggest route to next dot** fills in the dots between the selected dot and the next one along a route within the grade limit. It suggests a road a builder would make: straight where a straight road holds the grade, curving only along contours or in switchbacks. Treat it as a first draft, then drag and bend.
+
+**Read the road.**
+- The road is coloured by grade: green below 6%, yellow below 10%, orange up to the limit, red over it.
+- The long section under the map shows natural ground (green) and the road (dark), with cut in orange and fill in blue. Hover it to find that spot on the map.
+- Warnings name what a road builder would query and where: grade over the limit, a bend tighter than the pickup can turn, a crossing of open water, and cut or fill deeper than 4 m.
+- **Kind** sets the road's width and limits (fire road or track). **Stretch limit** overrides the grade limit for the stretch after the selected dot, as on the Cairn Summit spur.
+
+**Order matters.** Roads are graded in list order, each over the ground the earlier ones shaped. A road that branches from another must come after it, and its end dot should sit on a dot of that road, so the branch starts level with it.
+
+**Check it in 3D and save it.**
+- **Preview roads in 3D** in the inspector rebuilds the island with the draft's roads cut in. **Hide** folds the designer panel away so you can see the stage.
+- The draft is kept in this browser until you save. **Discard draft** goes back to the saved roads, and **Download** saves the layout as JSON.
+- **Save to source** writes the layout to [`src/worlds/starter/layout/roads.ts`](../src/worlds/starter/layout/roads.ts) and nothing else. It works only on the development server, from this computer. Then run `npm run island:plant`, because the Highwood planting keeps clear of roads, and commit both files.
+
 ## Procedural surfaces
 
 Open **Surfaces → Texture gallery** to compare 54 named materials across **Surface catalog** and **Gameplay surfaces**, or select a family in the Library. Use **Grazing light** to reveal relief, **Overcast** for diffuse light, and **Dusk** to see glow algae emit light. Meadow turf, Path gravel, and Weathered board also have an **On island** view. Both collections include contact sheets and reopenable setups. [Surface catalog](surface-catalog.md) · [Gameplay surfaces](gameplay-surfaces.md)

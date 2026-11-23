@@ -1033,3 +1033,37 @@
       quote: "radioed dispatch with a report of a highly active fire"
       quote-match: exact (2026-11-23)
       used-in: field-guide/practices/spotting-and-ranging.md#how-its-organised
+
+- id: usfs-low-volume-roads
+  title: "Low-Volume Roads Engineering: Best Management Practices Field Guide"
+  publisher: USDA Forest Service and USAID (Gordon Keller and James Sherar)
+  url: https://www.fs.usda.gov/t-d/programs/forest_mgmt/projects/lowvolroads
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: International (written for low-volume roads worldwide)
+  note: 2003. On 2026-11-23 the Forest Service pages and chapter PDFs returned 403 to automated reading, and the full PDF on waterboards.ca.gov was over the fetcher's 10 MB limit. A search summary reported 3–5% outsloped rolling dips 15–60 m long and a cross-drain spacing table that shortens with grade and soil erodibility; open the document and record quotes before relying on it.
+  supports:
+    - claim: Typical cut slopes stand steeper than fill slopes.
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+    - claim: Narrow roads are often outsloped at about 3–5% rather than crowned.
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Rolling dips and cross-drain culverts are spaced closer on steeper grades and more erodible soils.
+      used-in: field-guide/practices/forest-roads.md#water
+
+- id: nydec-unpaved-forest-roads
+  title: Standards for unpaved forest access roads
+  publisher: New York State Department of Environmental Conservation
+  url: https://extapps.dec.ny.gov/docs/lands_forests_pdf/sfunpavedroad.pdf
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: United States (New York)
+  note: The PDF timed out twice on 2026-11-23. A search summary reported a maximum sustained grade of 10%, a maximum pitch of 15%, a 14 ft roadbed and a 50 ft minimum curve radius; open it and record quotes before relying on them.
+  supports:
+    - claim: Unpaved forest access roads hold a sustained grade of about 10%, with short pitches to about 15%.
+      used-in: field-guide/practices/forest-roads.md#grade
+    - claim: A forest access road's curves keep a minimum radius of about 50 ft (15 m).
+      used-in: field-guide/practices/forest-roads.md#grade

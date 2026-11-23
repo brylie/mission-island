@@ -89,7 +89,7 @@ These apply at every phase, beyond the technical tests.
 | 0 | Branch, baseline and hero-view captures at their nearest current equivalents. **Not done as planned:** no baseline captures were made before the land changed. In the Art Director's reviews, the hero views passed the silhouette test in 1 of 5 in round 1, and 2 passed, 2 partly passed and 1 failed in round 2. |
 | 1 | Design and bake the island: the generated height field, erosion, masks for the settled south, then the world bounds (camera, fog, map, ocean, physics). Review the bare land from the hero views first. |
 | 2 | Tree and shrub species, habitats from the baked moisture, slope and exposure layers, forest placement and groundcover. **In progress:** fog is shared by every material ([#219](https://github.com/brylie/mission-island/issues/219)), the [habitat classifier](#habitats) is built, and [the forest](#forest) is planted, drawn and solid to walkers. Graphics detail (Automatic, High, Low) is in Options. Ground cover and litter footsteps are in. Footpaths and the fire road come with Phase 3. |
-| 3 | The fire access road, its fallen logs (0.25–0.30 m, rounded, for the Fire and Rescue pickup) and the Alder Creek ford |
+| 3 | The fire access road, its fallen logs (0.25–0.30 m, rounded, for the Fire and Rescue pickup) and the Alder Creek ford. **In progress:** the Workbench [road designer](workbench.md#design-roads) is built and [the fire road](#fire-road) is laid out, cut into the island and drivable. Still to come: fallen logs, a washout, the stone ford, a trailhead gate and sign, and tree colliders along the road. |
 | 4 | The Fire Watch on Cairn Summit, backcountry fire sites, hidden ground and sightlines, snag burn scars. Highwood's places are 222–520 m from the Fire Watch, against 26–102 m for today's fire sites, so a backcountry callout needs the fire road or a role on the way. See [open questions](open-questions.md#questions-to-answer). |
 | 5 | Docs, verification and a two-player playtest |
 
@@ -123,6 +123,23 @@ Highwood is planted in three layers from the [stand tables](../src/worlds/starte
 - **Wind and crowns.** `src/highwood-solids.ts` also files every canopy tree's crown in its grid. Wind shelter and crown rustle (`src/audio/wind-model.ts`) count Highwood's crowns as well as the authored island's trees, without scanning every tree, so the air hushes inside the pinewood. Pine crowns hush as needles; birch, aspen, rowan, alder and willow flutter as leaves.
 - **Walking.** `src/highwood-solids.ts` sizes trunks, snags and logs with the tree catalog's collision, from the same seeds as the drawn trees, and files them in a 4 m grid. A walking check reads the few cells around a walker, about 0.7 µs. Logs can be jumped onto, not stepped onto: a walker is stopped by any prop whose top stands more than 0.055 m above their feet (`propTopLeewayM` in `src/simulation/movement.ts`). Bare ground lets a walker step up 0.27 m, plus a little more for a longer stride, and a jump peaks at about 1.38 m. Shrubs and bracken are soft. Trees add no physics bodies.
 
+## Fire road
+
+Four graded roads, 1.5 km in all, give the Fire and Rescue crew vehicle access to Highwood. They were laid out with the [road designer](workbench.md#design-roads), starting from Suggest route, and live in [`roads.ts`](../src/worlds/starter/layout/roads.ts).
+
+| Road | Route | Length | Grade limit | Tightest bend |
+| --- | --- | --- | --- | --- |
+| Highwood fire road | From the harbor road beside the Fire Watch's lookout trail, straight up the valley west of Cairn to the Alder Creek valley | 434 m | 12% | 13 m |
+| Cairn Summit spur | Leaves the fire road in the valley and climbs round Cairn's shoulders on its contours to a pad about 31 m up, north of the crown | 430 m | 15% | 8.7 m |
+| Pine Draw road | From the end of the fire road across Alder Creek's valley to Pine Draw | 244 m | 12% | 8.3 m |
+| Fallow Ridge road | From Pine Draw back over Fallow Ridge's east side to the fire road, closing the loop | 359 m | 12% | 8.9 m |
+
+- **Shape.** The roads run straight where a straight road holds the grade, and curve only along contours and in switchbacks ([decision](design/decisions.md)). Cuts and fills stay under 3 m.
+- **The summit.** Cairn's top 10 m is too steep for a road, so the spur ends at a pad below the crown and the last climb is on foot.
+- **Vehicles.** The flatbed, pickup and tractor each climb the spur's steepest straight stretch on full throttle and stay on the 4 m road ([`test/game-fire-road.test.mjs`](../test/game-fire-road.test.mjs)).
+- **Surface.** Packed earth with two darker wheel ruts, distinct from the pale gravel of footpaths.
+- **Known gaps.** There is no drainage at the road's low points yet, and the crossing of Alder Creek's bed is plain ground until the stone ford is built.
+
 ## Performance
 
 **Targets.** 60 fps on the development machine (an M1 Pro) in the tower, island and forest views, and 30 fps on older computers, such as a laptop with integrated graphics from about 2016, through a low quality tier. Players shouldn't notice the economies:
@@ -141,10 +158,10 @@ Highwood is planted in three layers from the [stand tables](../src/worlds/starte
 | View | Frame ms | Draw calls | Triangles |
 | --- | --- | --- | --- |
 | Cairn Summit, north at dawn | 5.2 | 796 | 1.79M |
-| Fire road, midday | 5.0 | 777 | 1.78M |
+| Fire road, midday (on the road since Phase 3) | 4.6 | 751 | 1.62M |
 | Birch Flats, evening | 4.3 | 627 | 0.68M |
 | Fallow Ridge, looking home | 7.6 | 1,401 | 2.40M |
-| Alder Creek ford | 4.6 | 696 | 1.57M |
+| Alder Creek ford (roads in, Phase 3) | 4.3 | 688 | 1.41M |
 | Cairn from the south-west | 4.9 | 734 | 1.39M |
 
 All hold 60 fps here. Most views draw 1.4–2.4 million triangles, mostly near-tier crowns, their shadows, the always-detailed crest trees and close understory, so older computers rely on the Low tier. Its savings are not yet measured on an older computer; that belongs to the two-player playtest.

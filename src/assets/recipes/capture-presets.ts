@@ -93,8 +93,9 @@ export const capturePresets = {
   'highwood-fire-road': {
     label: 'Into the Highwood forest at midday',
     kind: 'landscape',
-    eye: { x: -128, z: 252, height: 1.7 },
-    look: { x: -160, z: 290, height: 4 },
+    // On the fire road in the valley west of Cairn, looking up it toward Alder Creek.
+    eye: { x: -196, z: 217, height: 1.7 },
+    look: { x: -244, z: 279, height: 4 },
     fov: 0.8,
     hour: 12,
     weather: 'clear',
