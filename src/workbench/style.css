@@ -469,6 +469,10 @@ body.dev-capture #viewport > :not(#stage) {
   font-size: 13px;
 }
 .road-designer h2 { margin: 0; font-size: 15px; }
+.road-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.road-header .road-summary { flex-basis: 100%; }
+.road-collapse { margin-left: auto; }
+.road-collapsed .road-body { display: none; }
 .road-summary, .road-help, .road-status { margin: 4px 0 8px; color: #c7d4cc; }
 .road-help { font-size: 12px; }
 .road-toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }

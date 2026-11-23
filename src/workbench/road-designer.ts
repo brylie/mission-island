@@ -47,6 +47,13 @@ function buildPanel() {
   // A reloaded module (during development) replaces the panel rather than stacking another.
   for (const stale of document.querySelectorAll('.road-designer')) stale.remove()
   host.append(root)
+  // Hiding the panel leaves its header, so the 3D preview behind it can be seen.
+  const collapse = element<HTMLButtonElement>(root, '.road-collapse')
+  collapse.addEventListener('click', () => {
+    const open = root.classList.toggle('road-collapsed') === false
+    collapse.setAttribute('aria-expanded', String(open))
+    collapse.textContent = open ? 'Hide' : 'Show'
+  })
   const base = element<HTMLCanvasElement>(root, '.road-map-base'), overlay = element<HTMLCanvasElement>(root, '.road-map-overlay')
   const chart = element<HTMLCanvasElement>(root, '.road-section')
   chart.width = look.chart.width

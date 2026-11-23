@@ -12,7 +12,7 @@ import { createResidentFigures } from './resident-scene'
 import type { ResidentWorld } from './residents/definition'
 import { residentAt } from './residents/schedule'
 import { starterResidents } from './worlds/starter/residents'
-import { createRoad, createSidewalk, createTrail } from './assets/routes'
+import { createDirtRoad, createRoad, createSidewalk, createTrail } from './assets/routes'
 import { playerColors } from './assets/crew'
 import { clothingCounter } from './farm'
 import { createBiomeScenery } from './biome-scenery'
@@ -63,7 +63,7 @@ const rainPavingWetness = 0.74
 
 // Graded roads drape on the ground they cut and fill.
 function createGradedRoads(meshes: MeshFactory) {
-  for (const { layout, profile } of gradedRoads()) createTrail(meshes, layout.name, profile, roadKinds[layout.kind].width, 'gravel', groundHeight)
+  for (const { layout, profile } of gradedRoads()) createDirtRoad(meshes, layout.name, profile, roadKinds[layout.kind].width, groundHeight)
 }
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {

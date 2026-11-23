@@ -1,11 +1,14 @@
-// The road designer panel's markup. Classes, not ids, so the panel stands alone.
+// The road designer panel's markup. Classes, not ids, so the panel stands alone; the
+// few ids name what labels and buttons point at, and only one panel exists at a time.
 export function roadDesignerMarkup(kinds: readonly string[]) {
   const kindOptions = kinds.map((kind) => `<option value="${kind}">${kind.replace('-', ' ')}</option>`).join('')
   return `
     <header class="road-header">
       <h2 id="road-designer-title">Road designer</h2>
+      <button type="button" class="road-collapse" aria-expanded="true" aria-controls="road-designer-body">Hide</button>
       <p class="road-summary" aria-live="polite"></p>
     </header>
+    <div class="road-body" id="road-designer-body">
     <div class="road-toolbar">
       <label>Road <select class="road-select" data-needs-road></select></label>
       <button type="button" class="road-new">New road</button>
@@ -36,6 +39,7 @@ export function roadDesignerMarkup(kinds: readonly string[]) {
       <button type="button" class="road-save">Save to source</button>
       <button type="button" class="road-download">Download</button>
       <button type="button" class="road-discard">Discard draft</button>
+    </div>
     </div>
     <p class="road-status" role="status"></p>`
 }
