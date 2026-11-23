@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import type { Plugin } from 'vite'
 import { roadKinds } from '../src/assets/geometry/route-profiles.ts'
 import type { StarterRoadLayout } from '../src/worlds/starter/layout/roads.ts'
+import { roadSavePath, workbenchSaveHeader } from '../src/workbench-save-contract.ts'
 
 // Lets the Workbench road designer save straight into the source tree while the
 // dev server runs. It writes exactly one file, the road layout, and only for a
@@ -11,8 +12,6 @@ import type { StarterRoadLayout } from '../src/worlds/starter/layout/roads.ts'
 // forces a browser preflight the server never grants, so no web page can post
 // here, and the loopback check keeps other computers on the LAN out.
 
-export const roadSavePath = '/__workbench/roads'
-export const workbenchSaveHeader = 'x-mission-island-workbench'
 const roadsFile = 'src/worlds/starter/layout/roads.ts'
 const maxBodyBytes = 262_144
 const maxRoads = 32
