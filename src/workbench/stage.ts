@@ -1,4 +1,5 @@
 import { createDevTools } from '../dev-tools'
+import { useSceneFog } from '../scene-fog'
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera'
 import type { Engine } from '@babylonjs/core/Engines/engine'
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color'
@@ -128,7 +129,7 @@ function renderWithDev(scene: Scene, dev: ReturnType<typeof createDevTools>, isl
 }
 
 export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values, reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>, field?: FieldSite, showFigure = false) {
-  const scene = new Scene(engine)
+  const scene = useSceneFog(new Scene(engine))
   const dev = createDevTools(scene, canvas)
   const biome = entry.id === 'biome'
   try {

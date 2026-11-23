@@ -14,6 +14,7 @@ import { createWildfireView } from './wildfire-view'
 import { moveTo, waterActors } from './island-render-pose'
 import { createCrewPresentation } from './crew-presentation'
 import { createIslandCamera } from './island-camera'
+import { useSceneFog } from './scene-fog'
 import { createDevTools } from './dev-tools'
 import type { OverlayContext } from './debug-overlays/registry'
 import { createIslandAudio, type CrateImpactNotice } from './audio/island-audio'
@@ -79,7 +80,7 @@ function renderView(scene: Scene, review: ReturnType<typeof createShaderReview>,
 
 export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement) {
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
-  const scene = new Scene(engine)
+  const scene = useSceneFog(new Scene(engine))
   const islandCamera = createIslandCamera(scene, canvas)
   const review = createShaderReview(scene, canvas, engine, islandCamera.releaseMouse)
   const dev = createDevTools(scene, canvas)
