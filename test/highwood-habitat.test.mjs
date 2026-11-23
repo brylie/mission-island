@@ -1,13 +1,24 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
+import { URL } from 'node:url'
+import { treeSpecies } from '../src/assets/trees/tree-catalog.ts'
 import { groundHeight, originalCoastRadius, waterLevel } from '../src/terrain.ts'
 import { authoredShare } from '../src/worlds/starter/generation/protection.ts'
+import { highwoodPlants } from '../src/assets/geometry/highwood-plants.ts'
+import { plantingSources } from '../src/worlds/starter/generation/bake-sources.ts'
+import { plantHighwood } from '../src/worlds/starter/generation/plant-highwood.ts'
 import { dominantHabitat, highwoodHabitatAt } from '../src/worlds/starter/highwood-habitat.ts'
+import { highwoodPlanting } from '../src/worlds/starter/highwood-planting.ts'
 import { highwoodHabitatIds } from '../src/worlds/starter/layout/highwood-habitats.ts'
 import { highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
 
 const sampleStepM = 8
 const landMarginM = 0.2
+const positionToleranceM = 0.02
+const minimumCanopy = 1000
+const half = 2
 
 function highwoodShares() {
   const counts = Object.fromEntries(highwoodHabitatIds.map((id) => [id, 0]))
@@ -40,4 +51,27 @@ test('Highwood reads as a pinewood mosaic with its named stands in place', () =>
   for (const id of ['wet', 'birch', 'bracken', 'edge', 'heath']) assert.ok(shares[id] > 0.02, `${id} covers only ${shares[id].toFixed(3)}`)
   assert.equal(dominantHabitat(highwoodHabitatAt(highwoodPlaces.cairnCrown)), 'ridge')
   assert.equal(dominantHabitat(highwoodHabitatAt(highwoodPlaces.birchFlats)), 'birch')
+})
+
+test('the baked planting is up to date and decodes to the placer\'s plants', () => {
+  const hash = createHash('sha256')
+  for (const path of plantingSources) hash.update(path).update(readFileSync(new URL(`../${path}`, import.meta.url)))
+  assert.equal(highwoodPlants.sourceHash, hash.digest('hex'), 'run npm run island:generate and commit the new bake')
+  const placed = plantHighwood()
+  const baked = highwoodPlanting()
+  assert.equal(baked.length, placed.length)
+  for (let i = 0; i < placed.length; i += 37) {
+    const [a, b] = [placed[i], baked[i]]
+    assert.deepEqual([b.layer, b.species, b.age, b.exposure, b.variant], [a.layer, a.species, a.age, a.exposure, a.variant])
+    assert.ok(Math.hypot(a.x - b.x, a.z - b.z) < positionToleranceM, `plant ${i} moved in the bake`)
+  }
+})
+
+test('Highwood plants keep to land, come from the catalog and are mostly pine', () => {
+  const plants = highwoodPlanting()
+  assert.ok(plants.every((plant) => groundHeight(plant) > waterLevel))
+  assert.ok(plants.every((plant) => plant.species in treeSpecies), 'every planted species is in the tree catalog')
+  const canopy = plants.filter((plant) => plant.layer === 'canopy')
+  assert.ok(canopy.length > minimumCanopy, `only ${canopy.length} canopy trees`)
+  assert.ok(canopy.filter((plant) => plant.species === 'scots-pine').length > canopy.length / half, 'Scots pine should be most of the canopy')
 })

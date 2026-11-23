@@ -45,3 +45,17 @@ export const heightmapEncoding = {
   reachLimitM: 950,
   reachUnitM: 0.1,
 } as const
+
+// How the baked Highwood planting is encoded: per plant, x and z as u16 steps from
+// the grid's corner, a species index, then layer, age, exposure and variant bits,
+// a heading in 256ths of a turn and a scale step about 1.
+export const plantingEncoding = {
+  positionStepM: 0.02,
+  bytesPerPlant: 8,
+  turnSteps: 256,
+  scaleCentre: 128,
+  scaleStep: 0.002,
+  layerBits: 2,
+  ageBits: 2,
+  exposureBits: 1,
+} as const
