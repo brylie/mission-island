@@ -1,12 +1,13 @@
 import { plantingLayers, type Planting, type PlantingLayer } from '../highwood-planting.ts'
 import { distanceToRoute, footpaths, roads, walkways } from '../../../routes.ts'
+import { fbm } from '../../../math/gradient-noise.ts'
 import { seededRandom } from '../../../seeded-random.ts'
 import { groundHeight, originalCoastRadius, waterLevel } from '../../../terrain.ts'
 import type { Point } from '../../../world.ts'
 import { authoredShare } from './protection.ts'
 import { highwoodExposure, highwoodHabitatAt, type HighwoodHabitat } from '../highwood-habitat.ts'
 import { bakedSurface } from '../highwood-terrain.ts'
-import { highwoodExposedAbove, highwoodPlantingLayers, highwoodSightlines, highwoodPlantingLimits, highwoodPlantingSeed, highwoodRouteClearanceM, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
+import { highwoodClumping, highwoodExposedAbove, highwoodMaximumCover, highwoodPlantingLayers, highwoodSightlines, highwoodPlantingLimits, highwoodPlantingSeed, highwoodRouteClearanceM, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
 import { highwoodGeneration } from '../layout/island-generation.ts'
 import { ridgeWind } from '../ridge-scout.ts'
 
@@ -16,6 +17,7 @@ import { ridgeWind } from '../ridge-scout.ts'
 
 const landMarginM = 0.3
 const half = 0.5
+const noiseRange = 0.7
 const fullTurn = Math.PI + Math.PI
 const slopeSpanM = 1
 // Exposed forms lean toward +x; this heading turns +x to point the way the wind blows.
@@ -58,6 +60,18 @@ function clearOfRoutes(point: Point, layer: PlantingLayer) {
   return routes.every((route) => distanceToRoute(point, route) > highwoodRouteClearanceM)
 }
 
+// How much a clump raises or lowers a layer's cover at a point, as a multiplier.
+function clumpCover(layer: PlantingLayer, point: Point) {
+  const clumping = layer === 'deadwood' ? undefined : highwoodClumping[layer]
+  if (!clumping) return 1
+  const patch = fbm(point.x, point.z, highwoodClumping.seed + plantingLayers.indexOf(layer), clumping) / noiseRange
+  return Math.max(0, 1 + clumping.strength * patch)
+}
+
+function scaleSpread(layer: PlantingLayer) {
+  return layer === 'deadwood' ? highwoodScaleSpread : highwoodClumping[layer].scaleSpread
+}
+
 function plantLayer(layer: PlantingLayer, out: Planting[]) {
   const { cellM, stands } = highwoodPlantingLayers[layer]
   const { west, south, cell, columns, rows } = highwoodGeneration.grid
@@ -70,7 +84,7 @@ function plantLayer(layer: PlantingLayer, out: Planting[]) {
       if (!onHighwoodLand(point)) continue
       const habitat = pick<HighwoodHabitat>(() => rolls.habitat, highwoodHabitatAt(point))
       const stand = stands[habitat]
-      if (rolls.cover >= stand.cover || !stand.mix.length || !clearOfRoutes(point, layer)) continue
+      if (rolls.cover >= Math.min(highwoodMaximumCover, stand.cover * clumpCover(layer, point)) || !stand.mix.length || !clearOfRoutes(point, layer)) continue
       const choice = stand.mix[Number(pick(() => rolls.species, Object.fromEntries(stand.mix.map((entry, index) => [index, entry.weight]))))]
       const exposed = highwoodExposure(point) > highwoodExposedAbove
       out.push({
@@ -81,7 +95,7 @@ function plantLayer(layer: PlantingLayer, out: Planting[]) {
         exposure: exposed ? 'exposed' : 'sheltered',
         variant: Math.floor(rolls.variant * highwoodTemplateVariants),
         heading: exposed ? downwind : rolls.heading * fullTurn,
-        scale: 1 + (rolls.scale - half) * (highwoodScaleSpread + highwoodScaleSpread),
+        scale: 1 + (rolls.scale - half) * (scaleSpread(layer) + scaleSpread(layer)),
       })
     }
   }

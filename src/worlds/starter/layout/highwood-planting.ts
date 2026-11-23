@@ -29,8 +29,18 @@ export const highwoodSightlines = [
   { id: 'highwood-ridge-home', eye: { x: -220, z: 310 }, look: { x: -35, z: -5 }, reachM: 340, halfWidthM: 8, spread: 0.1 },
   { id: 'highwood-cairn-southwest', eye: { x: -212, z: 129 }, look: { x: -92, z: 219 }, reachM: 110, halfWidthM: 7, spread: 0.12 },
 ] as const
-// A plant's height varies by up to this share either way, so stands don't look cloned.
+// A plant's size varies by up to this share either way, so stands don't look cloned.
 export const highwoodScaleSpread = 0.12
+// Native pinewood grows in irregular clumps with glades between, not in rows. A
+// layer's cover is scaled by soft noise patches: by up to `strength` either way,
+// over patches about `wavelength` metres across. `scaleSpread` overrides the size spread.
+export const highwoodClumping = {
+  seed: 5303,
+  canopy: { wavelength: 38, octaves: 2, lacunarity: 2, gain: 0.5, strength: 0.85, scaleSpread: 0.24 },
+  understory: { wavelength: 18, octaves: 2, lacunarity: 2, gain: 0.5, strength: 0.6, scaleSpread: 0.2 },
+} as const
+// Cover never rises above this share of candidates, however dense a clump.
+export const highwoodMaximumCover = 0.92
 
 const pine = 'scots-pine', birch = 'birch', aspen = 'aspen', rowan = 'rowan', alder = 'alder', willow = 'willow'
 const juniper = 'juniper', heather = 'heather', bilberry = 'bilberry', bracken = 'bracken'
@@ -41,7 +51,7 @@ export const highwoodPlantingLayers = {
   canopy: {
     cellM: 5,
     stands: {
-      pinewood: { cover: 0.62, mix: [{ species: pine, weight: 8, ages: { mature: 6, old: 3, young: 1 } }, { species: birch, weight: 1, ages: { mature: 1 } }, { species: rowan, weight: 1, ages: { mature: 1, young: 1 } }] },
+      pinewood: { cover: 0.62, mix: [{ species: pine, weight: 8, ages: { mature: 5, old: 3, young: 2 } }, { species: birch, weight: 1, ages: { mature: 1 } }, { species: rowan, weight: 1, ages: { mature: 1, young: 1 } }] },
       edge: { cover: 0.3, mix: [{ species: pine, weight: 3, ages: { young: 3, mature: 1 } }, { species: birch, weight: 3, ages: { young: 2, mature: 1 } }, { species: rowan, weight: 1, ages: { young: 1 } }] },
       birch: { cover: 0.55, mix: [{ species: birch, weight: 6, ages: { mature: 3, young: 1 } }, { species: aspen, weight: 3, ages: { mature: 2, young: 1 } }, { species: rowan, weight: 1, ages: { mature: 1 } }] },
       wet: { cover: 0.45, mix: [{ species: alder, weight: 3, ages: { mature: 2, young: 1 } }, { species: willow, weight: 2, ages: { mature: 1, young: 1 } }] },
