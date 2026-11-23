@@ -21,6 +21,14 @@ export const highwoodExposedAbove = 0.5
 export const highwoodPlantingLimits = { treeSlope: 0.9, sand: 0.4 }
 // Plants keep this far, in metres, from routes and the Fire Watch so paths stay clear.
 export const highwoodRouteClearanceM = 3
+// Sight lines kept open through the forest, as gaps on a crest would be, so the
+// views players stop for stay open. Canopy and deadwood keep out of a corridor
+// `halfWidthM` wide at the eye, widening by `spread` per metre, for `reachM` metres
+// toward the look point. They match the capture presets of the same id.
+export const highwoodSightlines = [
+  { id: 'highwood-ridge-home', eye: { x: -220, z: 310 }, look: { x: -35, z: -5 }, reachM: 340, halfWidthM: 8, spread: 0.1 },
+  { id: 'highwood-cairn-southwest', eye: { x: -212, z: 129 }, look: { x: -92, z: 219 }, reachM: 110, halfWidthM: 7, spread: 0.12 },
+] as const
 // A plant's height varies by up to this share either way, so stands don't look cloned.
 export const highwoodScaleSpread = 0.12
 

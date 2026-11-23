@@ -6,7 +6,7 @@ import type { Point } from '../../../world.ts'
 import { authoredShare } from './protection.ts'
 import { highwoodExposure, highwoodHabitatAt, type HighwoodHabitat } from '../highwood-habitat.ts'
 import { bakedSurface } from '../highwood-terrain.ts'
-import { highwoodExposedAbove, highwoodPlantingLayers, highwoodPlantingLimits, highwoodPlantingSeed, highwoodRouteClearanceM, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
+import { highwoodExposedAbove, highwoodPlantingLayers, highwoodSightlines, highwoodPlantingLimits, highwoodPlantingSeed, highwoodRouteClearanceM, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
 import { highwoodGeneration } from '../layout/island-generation.ts'
 import { ridgeWind } from '../ridge-scout.ts'
 
@@ -41,8 +41,20 @@ function onHighwoodLand(point: Point) {
     && bakedSurface(point).sand <= highwoodPlantingLimits.sand
 }
 
+// Whether a point falls in a kept-open sight line's corridor.
+export function inSightline(point: Point) {
+  return highwoodSightlines.some(({ eye, look, reachM, halfWidthM, spread }) => {
+    const dx = look.x - eye.x, dz = look.z - eye.z
+    const length = Math.hypot(dx, dz)
+    const along = ((point.x - eye.x) * dx + (point.z - eye.z) * dz) / length
+    if (along < 0 || along > reachM) return false
+    const across = Math.abs((point.x - eye.x) * dz - (point.z - eye.z) * dx) / length
+    return across < halfWidthM + along * spread
+  })
+}
+
 function clearOfRoutes(point: Point, layer: PlantingLayer) {
-  if (layer !== 'understory' && slope(point) > highwoodPlantingLimits.treeSlope) return false
+  if (layer !== 'understory' && (slope(point) > highwoodPlantingLimits.treeSlope || inSightline(point))) return false
   return routes.every((route) => distanceToRoute(point, route) > highwoodRouteClearanceM)
 }
 

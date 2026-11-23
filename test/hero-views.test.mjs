@@ -3,6 +3,9 @@ import { test } from 'node:test'
 import { capturePresets } from '../src/assets/recipes/capture-presets.ts'
 import { studioCamera } from '../src/assets/recipes/workbench-stage.ts'
 import { groundHeight } from '../src/terrain.ts'
+import { inSightline } from '../src/worlds/starter/generation/plant-highwood.ts'
+import { highwoodPlanting } from '../src/worlds/starter/highwood-planting.ts'
+import { highwoodSightlines } from '../src/worlds/starter/layout/highwood-planting.ts'
 
 const heroes = Object.entries(capturePresets).filter(([id, preset]) => id.startsWith('highwood-') && preset.kind === 'landscape')
 
@@ -18,4 +21,14 @@ test('Highwood\'s five hero views and its landmark view each see their subject w
       assert.ok(groundHeight(point) < from.y + (to.y - from.y) * t, `${id} is blocked at ${point.x.toFixed(0)}, ${point.z.toFixed(0)}`)
     }
   }
+})
+
+test('Highwood keeps its stop-and-look views open through the forest', () => {
+  for (const line of highwoodSightlines) {
+    const preset = capturePresets[line.id]
+    assert.ok(preset, `${line.id} names a capture preset`)
+    assert.deepEqual([preset.eye.x, preset.eye.z, preset.look.x, preset.look.z], [line.eye.x, line.eye.z, line.look.x, line.look.z], `${line.id} matches its preset`)
+  }
+  const blocking = highwoodPlanting().filter((plant) => plant.layer !== 'understory' && inSightline(plant))
+  assert.deepEqual(blocking, [], 'no tree or deadwood stands in a kept-open sight line')
 })
