@@ -3,7 +3,8 @@ import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { fromThisComputer, readRoadLayouts, roadsSource, roadSavePath, workbenchSave, workbenchSaveHeader } from '../server/workbench-save.ts'
+import { fromThisComputer, readRoadLayouts, roadsSource, workbenchSave } from '../server/workbench-save.ts'
+import { roadSavePath, workbenchSaveHeader } from '../src/workbench-save-contract.ts'
 
 const road = { id: 'fire-road', name: 'Highwood fire road', kind: 'fire-road', points: [{ x: 12, z: 20 }, { x: -40.123, z: 150 }], bends: [3.456] }
 

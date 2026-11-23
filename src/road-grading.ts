@@ -13,7 +13,7 @@ import type { StarterRoadLayout } from './worlds/starter/layout/roads.ts'
 
 type GroundFunction = (point: Point) => number
 
-interface GradedRoad {
+export interface GradedRoad {
   layout: StarterRoadLayout
   profile: RoadProfileSample[]
   halfWidth: number
@@ -34,7 +34,7 @@ function roadKind(layout: Pick<StarterRoadLayout, 'kind'>) {
 }
 
 // A road's profile through the natural ground: grade-limited, held to the ground at both ends.
-function gradeRoad(layout: StarterRoadLayout, natural: GroundFunction): GradedRoad {
+export function gradeRoad(layout: StarterRoadLayout, natural: GroundFunction): GradedRoad {
   const kind = roadKind(layout)
   const samples = sampleRoad(layout)
   const halfWidth = kind.width * half

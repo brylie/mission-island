@@ -14,6 +14,7 @@ import { farmStudy } from './farm-study'
 import { gullStudy } from './gull-study'
 import { furnishingStudies } from './furnishing-studies'
 import { landscapeStudy } from './landscape-study'
+import { roadDesignerStudy } from './road-designer-study'
 import { materialStudies } from './material-studies'
 import { mechanicStudies } from './mechanic-studies'
 import { longAcreStudy } from './long-acre-study'
@@ -44,6 +45,7 @@ export const entries: Entry[] = [
   residentRoutinesStudy,
   ...furnishingStudies,
   landscapeStudy,
+  roadDesignerStudy,
   ridgeScoutStudy,
   lookoutRecoveryStudy,
   fireWatchStudy,

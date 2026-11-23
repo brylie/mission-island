@@ -1,5 +1,5 @@
 import { createRoadGrading } from './road-grading.ts'
-import { starterRoads } from './worlds/starter/layout/roads.ts'
+import { starterRoads, type StarterRoadLayout } from './worlds/starter/layout/roads.ts'
 import { fireWatch, fireWatchFloor } from './fire-watch.ts'
 import { harborDock, island, onDock } from './world.ts'
 import type { Point } from './world.ts'
@@ -200,7 +200,13 @@ export function naturalGroundHeight(point: Point) {
 }
 
 // Graded roads (src/worlds/starter/layout/roads.ts) cut and fill the natural ground.
-const roadGrading = createRoadGrading(starterRoads, naturalGroundHeight)
+let roadGrading = createRoadGrading(starterRoads, naturalGroundHeight)
+
+// The Workbench road designer previews a draft by grading its roads instead; the
+// meshes built afterwards show them. The game always uses the roads in the source tree.
+export function previewRoadLayouts(layouts: readonly StarterRoadLayout[]) {
+  roadGrading = createRoadGrading(layouts, naturalGroundHeight)
+}
 
 // The ground players, wheels and physics stand on: the natural ground with its roads graded in.
 export function groundHeight(point: Point) {
