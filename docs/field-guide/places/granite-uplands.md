@@ -1,6 +1,6 @@
 # Granite uplands
 
-**Type: explanation (place). Real world: draft. On the island: in progress**, as the bare ground on Highwood's granite hills: Cairn Summit, Fallow Ridge and Windstone. Last tended 2026-11-23. Model purpose: **illustrate** a landform as ground texture. It uses its own headings rather than the framework's place shape. This page owns the granite weathering claims. The [island story](../../design/island-story.md#1-an-old-block-of-granite-and-sandstone) tells how the granite got there.
+**Type: explanation (place). Real world: draft. On the island: in progress**, as the bare ground on Highwood's granite hills: Cairn Summit, Fallow Ridge and Windstone. Last tended 2026-11-23. Model purpose: **illustrate** a landform as ground texture and small outcrop meshes. It uses its own headings rather than the framework's place shape. This page owns the granite weathering claims. The [island story](../../design/island-story.md#1-an-old-block-of-granite-and-sandstone) tells how the granite got there.
 
 Climb a granite hill on Dartmoor, in the Cairngorms or on Arran and the ground changes as you go up. Turf and heather thin out. Grey rock breaks through in slabs crossed by straight cracks, and loose gravel and boulders lie below. Close up, the rock is speckled with crystals and patched with lichen. This page explains why granite looks like that, so the island's hills can look like it too.
 
@@ -35,13 +35,16 @@ Highwood's ground shader (`src/beach-material.ts`, numbers in `highwoodGranite` 
 - **Crystals at true size.** The [granite surface](../../surface-catalog.md) texture shows grains about 16 mm across.
 - **Lichen and blotches.** Pale grey-green lichen crusts and dark weathering blotches patch the faces.
 
+- **Outcrops and clitter.** Real blocks of granite stand on the steepest bedrock and on granite crests (`src/highwood-outcrops.ts`, numbers in `src/worlds/starter/layout/highwood-outcrops.ts` and `src/assets/geometry/granite-outcrops.ts`). Each outcrop is a small tor of flat slabs, each smaller than the one below and slipped a little sideways. On a crest the slabs follow the joint grain. On a steep face they lie long and low along the slope's contour, one or two slabs, any upper slab set off sideways or into the slope so it never looks like a built cairn; spots too steep for a block stay bare rock. A few clitter boulders lie below each outcrop. Each one slides downhill until the ground is no steeper than about 35°, where loose blocks come to rest (unsourced; the scree angle from [island generation](../../design/island-generation.md#erosion-turns-noise-into-land), whose source `selby-1993` is unopened, and boulders may rest differently from scree). Outcrops gather in groups along a face rather than spreading evenly. They keep off paths, the kept-open views and Cairn Summit's crown, and you can't walk through them.
+
 The same noise that draws the joints and stones also tilts the lighting, so they catch low sun. The [rendering page](../../craft/rendering-and-detail.md#ground-that-doesnt-tile) explains how.
 
 ## Where the island differs
 
 | Real | On the island | Why | What a player might wrongly learn |
 | --- | --- | --- | --- |
-| Tors and clitter boulders stand up from the ground. | Bedrock and grus are painted on the terrain, with lighting relief but no real height. Separate boulder props stand on the meadows. | The terrain mesh has a vertex every few metres, too coarse for blocks a metre wide. | That granite slopes are smooth. Scattered outcrop meshes are a follow-up. |
+| Tors are large: whole hilltops of stacked blocks several metres high. | Outcrops are small tors of one to three slabs, up to about 3 m wide and 6 m long, and none stand within 25 m of Cairn Summit's crown, which is kept for the Fire Watch. The joints and grus between them are painted on the terrain. | Large tors would need their own placement around the summit and the road being planned there. | That tors are small. |
+| Clitter comes from frost in the Ice Age, so it lies where it fell long ago, often far downslope. | Clitter starts 2.5–9 m below its outcrop and slides until the ground is gentle enough, up to 24 m further. | Keeping it near its outcrop shows where it came from. | That clitter only lies near a rock. |
 | Joints follow each granite body's own stresses. | One joint direction for all of Highwood, set by Cairn Summit's core. | One direction is enough to stop the pattern looking random. | That joints always run north-east. |
 | Lichen species and colours vary with aspect, height and exposure. | One grey-green crust tint, placed by noise. | Not needed for play yet. | That all granite lichen is grey-green. |
 | Dark streaks run down faces where water flows. | Dark blotches placed by noise, not stretched downslope. | Cheap. | That stains are random. |

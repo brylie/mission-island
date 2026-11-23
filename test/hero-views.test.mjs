@@ -3,7 +3,8 @@ import { test } from 'node:test'
 import { capturePresets } from '../src/assets/recipes/capture-presets.ts'
 import { studioCamera } from '../src/assets/recipes/workbench-stage.ts'
 import { groundHeight } from '../src/terrain.ts'
-import { inSightline, sightlineAlong } from '../src/worlds/starter/generation/plant-highwood.ts'
+import { sightlineAlong as bakedSightlineAlong } from '../src/worlds/starter/generation/plant-highwood.ts'
+import { inSightline, sightlineAlong } from '../src/worlds/starter/highwood-clearings.ts'
 import { highwoodPlanting } from '../src/worlds/starter/highwood-planting.ts'
 import { highwoodSightlineEyeClearM, highwoodSightlines } from '../src/worlds/starter/layout/highwood-planting.ts'
 
@@ -33,4 +34,13 @@ test('Highwood keeps its stop-and-look views open through the forest', () => {
   const blocking = highwoodPlanting().filter((plant) => plant.layer !== 'understory' && inSightline(plant)
     && !(['alder', 'willow'].includes(plant.species) && sightlineAlong(plant) > highwoodSightlineEyeClearM))
   assert.deepEqual(blocking, [], 'no other tree or deadwood stands in a kept-open sight line')
+})
+
+// The planting bake keeps its own copy of the sight-line rule until the next rebake moves it
+// onto highwood-clearings.ts; until then the two must agree.
+test('the planting bake and the outcrops read the same sight lines', () => {
+  const stepM = 10
+  for (let x = -500; x <= 120; x += stepM) {
+    for (let z = -40; z <= 640; z += stepM) assert.equal(sightlineAlong({ x, z }), bakedSightlineAlong({ x, z }), `sight lines disagree at ${x}, ${z}`)
+  }
 })

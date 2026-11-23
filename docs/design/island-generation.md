@@ -46,6 +46,7 @@ Erosion is what makes the land read as shaped, rather than as bumps.
 - **The generator script.** An offline, seeded script writes a heightmap asset, for example 1024 × 1024 cells at 0.5 to 1 m each. It also writes derived layers for the habitat classifier: flow accumulation or moisture, slope, and exposure.
 - **One source.** `groundHeight`, the coast helpers, host physics, terrain rendering, the map, the ocean's shore-depth texture and the skiff buoy ring all read the same baked data. This retires the duplicated coast formula in `src/ocean.ts`.
 - **Reviewable changes.** The parameters and a preview image are committed beside the asset, so regenerating the island shows up as a diff a person can review.
+- **Exception: granite rocks.** Outcrops are computed at load from the baked height ([granite uplands](../field-guide/places/granite-uplands.md#in-the-game)), so they follow each rebake without one of their own.
 - **Budget.** Measure the asset size and load time against the [performance baseline](../backcountry.md#performance). Use a compressed format, and a coarser grid outside the playable area if needed.
 
 ## Acceptance metrics

@@ -2,9 +2,10 @@ import type { TreeTemplateOptions } from './assets/trees/tree-catalog.ts'
 import { treeCollision } from './assets/trees/tree-collision.ts'
 import { groundHeight } from './terrain.ts'
 import type { Point } from './world.ts'
+import { highwoodGraniteRocks } from './highwood-outcrops.ts'
 import { highwoodPlanting, logRise, plantTemplateOptions } from './worlds/starter/highwood-planting.ts'
 
-// Highwood's solid trunks, snags and fallen logs for walking, indexed by a grid
+// Highwood's solid trunks, snags, fallen logs and granite rocks for walking, indexed by a grid
 // so each step checks only the few nearby, not every tree in the forest. Soft
 // plants (shrubs, saplings' leaves, bracken) are left out: you walk through them.
 // The canopy trees are indexed the same way for wind shelter and crown rustle.
@@ -15,6 +16,7 @@ interface Log { kind: 'lying', x: number, z: number, dx: number, dz: number, len
 type Solid = Trunk | Log
 
 const cellM = 4
+const half = 0.5
 const cells = new Map<string, Solid[]>()
 // Crowns for sound: pines hush, broadleaves flutter.
 interface Crown { x: number, z: number, height: number, leafy: boolean }
@@ -53,6 +55,20 @@ for (const plant of highwoodPlanting()) {
     const length = collision.length * plant.scale
     // The log follows the ground from its root to its far end, so its top rises along it.
     file({ kind: 'lying', x: plant.x, z: plant.z, dx, dz, length, radius, top: ground + (collision.axisHeight + collision.radius) * plant.scale, rise: logRise(plant, length) }, radius)
+  }
+}
+
+// Granite outcrops and clitter: each slab is a level capsule as wide as the slab, running
+// its length, so a stack steps up slab by slab and the long ends are solid too.
+for (const rock of highwoodGraniteRocks()) {
+  for (const slab of rock.slabs) {
+    const radius = Math.min(slab.width, slab.length) * half
+    const length = Math.abs(slab.length - slab.width)
+    const dx = Math.cos(slab.heading), dz = Math.sin(slab.heading)
+    // Run along the slab's longer side from one rounded end to the other.
+    const [ux, uz] = slab.length >= slab.width ? [dx, dz] : [-dz, dx]
+    const x = rock.x + slab.dx - ux * length * half, z = rock.z + slab.dz - uz * length * half
+    file({ kind: 'lying', x, z, dx: ux, dz: uz, length, radius, top: rock.ground + slab.base + slab.height, rise: 0 }, radius)
   }
 }
 

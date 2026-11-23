@@ -10,10 +10,12 @@ export type Corner = [number, number, number]
 
 // Keep fracture faces flat. Project top faces in plan and steep faces in
 // elevation so the grain retains its scale around a broken edge.
-export function facetBatch() {
+// `repeatsPerMetre` scales the texture; a face's shade is a grey level or a red, green, blue tint.
+export function facetBatch(repeatsPerMetre = 1) {
   const positions: number[] = [], indices: number[] = [], uvs: number[] = [], colors: number[] = []
   return {
-    face(corners: Corner[], shade: number, phase = 0) {
+    face(corners: Corner[], shade: number | readonly [number, number, number], phase = 0) {
+      const [red, green, blue] = typeof shade === 'number' ? [shade, shade, shade] : shade
       const first = positions.length / coordinatesPerVertex
       const [a, b, c] = corners
       const ab = b.map((v, i) => v - a[i]), ac = c.map((v, i) => v - a[i])
@@ -22,9 +24,9 @@ export function facetBatch() {
       const nz = Math.abs(ab[0] * ac[1] - ab[1] * ac[0])
       for (const [x, y, z] of corners) {
         positions.push(x, y, z)
-        if (ny >= nx && ny >= nz) uvs.push(x + phase, z)
-        else uvs.push((nx > nz ? z : x) + phase, y)
-        colors.push(shade, shade, shade, 1)
+        if (ny >= nx && ny >= nz) uvs.push((x + phase) * repeatsPerMetre, z * repeatsPerMetre)
+        else uvs.push(((nx > nz ? z : x) + phase) * repeatsPerMetre, y * repeatsPerMetre)
+        colors.push(red, green, blue, 1)
       }
       for (let i = firstTriangleEnd; i < corners.length; i++) indices.push(first, first + i - 1, first + i)
     },
