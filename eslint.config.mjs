@@ -261,7 +261,7 @@ export default defineConfig(
   },
   {
     files: ['server/**/*.ts'],
-    ignores: ['server/multiplayer.ts', 'server/socket-sessions.ts', 'server/save.ts'],
+    ignores: ['server/multiplayer.ts', 'server/socket-sessions.ts', 'server/save.ts', 'server/workbench-save.ts'],
     rules: {
       'no-restricted-imports': ['error', { patterns: [
         platformImports,
