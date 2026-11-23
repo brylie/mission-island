@@ -1,5 +1,7 @@
 # Mission Island architecture
 
+**Status:** The physics section is verified by [the broadphase tests](../test/broadphase.test.mjs). Type: reference. Last tended 2026-11-22. Older sections predate the [knowledge framework](knowledge-framework.md).
+
 The LAN host owns gameplay state, including movement, crew membership, orders, the shared bank, and saved progress. The game client renders host snapshots and sends player input. The Workbench and Saltwind preview run local sessions and can reuse mechanics and assets.
 
 ## Where changes belong
@@ -82,8 +84,23 @@ To add a villager, write a definition file and append it to the registry. A visi
 - **Animals.** In [Juniper Hollow](../src/juniper-habitat.ts), hares and foxes can share locomotion and [obstacle navigation](../src/biome-navigation.ts) with different speeds and clearances. A hare's threat response can send it toward cover, while a fox can give a nearby player space and then resume its patrol. Position and current behavior belong to each animal.
 - **Plants.** A habitat trait can guide where an island places reeds or clover. A regrowth trait can let clover replenish forage after grazing, with the patch's remaining forage tracked by the [biome simulation](../src/biome-model.ts). Wind sway can stay in presentation when it only affects appearance. The [Highwood species generator](highwood-species.md#how-the-generator-is-built) bakes trees and shrubs into templates for thin instancing, with near and far tiers, host-safe collision from `treeCollision`, and a sway weight in vertex alpha.
 
+## Physics cost and static colliders
+
+The cargo world in [cargo.ts](../src/simulation/cargo.ts) holds a few moving bodies, the flatbed, learner vehicles and crates, among hundreds of static ones: tree trunks, rocks, buildings, the heightfield and the dock. It steps twice per host tick. The host, the integration tests and the coverage run all pay for that step, so its cost decides how fast the whole suite runs.
+
+Stock cannon-es grows with the square of the body count in two places on every substep:
+
+- **The sweep.** `SAPBroadphase` sorts bodies along one axis and should stop scanning once the next body starts past the current one. It runs its "can these two collide?" filter before that bound, though. A static body skips every other static body without checking the bound, and stops only at the first moving body past it. Measured on 2026-11-22, with 363 static bodies, one substep made about 27,500 pair checks to find 3 real pairs.
+- **Contact memory.** `ArrayCollisionMatrix` keeps one slot for every possible body pair (66,795 for 366 bodies) and zeroes them all each substep. It does this to tell a first contact from a continuing one.
+
+[broadphase.ts](../src/simulation/broadphase.ts) replaces both. `SettledSweepBroadphase` scans only the moving bodies after a static or sleeping one, because two settled bodies can never collide. `SparseCollisionMatrix` remembers only the pairs touching this step. Both keep the stock pair order and index keys, so the solver sees the same input. Like the stock matrix, removing a body forgets the remembered contacts of the highest body indices, so a crate taken off and released again fires a fresh `collide` event. The crate impact sounds listen to `beginContact`, which cannon tracks by body ID, so the matrix does not affect them. The cargo world leaves `allowSleep` off, so in play "settled" means static, or a vehicle that [ground drive](../src/simulation/ground-drive.ts) put to sleep while parked. A crate that hits a parked vehicle wakes it just as in stock cannon-es. The pair still reaches the narrowphase, which wakes a sleeping body when the other body is awake, not static, and moving faster than √2 times its own `sleepSpeedLimit`. The [broadphase tests](../test/broadphase.test.mjs) step a stock world and a replaced world side by side and compare pairs, first-contact events, and positions bit for bit.
+
+The step now costs about the number of moving bodies times the number of static bodies. Adding scenery colliders adds cost linearly. When a new world builds its own cannon `World`, call `useSparseCollisions(world)`. Both classes override cannon-es 0.20 internals (`SAPBroadphase.collisionPairs` and `ArrayCollisionMatrix`). After upgrading cannon-es, run the broadphase tests before anything else.
+
+Coverage instruments every executed line, including cannon-es in `node_modules`, so physics-heavy tests run several times slower under it. Measured on 2026-11-22 on a 10-core laptop: before this change the suite took 58 s under `npm test` and 338 s under `npm run coverage`; after it, 20 s and 76 s.
+
 ## Static checks
 
-`npm run quality` runs lint, type checking, tests, unused-code checks, and the build. CI runs coverage separately. First-party TypeScript modules have a 350-line file limit, a 140-line function limit, and a cyclomatic complexity ceiling of 24. Line limits exclude comments and blank lines. Test files have the same file limit. The [ESLint config](../eslint.config.mjs) records per-file ceilings for existing hotspots, including modules that grew through formatting. Lower an exception or remove it when the relevant code is split.
+`npm run quality` runs lint, type checking, tests, unused-code checks, and the build. CI runs the tests once, under the coverage gate (see [Quality checks](../CONTRIBUTING.md#quality-checks)). First-party TypeScript modules have a 350-line file limit, a 140-line function limit, and a cyclomatic complexity ceiling of 24. Line limits exclude comments and blank lines. Test files have the same file limit. The [ESLint config](../eslint.config.mjs) records per-file ceilings for existing hotspots, including modules that grew through formatting. Lower an exception or remove it when the relevant code is split.
 
 Import checks keep browser modules out of `server/`. Host simulation, shared simulation and world data can read the dependency-free definitions in `src/assets/geometry/`. Imports from rendering and transport modules are restricted. Type-only imports are allowed for host command and save contracts. These checks cover direct imports. Review how dependencies flow through a feature when moving code across layers.

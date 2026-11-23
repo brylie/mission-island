@@ -111,7 +111,9 @@ The pre-push hook runs ESLint without the cache, Knip for unused code and depend
 
 `mise run quality` runs the npm scripts behind both hooks. It skips the hooks' built-in file checks, such as `detect-private-key` and `check-json`, and the audit. To run every hook check, use `prek run --all-files --hook-stage pre-commit` and `prek run --all-files --hook-stage pre-push`. Run the audit separately with `mise run audit`.
 
-The coverage gate runs only in CI, because it takes a few minutes. It fails the build when lines, functions, or branches drop below 81% across the host and shared mechanics. Run it locally with `npm run coverage`.
+The coverage gate runs only in CI, because instrumenting every line makes the suite several times slower. It fails the build when lines, functions, or branches drop below 81% across the host and shared mechanics. Run it locally with `npm run coverage`.
+
+**Find a slow test.** `npm test` prints each test's duration in milliseconds. To see where one file spends its time, run it directly: `node --cpu-prof --cpu-prof-dir=<a folder outside the repo> --experimental-strip-types test/<name>.test.mjs`. Then open the `.cpuprofile` in the Chrome DevTools Performance panel or in VS Code. Physics-heavy tests are usually slow because of the cannon-es step; see [Physics cost and static colliders](docs/architecture.md#physics-cost-and-static-colliders).
 
 Run `npm run lint:fix` to apply ESLint layout fixes. First-party JavaScript and TypeScript follow the ESLint Stylistic recommended preset with LF line endings and parentheses around all arrow function parameters. Multiline interaction registries use one entry per line.
 
@@ -132,7 +134,7 @@ ESLint reports numeric-literal violations directly and disables inline overrides
 
 The correctness rules check callback returns, loop control, imports, parameter reassignment, and other common errors. Switches over typed unions in the host and shared gameplay modules must handle every declared case.
 
-On pull requests into `main` and pushes to `main`, GitHub Actions runs the pre-commit and pre-push checks and the coverage gate. Open **CI → Quality and tests** to inspect coverage, the build, and the dependency audit.
+On pull requests into `main` and pushes to `main`, GitHub Actions runs the pre-commit and pre-push checks and the coverage gate. CI skips the `mission-island-tests` hook with `SKIP=mission-island-tests`, because the coverage gate runs the same tests, so each build runs the suite once. Open **CI → Quality and tests** to inspect coverage, the build, and the dependency audit.
 
 ## Build and iterate together
 

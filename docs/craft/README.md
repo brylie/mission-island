@@ -17,6 +17,7 @@ These pages are for anyone who wants to make something similar, learn from it or
 | Add or change a tree species, as a checklist | [How-to](add-tree-species.md) | Steps run |
 | Growing trees, shrubs and groundcover from rules and seeds | [Procedural flora](procedural-flora.md) | Written |
 | Distance, level of detail, draw calls and triangle budgets | [Rendering, distance and level of detail](rendering-and-detail.md) | Written |
+| Collision physics: broadphase, sleeping bodies and contact memory | [Physics cost and static colliders](../architecture.md#physics-cost-and-static-colliders) | Existing reference; a craft page is planned |
 | Generated surfaces and texture recipes | [Surface catalog](../surface-catalog.md) and [gameplay surfaces](../gameplay-surfaces.md) | Existing reference |
 | Shaders for water, meadow, paving and effects | [Shader studies](../shader-studies.md), [more shader studies](../more-shader-studies.md) and the [effects shelf](../effects-workbench.md) | Existing reference |
 | Synthesised sound: wind, surf, footsteps, engines, birds | Procedural audio | Planned |

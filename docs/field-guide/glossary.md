@@ -38,8 +38,12 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 
 | Term | Meaning |
 | --- | --- |
+| **Broadphase** | The cheap first pass of collision detection. It rules out body pairs too far apart to touch, so the costly exact test (the narrowphase) runs on few pairs. |
 | **Far tier, near tier** | Two detail levels of the same tree. The near model has more triangles and shows close up; the far model keeps the silhouette with few triangles and replaces it beyond about 100 metres. |
+| **Narrowphase** | The exact collision test on the pairs the broadphase kept. It finds contact points and can wake a sleeping body. |
 | **Seed** | A whole number that picks one plant's variation. The same species, age, exposure and seed always grows the same plant. |
 | **Silhouette view** | A Workbench look that draws every plant as a flat black shape, to check each species can be recognised by outline alone. |
+| **Sleeping body** | A body the physics engine has stopped simulating until something wakes it, such as a parked vehicle. |
+| **Static body** | A physics body that never moves, such as a tree trunk or rock. It can only collide with moving bodies. |
 | **Template** | One baked species, age, exposure and seed, built once and drawn many times with thin instances. |
 | **Thin instance** | A cheap copy of a mesh placed with only a position, rotation and scale, so thousands of trees cost about as much as one draw per material. |
