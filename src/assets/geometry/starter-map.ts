@@ -35,4 +35,6 @@ export const starterMapLook = {
   ferry: { color: '#d7a07d', radius: locationRadius },
   chest: { color: '#fed487', radius: 3 },
   player: { border: '#234244', radius: 6.5, fillRadius: 4.5 },
+  // A crewmate's binocular mark: a diamond pin in their crew tag colour, so it reads apart from the round dots.
+  crewMark: { size: 6, outline: '#14201f', lineWidth: 2 },
 } as const

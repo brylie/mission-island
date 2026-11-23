@@ -108,6 +108,7 @@ export function createBinocularView(meshes: MeshFactory, markers: HTMLElement) {
       const ahead = lookDirection(view)
       camera.position.set(eye.x, eye.y, eye.z)
       camera.setTarget(new Vector3(eye.x + ahead.x, eye.y + ahead.y, eye.z + ahead.z))
+      meshes.scene.activeCamera = camera
       return camera
     },
     fogScale: () => viewing ? viewingFogScale : 1,

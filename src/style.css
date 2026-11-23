@@ -589,6 +589,18 @@ kbd {
   white-space: nowrap;
 }
 .binoculars[data-ranged="false"] .binoculars-readout { color: #d3dccf; }
+.binoculars-status {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 64px);
+  transform: translateX(-50%);
+  margin: 0;
+  color: #fff4d8;
+  font-size: 12px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px #061010;
+  white-space: nowrap;
+}
 .binoculars-help {
   position: absolute;
   left: 50%;
@@ -606,7 +618,7 @@ kbd {
 .binoculars-help span { margin: 0 9px 0 3px; }
 body[data-binoculars] .playfield > :is(.mission, .crew, .controls, .controls-toggle, .reticle, .charge-meter) { display: none; }
 body[data-binoculars] #markers > .place { display: none; }
-body[data-binoculars] .prompt { bottom: 44px; }
+body[data-binoculars] .prompt { display: none; }
 
 .shader-study-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 5px; }
 #shader-workbench { color: #bce8d5; }

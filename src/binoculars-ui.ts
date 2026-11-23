@@ -1,7 +1,8 @@
 import { binocularEye, binocularFieldOfView, lookDirection, type BinocularLook } from './binocular-view'
 import { lookPitchSensitivity, lookYawSensitivity } from './island-camera'
 import type { LookSettings } from './look-options-ui'
-import type { ClientMessage, Snapshot } from './protocol'
+import type { ClientMessage, CrewMark, Snapshot } from './protocol'
+import { distance, type Point } from './world'
 import { bearingDegrees, binocularMagnification, canUseBinoculars, rangeFind, rangeReadout } from './spotting'
 
 interface Options {
@@ -21,11 +22,13 @@ const millisecondsPerSecond = 1000
 const longestFrameSeconds = 0.1
 // The rangefinder updates its readout ten times a second, like a scanning laser rangefinder.
 const readoutIntervalMs = 100
+const statusDurationMs = 2400
 // The view tilts no further than this above or below the horizon.
 const pitchLimit = 1.25
-// Movement keys pan the view by this share of its width each second.
-const keyPanFieldsPerSecond = 0.75
+// Movement keys pan the view by this share of its width each second, and Shift sweeps faster to swing round.
+const keyPanFieldsPerSecond = 1
 const keyPanRadPerSecond = binocularFieldOfView * keyPanFieldsPerSecond
+const sweepMultiplier = 4
 const panKeys: Record<string, [yaw: number, pitch: number]> = {
   KeyW: [0, 1],
   ArrowUp: [0, 1],
@@ -50,6 +53,7 @@ function overlayMarkup() {
     <div class="binoculars-field" aria-hidden="true"></div>
     <div class="binoculars-reticle" aria-hidden="true"><i></i><i></i></div>
     <output class="binoculars-readout" aria-label="Rangefinder distance and bearing"></output>
+    <p class="binoculars-status" role="status"></p>
     <p class="binoculars-help"><kbd>Click</kbd><kbd>Enter</kbd><span>Mark</span><kbd>X</kbd><span>Clear mark</span><kbd>V</kbd><kbd>Esc</kbd><span>Lower</span></p>`
   return overlay
 }
@@ -60,12 +64,16 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
   const overlay = overlayMarkup()
   playfield.append(overlay)
   const readout = overlay.querySelector('output') as HTMLOutputElement
+  const status = overlay.querySelector('.binoculars-status') as HTMLElement
+  let ownMark: CrewMark | undefined
+  let statusUntil = 0
   const panning = new Set<string>()
   let view: BinocularLook | undefined
   let target: { x: number, z: number } | undefined
   let lastFrame = 0
   let lastReading = -readoutIntervalMs
   let wasLocked = false
+  let sweeping = false
 
   function crewmate() {
     const current = crew()
@@ -82,6 +90,8 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     lastFrame = performance.now()
     lastReading = -readoutIntervalMs
     readout.textContent = ''
+    ownMark = crew()?.state.marks.find((mark) => mark.playerId === current.player.id)
+    status.hidden = true
     overlay.hidden = false
     document.body.dataset.binoculars = 'raised'
     prepare()
@@ -106,6 +116,16 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     overlay.dataset.ranged = String(Boolean(hit))
   }
 
+  // The host confirms a mark by sharing it, so the confirmation shows when the crewmate's own mark moves or goes.
+  function showOwnMark(mark: CrewMark | undefined, player: Point, now: number) {
+    if (mark?.x !== ownMark?.x || mark?.z !== ownMark?.z) {
+      status.textContent = mark ? `Marked for the crew · ${Math.round(distance(player, mark))} m` : 'Mark cleared'
+      statusUntil = now + statusDurationMs
+    }
+    ownMark = mark
+    status.hidden = now > statusUntil
+  }
+
   // Called once per rendered frame. Pans by the held keys and lowers the binoculars when the crewmate can no longer use them.
   function frame() {
     if (!view) return undefined
@@ -118,11 +138,13 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     const seconds = Math.min(longestFrameSeconds, (now - lastFrame) / millisecondsPerSecond)
     lastFrame = now
     const settings = look()
+    const step = keyPanRadPerSecond * seconds * (sweeping ? sweepMultiplier : 1)
     for (const code of panning) {
       const [yaw, pitch] = panKeys[code]
-      view.yaw += yaw * keyPanRadPerSecond * seconds * (settings.invertHorizontal ? -1 : 1)
-      view.pitch = clampPitch(view.pitch + pitch * keyPanRadPerSecond * seconds * (settings.invertVertical ? -1 : 1))
+      view.yaw += yaw * step * (settings.invertHorizontal ? -1 : 1)
+      view.pitch = clampPitch(view.pitch + pitch * step * (settings.invertVertical ? -1 : 1))
     }
+    showOwnMark(current.state.marks.find((mark) => mark.playerId === current.player.id), current.player, now)
     if (now - lastReading >= readoutIntervalMs) {
       lastReading = now
       range(current.player, view)
@@ -150,6 +172,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
       return
     }
     swallow(event)
+    sweeping = event.shiftKey
     if (event.code in panKeys) panning.add(event.code)
     if (event.repeat) return
     if (event.code === 'KeyV' || event.code === 'Escape') lower()
@@ -157,6 +180,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     else if (event.code === 'KeyX') send({ type: 'clear-mark' })
   }, true)
   window.addEventListener('keyup', (event) => {
+    sweeping = event.shiftKey
     if (panning.delete(event.code)) event.stopImmediatePropagation()
   }, true)
 

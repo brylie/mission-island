@@ -13,6 +13,7 @@ import { northernRegions, starterDiscoveries } from './scenery'
 import { boundaryBuoys, buoyBoundaryPoint, coastBounds, coastSegments, coastalSurface, groundHeight, offshoreLimitMetres, waterLevel } from './terrain'
 import { crewHomes, ferryTerminal, harbor, lookout } from './world'
 import { fireCentre } from './wildfire'
+import { playerColors } from './assets/crew'
 
 type MapDot = (x: number, z: number, color: string, radius: number) => void
 
@@ -127,6 +128,24 @@ function drawLearners(ink: CanvasRenderingContext2D, state: Snapshot, local: Pla
   ink.fill()
 }
 
+function drawMarks(ink: CanvasRenderingContext2D, state: Snapshot, mx: (x: number) => number, mz: (z: number) => number) {
+  const { size, outline, lineWidth } = look.crewMark
+  ink.lineWidth = lineWidth
+  ink.strokeStyle = outline
+  for (const mark of state.marks) {
+    const x = mx(mark.x), y = mz(mark.z)
+    ink.fillStyle = playerColors[mark.playerId % playerColors.length]
+    ink.beginPath()
+    ink.moveTo(x, y - size)
+    ink.lineTo(x + size, y)
+    ink.lineTo(x, y + size)
+    ink.lineTo(x - size, y)
+    ink.closePath()
+    ink.stroke()
+    ink.fill()
+  }
+}
+
 export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapshot) {
   const ink = map.getContext('2d')
   if (!ink) return
@@ -202,6 +221,7 @@ export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapsh
   drawWork(state, local, dot)
   const home = crewHomes[id]
   if (home) dot(home.chest.x, home.chest.z, look.chest.color, look.chest.radius)
+  drawMarks(ink, state, mx, mz)
   for (const player of state.players) {
     if (!player.connected) continue
     dot(player.x, player.z, look.player.border, look.player.radius)

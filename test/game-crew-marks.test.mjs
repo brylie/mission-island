@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { markCooldownMs } from '../server/crew-marks.ts'
+import { crewMarkFeedback } from '../src/crew-mark-notices.ts'
 import { igniteFire } from '../server/wildfire.ts'
 import { fireWatchGeometry } from '../src/assets/geometry/fire-watch.ts'
 import { fireFinder } from '../src/fire-watch.ts'
@@ -107,4 +108,15 @@ test('a mark near a burning hotspot locates the fire, as the fire finder does', 
   assert.equal(a.state.events.fire.located, true)
   const located = b.messages.find((message) => message.type === 'wildfire' && message.event === 'located')
   assert.equal(located.playerId, 0)
+})
+
+test('crewmates read who marked a spot and where it lies from them; the placer reads nothing twice', () => {
+  const snapshot = { players: [{ id: 0, name: 'Ana', x: 0, z: 0 }, { id: 1, name: '', x: 0, z: 0 }] }
+  const placed = { type: 'crew-mark', event: 'placed', playerId: 0, x: -84, z: 0 }
+  assert.equal(crewMarkFeedback(placed, 1, snapshot).label, 'Ana marked a spot · 84 m west')
+  assert.equal(crewMarkFeedback(placed, 0, snapshot), undefined)
+  assert.equal(crewMarkFeedback({ ...placed, playerId: 1 }, 0, snapshot).label, 'Crew 2 marked a spot · 84 m west')
+  assert.equal(crewMarkFeedback(placed, 2, snapshot).label, 'Ana marked a spot')
+  assert.equal(crewMarkFeedback({ type: 'crew-mark', event: 'cleared', playerId: 0 }, 1, snapshot).label, 'Ana cleared their mark')
+  assert.equal(crewMarkFeedback({ type: 'crew-mark', event: 'refused', reason: 'reach' }, 0, snapshot).label, 'Too far for the rangefinder to mark')
 })
