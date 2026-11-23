@@ -69,6 +69,7 @@ const authoredWorldLayouts = [
   'src/worlds/starter/layout/highwood-habitats.ts',
   'src/worlds/starter/layout/highwood-planting.ts',
   'src/worlds/starter/layout/places.ts',
+  'src/worlds/starter/layout/roads.ts',
   'src/worlds/starter/layout/routes.ts',
   'src/worlds/starter/layout/scenery.ts',
   'src/worlds/starter/layout/sites.ts',

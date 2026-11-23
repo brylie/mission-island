@@ -2,7 +2,7 @@ import { groundSurfaces } from '../assets/audio/ground.ts'
 import type { Player } from '../protocol.ts'
 import { distanceToRoads, distanceToRoute, footpaths, walkways } from '../routes.ts'
 import { islandTrees, northernRegions } from '../scenery.ts'
-import { coastalSurface, waterDepth } from '../terrain.ts'
+import { coastalSurface, roadClearance, waterDepth } from '../terrain.ts'
 import { beachHasSand } from '../worlds/starter/beach-landforms.ts'
 import { onDock, type Point } from '../world.ts'
 import { highwoodGroundCover } from '../worlds/starter/highwood-planting.ts'
@@ -36,7 +36,8 @@ export function groundSurface(point: Point): FootSurface {
   if (onDock(point)) return 'boards'
   const depth = waterDepth(point)
   if (depth > groundSurfaces.shallows.minDepthMetres && depth < groundSurfaces.shallows.maxDepthMetres) return 'shallows'
-  if (onPath(point, 'gravel')) return 'gravel'
+  // Graded dirt roads crunch like gravel paths.
+  if (onPath(point, 'gravel') || roadClearance(point) <= 0) return 'gravel'
   if (paved(point)) return 'pavement'
   // Sand follows the shaped beaches and dunes; exposed shore rock and worn paths are bare ground.
   const coast = coastalSurface(point)

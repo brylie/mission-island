@@ -2,7 +2,7 @@ import { plantingLayers, type Planting, type PlantingLayer } from '../highwood-p
 import { distanceToRoute, footpaths, roads, walkways } from '../../../routes.ts'
 import { fbm } from '../../../math/gradient-noise.ts'
 import { seededRandom } from '../../../seeded-random.ts'
-import { groundHeight, originalCoastRadius, waterLevel } from '../../../terrain.ts'
+import { groundHeight, originalCoastRadius, roadClearance, waterLevel } from '../../../terrain.ts'
 import type { Point } from '../../../world.ts'
 import { authoredShare } from './protection.ts'
 import { highwoodExposure, highwoodHabitatAt, type HighwoodHabitat } from '../highwood-habitat.ts'
@@ -66,7 +66,7 @@ function clearOfRoutes(point: Point, layer: PlantingLayer, habitat: HighwoodHabi
   const along = sightlineAlong(point)
   if (along !== undefined && along <= highwoodSightlineEyeClearM) return false
   if (along !== undefined && layer !== 'understory' && !(habitat === 'wet' && layer === 'canopy')) return false
-  return routes.every((route) => distanceToRoute(point, route) > highwoodRouteClearanceM)
+  return roadClearance(point) > highwoodRouteClearanceM && routes.every((route) => distanceToRoute(point, route) > highwoodRouteClearanceM)
 }
 
 // How much a clump raises or lowers a layer's cover at a point, as a multiplier.

@@ -9,7 +9,7 @@ import type { Point } from './world.ts'
 // stretch's middle by exactly the bend. Designers never see handles: they drag dots
 // and the middle of a stretch.
 
-export interface RoadPlan {
+interface RoadPlan {
   points: readonly Point[]
   // One per stretch between two dots: metres the stretch's middle moves left (+) or right (−).
   bends: readonly number[]

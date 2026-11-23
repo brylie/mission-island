@@ -1,3 +1,4 @@
+import { roadKinds } from './assets/geometry/route-profiles'
 import type { Material } from '@babylonjs/core/Materials/material'
 import { createFieldOutingScenery } from './assets/field-outing'
 import { shellRockCap, tidePoolDressing } from './assets/geometry/tide-pool-dressing'
@@ -40,7 +41,7 @@ import { createSurfaceMaterial } from './materials'
 import { meadowDefaults, shaderPresets, shoreDefaults, type ShaderQuality } from './shader-studies'
 import type { WildlifeFrame } from './wildlife'
 import { createStreetLights } from './street-lights'
-import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
+import { boundaryBuoys, fireWatchBaseHeight, gradedRoads, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
 import { buildings, crewHomes, extinguisherStations } from './world'
 import { createFireWatch } from './assets/fire-watch'
 import { createFireStation } from './assets/fire-station'
@@ -60,6 +61,11 @@ interface WorldSubstitutions {
 
 const rainPavingWetness = 0.74
 
+// Graded roads drape on the ground they cut and fill.
+function createGradedRoads(meshes: MeshFactory) {
+  for (const { layout, profile } of gradedRoads()) createTrail(meshes, layout.name, profile, roadKinds[layout.kind].width, 'gravel', groundHeight)
+}
+
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
   const study = substitutions.surfaceStudy
   const water = createIslandTerrain(meshes, study?.target === 'meadow' ? study : undefined)
@@ -72,6 +78,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const wetPaving = createWetPaving(paving)
   for (const path of walkways) createSidewalk(meshes, path, paving)
   createRoad(meshes, harborRoad)
+  createGradedRoads(meshes)
   const { depotRoad, wardrobeZ, clothingCounterZ } = starterDecorationOffsets
   createRoad(meshes, depotLane, depotRoad.width, { lift: depotRoad.lift, marked: [depotLane[0], { x: depotJunction.x + depotRoad.markingEndX, z: depotJunction.z }] })
 

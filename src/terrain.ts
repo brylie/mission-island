@@ -1,3 +1,5 @@
+import { createRoadGrading } from './road-grading.ts'
+import { starterRoads } from './worlds/starter/layout/roads.ts'
 import { fireWatch, fireWatchFloor } from './fire-watch.ts'
 import { harborDock, island, onDock } from './world.ts'
 import type { Point } from './world.ts'
@@ -185,7 +187,9 @@ export function authoredGroundHeight(point: Point) {
 // across the join), so beyond protected ground the baked height is the ground.
 // In the last `seamBlend` of the join's fade the exact authored ground takes over,
 // so the 2 m bake meets the authored surface without a step.
-export function groundHeight(point: Point) {
+// The island's ground before roads are cut and filled into it: the authored south,
+// the baked Highwood terrain and the seam between them.
+export function naturalGroundHeight(point: Point) {
   const original = originalCoastRadius(point)
   const keep = authoredShare(point, original)
   if (keep >= 1) return baseGroundHeight(point, original) + duneRelief(point)
@@ -194,6 +198,18 @@ export function groundHeight(point: Point) {
   const authored = baseGroundHeight(point, original) + duneRelief(point)
   return baked + (authored - baked) * (keep - 1 + seamBlend) / seamBlend
 }
+
+// Graded roads (src/worlds/starter/layout/roads.ts) cut and fill the natural ground.
+const roadGrading = createRoadGrading(starterRoads, naturalGroundHeight)
+
+// The ground players, wheels and physics stand on: the natural ground with its roads graded in.
+export function groundHeight(point: Point) {
+  return naturalGroundHeight(point) + roadGrading.delta(point)
+}
+
+export const gradedRoads = () => roadGrading.roads()
+// Metres from a point to the nearest graded road's edge: scenery and plants keep clear of the formation.
+export const roadClearance = (point: Point) => roadGrading.clearance(point)
 
 function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {
   if (Math.abs(radius - shoreStations.sandEdge.radius) > slopeSampleRadius) return 0

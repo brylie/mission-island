@@ -14,7 +14,7 @@ import { seededRandom } from './seeded-random'
 import { distanceToRoads, distanceToRoute, footpaths, walkways } from './routes'
 import { inFerryYard } from './worlds/starter/ferry-terminal'
 import { driftwoodStrand, fernfallChannel, shoreStations } from './worlds/starter/layout/terrain'
-import { coastPoint, coastRadius, coastSegments, coastalSurface, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, originalCoastPoint, originalCoastRadius, pool, shoreProfile, streamX, waterLevel } from './terrain'
+import { coastPoint, coastRadius, coastSegments, coastalSurface, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, originalCoastPoint, originalCoastRadius, pool, roadClearance, shoreProfile, streamX, waterLevel } from './terrain'
 import { authoredShare } from './worlds/starter/generation/protection'
 import { highwoodHeightmap } from './assets/geometry/highwood-heightmap'
 import { bakedSurface } from './worlds/starter/highwood-terrain'
@@ -349,7 +349,7 @@ export function createGrassTufts(meshes: MeshFactory) {
     const z = center.z + (random() - grassScatterCentre) * extent.length
     const point = { x, z }
     if (onBeachTowel(point) || distance(point, harbor) < grassHarborClearance || distance(point, town) < grassTownClearance
-      || distance(point, lookout) < grassLookoutClearance || distanceToRoads(point) < grassRoadClearance || inFerryYard(point, grassYardClearance)
+      || distance(point, lookout) < grassLookoutClearance || distanceToRoads(point) < grassRoadClearance || roadClearance(point) < grassRoadClearance || inFerryYard(point, grassYardClearance)
       || footpaths.some(({ points, width }) => distanceToRoute(point, points) < width / halves + grassPathClearance)
       || walkways.some(({ points, width }) => distanceToRoute(point, points) < width / halves + grassPathClearance)
       || buildings.some((entry) => Math.abs(entry.x - x) < entry.w / halves + grassBuildingClearance && Math.abs(entry.z - z) < entry.d / halves + grassBuildingClearance)) continue
