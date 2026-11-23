@@ -5,7 +5,7 @@ import type { Point } from '../src/world.ts'
 import type { CrewCommand } from './commands.ts'
 import type { CrewBroadcast, CrewMember } from './crew.ts'
 
-// The browser waits the full cooldown before sending; the host allows this much less, so network jitter never drops a mark.
+// The browser waits the full cooldown before sending; the host allows this much less, so ordinary network jitter rarely drops a mark.
 const networkLeewayMs = 250
 
 type MarkCommand = Extract<CrewCommand, { type: 'mark' | 'clear-mark' }>
