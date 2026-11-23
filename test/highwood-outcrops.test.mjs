@@ -2,9 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { highwoodGraniteRocks, slabCorners } from '../src/highwood-outcrops.ts'
 import { highwoodSolidTop } from '../src/highwood-solids.ts'
-import { distanceToRoute } from '../src/routes.ts'
 import { groundHeight } from '../src/terrain.ts'
-import { highwoodRoutes, inSightline } from '../src/worlds/starter/highwood-clearings.ts'
+import { clearOfRoutes, inSightline } from '../src/worlds/starter/highwood-clearings.ts'
 import { highwoodOutcropPlacement as placement } from '../src/worlds/starter/layout/highwood-outcrops.ts'
 import { highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
 
@@ -36,7 +35,8 @@ test('Highwood\'s granite carries outcrops, with clitter resting below them', ()
 test('granite rocks keep clear of routes, sight lines and Cairn\'s crown', () => {
   const crown = highwoodPlaces.cairnCrown
   for (const rock of highwoodGraniteRocks()) {
-    for (const route of highwoodRoutes) assert.ok(distanceToRoute(rock, route) >= placement.routeClearanceM + rock.reach, `${where(rock)} crowds a route`)
+    // Routes, and every graded road: fire road, summit spur, Pine Draw road and the Cairn ridge road.
+    assert.ok(clearOfRoutes(rock, placement.routeClearanceM + rock.reach), `${where(rock)} crowds a route or road`)
     assert.ok(!inSightline(rock, rock.reach), `${where(rock)} stands in a sight line`)
     assert.ok(Math.hypot(rock.x - crown.x, rock.z - crown.z) >= placement.keepFromCrownM + rock.reach, `${where(rock)} crowds the crown`)
   }

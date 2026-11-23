@@ -149,21 +149,21 @@ export const capturePresets = {
     hour: 15,
     weather: 'clear',
   },
-  // Ground texture checks: the summit overlook down Cairn's rocky south-east flank, the same flank at walking height, and the steep north-east face from the ridge foot.
+  // Ground texture checks: the summit overlook down Cairn's rocky north-east face, the same face at walking height, and the face from the ridge foot below.
   'ground-cairn-summit': {
-    label: 'Cairn Summit crown looking down the rocky south-east flank',
+    label: 'Overlook of Cairn Summit\'s rocky north-east face from above the ridge foot',
     kind: 'landscape',
-    eye: { x: -86, z: 210, height: 8 },
-    look: { x: -62, z: 182, height: 0 },
+    eye: { x: -52, z: 292, height: 32 },
+    look: { x: -104, z: 238, height: 0 },
     fov: 0.85,
     hour: 15,
     weather: 'clear',
   },
   'ground-cairn-slope': {
-    label: 'Bare granite on Cairn Summit\'s south-east flank at walking height',
+    label: 'Bare granite and crags on Cairn\'s north-east face at walking height',
     kind: 'landscape',
-    eye: { x: -72, z: 198, height: 1.7 },
-    look: { x: -62, z: 187, height: 0 },
+    eye: { x: -104, z: 252, height: 1.7 },
+    look: { x: -122, z: 240, height: 2 },
     fov: 0.85,
     hour: 15,
     weather: 'clear',

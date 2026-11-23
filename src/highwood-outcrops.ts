@@ -4,12 +4,11 @@ import { highwoodHeightmap } from './assets/geometry/highwood-heightmap.ts'
 import type { TreeTemplateOptions } from './assets/trees/tree-catalog.ts'
 import { treeCollision } from './assets/trees/tree-collision.ts'
 import { fbm } from './math/gradient-noise.ts'
-import { distanceToRoute } from './routes.ts'
 import { seededRandom } from './seeded-random.ts'
 import { groundHeight, originalCoastRadius, waterLevel } from './terrain.ts'
 import type { Point } from './world.ts'
 import { authoredShare } from './worlds/starter/generation/protection.ts'
-import { highwoodRoutes, inSightline } from './worlds/starter/highwood-clearings.ts'
+import { clearOfRoutes, inSightline } from './worlds/starter/highwood-clearings.ts'
 import { highwoodPlanting, plantTemplateOptions } from './worlds/starter/highwood-planting.ts'
 import { highwoodOutcropPlacement as placement } from './worlds/starter/layout/highwood-outcrops.ts'
 import { highwoodAuthoredLimit } from './worlds/starter/layout/highwood-planting.ts'
@@ -132,7 +131,7 @@ function clearOf(point: Point, reach: number, wood: Map<string, Point[]>, placed
   if (Math.hypot(point.x - crown.x, point.z - crown.z) < placement.keepFromCrownM + reach) return false
   // Rocks stay out of the kept-open sight lines, as the canopy does, and off routes.
   if (inSightline(point, reach)) return false
-  if (highwoodRoutes.some((route) => distanceToRoute(point, route) < placement.routeClearanceM + reach)) return false
+  if (!clearOfRoutes(point, placement.routeClearanceM + reach)) return false
   const i = Math.floor(point.x / woodCellM), j = Math.floor(point.z / woodCellM), span = Math.ceil((reach + placement.trunkClearanceM) / woodCellM)
   for (let di = -span; di <= span; di++) {
     for (let dj = -span; dj <= span; dj++) {
