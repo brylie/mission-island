@@ -36,6 +36,7 @@ Each species is a table in `src/assets/geometry/tree-species.ts` or `src/assets/
 - Exposed forms flatten, lean and stream toward +x. Old trees may snap at the top (25% chance per seed) and flatten their crowns.
 - **Simplified:** needles and cones aren't modelled; foliage pads stand in for clusters of shoots.
 - **Pine sapling** (`pineSapling`) is a small pine with a low, full crown.
+- Placement puts young pines and pine saplings at edges, in gaps and on open heath, not under the closed pinewood canopy. See [the forest](../backcountry.md#forest).
 
 **Notice this:** compare a pine in the middle of the wood with one on the ridge. Which way does the ridge pine lean, and which side lost its branches?
 
@@ -86,7 +87,7 @@ Each species is a table in `src/assets/geometry/tree-species.ts` or `src/assets/
 
 **In the game**
 - `aspen` in `tree-species.ts`: one straight stem with a small, high crown.
-- **Simplified:** each template is one stem. Placement should group aspens in patches to suggest a clone, but the trees aren't linked.
+- **Simplified:** each template is one stem, and the trees aren't linked. Placement mixes aspen into birch stands by weight, about three canopy trees in ten there, but doesn't yet group aspens into clone-like patches.
 
 **Notice this:** stand under an aspen on a still day and listen. You can often hear the leaves moving when you can't feel any wind.
 
@@ -207,7 +208,9 @@ Each species is a table in `src/assets/geometry/tree-species.ts` or `src/assets/
 **In the game**
 - `deadfallLog` in `shrub-species.ts`. It lies along +x with the root plate at the origin.
 - Young logs are long, stout and bark-covered. Mature logs are shorter, sunken and mossy.
-- Placement should lay logs roughly downwind, with a root pit on the upwind side.
+- Placement lays each log along the contour, either way along it, and tilts it to follow the ground from its root to its far end. Ground that bulges or dips more than 0.15 m from that line under a 7 m log is rejected, so logs rest on the ground rather than bridge hollows. There is no root pit yet.
+
+**Divergence:** real windthrow mostly points downwind, away from the storm. The island lays logs across the slope instead, so they rest on the ground, and they don't agree on a storm direction. A player shouldn't read the wind from island logs. Whether real logs on slopes come to rest across the slope is an [open question](../open-questions.md#sources-to-find).
 
 **Notice this:** check the direction of several fallen trees in one place. Do they agree on where the big storm came from?
 

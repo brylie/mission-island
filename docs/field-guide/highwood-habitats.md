@@ -52,7 +52,8 @@ Plants are described in [Highwood plants](highwood-plants.md), and terms in *ita
 - **What changes it.** Storms throw shallow-rooted trees, so the ridge collects more deadfall.
 - **Life (real).** Exposed heath holds mosses, lichens and low, wind-pruned heath plants. Meadow pipits, common nesting birds of moorland and heath, breed on open hillsides. *Sources: jncc-h4060, which describes higher montane heath than the island's ridge; wt-meadow-pipit.*
 - **In the game.** A few wind-bent pines all leaning the same way, with low juniper and heather, and no broadleaf trees or bracken.
-- **Notice this.** Which way do all the ridge pines lean? That tells you where the prevailing wind comes from. On Starter Island the breeze comes from the south-east, so the pines lean north-west. In the Scottish Highlands the prevailing wind is south-westerly, so flagged pines there lean north-east (unsourced).
+- **Notice this.** Which way do all the ridge pines lean? That tells you where the prevailing wind comes from. On Starter Island the breeze comes from the south-east, so the pines lean north-west. In the Scottish Highlands the prevailing wind is south-westerly, so flagged pines there lean north-east (unsourced: needs a Met Office climate source).
+- **Divergence.** The island's breeze is south-easterly, but the Highlands' prevailing wind is south-westerly, so real flagged pines there lean north-east, not north-west. A player shouldn't take the island's lean as the Highlands' wind.
 
 ## Wet woodland (Mirror Pool and stream banks)
 

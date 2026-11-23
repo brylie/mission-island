@@ -12,6 +12,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Crozier** | A young fern frond still curled like a shepherd's crook, also called a fiddlehead. |
 | **Deadfall** | A fallen dead tree or limb lying on the ground. |
 | **Dioecious** | Having male and female flowers on separate plants, as in juniper, willow and aspen. |
+| **Duff, needle litter** | The layer of fallen needles, leaves and twigs on a forest floor, slowly rotting into soil. *Duff* often means the lower, partly rotted part. In the game, Highwood's ground shows needle litter under pine with the `pine-duff` texture. |
 | **Exposure** | How much a site is open to the wind. The game has two levels, sheltered and exposed, and [#213](https://github.com/brylie/mission-island/issues/213) proposes a gradient. |
 | **Granny pine** | A Scottish name for a very old Scots pine, often broad-crowned with heavy limbs. |
 | **Heath** | Open ground of heather and other low shrubs on poor, acid soil. |
@@ -22,6 +23,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Phenology** | The timing of seasonal events in nature, such as flowering, fruiting, leaf fall and bird migration. |
 | **Pinnate** | A leaf made of many leaflets on either side of a central stalk, as in rowan and bracken. |
 | **Pioneer species** | A plant that colonises open or disturbed ground first, such as birch. |
+| **Regeneration** | New trees growing up in a wood, usually from seed. Natural regeneration needs seed, light and freedom from heavy grazing. In the game, young pines and saplings are placed at edges and in gaps. |
 | **Rhizome** | An underground stem that spreads sideways and sends up new shoots, as in bracken. |
 | **Root plate** | The flat disc of roots and soil torn out of the ground when a tree is blown over. |
 | **Self-pruning** | The natural loss of shaded lower branches as a tree grows taller in a stand. |
@@ -39,7 +41,10 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | Term | Meaning |
 | --- | --- |
 | **Broadphase** | The cheap first pass of collision detection. It rules out body pairs too far apart to touch, so the costly exact test (the narrowphase) runs on few pairs. |
-| **Far tier, near tier** | Two detail levels of the same tree. The near model has more triangles and shows close up; the far model keeps the silhouette with few triangles and replaces it beyond about 100 metres. |
+| **Draw call** | One request from the main processor to the graphics card to draw a mesh with its material. Each carries overhead, so a forest is cheaper in a few big batches than in many small ones. |
+| **Far tier, near tier** | Two detail levels of the same tree. The near model has more triangles and shows close up; the far model keeps the silhouette with few triangles. In Highwood, a 64 m tile switches to the far tier about 80 metres from the camera. |
+| **Frustum culling** | Skipping anything outside the camera's view, the *frustum*, before drawing it. Highwood culls each far tile whole. |
+| **Level of detail (LOD)** | Drawing a simpler model of an object when it is far away and small on screen. The switch between models is an LOD switch. |
 | **Narrowphase** | The exact collision test on the pairs the broadphase kept. It finds contact points and can wake a sleeping body. |
 | **Seed** | A whole number that picks one plant's variation. The same species, age, exposure and seed always grows the same plant. |
 | **Silhouette view** | A Workbench look that draws every plant as a flat black shape, to check each species can be recognised by outline alone. |

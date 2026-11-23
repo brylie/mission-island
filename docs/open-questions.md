@@ -24,6 +24,9 @@ One list of everything we know we don't know: research to do, sources to find, a
 - **Moved pages' shapes.** The wildfire, bracken slopes and wet woodland pages still use their own headings, not the framework's process and place shapes. Reshape them in a later edit, and fix any anchors that change.
 - **Two alder quotes not found.** `node scripts/check-source-quotes.mjs` couldn't find the Woodland Trust alder quotes about siskins and otters on the page; the fetcher probably paraphrased them. Check them on the page, or find the actual wording.
 - **Quote checks.** A person needs to check each `quote-via: fetcher` quote in the sources register against its page, before those claims can be marked checked.
+- **Logs on slopes.** Do fallen trees on a slope tend to come to rest across it? The island lays every log along the contour; real windthrow mostly points downwind. Unsourced. See [deadfall log](field-guide/highwood-plants.md#deadfall-log).
+- **Scotland's prevailing wind.** That the Highlands' prevailing wind is south-westerly needs a Met Office climate source. See [exposed ridge](field-guide/highwood-habitats.md#exposed-ridge-toward-windstone-ridge).
+- **Footstep surfaces.** The litter footsteps assume pine duff is soft and quiet, broadleaf litter crackles, moss squelches and heather swishes. None of these is sourced. See [the forest's ground cover](backcountry.md#forest).
 - **Archiving.** No source has an archived copy yet. Saving pages to the Wayback Machine sends their URLs to an outside service, so it needs the maintainer's go-ahead.
 
 ## Planned, not built
@@ -33,11 +36,16 @@ One list of everything we know we don't know: research to do, sources to find, a
 - Graded wind exposure: [#213](https://github.com/brylie/mission-island/issues/213).
 - Old forms for shrubs and deadwood: [#214](https://github.com/brylie/mission-island/issues/214).
 - Craft pages for procedural audio, procedural landscape and wildlife behaviour. See [craft](craft/README.md#pages).
+- An inland outcrop layer. The habitat classifier's rock term reads only the baked coastal rock, so inland heath and ridge come from wind exposure alone. See [Highwood backcountry](backcountry.md#habitats).
+- Route clearance for Phase 3. Plants keep 3 m from every route's centreline (`highwoodRouteClearanceM`), less than a road's half-width plus shoulder, 4.4 m (`roadSurface` in `src/assets/geometry/route-profiles.ts`: 6 m wide, 1.4 m shoulders). The road needs a wider clearance by route kind. See [Highwood backcountry](backcountry.md#phases).
+- A stable plant ID for Phase 4. Burn scars and other per-plant state should key on a plant's layer and planting cell, not its place in the bake. See [Highwood forest](architecture.md#highwood-forest).
 - Reference photos for the procedural terrain model: granite tors, U-shaped valleys, fjards and scree, with licence and author, stored beside the generation parameters as `tree-references.ts` is for the Highwood trees.
 
 ## Questions to answer
 
-- Where should the Highwood near-to-far tree switch sit with the game camera's field of view? The Workbench suggests about 100 m. See [rendering and detail](craft/rendering-and-detail.md#hiding-the-switch).
+- Is the Highwood near-to-far tree switch, at 80 m to a tile's nearest point with a 16 m dead band, invisible in the game camera? The Workbench suggested about 100 m for one tree. See [rendering and detail](craft/rendering-and-detail.md#hiding-the-switch).
+- Why did far crowns vanish when the far merged meshes shared a foliage material with the near thin instances, once the scene fog plugin was on? Far material copies work around it, but the cause is unknown. See [rendering and detail](craft/rendering-and-detail.md#what-failed).
+- Does the Low graphics tier hold 30 fps on an older computer? It is not yet measured on one; that belongs to the two-player playtest. See [Highwood backcountry](backcountry.md#performance).
 - Should the fire model add slope, a second lookout for cross-bearings, or fuel types? Each would reduce a [misconception](misconceptions.md).
 - How should a crew reach a backcountry fire? Highwood's places are 222–520 m from the Fire Watch, against 26–102 m for the current fire sites, so a callout there needs the fire road or a role on the way. See [Highwood backcountry](backcountry.md#phases).
 - Can the generated coast reach a real rocky coast's fractal dimension? [The current bake](design/island-generation.md#the-current-bake) measures 1.09 against a 1.2–1.3 target, because a dome plus noise reads near 1 at fine scales.

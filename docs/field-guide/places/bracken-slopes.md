@@ -1,6 +1,6 @@
 # Bracken slopes
 
-**Type: explanation (place). Real world: draft. On the island: planned**, as part of the Highwood. Last tended 2026-11-22. Model purpose: **illustrate** a habitat as scenery. It uses its own headings rather than the framework's place shape. This page owns the bracken claims, and the [habitat card](../highwood-habitats.md#bracken-slopes) summarises them.
+**Type: explanation (place). Real world: draft. On the island: in progress**, as part of the Highwood. Last tended 2026-11-23. Model purpose: **illustrate** a habitat as scenery. It uses its own headings rather than the framework's place shape. This page owns the bracken claims, and the [habitat card](../highwood-habitats.md#bracken-slopes) summarises them.
 
 Walk up many hillsides in Britain and Ireland in late summer and you wade through waist-high green fronds, all one plant: bracken. In autumn the whole slope turns bronze. This explainer covers how a single fern can take over a hillside, why it grows where it does, and what that means for wildlife and for the people who work the land.
 
@@ -38,7 +38,7 @@ So on a hillside, bracken often marks the deeper, drier soils, with heather on t
 
 ## On the island
 
-Bracken is one of the [Highwood plants](../highwood-plants.md#bracken-pteridium-aquilinum). Each patch is a few fronds rising from separate points, as from a rhizome, with tips turning from rust-green toward bronze. Placement is planned to put bracken in woodland gaps and on gentle, deeper-soiled slopes, never on the exposed ridge or in wet ground. Players can walk through it: it is soft cover, not an obstacle.
+Bracken is one of the [Highwood plants](../highwood-plants.md#bracken-pteridium-aquilinum). Each patch is a few fronds rising from separate points, as from a rhizome, with tips turning from rust-green toward bronze. Placement puts bracken on gentle, deeper-soiled slopes, at woodland edges and in gaps, and under birch, never on the exposed ridge or in wet ground. The ground shader also tints bracken ground, so a slope reads as bracken beyond the distance where fronds are drawn; see [the forest](../../backcountry.md#forest). Players can walk through it: it is soft cover, not an obstacle.
 
 ## Where the island differs
 
