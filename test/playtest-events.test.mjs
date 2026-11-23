@@ -115,8 +115,8 @@ test('a playtest crewmate can go to a named place, standing on its ground', () =
   const arrived = game.tick().players[0]
   assert.deepEqual([arrived.sleeping, arrived.onBed, arrived.rowing], [false, false, false])
   // A hero view's spot faces the view's target.
-  game.playtestEvent({ type: 'go-to', place: 'highwood-ridge-home' }, tokens[0])
-  const hero = playtestPlaces.find(({ id }) => id === 'highwood-ridge-home')
+  game.playtestEvent({ type: 'go-to', place: 'highwood-summit-home' }, tokens[0])
+  const hero = playtestPlaces.find(({ id }) => id === 'highwood-summit-home')
   assert.equal(game.tick().players[0].heading, hero.heading)
   state.players[0].seat = 'driver'
   assert.deepEqual(game.playtestEvent({ type: 'go-to', place: 'bracken' }, tokens[0]), { ok: false, text: 'Leave your seat or land first.' })

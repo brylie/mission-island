@@ -20,7 +20,7 @@ Capture these at every phase with the same camera, hour, weather and quality. Th
 | Fire road entering the forest | Midday, light filtering down | The threshold from open meadow into tall trunks |
 | Alder Creek ford | Overcast after rain | Intimacy: wet stones, moss, alder roots |
 | Birch Flats | Evening, low sun | Beauty: pale trunks glowing amber, long shadows |
-| Ridge crest looking back south | Late afternoon | Belonging: Harbor, Seabrook and the farm small in the distance |
+| Cairn Summit looking back south | Late afternoon | Belonging: Harbor, Seabrook and the farm small in the distance below the mountain |
 
 The five views are `highwood-*` capture presets in [`src/assets/recipes/capture-presets.ts`](../src/assets/recipes/capture-presets.ts), each an eye, a look point, an hour and a sky. A test keeps every view's line of sight clear of terrain and within the Workbench's orbit range.
 
@@ -29,7 +29,7 @@ A sixth preset, `highwood-cairn-southwest`, looks at Cairn Summit's crown from t
 Capture the views with the shared [iteration tooling](iteration-tooling.md#captures):
 
 ```sh
-npm run capture -- --preset highwood-tower-north,highwood-fire-road,highwood-creek-ford,highwood-birch-flats,highwood-ridge-home
+npm run capture -- --preset highwood-tower-north,highwood-fire-road,highwood-creek-ford,highwood-birch-flats,highwood-summit-home
 ```
 
 Add `highwood-cairn-southwest` to the list for the landmark check.
@@ -113,7 +113,7 @@ Highwood is planted in three layers from the [stand tables](../src/worlds/starte
 
 - **Regeneration.** Scots pine needs light to establish, so young pines and pine saplings grow at edges and in gaps, not under the closed pinewood canopy, whose floor carries bilberry and heather.
 - **Clumps and glades.** Native pinewood grows in irregular clumps with open glades between, not in rows. Soft noise patches about 38 m across scale the canopy's cover by up to 85% either way, and 18 m patches do the same for the understory. Canopy trees vary in size by up to a quarter either way, and the pinewood mixes old, mature and young pines.
-- **Kept-open views.** Canopy and deadwood keep out of a widening corridor along the ridge-home and Cairn south-west sight lines, as gaps on a crest would, so players stopping there see what the capture presets show. A test keeps the corridors and the presets in step.
+- **Kept-open views.** Canopy and deadwood keep out of a widening corridor along the summit-home and Cairn south-west sight lines, as gaps on a crest would, so players stopping there see what the capture presets show. A test keeps the corridors and the presets in step.
 
 `npm run island:generate` bakes the planting after the terrain (`scripts/plant-highwood.mjs`): 6,795 plants at 8 bytes each plus the ground raster, 86 KB. The host and every screen decode it in about 6 ms instead of classifying for about 180 ms at load. A source-hash test over every file the planter reads catches a stale bake, and the test re-plants and compares every plant's position, heading and size with the bake.
 
@@ -160,7 +160,7 @@ Four graded roads, 1.5 km in all, give the Fire and Rescue crew vehicle access t
 | Cairn Summit, north at dawn | 5.2 | 796 | 1.79M |
 | Fire road, midday (on the road since Phase 3) | 4.6 | 751 | 1.62M |
 | Birch Flats, evening | 4.3 | 627 | 0.68M |
-| Fallow Ridge, looking home | 7.6 | 1,401 | 2.40M |
+| Cairn Summit, looking home | to measure | | |
 | Alder Creek ford (roads in, Phase 3) | 4.3 | 688 | 1.41M |
 | Cairn from the south-west | 4.9 | 734 | 1.39M |
 

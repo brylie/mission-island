@@ -80,6 +80,16 @@ export const capturePresets = {
     weather: 'clear',
     overlays: ['sightlines', 'wildfire', 'protected'],
   },
+  // Cairn from the village: the landmark has to read as a mountain from home.
+  'landmark-cairn-from-village': {
+    label: 'Cairn Summit from the village',
+    kind: 'landscape',
+    eye: { x: -20, z: 30, height: 2 },
+    look: { x: -110, z: 225, height: 30 },
+    fov: 0.8,
+    hour: 16.5,
+    weather: 'clear',
+  },
   // Highwood's hero views (docs/backcountry.md#hero-views), captured at every phase to compare like for like.
   'highwood-tower-north': {
     label: 'Cairn Summit looking north at dawn',
@@ -93,9 +103,9 @@ export const capturePresets = {
   'highwood-fire-road': {
     label: 'Into the Highwood forest at midday',
     kind: 'landscape',
-    // On the fire road in the valley west of Cairn, looking up it toward Alder Creek.
-    eye: { x: -196, z: 217, height: 1.7 },
-    look: { x: -244, z: 279, height: 4 },
+    // On the fire road below Cairn's south-west flank, looking up it toward Alder Creek.
+    eye: { x: -214, z: 193, height: 1.7 },
+    look: { x: -260, z: 243, height: 4 },
     fov: 0.8,
     hour: 12,
     weather: 'clear',
@@ -119,16 +129,17 @@ export const capturePresets = {
     hour: 17.4,
     weather: 'clear',
   },
-  'highwood-ridge-home': {
-    label: 'Fallow Ridge looking home',
+  // From Cairn Summit, beside the Fire Watch's site, south over the massif's flank to the settled south.
+  'highwood-summit-home': {
+    label: 'Home from Cairn Summit',
     kind: 'landscape',
-    eye: { x: -220, z: 310, height: 2 },
+    eye: { x: -95, z: 210, height: 1.7 },
     look: { x: -35, z: -5, height: 2 },
     fov: 0.8,
     hour: 16.5,
     weather: 'clear',
   },
-  // The landmark from the side: Cairn Summit's long shoulder and steep north-west face.
+  // The landmark from the side: Cairn Summit's crag on its ridge, whose broad south-west flank carries the summit road.
   'highwood-cairn-southwest': {
     label: 'Cairn Summit from the south-west shore',
     kind: 'landscape',

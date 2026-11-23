@@ -44,7 +44,9 @@ test('the generated island reads like a real coast', () => {
   assert.ok(development > 1.8, `shoreline development ${development}`)
   assert.ok(coastlineDimension(grid, land) > 1.03, 'a coast rougher than a smooth curve')
   const { steep } = slopeShares(grid, land)
-  assert.ok(steep < 0.3, `most land is walkable, steep share ${steep}`)
+  // Cairn is a mountain massif: an 80 m crag on a ridge with steep flanks adds steep ground (rising
+  // more than 0.6 per metre) to the island's 28 %. About two-thirds of the land stays walkable.
+  assert.ok(steep < 0.37, `most land is walkable, steep share ${steep}`)
   const bounds = coastBounds()
   assert.ok(bounds.east - bounds.west > 500 && bounds.north - bounds.south > 600, JSON.stringify(bounds))
 })

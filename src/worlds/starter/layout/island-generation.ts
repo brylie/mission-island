@@ -71,8 +71,9 @@ export const highwoodGeneration = {
   // bands and the summit. Strength fades over each core's radius.
   uplift: {
     cores: [
-      // Cairn Summit's granite runs north-east to south-west, so it weathers into a ridge, not a cone.
-      { from: { x: -128, z: 196 }, to: { x: -72, z: 238 }, radius: 58, strength: 1 },
+      // Cairn Summit's granite crown and its north-east crest. It stays first: the granite ground's
+      // joints take their bearing from it. The ridge running north-west is set below, under `ridges`.
+      { from: { x: -100, z: 216 }, to: { x: -72, z: 238 }, radius: 44, strength: 1 },
       { from: { x: -320, z: 330 }, to: { x: -120, z: 415 }, radius: 70, strength: 0.9 },
       { from: { x: -215, z: 540 }, to: { x: -110, z: 480 }, radius: 55, strength: 0.6 },
       { from: { x: -430, z: 520 }, to: { x: -380, z: 500 }, radius: 60, strength: 0.6 },
@@ -80,12 +81,32 @@ export const highwoodGeneration = {
     ridged: { wavelength: 210, octaves: 6, lacunarity: 2.1, gain: 0.6 },
     height: 22,
   },
-  // Cairn Summit's crown is pinned so the Fire Watch sees over Fallow Ridge. The
-  // crag is lopsided: a steep face toward Fallow Ridge (`faceRadius`), a long
-  // shoulder the other way (`shoulderRadius`), and `radius` across. `plateau` is
-  // the share of the crag that stays near the top. `shield` is how much of the
-  // crown erosion leaves alone.
-  pins: [{ ...highwoodPlaces.cairnSummit, height: 50, toward: highwoodPlaces.fallowRidge, faceRadius: 16, shoulderRadius: 80, radius: 30, plateau: 0.25, shield: 0.15 }],
+  // Cairn Summit's crown is pinned so the Fire Watch sees over Fallow Ridge, and high enough to
+  // read as the island's mountain from the village. The crag is lopsided: a steep face toward the
+  // north-east sea (`faceRadius`), a shorter shoulder the other way (`shoulderRadius`) where it
+  // meets its ridge, and `radius` across. `plateau` is the share of the crag that stays near the
+  // top. `shield` is how much of the crown erosion leaves alone.
+  pins: [{ ...highwoodPlaces.cairnSummit, height: 80, toward: { x: -45, z: 265 }, faceRadius: 24, shoulderRadius: 55, radius: 36, plateau: 0.2, shield: 0.2 }],
+
+  // Granite ridges: each crest runs through its points at their heights, and its flanks fall to
+  // the land around over each point's `leftWidth` and `rightWidth` (left and right looking along
+  // the crest), so a flank can be narrow in one place and broad in another. `round` turns an even
+  // flank (0) into a rounded one (1). `shield` is how much of the ridge erosion leaves alone.
+  ridges: [
+    // Cairn's ridge runs north-west from the crown toward Fallow Ridge, falling in steps. Its
+    // south-west flank is narrow by the crown, clear of the village, and broadens into the even
+    // face the summit road switches back up; the north-east flank is steep.
+    {
+      crest: [
+        { x: -95, z: 215, height: 68, leftWidth: 70, rightWidth: 60 },
+        { x: -140, z: 265, height: 54, leftWidth: 150, rightWidth: 70 },
+        { x: -185, z: 315, height: 40, leftWidth: 160, rightWidth: 75 },
+        { x: -215, z: 360, height: 32, leftWidth: 120, rightWidth: 60 },
+      ],
+      round: 0.3,
+      shield: 0.4,
+    },
+  ] as readonly { crest: readonly { x: number, z: number, height: number, leftWidth: number, rightWidth: number }[], round: number, shield: number }[],
 
   // Era 2: glaciers carved broad U-shaped valleys toward the sea. Each valley has
   // a flat floor of `floorWidth` and walls rising over `wallWidth`.

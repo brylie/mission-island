@@ -58,7 +58,7 @@ Presets are declarative data in [`src/assets/recipes/capture-presets.ts`](../src
 | `highwood-fire-road` | Along the fire road into the Highwood forest at midday. |
 | `highwood-creek-ford` | Alder Creek under an overcast sky after rain. |
 | `highwood-birch-flats` | Birch Flats in low evening sun. |
-| `highwood-ridge-home` | From Fallow Ridge back toward the settled south in late afternoon. |
+| `highwood-summit-home` | From Cairn Summit, beside the Fire Watch's site, south to the settled south in late afternoon. |
 | `highwood-cairn-southwest` | Cairn Summit from the south-west shore, a landmark check of the crag's outline rather than a hero view. |
 | `specimen-tussock` | A grass tussock specimen. Use `--grid` for a four-seed turntable. |
 

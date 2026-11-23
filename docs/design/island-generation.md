@@ -16,7 +16,7 @@ Every layer is seeded and deterministic.
 
 1. **Base mass.** A few low-frequency "continent" shapes for the main blocks: the southern block, the Windstone upland, and the Highwood upland. A gentle falloff toward the edge of the map keeps the island surrounded by sea. No ellipse.
 2. **Fractal detail.** fBm noise with lacunarity 2. The coastline of an fBm surface with Hurst exponent H has a fractal dimension of about 2 − H, and an octave gain of 2^(−H) sets H (`mandelbrot-1967`, `mandelbrot-1975`, `voss-1988`; recorded unopened, so unsourced). A gain of 0.5 gives H = 1 and a smooth coast near 1; the 1.2–1.3 of real rocky coasts needs a gain of about 0.57–0.62. Highwood's fine roughness uses 0.6, strongest near sea level and on hard rock so the interior stays walkable. The relation assumes a homogeneous field; here the coast is the contour of a broad dome plus noise, so the finest scales still read near 1.
-3. **Hard-rock uplands.** Ridged multifractal noise, weighted by an uplift field placed where the story puts granite: Windstone, Cairn Summit and Fallow Ridge. It gives sharp crests and rock bands.
+3. **Hard-rock uplands.** Ridged multifractal noise, weighted by an uplift field placed where the story puts granite: Windstone, Cairn Summit and Fallow Ridge. It gives sharp crests and rock bands. Pinned crags and ridges (`pins`, `ridges`) shape the landmarks the story needs; they stand on the land with `max`, after the noise.
 4. **Domain warping.** Displace the noise coordinates with another noise field, so ridges and valleys fold and flow instead of lining up on a grid.
 
 ## Erosion turns noise into land
@@ -35,7 +35,10 @@ Erosion is what makes the land read as shaped, rather than as bumps.
   - Pinewoods, Juniper Hollow, Fernfall and Mirror Pool;
   - the Windstone launch, landing meadow and flight envelope;
   - the beach and dune shaping from #167.
-- **Pinned control points.** These include the summit height, the creek's course, the harbor's depth, and Windstone staying a sea-facing headland. The generator fills in around them. Cairn Summit's pin is a lopsided crag rather than a round dome: a steep face toward Fallow Ridge (a 16 m face radius), a long shoulder to the south-east (80 m), 30 m across, with a flat top over its inner quarter. Erosion leaves 0.15 of the crown alone, down from 0.3, so the crag weathers like the rest of the granite.
+- **Pinned control points.** These include the summit height, the creek's course, the harbor's depth, and Windstone staying a sea-facing headland. The generator fills in around them. Cairn Summit is a mountain massif, not a lone cone. Its pin is an 80 m crag, steep toward the north-east sea (a 24 m face radius) and 36 m across, standing on a granite ridge that runs north-west toward Fallow Ridge.
+  - **The ridge** is a crest through four points, falling from 68 m by the crown to 32 m. Each point sets how far its flanks reach on either side. The south-west flank is 70 m by the crown, clear of the village's protected ground, and broadens to 150–160 m further along. That gives an even face of about a third, which the summit road switches back up. The north-east flank stays steep.
+  - **Why so tall.** At 50 m, Cairn read as a hill behind the village's trees. At 80 m it reads as the island's mountain from home, and its broad flank gives room for a drivable road. The design comparison of a 52 m north-west ridge, a 52 m west ridge and this massif is in [decisions](decisions.md).
+  - **Erosion** leaves 0.2 of the crown and 0.4 of the ridge alone, so the flanks keep gullies without losing their even face.
 - **Compatibility.** Existing coordinates, saves, and the glider, landing and coastline tests must still hold. Only tests that pinned the old ellipse formula are rewritten.
 
 ## Bake, don't compute live
@@ -68,7 +71,7 @@ Tested automatically where possible:
   - About 0.16 km² of land in the generated grid, roughly 0.2 km² for the whole island.
   - A shoreline development index of 2.2. A box-counting dimension of 1.09, fitted over the noise's scaling range of 8–64 m.
   - Under a fifth of the land is steep.
-  - Cairn Summit's crown, at 49.9 m at (−92, 219), is the highest point; Fallow Ridge hides Pine Draw from it.
+  - Cairn Summit's crown, at about 80 m at (−92, 219), is the highest point; Fallow Ridge still hides Pine Draw's ground, but not its smoke, from the tower deck.
 - **Stone.** Upland stone renders as granite above about 7–15 m, blending from the coastal sandstone below. It is projected from three sides, so steep faces aren't streaked.
 - **Aspect.** Slopes facing south, toward the midday sun, are tinted drier and straw-coloured; slopes facing north stay cooler and mossier. In the northern hemisphere, south-facing slopes get more direct sun, so they are warmer and drier (unsourced). The tint is a hue shift, so hillsides differ at every hour without baking in a light direction that would disagree with the evening sun.
 - **Still to tune.** The coast dimension is below the 1.2–1.3 target: the dome-plus-noise shape reads near 1 at fine scales. Gully density is still even on most slopes, and the old island's smooth hills sit beside the eroded land in a different style.

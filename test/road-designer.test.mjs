@@ -53,8 +53,8 @@ test('Suggest route finds a grade-limited way up toward Cairn Summit', () => {
 })
 
 test('Suggest route keeps a road straight where a straight road holds the grade', () => {
-  // The valley west of Cairn rises gently: a road builder runs straight up it.
-  const from = { x: -112, z: 109 }, to = { x: -256, z: 294 }
+  // The country south-west of Cairn rises gently: a road builder runs straight across it.
+  const from = { x: -112, z: 107 }, to = { x: -172, z: 167 }
   const suggestion = suggestRoute(from, to, 0.12)
   const route = [from, ...suggestion.dots, to]
   const length = route.slice(1).reduce((sum, point, i) => sum + Math.hypot(point.x - route[i].x, point.z - route[i].z), 0)

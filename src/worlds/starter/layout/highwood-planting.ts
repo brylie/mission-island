@@ -32,7 +32,7 @@ export const highwoodRouteClearanceM = 3
 // toward the look point. They match the capture presets of the same id. Wet woodland
 // keeps its alders and willows inside a corridor: a creek bank stays wooded.
 export const highwoodSightlines = [
-  { id: 'highwood-ridge-home', eye: { x: -220, z: 310 }, look: { x: -35, z: -5 }, reachM: 340, halfWidthM: 8, spread: 0.1 },
+  { id: 'highwood-summit-home', eye: { x: -95, z: 210 }, look: { x: -35, z: -5 }, reachM: 235, halfWidthM: 8, spread: 0.1 },
   { id: 'highwood-cairn-southwest', eye: { x: -212, z: 129 }, look: { x: -92, z: 219 }, reachM: 110, halfWidthM: 7, spread: 0.12 },
   { id: 'highwood-creek-ford', eye: { x: -270, z: 300 }, look: { x: -310, z: 280 }, reachM: 30, halfWidthM: 4, spread: 0.15 },
 ] as const
