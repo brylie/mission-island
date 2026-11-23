@@ -6,7 +6,7 @@ One list of everything we know we don't know: research to do, sources to find, a
 
 ## Sources to find
 
-- **Wildfire.** A fire-behaviour source for fuel, weather, topography and fighting tactics. UK spring fire timing and human ignition. Scots pine bark and fire, and recovery after burning. The US Forest Service notes behind the fire-finder claim. See [wildfire](field-guide/processes/wildfire.md#sources).
+- **Wildfire.** A fire-behaviour source for fuel, weather, topography and fighting tactics. UK spring fire timing and human ignition. Scots pine bark and fire, and recovery after burning. The New York State fire tower study behind the cross-bearing claim. See [wildfire](field-guide/processes/wildfire.md#sources).
 - **Bracken.** Rhizome spread, soil and frost preferences, toxicity, wildlife and ticks. See [bracken slopes](field-guide/places/bracken-slopes.md#sources).
 - **Wet woodland.** Waterlogging, alder's *Frankia* nodules, the hydrosere, wildlife, and flood and water roles. See [wet woodland](field-guide/places/wet-woodland.md#sources).
 - **Highwood habitats.** Every *Life* line. See [Highwood habitats](field-guide/highwood-habitats.md).
@@ -18,9 +18,10 @@ One list of everything we know we don't know: research to do, sources to find, a
 
 - **Bracken toxicity.** A search summary suggested the risk to livestock may be low, but its page couldn't be opened. "Bracken is poisonous to livestock" may turn out contested once that source is read.
 - **Field guide species entries.** These still make real claims with no individual sources. Several are now sourced on the habitats page, such as juniper's decline, alder's nodules, siskins and otters. Link those source ids from the species entries.
-- **Fire-finder primary sources.** The US Forest Service account (403 error) and the New York State fire tower study (the PDF timed out) are recorded as unopened in the register. Read them to replace the tier 4 Wikipedia source.
+- **Fire-finder primary sources.** The US Forest Service account (`usfs-osborne-firefinder`) was read on 2026-11-23 from its archived copy, because the live page returns 403. The New York State fire tower study (the PDF timed out) is still unopened. NWCG's intersection page (`nwcg-firefighter-math-location`) now sources crossing bearings at tier 1, so the tier 4 Wikipedia source on the wildfire page can be replaced.
+- **Spotting and ranging.** A source for a wide exit pupil helping in poor light, for bracing to steady binoculars and higher magnification narrowing the field, for haze, smoke and rain washing out a distant view, and for how lookouts are trained and staffed. A physics textbook or agency source for distance = c·t/2, to replace the tier 4 Wikipedia citation. NWCG and US Forest Service quotes were read from Wayback copies because the live sites refuse automated reading, so the quote checker reports them unfetchable. See [spotting and ranging](field-guide/practices/spotting-and-ranging.md#sources).
 - **Wildfire safety box.** A person must check the box against the Scottish Fire and Rescue Service page before the wildfire page can be verified.
-- **Archive failures.** Four Wildlife Trusts pages couldn't be saved to the Wayback Machine. Try again later or from a browser.
+- **Archive failures.** Four Wildlife Trusts pages couldn't be saved to the Wayback Machine. Nor could, on 2026-11-23, `nikon-laser-30`, `vortex-rangefinder-modes`, `fda-laser-classes` and `os-three-norths`. Try again later or from a browser.
 - **Moved pages' shapes.** The wildfire, bracken slopes and wet woodland pages still use their own headings, not the framework's process and place shapes. Reshape them in a later edit, and fix any anchors that change.
 - **Two alder quotes not found.** `node scripts/check-source-quotes.mjs` couldn't find the Woodland Trust alder quotes about siskins and otters on the page; the fetcher probably paraphrased them. Check them on the page, or find the actual wording.
 - **Quote checks.** A person needs to check each `quote-via: fetcher` quote in the sources register against its page, before those claims can be marked checked.

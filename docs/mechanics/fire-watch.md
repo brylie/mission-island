@@ -25,7 +25,7 @@ The brass **fire finder** stands in the middle of the cab. **E · Sight the fire
 
 ## Binoculars and crew marks
 
-Every crewmate carries a pair of 8×42 binoculars with a built-in laser rangefinder and compass. They are personal kit: there is nothing to pick up, and nothing about them is saved. The [field guide](../field-guide/README.md) explains how real binoculars, rangefinders and compass bearings work.
+Every crewmate carries a pair of 8×42 binoculars with a built-in laser rangefinder and compass. They are personal kit: there is nothing to pick up, and nothing about them is saved. The [spotting and ranging](../field-guide/practices/spotting-and-ranging.md) field-guide page explains how real binoculars, rangefinders and compass bearings work.
 
 - **Raising them.** Press **V** on foot to raise them and **V** or **Esc** to lower them. They will not come up while seated, flying, swimming, asleep, pushing the barrow, with a dialog open, in the island overview or during a shader review, and they come down by themselves if any of those starts. Raising them stops you walking and cancels anything held in your hands. Lowering them returns to the follow camera exactly as it was.
 - **The view.** You look out from your own eyes, 1.53 m above your feet, at eight times magnification: the field of view narrows from the follow camera's 54° to about 7.3°, close to the true field of a real 8× pair. The mouse turns the view at one eighth of its usual rate, so the island moves across the screen at the same speed it does without them, and the look options' speed and invert settings apply. **W A S D** or the arrow keys pan by one field of view a second, four times faster with **Shift**, and the invert settings apply to them too. The HUD gives way to a twin round field, a fine reticle and the readout. Crewmates' name tags stay; place labels hide.
@@ -40,10 +40,7 @@ The browser sends only the mark's position on the ground. The host accepts it wh
 
 ### Where the binoculars differ from real ones
 
-- **Haze.** While the binoculars are up, the fog starts and ends twice as far away, so far ground stays readable. Real binoculars magnify detail but cannot see through haze or rain; this is a game choice for legibility.
-- **What stops the beam.** A real rangefinder reports the first strong echo, which is often a branch, a leaf or rain. Here the beam ignores trees and treats each house as a box up to its ridge, so the reading is the ground behind the trees.
-- **North.** Bearings are measured from the island's north, +z on the map. There is no magnetic declination to correct for.
-- **Steadiness and light.** The view never shakes, and the 42 mm objective lenses' light gathering is not modelled: at night the view is as dark as without binoculars.
+Two choices change what a player sees. While the binoculars are up the fog starts and ends twice as far away, so far ground stays readable. The beam also ignores trees, so a reading under a tree crown is the ground behind it. The [spotting and ranging](../field-guide/practices/spotting-and-ranging.md#where-the-island-differs) page explains how real binoculars, rangefinders and bearings work, and lists every way the island differs from them.
 
 The binoculars are a first step toward shared map pins ([#7](https://github.com/brylie/mission-island/issues/7)) and toward a lookout scope at the fire finder ([#93](https://github.com/brylie/mission-island/issues/93)).
 

@@ -1,6 +1,6 @@
 # Conventions
 
-**Status: reference. Last tended 2026-11-22.**
+**Status: reference. Last tended 2026-11-23.**
 
 Shared rules for space, time and randomness that other pages assume. Link here instead of restating them.
 
@@ -11,6 +11,7 @@ Shared rules for space, time and randomness that other pages assume. Link here i
   - The game uses Babylon.js's left-handed axes, with **+y up**.
   - A ground position is written as an *(x, z)* pair in metres, for example the Fire Watch tower at (21, 36).
   - Heights come from the terrain at that point.
+- **North and bearings.** North is **+z** and east is **+x**. The island has one north: true, grid and compass north are the same, with no magnetic declination. A bearing is in whole degrees clockwise from north, as in `src/spotting.ts`. See [spotting and ranging](field-guide/practices/spotting-and-ranging.md#where-the-island-differs) for how real compasses differ.
 - **Model origin.** A model's origin sits where it meets the ground. For Highwood trees that's the base of the trunk. Trunks continue a little below the origin, so slopes never show a gap.
 - **Downwind for Highwood templates.** Exposed trees and shrubs lean and stream toward their local **+x**. When placing one, turn it about **y** so +x points downwind. Fallen logs lie along local +x, with the root plate at the origin.
 
