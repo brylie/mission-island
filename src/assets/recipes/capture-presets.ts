@@ -149,7 +149,7 @@ export const capturePresets = {
     hour: 15,
     weather: 'clear',
   },
-  // Ground texture checks: the summit overlook down Cairn's rocky south-east flank, the same flank at walking height, and the foot of its west shoulder.
+  // Ground texture checks: the summit overlook down Cairn's rocky south-east flank, the same flank at walking height, and the steep north-east face from the ridge foot.
   'ground-cairn-summit': {
     label: 'Cairn Summit crown looking down the rocky south-east flank',
     kind: 'landscape',
@@ -168,11 +168,11 @@ export const capturePresets = {
     hour: 15,
     weather: 'clear',
   },
-  'ground-cairn-shoulder': {
-    label: 'Foot of Cairn Summit\'s west shoulder, grus and outcrop under pines',
+  'ground-cairn-northeast': {
+    label: 'Cairn Summit\'s steep north-east face, crags and clitter above the ridge foot',
     kind: 'landscape',
-    eye: { x: -128, z: 196, height: 1.7 },
-    look: { x: -112, z: 208, height: 0 },
+    eye: { x: -84, z: 288, height: 1.7 },
+    look: { x: -102, z: 256, height: 4 },
     fov: 0.85,
     hour: 15,
     weather: 'clear',
