@@ -13,7 +13,7 @@ import { ridgeWind } from './ridge-scout.ts'
 // host and every screen call this with the same bake, so they agree.
 
 export type HighwoodHabitat = typeof highwoodHabitatIds[number]
-export type HabitatWeights = Record<HighwoodHabitat, number>
+type HabitatWeights = Record<HighwoodHabitat, number>
 
 const noiseRange = 0.7
 const half = 0.5

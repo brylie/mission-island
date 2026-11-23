@@ -13,6 +13,8 @@ interface Stand { cover: number, mix: readonly Pick[] }
 export const highwoodPlantingSeed = 7121
 // Seeded variants grown per species, age and exposure; placements reuse them.
 export const highwoodTemplateVariants = 3
+// Variant v grows from this seed plus v, on the host (collision) and on screen alike.
+export const highwoodTemplateSeedBase = 1
 // Wind exposure above which a tree or shrub grows its exposed, wind-bent form.
 export const highwoodExposedAbove = 0.5
 // Trees stay off ground steeper than this rise per metre, and every plant off wetter, sandier ground.

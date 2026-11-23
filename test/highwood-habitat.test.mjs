@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { URL } from 'node:url'
 import { treeSpecies } from '../src/assets/trees/tree-catalog.ts'
+import { highwoodSolidTop } from '../src/highwood-solids.ts'
+import { propTop } from '../src/scenery.ts'
 import { groundHeight, originalCoastRadius, waterLevel } from '../src/terrain.ts'
 import { authoredShare } from '../src/worlds/starter/generation/protection.ts'
 import { highwoodPlants } from '../src/assets/geometry/highwood-plants.ts'
@@ -19,6 +21,8 @@ const landMarginM = 0.2
 const positionToleranceM = 0.02
 const minimumCanopy = 1000
 const half = 2
+const walkerPaddingM = 0.35
+const standingHeightM = 2
 
 function highwoodShares() {
   const counts = Object.fromEntries(highwoodHabitatIds.map((id) => [id, 0]))
@@ -74,4 +78,13 @@ test('Highwood plants keep to land, come from the catalog and are mostly pine', 
   const canopy = plants.filter((plant) => plant.layer === 'canopy')
   assert.ok(canopy.length > minimumCanopy, `only ${canopy.length} canopy trees`)
   assert.ok(canopy.filter((plant) => plant.species === 'scots-pine').length > canopy.length / half, 'Scots pine should be most of the canopy')
+})
+
+test('Highwood trunks block walking and soft plants do not', () => {
+  const plants = highwoodPlanting()
+  const pine = plants.find((plant) => plant.layer === 'canopy' && plant.species === 'scots-pine' && plant.age === 'mature')
+  assert.ok(highwoodSolidTop(pine, walkerPaddingM) > groundHeight(pine) + standingHeightM, 'a mature pine stands taller than a walker')
+  const bracken = plants.find((plant) => plant.species === 'bracken' && highwoodSolidTop(plant, 0) === -Infinity)
+  assert.ok(bracken, 'bracken is soft cover')
+  assert.equal(propTop(pine, walkerPaddingM), highwoodSolidTop(pine, walkerPaddingM))
 })
