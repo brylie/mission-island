@@ -40,6 +40,8 @@ type GameOptions = {
   save?: IslandSave
   checkpoint?: () => void
   metrics?: PlaytestMetricsRun
+  // Tooling hook for a checkpoint run: adjusts the prepared world before the first tick, such as a sim sweep reseeding island events.
+  prepare?: (state: Snapshot) => void
 }
 
 // The truck carries its driver's input and records driven distance; the skiff moves with its rowers.
@@ -84,7 +86,8 @@ function stepWildlife(state: Snapshot, driftwood: ReturnType<typeof createDriftw
 }
 
 // A checkpoint can arrange the ferry stage, the truck and loose crates, so physics follows the arranged world.
-function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>, fleet: ReturnType<typeof createLearnerFleet>, trial: T) {
+function settleTrial<T>(state: Snapshot, physics: ReturnType<typeof createCargoPhysics>, fleet: ReturnType<typeof createLearnerFleet>, trial: T, prepare?: (state: Snapshot) => void) {
+  prepare?.(state)
   physics.placeFerry(state)
   state.truck = physics.parkTruck(state.truck)
   fleet.park()
@@ -107,11 +110,11 @@ function observeCrewNotices(state: Snapshot, notifyCrew: CrewBroadcast, metrics?
   }
 }
 
-export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest, metrics }: GameOptions = {}) {
+export function createGame({ clock = Date.now, random = Math.random, save, checkpoint, playtest, metrics, prepare }: GameOptions = {}) {
   const physics = createCargoPhysics(), juniper = createJuniperHabitat(), driftwood = createDriftwoodSchool(clock() >>> 0)
   const { state, growth } = restoreIsland(physics, juniper, driftwood.frame(), save, random)
   const fleet = createLearnerFleet(state, physics, (notice) => crew.notifyAll(notice), checkpoint)
-  const trial = playtest && settleTrial(state, physics, fleet, prepareTrial(state, playtest))
+  const trial = playtest && settleTrial(state, physics, fleet, prepareTrial(state, playtest), prepare)
   let wildlifeTick = 0
   const crew = createCrewRoster(state, save?.crew ?? [], clock, physics, checkpoint, playtest?.seats)
   const freight = createFreight(crew, state, clock, checkpoint)

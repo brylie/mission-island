@@ -165,7 +165,7 @@ const sharedInteractionFiles = [
 
 export default defineConfig(
   // .claude/ holds agent worktrees: full copies of the repo that git ignores but ESLint would walk.
-  { ignores: ['dist/**', 'coverage/**', '.claude/**'] },
+  { ignores: ['dist/**', 'coverage/**', '.claude/**', 'captures/**', 'sims/**'] },
   {
     files: ['**/*.{cjs,js,mjs,ts}'],
     extends: [stylistic.configs.recommended],

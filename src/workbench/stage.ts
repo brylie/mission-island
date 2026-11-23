@@ -1,3 +1,4 @@
+import { createDevTools } from '../dev-tools'
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera'
 import type { Engine } from '@babylonjs/core/Engines/engine'
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color'
@@ -120,8 +121,15 @@ function createPreviewCamera(scene: Scene, canvas: HTMLCanvasElement, entry: Ent
   return { camera, center, size, radius, groundSize, groundHeight, step, triangles, meshCount, shown }
 }
 
+// Dev overlays read the study's island clock, then the scene renders.
+function renderWithDev(scene: Scene, dev: ReturnType<typeof createDevTools>, islandTime: number, time: number) {
+  dev?.frame({ islandTime }, time)
+  scene.render()
+}
+
 export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: Entry, values: Values, reportError: (error: string) => void, draft: ReturnType<typeof createLandscapeDraft>, field?: FieldSite, showFigure = false) {
   const scene = new Scene(engine)
+  const dev = createDevTools(scene, canvas)
   const biome = entry.id === 'biome'
   try {
     scene.clearColor = Color4.FromHexString('#1b292aff')
@@ -262,7 +270,7 @@ export function createStage(engine: Engine, canvas: HTMLCanvasElement, entry: En
         layout?.update(delta, time)
         subject.forEach(applyWireframe)
         layout?.meshes().forEach(applyWireframe)
-        scene.render()
+        renderWithDev(scene, dev, Number(settings.clockStart ?? 0) + time, time)
         // Measured after the render, which brings every parent's world matrix up to date.
         if (subjectSize?.refresh(settings, rate && entry.duration ? undefined : time)) {
           if (figureFrame) figureFrame = fitFigure(true)
