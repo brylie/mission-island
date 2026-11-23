@@ -5,11 +5,12 @@ import type { Point } from '../world.ts'
 // Suggest route: a grade-limited path between two dots over the natural ground, as
 // a road surveyor would walk it. The search judges grade on ground smoothed over a
 // few cells, because a road is cut and filled through small bumps, and it avoids
-// water. The path it finds is thinned to dots a designer can then drag and bend.
+// water. The path it finds is pulled straight wherever a straight road holds the grade,
+// as real roads are built, then thinned to dots a designer can then drag and bend.
 
 interface Grid { west: number, south: number, columns: number, rows: number, heights: Float32Array, wet: Uint8Array }
 
-const { cellM, marginM, smoothPasses, gradeCostWeight, overGradeWeight, hardGradeShare, turnCostM, waterMarginM, simplifyToleranceM, maxDotSpacingM, minDotSpacingM } = roadSuggestion
+const { cellM, marginM, smoothPasses, gradeCostWeight, overGradeWeight, hardGradeShare, turnCostM, straightenTurnRad, waterMarginM, maxDotSpacingM, minDotSpacingM } = roadSuggestion
 // Steps to the eight neighbours and the eight knight's moves (one cell across, two along),
 // sorted by direction, so the path is not tied to the grid's angles. Each step may turn
 // only to a neighbouring direction, as a vehicle turns gradually: with 4 m cells that holds
@@ -20,8 +21,6 @@ const half = 0.5
 // Bends are kept to a tenth of a metre.
 const bendRounding = 10
 const signs = [1, -1]
-// A line of two points is already as simple as it gets.
-const minimumLine = 2
 const moves: readonly (readonly [number, number])[] = [
   ...signs.flatMap((a) => [[a, 0], [0, a]] as const),
   ...signs.flatMap((a) => signs.flatMap((b) => [[a, b], [knight * a, b], [a, knight * b]] as const)),
@@ -153,18 +152,48 @@ function search(grid: Grid, a: Point, b: Point, maxGrade: number) {
   return path.reverse()
 }
 
-// Keeps the points that matter to the line's shape (Ramer-Douglas-Peucker), within a tolerance.
-function simplify(points: readonly Point[], tolerance: number): Point[] {
-  if (points.length <= minimumLine) return [...points]
-  const a = points[0], b = points[points.length - 1]
-  const length = Math.hypot(b.x - a.x, b.z - a.z) || 1
-  let worst = 0, at = 0
-  for (let i = 1; i < points.length - 1; i++) {
-    const off = Math.abs((points[i].x - a.x) * (b.z - a.z) - (points[i].z - a.z) * (b.x - a.x)) / length
-    if (off > worst) [worst, at] = [off, i]
+// The smoothed ground at a point, between grid nodes.
+function heightAt({ west, south, columns, rows, heights }: Grid, { x, z }: Point) {
+  const gx = Math.min(columns - 1 - Number.EPSILON, Math.max(0, (x - west) / cellM)), gz = Math.min(rows - 1 - Number.EPSILON, Math.max(0, (z - south) / cellM))
+  const i = Math.floor(gx), j = Math.floor(gz), fx = gx - i, fz = gz - j, at = j * columns + i
+  return (heights[at] * (1 - fx) + heights[at + 1] * fx) * (1 - fz) + (heights[at + columns] * (1 - fx) + heights[at + columns + 1] * fx) * fz
+}
+
+// Whether a straight road from `a` to `b` stays dry and within `maxGrade`, judged every half cell.
+function straightFits(grid: Grid, a: Point, b: Point, maxGrade: number) {
+  const steps = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / (cellM * half))
+  const run = Math.hypot(b.x - a.x, b.z - a.z) / steps
+  let previous = heightAt(grid, a)
+  for (let k = 1; k <= steps; k++) {
+    const point = { x: a.x + (b.x - a.x) * k / steps, z: a.z + (b.z - a.z) * k / steps }
+    const height = heightAt(grid, point)
+    if (height < waterLevel + waterMarginM || Math.abs(height - previous) / run > maxGrade) return false
+    previous = height
   }
-  if (worst <= tolerance) return [a, b]
-  return [...simplify(points.slice(0, at + 1), tolerance).slice(0, -1), ...simplify(points.slice(at), tolerance)]
+  return true
+}
+
+function turnBetween(a: Point, b: Point, c: Point) {
+  const first = Math.atan2(b.z - a.z, b.x - a.x), second = Math.atan2(c.z - b.z, c.x - b.x)
+  return Math.abs(Math.atan2(Math.sin(second - first), Math.cos(second - first)))
+}
+
+// Pulls the path straight: from each kept point, on to the furthest later point a straight
+// road reaches within the grade without turning sharply from the run before it.
+function straighten(grid: Grid, path: readonly Point[], maxGrade: number) {
+  const kept = [path[0]]
+  for (let i = 0; i < path.length - 1;) {
+    // The run before this one: the kept point before the last, if there is one.
+    const previous = kept.at(-1 - 1)
+    let next = i + 1
+    for (let j = next + 1; j < path.length; j++) {
+      if (previous && turnBetween(previous, path[i], path[j]) > straightenTurnRad) continue
+      if (straightFits(grid, path[i], path[j], maxGrade)) next = j
+    }
+    kept.push(path[next])
+    i = next
+  }
+  return kept
 }
 
 // How far the path bows to the left of the straight line between two of its points: the
@@ -187,9 +216,12 @@ function bowBetween(path: readonly Point[], from: Point, to: Point) {
 // with a bend for each stretch (one more than the dots) so the road follows the path, or
 // undefined if no route exists.
 export function suggestRoute(a: Point, b: Point, maxGrade: number): { dots: Point[], bends: number[] } | undefined {
-  const path = search(groundGrid(a, b), a, b, maxGrade)
-  if (!path) return undefined
-  const kept = simplify(path, simplifyToleranceM)
+  const grid = groundGrid(a, b)
+  const found = search(grid, a, b, maxGrade)
+  if (!found) return undefined
+  // The road runs from the dots themselves, not the grid cells nearest them.
+  const kept = straighten(grid, [a, ...found.slice(1, -1), b], maxGrade)
+  const path = kept
   // Long straight runs get extra dots, so every stretch can still be bent.
   const dots: Point[] = []
   for (let i = 1; i < kept.length; i++) {
@@ -198,12 +230,18 @@ export function suggestRoute(a: Point, b: Point, maxGrade: number): { dots: Poin
     for (let k = 1; k <= pieces; k++) dots.push({ x: from.x + (to.x - from.x) * k / pieces, z: from.z + (to.z - from.z) * k / pieces })
   }
   dots.pop()
-  // Dots crowded closer than the minimum spacing make tight kinks; keep the first of each cluster.
+  // A bend found on the grid is a run of short steps. Thin each run to dots at least the
+  // minimum spacing apart, always keeping the dot where the next straight run begins, so the
+  // road's curve takes the bend and its straight runs stay straight.
+  const far = (p: Point, q: Point) => Math.hypot(p.x - q.x, p.z - q.z) >= minDotSpacingM
   const spaced: Point[] = []
-  for (const dot of dots) {
-    const previous = spaced[spaced.length - 1] ?? a
-    if (Math.hypot(dot.x - previous.x, dot.z - previous.z) >= minDotSpacingM && Math.hypot(dot.x - b.x, dot.z - b.z) >= minDotSpacingM) spaced.push(dot)
-  }
+  dots.forEach((dot, i) => {
+    const next = dots[i + 1] ?? b
+    if (far(dot, spaced.at(-1) ?? a)) spaced.push(dot)
+    // The start of a straight run replaces a dot crowding it.
+    else if (far(dot, next) && spaced.length) spaced[spaced.length - 1] = dot
+  })
+  while (spaced.length && !far(spaced[spaced.length - 1], b)) spaced.pop()
   const chain = [a, ...spaced, b]
   return { dots: spaced, bends: chain.slice(1).map((to, i) => bowBetween(path, chain[i], to)) }
 }

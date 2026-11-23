@@ -49,3 +49,14 @@ test('Suggest route finds a grade-limited way up toward Cairn Summit', () => {
   assert.ok(Math.min(...radii) >= roadKinds['fire-road'].minTurnRadiusM, `tightest bend ${Math.min(...radii).toFixed(1)} m`)
   assert.equal(suggestRoute(from, { x: -92, z: 219 }, 0.02), undefined, 'no route up the summit at 2%')
 })
+
+test('Suggest route keeps a road straight where a straight road holds the grade', () => {
+  // The valley west of Cairn rises gently: a road builder runs straight up it.
+  const from = { x: -112, z: 109 }, to = { x: -256, z: 294 }
+  const suggestion = suggestRoute(from, to, 0.12)
+  const route = [from, ...suggestion.dots, to]
+  const length = route.slice(1).reduce((sum, point, i) => sum + Math.hypot(point.x - route[i].x, point.z - route[i].z), 0)
+  const straightLine = Math.hypot(to.x - from.x, to.z - from.z), slack = 1.01
+  assert.ok(length < straightLine * slack, `${length.toFixed(0)} m against ${straightLine.toFixed(0)} m in a straight line`)
+  assert.deepEqual(suggestion.bends.filter((bend) => bend !== 0), [], 'no stretch is bent')
+})

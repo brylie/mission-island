@@ -1,25 +1,29 @@
 // The Workbench road designer's settings and look.
 
-// Suggest route: a grade-limited search over the natural ground. It works on a
-// `cellM` grid around the two dots plus `marginM`, judges grade on ground smoothed
-// `smoothPasses` times, prefers gentler ground by `gradeCostWeight`, keeps out of
-// water shallower than `waterMarginM` above sea level, then keeps dots that hold the
-// path within `simplifyToleranceM`, no further apart than `maxDotSpacingM` and no
-// closer than `minDotSpacingM`. Each change of heading costs `turnCostM` metres at a
-// right angle (more for sharper), so the path sweeps round bends a vehicle can take.
+// Suggest route: a grade-limited search over the natural ground, then straightened, as
+// roads are built: straight where the ground allows, curving only to follow contours or
+// to switch back up a slope. It works on a `cellM` grid around the two dots plus
+// `marginM`, judges grade on ground smoothed `smoothPasses` times, and keeps out of water
+// shallower than `waterMarginM` above sea level. Grade within the limit costs only
+// `gradeCostWeight` extra, so the search takes the short line rather than wandering for
+// gentler ground. Each change of heading costs `turnCostM` metres at a right angle (more
+// for sharper), so the path sweeps round bends a vehicle can take. The path is then
+// pulled straight between points whenever the straight line holds the grade and turns no
+// more than `straightenTurnRad` from the run before it, and thinned to dots no further apart
+// than `maxDotSpacingM` and no closer than `minDotSpacingM`.
 export const roadSuggestion = {
   cellM: 4,
   marginM: 120,
   smoothPasses: 5,
-  gradeCostWeight: 20,
+  gradeCostWeight: 2,
   // Over the grade limit each metre costs this many metres more per unit of excess grade, and
   // ground steeper than the limit times `hardGradeShare` is refused outright.
   overGradeWeight: 400,
   hardGradeShare: 1.6,
   turnCostM: 14,
+  straightenTurnRad: 0.6,
   minDotSpacingM: 14,
   waterMarginM: 0.05,
-  simplifyToleranceM: 5,
   maxDotSpacingM: 40,
 } as const
 
