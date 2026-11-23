@@ -6,6 +6,7 @@ import type { Player, Snapshot } from './protocol'
 import { northernRegions, starterDiscoveries } from './scenery'
 import { groundHeight } from './terrain'
 import { distance } from './world'
+import { highwoodLabels } from './worlds/starter/layout/island-generation'
 
 const discoveryLabelHeight = 2.8
 const biomeLabelHeight = 5
@@ -23,6 +24,7 @@ export function createPlaceLabels(markers: HTMLElement, residentRoots: { root: T
     ...landmarks.map((place) => ({ ...place, discovery: '', mapOnly: false })),
     ...starterDiscoveries.map((region) => ({ point: region.site, title: region.name, kind: 'discovery', height: discoveryLabelHeight, discovery: region.id, mapOnly: false })),
     ...northernRegions.map((region) => ({ point: region.at, title: region.biome, kind: 'biome', height: biomeLabelHeight, discovery: '', mapOnly: true })),
+    ...highwoodLabels.map((region) => ({ point: region.at, title: region.name, kind: 'biome', height: biomeLabelHeight, discovery: '', mapOnly: true })),
   ].map((place) => {
     const label = document.createElement('span')
     label.className = `place place--${place.kind}`

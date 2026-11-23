@@ -10,7 +10,7 @@ import { learnerVehicleIds, practiceStop } from './learner-vehicles'
 import { drawRidgeMap } from './ridge-ui'
 import { footpaths, roads, walkways } from './routes'
 import { northernRegions, starterDiscoveries } from './scenery'
-import { boundaryBuoys, buoyBoundaryPoint, coastBounds, coastPoint, coastSegments, offshoreLimitMetres } from './terrain'
+import { boundaryBuoys, buoyBoundaryPoint, coastBounds, coastSegments, coastalSurface, groundHeight, offshoreLimitMetres, waterLevel } from './terrain'
 import { crewHomes, ferryTerminal, harbor, lookout } from './world'
 import { fireCentre } from './wildfire'
 
@@ -22,10 +22,44 @@ const coast = coastBounds()
 const mapCentre = { x: (coast.east + coast.west) * half, z: (coast.north + coast.south) * half }
 const mapWidth = coast.east - coast.west + look.margin
 const mapHeight = coast.north - coast.south + look.margin
-const rings = Array.from({ length: coastSegments }, (_, i) => {
-  const angle = i * fullTurn / coastSegments
-  return { shore: coastPoint(angle), grass: coastPoint(angle, look.grassRing), boundary: buoyBoundaryPoint(angle) }
-})
+const boundaryRing = Array.from({ length: coastSegments }, (_, i) => buoyBoundaryPoint(i * fullTurn / coastSegments))
+const rgbChannels = 4
+const hexRadix = 16
+const hexChannel = 2
+const opaque = 255
+const sandShare = 0.5
+
+function rgb(hex: string) {
+  return [1, 1 + hexChannel, 1 + hexChannel + hexChannel].map((start) => Number.parseInt(hex.slice(start, start + hexChannel), hexRadix))
+}
+
+// The land, painted once per map size from the ground itself, so coves, straits
+// and islets show as they are.
+const landLayers = new Map<string, HTMLCanvasElement>()
+function landLayer(width: number, height: number, scale: number) {
+  const key = `${width}x${height}@${scale}`
+  const cached = landLayers.get(key)
+  if (cached) return cached
+  const layer = document.createElement('canvas')
+  Object.assign(layer, { width, height })
+  const paint = layer.getContext('2d')
+  if (!paint) return layer
+  const image = paint.createImageData(width, height)
+  const sand = rgb(look.land.sand), grass = rgb(look.land.grass), high = rgb(look.land.high)
+  for (let py = 0; py < height; py++) {
+    for (let px = 0; px < width; px++) {
+      const point = { x: mapCentre.x + (px + half - width * half) / scale, z: mapCentre.z - (py + half - height * half) / scale }
+      const ground = groundHeight(point)
+      if (ground < waterLevel) continue
+      const rise = Math.min(1, (ground - waterLevel) / look.land.reliefMetres)
+      const base = coastalSurface(point, ground).sand >= sandShare ? sand : grass.map((c, k) => c + (high[k] - c) * rise)
+      image.data.set([...base, opaque], (py * width + px) * rgbChannels)
+    }
+  }
+  paint.putImageData(image, 0, 0)
+  landLayers.set(key, layer)
+  return layer
+}
 
 function drawShift(state: Snapshot, dot: MapDot, ring: MapDot) {
   const wildfire = state.events.fire
@@ -109,10 +143,9 @@ export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapsh
     ink.arc(mx(x), mz(z), radius, 0, fullTurn)
     ink.fill()
   }
-  const traceRing = (ring: 'shore' | 'grass' | 'boundary') => {
+  const traceBoundary = () => {
     ink.beginPath()
-    for (const [i, points] of rings.entries()) {
-      const { x, z } = points[ring]
+    for (const [i, { x, z }] of boundaryRing.entries()) {
       if (i === 0) ink.moveTo(mx(x), mz(z))
       else ink.lineTo(mx(x), mz(z))
     }
@@ -121,17 +154,13 @@ export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapsh
   ink.fillStyle = look.water
   ink.fillRect(0, 0, width, height)
   if (afloat) {
-    traceRing('boundary')
+    traceBoundary()
     ink.strokeStyle = look.boundary.color
     ink.lineWidth = look.boundary.lineWidth
     ink.stroke()
     for (const { x, z } of boundaryBuoys) dot(x, z, look.boundary.buoy.color, look.boundary.buoy.radius)
   }
-  for (const [ring, color] of look.land) {
-    ink.fillStyle = color
-    traceRing(ring)
-    ink.fill()
-  }
+  ink.drawImage(landLayer(width, height, scale), 0, 0)
   for (const region of northernRegions) {
     dot(region.at.x, region.at.z, region.color, region.spread * scale * look.regionSpread)
   }

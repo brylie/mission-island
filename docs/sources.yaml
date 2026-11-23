@@ -418,3 +418,154 @@
       quote: "tussocks for nest sites"
       quote-match: exact (2026-11-22)
       used-in: field-guide/places/bracken-slopes.md#how-bracken-changes-a-place
+
+# Added 2026-11-23 by the Knowledge Keeper's review of the Highwood backcountry (PR #197).
+# Only os-mapzone-glaciation was opened. The rest were named by reviewers and recorded unopened;
+# their bibliographic details were written from the reviewers' handover and not checked against
+# the works themselves. Claims resting only on them are unsourced.
+
+- id: os-mapzone-glaciation
+  title: Glaciation (Mapzone geography resource)
+  publisher: Ordnance Survey
+  url: https://www.ordnancesurvey.co.uk/mapzone/assets/doc/geography/Glaciation-en.pdf
+  archived:            # not saved yet: archiving sends the URL to an outside service, so it waits for the maintainer's go-ahead (see open questions)
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: UK
+  note: Ordnance Survey is the national mapping agency, and this is its teaching material. The quotes were pulled from the PDF's text streams, so a person should check them against the rendered page. The quote checker reads only HTML, so it reports this PDF as unfetchable.
+  supports:
+    - claim: A glacier deepens and widens an earlier V-shaped valley into a U-shaped trough.
+      quote: "The glacier flows through an earlier 'V' shaped valley, scouring the sides and the floor as it does so."
+      used-in: design/island-story.md#2-ice-carves-the-valleys
+    - claim: A waterfall flowing into the main glacial valley is a good sign of a hanging valley.
+      quote: "A good sign of a hanging valley is a waterfall or several waterfalls flowing into the main glacial valley."
+      used-in: design/island-story.md#2-ice-carves-the-valleys
+
+- id: lambeck-2014-pnas
+  title: "Sea level and global ice volumes from the Last Glacial Maximum to the Holocene"
+  publisher: Proceedings of the National Academy of Sciences
+  url:
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: Global
+  note: Lambeck, Rouby, Purcell, Sun and Sambridge, PNAS 111 (43), 2014. PNAS, PMC and NASA pages blocked automated reads on 2026-11-23. A search summary gives about −134 m at the glacial maximum, which conflicts with the 120 m on the island story page. A person should read it before the figure is reworded.
+  supports:
+    - claim: How far global sea level has risen since the last glacial maximum.
+      used-in: design/island-story.md#3-the-sea-rises-and-drowns-the-valley-mouths
+    - claim: Land rebounds after the ice leaves, leaving raised beaches near former ice sheets.
+      used-in: design/island-story.md#3-the-sea-rises-and-drowns-the-valley-mouths
+
+- id: mandelbrot-1967
+  title: "How long is the coast of Britain? Statistical self-similarity and fractional dimension"
+  publisher: Science
+  url:
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: General (Britain's west coast as the worked example)
+  note: Benoit B. Mandelbrot, Science 156 (3775), 1967.
+  supports:
+    - claim: Real rocky coastlines have a fractal dimension of about 1.2–1.3.
+      used-in: design/island-generation.md#layers-of-the-height-field
+
+- id: mandelbrot-1975
+  title: "Stochastic models for the Earth's relief, the shape and the fractal dimension of the coastlines, and the number-area rule for islands"
+  publisher: Proceedings of the National Academy of Sciences
+  url:
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: General
+  note: Benoit B. Mandelbrot, PNAS 72 (10), 1975. Title to confirm; the handover gave only "Mandelbrot 1975", and this is the 1975 paper that models relief as fractional Brownian surfaces.
+  supports:
+    - claim: The coastline of a fractional Brownian surface with Hurst exponent H has a fractal dimension of about 2 − H.
+      used-in: design/island-generation.md#layers-of-the-height-field
+
+- id: voss-1988
+  title: "Fractals in nature: from characterization to simulation"
+  publisher: Springer
+  url:
+  archived:
+  accessed:
+  opened: false
+  tier: 3
+  region: General
+  note: Richard F. Voss, a chapter in Peitgen and Saupe (eds), The Science of Fractal Images, 1988.
+  supports:
+    - claim: Summing noise octaves with lacunarity 2 and gain 2^(−H) gives an fBm surface with Hurst exponent H.
+      used-in: design/island-generation.md#layers-of-the-height-field
+
+- id: beyer-2015
+  title: "Implementation of a method for hydraulic erosion"
+  publisher: Technical University of Munich
+  url:
+  archived:
+  accessed:
+  opened: false
+  tier: 3
+  region: General
+  note: Hans Theobald Beyer, bachelor's thesis, 2015. The droplet erosion model the generator follows.
+  supports:
+    - claim: Simulated droplets that pick up sediment where they can carry more and drop it where they slow carve plausible drainage.
+      used-in: design/island-generation.md#erosion-turns-noise-into-land
+
+- id: selby-1993
+  title: Hillslope Materials and Processes (2nd edition)
+  publisher: Oxford University Press
+  url:
+  archived:
+  accessed:
+  opened: false
+  tier: 3
+  region: General
+  note: M. J. Selby, 1993. The reviewers' handover named it for scree resting at about 32–38°.
+  supports:
+    - claim: Loose scree rests near 35°.
+      used-in: design/island-generation.md#erosion-turns-noise-into-land
+
+- id: komar-1998
+  title: Beach Processes and Sedimentation (2nd edition)
+  publisher: Prentice Hall
+  url:
+  archived:
+  accessed:
+  opened: false
+  tier: 3
+  region: General
+  note: Paul D. Komar, 1998.
+  supports:
+    - claim: Wave energy gathers on headlands, and sand settles in the bays between them.
+      used-in: design/island-story.md#4-waves-sort-the-coast
+
+- id: bird-2008
+  title: "Coastal Geomorphology: An Introduction (2nd edition)"
+  publisher: Wiley
+  url:
+  archived:
+  accessed:
+  opened: false
+  tier: 3
+  region: General
+  note: Eric Bird, 2008.
+  supports:
+    - claim: A drowned glacial valley on low ground is a fjard; a ria is a drowned river valley.
+      used-in: design/island-story.md#3-the-sea-rises-and-drowns-the-valley-mouths
+
+- id: linton-1955
+  title: "The problem of tors"
+  publisher: The Geographical Journal
+  url:
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: United Kingdom (Dartmoor and other granite uplands)
+  note: D. L. Linton, The Geographical Journal 121 (4), 1955.
+  supports:
+    - claim: Granite weathers along its joints into rounded blocks and tors.
+      used-in: design/island-story.md#1-an-old-block-of-granite-and-sandstone

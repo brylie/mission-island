@@ -1,4 +1,4 @@
-import { fireIntensityChoices, fireSiteChoices, fireSizeChoices, playtestEventQuery, type PlaytestEvent, type WildfireChoice } from './playtest-events'
+import { fireIntensityChoices, fireSiteChoices, fireSizeChoices, placeChoices, playtestEventQuery, type PlaytestEvent, type WildfireChoice } from './playtest-events'
 
 function fill(select: HTMLSelectElement, choices: readonly { id: string, label: string }[]) {
   for (const { id, label } of choices) select.add(new Option(label, id))
@@ -14,9 +14,11 @@ export function bindPlaytestEvents(dialog: HTMLDialogElement, token: () => strin
   fill(field('size'), fireSizeChoices)
   fill(field('site'), fireSiteChoices)
   fill(field('intensity'), fireIntensityChoices)
+  fill(field('place'), placeChoices)
   let pending = false
 
   function chosen(type: string | undefined): PlaytestEvent {
+    if (type === 'go-to') return { type, place: field('place').value }
     if (type !== 'wildfire') return { type: 'end-wildfire' }
     const choice = Object.fromEntries((['size', 'site', 'intensity'] as const).flatMap((key) => field(key).value ? [[key, field(key).value]] : [])) as WildfireChoice
     return { type, ...choice, ...(located.checked && { located: true }) }
@@ -31,7 +33,8 @@ export function bindPlaytestEvents(dialog: HTMLDialogElement, token: () => strin
         method: 'POST',
         headers: { Authorization: 'Bearer ' + token() },
       })
-      message.textContent = await result.text()
+      // Success shows in the world; only a refusal stays in the panel to read.
+      message.textContent = result.ok ? '' : await result.text()
       if (result.ok) dialog.close()
     }
     catch { message.textContent = 'Could not reach the host. Try again after reconnecting.' }

@@ -3,6 +3,8 @@ import { harborDock, island, onDock } from './world.ts'
 import type { Point } from './world.ts'
 import { duneRelief, sampleBeach } from './worlds/starter/beach-landforms.ts'
 import { createStarterCoast, starterCoastSeed } from './worlds/starter/coastline.ts'
+import { authoredShare, joinShare } from './worlds/starter/generation/protection.ts'
+import { bakedHeight, bakedReach, bakedShoreMetres, bakedSurface } from './worlds/starter/highwood-terrain.ts'
 import { falls, fernfallChannel, fernfallProfile, landRelief, shellglassBasin, shoreProfile, shoreStations, tidePool, waterLevel } from './worlds/starter/layout/terrain.ts'
 
 export { falls, fernfallProfile, grove, headland, meadowFoot, meadowHill, pool, shoreProfile, tidePool, waterLevel } from './worlds/starter/layout/terrain.ts'
@@ -20,12 +22,34 @@ const firstSandStation = shoreProfile.indexOf(shoreStations.sandEdge)
 
 const slopeSampleRadius = 0.08
 const slopeSampleReachM = 0.4
+const halfTurnDegrees = 180
+const turnDegrees = 360
+// The share of the join's fade over which the exact authored ground takes over from the bake.
+const seamBlend = 0.1
+// Generated shores read damp up to this height above the water.
+const generatedWetReachM = 0.35
 
 const shoreShape = createStarterCoast(starterCoastSeed)
 
-export function coastPoint(angle: number, radius = 1): Point {
+// A point on the island's original, authored coast ring.
+export function originalCoastPoint(angle: number, radius = 1): Point {
   const scale = radius * shoreShape(angle)
   return { x: Math.cos(angle) * island.width / halves * scale, z: Math.sin(angle) * island.length / halves * scale }
+}
+
+// A point along a coast angle at a radius measured against the shore. Where
+// Highwood's generated land reaches farther than the original coast, radius 1 is
+// the farthest generated shore on that ray and other radii keep their metres
+// from it.
+export function coastPoint(angle: number, radius = 1): Point {
+  const original = originalCoastPoint(angle, radius)
+  const share = joinShare(((angle * halfTurnDegrees / Math.PI) % turnDegrees + turnDegrees) % turnDegrees)
+  if (share <= 0) return original
+  const unit = originalRayLength(angle)
+  const reach = bakedReach(angle) + (radius - 1) * unit
+  const distance = Math.hypot(original.x, original.z)
+  const scale = 1 + share * Math.max(0, reach - distance) / Math.max(distance, 1)
+  return { x: original.x * scale, z: original.z * scale }
 }
 
 export function coastBounds(radius = 1) {
@@ -76,8 +100,26 @@ function coastRadiusAt(point: Point, bearing: number) {
   return Math.hypot(point.x / (island.width / halves), point.z / (island.length / halves)) / shoreShape(bearing)
 }
 
-export function coastRadius(point: Point) {
+// Metres from the island's centre to the original coast along a coast angle.
+function originalRayLength(bearing: number) {
+  return Math.hypot(Math.cos(bearing) * island.width / halves, Math.sin(bearing) * island.length / halves) * shoreShape(bearing)
+}
+
+// The radius against the island's original coast, before Highwood.
+export function originalCoastRadius(point: Point) {
   return coastRadiusAt(point, coastBearing(point))
+}
+
+// 1 at the shore, below 1 inland and above it at sea. On Highwood's generated
+// land the radius keeps the original coast's metres per unit, measured from the
+// generated shore.
+export function coastRadius(point: Point) {
+  const bearing = coastBearing(point)
+  const original = coastRadiusAt(point, bearing)
+  const keep = authoredShare(point, original)
+  if (keep >= 1) return original
+  const generated = 1 - bakedShoreMetres(point) / originalRayLength(bearing)
+  return generated + (original - generated) * keep
 }
 
 interface Landform { centre: Point, width: number, length: number, height: number }
@@ -134,8 +176,23 @@ function baseGroundHeight(point: Point, radius: number) {
   return shoreProfile[shoreProfile.length - 1].y
 }
 
+// The island as it was authored before Highwood. The generator blends into it.
+export function authoredGroundHeight(point: Point) {
+  return baseGroundHeight(point, originalCoastRadius(point)) + duneRelief(point)
+}
+
+// The bake already joins Highwood to the old island (the higher ground wins
+// across the join), so beyond protected ground the baked height is the ground.
+// In the last `seamBlend` of the join's fade the exact authored ground takes over,
+// so the 2 m bake meets the authored surface without a step.
 export function groundHeight(point: Point) {
-  return baseGroundHeight(point, coastRadius(point)) + duneRelief(point)
+  const original = originalCoastRadius(point)
+  const keep = authoredShare(point, original)
+  if (keep >= 1) return baseGroundHeight(point, original) + duneRelief(point)
+  const baked = Math.max(bakedHeight(point), shoreStations.seabed.y)
+  if (keep <= 1 - seamBlend) return baked
+  const authored = baseGroundHeight(point, original) + duneRelief(point)
+  return baked + (authored - baked) * (keep - 1 + seamBlend) / seamBlend
 }
 
 function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {
@@ -151,9 +208,25 @@ function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {
 export function coastalSurface(point: Point, height?: number) {
   const bearing = coastBearing(point)
   const radius = coastRadiusAt(point, bearing)
+  const keep = authoredShare(point, radius)
+  const ground = height ?? groundHeight(point)
   const rayLengthM = radius > 0 ? Math.hypot(point.x, point.z) / radius : 0
-  const ground = height ?? baseGroundHeight(point, radius) + duneRelief(point)
-  return sampleBeach(point, { bearing, radius, rayLengthM }, ground, crossShoreSlope(point, radius, rayLengthM))
+  const authored = keep > 0 ? sampleBeach(point, { bearing, radius, rayLengthM }, ground, crossShoreSlope(point, radius, rayLengthM)) : undefined
+  if (keep >= 1 && authored) return authored
+  const baked = bakedSurface(point)
+  const generated = {
+    sand: baked.sand,
+    rock: baked.rock,
+    wet: 1 - Math.max(0, Math.min(1, (ground - waterLevel) / generatedWetReachM)),
+    duneGrass: 0,
+  }
+  if (!authored) return generated
+  return {
+    sand: generated.sand + (authored.sand - generated.sand) * keep,
+    rock: generated.rock + (authored.rock - generated.rock) * keep,
+    wet: generated.wet + (authored.wet - generated.wet) * keep,
+    duneGrass: authored.duneGrass * keep,
+  }
 }
 
 export function waterDepth(point: Point) {

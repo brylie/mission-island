@@ -63,22 +63,27 @@ async function captureShot(browser, shot, folder) {
 
 async function captureRun(options, root, runFolder, commit) {
   const { server, base } = await startHost(root)
-  const browser = await launchBrowser()
   const written = []
+  // The host closes even if the browser fails to launch.
   try {
-    for (const shot of planCaptures(base, options)) {
-      const folder = join(runFolder, shot.preset)
-      mkdirSync(folder, { recursive: true })
-      const { png, perf } = await captureShot(browser, shot, folder)
-      const sidecar = { ...shot.meta, preset: shot.preset, mode: shot.mode, commit, url: shot.url.replace(base, '/'), viewport: captureViewport, capturedAt: new Date().toISOString(), perf }
-      writeFileSync(png.replace(/\.png$/, '.json'), JSON.stringify(sidecar, null, jsonIndent) + '\n')
-      written.push({ shot, png, sidecar })
-      process.stderr.write(`${relative(checkout, png)} · ${perf ? `${perf.fps} fps · ${perf.drawCalls} draws` : 'no perf readout'}\n`)
+    const browser = await launchBrowser()
+    try {
+      for (const shot of planCaptures(base, options)) {
+        const folder = join(runFolder, shot.preset)
+        mkdirSync(folder, { recursive: true })
+        const { png, perf } = await captureShot(browser, shot, folder)
+        const sidecar = { ...shot.meta, preset: shot.preset, mode: shot.mode, commit, url: shot.url.replace(base, '/'), viewport: captureViewport, capturedAt: new Date().toISOString(), perf }
+        writeFileSync(png.replace(/\.png$/, '.json'), JSON.stringify(sidecar, null, jsonIndent) + '\n')
+        written.push({ shot, png, sidecar })
+        process.stderr.write(`${relative(checkout, png)} · ${perf ? `${perf.fps} fps · ${perf.drawCalls} draws` : 'no perf readout'}\n`)
+      }
+      if (options.grid) await writeTurntableSheets(browser, written, runFolder)
     }
-    if (options.grid) await writeTurntableSheets(browser, written, runFolder)
+    finally {
+      await browser.close()
+    }
   }
   finally {
-    await browser.close()
     await server.close()
   }
   return written

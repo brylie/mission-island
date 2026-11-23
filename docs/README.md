@@ -17,6 +17,8 @@ Mission Island is a third-person co-op game about two people making a home on a 
 | What gives the crew a reason to stay for a season? | [Starter Island story and cadence](design/starter-island-story-and-cadence.md) |
 | Where should the first Starter Island world-building pass begin? | [Starter Island world-building brief](design/starter-island-worldbuilding-brief.md) |
 | How do habitats fit together across Starter Island? | [Starter Island biome plan](design/starter-island-biomes.md) |
+| Why does the island look the way it does, and what history can players read in it? | [The island's deep history](design/island-story.md) and [island generation](design/island-generation.md) |
+| What should the Highwood backcountry feel like, and how is it built? | [Highwood backcountry](backcountry.md), its experience goal and hero views |
 | How should a place change with latitude, exposure, or time of year? | [Island climates and seasons](design/climate-and-seasons.md) |
 | How do I review or improve the look of a model, place, or seasonal scene? | [Creative direction](design/creative-direction.md) and [Art Director skill](../.agents/skills/mission-island-art-director/SKILL.md) |
 | Which color should a new asset use, and how do light and color fit together? | [Color direction](design/color-direction.md) (proposal) |

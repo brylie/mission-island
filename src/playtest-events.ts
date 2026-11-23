@@ -1,5 +1,6 @@
 import { wildfireSizes, type FireSiteId, type WildfireSize } from './wildfire.ts'
 import { starterFireSites } from './worlds/starter/layout/fire-sites.ts'
+import { playtestPlaces } from './playtest-places.ts'
 
 // Island events a live playtest can start on demand, so a tester can play through one without waiting
 // for the host's schedule. A choice left out is drawn the way the schedule would draw it.
@@ -20,9 +21,12 @@ export interface WildfireChoice {
 export type PlaytestEvent =
   | { type: 'wildfire' } & WildfireChoice
   | { type: 'end-wildfire' }
+  // Sends the crewmate who asked to a named place.
+  | { type: 'go-to', place: string }
 
 export const fireSizeChoices = Object.entries(wildfireSizes).map(([id, { label }]) => ({ id: id as WildfireSize, label }))
 export const fireSiteChoices = starterFireSites.map(({ id, name }) => ({ id, label: name }))
+export const placeChoices = playtestPlaces.map(({ id, label }) => ({ id, label }))
 export const fireIntensityChoices = Object.entries(fireIntensities).map(([id, label]) => ({ id: id as FireIntensity, label }))
 
 function pick<T extends string>(params: URLSearchParams, key: string, choices: readonly { id: T }[]): T | undefined | false {
@@ -33,6 +37,7 @@ function pick<T extends string>(params: URLSearchParams, key: string, choices: r
 
 export function playtestEventQuery(event: PlaytestEvent) {
   const params = new URLSearchParams({ type: event.type })
+  if (event.type === 'go-to') params.set('place', event.place)
   if (event.type !== 'wildfire') return params
   for (const key of ['size', 'site', 'intensity'] as const) if (event[key]) params.set(key, event[key])
   if (event.located) params.set('located', '1')
@@ -43,6 +48,10 @@ export function playtestEventQuery(event: PlaytestEvent) {
 export function readPlaytestEvent(params: URLSearchParams): PlaytestEvent | undefined {
   const type = params.get('type')
   if (type === 'end-wildfire') return { type }
+  if (type === 'go-to') {
+    const place = pick(params, 'place', placeChoices)
+    return place ? { type, place } : undefined
+  }
   if (type !== 'wildfire') return
   const size = pick(params, 'size', fireSizeChoices)
   const site = pick(params, 'site', fireSiteChoices)
