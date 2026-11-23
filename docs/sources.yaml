@@ -1131,10 +1131,10 @@
       quote: "will result in a vertical face or bank prone to slumping"
       quote-match: exact (2026-11-23)
       used-in: field-guide/practices/forest-roads.md#what-goes-wrong
-    - claim: Published slope stability charts guide the design of cut and fill slopes by soil type.
+    - claim: Published slope stability charts guide the design of cut and fill slopes.
       quote: "slope stability charts for the design of cut and fill slopes"
       quote-match: exact (2026-11-23)
-      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
 
 - id: fao-road-drainage-watersheds
   title: "Watershed management field manual: road design and construction in sensitive watersheds, chapter 4: Drainage design"
@@ -1409,6 +1409,10 @@
       used-in: field-guide/practices/forest-roads.md#cut-and-fill
     - claim: Tractor and forwarder tracks have a 5% cross fall.
       quote: "with a cross fall of 5%"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#where-the-island-differs
+    - claim: A forest road is normally single lane.
+      quote: "is the forest road normally single lane"
       quote-match: unfetchable (2026-11-23)
       used-in: field-guide/practices/forest-roads.md#where-the-island-differs
     - claim: An English forest road has a 3.2 m running width, wider on bends.
