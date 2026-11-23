@@ -48,15 +48,21 @@ function run(sparse) {
   const { world, moving } = scene(sparse)
   const log = record(world)
   const poses = []
+  let removed
   for (let step = 0; step < 900; step++) {
     if (step === 300) world.removeBody(moving[2])
     if (step === 450) world.addBody(new Body({ mass: 2, position: new Vec3(1, 3, 1), shape: new Sphere(0.5) }))
     if (step === 600) moving[0].applyImpulse(new Vec3(8, 6, 0))
     // Removing the highest-index body while it rests forgets its contacts, so its return is a first contact again.
-    const last = world.bodies.at(-1)
-    if (step === 700) world.removeBody(last)
-    if (step === 701) world.addBody(last)
-    if (step === 800) world.removeBody(last)
+    if (step === 700 || step === 800) {
+      removed = world.bodies.at(-1)
+      world.removeBody(removed)
+      assert.ok(!world.bodies.includes(removed))
+    }
+    if (step === 701) {
+      world.addBody(removed)
+      assert.equal(world.bodies.at(-1), removed, 'the removed body returns at the highest index')
+    }
     if (step === 801) world.addBody(new Body({ mass: 2, position: new Vec3(-2, 0.5, -2), shape: new Sphere(0.5) }))
     world.step(1 / 60)
     poses.push(world.bodies.filter((body) => body.type !== Body.STATIC).map(({ position: p, quaternion: q }) => [p.x, p.y, p.z, q.x, q.y, q.z, q.w]))
