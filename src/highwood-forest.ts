@@ -37,13 +37,25 @@ function plantMatrix(plant: Planting) {
   return Matrix.Compose(new Vector3(plant.scale, plant.scale, plant.scale), Quaternion.RotationYawPitchRoll(plant.heading, 0, 0), new Vector3(plant.x, y, plant.z))
 }
 
+// Far silhouettes draw with their own copies of the tree materials. A material
+// shared with the near thin instances lost the far crowns entirely once both drew.
+const farMaterials = new Map<Material, Material>()
+function farMaterial(material: Material) {
+  let copy = farMaterials.get(material)
+  if (!copy) {
+    copy = material.clone(`${material.name} far`) ?? material
+    farMaterials.set(material, copy)
+  }
+  return copy
+}
+
 // Bakes the far templates of a tile's trees into one mesh per material.
 function mergeFar(meshes: MeshFactory, tile: Tile, template: (plant: Planting) => TreeTemplate) {
   const groups = new Map<Material, { positions: number[], normals: number[], uvs: number[], colors: number[], indices: number[] }>()
   for (const plant of tile.canopy) {
     const matrix = plantMatrix(plant)
     for (const part of template(plant).parts) {
-      const material = part.material!
+      const material = farMaterial(part.material!)
       const group = groups.get(material) ?? { positions: [], normals: [], uvs: [], colors: [], indices: [] }
       groups.set(material, group)
       // Copy, or transforming the data would move the shared template too.
