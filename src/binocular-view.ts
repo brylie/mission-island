@@ -124,8 +124,8 @@ export function createBinocularView(meshes: MeshFactory, markers: HTMLElement) {
   return {
     // The camera to draw through while the binoculars are up, from the crewmate's eyes along their view.
     // The binocular state is read every frame, even when another view wins, so the binoculars can lower themselves.
-    frame({ local, subject, review }: { local?: Player, subject?: TransformNode, review?: unknown }, binoculars?: () => BinocularLook | undefined) {
-      const view = binoculars?.()
+    frame({ local, subject, review }: { local?: Player, subject?: TransformNode, review?: unknown }, binoculars?: (drawn?: Vector3) => BinocularLook | undefined) {
+      const view = binoculars?.(subject?.position)
       viewing = Boolean(local && !local.seat && subject && view && !review)
       if (!viewing || !subject || !view) return undefined
       const eye = binocularEye(subject.position, view)

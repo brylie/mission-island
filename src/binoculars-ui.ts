@@ -22,6 +22,8 @@ const longestFrameSeconds = 0.1
 // The rangefinder updates its readout ten times a second, like a scanning laser rangefinder.
 const readoutIntervalMs = 100
 const statusDurationMs = 2400
+// How long after sending a mark it may still be on its way to the host and back.
+const pendingMarkMs = 2000
 // The view tilts no further than this above or below the horizon.
 const pitchLimit = 1.25
 // Movement keys pan the view by this share of its width each second, and Shift sweeps faster to swing round.
@@ -98,6 +100,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
   const readout = overlay.querySelector('output') as HTMLOutputElement
   const status = overlay.querySelector('.binoculars-status') as HTMLElement
   let statusUntil = 0
+  let feet: { x: number, y: number, z: number } | undefined
   let lastMarkSent = -markCooldownMs
   const panning = new Set<string>()
   let view: BinocularLook | undefined
@@ -157,9 +160,11 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     statusUntil = performance.now() + statusDurationMs
   }
 
+  // A mark sent moments ago may not be in a snapshot yet, so it still counts as one to clear.
   function clearMark() {
     const current = crewmate()
-    if (current?.state.marks.some((each) => each.playerId === current.player.id)) send({ type: 'clear-mark' })
+    const shown = current?.state.marks.some((each) => each.playerId === current.player.id)
+    if (shown || performance.now() - lastMarkSent < pendingMarkMs) send({ type: 'clear-mark' })
     else say('No mark to clear')
   }
 
@@ -167,7 +172,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
   function mark() {
     const now = performance.now()
     const current = crewmate()
-    if (current && view) range(current.player, view)
+    if (current && view) range(feet ?? current.player, view)
     if (!target) say('Nothing in range to mark')
     else if (now - lastMarkSent < markCooldownMs) say('Hold steady, then mark again')
     else {
@@ -177,7 +182,9 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
   }
 
   // Called once per rendered frame. Pans by the held keys and lowers the binoculars when the crewmate can no longer use them.
-  function frame() {
+  // The renderer passes the crewmate's drawn position, so the rangefinder traces the same ray as the camera.
+  function frame(drawn?: { x: number, y: number, z: number }) {
+    feet = drawn && { x: drawn.x, y: drawn.y, z: drawn.z }
     if (!view) return undefined
     const current = crewmate()
     if (!current) {
@@ -197,7 +204,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     if (now > statusUntil && status.textContent) status.textContent = ''
     if (now - lastReading >= readoutIntervalMs) {
       lastReading = now
-      range(current.player, view)
+      range(feet ?? current.player, view)
     }
     return view
   }
@@ -229,6 +236,11 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     else if (event.code === 'Enter' || event.code === 'NumpadEnter') mark()
     else if (event.code === 'KeyX') clearMark()
   }, true)
+  // A key released outside the page sends no keyup, so leaving the page stops any pan.
+  window.addEventListener('blur', () => {
+    panning.clear()
+    sweeping = false
+  })
   window.addEventListener('keyup', (event) => {
     sweeping = event.shiftKey
     if (panning.delete(event.code)) event.stopImmediatePropagation()

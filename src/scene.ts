@@ -78,7 +78,7 @@ function renderView(scene: Scene, review: ReturnType<typeof createShaderReview>,
   scene.render()
 }
 
-export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement, binoculars?: () => BinocularLook | undefined) {
+export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement, binoculars?: (drawn?: Vector3) => BinocularLook | undefined) {
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
   const scene = new Scene(engine)
   const islandCamera = createIslandCamera(scene, canvas)
