@@ -26,6 +26,7 @@ Mission Island is a third-person co-op game about two people making a home on a 
 | How do we get variation that still makes sense? | [Generativity and the Juniper Hollow habitat](game-design.md#generativity) and [the Biome Composer workflow](../CONTRIBUTING.md#asset-workbench) |
 | How do I review an ecological or procedural simulation? | [Natural Systems Reviewer skill](../.agents/skills/mission-island-natural-systems/SKILL.md) |
 | What is a species, habitat or term in the real world, and what does the game simplify? | [Field guide](field-guide/README.md): [Highwood plants](field-guide/highwood-plants.md), [Highwood habitats](field-guide/highwood-habitats.md) and the [glossary](field-guide/glossary.md) |
+| How do binoculars, laser rangefinders and compass bearings work, and how do fire lookouts report a smoke? | [Spotting and ranging](field-guide/practices/spotting-and-ranging.md) |
 | How are Highwood trees and shrubs generated, and what budgets apply? | [Highwood species](highwood-species.md) and its Workbench study |
 | How do we grow trees, synthesise sound or keep thousands of objects fast, and why do those techniques work? | [Craft](craft/README.md): [procedural flora](craft/procedural-flora.md), [rendering, distance and level of detail](craft/rendering-and-detail.md), [physics cost with many static colliders](architecture.md#physics-cost-and-static-colliders), and links to surface and shader studies |
 | Which way is +x, how long is an island day, and how do seeds work? | [Conventions](conventions.md) |
@@ -44,7 +45,7 @@ The [knowledge framework](knowledge-framework.md) explains how it's organised:
 
 | If you are… | Start with |
 | --- | --- |
-| A student or curious player | Field guide pages on topics such as [wildfire](field-guide/processes/wildfire.md) and [wet woodland](field-guide/places/wet-woodland.md), the [field guide](field-guide/README.md) for species, habitats and terms, then the [player guide](player-guide.md) and the [field journal](mechanics/field-journal.md) |
+| A student or curious player | Field guide pages on topics such as [wildfire](field-guide/processes/wildfire.md), [wet woodland](field-guide/places/wet-woodland.md) and [spotting and ranging](field-guide/practices/spotting-and-ranging.md), the [field guide](field-guide/README.md) for species, habitats and terms, then the [player guide](player-guide.md) and the [field journal](mechanics/field-journal.md) |
 | A teacher or parent | [Learning through island work](design/learning-and-careers.md) for the skills play can teach, and the field guide's *Notice this* prompts for observation activities |
 | A researcher or scientist | The field guide's *In the game* notes, which say what each system models and simplifies, then the [Natural Systems Reviewer skill](../.agents/skills/mission-island-natural-systems/SKILL.md) and the [climate and seasons](design/climate-and-seasons.md) page |
 | A game designer | [Product and game design](game-design.md), the [mechanic pages](#from-a-playtest-to-a-design-change), and [design decisions](design/decisions.md) with the reasons behind them |

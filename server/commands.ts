@@ -45,6 +45,11 @@ function readChoice(raw: unknown) {
   return interactionChoice({ action, subject, favor })
 }
 
+// A binocular mark is a ground position. The host sets its height, so only finite x and z are read.
+function readMark({ x, z }: Record<string, unknown>): CrewCommand | undefined {
+  if (typeof x === 'number' && typeof z === 'number' && Number.isFinite(x) && Number.isFinite(z)) return { type: 'mark', x, z }
+}
+
 export function readCrewCommand(message: Record<string, unknown>): CrewCommand | undefined {
   switch (message.type) {
     case 'input':
@@ -75,11 +80,14 @@ export function readCrewCommand(message: Record<string, unknown>): CrewCommand |
       const choice = readChoice(message.choice)
       return choice ? { type: 'interact', choice } : undefined
     }
+    case 'mark':
+      return readMark(message)
     case 'buy-angler':
     case 'buy-seed':
     case 'seat':
     case 'jump':
     case 'respawn':
+    case 'clear-mark':
       return { type: message.type }
   }
 }

@@ -139,7 +139,22 @@ export interface Snapshot {
   materialsWork: MaterialsWork
   aviation: AviationState
   journal: Journal
+  // Each crewmate's binocular mark. Shared live with the crew and never saved.
+  marks: CrewMark[]
 }
+
+// A spot one crewmate marked through the binoculars, kept until they mark another, clear it or leave.
+export interface CrewMark {
+  playerId: number
+  x: number
+  y: number
+  z: number
+}
+
+export type CrewMarkNotice =
+  | { type: 'crew-mark', event: 'placed', playerId: number, x: number, z: number, fire?: true }
+  | { type: 'crew-mark', event: 'cleared', playerId: number }
+  | { type: 'crew-mark', event: 'refused', reason: 'reach' | 'busy' | 'no-mark' }
 
 export type ServerMessage =
   | Snapshot
@@ -168,6 +183,7 @@ export type ServerMessage =
   | { type: 'flight-result', result: FlightResult, pilotId: number, aerial?: string[], recorded?: number }
   | { type: 'aerial-sighting', id: string }
   | WildfireNotice
+  | CrewMarkNotice
   | LearnerNotice
   // A transient sound cue from host physics. Never saved; clients drop repeated or late IDs.
   | { type: 'crate-impact', id: string, item: number, x: number, y: number, z: number, strength: number, surface: 'ground' | 'bed' }
@@ -194,3 +210,5 @@ export type ClientMessage =
   | { type: 'buy-clothing', item: ClothingId }
   | { type: 'interact', choice?: InteractionChoice }
   | { type: 'seat' | 'jump' | 'respawn' }
+  | { type: 'mark', x: number, z: number }
+  | { type: 'clear-mark' }

@@ -9,6 +9,7 @@ import { neighborFeedback } from './resident-notices'
 import { shellglassTideAt } from './shellglass-tide'
 import { starterPay } from './world'
 import { wildfireFeedback } from './wildfire-card'
+import { crewMarkFeedback } from './crew-mark-notices'
 
 const fishingFeedbackDurationMs = 1900
 const farmFeedbackDurationMs = 4200
@@ -53,6 +54,8 @@ export function starterNoticeFeedback(incoming: ServerMessage, localId: number, 
       return { key: `+${incoming.coins} coins`, label: `${jobs[incoming.id].title} complete · Crew bank`, until: performance.now() + jobPaymentDurationMs }
     case 'wildfire':
       return wildfireFeedback(incoming, localId)
+    case 'crew-mark':
+      return crewMarkFeedback(incoming, localId, snapshot)
     case 'crew-signal': case 'first-aid-check': case 'practice-run':
       return learnerFeedback(incoming, localId, snapshot)
     case 'starter-seed':

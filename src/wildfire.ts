@@ -1,5 +1,6 @@
 import { fireFinder } from './fire-watch.ts'
 import type { Item, Player, Snapshot } from './protocol.ts'
+import { bearingDegrees, compassName } from './spotting.ts'
 import { distance, itemStarts, type Point } from './world.ts'
 import { starterFireSites } from './worlds/starter/layout/fire-sites.ts'
 
@@ -61,11 +62,6 @@ const wildfireSprayReach = 5
 // A crewmate on the ground finds a fire only when this close. The fire finder is the quick way.
 export const fireSightRangeM = 8
 const fireFinderReachM = 1.6
-const fullTurnDegrees = 360
-const compassPoints = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'] as const
-const compassSector = fullTurnDegrees / compassPoints.length
-const half = 0.5
-const halfSector = compassSector * half
 const metresPerHundred = 10
 const homeReachM = 1.4
 
@@ -111,16 +107,6 @@ export function sprayTarget(fire: Wildfire | null | undefined, player: Point) {
     if (distance(spot, player) < wildfireSprayReach && (!best || distance(spot, player) < distance(best, player))) best = spot
   }
   return best
-}
-
-// Compass bearing in whole degrees, where north is +z and east is +x.
-function bearingDegrees(from: Point, to: Point) {
-  const degrees = Math.atan2(to.x - from.x, to.z - from.z) * fullTurnDegrees / (Math.PI + Math.PI)
-  return Math.round((degrees + fullTurnDegrees) % fullTurnDegrees)
-}
-
-function compassName(degrees: number) {
-  return compassPoints[Math.floor(((degrees + halfSector) % fullTurnDegrees) / compassSector)]
 }
 
 // What the fire finder reads: the bearing, rough distance and place of the smoke.
