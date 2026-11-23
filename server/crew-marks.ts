@@ -1,12 +1,9 @@
 import type { Player, Snapshot } from '../src/protocol.ts'
-import { canUseBinoculars, withinMarkReach } from '../src/spotting.ts'
+import { canUseBinoculars, markCooldownMs, withinMarkReach } from '../src/spotting.ts'
 import { walkingHeight, waterLevel } from '../src/terrain.ts'
 import type { Point } from '../src/world.ts'
 import type { CrewCommand } from './commands.ts'
 import type { CrewBroadcast, CrewMember } from './crew.ts'
-
-// One mark per crewmate. A second click this soon after the last is ignored, so a held button cannot flood the crew.
-export const markCooldownMs = 1500
 
 type MarkCommand = Extract<CrewCommand, { type: 'mark' | 'clear-mark' }>
 
@@ -14,7 +11,7 @@ export function createCrewMarks(
   state: Pick<Snapshot, 'marks' | 'aviation' | 'farmWork'>,
   clock: () => number,
   notifyAll: CrewBroadcast,
-  sightMark: (point: Point, player: Player) => void,
+  sightMark: (point: Point, player: Player) => boolean,
 ) {
   const lastMarkAt = new Map<number, number>()
 
@@ -36,8 +33,9 @@ export function createCrewMarks(
     const mark = { playerId: player.id, x: point.x, y: Math.max(walkingHeight(point), waterLevel), z: point.z }
     remove(player.id)
     state.marks.push(mark)
-    notifyAll({ type: 'crew-mark', event: 'placed', playerId: player.id, x: mark.x, z: mark.z })
-    sightMark(mark, player)
+    // The fire's own notice goes first, so the crew's last word names who marked it.
+    const fire = sightMark(mark, player)
+    notifyAll({ type: 'crew-mark', event: 'placed', playerId: player.id, x: mark.x, z: mark.z, ...(fire && { fire }) })
   }
 
   function clear(member: CrewMember) {

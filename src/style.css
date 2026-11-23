@@ -529,7 +529,7 @@ kbd {
   border-radius: 10px;
   background: #142625e6;
   color: var(--cream);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.04em;
 }
@@ -592,13 +592,15 @@ kbd {
 .binoculars-status {
   position: absolute;
   left: 50%;
-  top: calc(50% + 64px);
+  top: calc(50% + 66px);
   transform: translateX(-50%);
   margin: 0;
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: #0b1716d0;
   color: #fff4d8;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
-  text-shadow: 0 1px 2px #061010;
   white-space: nowrap;
 }
 .binoculars-help {
@@ -610,12 +612,16 @@ kbd {
   display: flex;
   align-items: center;
   gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: max-content;
+  max-width: calc(100% - 32px);
   color: #d5e4d8;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  white-space: nowrap;
 }
 .binoculars-help span { margin: 0 9px 0 3px; }
+.binoculars-help kbd { font-size: 11px; }
 body[data-binoculars] .playfield > :is(.mission, .crew, .controls, .controls-toggle, .reticle, .charge-meter) { display: none; }
 body[data-binoculars] #markers > .place { display: none; }
 body[data-binoculars] .prompt { display: none; }

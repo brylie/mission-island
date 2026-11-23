@@ -272,7 +272,7 @@ function hearNotice(message: ServerMessage) {
 function receive(incoming: ServerMessage) {
   hearNotice(incoming)
   const feedback = starterNoticeFeedback(incoming, id, snapshot)
-  if (feedback) actionFeedback = feedback
+  if (feedback) actionFeedback = binoculars.echo(feedback)
   switch (incoming.type) {
     case 'welcome':
       if (incoming.scenarios) checkpointControls.setCatalog(incoming.scenarios)

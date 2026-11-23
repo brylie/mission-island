@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { houseRoofRise } from '../src/assets/geometry/starter-house.ts'
 import { finderReading } from '../src/wildfire.ts'
-import { fireFinder } from '../src/fire-watch.ts'
+import { fireFinder, fireWatch } from '../src/fire-watch.ts'
+import { fireWatchGeometry } from '../src/assets/geometry/fire-watch.ts'
 import {
   bearingDegrees,
   binocularEyeHeightM,
@@ -13,7 +14,7 @@ import {
   rangefinderReachM,
   withinMarkReach,
 } from '../src/spotting.ts'
-import { groundHeight, waterLevel } from '../src/terrain.ts'
+import { fireWatchBaseHeight, groundHeight, waterLevel } from '../src/terrain.ts'
 import { buildings, skiffStart, town } from '../src/world.ts'
 
 const origin = { x: 0, z: 0 }
@@ -84,4 +85,16 @@ test('binoculars come out only on foot, and marks stay within reach', () => {
   assert.equal(canUseBinoculars({ ...state, farmWork: { barrow: { handler: 0 } } }, crew), false)
   assert.equal(withinMarkReach(origin, { x: rangefinderReachM, z: 0 }), true)
   assert.equal(withinMarkReach(origin, { x: rangefinderReachM + 10, z: 0 }), false)
+})
+
+test('the Fire Watch stops the beam from outside, but a lookout inside the cab ranges past it', () => {
+  const base = fireWatchBaseHeight()
+  const outside = { x: fireWatch.x - 20, y: base + fireWatchGeometry.deck.top + 1.5, z: fireWatch.z }
+  const hit = rangeFind(outside, { x: 1, y: 0, z: 0 })
+  assert.equal(hit.surface, 'building')
+  assert.ok(hit.metres < 20 && hit.metres > 15, `Expected the cab about 17 m ahead, read ${hit.metres}`)
+  const inside = { x: fireFinder.x + 0.9, y: base + fireWatchGeometry.deck.top + binocularEyeHeightM, z: fireFinder.z }
+  const out = rangeFind(inside, { x: -1, y: -0.2, z: 0 })
+  assert.notEqual(out.surface, 'building')
+  assert.ok(out.metres > 10, 'The reading is the ground beyond the deck')
 })

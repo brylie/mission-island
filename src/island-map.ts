@@ -129,7 +129,7 @@ function drawLearners(ink: CanvasRenderingContext2D, state: Snapshot, local: Pla
 }
 
 function drawMarks(ink: CanvasRenderingContext2D, state: Snapshot, mx: (x: number) => number, mz: (z: number) => number) {
-  const { size, outline, lineWidth } = look.crewMark
+  const { size, outline, lineWidth, centre, centreRadius } = look.crewMark
   ink.lineWidth = lineWidth
   ink.strokeStyle = outline
   for (const mark of state.marks) {
@@ -141,7 +141,11 @@ function drawMarks(ink: CanvasRenderingContext2D, state: Snapshot, mx: (x: numbe
     ink.lineTo(x, y + size)
     ink.lineTo(x - size, y)
     ink.closePath()
+    ink.fill()
     ink.stroke()
+    ink.fillStyle = centre
+    ink.beginPath()
+    ink.arc(x, y, centreRadius, 0, fullTurn)
     ink.fill()
   }
 }
@@ -221,10 +225,10 @@ export function drawIslandMap(map: HTMLCanvasElement, id: number, state?: Snapsh
   drawWork(state, local, dot)
   const home = crewHomes[id]
   if (home) dot(home.chest.x, home.chest.z, look.chest.color, look.chest.radius)
-  drawMarks(ink, state, mx, mz)
   for (const player of state.players) {
     if (!player.connected) continue
     dot(player.x, player.z, look.player.border, look.player.radius)
     dot(player.x, player.z, shirtColor(player.appearance ?? defaultAppearance, player.appearanceBase ?? player.id).color, look.player.fillRadius)
   }
+  drawMarks(ink, state, mx, mz)
 }

@@ -152,7 +152,7 @@ export interface CrewMark {
 }
 
 export type CrewMarkNotice =
-  | { type: 'crew-mark', event: 'placed', playerId: number, x: number, z: number }
+  | { type: 'crew-mark', event: 'placed', playerId: number, x: number, z: number, fire?: true }
   | { type: 'crew-mark', event: 'cleared', playerId: number }
   | { type: 'crew-mark', event: 'refused', reason: 'reach' | 'busy' }
 

@@ -240,10 +240,12 @@ export function createWildfire(
     else locate(fire, player)
   }
 
-  // A crew mark close to a burning hotspot fixes the fire, the same as walking up to it.
+  // A crew mark close to a burning hotspot fixes the fire, the same as walking up to it. Returns whether it marks a fire.
   function sightMark(point: Point, player: Player) {
     const fire = state.events.fire
-    if (fire && burningHotspots(fire).some((spot) => distance(spot, point) < fireSightRangeM)) locate(fire, player)
+    if (!fire || !burningHotspots(fire).some((spot) => distance(spot, point) < fireSightRangeM)) return false
+    locate(fire, player)
+    return true
   }
 
   // A playtest starts a fire on demand, skipping the schedule, the hour and the weather checks.

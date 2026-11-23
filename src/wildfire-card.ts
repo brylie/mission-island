@@ -17,7 +17,7 @@ export function wildfireCard(state: Pick<Snapshot, 'events'>) {
       value: 0,
       max: 1,
       text: 'Not yet found',
-      instruction: 'Climb the Fire Watch beside Fire Supplies and sight the fire finder, or search for the smoke column.',
+      instruction: 'Climb the Fire Watch beside Fire Supplies and sight the fire finder, or raise your binoculars with V and mark the flames under the smoke.',
     }
   }
   const reading = finderReading(fire)

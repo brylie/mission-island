@@ -292,7 +292,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement, 
     const aspect = engine.getRenderWidth() / Math.max(1, engine.getRenderHeight())
     const normalCamera = islandCamera.update(review?.active() ? undefined : subject, Boolean(local?.seat), aspect, delta, ridgeCameraMode(last, local))
     const field = review?.view(time)
-    const camera = field?.camera ?? binocularView.frame(local, subject, binoculars) ?? pinned(normalCamera)
+    const camera = binocularView.frame({ local, subject, review: field }, binoculars) ?? field?.camera ?? pinned(normalCamera)
     const close = Boolean(field || subject)
     drawEnvironment(delta, factor, { camera, close, field, livePlayer: !field && subject ? local : undefined })
     renderView(scene, review, dev, { islandTime: last?.islandTime ?? ambientTime, state: last }, time)

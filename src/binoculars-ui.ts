@@ -1,9 +1,8 @@
 import { binocularEye, binocularFieldOfView, lookDirection, type BinocularLook } from './binocular-view'
 import { lookPitchSensitivity, lookYawSensitivity } from './island-camera'
 import type { LookSettings } from './look-options-ui'
-import type { ClientMessage, CrewMark, Snapshot } from './protocol'
-import { distance, type Point } from './world'
-import { bearingDegrees, binocularMagnification, canUseBinoculars, rangeFind, rangeReadout } from './spotting'
+import type { ClientMessage, Snapshot } from './protocol'
+import { bearingDegrees, binocularMagnification, canUseBinoculars, markCooldownMs, rangeFind, rangeReadout } from './spotting'
 
 interface Options {
   playfield: HTMLElement
@@ -52,10 +51,43 @@ function overlayMarkup() {
   overlay.innerHTML = `
     <div class="binoculars-field" aria-hidden="true"></div>
     <div class="binoculars-reticle" aria-hidden="true"><i></i><i></i></div>
-    <output class="binoculars-readout" aria-label="Rangefinder distance and bearing"></output>
+    <output class="binoculars-readout" aria-live="off"></output>
     <p class="binoculars-status" role="status"></p>
-    <p class="binoculars-help"><kbd>Click</kbd><kbd>Enter</kbd><span>Mark</span><kbd>X</kbd><span>Clear mark</span><kbd>V</kbd><kbd>Esc</kbd><span>Lower</span></p>`
+    <p class="binoculars-help"><kbd>Mouse</kbd><kbd>WASD</kbd><span>Look</span><kbd>Shift</kbd><span>Sweep</span><kbd>Click</kbd><kbd>Enter</kbd><span>Mark</span><kbd>X</kbd><span>Clear</span><kbd>V</kbd><kbd>Esc</kbd><span>Lower</span></p>`
   return overlay
+}
+
+// While raised, the mouse turns the binoculars and a left click marks. The game never sees either.
+function bindMouse(playfield: HTMLElement, look: () => LookSettings, { view, mark, lower }: { view: () => BinocularLook | undefined, mark: () => void, lower: () => void }) {
+  let wasLocked = false
+  window.addEventListener('mousemove', (event) => {
+    const current = view()
+    if (!current) return
+    event.stopImmediatePropagation()
+    // The same look rates as the follow camera, slowed by the magnification so the view moves at the same speed on screen.
+    const { speed, invertHorizontal, invertVertical } = look()
+    const rate = speed / binocularMagnification
+    current.yaw += event.movementX * lookYawSensitivity * rate * (invertHorizontal ? -1 : 1)
+    current.pitch = clampPitch(current.pitch - event.movementY * lookPitchSensitivity * rate * (invertVertical ? -1 : 1))
+  }, true)
+
+  // A left click marks the ranged point, so it cannot also spray or throw.
+  const overView = (event: Event) => event.target instanceof Element && playfield.contains(event.target) && !event.target.closest('button, a, input, select, textarea, dialog')
+  for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup'] as const) {
+    window.addEventListener(type, (event) => {
+      if (!view() || (!overView(event) && !document.pointerLockElement)) return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      if (type === 'pointerdown' && event.button === 0) mark()
+    }, true)
+  }
+
+  // Escape releases a locked mouse before the page sees the key, so losing the lock lowers the binoculars too.
+  document.addEventListener('pointerlockchange', () => {
+    const locked = Boolean(document.pointerLockElement)
+    if (wasLocked && !locked && view()) lower()
+    wasLocked = locked
+  })
 }
 
 // Handheld 8× binoculars with a laser rangefinder and compass. V raises them on foot; while raised they take the
@@ -65,14 +97,13 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
   playfield.append(overlay)
   const readout = overlay.querySelector('output') as HTMLOutputElement
   const status = overlay.querySelector('.binoculars-status') as HTMLElement
-  let ownMark: CrewMark | undefined
   let statusUntil = 0
+  let lastMarkSent = -markCooldownMs
   const panning = new Set<string>()
   let view: BinocularLook | undefined
   let target: { x: number, z: number } | undefined
   let lastFrame = 0
   let lastReading = -readoutIntervalMs
-  let wasLocked = false
   let sweeping = false
 
   function crewmate() {
@@ -90,7 +121,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     lastFrame = performance.now()
     lastReading = -readoutIntervalMs
     readout.textContent = ''
-    ownMark = crew()?.state.marks.find((mark) => mark.playerId === current.player.id)
+    statusUntil = 0
     status.hidden = true
     overlay.hidden = false
     document.body.dataset.binoculars = 'raised'
@@ -112,18 +143,30 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     target = hit && { x: hit.x, z: hit.z }
     // The compass reads the bearing of the ranged point, or of the line of sight when nothing is in range.
     const degrees = bearingDegrees(feet, hit ?? { x: feet.x + ahead.x, z: feet.z + ahead.z })
-    readout.textContent = rangeReadout(hit?.metres, degrees)
+    // Written only when it changes; the readout is not a live region, so a screen reader reads it on request.
+    const text = rangeReadout(hit?.metres, degrees)
+    if (readout.textContent !== text) readout.textContent = text
     overlay.dataset.ranged = String(Boolean(hit))
   }
 
-  // The host confirms a mark by sharing it, so the confirmation shows when the crewmate's own mark moves or goes.
-  function showOwnMark(mark: CrewMark | undefined, player: Point, now: number) {
-    if (mark?.x !== ownMark?.x || mark?.z !== ownMark?.z) {
-      status.textContent = mark ? `Marked for the crew · ${Math.round(distance(player, mark))} m` : 'Mark cleared'
-      statusUntil = now + statusDurationMs
+  // Notices and refusals show under the readout while the binoculars are up, where the game's prompt is hidden.
+  function say(text: string) {
+    status.textContent = text
+    statusUntil = performance.now() + statusDurationMs
+    status.hidden = false
+  }
+
+  // Ranges again at the click, so the mark is always where the reticle is now, not at the last readout.
+  function mark() {
+    const now = performance.now()
+    const current = crewmate()
+    if (current && view) range(current.player, view)
+    if (!target) say('Nothing in range to mark')
+    else if (now - lastMarkSent < markCooldownMs) say('Hold steady, then mark again')
+    else {
+      lastMarkSent = now
+      send({ type: 'mark', ...target })
     }
-    ownMark = mark
-    status.hidden = now > statusUntil
   }
 
   // Called once per rendered frame. Pans by the held keys and lowers the binoculars when the crewmate can no longer use them.
@@ -144,7 +187,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
       view.yaw += yaw * step * (settings.invertHorizontal ? -1 : 1)
       view.pitch = clampPitch(view.pitch + pitch * step * (settings.invertVertical ? -1 : 1))
     }
-    showOwnMark(current.state.marks.find((mark) => mark.playerId === current.player.id), current.player, now)
+    if (now > statusUntil) status.hidden = true
     if (now - lastReading >= readoutIntervalMs) {
       lastReading = now
       range(current.player, view)
@@ -176,7 +219,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     if (event.code in panKeys) panning.add(event.code)
     if (event.repeat) return
     if (event.code === 'KeyV' || event.code === 'Escape') lower()
-    else if ((event.code === 'Enter' || event.code === 'NumpadEnter') && target) send({ type: 'mark', ...target })
+    else if (event.code === 'Enter' || event.code === 'NumpadEnter') mark()
     else if (event.code === 'KeyX') send({ type: 'clear-mark' })
   }, true)
   window.addEventListener('keyup', (event) => {
@@ -184,32 +227,14 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
     if (panning.delete(event.code)) event.stopImmediatePropagation()
   }, true)
 
-  window.addEventListener('mousemove', (event) => {
-    if (!view) return
-    event.stopImmediatePropagation()
-    // The same look rates as the follow camera, slowed by the magnification so the view moves at the same speed on screen.
-    const { speed, invertHorizontal, invertVertical } = look()
-    const rate = speed / binocularMagnification
-    view.yaw += event.movementX * lookYawSensitivity * rate * (invertHorizontal ? -1 : 1)
-    view.pitch = clampPitch(view.pitch - event.movementY * lookPitchSensitivity * rate * (invertVertical ? -1 : 1))
-  }, true)
+  bindMouse(playfield, look, { view: () => view, mark, lower })
 
-  // A left click marks the ranged point. The game never sees the click, so it cannot also spray or throw.
-  const overView = (event: Event) => event.target instanceof Element && playfield.contains(event.target) && !event.target.closest('button, a, input, select, textarea, dialog')
-  for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup'] as const) {
-    window.addEventListener(type, (event) => {
-      if (!view || (!overView(event) && !document.pointerLockElement)) return
-      swallow(event)
-      if (type === 'pointerdown' && event.button === 0 && target) send({ type: 'mark', ...target })
-    }, true)
+  return {
+    view: frame,
+    // Shows a game notice in the binoculars while they are up, and hands it on for the prompt.
+    echo<T extends { label: string }>(feedback: T) {
+      if (view && feedback.label) say(feedback.label)
+      return feedback
+    },
   }
-
-  // Escape releases a locked mouse before the page sees the key, so losing the lock lowers the binoculars too.
-  document.addEventListener('pointerlockchange', () => {
-    const locked = Boolean(document.pointerLockElement)
-    if (wasLocked && !locked && view) lower()
-    wasLocked = locked
-  })
-
-  return { view: frame }
 }
