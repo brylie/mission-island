@@ -1,14 +1,14 @@
-import type { TreeSpecies } from './assets/trees/tree-catalog.ts'
+import type { TreeTemplateOptions } from './assets/trees/tree-catalog.ts'
 import { treeCollision } from './assets/trees/tree-collision.ts'
 import { groundHeight } from './terrain.ts'
 import type { Point } from './world.ts'
-import { highwoodPlanting, logRise } from './worlds/starter/highwood-planting.ts'
-import { highwoodTemplateSeedBase } from './worlds/starter/layout/highwood-planting.ts'
+import { highwoodPlanting, logRise, plantTemplateOptions } from './worlds/starter/highwood-planting.ts'
 
 // Highwood's solid trunks, snags and fallen logs for walking, indexed by a grid
 // so each step checks only the few nearby, not every tree in the forest. Soft
 // plants (shrubs, saplings' leaves, bracken) are left out: you walk through them.
 // The canopy trees are indexed the same way for wind shelter and crown rustle.
+// The understory layer is soft by design, even a young willow grown as a tree.
 
 interface Trunk { kind: 'upright', x: number, z: number, radius: number, top: number }
 interface Log { kind: 'lying', x: number, z: number, dx: number, dz: number, length: number, radius: number, top: number, rise: number }
@@ -37,7 +37,7 @@ function file(solid: Solid, reach: number) {
 
 for (const plant of highwoodPlanting()) {
   if (plant.layer === 'understory') continue
-  const collision = treeCollision({ species: plant.species as TreeSpecies, age: plant.age, exposure: plant.exposure, seed: highwoodTemplateSeedBase + plant.variant, tier: 'near' })
+  const collision = treeCollision(plantTemplateOptions(plant, 'near') as TreeTemplateOptions)
   if (!collision.solid) continue
   if (plant.layer === 'canopy' && collision.shape === 'upright') {
     const list = crowns.get(key(Math.floor(plant.x / cellM), Math.floor(plant.z / cellM))) ?? []

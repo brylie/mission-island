@@ -99,7 +99,7 @@ These apply at every phase, beyond the technical tests.
 
 1. **Shore.** The first 2–14 m inland, where spray and sand keep trees back.
 2. **Wet woodland.** The wettest ground within 6 m, from the baked drainage (flow accumulation), below about 10–18 m. Drainage lines are a cell wide, so a bank reads the creek beside it.
-3. **Exposed ridge**, then **heath.** Wind exposure, or bare rock. Exposure mixes height, ground facing into the prevailing Windstone breeze, and how far a point stands above the ground 12 m around it.
+3. **Exposed ridge**, then **heath.** Wind exposure, or bare rock. Exposure mixes height, ground facing into the prevailing Windstone breeze, and how far a point stands above the ground 12 m around it. On Starter Island that breeze blows from the south-east toward the north-west, so exposed trees lean north-west. The baked rock layer covers only the coast, so inland heath and ridge come from exposure alone; an inland outcrop layer is a follow-up.
 4. **Bracken.** Gentle, deep-soiled slopes, in soft patches.
 5. **Birch.** A grove on Birch Flats and a few patches elsewhere.
 6. **Edges and gaps.** Openings in the canopy.
@@ -111,12 +111,13 @@ The test (`test/highwood-habitat.test.mjs`) checks that pinewood covers the most
 
 Highwood is planted in three layers from the [stand tables](../src/worlds/starter/layout/highwood-planting.ts): a canopy (one candidate per 5 m cell), an understory of shrubs, saplings and bracken (2.5 m) and deadwood (12 m). Each candidate rolls its habitat from the classifier's weights, then the habitat's cover, species and age. Plants keep off sand, steep ground and routes. Where wind exposure passes 0.5, trees and shrubs grow their exposed form and turn their lean downwind.
 
+- **Regeneration.** Scots pine needs light to establish, so young pines and pine saplings grow at edges and in gaps, not under the closed pinewood canopy, whose floor carries bilberry and heather.
 - **Clumps and glades.** Native pinewood grows in irregular clumps with open glades between, not in rows. Soft noise patches about 38 m across scale the canopy's cover by up to 85% either way, and 18 m patches do the same for the understory. Canopy trees vary in size by up to a quarter either way, and the pinewood mixes old, mature and young pines.
 - **Kept-open views.** Canopy and deadwood keep out of a widening corridor along the ridge-home and Cairn south-west sight lines, as gaps on a crest would, so players stopping there see what the capture presets show. A test keeps the corridors and the presets in step.
 
-`npm run island:generate` bakes the planting after the terrain (`scripts/plant-highwood.mjs`): 7,516 plants at 8 bytes each, 59 KB. The host and every screen decode it in about 6 ms instead of classifying for about 180 ms at load. A source-hash test catches a stale bake.
+`npm run island:generate` bakes the planting after the terrain (`scripts/plant-highwood.mjs`): 6,795 plants at 8 bytes each plus the ground raster, 86 KB. The host and every screen decode it in about 6 ms instead of classifying for about 180 ms at load. A source-hash test over every file the planter reads catches a stale bake, and the test re-plants and compares every plant's position, heading and size with the bake.
 
-- **Drawing.** `src/highwood-forest.ts`. Beyond 110 m, a tile's trees are merged far silhouettes, one mesh per 64 m tile and material. Within it they are detailed templates drawn as thin instances, one batch per template, rebuilt only when the set of near tiles changes; a 16 m dead band stops tiles flickering between tiers. Understory draws within 60 m. Far silhouettes use their own copies of the tree materials: sharing a foliage material with the near thin instances made the far crowns vanish.
+- **Drawing.** `src/highwood-forest.ts`. Beyond 80 m from a tile's nearest point, its trees are merged far silhouettes, one mesh per 64 m tile and material. Within it they are detailed templates drawn as thin instances, one batch per template, rebuilt only when the set of near tiles changes; a 16 m dead band stops tiles flickering between tiers. Understory draws within 45 m. Far silhouettes use their own copies of the tree materials: sharing a foliage material with the near thin instances made the far crowns vanish.
 - **Ground cover.** The planting bake also writes an 8 m ground raster from the habitat weights: needle litter under pine (and half under edges and birch), heather on heath and the exposed ridge, moss in wet woodland, and bracken. The Highwood terrain tiles carry it as a `groundCover` vertex attribute, and the ground shader lays the `pine-duff` texture for litter and tints for heather, moss and bracken over the turf (`highwoodGroundCover` in `src/assets/geometry/starter-landscape.ts`). Bracken is stored inverted, because a mesh without the attribute reads it as full; the authored south has none. Footsteps sound as litter wherever litter is the strongest cover and passes 0.3, so birch and edge ground (which bake to exactly half litter) don't flicker between litter and grass.
 - **Wind and crowns.** `src/highwood-solids.ts` also files every canopy tree's crown in its grid. Wind shelter and crown rustle (`src/audio/wind-model.ts`) count Highwood's crowns as well as the authored island's trees, without scanning every tree, so the air hushes inside the pinewood. Pine crowns hush as needles; birch, aspen, rowan, alder and willow flutter as leaves.
 - **Walking.** `src/highwood-solids.ts` sizes trunks, snags and logs with the tree catalog's collision, from the same seeds as the drawn trees, and files them in a 4 m grid. A walking check reads the few cells around a walker, about 0.7 µs. Logs can be stepped onto; shrubs and bracken are soft. Trees add no physics bodies.
@@ -127,24 +128,25 @@ Highwood is planted in three layers from the [stand tables](../src/worlds/starte
 
 | Concern | Approach |
 | --- | --- |
-| Physics | Trees get no rigid bodies. Walking checks nearby trunks through a spatial grid, not every tree. Vehicles meet trunk colliders only along the fire road and tracks, merged into one body per tile. Each static body the host adds raises the cost of every physics step (see [#230](https://github.com/brylie/mission-island/pull/230)). |
-| Draw calls | One template per species and age, drawn as thin instances, one call per template per 63 m terrain tile. Off-screen tiles are culled whole. |
-| Detail | The near tree (600–1,500 triangles) switches to the far tree (60–160) by tile distance, with a dead band so trees don't flicker. Shrubs and groundcover stop beyond about 150 m, where fog and the ground texture take over. |
+| Physics | Trees get no rigid bodies. Walking checks nearby trunks through a spatial grid, not every tree. Vehicles don't meet Highwood trunks yet; Phase 3 adds trunk colliders only along the fire road and tracks, merged into one body per tile. Each static body the host adds raises the cost of every physics step (see [#230](https://github.com/brylie/mission-island/pull/230)). |
+| Draw calls | Far trees merge into one mesh per 64 m tile and material, culled whole when off screen. Near trees are one thin-instance batch per template across all near tiles, so they are few draw calls but not culled per tile. |
+| Detail | The near tree (600–1,500 triangles) switches to the far tree (60–160) by distance to a tile's nearest point, 80 m on High, with a 16 m dead band so trees don't flicker. Understory draws within 45 m; beyond it, the ground cover texture and tints carry the habitat. Exposed crest trees always draw detailed, because a tier switch on a skyline shows. Understory casts no shadows. |
 | Culling | Frustum culling per tile, and nothing past the fog's end. Babylon's occlusion queries answer a frame late and cost one query per mesh, so a ridge mask from known viewpoints comes first, and only if the numbers ask for it. |
-| Older computers | **Options → Graphics → Detail**: Low renders at two-thirds resolution (about 44% of the pixels), turns off shadows, and pulls the detailed-tree range in from 110 m to 55 m and the understory from 60 m to 25 m. Automatic starts at High and drops to Low once, for the session, when frames average slower than 33 ms for 4 s after a 6 s settle. Tiers are in `src/assets/recipes/graphics-quality.ts`. |
+| Older computers | **Options → Graphics → Detail**: Low renders at two-thirds resolution (about 44% of the pixels), turns off shadows, and pulls the detailed-tree range in from 80 m to 40 m and the understory from 45 m to 20 m. Automatic starts at High and drops to Low once, for the session, when frames average slower than 40 ms for 4 s after a 6 s settle; 40 ms sits clear of a 30 Hz cap. Tiers are in `src/assets/recipes/graphics-quality.ts`. |
 | Guard rails | Draw calls, triangles and frame time per hero view, from `npm run capture`'s perf numbers. #198 tracks checking them in CI. |
 
-**With the forest** (development machine, headless capture, `npm run capture`):
+**With the forest** (development machine, headless capture, `npm run capture`, High):
 
 | View | Frame ms | Draw calls | Triangles |
 | --- | --- | --- | --- |
-| Cairn Summit, north at dawn | 4.1 | 584 | 636k |
-| Fire road, midday | 4.7 | 802 | 2.21M |
-| Birch Flats, evening | 4.0 | 639 | 661k |
-| Fallow Ridge, looking home | 7.3 | 1,429 | 2.19M |
-| Alder Creek ford | 4.3 | 708 | 1.43M |
+| Cairn Summit, north at dawn | 5.2 | 796 | 1.79M |
+| Fire road, midday | 5.0 | 777 | 1.78M |
+| Birch Flats, evening | 4.3 | 627 | 0.68M |
+| Fallow Ridge, looking home | 7.6 | 1,401 | 2.40M |
+| Alder Creek ford | 4.6 | 696 | 1.57M |
+| Cairn from the south-west | 4.9 | 734 | 1.39M |
 
-All hold 60 fps here. The fire road and ridge views reach 2.2 million triangles, mostly near-tier crowns and their shadows, so older computers rely on the Low tier. Its savings are not yet measured on an older computer; that belongs to the two-player playtest.
+All hold 60 fps here. Most views draw 1.4–2.4 million triangles, mostly near-tier crowns, their shadows, the always-detailed crest trees and close understory, so older computers rely on the Low tier. Its savings are not yet measured on an older computer; that belongs to the two-player playtest.
 
 
 Baseline on main `7a838c0`, in the `fire-watch` playtest, read with `?dev=1&perf=1` in the game address (see [the dev view URL](iteration-tooling.md#the-dev-view-url)). Compare the frame time and the draw calls; the browser pane's FPS is throttled.

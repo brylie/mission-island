@@ -39,7 +39,7 @@ plants.forEach((plant, index) => {
   bytes.writeUInt16LE(Math.round((plant.z - south) / encoding.positionStepM), at + zOffset)
   bytes[at + speciesByte] = species.indexOf(plant.species)
   bytes[at + packedByte] = plantingLayers.indexOf(plant.layer) | (plantingAges.indexOf(plant.age) << layerBits)
-    | (plantingExposures.indexOf(plant.exposure) << (layerBits + ageBits)) | (plant.variant << (layerBits + ageBits + exposureBits))
+    | (plantingExposures.indexOf(plant.exposure) << (layerBits + ageBits)) | ((plant.variant & ((1 << encoding.variantBits) - 1)) << (layerBits + ageBits + exposureBits))
   const turn = ((plant.heading / fullTurn) % 1 + 1) % 1
   bytes[at + headingByte] = Math.round(turn * encoding.turnSteps) % encoding.turnSteps
   bytes[at + scaleByte] = Math.max(0, Math.min(byteMax, Math.round((plant.scale - 1) / encoding.scaleStep + encoding.scaleCentre)))

@@ -1,6 +1,6 @@
 # Highwood habitats
 
-**Type: reference (place cards). Status: in progress. Last tended 2026-11-23.** Highwood's land is on the island, and the game now divides it into these habitats from its soil water, height, slope, rock and wind exposure ([how](../backcountry.md#habitats)). The plants that will grow in each are still to be placed.
+**Type: reference (place cards). Status: in progress. Last tended 2026-11-23.** Highwood's land is on the island, and the game now divides it into these habitats from its soil water, height, slope, rock and wind exposure ([how](../backcountry.md#habitats)). Each habitat is planted with the species these cards name.
 
 **New here?** Read the pinewood interior and the exposed ridge first: they're the Highwood's two extremes, and every other habitat sits between them. For processes that cross every habitat, see the explainers on [wildfire](processes/wildfire.md), [bracken slopes](places/bracken-slopes.md) and [wet woodland](places/wet-woodland.md).
 
@@ -52,7 +52,7 @@ Plants are described in [Highwood plants](highwood-plants.md), and terms in *ita
 - **What changes it.** Storms throw shallow-rooted trees, so the ridge collects more deadfall.
 - **Life (real).** Exposed heath holds mosses, lichens and low, wind-pruned heath plants. Meadow pipits, common nesting birds of moorland and heath, breed on open hillsides. *Sources: jncc-h4060, which describes higher montane heath than the island's ridge; wt-meadow-pipit.*
 - **In the game.** A few wind-bent pines all leaning the same way, with low juniper and heather, and no broadleaf trees or bracken.
-- **Notice this.** Which way do all the ridge pines lean? That tells you where the prevailing wind comes from.
+- **Notice this.** Which way do all the ridge pines lean? That tells you where the prevailing wind comes from. On Starter Island the breeze comes from the south-east, so the pines lean north-west. In the Scottish Highlands the prevailing wind is south-westerly, so flagged pines there lean north-east (unsourced).
 
 ## Wet woodland (Mirror Pool and stream banks)
 
@@ -60,7 +60,7 @@ Plants are described in [Highwood plants](highwood-plants.md), and terms in *ita
 - **Why here.** Waterlogged soil, which pines can't tolerate. See the [wet woodland explainer](places/wet-woodland.md).
 - **What changes it.** The water level. Wet woodland on permanently waterlogged ground is called *carr*.
 - **Life (real).** Alder enriches waterlogged soil, and otters, seed-eating finches and many invertebrates live in wet woods. Details and sources are on the [wet woodland](places/wet-woodland.md) page.
-- **In the game.** Alder and grey willow by the water, with no pine.
+- **In the game.** Alder and grey willow by the water, with little or no pine, thinning toward the water.
 - **Notice this.** Follow the stream and watch where the alders stop. Their edge shows how far the wet ground reaches.
 
 ## Bracken slopes

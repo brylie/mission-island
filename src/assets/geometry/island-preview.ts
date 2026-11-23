@@ -47,7 +47,8 @@ export const heightmapEncoding = {
 } as const
 
 // How the baked Highwood planting is encoded: per plant, x and z as u16 steps from
-// the grid's corner, a species index, then layer, age, exposure and variant bits,
+// the grid's corner, a species index, then layer, age, exposure and variant bits (the
+// layer order of highwoodPlantingLayers is part of the format, and seeds each layer),
 // a heading in 256ths of a turn and a scale step about 1.
 export const plantingEncoding = {
   positionStepM: 0.02,
@@ -58,6 +59,8 @@ export const plantingEncoding = {
   layerBits: 2,
   ageBits: 2,
   exposureBits: 1,
+  // Up to four template variants per species, age and exposure.
+  variantBits: 2,
   // The ground raster: one cell every `groundCellM` metres, `groundChannels` bytes each
   // (needle litter, heath, moss, bracken from 0 to 255).
   groundCellM: 8,

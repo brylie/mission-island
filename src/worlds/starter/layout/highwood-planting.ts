@@ -23,7 +23,8 @@ export const highwoodLeanJitter = 0.15
 export const highwoodAuthoredLimit = 0.5
 // Trees stay off ground steeper than this rise per metre, and every plant off wetter, sandier ground.
 export const highwoodPlantingLimits = { treeSlope: 0.9, sand: 0.4 }
-// Plants keep this far, in metres, from routes and the Fire Watch so paths stay clear.
+// Plants keep this far, in metres, from the centreline of every route so paths stay clear.
+// Phase 3's fire road will need a wider, kind-dependent clearance (half-width, shoulder, crown).
 export const highwoodRouteClearanceM = 3
 // Sight lines kept open through the forest, as gaps on a crest would be, so the
 // views players stop for stay open. Canopy and deadwood keep out of a corridor

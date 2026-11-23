@@ -23,6 +23,8 @@ const sampleStepM = 8
 const sampleOffsetM = 1.37
 const landMarginM = 0.2
 const positionToleranceM = 0.02
+const headingToleranceRad = 0.025
+const scaleTolerance = 0.002
 const minimumCanopy = 1000
 const half = 2
 const walkerPaddingM = 0.35
@@ -76,9 +78,11 @@ test('the baked planting is up to date and decodes to the placer\'s plants', () 
   const placed = plantHighwood()
   const baked = highwoodPlanting()
   assert.equal(baked.length, placed.length)
-  for (let i = 0; i < placed.length; i += 37) {
+  for (let i = 0; i < placed.length; i++) {
     const [a, b] = [placed[i], baked[i]]
     assert.deepEqual([b.layer, b.species, b.age, b.exposure, b.variant], [a.layer, a.species, a.age, a.exposure, a.variant])
+    const turn = Math.abs(Math.atan2(Math.sin(a.heading - b.heading), Math.cos(a.heading - b.heading)))
+    assert.ok(turn < headingToleranceRad && Math.abs(a.scale - b.scale) < scaleTolerance, `plant ${i} turned or resized in the bake`)
     assert.ok(Math.hypot(a.x - b.x, a.z - b.z) < positionToleranceM, `plant ${i} moved in the bake`)
   }
 })

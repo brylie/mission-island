@@ -2,7 +2,7 @@ import { highwoodPlants } from '../../assets/geometry/highwood-plants.ts'
 import { plantingEncoding as encoding } from '../../assets/geometry/island-preview.ts'
 import { groundHeight } from '../../terrain.ts'
 import type { Point } from '../../world.ts'
-import { highwoodPlantingLayers, plantingAges, plantingExposures } from './layout/highwood-planting.ts'
+import { highwoodPlantingLayers, highwoodTemplateSeedBase, plantingAges, plantingExposures } from './layout/highwood-planting.ts'
 
 // Highwood's planting, decoded from the bake (scripts/plant-highwood.mjs). The
 // host's walking solids and every screen's forest read the same list.
@@ -49,7 +49,7 @@ export function highwoodPlanting(): readonly Planting[] {
       layer: plantingLayers[bits(packed, 0, layerBits)],
       age: plantingAges[bits(packed, layerBits, ageBits)],
       exposure: plantingExposures[bits(packed, layerBits + ageBits, exposureBits)],
-      variant: bits(packed, layerBits + ageBits + exposureBits, layerBits),
+      variant: bits(packed, layerBits + ageBits + exposureBits, encoding.variantBits),
       heading: bytes[at + headingByte] / encoding.turnSteps * fullTurn,
       scale: 1 + (bytes[at + scaleByte] - encoding.scaleCentre) * encoding.scaleStep,
     })
@@ -81,4 +81,10 @@ export function highwoodGroundCover({ x, z }: Point) {
 export function logRise(plant: Planting, lengthM: number) {
   const end = { x: plant.x + Math.cos(plant.heading) * lengthM, z: plant.z - Math.sin(plant.heading) * lengthM }
   return (groundHeight(end) - groundHeight(plant)) / lengthM
+}
+
+// The template a plant grows from. The host sizes its collision and every screen
+// grows its mesh from these same options, so they can't drift apart.
+export function plantTemplateOptions(plant: Planting, tier: 'near' | 'far') {
+  return { species: plant.species, age: plant.age, exposure: plant.exposure, seed: highwoodTemplateSeedBase + plant.variant, tier }
 }
