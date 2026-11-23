@@ -14,8 +14,16 @@ repos:
   - repo: local
     hooks:
       - id: mission-island-quality
-        name: Lint, type check and tests
-        entry: npm run quality:commit
+        name: Lint and type check
+        entry: npm run quality:static
+        language: system
+        stages: [pre-commit]
+        pass_filenames: false
+        always_run: true
+      # CI skips this hook and runs the same tests once, under coverage.
+      - id: mission-island-tests
+        name: Tests
+        entry: npm test
         language: system
         stages: [pre-commit]
         pass_filenames: false
