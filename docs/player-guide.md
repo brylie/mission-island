@@ -20,14 +20,16 @@ Join the same host using the [LAN instructions](../README.md#play-on-your-local-
 | **Mouse** | Look around your character or vehicle. The first gameplay keypress captures the mouse. Aim the reticle at something you can use to choose it: it turns gold and a tooltip names the thing and the key. With nothing under the reticle, **E** uses whatever is nearest. |
 | **Esc** | Release the mouse. Press a gameplay key to capture it again. |
 | **J** | Open the crew's field journal. Press **J** again or **Esc** to close it. |
-| **V** | Raise or lower your binoculars while on foot. While they are up, the mouse or **W A S D** look around (hold **Shift** to sweep faster), the readout under the reticle gives the distance and compass bearing, **left click** or **Enter** marks the spot for the crew, **X** clears your mark, and **V** or **Esc** lowers them. |
-| **O** | Open Options for your name, appearance, mouse look (invert either axis, look speed), sound (ambience and effects levels, mute), and **Respawn at home**. |
+| **V** | Raise or lower your binoculars while on foot. They come up on whatever the reticle points at. While they are up, the mouse or **W A S D** look around (hold **Shift** to sweep faster), the readout under the reticle gives the distance and compass bearing, **left click** or **Enter** marks the spot for the crew, **X** clears your mark, and **V** or **Esc** lowers them. |
+| **O** | Open Options for your name, appearance, mouse look (invert either axis, look speed), graphics detail, sound (ambience and effects levels, mute), and **Respawn at home**. |
 
 Bring crates to the tail of the truck to set them on the bed. Amber orbs appear along the recommended route once a crate is loaded. Jump over the low rear lip and ride along on the bed as the truck moves. The side rails and rear lip help keep crates aboard through turns. At Seabrook, step out, collect each crate from the bed, and press **E** with the crate inside the glowing teal delivery circle. The beach has a shallow wading shelf. You slow down as the water gets deeper.
 
+**Options → Graphics → Detail** is **Automatic** at first: the game starts at High and, if frames stay slow for a few seconds, switches to Low for the rest of the session, says so on screen and under the setting. Choosing High keeps full detail; choosing Automatic again starts back at High and checks the frame rate afresh. **Low (older computers)** draws at a lower resolution, turns off shadows and shows detailed trees and undergrowth only close by. **High** keeps the full look. Your choice is remembered in this browser.
+
 Sound starts after your first click or key press. Surf grows as you near the shore, and your boots sound different on gravel paths, pavement, grass, leaf litter, sand, dock boards and in shallow water, duller and squelchier once rain soaks the ground. The flatbed idles while someone is in the driver's seat and strains as it pulls away or climbs. Wind is strongest on the ridge and the shore and hushes among trees, where the crowns rustle as the leaves blow. Ferns, rushes and marram rustle as you push through them, gulls call around the harbor and over the lift sites, and songbirds sing in the woods by day. Both crewmates hear a crate land, from where each of them stands, and a harder drop sounds heavier than a gentle set-down. Every cue also has visible feedback, so muting changes nothing you need to finish a job. **Options → Sound** sets ambience and effects levels or mutes this browser.
 
-Jump onto or over low rocks and crates. The bed or hood gives you a second jump onto the cab roof.
+Jump onto or over low rocks, crates and fallen logs. The bed or hood gives you a second jump onto the cab roof.
 
 Each starter crate delivered pays two coins into the shared crew bank. Completing the delivery pays three more, and clearing the lookout fire pays four. The truck's headlights and taillights come on around dusk, along with street lamps in the settlements.
 

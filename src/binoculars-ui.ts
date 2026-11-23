@@ -2,7 +2,7 @@ import { binocularEye, binocularFieldOfView, lookDirection, type BinocularLook }
 import { lookPitchSensitivity, lookYawSensitivity } from './island-camera'
 import type { LookSettings } from './look-options-ui'
 import type { ClientMessage, Snapshot } from './protocol'
-import { bearingDegrees, binocularMagnification, canUseBinoculars, markCooldownMs, rangeFind, rangeReadout } from './spotting'
+import { bearingDegrees, binocularEyeHeightM, binocularMagnification, canUseBinoculars, markCooldownMs, rangeFind, rangefinderReachM, rangeReadout } from './spotting'
 
 interface Options {
   playfield: HTMLElement
@@ -11,8 +11,8 @@ interface Options {
   // Whether the game takes keys and clicks now: connected, following the crewmate, no dialog or shader review open.
   ready: () => boolean
   crew: () => { state: Snapshot, id: number } | undefined
-  // The follow camera's heading, so the binoculars come up looking the same way.
-  heading: () => number | undefined
+  // The camera's view through the reticle, so the binoculars come up on what it points at.
+  aim: () => { origin: Spot, direction: Spot } | undefined
   // Stops walking and any held action, and captures the mouse for looking.
   raise: () => void
 }
@@ -37,6 +37,19 @@ const panKeys: Record<string, [yaw: number, pitch: number]> = {
   ArrowLeft: [-1, 0],
   KeyD: [1, 0],
   ArrowRight: [1, 0],
+}
+
+interface Spot { x: number, y: number, z: number }
+
+// The view from the crewmate's eyes onto whatever the reticle points at: the ground, water or a
+// building it meets, or a point far along the ray when it meets nothing. The reticle sits over the
+// shoulder, so aiming at the spot itself (not along the camera's direction) centres it in the lenses.
+function aimedView(feet: Spot & { heading: number }, ray: { origin: Spot, direction: Spot } | undefined): BinocularLook {
+  if (!ray) return { yaw: feet.heading, pitch: 0 }
+  const spot = rangeFind(ray.origin, ray.direction) ?? { x: ray.origin.x + ray.direction.x * rangefinderReachM, y: ray.origin.y + ray.direction.y * rangefinderReachM, z: ray.origin.z + ray.direction.z * rangefinderReachM }
+  const eye = { x: feet.x, y: feet.y + binocularEyeHeightM, z: feet.z }
+  const dx = spot.x - eye.x, dz = spot.z - eye.z
+  return { yaw: Math.atan2(dx, dz), pitch: clampPitch(Math.atan2(spot.y - eye.y, Math.hypot(dx, dz))) }
 }
 
 function clampPitch(pitch: number) {
@@ -92,7 +105,7 @@ function bindMouse(playfield: HTMLElement, look: () => LookSettings, { view, mar
 
 // Handheld 8× binoculars with a laser rangefinder and compass. V raises them on foot; while raised they take the
 // mouse and keyboard first, so the game's walking, clicking and interaction keys stay quiet.
-export function bindBinoculars({ playfield, send, look, ready, crew, heading, raise: prepare }: Options) {
+export function bindBinoculars({ playfield, send, look, ready, crew, aim, raise: prepare }: Options) {
   const overlay = overlayMarkup()
   playfield.append(overlay)
   const readout = overlay.querySelector('output') as HTMLOutputElement
@@ -116,7 +129,7 @@ export function bindBinoculars({ playfield, send, look, ready, crew, heading, ra
   function raise() {
     const current = crewmate()
     if (!current) return
-    view = { yaw: heading() ?? current.player.heading, pitch: 0 }
+    view = aimedView(current.player, aim())
     panning.clear()
     target = undefined
     lastFrame = performance.now()

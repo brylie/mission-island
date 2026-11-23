@@ -85,7 +85,7 @@ const joinName = element<HTMLInputElement>('join-name')
 const editCrewName = element<HTMLButtonElement>('edit-crew-name')
 const lookSettings = bindLookOptions((settings) => renderer?.setLook(settings))
 // Registered before the game's own key and mouse listeners, so the binoculars take input first while raised.
-const binoculars = bindBinoculars({ playfield, send, look: lookSettings, ready: () => live && follow && !modalOpen() && !renderer?.isReviewing(), crew: () => snapshot && { state: snapshot, id }, heading: () => renderer?.aimHeading(), raise: () => {
+const binoculars = bindBinoculars({ playfield, send, look: lookSettings, ready: () => live && follow && !modalOpen() && !renderer?.isReviewing(), crew: () => snapshot && { state: snapshot, id }, aim: () => renderer?.viewRay(), raise: () => {
   keys.clear()
   cancelMouseActions()
   sendInput()
@@ -357,8 +357,10 @@ function send(message: ClientMessage) {
 
 const keyBindings = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'KeyB', 'ShiftLeft', 'ShiftRight', 'KeyE', 'KeyF', 'KeyC', 'KeyR', 'Space', 'Digit1', 'Digit2', 'Digit3'])
 
+// The heading the reticle faces, from the camera's view ray.
 function aimHeading() {
-  return follow ? renderer?.aimHeading() : undefined
+  const ray = follow ? renderer?.viewRay() : undefined
+  return ray && Math.atan2(ray.direction.x, ray.direction.z)
 }
 
 function equip(item: InventoryItem) {

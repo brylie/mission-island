@@ -1,3 +1,4 @@
+import { createGraphicsQuality } from './graphics-quality'
 import type { Camera } from '@babylonjs/core/Cameras/camera'
 import { Engine } from '@babylonjs/core/Engines/engine'
 import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
@@ -14,6 +15,7 @@ import { createWildfireView } from './wildfire-view'
 import { moveTo, waterActors } from './island-render-pose'
 import { createCrewPresentation } from './crew-presentation'
 import { createIslandCamera } from './island-camera'
+import { useSceneFog } from './scene-fog'
 import { createBinocularView, type BinocularLook } from './binocular-view'
 import { createDevTools } from './dev-tools'
 import type { OverlayContext } from './debug-overlays/registry'
@@ -80,17 +82,16 @@ function renderView(scene: Scene, review: ReturnType<typeof createShaderReview>,
 
 export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement, binoculars?: (drawn?: Vector3) => BinocularLook | undefined) {
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true })
-  const scene = new Scene(engine)
+  const scene = useSceneFog(new Scene(engine))
   const islandCamera = createIslandCamera(scene, canvas)
   const review = createShaderReview(scene, canvas, engine, islandCamera.releaseMouse)
   const dev = createDevTools(scene, canvas)
   const pinned = (camera: Camera) => dev?.camera ?? camera
 
   const lighting = createIslandLighting(scene)
-  const { shadows } = lighting
-  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, shadows)
-  const meshes = createMeshFactory(scene, shadows)
-  const { juniper, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, plants, garden, residents, ferry } = createIslandWorld(meshes, { liveParticles: true })
+  const atmosphere = createAtmosphere(scene, lighting.sky, lighting.sunlight, lighting.shadows)
+  const meshes = createMeshFactory(scene, lighting.shadows)
+  const { juniper, forest, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, plants, garden, residents, ferry } = createIslandWorld(meshes, { liveParticles: true })
   const audio = createIslandAudio(window, plants)
   const showMaterialsWork = createMaterialsWorkView(meshes)
 
@@ -115,6 +116,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement, 
   const truckStep = { x: 0, z: 0 }
   const aviation = createRidgeAviationView(meshes, crew)
   const showDeliveryRoute = createDeliveryWayfindingView(meshes)
+  createGraphicsQuality(engine, lighting.sunlight, forest)
   const showFarmOrder = createFarmOrderView(meshes, crew.map((character) => character.root))
   const { farmTools, skiffGear, update: updateCrew } = createCrewPresentation(meshes, crew, boat, (...args) => aviation.pose(...args), (...args) => audio.footsteps(...args))
   const items = createItemNodes(meshes)
@@ -320,8 +322,8 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement, 
     },
     isReviewing: () => review?.active() ?? false,
     walkInput: (x: number, z: number) => islandCamera.walkInput(x, z),
-    aimHeading: islandCamera.aimHeading,
     aimRay: () => islandCamera.aimRay(),
+    viewRay: () => islandCamera.viewRay(),
     pinTip(element: HTMLElement, at?: { x: number, y: number, z: number }) { tip = at && { element, at } },
     captureMouse: () => { if (!review?.active()) islandCamera.captureMouse() },
     releaseMouse: islandCamera.releaseMouse,

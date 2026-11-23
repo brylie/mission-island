@@ -93,6 +93,11 @@ button:focus-visible { outline: 2px solid #ffc560; outline-offset: 4px; }
 .target-tip strong { font-weight: 850; }
 .target-tip kbd[hidden] { display: none; }
 .look-speed input { width: 100%; }
+.graphics-status { margin: 0.4em 0 0; font-size: 0.85em; }
+#graphics-quality { padding: 4px 6px; color: var(--ink); background: #fffbec; border: 1px solid #c9c3ac; border-radius: 4px; font: inherit; }
+/* A focus ring with at least 3:1 contrast on the cream dialog. */
+.options-dialog select:focus-visible, .options-dialog input:focus-visible { outline: 2px solid #8a5200; outline-offset: 2px; }
+.graphics-status:empty { display: none; }
 .charge-meter {
   position: absolute;
   top: calc(50% + 23px);

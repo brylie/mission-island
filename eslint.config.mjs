@@ -66,6 +66,8 @@ const authoredWorldLayouts = [
   'src/worlds/saltwind/layout/terrain.ts',
   'src/worlds/starter/layout/island-generation.ts',
   'src/worlds/starter/layout/fire-sites.ts',
+  'src/worlds/starter/layout/highwood-habitats.ts',
+  'src/worlds/starter/layout/highwood-planting.ts',
   'src/worlds/starter/layout/places.ts',
   'src/worlds/starter/layout/routes.ts',
   'src/worlds/starter/layout/scenery.ts',

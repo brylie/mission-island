@@ -23,6 +23,13 @@ export const habitatOverlay = {
   boundaryRadiusM: 14,
 } as const
 
+// Highwood's dominant habitat per cell, in the order of highwoodHabitatIds:
+// pinewood, edge, heath, ridge, wet, bracken, birch, shore.
+export const highwoodHabitatOverlay = {
+  cellM: 4,
+  ramp: [[0, '#2b8a3e'], [1, '#a9e34b'], [2, '#cc5de8'], [3, '#868e96'], [4, '#339af0'], [5, '#e8590c'], [6, '#f1f3f5'], [7, '#ffe066']],
+} as const
+
 export const solidsOverlay = { walking: '#4dabf7', cargo: '#f783ac' } as const
 
 export const corridorOverlay = { road: '#adb5bd', footpath: '#e8d5b5', centre: '#ffffff' } as const

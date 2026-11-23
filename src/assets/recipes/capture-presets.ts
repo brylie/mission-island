@@ -102,8 +102,9 @@ export const capturePresets = {
   'highwood-creek-ford': {
     label: 'Alder Creek after rain',
     kind: 'landscape',
-    eye: { x: -300, z: 312, height: 2.6 },
-    look: { x: -328, z: 284, height: 1.4 },
+    // From the bank above the alders, down the creek's wet ribbon toward the cove.
+    eye: { x: -270, z: 300, height: 1.7 },
+    look: { x: -310, z: 280, height: 1.2 },
     fov: 0.8,
     hour: 11,
     weather: 'overcast',

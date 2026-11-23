@@ -15,7 +15,7 @@ import type { Point } from './world'
 
 const componentsPerVertex = 3
 
-const uniforms = 'uniform vec4 meadowControls; uniform vec3 meadowEye; uniform vec3 meadowFog; uniform vec3 meadowFogColor;'
+const uniforms = 'uniform vec4 meadowControls; uniform vec3 meadowEye;'
 
 class MeadowShader extends MaterialPluginBase {
   private time = 0
@@ -26,11 +26,7 @@ class MeadowShader extends MaterialPluginBase {
   constructor(material: Material, private readonly blades: boolean) {
     super(material, blades ? 'Stem wind' : 'Meadow distance', environmentalMaterialPriority)
     this.pbr = material instanceof PBRMaterial
-    // PBR fog mixes in linear light before the image's gamma, which washes dark
-    // ground to a pale haze long before the sea. The plugin fogs the ground after
-    // image processing instead, the way the ocean does, so land and water at the
-    // same distance haze alike.
-    if (this.pbr) material.fogEnabled = false
+    // Fog comes from the scene-wide plugin in scene-fog.ts, which every material shares.
     this.registerForExtraEvents = true
     this._enable(true)
   }
@@ -44,7 +40,7 @@ class MeadowShader extends MaterialPluginBase {
   override getClassName() { return this.name }
 
   override getUniforms() {
-    return { externalUniforms: ['meadowControls', 'meadowEye', 'meadowFog', 'meadowFogColor'] }
+    return { externalUniforms: ['meadowControls', 'meadowEye'] }
   }
 
   override getAttributes(attributes: string[]) {
@@ -55,10 +51,6 @@ class MeadowShader extends MaterialPluginBase {
     const { gust, grassDistance, patchContrast } = this.settings
     subMesh.effect?.setFloat4('meadowControls', this.time, gust, grassDistance, patchContrast)
     if (this.eye) subMesh.effect?.setFloat3('meadowEye', this.eye.x, this.eye.y, this.eye.z)
-    const scene = this._material.getScene()
-    const fogged = scene.fogEnabled && scene.fogMode !== Scene.FOGMODE_NONE
-    subMesh.effect?.setFloat3('meadowFog', scene.fogStart, scene.fogEnd, Number(fogged && this.pbr))
-    subMesh.effect?.setColor3('meadowFogColor', scene.fogColor)
   }
 
   override getCustomCode(type: string): Record<string, string> {
@@ -125,9 +117,6 @@ class MeadowShader extends MaterialPluginBase {
         ${this.blades ? 'varying vec2 stemXZ;' : ''}
         ${patchNoise}`,
       CUSTOM_FRAGMENT_BEFORE_LIGHTS: this.pbr ? shading : '',
-      CUSTOM_FRAGMENT_BEFORE_FRAGCOLOR: this.pbr
-        ? `if (meadowFog.z > 0.) finalColor.rgb = mix(finalColor.rgb, meadowFogColor, smoothstep(meadowFog.x, meadowFog.y, distance(vPositionW, vEyePosition.xyz)));`
-        : '',
       CUSTOM_FRAGMENT_UPDATE_DIFFUSE: this.pbr ? '' : shading,
     }
   }

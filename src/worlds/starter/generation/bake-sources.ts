@@ -14,3 +14,25 @@ export const bakeSources = [
   'src/worlds/starter/layout/island-generation.ts',
   'src/worlds/starter/layout/terrain.ts',
 ] as const
+
+// Everything the baked Highwood planting depends on; npm run island:generate rebakes it after the terrain.
+export const plantingSources = [
+  'scripts/plant-highwood.mjs',
+  'src/assets/geometry/highwood-heightmap.ts',
+  'src/assets/geometry/island-preview.ts',
+  'src/math/gradient-noise.ts',
+  'src/math/smoothstep.ts',
+  'src/routes.ts',
+  'src/seeded-random.ts',
+  'src/terrain.ts',
+  'src/worlds/starter/generation/protection.ts',
+  'src/worlds/starter/generation/plant-highwood.ts',
+  'src/worlds/starter/highwood-habitat.ts',
+  'src/worlds/starter/highwood-terrain.ts',
+  'src/worlds/starter/layout/highwood-habitats.ts',
+  'src/worlds/starter/layout/highwood-planting.ts',
+  'src/worlds/starter/layout/island-generation.ts',
+  'src/worlds/starter/layout/routes.ts',
+  'src/worlds/starter/layout/sites.ts',
+  'src/worlds/starter/ridge-scout.ts',
+] as const

@@ -44,6 +44,7 @@ import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, streamX, tidePo
 import { buildings, crewHomes, extinguisherStations } from './world'
 import { createFireWatch } from './assets/fire-watch'
 import { createFireStation } from './assets/fire-station'
+import { createHighwoodForest } from './highwood-forest'
 
 export type IslandSurfaceTarget = 'meadow' | 'harbor-trail' | 'dock'
 
@@ -139,6 +140,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   }
   const juniper = createBiomeScenery(meshes, juniperLayout, juniperCenter, groundHeight)
   const northernScenery = createNorthernScenery(meshes)
+  const highwoodForest = createHighwoodForest(meshes)
   const blades = createGrassTufts(meshes)
   createWildflowers(meshes)
   const { ferns, plants } = createUnderstory(meshes)
@@ -172,6 +174,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     actors?: StudyActors
   } = {}) {
     northernScenery.update(frame.camera, close)
+    highwoodForest.update(frame.camera, close)
     const walkers = actors?.snapshot?.players.filter((player) => player.connected && player.grounded && !player.sleeping && !player.seat)
     wildlife(frame, driftwood, walkers ?? [])
     updateFieldScenery(frame.time)
@@ -191,5 +194,5 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
     return tide
   }
 
-  return { juniper, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, plants, garden, residents, ferry }
+  return { juniper, forest: highwoodForest, updateEnvironment, homeChests, showFarm, showHouseholds, boat, buoys, ferns, plants, garden, residents, ferry }
 }

@@ -249,6 +249,17 @@
           <label class="look-speed">Look speed <input id="look-speed" type="range" min="0.4" max="2" step="0.1" value="1" /></label>
         </fieldset>
         <fieldset>
+          <legend>Graphics</legend>
+          <label>Detail
+            <select id="graphics-quality" aria-describedby="graphics-status">
+              <option value="auto">Automatic</option>
+              <option value="high">High</option>
+              <option value="low">Low (older computers)</option>
+            </select>
+          </label>
+          <p id="graphics-status" class="graphics-status" role="status"></p>
+        </fieldset>
+        <fieldset>
           <legend>Sound</legend>
           <label class="look-speed">Ambience <input id="sound-ambience" type="range" min="0" max="1" step="0.05" value="0.7" /></label>
           <label class="look-speed">Effects <input id="sound-effects" type="range" min="0" max="1" step="0.05" value="0.8" /></label>

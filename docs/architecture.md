@@ -105,6 +105,20 @@ Starter Island's north-west, Highwood, is a baked height field. The [design note
   - Crates go back into physics as saved. The physics step returns any crate in deep water, or below the recovery depth, to its start.
   - Loose gear saved below the ground that has risen is lifted back onto it (`restoreItems` in [`server/island-state.ts`](../server/island-state.ts)).
 
+### Highwood forest
+
+Highwood's plants are baked at generation time, like the height field. The [backcountry page](backcountry.md#forest) explains the planting and its numbers; this section follows the data and the contracts.
+
+- **The bake.** [`scripts/plant-highwood.mjs`](../scripts/plant-highwood.mjs) writes [`src/assets/geometry/highwood-plants.ts`](../src/assets/geometry/highwood-plants.ts) during `npm run island:generate`. Each plant takes 8 bytes: position, species, a packed byte for layer, age, exposure and variant, heading and scale. An 8 m ground raster beside it holds needle litter, heath, moss and bracken. Never edit it by hand.
+- **Stale bakes.** The asset records a `sourceHash` of every file in `plantingSources` in [`bake-sources.ts`](../src/worlds/starter/generation/bake-sources.ts), and [`test/highwood-habitat.test.mjs`](../test/highwood-habitat.test.mjs) fails until the forest is baked again.
+- **Decoding.** [`src/worlds/starter/highwood-planting.ts`](../src/worlds/starter/highwood-planting.ts) decodes the bake once. The host's walking solids and every screen's forest read the same list.
+- **Plant identity.** The bake's array order is not a stable plant ID: a change to any table can reorder it. A plant is identified by its layer and planting cell. Anything that saves per-plant state, such as a burn scar, should key on (layer, cell).
+- **Drawing.** [`src/highwood-forest.ts`](../src/highwood-forest.ts) draws two tiers. Near tiles show detailed templates as thin instances, one batch per template across every near tile. Far tiles are merged meshes, one per 64 m tile and material, culled whole.
+- **Walking and wind.** [`src/highwood-solids.ts`](../src/highwood-solids.ts) files trunks, snags and logs in a 4 m grid for walking checks, and canopy crowns in the same grid. Wind shelter and crown rustle in [`src/audio/wind-model.ts`](../src/audio/wind-model.ts) read the crown index. Trees add no physics bodies.
+- **Ground cover.** The Highwood terrain tiles carry the ground raster as a `groundCover` vertex attribute, read by the ground shader in [`src/beach-material.ts`](../src/beach-material.ts). Bracken is stored inverted, because a mesh without the attribute reads (0, 0, 0, 1); stored straight, that would be full bracken everywhere else.
+
+**Scene fog contract.** [`src/scene-fog.ts`](../src/scene-fog.ts) attaches a material plugin to every standard and PBR material in the scene and replaces Babylon's own fog. It mixes toward the fog colour after image processing, by distance from the eye, so land, trees, buildings and sea at the same distance fade alike ([#219](https://github.com/brylie/mission-island/issues/219)). Because the plugin turns off each material's `fogEnabled`, setting `material.fogEnabled` or `mesh.applyFog` no longer does anything. There is no per-material opt-out yet: every standard and PBR material fogs. Add one to the plugin when a material needs it. Cloning a material keeps its GPU textures but drops any plugin that isn't registered as `BABYLON.<className>`; `SceneFog` is registered, so clones keep the fog.
+
 ## Physics cost and static colliders
 
 The cargo world in [cargo.ts](../src/simulation/cargo.ts) holds a few moving bodies, the flatbed, learner vehicles and crates, among hundreds of static ones: tree trunks, rocks, buildings, the heightfield and the dock. It steps twice per host tick. The host, the integration tests and the coverage run all pay for that step, so its cost decides how fast the whole suite runs.

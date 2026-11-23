@@ -104,6 +104,7 @@ With `dev=1`, a **Debug overlays** panel lists every layer. Hover a name for its
 | --- | --- |
 | `slope` | Ground slope per 3 m cell, green (flat) to red (over 50°). |
 | `habitat` | Juniper Hollow patches coloured by kind, inside the habitat boundary. |
+| `highwood-habitat` | Highwood's dominant habitat per 4 m cell, from [the habitat classifier](backcountry.md#habitats): dark green pinewood, light green edges, purple heath, grey ridge, blue wet woodland, orange bracken, white birch, yellow shore. |
 | `solids` | Walking solids (blue) and cargo-only ferry colliders (pink). |
 | `corridors` | Road shoulders, footpath edges and centrelines. |
 | `protected` | Windstone launch clearance, landing approach and circle, and the walk back. |

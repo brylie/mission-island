@@ -1,3 +1,4 @@
+import { highwoodSolidTop } from './highwood-solids.ts'
 import { islandRockGeometry, islandTreeGeometry, northernRockGeometry, northernTreeGeometry } from './assets/geometry/starter-scenery.ts'
 import { seededRandom } from './seeded-random.ts'
 import { ridgeViewpoint } from './worlds/starter/sites.ts'
@@ -105,7 +106,7 @@ for (const [x, z, size, angle] of ledgeStones.placements) {
 }
 
 export function overlapsProp(point: Point, padding: number) {
-  if (starterPropTop(point, padding) > -Infinity) return true
+  if (starterPropTop(point, padding) > -Infinity || highwoodSolidTop(point, padding) > -Infinity) return true
   const trunk = islandTreeGeometry.trunkRadius + padding
   if (islandTrees.some((tree) => (point.x - tree.x) ** square + (point.z - tree.z) ** square < trunk ** square)) return true
   if (point.z > northernCollisionStartZ && northernProps.some((prop) => {
@@ -134,7 +135,7 @@ function rockTop(point: Point, rock: Point, angle: number, width: number, depth:
 }
 
 export function propTop(point: Point, padding: number) {
-  let top = starterPropTop(point, padding)
+  let top = Math.max(starterPropTop(point, padding), highwoodSolidTop(point, padding))
   for (const tree of islandTrees) {
     if (distance(point, tree) < islandTreeGeometry.trunkRadius + padding) top = Math.max(top, groundHeight(tree) + tree.height * islandTreeGeometry.trunkHeightRatio)
   }

@@ -21,7 +21,7 @@ These pages are for anyone who wants to make something similar, learn from it or
 | Generated surfaces and texture recipes | [Surface catalog](../surface-catalog.md) and [gameplay surfaces](../gameplay-surfaces.md) | Existing reference |
 | Shaders for water, meadow, paving and effects | [Shader studies](../shader-studies.md), [more shader studies](../more-shader-studies.md) and the [effects shelf](../effects-workbench.md) | Existing reference |
 | Synthesised sound: wind, surf, footsteps, engines, birds | Procedural audio | Planned |
-| Landforms, coastlines and habitat fields | Procedural landscape | Planned |
+| Landforms, coastlines and habitat fields | Procedural landscape | Partly written: see [island generation](../design/island-generation.md) and [Highwood habitats and forest](../backcountry.md#habitats) |
 | Flocking, schooling and animal behaviour | Wildlife behaviour | Planned; see [Driftwood fish school](../driftwood-fish-school.md) |
 
 ## Where this knowledge comes from
