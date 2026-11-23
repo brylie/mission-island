@@ -52,13 +52,14 @@ export const wornTrailModel = {
 // on firm ground are commonly built. `minTurnRadiusM` is the tightest bend the Fire and Rescue
 // pickup turns without shunting.
 // A graded dirt road's ribbon: points across the road, as shares of half its width, so the
-// ribbon follows the crown. Wheel ruts darken the lanes near `ruts`, and the ribbon floats
+// ribbon follows the crown. The gravel finish is tinted toward packed earth, darker in the two
+// wheel ruts (the lanes at `ruts`) and at the edges where loose stone gathers. The ribbon floats
 // `lift` metres over the graded ground so the 1.5 m terrain mesh never shows through.
 export const dirtRoadModel = {
-  lanes: [-1, -0.78, -0.55, -0.3, 0, 0.3, 0.55, 0.78, 1],
+  lanes: [-1, -0.8, -0.66, -0.55, -0.44, -0.2, 0, 0.2, 0.44, 0.55, 0.66, 0.8, 1],
   ruts: 0.55,
   lift: 0.07,
-  tint: { rut: 0.8, crown: 0.97, edge: 0.9 },
+  tint: { crown: [0.86, 0.76, 0.62], rut: [0.58, 0.48, 0.38], edge: [0.78, 0.71, 0.6] },
 } as const
 
 export const roadKinds = {

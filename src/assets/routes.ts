@@ -91,7 +91,7 @@ export function createDirtRoad(meshes: MeshFactory, name: string, centreline: re
       positions.push(x, heightAt({ x, z }) + lift, z)
       uvs.push(x / roadFinish.gravelTile, z / roadFinish.gravelTile)
       const shade = Math.abs(Math.abs(lane) - ruts) < Number.EPSILON ? tint.rut : Math.abs(lane) === 1 ? tint.edge : tint.crown
-      colors.push(shade, shade, shade, 1)
+      colors.push(...shade, 1)
       if (i && j) {
         const d = i * lanes.length + j
         indices.push(d - lanes.length - 1, d - 1, d - lanes.length, d - lanes.length, d - 1, d)
