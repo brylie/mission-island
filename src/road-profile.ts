@@ -1,4 +1,4 @@
-import { roadProfileSolver } from './assets/geometry/route-profiles.ts'
+import { roadProfileSolver } from './assets/geometry/road-kinds.ts'
 import type { RoadSample } from './road-shape.ts'
 import type { Point } from './world.ts'
 
@@ -29,11 +29,15 @@ interface ProfileOptions {
   // Heights to hold the first or last sample at, where the road joins another.
   start?: number
   end?: number
+  // Across slopes steeper than this (rise per metre across the road) bench the road into the
+  // hill: it follows the ground at its downhill edge, so no fill hangs off a steep slope.
+  benchSideSlope?: number
 }
 
 const half = 0.5
 // Across the road: both edges, halfway to each and the centre.
 const acrossSamples = [-1, -half, 0, half, 1]
+const { benchBlend } = roadProfileSolver
 
 function smooth(values: readonly number[], along: readonly number[], spanM: number) {
   const out = new Array<number>(values.length)
@@ -59,10 +63,17 @@ function limitGrades(y: number[], samples: readonly RoadSample[], limits: readon
   }
 }
 
-export function solveRoadProfile(samples: readonly RoadSample[], { groundAt, halfWidth, maxGrade, start, end }: ProfileOptions): RoadProfileSample[] {
+export function solveRoadProfile(samples: readonly RoadSample[], { groundAt, halfWidth, maxGrade, start, end, benchSideSlope }: ProfileOptions): RoadProfileSample[] {
   if (!samples.length) return []
   const along = samples.map((sample) => sample.along)
-  const ground = samples.map((sample) => acrossSamples.reduce((sum, share) => sum + groundAt({ x: sample.x - sample.dz * share * halfWidth, z: sample.z + sample.dx * share * halfWidth }), 0) / acrossSamples.length)
+  const ground = samples.map((sample) => {
+    const heights = acrossSamples.map((share) => groundAt({ x: sample.x - sample.dz * share * halfWidth, z: sample.z + sample.dx * share * halfWidth }))
+    const mean = heights.reduce((sum, height) => sum + height, 0) / heights.length
+    if (benchSideSlope === undefined) return mean
+    const side = Math.abs(heights[heights.length - 1] - heights[0]) / (halfWidth + halfWidth)
+    const bench = Math.min(1, Math.max(0, (side / benchSideSlope - benchBlend.from) / benchBlend.span))
+    return mean + (Math.min(...heights) - mean) * bench
+  })
   const limits = samples.map(maxGrade)
   const fixed = samples.map((_, i) => (i === 0 && start !== undefined) || (i === samples.length - 1 && end !== undefined))
   let y = smooth(ground, along, roadProfileSolver.groundSmoothM)

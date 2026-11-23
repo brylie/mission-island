@@ -46,11 +46,6 @@ export const wornTrailModel = {
   opacityEdgeCurve: 1.6,
 } as const
 
-// Graded roads: kinds of road the road designer lays and the terrain is cut and filled for.
-// Widths and slopes are metres; grades are rise per metre along the road. Batter slopes are
-// horizontal metres per metre of height: a cut bank 1:1, a fill embankment 1:1.5, as earthworks
-// on firm ground are commonly built. `minTurnRadiusM` is the tightest bend the Fire and Rescue
-// pickup turns without shunting.
 // A graded dirt road's ribbon: points across the road, as shares of half its width, so the
 // ribbon follows the crown. The gravel finish is tinted toward packed earth, darker in the two
 // wheel ruts (the lanes at `ruts`) and at the edges where loose stone gathers. The ribbon floats
@@ -61,13 +56,3 @@ export const dirtRoadModel = {
   lift: 0.07,
   tint: { crown: [0.86, 0.76, 0.62], rut: [0.58, 0.48, 0.38], edge: [0.78, 0.71, 0.6] },
 } as const
-
-export const roadKinds = {
-  'fire-road': { width: 4, shoulderWidth: 1, maxGrade: 0.12, minTurnRadiusM: 8, cutSlope: 1, fillSlope: 1.5, crown: 0.05 },
-  'track': { width: 3, shoulderWidth: 0.6, maxGrade: 0.16, minTurnRadiusM: 6, cutSlope: 1, fillSlope: 1.5, crown: 0.03 },
-} as const
-
-// How a road finds its height. The road is sampled every `sampleStepM` along its centreline. Its
-// ground is averaged across the road's width, smoothed over `groundSmoothM`, then held within the
-// grade limit by forward and backward passes, smoothing over `passSmoothM` between them.
-export const roadProfileSolver = { sampleStepM: 1, groundSmoothM: 20, passSmoothM: 6, passes: 6 } as const

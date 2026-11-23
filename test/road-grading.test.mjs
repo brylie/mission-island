@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { roadKinds } from '../src/assets/geometry/route-profiles.ts'
+import { roadKinds } from '../src/assets/geometry/road-kinds.ts'
 import { createRoadGrading } from '../src/road-grading.ts'
-import { groundHeight, naturalGroundHeight } from '../src/terrain.ts'
+import { naturalGroundHeight } from '../src/terrain.ts'
 import { analyseRoad } from '../src/workbench/road-analysis.ts'
 import { starterRoads } from '../src/worlds/starter/layout/roads.ts'
 
@@ -12,83 +12,111 @@ const layout = { id: 'test', name: 'Test road', kind: 'fire-road', points: [{ x:
 const kind = roadKinds['fire-road']
 const onRoadM = 0.08
 const farM = 40
-const slopeSlack = 0.15
-const sideStepM = 0.5
+const stepM = 0.5
+// Nothing in the graded ground stands steeper than the natural ground or a rock cut, with slack.
+const steepestBank = 1 / kind.rockCutSlope
+const wallSlack = 0.5
+const grade = (natural, roads, paved = []) => {
+  const grading = createRoadGrading(roads, natural, paved)
+  return { grading, ground: (point) => natural(point) + grading.delta(point) }
+}
 
-test('graded ground follows the road profile and eases back to natural ground on batters', () => {
-  const grading = createRoadGrading([layout], natural)
-  const ground = (point) => natural(point) + grading.delta(point)
+// Every step of half a metre across and along each road's corridor, out past its banks.
+function walls(grading, natural, ground, reachM = 24) {
+  const found = []
+  for (const road of grading.roads()) {
+    for (const s of road.profile.filter((_, i) => i % 2 === 0)) {
+      for (let t = -reachM; t <= reachM; t += stepM) {
+        const p = { x: s.x - s.dz * t, z: s.z + s.dx * t }
+        for (const q of [{ x: p.x - s.dz * stepM, z: p.z + s.dx * stepM }, { x: p.x + s.dx * stepM, z: p.z + s.dz * stepM }]) {
+          const rise = Math.abs(ground(q) - ground(p)) / stepM, naturalRise = Math.abs(natural(q) - natural(p)) / stepM
+          if (rise > Math.max(naturalRise, steepestBank) + wallSlack) found.push(`${road.name} ${rise.toFixed(1)}:1 at (${p.x.toFixed(1)}, ${p.z.toFixed(1)})`)
+        }
+      }
+    }
+  }
+  return found
+}
+
+test('graded ground follows the road profile and eases back to the natural ground on its banks', () => {
+  const { grading, ground } = grade(natural, [layout])
   const [road] = grading.roads()
   for (const sample of road.profile.filter((_, i) => i % 10 === 5)) {
     assert.ok(Math.abs(ground(sample) - sample.y) < onRoadM, `centre at ${sample.along.toFixed(0)} m is ${ground(sample).toFixed(2)}, profile ${sample.y.toFixed(2)}`)
     // Across the formation the road is level apart from its crown.
-    const edge = { x: sample.x, z: sample.z + road.halfWidth }
-    assert.ok(Math.abs(ground(edge) - (sample.y - kind.crown)) < onRoadM)
+    for (const side of [road.halfWidth, -road.halfWidth]) assert.ok(Math.abs(ground({ x: sample.x, z: sample.z + side }) - (sample.y - kind.crown)) < onRoadM)
     assert.equal(grading.delta({ x: sample.x, z: sample.z + farM }), 0, 'far from the road the ground is untouched')
     assert.equal(grading.delta({ x: sample.x, z: sample.z - farM }), 0)
-    // Batters never stand steeper than their slope.
-    for (let side = road.halfFormation + 1; side < road.halfFormation + 10; side += sideStepM) {
-      for (const direction of [1, -1]) {
-        const a = ground({ x: sample.x, z: sample.z + direction * side }), b = ground({ x: sample.x, z: sample.z + direction * (side + sideStepM) })
-        const rise = Math.abs(b - a) / sideStepM
-        assert.ok(rise <= Math.max(1 / kind.cutSlope, 1 / kind.fillSlope, 0.25) + slopeSlack, `batter at ${side} m rises ${rise.toFixed(2)}`)
-      }
-    }
   }
+  assert.deepEqual(walls(grading, natural, ground), [])
   assert.ok(grading.clearance(road.profile[40]) < 0, 'the centreline is inside the formation')
   assert.equal(grading.clearance({ x: 80, z: 200 }), Infinity)
 })
 
-test('a branch leaves its road level, without a step or a second cut', () => {
-  // The branch leaves the trunk where the trunk runs in cut through the hill, and climbs
-  // a gentle side slope it can hold within its grade.
+test('on a hillside too steep for a fill, the road is benched into it and its banks still meet the ground', () => {
+  // A 45 degree side slope: an embankment at 1.5 : 1 would never reach the ground below.
+  const steep = ({ z }) => z
+  const { grading, ground } = grade(steep, [layout])
+  const [road] = grading.roads()
+  for (const sample of road.profile.filter((_, i) => i % 10 === 5)) {
+    // Below the downhill formation edge nothing is filled.
+    for (let t = road.halfFormation; t < road.halfFormation + 10; t += 1) assert.ok(grading.delta({ x: sample.x, z: sample.z - t }) < onRoadM, `fill ${grading.delta({ x: sample.x, z: sample.z - t }).toFixed(2)} m below the road`)
+  }
+  assert.ok(road.banks.every((bank) => bank.left.meets && bank.right.meets), 'every bank meets the hillside')
+  assert.deepEqual(walls(grading, steep, ground), [])
+})
+
+test('between the legs of a switchback the ground is continuous', () => {
+  // Two legs 14 m apart up a 30 % slope, joined by a hairpin.
+  const slope = ({ z }) => z * 0.3
+  const hairpin = { id: 'switchback', name: 'Switchback', kind: 'fire-road', points: [{ x: 0, z: 0 }, { x: 80, z: 8 }, { x: 80, z: 22 }, { x: 0, z: 30 }], bends: [0, 0, 0], maxGrade: [0.2, 0.2, 0.2] }
+  const { grading, ground } = grade(slope, [hairpin])
+  assert.deepEqual(walls(grading, slope, ground), [])
+})
+
+test('a branch leaves its road through a smooth mouth and leaves that road as it was', () => {
+  // The branch leaves the trunk where the trunk runs in cut through the hill, and climbs a gentle
+  // side slope it can hold within its grade.
   const gentle = ({ x, z }) => z * 0.05 + Math.max(0, Math.min(20, (x - 60) * 0.4))
   const branch = { id: 'branch', name: 'Branch', kind: 'fire-road', points: [{ x: 100, z: 0 }, { x: 100, z: 60 }], bends: [0] }
-  const grading = createRoadGrading([layout, branch], gentle)
-  const ground = (point) => gentle(point) + grading.delta(point)
-  const trunkOnly = createRoadGrading([layout], gentle)
+  const { grading, ground } = grade(gentle, [layout, branch])
+  const { grading: trunkOnly } = grade(gentle, [layout])
+  assert.deepEqual(grading.network().junctions.map(({ branch: b, host, end }) => [b, host, end]), [[1, 0, 'start']])
   const [trunk, climb] = grading.roads()
   const atJunction = trunk.profile.find((sample) => sample.x >= 100)
   assert.ok(atJunction.cut > 1, 'the junction is in cut, where a second cut would show')
-  assert.ok(Math.abs(climb.profile[0].y - atJunction.y) < onRoadM, 'the branch starts level with the trunk')
-  // Up the branch the ground is the branch's own profile, rising smoothly off the trunk.
-  for (const sample of climb.profile.slice(0, 16)) assert.ok(Math.abs(ground(sample) - sample.y) < onRoadM, `${ground(sample).toFixed(2)} on the branch at ${sample.along} m, profile ${sample.y.toFixed(2)}`)
-  // Across the trunk from the branch, the trunk's bed and cut bank are as the trunk alone left them.
-  for (const x of [97, 100, 103]) {
-    for (const z of [-2, -4, -6]) {
-      const alone = gentle({ x, z }) + trunkOnly.delta({ x, z })
-      assert.ok(Math.abs(ground({ x, z }) - alone) < onRoadM + kind.crown, `(${x}, ${z}) is ${ground({ x, z }).toFixed(2)}, the trunk alone ${alone.toFixed(2)}`)
+  // The trunk's carriageway is untouched by the branch.
+  for (const sample of trunk.profile) {
+    for (const t of [-trunk.halfWidth, 0, trunk.halfWidth]) {
+      const point = { x: sample.x, z: sample.z + t }
+      assert.ok(Math.abs(grading.delta(point) - trunkOnly.delta(point)) < 0.02, `trunk moved at ${sample.along} m`)
     }
   }
+  // Past the mouth the ground is the branch's own profile.
+  const mouth = trunk.halfFormation + 8 + 1
+  for (const sample of climb.profile.filter((s) => s.z > mouth)) assert.ok(Math.abs(ground(sample) - sample.y) < onRoadM, `${ground(sample).toFixed(2)} on the branch at ${sample.along} m, profile ${sample.y.toFixed(2)}`)
+  assert.deepEqual(walls(grading, gentle, ground), [])
 })
 
-test('the shipped fire roads keep to their grades, bends and earthworks, and meet without a step', () => {
+test('the shipped roads keep to their grades and bends, never stand in a wall, and leave the roads they join as they were', () => {
   assert.ok(starterRoads.length >= 1, 'the island has its fire road')
   const shipped = createRoadGrading(starterRoads, naturalGroundHeight)
-  starterRoads.forEach((road, i) => {
-    // Each road is judged over the ground the roads before it shaped, as the island grades it.
-    const before = createRoadGrading(starterRoads.slice(0, i), naturalGroundHeight)
-    const { warnings } = analyseRoad(road, (point) => naturalGroundHeight(point) + before.delta(point))
-    assert.deepEqual(warnings.map((warning) => warning.text), [], road.name)
-  })
-  // Every road runs smoothly into its ends, and where it ends partway along another road
-  // (a T junction) the ground runs on along its heading onto that road without a step.
-  // Rises are compared with a steep road grade.
-  const stepM = 0.25, steepest = 0.25, joinM = 1
-  const roads = shipped.roads()
-  const inside = (other, sample) => sample.along > farM && sample.along < other.profile.at(-1).along - farM
-  const partwayAlong = (road, end) => roads.some((other) => other !== road && other.profile.some((sample) => inside(other, sample) && Math.hypot(sample.x - end.x, sample.z - end.z) < joinM))
-  for (const road of roads) {
-    for (const end of [road.profile[0], road.profile.at(-1)]) {
-      const inward = end === road.profile[0] ? 1 : -1
-      const reach = partwayAlong(road, end) ? road.halfFormation : 0
-      for (let t = -road.halfFormation * 2; t < reach; t += stepM) {
-        const a = { x: end.x - inward * end.dx * t, z: end.z - inward * end.dz * t }
-        const b = { x: a.x - inward * end.dx * stepM, z: a.z - inward * end.dz * stepM }
-        const rise = Math.abs(groundHeight(b) - groundHeight(a)) / stepM
-        assert.ok(rise < steepest, `${road.layout.name}: ${(rise * 100).toFixed(0)}% slope at its end near (${end.x.toFixed(0)}, ${end.z.toFixed(0)})`)
+  const ground = (point) => naturalGroundHeight(point) + shipped.delta(point)
+  for (const road of shipped.roads()) assert.deepEqual(analyseRoad(road).warnings.map((warning) => warning.text), [], road.name)
+  assert.deepEqual(walls(shipped, naturalGroundHeight, ground).slice(0, 5), [])
+  // A branch leaves the road it joins as that road alone would be.
+  for (const { host, branch } of shipped.network().junctions) {
+    const roads = shipped.network().roads
+    const hostRoad = roads[host]
+    if (!hostRoad.layout || !roads[branch].layout) continue
+    // The same network without the branch.
+    const alone = createRoadGrading(starterRoads.filter((layout) => layout.id !== roads[branch].id), naturalGroundHeight)
+    const graded = shipped.roads().find((road) => road.id === hostRoad.id)
+    for (const sample of graded.profile) {
+      for (const t of [-graded.halfWidth, 0, graded.halfWidth]) {
+        const point = { x: sample.x - sample.dz * t, z: sample.z + sample.dx * t }
+        assert.ok(Math.abs(shipped.delta(point) - alone.delta(point)) < 0.02, `${roads[branch].name} moves ${hostRoad.name} at ${sample.along} m`)
       }
     }
   }
-  assert.ok(roads.filter((road) => partwayAlong(road, road.profile[0]) || partwayAlong(road, road.profile.at(-1))).length >= 2, 'the spur and the Fallow Ridge road join the fire road partway along')
 })

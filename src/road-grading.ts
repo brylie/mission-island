@@ -1,163 +1,259 @@
-import { roadKinds } from './assets/geometry/route-profiles.ts'
+import { roadKinds, roadNetwork } from './assets/geometry/road-kinds.ts'
+import { roadBanks, type SampleBanks } from './road-banks.ts'
+import { createSampleIndex } from './road-index.ts'
+import { buildRoadNetwork, halfFormationOf, halfWidthOf, pavedRoads, type Junction, type NetworkRoad, type RoadNetwork } from './road-network.ts'
 import { solveRoadProfile, type RoadProfileSample } from './road-profile.ts'
-import { sampleRoad } from './road-shape.ts'
+import type { RoadSample } from './road-shape.ts'
 import type { Point } from './world.ts'
 import type { StarterRoadLayout } from './worlds/starter/layout/roads.ts'
+import { smoothstep } from './math/smoothstep.ts'
 
-// Cuts and fills the island for its graded roads. Each road's profile comes from
-// the natural ground; the road surface lies flat across at that height, with a
-// slight crown, and the ground eases back to natural on batter slopes: a cut bank
-// where the road runs below the ground, an embankment where it runs above. The
-// result is a grid of height changes over each road's corridor, added to the
-// natural ground, so physics, wheels, walking and the map all see the road.
+// Cuts and fills the island for its road network. Each graded road finds its height through
+// the natural ground (road-profile.ts); a branch starts level with the road it joins. The
+// ground near the roads is then worked out cell by cell from every road nearby:
+// - inside a road's formation (carriageway and shoulders) the ground is that road's surface,
+//   the earlier road first where two overlap;
+// - at a junction the branch's mouth warps to meet the host and the two formations join in a
+//   smooth union, which rounds the corners into a bell-mouth;
+// - beyond the formations, every nearby road's banks bound the ground: no higher than any cut
+//   bank, no lower than any fill. Taking the lowest cut and the highest fill keeps the ground
+//   continuous between switchback legs and where banks meet.
+// The result is a raster of height changes added to the natural ground.
 
 type GroundFunction = (point: Point) => number
 
 export interface GradedRoad {
-  layout: StarterRoadLayout
+  id: string
+  name: string
+  kind: NetworkRoad['kind']
+  layout?: StarterRoadLayout
   profile: RoadProfileSample[]
+  banks: SampleBanks[]
   halfWidth: number
   // Half the width plus the shoulder: the flat part of the cross-section.
   halfFormation: number
+  graded: boolean
 }
 
-interface RoadRaster { west: number, south: number, columns: number, rows: number, delta: Float32Array }
+// One road's say at a point.
+interface Candidate {
+  road: number
+  sample: number
+  along: number
+  // Signed distance to the road's formation and carriageway edges (negative inside).
+  formation: number
+  carriageway: number
+  across: number
+  // The road surface level with the point, and its formation edge height for banks.
+  surface: number
+  edge: number
+  cutSlope: number
+  fillSlope: number
+  // How far beyond the formation edge each bank reaches before it meets the ground.
+  cutMeetsM: number
+  fillMeetsM: number
+}
 
-const cellM = 1
-const half = 0.5
+interface RoadSurfacePoint { road: GradedRoad, carriageway: number, formation: number, across: number, along: number, surface: 'asphalt' | 'earth' }
+
 const square = 2
-// The corridor reaches this far beyond the formation for the deepest cut or fill a batter meets.
-const batterReachM = 12
-
-function roadKind(layout: Pick<StarterRoadLayout, 'kind'>) {
-  return roadKinds[layout.kind]
+const clamp01 = (t: number) => Math.min(1, Math.max(0, t))
+// Polynomial smooth minimum: a union of two distance fields with corners rounded over `k` metres.
+function smoothMin(a: number, b: number, k: number) {
+  const h = Math.max(k - Math.abs(a - b), 0) / k
+  return Math.min(a, b) - h * h * k / (square + square)
 }
 
-// A road's profile through the ground: grade-limited, held to the ground at both ends.
-export function gradeRoad(layout: StarterRoadLayout, natural: GroundFunction): GradedRoad {
-  const kind = roadKind(layout)
-  const samples = sampleRoad(layout)
-  const halfWidth = kind.width * half
-  const profile = solveRoadProfile(samples, {
-    groundAt: natural,
-    halfWidth,
-    maxGrade: (sample) => layout.maxGrade?.[sample.stretch] ?? kind.maxGrade,
-    start: samples.length ? natural(samples[0]) : undefined,
-    end: samples.length ? natural(samples[samples.length - 1]) : undefined,
+// The furthest any of a road's banks reaches before meeting the ground.
+const bankReach = (banks: readonly SampleBanks[]) => Math.max(0, ...banks.flatMap(({ left, right }) => [left.cutMeetsM, left.fillMeetsM, right.cutMeetsM, right.fillMeetsM]))
+
+function nearest(samples: readonly Point[], point: Point) {
+  let best = 0, bestDistance = Infinity
+  samples.forEach((sample, i) => {
+    const d = Math.hypot(sample.x - point.x, sample.z - point.z)
+    if (d < bestDistance) [best, bestDistance] = [i, d]
   })
-  return { layout, profile, halfWidth, halfFormation: halfWidth + kind.shoulderWidth }
+  return { index: best, distance: bestDistance }
 }
 
-// The nearest profile sample to a point, by a scan of nearby samples on a coarse grid.
-function sampleIndex(profile: readonly RoadProfileSample[], bucketM: number) {
-  const buckets = new Map<string, number[]>()
-  profile.forEach((sample, i) => {
-    const key = `${Math.floor(sample.x / bucketM)},${Math.floor(sample.z / bucketM)}`
-    buckets.set(key, [...(buckets.get(key) ?? []), i])
-  })
-  return (point: Point) => {
-    let best = -1, bestDistance = Infinity
-    const i = Math.floor(point.x / bucketM), j = Math.floor(point.z / bucketM)
-    for (let di = -1; di <= 1; di++) {
-      for (let dj = -1; dj <= 1; dj++) {
-        for (const k of buckets.get(`${i + di},${j + dj}`) ?? []) {
-          const d = (profile[k].x - point.x) ** square + (profile[k].z - point.z) ** square
-          if (d < bestDistance) [best, bestDistance] = [k, d]
-        }
-      }
-    }
-    return best
-  }
-}
-
-// The graded height of one road at a point, or undefined beyond its batters.
-function roadSurfaceHeight(road: GradedRoad, nearest: (point: Point) => number, point: Point, ground: number) {
-  const k = nearest(point)
-  if (k < 0) return
-  const sample = road.profile[k]
-  // Sideways distance from the centreline, and the road's height level with the point.
-  const offset = (point.x - sample.x) * sample.dx + (point.z - sample.z) * sample.dz
+// A road's surface height at a point near it, from its nearest sample.
+function surfaceNear(road: GradedRoad, point: Point, natural: GroundFunction) {
+  if (!road.graded) return natural(point)
+  const sample = road.profile[nearest(road.profile, point).index]
+  const off = (point.x - sample.x) * sample.dx + (point.z - sample.z) * sample.dz
   const across = Math.abs((point.x - sample.x) * sample.dz - (point.z - sample.z) * sample.dx)
-  // Past either end the road fades into the ground it meets over its formation's half
-  // width, so a branch blends into the road it joins and a dead end ramps to the ground.
-  const pastEnd = (k === 0 && offset < 0) || (k === road.profile.length - 1 && offset > 0)
-  const fade = pastEnd ? Math.min(1, Math.abs(offset) / road.halfFormation) : 0
-  if (fade >= 1) return
-  const y = pastEnd ? sample.y : sample.y + sample.grade * offset
-  const kind = roadKind(road.layout)
-  let height: number
-  if (across <= road.halfFormation) height = y - kind.crown * Math.min(1, (across / road.halfWidth) ** square)
-  else {
-    const beyond = across - road.halfFormation
-    // A cut bank rises toward the ground at the cut slope; an embankment falls toward it at the fill slope.
-    height = ground > y ? Math.min(ground, y + beyond / kind.cutSlope) : Math.max(ground, y - beyond / kind.fillSlope)
-    if (height === ground) return
-  }
-  return height + (ground - height) * fade
+  return sample.y + sample.grade * off - roadKinds[road.kind].crown * Math.min(1, (across / road.halfWidth) ** square)
 }
 
-function rasterise(road: GradedRoad, natural: GroundFunction): RoadRaster {
-  const reach = road.halfFormation + batterReachM
-  const xs = road.profile.map((sample) => sample.x), zs = road.profile.map((sample) => sample.z)
-  const west = Math.floor(Math.min(...xs) - reach), south = Math.floor(Math.min(...zs) - reach)
-  const columns = Math.ceil(Math.max(...xs) + reach - west) + 1, rows = Math.ceil(Math.max(...zs) + reach - south) + 1
-  const delta = new Float32Array(columns * rows)
-  const nearest = sampleIndex(road.profile, reach)
-  for (let j = 0; j < rows; j++) {
-    for (let i = 0; i < columns; i++) {
-      const point = { x: west + i * cellM, z: south + j * cellM }
+// A branch's samples without those inside its host's formation, which the host's surface owns.
+function trimmed(samples: readonly RoadSample[], hosts: readonly ({ end: 'start' | 'end', host: GradedRoad } | undefined)[]) {
+  let from = 0, to = samples.length
+  const inside = (sample: RoadSample, host: GradedRoad) => nearest(host.profile, sample).distance < host.halfFormation
+  const [start, end] = hosts
+  if (start) while (from < to - square && inside(samples[from], start.host)) from++
+  if (end) while (to - square > from && inside(samples[to - 1], end.host)) to--
+  return samples.slice(from, to)
+}
+
+function gradeNetwork(network: RoadNetwork, natural: GroundFunction): GradedRoad[] {
+  const graded: GradedRoad[] = []
+  network.roads.forEach((road, index) => {
+    const kind = roadKinds[road.kind]
+    const halfWidth = halfWidthOf(road), halfFormation = halfFormationOf(road)
+    const hostAt = (end: 'start' | 'end') => {
+      const junction = network.junctions.find((join) => join.branch === index && join.end === end)
+      return junction && { end, host: graded[junction.host] }
+    }
+    const hosts = [hostAt('start'), hostAt('end')]
+    const samples = kind.graded ? trimmed(road.samples, hosts) : road.samples
+    // A joining end starts level with its host; a free end takes the road's own benched ground.
+    const pin = (sample: RoadSample, host: GradedRoad | undefined) => host && surfaceNear(host, sample, natural)
+    const profile = kind.graded
+      ? solveRoadProfile(samples, {
+          groundAt: natural,
+          halfWidth: halfFormation,
+          maxGrade: (sample) => road.layout?.maxGrade?.[sample.stretch] ?? kind.maxGrade,
+          start: pin(samples[0], hosts[0]?.host),
+          end: pin(samples[samples.length - 1], hosts[1]?.host),
+          benchSideSlope: roadNetwork.benchSideSlope,
+        })
+      : samples.map((sample) => ({ ...sample, y: natural(sample), ground: natural(sample), grade: 0, cut: 0 }))
+    const banks = kind.graded ? roadBanks(road.kind, profile, halfFormation, kind.crown, natural) : []
+    graded.push({ id: road.id, name: road.name, kind: road.kind, layout: road.layout, profile, banks, halfWidth, halfFormation, graded: kind.graded })
+  })
+  return graded
+}
+
+function candidateAt(roads: readonly GradedRoad[], road: number, sample: number, point: Point, natural: GroundFunction): Candidate {
+  const graded = roads[road], s = graded.profile[sample], kind = roadKinds[graded.kind]
+  let along = (point.x - s.x) * s.dx + (point.z - s.z) * s.dz
+  const side = (point.z - s.z) * s.dx - (point.x - s.x) * s.dz
+  let across = Math.abs(side)
+  // Past either end the road stops in a round cap at the end's height.
+  if ((sample === 0 && along < 0) || (sample === graded.profile.length - 1 && along > 0)) {
+    across = Math.hypot(point.x - s.x, point.z - s.z)
+    along = 0
+  }
+  const centre = s.y + s.grade * along
+  const surface = graded.graded ? centre - kind.crown * Math.min(1, (across / graded.halfWidth) ** square) : natural(point)
+  const banks = graded.banks[sample]?.[side >= 0 ? 'left' : 'right']
+  return {
+    road,
+    sample,
+    along: s.along + along,
+    across,
+    formation: across - graded.halfFormation,
+    carriageway: across - graded.halfWidth,
+    surface,
+    edge: graded.graded ? centre - kind.crown : surface,
+    cutSlope: banks?.cut ?? kind.cutSlope,
+    fillSlope: banks?.fill ?? kind.fillSlope,
+    cutMeetsM: banks?.cutMeetsM ?? 0,
+    fillMeetsM: banks?.fillMeetsM ?? 0,
+  }
+}
+
+// Joins a branch's mouth to its host: the branch's surface warps to the host's near the host,
+// and their formations join in a smooth union.
+function joinMouths(candidates: Candidate[], junctions: readonly Junction[], roads: readonly GradedRoad[]) {
+  for (const junction of junctions) {
+    const host = candidates.filter((c) => c.road === junction.host).sort((a, b) => a.formation - b.formation)[0]
+    const endSample = junction.end === 'start' ? 0 : roads[junction.branch].profile.length - 1
+    const branch = candidates.find((c) => c.road === junction.branch && Math.abs(c.sample - endSample) * roadNetwork.cellM <= roadNetwork.filletM + roadNetwork.mouthBlendM)
+    if (!host || !branch) continue
+    const t = smoothstep(clamp01(Math.max(0, host.formation) / roadNetwork.mouthBlendM))
+    branch.surface = host.surface + (branch.surface - host.surface) * t
+    branch.edge = host.surface + (branch.edge - host.surface) * t
+    branch.formation = smoothMin(host.formation, branch.formation, roadNetwork.filletM)
+    branch.carriageway = smoothMin(host.carriageway, branch.carriageway, roadNetwork.filletM)
+  }
+}
+
+// `paved` defaults to the village's roads; tests on made-up ground pass none.
+export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural: GroundFunction, paved: readonly NetworkRoad[] = pavedRoads()) {
+  let built: ReturnType<typeof build> | undefined
+  function build() {
+    const network = buildRoadNetwork(layouts, paved)
+    const roads = gradeNetwork(network, natural)
+    const index = createSampleIndex(roads.map((road) => road.profile), roadNetwork.filletM)
+    const radius = Math.max(...roads.map((road) => road.halfFormation + bankReach(road.banks)))
+    function evaluate(point: Point) {
       const ground = natural(point)
-      const height = roadSurfaceHeight(road, nearest, point, ground)
-      if (height !== undefined) delta[j * columns + i] = height - ground
+      const candidates = index.legsNear(point, radius).map(({ road, sample }) => candidateAt(roads, road, sample, point, natural))
+      joinMouths(candidates, network.junctions, roads)
+      const inside = candidates.filter((c) => c.formation <= 0).sort((a, b) => a.road - b.road)[0]
+      if (inside) return { height: inside.surface, ground, owner: inside, candidates }
+      let upper = Infinity, lower = -Infinity
+      for (const c of candidates) {
+        if (!roads[c.road].graded) continue
+        // A bank has its say only out to where it meets the ground, so it ends without a step.
+        if (c.formation <= c.cutMeetsM) upper = Math.min(upper, c.edge + c.formation / c.cutSlope)
+        if (c.formation <= c.fillMeetsM) lower = Math.max(lower, c.edge - c.formation / c.fillSlope)
+      }
+      const owner = candidates.sort((a, b) => a.formation - b.formation)[0]
+      return { height: Math.min(upper, Math.max(ground, lower)), ground, owner, candidates }
     }
+    let raster: ((point: Point) => number) | undefined
+    // The raster is built on the first height lookup; profiles and banks alone don't need it.
+    return { network, roads, evaluate, raster: (point: Point) => (raster ??= createRaster(roads, evaluate))(point) }
   }
-  return { west, south, columns, rows, delta }
-}
-
-function sampleRaster({ west, south, columns, rows, delta }: RoadRaster, { x, z }: Point) {
-  const gx = (x - west) / cellM, gz = (z - south) / cellM
-  if (gx < 0 || gz < 0 || gx >= columns - 1 || gz >= rows - 1) return 0
-  const i = Math.floor(gx), j = Math.floor(gz), fx = gx - i, fz = gz - j
-  const at = j * columns + i
-  return (delta[at] * (1 - fx) + delta[at + 1] * fx) * (1 - fz) + (delta[at + columns] * (1 - fx) + delta[at + columns + 1] * fx) * fz
-}
-
-// The island's graded roads, worked out once from the natural ground the first time they are needed.
-// A road joining another should come after it in the layout.
-export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural: GroundFunction) {
-  let built: { roads: GradedRoad[], rasters: RoadRaster[], nearest: ((point: Point) => number)[] } | undefined
-  const build = () => {
-    if (built) return built
-    // Roads are graded in order, each over the ground the earlier ones shaped, so a branch
-    // starts level with the road it leaves and overlapping corridors are cut only once.
-    const roads: GradedRoad[] = [], rasters: RoadRaster[] = []
-    const shaped = (point: Point) => rasters.reduce((height, raster) => height + sampleRaster(raster, point), natural(point))
-    for (const layout of layouts.filter((road) => road.points.length > 1)) {
-      const road = gradeRoad(layout, shaped)
-      const raster = rasterise(road, shaped)
-      roads.push(road)
-      rasters.push(raster)
-    }
-    built = { roads, rasters, nearest: roads.map((road) => sampleIndex(road.profile, road.halfFormation + batterReachM)) }
-    return built
-  }
+  const get = () => built ??= build()
   return {
     // How far the roads raise (+) or lower (−) the natural ground at a point.
-    delta: (point: Point) => {
-      let change = 0
-      for (const raster of build().rasters) change += sampleRaster(raster, point)
-      return change
-    },
-    roads: () => build().roads,
-    // Metres from a point to the nearest road's formation edge (negative on the road), or Infinity far from any road.
+    delta: (point: Point) => get().raster(point),
+    roads: () => get().roads.filter((road) => road.graded),
+    network: () => get().network,
+    // Metres from a point to the nearest graded road's formation edge (negative on the road).
     clearance: (point: Point) => {
-      const { roads, nearest } = build()
-      let clear = Infinity
-      roads.forEach((road, r) => {
-        const k = nearest[r](point)
-        if (k >= 0) clear = Math.min(clear, Math.hypot(road.profile[k].x - point.x, road.profile[k].z - point.z) - road.halfFormation)
-      })
-      return clear
+      const { candidates } = get().evaluate(point)
+      const { roads } = get()
+      return Math.min(Infinity, ...candidates.filter((c) => roads[c.road].graded).map((c) => c.formation))
     },
+    // Which road's surface a point is on or beside, if any.
+    surfaceAt: (point: Point): RoadSurfacePoint | undefined => {
+      const { owner } = get().evaluate(point)
+      if (!owner) return undefined
+      const road = get().roads[owner.road]
+      return { road, carriageway: owner.carriageway, formation: owner.formation, across: owner.across, along: owner.along, surface: roadKinds[road.kind].surface }
+    },
+  }
+}
+
+// The height changes over the ground near the graded roads, in square tiles of cells, sampled
+// between nodes. Tiles far from any graded road are never built and read as no change.
+function createRaster(roads: readonly GradedRoad[], evaluate: (point: Point) => { height: number, ground: number }) {
+  const { cellM, tileCells } = roadNetwork
+  const tileM = cellM * tileCells, nodes = tileCells + 1
+  const keyOf = (tx: number, tz: number) => tx * (1 << square * square * square) + tz
+  const tiles = new Map<number, Float32Array>()
+  const buildTile = (tx: number, tz: number) => {
+    const delta = new Float32Array(nodes * nodes)
+    for (let j = 0; j < nodes; j++) {
+      for (let i = 0; i < nodes; i++) {
+        const { height, ground } = evaluate({ x: tx * tileM + i * cellM, z: tz * tileM + j * cellM })
+        delta[j * nodes + i] = height - ground
+      }
+    }
+    tiles.set(keyOf(tx, tz), delta)
+  }
+  for (const road of roads.filter((graded) => graded.graded)) {
+    road.profile.forEach((sample, i) => {
+      // Each sample marks the tiles its formation and banks reach, and its mouth if it has one.
+      const reach = road.halfFormation + bankReach(road.banks.slice(i, i + 1)) + roadNetwork.filletM * Number(i === 0 || i === road.profile.length - 1) + cellM
+      for (let tz = Math.floor((sample.z - reach) / tileM); tz <= Math.floor((sample.z + reach) / tileM); tz++) {
+        for (let tx = Math.floor((sample.x - reach) / tileM); tx <= Math.floor((sample.x + reach) / tileM); tx++) {
+          if (!tiles.has(keyOf(tx, tz))) buildTile(tx, tz)
+        }
+      }
+    })
+  }
+  return ({ x, z }: Point) => {
+    const tx = Math.floor(x / tileM), tz = Math.floor(z / tileM)
+    const delta = tiles.get(keyOf(tx, tz))
+    if (!delta) return 0
+    const gx = (x - tx * tileM) / cellM, gz = (z - tz * tileM) / cellM
+    const i = Math.min(tileCells - 1, Math.floor(gx)), j = Math.min(tileCells - 1, Math.floor(gz)), fx = gx - i, fz = gz - j
+    const at = j * nodes + i
+    return (delta[at] * (1 - fx) + delta[at + 1] * fx) * (1 - fz) + (delta[at + nodes] * (1 - fx) + delta[at + nodes + 1] * fx) * fz
   }
 }

@@ -1,4 +1,4 @@
-import { roadKinds } from '../assets/geometry/route-profiles'
+import { gradedRoadKinds, roadKinds } from '../assets/geometry/road-kinds'
 import { roadDesignerLook as look } from '../assets/recipes/workbench-roads'
 import { bendToward, stretchMiddle } from '../road-shape'
 import { createRoadGrading } from '../road-grading'
@@ -43,7 +43,7 @@ function buildPanel() {
   const root = document.createElement('aside')
   root.className = 'road-designer'
   root.setAttribute('aria-labelledby', 'road-designer-title')
-  root.innerHTML = roadDesignerMarkup(Object.keys(roadKinds))
+  root.innerHTML = roadDesignerMarkup(gradedRoadKinds)
   const host = document.getElementById('landscape-map')?.parentElement ?? document.body
   // A reloaded module (during development) replaces the panel rather than stacking another.
   for (const stale of document.querySelectorAll('.road-designer')) stale.remove()
@@ -62,17 +62,18 @@ function buildPanel() {
   return { root, base, overlay, chart, map: createLandscapeMapCanvas(base, overlay), status: element<HTMLElement>(root, '.road-status') }
 }
 
-// Each road is analysed over the ground the roads before it in the draft have shaped,
-// as the island grades them, so a branch is judged where it really meets its road.
+// Roads are analysed as the island grades the whole draft, so a branch is judged where it
+// really meets its road. Editing a road regrades the draft's profiles, not its height raster.
+let graded: { key: string, grading: ReturnType<typeof createRoadGrading> } | undefined
 const analyses = new Map<string, { key: string, analysis: RoadAnalysis }>()
 function analysis(road: RoadDraftRoad) {
-  const roads = draft.roads()
-  const before = roads.slice(0, Math.max(0, roads.findIndex((other) => other.id === road.id)))
-  const key = JSON.stringify([before, road])
+  const key = JSON.stringify(draft.roads())
+  if (graded?.key !== key) graded = { key, grading: createRoadGrading(draft.roads(), naturalGroundHeight) }
   const cached = analyses.get(road.id)
   if (cached?.key === key) return cached.analysis
-  const earlier = createRoadGrading(before, naturalGroundHeight)
-  const fresh = analyseRoad(road, (point) => naturalGroundHeight(point) + earlier.delta(point))
+  const found = graded.grading.roads().find((other) => other.id === road.id)
+  if (!found) return undefined
+  const fresh = analyseRoad(found)
   analyses.set(road.id, { key, analysis: fresh })
   return fresh
 }
@@ -88,7 +89,10 @@ function say(text: string) {
 
 function render() {
   if (!panel || panel.root.hidden) return
-  const roads = draft.roads().map((road) => ({ road, analysis: analysis(road) }))
+  const roads = draft.roads().flatMap((road) => {
+    const found = analysis(road)
+    return found ? [{ road, analysis: found }] : []
+  })
   panel.map.paintView(view)
   const ink = panel.overlay.getContext('2d')
   if (ink) paintRoads(ink, view, roads, { road: draft.road()?.id, dot: draft.selectedDot(), hoverAlong })

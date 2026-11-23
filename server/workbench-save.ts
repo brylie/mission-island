@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { join } from 'node:path'
 import type { Plugin } from 'vite'
-import { roadKinds } from '../src/assets/geometry/route-profiles.ts'
+import { gradedRoadKinds } from '../src/assets/geometry/road-kinds.ts'
 import type { StarterRoadLayout } from '../src/worlds/starter/layout/roads.ts'
 import { roadSavePath, workbenchSaveHeader } from '../src/workbench-save-contract.ts'
 
@@ -37,7 +37,7 @@ function readRoad(raw: unknown): StarterRoadLayout | string {
   const { id, name, kind, points, bends, maxGrade: grades } = raw as Record<string, unknown>
   if (typeof id !== 'string' || !idPattern.test(id)) return 'a road id is lowercase letters, digits and hyphens'
   if (typeof name !== 'string' || !name.trim() || name.length > maxNameLength) return `road ${id} needs a name`
-  if (typeof kind !== 'string' || !(kind in roadKinds)) return `road ${id} has an unknown kind`
+  if (!gradedRoadKinds.some((graded) => graded === kind)) return `road ${id} has an unknown kind`
   if (!Array.isArray(points) || points.length < minPoints || points.length > maxPoints) return `road ${id} needs ${minPoints} to ${maxPoints} dots`
   const dots = points.map((point: unknown) => point && typeof point === 'object' ? point as Record<string, unknown> : {})
   if (!dots.every((point) => within(point.x, islandReachM) && within(point.z, islandReachM))) return `road ${id} has a dot off the island`

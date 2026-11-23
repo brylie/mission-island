@@ -1,4 +1,4 @@
-import { roadKinds } from './assets/geometry/route-profiles'
+import { roadKinds } from './assets/geometry/road-kinds'
 import type { Material } from '@babylonjs/core/Materials/material'
 import { createFieldOutingScenery } from './assets/field-outing'
 import { shellRockCap, tidePoolDressing } from './assets/geometry/tide-pool-dressing'
@@ -63,7 +63,7 @@ const rainPavingWetness = 0.74
 
 // Graded roads drape on the ground they cut and fill.
 function createGradedRoads(meshes: MeshFactory) {
-  for (const { layout, profile } of gradedRoads()) createDirtRoad(meshes, layout.name, profile, roadKinds[layout.kind].width, groundHeight)
+  for (const { name, kind, profile } of gradedRoads()) createDirtRoad(meshes, name, profile, roadKinds[kind].width, groundHeight)
 }
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {

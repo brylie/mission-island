@@ -1,10 +1,8 @@
-import { roadKinds } from '../assets/geometry/route-profiles.ts'
+import { roadKinds } from '../assets/geometry/road-kinds.ts'
 import { roadDesignerLook as look } from '../assets/recipes/workbench-roads.ts'
-import { gradeRoad, type GradedRoad } from '../road-grading.ts'
+import type { GradedRoad } from '../road-grading.ts'
 import { turnRadii } from '../road-shape.ts'
 import { naturalGroundHeight, waterLevel } from '../terrain.ts'
-import type { Point } from '../world.ts'
-import type { RoadDraftRoad } from './road-draft.ts'
 
 // What the road designer shows about a draft road: its graded profile through the
 // natural ground and the problems a road builder would raise, each with where it is.
@@ -28,11 +26,10 @@ function spaced(warnings: RoadWarning[], candidate: RoadWarning) {
   warnings.push(candidate)
 }
 
-// `ground` is the island as the roads before this one left it.
-export function analyseRoad(road: RoadDraftRoad, ground: (point: Point) => number = naturalGroundHeight): RoadAnalysis {
-  const kind = roadKinds[road.kind]
-  const graded = gradeRoad(road, ground)
-  const limits = graded.profile.map((sample) => road.maxGrade?.[sample.stretch] ?? kind.maxGrade)
+// A road as the island grades it, with the problems a road builder would raise.
+export function analyseRoad(graded: GradedRoad): RoadAnalysis {
+  const kind = roadKinds[graded.kind]
+  const limits = graded.profile.map((sample) => graded.layout?.maxGrade?.[sample.stretch] ?? kind.maxGrade)
   const radii = turnRadii(graded.profile)
   const warnings: RoadWarning[] = []
   graded.profile.forEach((sample, i) => {
@@ -41,6 +38,8 @@ export function analyseRoad(road: RoadDraftRoad, ground: (point: Point) => numbe
     if (radii[i] < kind.minTurnRadiusM) spaced(warnings, { along: sample.along, text: `Hairpin radius ${radii[i].toFixed(1)} m at ${metres} m (pickup needs ${kind.minTurnRadiusM} m)` })
     if (naturalGroundHeight(sample) < waterLevel) spaced(warnings, { along: sample.along, text: `Crosses water at ${metres} m` })
     if (Math.abs(sample.cut) > look.deepEarthworkM) spaced(warnings, { along: sample.along, text: `${sample.cut > 0 ? 'Cut' : 'Fill'} ${Math.abs(sample.cut).toFixed(1)} m deep at ${metres} m` })
+    const banks = graded.banks[i]
+    if (banks && !(banks.left.meets && banks.right.meets)) spaced(warnings, { along: sample.along, text: `Bank can't meet the ground at ${metres} m: the hillside is too steep; move the road` })
   })
   return { graded, limits, radii, warnings }
 }

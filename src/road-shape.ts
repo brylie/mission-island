@@ -1,4 +1,4 @@
-import { roadProfileSolver } from './assets/geometry/route-profiles.ts'
+import { roadProfileSolver } from './assets/geometry/road-kinds.ts'
 import type { Point } from './world.ts'
 
 // A road's centreline from the dots a designer places and how far each stretch
@@ -90,7 +90,15 @@ function curvePoints(plan: RoadPlan) {
 // Evenly spaced samples along the whole road, every `step` metres, with direction.
 export function sampleRoad(plan: RoadPlan, step: number = roadProfileSolver.sampleStepM): RoadSample[] {
   if (plan.points.length < minimumSamples) return []
-  const fine = curvePoints(plan)
+  return sampleAlong(curvePoints(plan), step)
+}
+
+// Samples a polyline as it is, every `step` metres, for roads drawn as points rather than dots and bends.
+export function samplePolyline(points: readonly Point[], step: number = roadProfileSolver.sampleStepM): RoadSample[] {
+  return sampleAlong(points.map((point) => ({ ...point, stretch: 0 })), step)
+}
+
+function sampleAlong(fine: readonly (Point & { stretch: number })[], step: number): RoadSample[] {
   if (fine.length < minimumSamples) return []
   const samples: RoadSample[] = []
   let along = 0, next = 0
@@ -106,7 +114,7 @@ export function sampleRoad(plan: RoadPlan, step: number = roadProfileSolver.samp
     along += length
   }
   const last = fine[fine.length - 1], before = samples[samples.length - 1]
-  // The road always ends exactly on its last dot.
+  // The road always ends exactly on its last point.
   const end = { x: last.x, z: last.z, along, dx: before.dx, dz: before.dz, stretch: last.stretch }
   if (along - before.along > step * half) samples.push(end)
   else samples[samples.length - 1] = end

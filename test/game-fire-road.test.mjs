@@ -23,7 +23,10 @@ function steepestClimb(road) {
     const rise = top.y - foot.y
     const up = rise > 0
     const grade = Math.abs(rise) / climbM
-    if (!best || grade > best.grade) best = { grade, foot: up ? foot : top, top: up ? top : foot, heading: Math.atan2(up ? foot.dx : -foot.dx, up ? foot.dz : -foot.dz) }
+    // Vehicles head along the chord from the foot to the top, which never strays more than a
+    // few decimetres from a stretch this straight.
+    const [low, high] = up ? [foot, top] : [top, foot]
+    if (!best || grade > best.grade) best = { grade, foot: low, top: high, heading: Math.atan2(high.x - low.x, high.z - low.z) }
   }
   return best
 }

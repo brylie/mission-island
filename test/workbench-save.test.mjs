@@ -15,6 +15,9 @@ test('road layouts are validated before anything is written', () => {
     [JSON.stringify({}), 'list'],
     [JSON.stringify([{ ...road, id: '../escape' }]), 'id'],
     [JSON.stringify([{ ...road, kind: 'motorway' }]), 'kind'],
+    // Inherited names and the village's paved kind are not kinds the designer lays.
+    [JSON.stringify([{ ...road, kind: 'toString' }]), 'kind'],
+    [JSON.stringify([{ ...road, kind: 'paved' }]), 'kind'],
     [JSON.stringify([{ ...road, points: [{ x: 0, z: 0 }] }]), 'dots'],
     [JSON.stringify([{ ...road, points: [{ x: 0, z: 0 }, { x: 1e9, z: 0 }] }]), 'off the island'],
     [JSON.stringify([{ ...road, bends: [] }]), 'bend'],

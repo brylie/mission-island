@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { roadKinds } from '../src/assets/geometry/route-profiles.ts'
+import { roadKinds } from '../src/assets/geometry/road-kinds.ts'
 import { roadSuggestion } from '../src/assets/recipes/workbench-roads.ts'
+import { createRoadGrading } from '../src/road-grading.ts'
 import { analyseRoad } from '../src/workbench/road-analysis.ts'
 import { createRoadDraft } from '../src/workbench/road-draft.ts'
 import { suggestRoute } from '../src/workbench/road-suggest.ts'
@@ -45,7 +46,8 @@ test('Suggest route finds a grade-limited way up toward Cairn Summit', () => {
   for (let i = 1; i < route.length; i++) assert.ok(Math.hypot(route[i].x - route[i - 1].x, route[i].z - route[i - 1].z) <= roadSuggestion.maxDotSpacingM + roadSuggestion.minDotSpacingM + 1e-6, 'no stretch much longer than the dot spacing')
   assert.ok(naturalGroundHeight(to) > naturalGroundHeight(from))
   // The suggested road bends no tighter than the Fire and Rescue pickup can turn.
-  const { radii } = analyseRoad({ id: 'suggested', name: 'Suggested', kind: 'fire-road', points: route, bends: suggestion.bends, maxGrade: suggestion.bends.map(() => 0.12) })
+  const suggested = { id: 'suggested', name: 'Suggested', kind: 'fire-road', points: route, bends: suggestion.bends, maxGrade: suggestion.bends.map(() => 0.12) }
+  const { radii } = analyseRoad(createRoadGrading([suggested], naturalGroundHeight, []).roads()[0])
   assert.ok(Math.min(...radii) >= roadKinds['fire-road'].minTurnRadiusM, `tightest bend ${Math.min(...radii).toFixed(1)} m`)
   assert.equal(suggestRoute(from, { x: -92, z: 219 }, 0.02), undefined, 'no route up the summit at 2%')
 })
