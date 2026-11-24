@@ -228,9 +228,11 @@ export function createRoadDraft() {
       const to = current ? roads.indexOf(current) + step : -1
       if (current && to >= 0 && to < roads.length) edit(() => reorder(roads, current, to))
     },
+    // Renames the selected road or changes its kind, and returns its name for the status line.
     setRoad(changes: Partial<Pick<RoadDraftRoad, 'name' | 'kind'>>) {
       const current = road()
       if (current) edit(() => Object.assign(current, changes))
+      return current?.name ?? 'No road'
     },
     // The grade limit of one stretch, or null for the kind's own.
     setStretchGrade(stretch: number, grade: number | null) {

@@ -46,7 +46,8 @@ function readRoad(raw: unknown, position: number): StarterRoadLayout | string {
   if (!gradedRoadKinds.some((graded) => graded === kind)) return `${label} has an unknown kind`
   if (!Array.isArray(points) || points.length < minPoints || points.length > maxPoints) return `${label} needs ${minPoints} to ${maxPoints} dots`
   const dots = points.map((point: unknown) => point && typeof point === 'object' ? point as Record<string, unknown> : {})
-  if (!dots.every((point) => within(point.x, islandReachM) && within(point.z, islandReachM))) return `${label} has a dot off the island`
+  const offIsland = dots.findIndex((point) => !(within(point.x, islandReachM) && within(point.z, islandReachM)))
+  if (offIsland >= 0) return `${label} has dot ${offIsland + 1} off the island`
   if (!Array.isArray(bends) || bends.length !== points.length - 1 || !bends.every((bend) => within(bend, maxBendM))) return `${label} needs one bend per stretch`
   if (grades !== undefined && (!Array.isArray(grades) || grades.length !== bends.length || !grades.every((grade) => grade === null || (finite(grade) && grade > 0 && grade <= maxGrade)))) return `${label} has a bad grade limit`
   return {

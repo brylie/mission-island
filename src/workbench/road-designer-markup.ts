@@ -24,7 +24,7 @@ export function roadDesignerMarkup(kinds: readonly string[]) {
     <header class="road-header">
       <h2 id="road-designer-title">Road designer</h2>
       <button type="button" class="road-collapse" aria-expanded="true" aria-controls="road-designer-body">Hide</button>
-      <p class="road-summary" aria-live="polite"></p>
+      <p class="road-summary"></p>
     </header>
     <div class="road-body" id="road-designer-body">
     <div class="road-toolbar">
@@ -45,7 +45,7 @@ export function roadDesignerMarkup(kinds: readonly string[]) {
     </div>
     <div class="road-map-surface">
       <canvas class="road-map-base" aria-hidden="true"></canvas>
-      <canvas class="road-map-overlay" tabindex="0" aria-label="Road layout over the island map" aria-describedby="road-help"></canvas>
+      <canvas class="road-map-overlay" tabindex="0" role="application" aria-roledescription="road map" aria-label="Road layout over the island map" aria-describedby="road-help"></canvas>
     </div>
     ${legend()}
     <p id="road-help" class="road-help">Click to add a dot at the nearer end of the selected road. Drag a dot to move it, or the small handle in a stretch's middle to bend it. Double-click a road to add a dot there. Drag empty ground to pan, scroll to zoom. With the map focused, arrow keys pan, + and − zoom, and Delete removes the selected dot. Pick a dot from the Dot list. Escape cancels New road; Cmd or Ctrl+Z undoes.</p>

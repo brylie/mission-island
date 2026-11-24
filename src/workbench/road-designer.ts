@@ -8,12 +8,13 @@ import { starterRoads } from '../worlds/starter/layout/roads'
 import { downloadJsonFile } from './file-download'
 import { createLandscapeMapCanvas } from './landscape-map-canvas'
 import { fullMapView, panMap, pointInWorld, pointOnMap, roundedPoint, viewPointOnMap, zoomMap, type MapView } from './landscape-map-projection'
-import { analyseRoad, type RoadAnalysis, type RoadWarning } from './road-analysis'
+import { analyseRoad, dotAlongs, type RoadAnalysis, type RoadWarning } from './road-analysis'
 import { createRoadDraft, type RoadDraftRoad } from './road-draft'
 import { alongAt, paintLongSection, paintRoads, screenPoint } from './road-paint'
 import { roadDesignerMarkup } from './road-designer-markup'
 import { cancelOverwrite, sayPendingNotice, saveRoads } from './road-save'
 import { keepFocus, renderInspector, setText } from './road-inspector'
+import { panKeys, zoomKey } from './road-keys'
 import { suggestRoute } from './road-suggest'
 
 // The Workbench road designer: lay out roads on the island map. Click to add dots,
@@ -34,15 +35,6 @@ const jsonIndent = 2
 const downloadName = 'mission-island-roads.json'
 const mapMiddle = 0.5
 const viewCenter = { u: mapMiddle, v: mapMiddle }
-const panKeys: Readonly<Record<string, { u: number, v: number }>> = {
-  ArrowLeft: { u: 1, v: 0 },
-  ArrowRight: { u: -1, v: 0 },
-  ArrowUp: { u: 0, v: 1 },
-  ArrowDown: { u: 0, v: -1 },
-}
-// Matched by key, and by physical key so + works without Shift on any layout.
-const zoomInKeys = new Set(['+', '=', 'Equal', 'NumpadAdd']), zoomOutKeys = new Set(['-', '_', 'Minus', 'NumpadSubtract'])
-const zoomKey = (event: KeyboardEvent) => zoomInKeys.has(event.key) || zoomInKeys.has(event.code) ? look.zoomStep : zoomOutKeys.has(event.key) || zoomOutKeys.has(event.code) ? 1 / look.zoomStep : undefined
 
 type Drag = { kind: 'dot' | 'middle' | 'pan', index: number, startX: number, startY: number, moved: boolean }
 
@@ -107,9 +99,14 @@ function say(text: string) {
   if (panel) setText(panel.status, text)
 }
 
+// Marks a warning's spot, and brings it into view on the map.
 function markWarning(warning: RoadWarning) {
   hoverAlong = warning.along
   markedWarning = warning.text
+  const road = draft.road()
+  const spot = road && analysis(road)?.graded.profile.find((sample) => sample.along >= warning.along)
+  if (spot) showDot(spot)
+  panel?.overlay.scrollIntoView({ block: 'nearest' })
   say(`Marked on the map and long section: ${warning.text}.`)
   render()
 }
@@ -313,7 +310,9 @@ function bindControls(root: HTMLElement) {
   on('.road-dot', 'change', (target) => {
     const road = draft.road(), dot = target.value === '' ? undefined : Number(target.value)
     draft.select(road?.id, dot)
-    hoverAlong = undefined
+    // A picked dot drives the long section's readout, as hovering it would.
+    const found = road && analysis(road)
+    hoverAlong = found && dot !== undefined ? dotAlongs(found, road.points.length)[dot] : undefined
     if (road && dot !== undefined) showDot(road.points[dot])
   })
   on('.road-move-up', 'click', () => moveRoad(-1))
@@ -323,8 +322,8 @@ function bindControls(root: HTMLElement) {
     pendingStart = undefined
     say('Click where the new road starts. Escape cancels.')
   })
-  on('.road-name', 'change', (target) => draft.setRoad({ name: target.value.trim() || 'Road' }))
-  on('.road-kind', 'change', (target) => draft.setRoad({ kind: target.value as RoadDraftRoad['kind'] }))
+  on('.road-name', 'change', (target) => say(`Renamed the road ${draft.setRoad({ name: target.value.trim() || 'Road' })}.`))
+  on('.road-kind', 'change', (target) => say(`${draft.setRoad({ kind: target.value as RoadDraftRoad['kind'] })} is now a ${target.value.replace('-', ' ')}.`))
   on('.road-grade', 'change', (target) => setStretchLimit(target.value))
   on('.road-suggest', 'click', () => suggest())
   on('.road-delete-dot', 'click', () => deleteDot())
