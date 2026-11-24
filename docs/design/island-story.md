@@ -10,7 +10,7 @@ The story is original to Mission Island. Its processes follow real cool-temperat
 
 Long before any ice, a body of granite cooled deep underground beneath layers of sand that later hardened into sandstone. Slow uplift and erosion brought both to the surface. Granite is hard, resists weathering and breaks into rounded blocks along its joints ([granite uplands](../field-guide/places/granite-uplands.md#joints-why-granite-breaks-into-blocks)). Sandstone is softer, splits along its beds and wears into fins, clefts and pale sand. (The sandstone half is still unsourced.)
 
-- **Still visible.** The bare crown of Windstone Ridge. The rock bands and tors on Cairn Summit and Fallow Ridge. The sandstone fins and Splitstone cleft at Driftwood. The Shellglass basin cut into a sandstone ledge.
+- **Still visible.** The bare crown of Windstone Ridge. The rock bands and crags on Cairn Summit and Fallow Ridge. The sandstone fins and Splitstone cleft at Driftwood. The Shellglass basin cut into a sandstone ledge.
 - **Habitats.** Windstone Ridge, exposed coastal grass and rock, and the Shellglass and Splitstone rocky shore.
 
 ## 2. Ice carves the valleys

@@ -21,7 +21,7 @@ export const highwoodOutcropPlacement = {
   // Outcrops gather in groups along a face, not evenly: a smooth noise this wide in
   // metres must climb from `from` to `full` for the full chance.
   cluster: { wavelength: 48, octaves: 2, lacunarity: 2, gain: 0.5, from: 0.38, full: 0.62 },
-  // Tors also stand on crests, whatever the slope: granite ground no more than `toleranceM`
+  // Outcrops also stand on crests, whatever the slope: granite ground no more than `toleranceM`
   // below the highest ground `radiusM` round it, at `chance` per candidate, with 2–3 slabs.
   crest: { radiusM: 6, toleranceM: 0.3, chance: 0.35, slabs: [2, 3] },
   // No rock stands within `crownM` of Cairn Summit's crown, kept for the Fire Watch tower,

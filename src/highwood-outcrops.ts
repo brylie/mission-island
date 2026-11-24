@@ -95,7 +95,8 @@ function onHighwood(point: Point) {
 }
 
 const compassPoints = 8
-// A tor on a crest: full granite, near the highest ground round it.
+// An outcrop on a crest: full granite, near the highest ground round it. (Real tors are
+// larger and fewer; see docs/field-guide/places/granite-uplands.md.)
 function onCrest(point: Point) {
   const { crest } = placement
   const height = groundHeight(point)
@@ -147,7 +148,7 @@ function clearOf(point: Point, reach: number, wood: Map<string, Point[]>, placed
   return placed.every((other) => Math.hypot(other.x - point.x, other.z - point.z) > other.reach + reach + placement.gapM)
 }
 
-// How a stack is built: crest tors follow the shape table; a steep face's crag uses its own
+// How a stack is built: crest outcrops follow the shape table; a steep face's crag uses its own
 // longer blocks, only a little smaller up the stack. `intoSlope` sets each upper slab back
 // into the hill (across the slab, toward its uphill side) rather than in a random direction.
 interface StackForm {
@@ -190,7 +191,7 @@ function slabStack(random: () => number, count: number, heading: number, form: S
 
 // An outcrop, or undefined where the slope under it is too steep for its stack.
 function outcropAt(point: Point, random: () => number, slabRange: readonly [number, number], crest: boolean): GraniteRock | undefined {
-  // A crest tor's blocks follow the joint grain. On a steep face a crag's blocks lie along
+  // A crest outcrop's blocks follow the joint grain. On a steep face a crag's blocks lie along
   // the contour, long and low, any block above set off along the contour or into the slope,
   // never centred, so it reads as bedrock stepping out of the face, not a built cairn.
   const fall = gradient(point), steep = !crest && Math.hypot(fall.x, fall.z) > rock.slopeFull
