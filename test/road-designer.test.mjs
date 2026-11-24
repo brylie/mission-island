@@ -10,6 +10,22 @@ import { starterRoads } from '../src/worlds/starter/layout/roads.ts'
 import { suggestRoute } from '../src/workbench/road-suggest.ts'
 import { naturalGroundHeight } from '../src/terrain.ts'
 
+test('undo and discard clear a selected dot the restored roads may not have', () => {
+  const draft = createRoadDraft()
+  draft.discard()
+  draft.addRoad({ x: 0, z: 0 }, { x: 40, z: 0 }, 'fire-road')
+  draft.extend({ x: 80, z: 10 })
+  assert.equal(draft.selectedDot(), 2, 'extending selects the new end')
+  draft.undo()
+  assert.equal(draft.selectedDot(), undefined)
+  // Deleting with nothing selected leaves the road whole: one bend per stretch.
+  draft.deleteDot()
+  assert.equal(draft.road().bends.length, draft.road().points.length - 1)
+  draft.select(draft.road().id, 1)
+  draft.discard()
+  assert.equal(draft.selectedDot(), undefined)
+})
+
 test('the road draft adds, extends, splits, deletes and undoes', () => {
   const draft = createRoadDraft()
   draft.discard()

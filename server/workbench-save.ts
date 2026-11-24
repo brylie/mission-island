@@ -50,11 +50,14 @@ function readRoad(raw: unknown, position: number): StarterRoadLayout | string {
   if (offIsland >= 0) return `${label} has dot ${offIsland + 1} off the island`
   if (!Array.isArray(bends) || bends.length !== points.length - 1 || !bends.every((bend) => within(bend, maxBendM))) return `${label} needs one bend per stretch`
   if (grades !== undefined && (!Array.isArray(grades) || grades.length !== bends.length || !grades.every((grade) => grade === null || (finite(grade) && grade > 0 && grade <= maxGrade)))) return `${label} has a bad grade limit`
+  const rounded = dots.map(({ x, z }) => ({ x: Number((x as number).toFixed(decimals)), z: Number((z as number).toFixed(decimals)) }))
+  // A road whose dots all round to one spot has no length to sample.
+  if (rounded.every((point) => point.x === rounded[0].x && point.z === rounded[0].z)) return `${label} has no length: its dots are all in one place`
   return {
     id,
     name: label,
     kind: kind as RoadKind,
-    points: dots.map(({ x, z }) => ({ x: Number((x as number).toFixed(decimals)), z: Number((z as number).toFixed(decimals)) })),
+    points: rounded,
     bends: bends.map((bend: number) => Number(bend.toFixed(decimals))),
     ...(grades && { maxGrade: grades as (number | null)[] }),
   }

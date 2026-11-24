@@ -115,6 +115,7 @@ export function createRoadDraft() {
   const snapshot = () => JSON.stringify({ base, roads } satisfies SavedDraft)
   const restore = (step: string) => {
     ({ base, roads } = JSON.parse(step) as SavedDraft)
+    selectedDot = undefined // the restored roads may not have it
   }
   const persist = () => writeStorage('localStorage', storageKey, snapshot())
   // Undo takes a step off one history and puts the present on the other; redo the reverse.
@@ -219,8 +220,7 @@ export function createRoadDraft() {
       edit(() => {
         roads = roads.filter((entry) => entry !== current)
       })
-      selectedRoad = roads[0]?.id
-      selectedDot = undefined
+      ;[selectedRoad, selectedDot] = [roads[0]?.id, undefined]
     },
     // Moves the selected road up (-1) or down (+1) the list, which is the order roads are graded in.
     moveRoad(step: number) {
@@ -253,6 +253,7 @@ export function createRoadDraft() {
         base = [source()]
       })
       selectedRoad = roads[0]?.id
+      selectedDot = undefined
     },
   }
 }

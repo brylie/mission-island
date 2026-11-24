@@ -21,6 +21,8 @@ test('road layouts are validated before anything is written', () => {
     [JSON.stringify([{ ...road, kind: 'paved' }]), 'Highwood fire road has an unknown kind'],
     [JSON.stringify([{ ...road, name: '' }]), 'road 1 needs a name'],
     [JSON.stringify([{ ...road, points: [road.points[0], { x: 1e6, z: 0 }] }]), 'Highwood fire road has dot 2 off the island'],
+    // Dots that round to one spot leave no length to sample.
+    [JSON.stringify([{ ...road, points: [{ x: 0, z: 0 }, { x: 0.004, z: 0.004 }] }]), 'Highwood fire road has no length: its dots are all in one place'],
     [JSON.stringify([{ ...road, points: [{ x: 0, z: 0 }] }]), 'dots'],
     [JSON.stringify([{ ...road, points: [{ x: 0, z: 0 }, { x: 1e9, z: 0 }] }]), 'off the island'],
     [JSON.stringify([{ ...road, bends: [] }]), 'bend'],
