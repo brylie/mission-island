@@ -98,6 +98,7 @@ export const islandRocks = Array.from({ length: rocks.count }, (_, index) => {
 }).filter((rock) =>
   distance(rock, harbor) >= harborRockClearance && distance(rock, town) >= townRockClearance && distance(rock, beach) >= beachRockClearance
   && distance(rock, lookout) >= lookoutRockClearance && !nearFireWatch(rock) && distanceToRoads(rock) >= roadRockClearance + rock.size * islandRockHalfDepthRatio
+  && roadClearance(rock) >= roadRockClearance + rock.size * islandRockHalfDepthRatio
   && !inFerryYard(rock, 1 + rock.size * half)
   && footpaths.every(({ points, width }) => distanceToRoute(rock, points) >= width * half + rock.size * pathRockRadiusRatio + pathRockClearance))
 

@@ -113,7 +113,7 @@ The island's roads are laid out in the Workbench [road designer](../../workbench
 | Tightest bend | 8 m radius: the tightest the Fire and Rescue pickup turns without shunting. The designer warns about tighter bends. | 6 m radius |
 | Width | 4 m, with 1 m shoulders | 3 m, with 0.6 m shoulders |
 | Crown | 5 cm higher in the middle, curved: flat at the centre and 5% at the edge, averaging 2.5% | 3 cm, averaging 2% |
-| Batters | Cuts at 1 horizontal : 1 vertical (45°), fills at 1.5 horizontal : 1 vertical (about 34°). A bank that wouldn't meet the ground within 18 m is steepened, as far as a rock cut at 0.25 horizontal : 1 vertical (about 76°). | The same |
+| Batters | Cuts at 1 horizontal : 1 vertical (45°), fills at 1.5 horizontal : 1 vertical (about 34°). A cut that wouldn't meet the ground within 18 m is steepened, as far as a rock cut at 0.25 horizontal : 1 vertical (about 76°). Fills are never steepened. | The same |
 | Steep side slopes | Where the hillside across the road is steeper than 45% (about 24°), the road starts to bench into it, and from 75% (about 37°) it is fully benched, so no fill hangs off the downhill side. | The same |
 | Plants on batters | Trees, fallen logs and granite outcrops keep off any ground the grading moved by more than 15 cm. Grass, ferns and heather grow on banks up to 40°, and steeper banks stay bare. | The same |
 

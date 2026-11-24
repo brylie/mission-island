@@ -25,21 +25,25 @@ const smoothSamples = 4
 function slopesToTry(kind: RoadKind) {
   const { cutSlope, fillSlope, rockCutSlope } = roadKinds[kind]
   const between = (cutSlope + rockCutSlope) * half
-  return { cut: [cutSlope, between, rockCutSlope], fill: [fillSlope, cutSlope, between, rockCutSlope] }
+  // Loose fill can't stand steeper than its slope, so only cuts steepen toward rock. A fill that
+  // can't meet the ground is flagged, and the road should be moved or benched.
+  return { cut: [cutSlope, between, rockCutSlope], fill: [fillSlope] }
 }
 
 // The slopes that bring one side's banks to the ground within reach.
 function sideSlopes(kind: RoadKind, edge: Point, outward: Point, base: number, ground: (point: Point) => number): BankSlopes {
   const reach = roadNetwork.reachM - meetMarginM
   const heights: number[] = []
-  for (let t = stepM; t <= reach; t += stepM) heights.push(ground({ x: edge.x + outward.x * t, z: edge.z + outward.z * t }))
+  // From the formation edge itself: an edge already in cut needs no fill, and one on fill no cut,
+  // so a benched road's downhill edge meets the ground where it stands.
+  for (let t = 0; t <= reach; t += stepM) heights.push(ground({ x: edge.x + outward.x * t, z: edge.z + outward.z * t }))
   // How far out a bank at this slope first meets the ground, if it does within reach.
   const meetsAt = (slope: number, rising: boolean) => {
     const i = heights.findIndex((height, k) => {
-      const t = (k + 1) * stepM
+      const t = k * stepM
       return rising ? base + t / slope >= height : base - t / slope <= height
     })
-    return i < 0 ? undefined : (i + 1) * stepM
+    return i < 0 ? undefined : i * stepM
   }
   const tries = slopesToTry(kind)
   const cut = tries.cut.find((slope) => meetsAt(slope, true) !== undefined)

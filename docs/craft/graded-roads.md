@@ -35,7 +35,7 @@ A road's ends are treated differently. An end that joins another road is pinned 
 
 Beside the formation the ground is a bank: a cut rising to meet the hill, or a fill falling to meet it ([forest roads: cut and fill](../field-guide/practices/forest-roads.md#cut-and-fill)). [`road-banks.ts`](../../src/road-banks.ts) works out each side of each sample on its own. It walks outward from the formation edge in half-metre steps and asks where a bank at a given batter first meets the natural ground:
 - A cut tries 1 : 1 (`cutSlope`), then halfway to a rock cut (0.625 : 1), then the rock cut itself, 0.25 : 1 (`rockCutSlope`, about 76°).
-- A fill tries 1.5 : 1 (`fillSlope`), then 1 : 1, then 0.625 : 1, then 0.25 : 1.
+- A fill stays at 1.5 : 1 (`fillSlope`). Loose spoil can't stand steeper, so a fill that can't meet the ground is flagged rather than steepened.
 - The first batter that meets the ground within the reach wins. The reach is 18 m (`reachM`) less a 1 m margin, so the grading's outer edge is never a step.
 - Each side then takes the steepest batter within four samples either way, so a bank's slope changes smoothly along the road.
 - Each bank also records how far out it meets the ground. Beyond that point it has no say.

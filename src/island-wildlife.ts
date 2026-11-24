@@ -14,7 +14,7 @@ import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
 import { distanceToRoads, distanceToRoute, footpaths } from './routes'
 import { islandTrees, seededRandom } from './scenery'
-import { coastPoint, coastRadius, coastalSurface, groundHeight, grove, pool, waterDepth, waterLevel } from './terrain'
+import { coastPoint, coastRadius, coastalSurface, groundHeight, grove, pool, roadSurfaceAt, waterDepth, waterLevel } from './terrain'
 import { beachHasSand } from './worlds/starter/beach-landforms'
 import { createFlocks, createSchools } from './wildlife'
 import type { WildlifeFrame } from './wildlife'
@@ -39,7 +39,7 @@ export function createWildflowers(meshes: MeshFactory) {
   for (const [x, z] of patches) {
     for (let i = 0; i < samplesPerPatch; i++) {
       const point = { x: x + (random() - half) * patchWidthM, z: z + (random() - half) * patchDepthM }
-      if (coastRadius(point) > inlandLimit || onBeachTowel(point) || beachHasSand(coastalSurface(point))) continue
+      if (coastRadius(point) > inlandLimit || onBeachTowel(point) || beachHasSand(coastalSurface(point)) || roadSurfaceAt(point)) continue
       const y = groundHeight(point)
       const angle = random() * Math.PI
       const height = stemHeight.minimum + random() * stemHeight.variation
@@ -88,7 +88,7 @@ export function createUnderstory(meshes: MeshFactory) {
       const radius = habitat.radius * (habitat.ring.innerRatio + random() * habitat.ring.widthRatio)
       const point = { x: habitat.x + radius * Math.cos(angle), z: habitat.z + radius * Math.sin(angle) }
       const height = groundHeight(point)
-      if (onBeachTowel(point) || height < waterLevel - maximumPlantWaterDepthM || distanceToRoads(point) < roadClearanceM
+      if (onBeachTowel(point) || height < waterLevel - maximumPlantWaterDepthM || distanceToRoads(point) < roadClearanceM || roadSurfaceAt(point)
         || footpaths.some(({ points, width }) => distanceToRoute(point, points) < width * half + pathEdgeClearanceM)) continue
       if (habitat.dune && random() > coastalSurface(point, height).duneGrass * habitat.density) continue
       if (habitat.seed === juniperFern.seed) ferns.push(point)

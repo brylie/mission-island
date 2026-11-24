@@ -134,7 +134,7 @@ Four graded roads, 1 km in all, give the Fire and Rescue crew vehicle access to 
 | Pine Draw road | From the end of the fire road across Alder Creek's valley to Pine Draw, with one hairpin | 210 m | 12% | 10.6 m |
 | Cairn ridge road | Leaves the Pine Draw road before its hairpin and climbs east onto Cairn's ridge, joining the spur's lower leg and closing a loop | 123 m | 15% | 9.5 m |
 
-- **Shape.** The roads run straight where a straight road holds the grade, and curve only along contours and in switchbacks ([decision](design/decisions.md)). Cuts stay under 3 m and fills under 4 m.
+- **Shape.** The roads run straight where a straight road holds the grade, and curve only along contours and in switchbacks ([decision](design/decisions.md)). At the centreline, cuts stay under 3 m and fills under 4 m; the banks beside a hairpin or a deep cut stand taller, up to about 9 m on the Pine Draw road.
 - **The summit.** Cairn is an 80 m massif. The spur ends at a pad on the ridge below the crag, and the last 34 m of climb is on foot.
 - **Junctions.** Each branch leaves its road at 30° or more, through a rounded mouth, and the road it leaves is as it would be alone, within 2 cm. At the trailhead the fire road's first 6 m are asphalt, so the village's paving runs into it.
 - **Drainage.** Wherever the grading leaves a hollow that would hold water, a culvert takes it to lower ground: 23 in all, found by [`road-culverts.ts`](../src/road-culverts.ts). They are not drawn yet.
