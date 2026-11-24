@@ -49,6 +49,8 @@ const fieldsPerVertex = 4
 const stampEvery = 2
 // A crossing this close to a node, as a share of the cell, is the node.
 const snapShare = 1e-6
+// An outline vertex takes its height this far inside the road's edge.
+const edgeInsetM = 0.03
 const zOffset = 2
 // Far beyond any road: a distance the shader treats as "not here".
 const far = 1e3
@@ -93,18 +95,23 @@ export function buildRoadNetworkMesh(source: RoadMeshSource, heightAt: (point: P
   const mesh: RoadNetworkMesh = { positions: [], indices: [], uvs: [], fields: [], ruts: [], surfaceIndices: 0 }
   // Node vertices by their node's key; edge crossings by both nodes' keys, as a string.
   const vertexOf = new Map<number | string, number>()
-  const addVertex = (point: Point, known?: RoadFields, drop = 0, out?: Point) => {
+  // `top` gives a vertex's height outright (the skirt copies its edge's), and `heightFrom` the
+  // point its height is sampled at, when that differs from where it stands.
+  const addVertex = (point: Point, known?: RoadFields, drop = 0, out?: Point, top?: number, heightFrom: Point = point) => {
     const at = out ? { x: point.x + out.x * skirtOutM, z: point.z + out.z * skirtOutM } : point
     const f = known ?? source.fieldsAt(point)
-    mesh.positions.push(at.x, heightAt(point) + lift - drop, at.z)
+    mesh.positions.push(at.x, (top ?? heightAt(heightFrom) + lift) - drop, at.z)
     mesh.uvs.push(at.x * uvPerMetre, (at.z - drop) * uvPerMetre)
     mesh.fields.push(clamped(f.carriageway), clamped(f.paved), clamped(f.graded), clamped(f.lane))
     mesh.ruts.push(rutAt(point))
     return mesh.positions.length / coordinates - 1
   }
-  const shared = (key: number | string, point: () => Point, known?: RoadFields) => {
+  const shared = (key: number | string, point: () => Point, known?: RoadFields, heightFrom?: (at: Point) => Point) => {
     let index = vertexOf.get(key)
-    if (index === undefined) vertexOf.set(key, index = addVertex(point(), known))
+    if (index === undefined) {
+      const at = point()
+      vertexOf.set(key, index = addVertex(at, known, 0, undefined, undefined, heightFrom?.(at)))
+    }
     return index
   }
   const node = (i: number, j: number) => shared(nodeKey(i, j), () => ({ x: i * cellM, z: j * cellM }), fieldsOf(i, j))
@@ -116,8 +123,12 @@ export function buildRoadNetworkMesh(source: RoadMeshSource, heightAt: (point: P
     // An outline through or right beside a node is that node, so no edge comes out with no length.
     if (t < snapShare) return node(p[0], p[1])
     if (t > 1 - snapShare) return node(q[0], q[1])
-    return shared(`${nodeKey(p[0], p[1])}:${nodeKey(q[0], q[1])}`, () => {
-      return { x: (p[0] + (q[0] - p[0]) * t) * cellM, z: (p[1] + (q[1] - p[1]) * t) * cellM }
+    // Its height is the road's, sampled a little inside the edge: the crossing can land a hair
+    // outside it, where the ground already rises or falls with the bank.
+    const inside = fp <= 0 ? p : q
+    return shared(`${nodeKey(p[0], p[1])}:${nodeKey(q[0], q[1])}`, () => ({ x: (p[0] + (q[0] - p[0]) * t) * cellM, z: (p[1] + (q[1] - p[1]) * t) * cellM }), undefined, (at) => {
+      const dx = inside[0] * cellM - at.x, dz = inside[1] * cellM - at.z, length = Math.hypot(dx, dz) || 1
+      return { x: at.x + dx / length * edgeInsetM, z: at.z + dz / length * edgeInsetM }
     })
   }
   // Each edge and how many triangles use it, with the third corner of one of them: an edge used
@@ -162,7 +173,7 @@ interface Edge { a: number, b: number, c: number, count: number }
 
 // A strip hanging from every edge used by one triangle: the road's outline. Its top copies the
 // edge's vertices, so the road's own normals aren't bent by it.
-function addSkirt(mesh: RoadNetworkMesh, edgeUse: Map<string, Edge>, addVertex: (point: Point, known?: RoadFields, drop?: number, out?: Point) => number) {
+function addSkirt(mesh: RoadNetworkMesh, edgeUse: Map<string, Edge>, addVertex: (point: Point, known?: RoadFields, drop?: number, out?: Point, top?: number) => number) {
   const fieldsAt = (v: number): RoadFields => {
     const [carriageway, paved, graded, lane] = mesh.fields.slice(v * fieldsPerVertex, (v + 1) * fieldsPerVertex)
     return { formation: 0, carriageway, paved, graded, lane }
@@ -177,8 +188,9 @@ function addSkirt(mesh: RoadNetworkMesh, edgeUse: Map<string, Edge>, addVertex: 
     const side = { x: (q.z - p.z) / length, z: -(q.x - p.x) / length }
     const towardInside = (inside.x - p.x) * side.x + (inside.z - p.z) * side.z
     const out = towardInside > 0 ? { x: -side.x, z: -side.z } : side
-    const topA = addVertex(p, fieldsAt(a)), topB = addVertex(q, fieldsAt(b))
-    const footA = addVertex(p, fieldsAt(a), skirtDropM, out), footB = addVertex(q, fieldsAt(b), skirtDropM, out)
+    const ya = mesh.positions[a * coordinates + 1], yb = mesh.positions[b * coordinates + 1]
+    const topA = addVertex(p, fieldsAt(a), 0, undefined, ya), topB = addVertex(q, fieldsAt(b), 0, undefined, yb)
+    const footA = addVertex(p, fieldsAt(a), skirtDropM, out, ya), footB = addVertex(q, fieldsAt(b), skirtDropM, out, yb)
     mesh.indices.push(topA, footA, footB, topA, footB, topB)
   }
 }
