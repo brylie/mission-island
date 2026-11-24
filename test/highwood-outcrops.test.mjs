@@ -5,6 +5,7 @@ import { highwoodGraniteRocks, slabCorners } from '../src/highwood-outcrops.ts'
 import { seededRandom } from '../src/seeded-random.ts'
 import { highwoodSolidTop } from '../src/highwood-solids.ts'
 import { groundHeight } from '../src/terrain.ts'
+import { jumpGravity, jumpSpeed } from '../src/world.ts'
 import { clearOfRoutes, inSightline } from '../src/worlds/starter/highwood-clearings.ts'
 import { highwoodOutcropPlacement as placement } from '../src/worlds/starter/layout/highwood-outcrops.ts'
 import { highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
@@ -106,4 +107,13 @@ test('tors stack off-centre and never taper like pyramids', () => {
   const pyramids = stacks.filter((rock) => rock.slabs.every((slab, k) => k === 0 || (slab.width < rock.slabs[k - 1].width && slab.length < rock.slabs[k - 1].length && Math.hypot(slab.dx - rock.slabs[k - 1].dx, slab.dz - rock.slabs[k - 1].dz) < 0.1 * rock.slabs[k - 1].length)))
   assert.equal(pyramids.length, 0, `${pyramids.length} tors stack as pyramids`)
   assert.ok(stacks.some((rock) => rock.slabs.some((slab, k) => k > 0 && slab.form === 'block' && slab.length > rock.slabs[k - 1].length)), 'some upper blocks are longer than the one below')
+  // A walker can climb a tor block by block: no block stands a full jump above the ones below it.
+  const jumpPeak = jumpSpeed * jumpSpeed / (2 * jumpGravity)
+  for (const rock of stacks) {
+    rock.slabs.forEach((slab, k) => {
+      if (k === 0) return
+      const below = Math.max(...rock.slabs.slice(0, k).map((lower) => lower.base + lower.height))
+      assert.ok(slab.base + slab.height - below < jumpPeak, `${where(rock)} block ${k} is out of a jump's reach`)
+    })
+  }
 })

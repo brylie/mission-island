@@ -45,8 +45,8 @@ export function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: b
   const kind = slab.form ?? 'block'
   const sides = form.sides[kind], rings = form.rings[kind]
   const n = between(random, form.squareness[kind])
-  const tilt = rock.kind === 'outcrop' ? shape.tiltM.outcrop : shape.tiltM.clitter
-  const tiltU = spread(random, tilt * half) / slab.length, tiltV = spread(random, tilt * half) / slab.width
+  const tilt = shape.tilt[kind]
+  const tiltU = spread(random, tilt * half), tiltV = spread(random, tilt * half)
   const waves = form.waves.map((wave) => ({ ...wave, phase: random() * turn, drift: spread(random, wave.driftRad) }))
   const sagAngle = random() * turn, sag = random() * form.crownSag * slab.height
   const cos = Math.cos(slab.heading), sin = Math.sin(slab.heading)
@@ -74,7 +74,7 @@ export function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: b
     const embed = rock.kind === 'outcrop' ? shape.embedM.outcrop : shape.embedM.clitter
     const lowest = layers[0]
     const feet = lowest.map(([x, y, z]) => {
-      const fx = cx + (x - cx) * form.footFlare, fz = cz + (z - cz) * form.footFlare
+      const fx = cx + (x - cx) * form.footFlare[kind], fz = cz + (z - cz) * form.footFlare[kind]
       return Math.min(y, groundHeight({ x: fx, z: fz })) - embed
     })
     const drop = Math.max(...lowest.map(([, y], k) => y - feet[k]))
@@ -82,7 +82,7 @@ export function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: b
     for (let step = 1; step <= steps; step++) {
       const share = step / steps
       layers.unshift(lowest.map(([x, y, z], k) => {
-        const out = 1 + (form.footFlare - 1) * (step < steps ? step - random() * form.skirt.jitter : step) / steps
+        const out = 1 + (form.footFlare[kind] - 1) * (step < steps ? step - random() * form.skirt.jitter : step) / steps
         return [cx + (x - cx) * out, y + (feet[k] - y) * share, cz + (z - cz) * out]
       }))
     }

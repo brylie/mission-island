@@ -179,7 +179,7 @@ function blockStack(random: () => number, count: number, heading: number, form: 
   let length = width * between(random, form.lengthRatio)
   let base = 0, dx = 0, dz = 0
   for (let k = 0; k < count; k++) {
-    const height = between(random, outcrop.slabHeightM)
+    const height = Math.max(outcrop.heightM[0], Math.min(outcrop.heightM[1], width * between(random, outcrop.heightRatio)))
     const turn = heading + (random() - half) * (form.twistRad + form.twistRad)
     slabs.push({ dx, dz, base, width, length, height, heading: turn, form: 'block' })
     base += height * (1 - sinkShare)
@@ -196,12 +196,13 @@ function blockStack(random: () => number, count: number, heading: number, form: 
   return slabs
 }
 
-// A boulder left perched on the top block, turned any way, near its middle.
+// A boulder left perched toward one end of the top block, turned any way.
 function perchedOn(random: () => number, top: GraniteSlab): GraniteSlab {
   const { perch, sinkShare } = shape
   const width = Math.min(top.width * between(random, perch.widthShare), perch.maxWidthM)
   const length = width * between(random, perch.lengthRatio), height = width * between(random, perch.heightRatio)
-  const u = (random() - half) * half * (top.length - length), v = (random() - half) * half * (top.width - width)
+  const u = (random() < half ? -1 : 1) * between(random, perch.alongShare) * top.length * half
+  const v = (random() - half) * half * Math.max(0, top.width - width)
   const cos = Math.cos(top.heading), sin = Math.sin(top.heading)
   return { dx: top.dx + u * cos - v * sin, dz: top.dz + u * sin + v * cos, base: top.base + top.height - height * sinkShare, width, length, height, heading: random() * Math.PI, form: 'boulder' }
 }
@@ -219,7 +220,7 @@ function outcropAt(point: Point, random: () => number, slabRange: readonly [numb
   const form: StackForm = steep ? { ...placement.steep, intoSlope: true } : shape.outcrop
   const slabs = blockStack(random, count, heading, form)
   const perchChance = crest ? shape.perch.chance : shape.perch.slopeChance
-  if (!steep && random() < perchChance) slabs.push(perchedOn(random, slabs[slabs.length - 1]))
+  if (!steep && slabs.length < shape.perch.belowSlabs && random() < perchChance) slabs.push(perchedOn(random, slabs[slabs.length - 1]))
   const [foot] = slabs
   const grounds = [point, ...slabCorners(point, foot)].map(groundHeight)
   const low = Math.min(...grounds), high = Math.max(...grounds)
