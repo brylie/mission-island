@@ -110,6 +110,17 @@ export const capturePresets = {
     hour: 11,
     weather: 'clear',
   },
+  // Below the summit spur's deepest fill, looking up at the road's edge: the road must meet the
+  // bank, with no underside showing.
+  'road-spur-downhill': {
+    label: 'Summit spur from the slope below its fill',
+    kind: 'landscape',
+    eye: { x: -253, z: 299, height: 1.2 },
+    look: { x: -248, z: 296.5, height: 0.4 },
+    fov: 0.8,
+    hour: 11,
+    weather: 'clear',
+  },
   // Cairn from the village: the landmark has to read as a mountain from home.
   'landmark-cairn-from-village': {
     label: 'Cairn Summit from the village',

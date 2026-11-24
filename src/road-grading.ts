@@ -151,12 +151,12 @@ function candidateAt(roads: readonly GradedRoad[], road: number, sample: number,
   // larger of how far beyond the row and how far outside the strip the point lies, so the field
   // stays continuous and a clip along it lands exactly on the row.
   const ribbon = pastEnd ? Math.max(Math.abs(along), across - graded.halfFormation) : across - graded.halfFormation
-  // A joined end's strip carries on square back to its host, so an angled mouth has no wedge
-  // outside both roads' formations; a free end stops in a round cap.
+  // Past an end the road stops in a round cap. A joined end's strip first carries on back toward
+  // its host, so an angled mouth has no wedge outside both roads' formations, and its cap is at the
+  // strip's far end: the shape is a capsule, so its edge never jumps.
   const joinReach = sample === 0 ? graded.joins.start : graded.joins.end
-  if (pastEnd && Math.abs(along) <= joinReach) along = 0
-  else if (pastEnd) {
-    across = Math.hypot(point.x - s.x, point.z - s.z)
+  if (pastEnd) {
+    across = Math.hypot(Math.max(0, Math.abs(along) - joinReach), across)
     along = 0
   }
   const centre = s.y + s.grade * along
@@ -264,6 +264,22 @@ export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural
         if (!roads[c.road].graded) paved = Math.min(paved, c.carriageway)
       }
       return { distance, formation, covered, paved }
+    },
+    // Everything the road surface's mesh needs at a point, from one evaluation: signed metres
+    // (negative inside) to any road's formation and carriageway, to the paved carriageways, and
+    // to the graded formations; and how far across its nearest road the point lies, in that
+    // road's half-widths.
+    fieldsAt: (point: Point) => {
+      const { candidates } = get().evaluate(point)
+      const { roads } = get()
+      let formation = Infinity, carriageway = Infinity, paved = Infinity, graded = Infinity, lane = Infinity
+      for (const c of candidates) {
+        formation = Math.min(formation, c.formation)
+        if (c.carriageway < carriageway) [carriageway, lane] = [c.carriageway, c.across / roads[c.road].halfWidth]
+        if (roads[c.road].graded) graded = Math.min(graded, c.formation)
+        else paved = Math.min(paved, c.carriageway)
+      }
+      return { formation, carriageway, paved, graded, lane }
     },
     // Which road's surface a point is on or beside, if any.
     surfaceAt: (point: Point): RoadSurfacePoint | undefined => {

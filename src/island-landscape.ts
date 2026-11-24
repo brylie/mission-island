@@ -15,7 +15,7 @@ import { distanceToRoads, distanceToRoute, footpaths, walkways } from './routes'
 import { inFerryYard } from './worlds/starter/ferry-terminal'
 import { driftwoodStrand, fernfallChannel, shoreStations } from './worlds/starter/layout/terrain'
 import { roadSurfaceModel } from './assets/geometry/route-profiles'
-import { coastPoint, coastRadius, coastSegments, coastalSurface, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, originalCoastPoint, originalCoastRadius, pool, roadClearance, shoreProfile, streamX, underGradedRoad, waterLevel } from './terrain'
+import { coastPoint, coastRadius, coastSegments, coastalSurface, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, originalCoastPoint, originalCoastRadius, pool, roadClearance, shoreProfile, streamX, underRoad, waterLevel } from './terrain'
 import { authoredShare } from './worlds/starter/generation/protection'
 import { highwoodHeightmap } from './assets/geometry/highwood-heightmap'
 import { bakedSurface } from './worlds/starter/highwood-terrain'
@@ -93,7 +93,7 @@ function buildGround(meshes: MeshFactory, angles: readonly number[], rings: read
       const point = originalCoastPoint(angle, ring)
       const { x, z } = point
       const height = groundHeight(point)
-      positions.push(x, height - (underGradedRoad(point) ? roadSurfaceModel.terrainSinkM : 0), z)
+      positions.push(x, height - (underRoad(point) ? roadSurfaceModel.terrainSinkM : 0), z)
       owned.push(authoredShare(point, originalCoastRadius(point)) < fullyAuthored)
       uvs.push(x, z)
       appendMeadowColor(colors, point, wear)
@@ -181,7 +181,7 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
           keep.push(share < fullyAuthored)
           wet ||= height > deepSeaFloor
           // Under a graded road the terrain sinks a little, so it never shows through the road.
-          const sink = (share > 0 ? seamDip : 0) + (underGradedRoad(point) ? roadSurfaceModel.terrainSinkM : 0)
+          const sink = (share > 0 ? seamDip : 0) + (underRoad(point) ? roadSurfaceModel.terrainSinkM : 0)
           positions.push(point.x, height - sink, point.z)
           // The slope and normal of the ground itself, the same on both sides of a tile's edge.
           const dx = (groundHeight({ x: point.x + tileCell, z: point.z }) - groundHeight({ x: point.x - tileCell, z: point.z })) / (tileCell + tileCell)

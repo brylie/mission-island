@@ -58,12 +58,28 @@ export const dirtRoadModel = {
   tint: { crown: [0.86, 0.76, 0.62], rut: [0.58, 0.48, 0.38], edge: [0.78, 0.71, 0.6], verge: [0.56, 0.5, 0.38] },
 } as const
 
-// The road network's surface: ribbons and junction patches float `lift` metres over the graded
-// ground. Patches are traced on a `patchCellM` grid over the ground no ribbon covers. The finish
-// repeats `uvPerMetre` times a metre, finer than a footpath's, so its stones read as a thin
-// wearing course. Terrain under a road's formation is sunk `terrainSinkM` out of sight, so the
-// terrain mesh's coarser triangles never poke through the road's edge where a bank rises. A
-// junction patch tucks `patchTuckM` under the ribbons it meets, `patchDropM` lower, so the ribbon
-// draws on top where they overlap and no hairline crack shows where their edges meet. Patch
-// triangles smaller than `patchMinAreaM2` are left out: slivers that thin shade black.
-export const roadSurfaceModel = { lift: dirtRoadModel.lift, patchCellM: 0.5, uvPerMetre: 2.5, terrainSinkM: 0.4, patchTuckM: 0.15, patchDropM: 0.02, patchMinAreaM2: 0.0001 } as const
+// The road network's surface: one mesh over every road's formation, paved and graded, traced on a
+// `cellM` grid and floating `lift` metres over the ground. The gravel finish repeats `uvPerMetre`
+// times a metre, finer than a footpath's, so its stones read as a thin wearing course, and a
+// coarser, turned second sample (`breakup`) keeps that repeat from showing. Edges between asphalt,
+// shoulder, earth and verge are softened over `edgeSoftM`. Ruts lie at `dirtRoadModel.ruts` of the
+// half-width, `rutWidth` wide in half-widths, and fade out over `rutFadeM` toward a junction,
+// where traffic spreads. A skirt hangs `skirtDropM` below every outer edge, `skirtOutM` outward,
+// so the road never shows its underside from a slope below it. Terrain under a road's formation is
+// sunk `terrainSinkM` out of sight, so the terrain's triangles never poke through the road.
+export const roadSurfaceModel = {
+  lift: dirtRoadModel.lift,
+  cellM: 0.5,
+  uvPerMetre: 2.5,
+  breakup: { repeatsPerMetre: 0.37, turn: 0.6, strength: [0.25, 0.6] },
+  edgeSoftM: 0.08,
+  rutWidth: 0.07,
+  rutStrength: 0.85,
+  rutFadeM: [5, 14],
+  skirtDropM: 0.6,
+  skirtOutM: 0.1,
+  terrainSinkM: 0.4,
+  asphalt: { tint: [0.4, 0.43, 0.41], contrast: 0.85, patches: 0.14 },
+  shoulder: { tint: [0.8, 0.78, 0.72] },
+  tone: { broadM: 23, midM: 4.1, broad: 0.08, mid: 0.06 },
+} as const

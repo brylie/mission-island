@@ -1,4 +1,3 @@
-import { roadFinish } from './assets/geometry/route-profiles'
 import type { Material } from '@babylonjs/core/Materials/material'
 import { createFieldOutingScenery } from './assets/field-outing'
 import { shellRockCap, tidePoolDressing } from './assets/geometry/tide-pool-dressing'
@@ -12,8 +11,9 @@ import { createResidentFigures } from './resident-scene'
 import type { ResidentWorld } from './residents/definition'
 import { residentAt } from './residents/schedule'
 import { starterResidents } from './worlds/starter/residents'
-import { createRoad, createSidewalk, createTrail } from './assets/routes'
+import { createRoadMarkings, createSidewalk, createTrail } from './assets/routes'
 import { createRoadNetworkSurface } from './assets/road-surface'
+import { createRoadMaterial } from './road-material'
 import { playerColors } from './assets/crew'
 import { clothingCounter } from './farm'
 import { createBiomeScenery } from './biome-scenery'
@@ -64,9 +64,9 @@ interface WorldSubstitutions {
 
 const rainPavingWetness = 0.74
 
-// Graded roads drape on the ground they cut and fill.
-function createGradedRoads(meshes: MeshFactory) {
-  createRoadNetworkSurface(meshes, roadSurfaceSource, groundHeight, { earth: meshes.paintRecipe('path-gravel'), asphalt: meshes.paintSurface('stone', roadFinish.asphalt) })
+// Every road, paved and graded, is one surface draped on the ground the graded roads cut and fill.
+function createRoads(meshes: MeshFactory) {
+  createRoadNetworkSurface(meshes, roadSurfaceSource, groundHeight, createRoadMaterial(meshes.paintRecipe('path-gravel')))
 }
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
@@ -80,10 +80,10 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const paving = createSurfaceMaterial(meshes.scene, 'concrete')
   const wetPaving = createWetPaving(paving)
   for (const path of walkways) createSidewalk(meshes, path, paving)
-  createRoad(meshes, harborRoad)
-  createGradedRoads(meshes)
+  createRoads(meshes)
+  createRoadMarkings(meshes, harborRoad, groundHeight)
   const { depotRoad, wardrobeZ, clothingCounterZ } = starterDecorationOffsets
-  createRoad(meshes, depotLane, depotRoad.width, { lift: depotRoad.lift, marked: [depotLane[0], { x: depotJunction.x + depotRoad.markingEndX, z: depotJunction.z }] })
+  createRoadMarkings(meshes, [depotLane[0], { x: depotJunction.x + depotRoad.markingEndX, z: depotJunction.z }], groundHeight)
 
   const households = buildings.flatMap((building, index) => {
     if (index === substitutions.replaceBuilding) return []

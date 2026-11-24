@@ -1,4 +1,5 @@
-import { roadNetwork } from './assets/geometry/road-kinds.ts'
+import { roadKinds, roadNetwork } from './assets/geometry/road-kinds.ts'
+import { depotLane, harborRoad } from './paved-roads.ts'
 import { createRoadGrading } from './road-grading.ts'
 import { starterRoads, type StarterRoadLayout } from './worlds/starter/layout/roads.ts'
 import { fireWatch, fireWatchFloor } from './fire-watch.ts'
@@ -220,6 +221,7 @@ export const roadSurfaceSource = {
   roads: () => roadGrading.roads(),
   network: () => roadGrading.network(),
   carriagewayAt: (point: Point) => roadGrading.carriagewayAt(point),
+  fieldsAt: (point: Point) => roadGrading.fieldsAt(point),
 }
 // Where the graded roads need culverts, so their hollows drain.
 export const roadCulverts = () => roadGrading.culverts()
@@ -238,9 +240,23 @@ export function roadSurfaceAt(point: Point): 'asphalt' | 'earth' | 'verge' | und
   if (roadGrading.clearance(point) > 0) return undefined
   return apron ? 'asphalt' : 'verge'
 }
-// Whether a point is under a graded road's drawn surface: its ribbons and its junction patches,
-// which together cover the formation, mouths included. Answered quickly far from any road.
+// Whether a point is under a graded road's drawn surface, mouths included. Answered quickly far
+// from any road.
 export const underGradedRoad = (point: Point) => roadGrading.near(point) && roadGrading.clearance(point) < 0
+// Whether a point is under any road's drawn surface, paved or graded: the terrain sinks there.
+const halfWidth = 0.5
+const pavedReach = roadKinds.paved.width * halfWidth + roadKinds.paved.shoulderWidth
+const pavedLines = [harborRoad, depotLane]
+function nearPavedRoad({ x, z }: Point) {
+  return pavedLines.some((line) => line.some((a, i) => {
+    const b = line[i + 1]
+    if (!b) return false
+    const dx = b.x - a.x, dz = b.z - a.z
+    const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz || 1)))
+    return Math.hypot(x - a.x - dx * t, z - a.z - dz * t) < pavedReach
+  }))
+}
+export const underRoad = (point: Point) => underGradedRoad(point) || nearPavedRoad(point)
 
 function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {
   if (Math.abs(radius - shoreStations.sandEdge.radius) > slopeSampleRadius) return 0
