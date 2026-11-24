@@ -21,15 +21,12 @@ export const highwoodOutcropPlacement = {
   // Outcrops gather in groups along a face, not evenly: a smooth noise this wide in
   // metres must climb from `from` to `full` for the full chance.
   cluster: { wavelength: 48, octaves: 2, lacunarity: 2, gain: 0.5, from: 0.38, full: 0.62 },
-  // Tors also stand on crests, whatever the slope: granite ground no more than `toleranceM`
+  // Outcrops also stand on crests, whatever the slope: granite ground no more than `toleranceM`
   // below the highest ground `radiusM` round it, at `chance` per candidate, with 2–3 slabs.
   crest: { radiusM: 6, toleranceM: 0.3, chance: 0.35, slabs: [2, 3] },
-  // Tors on Cairn Summit's brow: within `reachM` of the crown and no more than `dropM`
-  // below it, at `chance` per candidate, so a few break the dome's skyline.
-  brow: { reachM: 40, dropM: 9, chance: 0.25 },
-  // No rock stands within `crownM` of Cairn Summit's crown, where people stand at the top,
+  // No rock stands within `crownM` of Cairn Summit's crown, kept for the Fire Watch tower,
   // or within `padM` of the summit spur's end, the turning pad by the summit.
-  keepClear: { crownM: 10, padM: 15 },
+  keepClear: { crownM: 25, padM: 15 },
   // Under an outcrop the ground may fall at most this many times the stack's height below
   // its base, so a crag's downhill face stays a stepped stack, not a pillar; steeper spots
   // stay bare rock.

@@ -7,7 +7,7 @@ import { walkingHeight } from '../src/terrain.ts'
 import { jumpSpeed } from '../src/world.ts'
 
 // A walker meets Highwood's granite through the real movement step: the drawn woolsack
-// stops them at its side, and they can climb a tor by jumping from block to block.
+// stops them at its side, and they can climb an outcrop by jumping from block to block.
 
 const tick = 1 / 30
 const approachM = 4
@@ -46,33 +46,33 @@ function drawnGap(rock, index, point) {
   return nearest
 }
 
-// A two-block tor on a crest, low enough at its side to jump onto.
-const tor = highwoodGraniteRocks().find((rock) => {
+// A two-block outcrop, low enough at its side to jump onto.
+const outcrop = highwoodGraniteRocks().find((rock) => {
   if (rock.kind !== 'outcrop' || rock.slabs.length < 2 || rock.slabs[1].form !== 'block') return false
   const [foot] = rock.slabs, side = foot.heading + crossGrain
   const start = { x: rock.x + Math.cos(side) * approachM, z: rock.z + Math.sin(side) * approachM }
   return rock.ground + foot.height - walkingHeight(start) < 1
 })
 
-test('a walker stops at a woolsack\'s drawn side and climbs a tor block by block', () => {
-  assert.ok(tor, 'a low two-block tor stands somewhere on Highwood')
-  const [foot, upper] = tor.slabs, side = foot.heading + crossGrain
-  const start = { x: tor.x + Math.cos(side) * approachM, z: tor.z + Math.sin(side) * approachM }
-  const centre = { x: tor.x + foot.dx, z: tor.z + foot.dz }
+test('a walker stops at a woolsack\'s drawn side and climbs an outcrop block by block', () => {
+  assert.ok(outcrop, 'a low two-block outcrop stands somewhere on Highwood')
+  const [foot, upper] = outcrop.slabs, side = foot.heading + crossGrain
+  const start = { x: outcrop.x + Math.cos(side) * approachM, z: outcrop.z + Math.sin(side) * approachM }
+  const centre = { x: outcrop.x + foot.dx, z: outcrop.z + foot.dz }
 
   const blocked = walker(start)
   walk(blocked, centre, false)
-  const gap = drawnGap(tor, 0, blocked.player)
+  const gap = drawnGap(outcrop, 0, blocked.player)
   assert.ok(gap > 0 && gap < stopShortM, `stopped ${gap.toFixed(2)} m from the drawn rock`)
 
   const climber = walker(start)
   walk(climber, centre, true)
-  walk(climber, { x: tor.x + upper.dx, z: tor.z + upper.dz }, true)
+  walk(climber, { x: outcrop.x + upper.dx, z: outcrop.z + upper.dz }, true)
   // Let the last jump land.
   walk(climber, climber.player, false)
   for (let step = 0; step < walkTicks && !climber.player.grounded; step++) stepPlayerOnTerrain(climber, [], { x: 0, z: 0, spray: false, careful: false, sprint: false }, false, tick, () => -Infinity)
   // On top of the upper block, or of a higher one it climbed on to.
-  const tops = tor.slabs.map((slab) => tor.ground + slab.base + slab.height)
+  const tops = outcrop.slabs.map((slab) => outcrop.ground + slab.base + slab.height)
   const standing = climber.player.y
   assert.ok(tops.some((top) => Math.abs(standing - top) < levelM) && standing >= tops[1] - levelM, `stands at ${standing.toFixed(2)}, not on a block from the second up`)
 })

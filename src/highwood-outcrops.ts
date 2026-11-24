@@ -29,7 +29,7 @@ export interface GraniteSlab {
   height: number
   // Turn about the vertical: the long side runs along (cos heading, sin heading).
   heading: number
-  // A joint block, or a rounder boulder (clitter, or one perched on a tor).
+  // A joint block, or a rounder boulder (clitter, or one perched on an outcrop).
   form: 'block' | 'boulder'
 }
 
@@ -97,7 +97,8 @@ function onHighwood(point: Point) {
 }
 
 const compassPoints = 8
-// A tor on a crest: full granite, near the highest ground round it.
+// An outcrop on a crest: full granite, near the highest ground round it. (Real tors are
+// larger and fewer; see docs/field-guide/places/granite-uplands.md.)
 function onCrest(point: Point) {
   const { crest } = placement
   const height = groundHeight(point)
@@ -107,14 +108,6 @@ function onCrest(point: Point) {
     if (groundHeight({ x: point.x + Math.cos(a) * crest.radiusM, z: point.z + Math.sin(a) * crest.radiusM }) > height + crest.toleranceM) return false
   }
   return true
-}
-
-const crownHeight = () => groundHeight(highwoodPlaces.cairnCrown)
-// On Cairn Summit's brow: near the crown and not far below it.
-function onBrow(point: Point) {
-  const { brow } = placement
-  const crown = highwoodPlaces.cairnCrown
-  return Math.hypot(point.x - crown.x, point.z - crown.z) < brow.reachM && groundHeight(point) > crownHeight() - brow.dropM
 }
 
 // Tree trunks and every metre along fallen logs, in a grid, so rocks don't stand on wood.
@@ -157,11 +150,11 @@ function clearOf(point: Point, reach: number, wood: Map<string, Point[]>, placed
   return placed.every((other) => Math.hypot(other.x - point.x, other.z - point.z) > other.reach + reach + placement.gapM)
 }
 
-// How a stack is built: crest tors and ordinary crags follow the shape table; a steep face's
-// crag uses its own longer blocks. Each block up may be larger or smaller than the one below
-// in width and length separately, so a stack never tapers like a pyramid, and it slips along
-// the joint grain, off-centre. `intoSlope` sets each upper block back into the hill (across
-// it, toward its uphill side) and never out over the downhill face.
+// How a stack is built: crest outcrops and ordinary crags follow the shape table; a steep
+// face's crag uses its own longer blocks. Each block up may be larger or smaller than the one
+// below in width and length separately, so a stack never tapers like a pyramid, and it slips
+// along the joint grain, off-centre. `intoSlope` sets each upper block back into the hill
+// (across it, toward its uphill side) and never out over the downhill face.
 interface StackForm {
   widthM: readonly [number, number]
   lengthRatio: readonly [number, number]
@@ -209,7 +202,7 @@ function perchedOn(random: () => number, top: GraniteSlab): GraniteSlab {
 
 // An outcrop, or undefined where the slope under it is too steep for its stack.
 function outcropAt(point: Point, random: () => number, slabRange: readonly [number, number], crest: boolean): GraniteRock | undefined {
-  // A crest tor's blocks follow the joint grain. On a steep face a crag's blocks lie along
+  // A crest outcrop's blocks follow the joint grain. On a steep face a crag's blocks lie along
   // the contour, long and low, any block above set off along the contour or into the slope,
   // so it reads as bedrock stepping out of the face, not a built cairn.
   const fall = gradient(point), steep = !crest && Math.hypot(fall.x, fall.z) > rock.slopeFull
@@ -267,11 +260,10 @@ function placeRocks() {
       const point = { x: x + (random() - half) * jitter * cellM, z: z + (random() - half) * jitter * cellM }
       const roll = random(), seed = random()
       const bedrock = bedrockAt(point)
-      const brow = onBrow(point)
-      const crest = brow || (bedrock < placement.bedrockFrom && onCrest(point))
+      const crest = bedrock < placement.bedrockFrom && onCrest(point)
       if ((bedrock < placement.bedrockFrom && !crest) || !onHighwood(point)) continue
       const grouping = ramp((fbm(point.x, point.z, placement.seed, cluster) / noiseRange + 1) * half, cluster.from, cluster.full)
-      const chance = brow ? placement.brow.chance : crest ? placement.crest.chance : placement.outcropChance * ramp(bedrock, placement.bedrockFrom, placement.bedrockFull) * grouping
+      const chance = crest ? placement.crest.chance : placement.outcropChance * ramp(bedrock, placement.bedrockFrom, placement.bedrockFull) * grouping
       if (roll >= chance) continue
       const own = seededRandom(Math.floor(seed * placement.streamSeeds))
       const crag = outcropAt(point, own, crest ? placement.crest.slabs : shape.outcrop.slabs, crest)

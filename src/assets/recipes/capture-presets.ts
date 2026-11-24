@@ -216,8 +216,8 @@ export const capturePresets = {
     hour: 15,
     weather: 'clear',
   },
-  'ground-cairn-tor': {
-    label: 'A three-block granite tor and its clitter on Cairn\'s western flank, close up at walking height',
+  'ground-cairn-outcrop': {
+    label: 'A three-block granite outcrop and its clitter on Cairn\'s western flank, close up at walking height',
     kind: 'landscape',
     eye: { x: -223.5, z: 380.5, height: 1.7 },
     look: { x: -229, z: 385, height: 1.2 },

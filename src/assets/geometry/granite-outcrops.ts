@@ -33,8 +33,8 @@ export const graniteOutcropShape = {
   // Upper blocks sit this share of their height down into the block below, closing the
   // gap between a rounded top and a rounded underside into a horizontal joint.
   sinkShare: 0.14,
-  // A boulder left perched on a tor of fewer than `belowSlabs` blocks, at `chance` per tor
-  // on crests and the brow and `slopeChance` elsewhere. It rests toward one end of the top
+  // A boulder left perched on an outcrop of fewer than `belowSlabs` blocks, at `chance` per
+  // outcrop on crests and `slopeChance` elsewhere. It rests toward one end of the top
   // block, `alongShare` of its half length from the middle, never centred like a finial.
   // Its width is a share of the top block's, up to `maxWidthM` so it stays a step a walker
   // can still climb, its length a multiple of its width and its height a share of its width.

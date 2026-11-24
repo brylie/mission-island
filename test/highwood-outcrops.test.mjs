@@ -110,14 +110,14 @@ test('granite rocks are weathered woolsacks, not bevelled boxes', () => {
   }
 })
 
-test('tors stack off-centre and never taper like pyramids', () => {
+test('outcrops stack off-centre and never taper like pyramids', () => {
   const stacks = highwoodGraniteRocks().filter((rock) => rock.kind === 'outcrop' && rock.slabs.length > 1)
-  assert.ok(stacks.some((rock) => rock.slabs.some((slab) => slab.form === 'boulder')), 'some tors carry a perched boulder')
+  assert.ok(stacks.some((rock) => rock.slabs.some((slab) => slab.form === 'boulder')), 'some outcrops carry a perched boulder')
   // In a pyramid every block is centred and smaller than the one below.
   const pyramids = stacks.filter((rock) => rock.slabs.every((slab, k) => k === 0 || (slab.width < rock.slabs[k - 1].width && slab.length < rock.slabs[k - 1].length && Math.hypot(slab.dx - rock.slabs[k - 1].dx, slab.dz - rock.slabs[k - 1].dz) < 0.1 * rock.slabs[k - 1].length)))
-  assert.equal(pyramids.length, 0, `${pyramids.length} tors stack as pyramids`)
+  assert.equal(pyramids.length, 0, `${pyramids.length} outcrops stack as pyramids`)
   assert.ok(stacks.some((rock) => rock.slabs.some((slab, k) => k > 0 && slab.form === 'block' && slab.length > rock.slabs[k - 1].length)), 'some upper blocks are longer than the one below')
-  // A walker can climb a tor block by block: no block stands a full jump above the ones below it.
+  // A walker can climb an outcrop block by block: no block stands a full jump above the ones below it.
   const jumpPeak = jumpSpeed * jumpSpeed / (2 * jumpGravity)
   for (const rock of stacks) {
     rock.slabs.forEach((slab, k) => {
