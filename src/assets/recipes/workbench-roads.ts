@@ -36,12 +36,20 @@ export const roadSuggestion = {
 } as const
 
 export const roadDesignerLook = {
-  // Grade colours along a road: easy, steady, at the limit, and over it.
-  grade: { easy: '#3fae5a', steady: '#d8c23a', limit: '#e98a2c', over: '#d63c3c', easyBelow: 0.06, steadyBelow: 0.1 },
-  // Map strokes in screen pixels.
-  road: { width: 4, selectedWidth: 6, outline: '#1c2622', outlineWidth: 8 },
-  dot: { radius: 6, selectedRadius: 8, fill: '#fff7e0', stroke: '#1c2622', selectedFill: '#ffd166' },
-  middle: { radius: 4, fill: '#c9e7ff', stroke: '#1c2622' },
+  // Grade colours along a road: easy (under `easyBelow`), steady, near the stretch's own limit
+  // (from `nearLimitShare` of it), and over it, which is also drawn dashed so it reads without colour.
+  grade: { easy: '#3fae5a', steady: '#d8c23a', limit: '#e98a2c', over: '#d63c3c', easyBelow: 0.06, nearLimitShare: 0.8 },
+  // Map strokes in screen pixels; an over-limit stretch is dashed `overDash` on and off.
+  road: { width: 4, selectedWidth: 6, outline: '#1c2622', outlineWidth: 8, overDash: [7, 5] },
+  dot: { radius: 4.5, selectedRadius: 6.5, fill: '#fff7e0', stroke: '#1c2622', selectedFill: '#ffd166' },
+  middle: { radius: 3.5, fill: '#c9e7ff', stroke: '#1c2622' },
+  // The spot a warning or the long section points at: a white ring over a dark one, unlike any grade colour.
+  marker: { radius: 9, width: 3, color: '#ffffff', outline: '#1c2622', outlineWidth: 6 },
+  // The Stretch limit field's range, in percent; the save endpoint refuses limits over 40%.
+  stretchLimitPercent: { min: 1, max: 40 },
+  // Arrow keys pan the map by this share of its width; + and − zoom by `zoomStep`.
+  keyPanShare: 0.1,
+  zoomStep: 1.25,
   // How near, in screen pixels, a pointer must be to pick a dot or a stretch's middle.
   pickRadius: 12,
   // A pointer must move this far before a press becomes a drag.
@@ -52,7 +60,8 @@ export const roadDesignerLook = {
   // The long section: canvas size, padding, and its colours.
   // Line widths of a disc's rim, the chart's ground and road lines, and where its labels sit.
   rimWidth: 1.5,
-  chart: { width: 640, height: 150, padding: 22, groundWidth: 1.5, roadWidth: 2.5, labelInset: 2, labelDrop: 4, ground: '#7d8f6a', road: '#2c2c2c', cut: 'rgba(196, 120, 70, 0.35)', fill: 'rgba(80, 130, 200, 0.35)', marker: '#d63c3c' },
+  // Ground is a brown line, not green, because green on the map means an easy grade.
+  chart: { width: 640, height: 150, padding: 22, groundWidth: 2.5, roadWidth: 2.5, labelInset: 2, labelDrop: 4, ground: '#7a5230', road: '#1f1f1f', cut: 'rgba(214, 120, 50, 0.6)', fill: 'rgba(60, 120, 210, 0.55)', marker: '#1f1f1f', markerWidth: 1.5 },
   // Warnings are listed at most this many to a road, and at most one per this many metres.
   maxWarnings: 12,
   warningSpacingM: 25,

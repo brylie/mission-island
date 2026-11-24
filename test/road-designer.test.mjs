@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { roadKinds } from '../src/assets/geometry/road-kinds.ts'
-import { roadSuggestion } from '../src/assets/recipes/workbench-roads.ts'
+import { roadDesignerLook, roadSuggestion } from '../src/assets/recipes/workbench-roads.ts'
 import { createRoadGrading } from '../src/road-grading.ts'
-import { analyseRoad } from '../src/workbench/road-analysis.ts'
-import { createRoadDraft } from '../src/workbench/road-draft.ts'
+import { analyseRoad, dotAlongs, gradeBand } from '../src/workbench/road-analysis.ts'
+import { roadSummary, sectionReadout, stretchHint } from '../src/workbench/road-inspector.ts'
+import { createRoadDraft, roadsHash } from '../src/workbench/road-draft.ts'
+import { starterRoads } from '../src/worlds/starter/layout/roads.ts'
 import { suggestRoute } from '../src/workbench/road-suggest.ts'
 import { naturalGroundHeight } from '../src/terrain.ts'
 
@@ -35,6 +37,89 @@ test('the road draft adds, extends, splits, deletes and undoes', () => {
   draft.setStretchGrade(0, null)
   assert.equal(draft.road().maxGrade, undefined, 'no overrides left means no override list')
   draft.discard()
+})
+
+function fakeStorage(t, initial) {
+  const data = new Map(initial)
+  Object.defineProperty(globalThis, 'window', { configurable: true, value: { localStorage: {
+    getItem: (k) => data.get(k) ?? null,
+    setItem: (k, v) => data.set(k, v),
+  } } })
+  t.after(() => {
+    delete globalThis.window
+  })
+  return data
+}
+
+test('the road draft knows what it can undo and keeps the grading order', (t) => {
+  fakeStorage(t)
+  const draft = createRoadDraft()
+  assert.equal(draft.canUndo(), false)
+  assert.equal(draft.canRedo(), false)
+  const [first, second] = draft.roads().map((road) => road.id)
+  draft.select(second)
+  draft.moveRoad(-1)
+  assert.deepEqual(draft.roads().slice(0, 2).map((road) => road.id), [second, first])
+  draft.moveRoad(-1)
+  assert.equal(draft.roads()[0].id, second, 'the first road cannot move further up')
+  assert.equal(draft.canUndo(), true)
+  draft.undo()
+  assert.equal(draft.roads()[0].id, first)
+  assert.equal(draft.canRedo(), true)
+})
+
+test('a draft warns when roads.ts changed after it began', (t) => {
+  const key = 'mission-island-road-draft'
+  const edited = starterRoads.map((road, i) => i ? road : { ...road, name: 'Renamed' })
+  // A draft begun from other roads, with a base that is not today's source.
+  const data = fakeStorage(t, [[key, JSON.stringify({ base: ['older'], roads: edited })]])
+  const draft = createRoadDraft()
+  assert.equal(draft.sourceChanged(), true)
+  draft.markSaved()
+  assert.equal(draft.sourceChanged(), false, 'a saved draft is the source')
+  assert.ok(JSON.parse(data.get(key)).base.includes(roadsHash(edited)), 'the roads.ts this save writes is known after the reload')
+  // A draft kept as a bare list, from before the base was stored, still loads.
+  data.set(key, JSON.stringify(edited))
+  assert.equal(createRoadDraft().roads()[0].name, 'Renamed')
+  // A draft that matches the source has nothing to overwrite, whatever its base.
+  data.set(key, JSON.stringify({ base: ['older'], roads: starterRoads }))
+  assert.equal(createRoadDraft().sourceChanged(), false)
+  // Discard starts again from the source, and undoing it brings the warning back.
+  data.set(key, JSON.stringify({ base: ['older'], roads: edited }))
+  const stale = createRoadDraft()
+  stale.discard()
+  assert.equal(stale.sourceChanged(), false)
+  stale.undo()
+  assert.equal(stale.sourceChanged(), true)
+  assert.equal(roadsHash([{ ...starterRoads[0], points: starterRoads[0].points.map(({ x, z }) => ({ x: x + 0.001, z })) }]), roadsHash([starterRoads[0]]), 'the hash rounds as Save does')
+})
+
+test('grade bands follow each stretch\'s own limit', () => {
+  assert.equal(gradeBand(0.03, 0.12), 'easy')
+  assert.equal(gradeBand(0.08, 0.12), 'steady')
+  assert.equal(gradeBand(0.1, 0.12), 'limit', 'within a fifth of a 12% limit')
+  assert.equal(gradeBand(0.1, 0.15), 'steady', 'the same grade is steady under a 15% limit')
+  assert.equal(gradeBand(-0.14, 0.12), 'over', 'downhill counts too')
+  assert.equal(gradeBand(0.05, 0.06), 'limit', 'a gentle limit is near sooner than the easy grade')
+})
+
+test('the designer reads a road out in words', () => {
+  // A straight road from the shore up a steep face: grade problems all the way.
+  const road = { id: 'steep', name: 'Steep test', kind: 'fire-road', points: [{ x: 12, z: 20 }, { x: -60, z: 170 }, { x: -92, z: 219 }], bends: [0, 0] }
+  const analysis = analyseRoad(createRoadGrading([road], naturalGroundHeight, []).roads()[0])
+  assert.ok(analysis.warningTotal >= analysis.warnings.length)
+  assert.ok(analysis.warnings.length <= roadDesignerLook.maxWarnings)
+  const alongs = dotAlongs(analysis, road.points.length)
+  assert.equal(alongs[0], 0)
+  assert.ok(alongs[1] > 0 && alongs[1] < alongs[2], 'each dot sits further along than the one before')
+  assert.equal(alongs[2], analysis.graded.profile.at(-1).along)
+  assert.match(roadSummary(road, analysis), /^Steep test: 3 dots · \d+ m · /)
+  const capped = { ...analysis, warnings: analysis.warnings.slice(0, 1), warningTotal: 5 }
+  assert.match(roadSummary(road, capped), /1 shown of 5 problems/)
+  assert.match(sectionReadout(analysis, undefined), /^Steepest: \d+% at \d+ m \(limit 12%\)/)
+  assert.match(sectionReadout(analysis, alongs[1]), /^At \d+ m: grade \d+% \(limit 12%\), road/)
+  assert.equal(stretchHint(road, undefined), 'Select a dot to set its stretch limit')
+  assert.match(stretchHint(road, 1), /Dot 2 to the next; empty uses the fire road limit, 12%/)
 })
 
 test('Suggest route finds a grade-limited way up toward Cairn Summit', () => {

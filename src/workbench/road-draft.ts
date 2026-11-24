@@ -1,10 +1,13 @@
 import { readStorage, writeStorage } from '../browser-storage.ts'
 import type { Point } from '../world.ts'
+import { roadSaveDecimals } from '../workbench-save-contract.ts'
 import { starterRoads, type StarterRoadLayout } from '../worlds/starter/layout/roads.ts'
 
 // The road designer's working copy: every road being edited, which road and dot
 // are selected, and an undo history. It is kept in this browser until it is saved
-// to the source tree, so a reload never loses work.
+// to the source tree, so a reload never loses work. Beside it the browser keeps a
+// hash of the source roads the draft started from, so Save can warn when roads.ts
+// has changed since (another checkout, a pull) and the draft would overwrite it.
 
 export interface RoadDraftRoad {
   id: string
@@ -21,6 +24,27 @@ const half = 0.5
 // A road needs at least two dots; deleting one of the last two deletes the road.
 const minimumDots = 2
 
+// FNV-1a, 32 bits: a short, stable fingerprint of the roads, not a security hash.
+const fnvOffset = 0x811c9dc5, fnvPrime = 0x01000193, hexBase = 16
+
+const rounded = (value: number) => Number(value.toFixed(roadSaveDecimals))
+
+// A fingerprint of roads as Save writes them: rounded and trimmed as the server does,
+// so a draft and the roads.ts saved from it share one.
+export function roadsHash(roads: readonly StarterRoadLayout[]) {
+  const text = JSON.stringify(roads.map((road) => [
+    road.id,
+    road.name.trim(),
+    road.kind,
+    road.points.map(({ x, z }) => [rounded(x), rounded(z)]),
+    road.bends.map(rounded),
+    road.maxGrade ?? [],
+  ]))
+  let hash = fnvOffset
+  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), fnvPrime)
+  return (hash >>> 0).toString(hexBase)
+}
+
 const copy = (roads: readonly StarterRoadLayout[]): RoadDraftRoad[] => roads.map((road) => ({
   id: road.id,
   name: road.name,
@@ -30,11 +54,19 @@ const copy = (roads: readonly StarterRoadLayout[]): RoadDraftRoad[] => roads.map
   ...(road.maxGrade && { maxGrade: [...road.maxGrade] }),
 }))
 
-function readSaved(): RoadDraftRoad[] | undefined {
+// `base` lists the source hashes this draft knows about: the roads.ts it began from and,
+// after a save, the roads.ts that save wrote, which the page only loads after the reload.
+interface SavedDraft { base: string[], roads: RoadDraftRoad[] }
+
+// The stored draft. A draft from before the hash was kept is a bare list, with no base.
+function readSaved(): SavedDraft | undefined {
   try {
     const raw = readStorage('localStorage', storageKey)
     const parsed: unknown = raw ? JSON.parse(raw) : undefined
-    return Array.isArray(parsed) ? parsed as RoadDraftRoad[] : undefined
+    if (Array.isArray(parsed)) return { base: [], roads: parsed as RoadDraftRoad[] }
+    const saved = parsed as Partial<SavedDraft> | undefined
+    const base = Array.isArray(saved?.base) ? saved.base.filter((hash) => typeof hash === 'string') : []
+    return Array.isArray(saved?.roads) ? { base, roads: saved.roads } : undefined
   }
   catch {
     return undefined
@@ -56,14 +88,43 @@ function extendRoad(road: RoadDraftRoad, point: Point) {
   return road.points.length - 1
 }
 
+// Takes dot `i` out of a road, with the stretch after it (or before it, at the end).
+function removeDot(road: RoadDraftRoad, i: number) {
+  road.points.splice(i, 1)
+  const stretch = Math.min(i, road.bends.length - 1)
+  road.bends.splice(stretch, 1)
+  road.maxGrade?.splice(stretch, 1)
+}
+
+// Moves a road to place `to` in the list.
+function reorder(roads: RoadDraftRoad[], road: RoadDraftRoad, to: number) {
+  roads.splice(roads.indexOf(road), 1)
+  roads.splice(to, 0, road)
+}
+
 export function createRoadDraft() {
-  let roads = readSaved() ?? copy(starterRoads)
+  const source = () => roadsHash(starterRoads)
+  const saved = readSaved()
+  let roads = saved?.roads ?? copy(starterRoads)
+  let base = saved ? saved.base : [source()]
   const undo: string[] = [], redo: string[] = []
   let selectedRoad: string | undefined = roads[0]?.id
   let selectedDot: number | undefined
 
-  const snapshot = () => JSON.stringify(roads)
+  // Undo steps hold the base too, so undoing Discard brings back the older draft's warning.
+  const snapshot = () => JSON.stringify({ base, roads } satisfies SavedDraft)
+  const restore = (step: string) => {
+    ({ base, roads } = JSON.parse(step) as SavedDraft)
+  }
   const persist = () => writeStorage('localStorage', storageKey, snapshot())
+  // Undo takes a step off one history and puts the present on the other; redo the reverse.
+  function travel(from: string[], to: string[]) {
+    const step = from.pop()
+    if (!step) return
+    to.push(snapshot())
+    restore(step)
+    persist()
+  }
   function edit(change: () => void) {
     undo.push(snapshot())
     if (undo.length > historyLimit) undo.shift()
@@ -76,6 +137,16 @@ export function createRoadDraft() {
   return {
     roads: () => roads,
     road,
+    canUndo: () => undo.length > 0,
+    canRedo: () => redo.length > 0,
+    // True when roads.ts has changed since this draft began from it, and the draft
+    // differs from it: saving would overwrite roads someone else saved.
+    sourceChanged: () => !base.includes(source()) && roadsHash(roads) !== source(),
+    // After a save, the draft is the source, before and after the page reloads it.
+    markSaved() {
+      base = [source(), roadsHash(roads)]
+      persist()
+    },
     selectedDot: () => selectedDot,
     select(id: string | undefined, dot?: number) {
       selectedRoad = id
@@ -137,12 +208,7 @@ export function createRoadDraft() {
       const i = selectedDot
       edit(() => {
         if (current.points.length <= minimumDots) roads = roads.filter((entry) => entry !== current)
-        else {
-          current.points.splice(i, 1)
-          const stretch = Math.min(i, current.bends.length - 1)
-          current.bends.splice(stretch, 1)
-          current.maxGrade?.splice(stretch, 1)
-        }
+        else removeDot(current, i)
       })
       selectedDot = undefined
       if (!roads.includes(current)) selectedRoad = roads[0]?.id
@@ -155,6 +221,12 @@ export function createRoadDraft() {
       })
       selectedRoad = roads[0]?.id
       selectedDot = undefined
+    },
+    // Moves the selected road up (-1) or down (+1) the list, which is the order roads are graded in.
+    moveRoad(step: number) {
+      const current = road()
+      const to = current ? roads.indexOf(current) + step : -1
+      if (current && to >= 0 && to < roads.length) edit(() => reorder(roads, current, to))
     },
     setRoad(changes: Partial<Pick<RoadDraftRoad, 'name' | 'kind'>>) {
       const current = road()
@@ -170,24 +242,13 @@ export function createRoadDraft() {
         if (current.maxGrade.every((entry) => entry === null)) delete current.maxGrade
       })
     },
-    undo() {
-      const previous = undo.pop()
-      if (!previous) return
-      redo.push(snapshot())
-      roads = JSON.parse(previous) as RoadDraftRoad[]
-      persist()
-    },
-    redo() {
-      const next = redo.pop()
-      if (!next) return
-      undo.push(snapshot())
-      roads = JSON.parse(next) as RoadDraftRoad[]
-      persist()
-    },
+    undo: () => travel(undo, redo),
+    redo: () => travel(redo, undo),
     // Back to the roads in the source tree.
     discard() {
       edit(() => {
         roads = copy(starterRoads)
+        base = [source()]
       })
       selectedRoad = roads[0]?.id
     },
