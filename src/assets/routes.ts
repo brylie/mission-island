@@ -1,6 +1,6 @@
 import type { Material } from '@babylonjs/core/Materials/material'
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
-import { dirtRoadModel, gravelTrailModel, laneMarkingModel, roadFinish, roadSurface, sidewalkLift, trailLift, wornTrailModel } from './geometry/route-profiles'
+import { gravelTrailModel, laneMarkingModel, roadFinish, roadSurface, sidewalkLift, trailLift, wornTrailModel } from './geometry/route-profiles'
 import type { MeshFactory } from '../island-meshes'
 import { ribbonGeometry } from '../math/ribbon'
 import { smoothstep } from '../math/smoothstep'
@@ -76,31 +76,6 @@ function gravelTrail(meshes: MeshFactory, name: string, points: readonly Point[]
   trail.setVerticesData(VertexBuffer.ColorKind, colors)
   trail.hasVertexAlpha = true
   return trail.freezeWorldMatrix()
-}
-
-// A graded dirt road, draped on the ground it was cut into, with darker wheel ruts.
-export function createDirtRoad(meshes: MeshFactory, name: string, centreline: readonly Point[], width: number, heightAt: (p: Point) => number) {
-  const positions: number[] = [], indices: number[] = [], uvs: number[] = [], colors: number[] = []
-  const { lanes, ruts, lift, tint } = dirtRoadModel
-  for (const [i, point] of centreline.entries()) {
-    const prev = centreline[Math.max(0, i - 1)], next = centreline[Math.min(i + 1, centreline.length - 1)]
-    const dx = next.x - prev.x, dz = next.z - prev.z, length = Math.hypot(dx, dz) || 1
-    for (const [j, lane] of lanes.entries()) {
-      const spread = lane * width * half
-      const x = point.x - dz / length * spread, z = point.z + dx / length * spread
-      positions.push(x, heightAt({ x, z }) + lift, z)
-      uvs.push(x / roadFinish.gravelTile, z / roadFinish.gravelTile)
-      const shade = Math.abs(Math.abs(lane) - ruts) < Number.EPSILON ? tint.rut : Math.abs(lane) === 1 ? tint.edge : tint.crown
-      colors.push(...shade, 1)
-      if (i && j) {
-        const d = i * lanes.length + j
-        indices.push(d - lanes.length - 1, d - 1, d - lanes.length, d - lanes.length, d - 1, d)
-      }
-    }
-  }
-  const road = meshes.surface(name, positions, indices, meshes.paintSurface('gravel'), undefined, uvs)
-  road.setVerticesData(VertexBuffer.ColorKind, colors)
-  return road.freezeWorldMatrix()
 }
 
 function wornPath(meshes: MeshFactory, name: string, points: readonly Point[], width: number, heightAt: (p: Point) => number) {

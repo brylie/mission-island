@@ -1,4 +1,4 @@
-import { roadKinds } from './assets/geometry/road-kinds'
+import { roadFinish } from './assets/geometry/route-profiles'
 import type { Material } from '@babylonjs/core/Materials/material'
 import { createFieldOutingScenery } from './assets/field-outing'
 import { shellRockCap, tidePoolDressing } from './assets/geometry/tide-pool-dressing'
@@ -12,7 +12,8 @@ import { createResidentFigures } from './resident-scene'
 import type { ResidentWorld } from './residents/definition'
 import { residentAt } from './residents/schedule'
 import { starterResidents } from './worlds/starter/residents'
-import { createDirtRoad, createRoad, createSidewalk, createTrail } from './assets/routes'
+import { createRoad, createSidewalk, createTrail } from './assets/routes'
+import { createRoadNetworkSurface } from './assets/road-surface'
 import { playerColors } from './assets/crew'
 import { clothingCounter } from './farm'
 import { createBiomeScenery } from './biome-scenery'
@@ -41,7 +42,7 @@ import { createSurfaceMaterial } from './materials'
 import { meadowDefaults, shaderPresets, shoreDefaults, type ShaderQuality } from './shader-studies'
 import type { WildlifeFrame } from './wildlife'
 import { createStreetLights } from './street-lights'
-import { boundaryBuoys, fireWatchBaseHeight, gradedRoads, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
+import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, roadSurfaceSource, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
 import { buildings, crewHomes, extinguisherStations } from './world'
 import { createFireWatch } from './assets/fire-watch'
 import { createFireStation } from './assets/fire-station'
@@ -63,7 +64,7 @@ const rainPavingWetness = 0.74
 
 // Graded roads drape on the ground they cut and fill.
 function createGradedRoads(meshes: MeshFactory) {
-  for (const { name, kind, profile } of gradedRoads()) createDirtRoad(meshes, name, profile, roadKinds[kind].width, groundHeight)
+  createRoadNetworkSurface(meshes, roadSurfaceSource, groundHeight, { earth: meshes.paintRecipe('path-gravel'), asphalt: meshes.paintSurface('stone', roadFinish.asphalt) })
 }
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {

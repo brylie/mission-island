@@ -53,6 +53,9 @@ interface Candidate {
   // How far beyond the formation edge each bank reaches before it meets the ground.
   cutMeetsM: number
   fillMeetsM: number
+  // Signed distance to the formation the road's own ribbon covers, before any junction's
+  // rounding, and Infinity past its ends, where its ribbon stops.
+  ribbon: number
 }
 
 interface RoadSurfacePoint { road: GradedRoad, carriageway: number, formation: number, across: number, along: number, surface: 'asphalt' | 'earth' }
@@ -135,7 +138,8 @@ function candidateAt(roads: readonly GradedRoad[], road: number, sample: number,
   const side = (point.z - s.z) * s.dx - (point.x - s.x) * s.dz
   let across = Math.abs(side)
   // Past either end the road stops in a round cap at the end's height.
-  if ((sample === 0 && along < 0) || (sample === graded.profile.length - 1 && along > 0)) {
+  const pastEnd = (sample === 0 && along < 0) || (sample === graded.profile.length - 1 && along > 0)
+  if (pastEnd) {
     across = Math.hypot(point.x - s.x, point.z - s.z)
     along = 0
   }
@@ -155,6 +159,7 @@ function candidateAt(roads: readonly GradedRoad[], road: number, sample: number,
     fillSlope: banks?.fill ?? kind.fillSlope,
     cutMeetsM: banks?.cutMeetsM ?? 0,
     fillMeetsM: banks?.fillMeetsM ?? 0,
+    ribbon: pastEnd ? Infinity : across - graded.halfFormation,
   }
 }
 
@@ -219,11 +224,34 @@ export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural
       return built.culverts
     },
     network: () => get().network,
+    // Whether a point is near enough a graded road for its grading raster to cover it: a quick
+    // test before asking anything dearer.
+    near: (point: Point) => get().raster().near(point),
+    // Whether a point lies under a graded road's own ribbon: its carriageway and shoulders.
+    underRibbon: (point: Point) => {
+      const { candidates } = get().evaluate(point)
+      return candidates.some((c) => get().roads[c.road].graded && c.ribbon < 0)
+    },
     // Metres from a point to the nearest graded road's formation edge (negative on the road).
     clearance: (point: Point) => {
       const { candidates } = get().evaluate(point)
       const { roads } = get()
       return Math.min(Infinity, ...candidates.filter((c) => roads[c.road].graded).map((c) => c.formation))
+    },
+    // Signed metres (negative inside) to the edges of the roads' carriageway and formation,
+    // junction corners included; to the formation the roads' ribbons cover; and to the nearest
+    // paved carriageway.
+    carriagewayAt: (point: Point) => {
+      const { candidates } = get().evaluate(point)
+      const { roads } = get()
+      let distance = Infinity, formation = Infinity, covered = Infinity, paved = Infinity
+      for (const c of candidates) {
+        distance = Math.min(distance, c.carriageway)
+        formation = Math.min(formation, c.formation)
+        covered = Math.min(covered, c.ribbon)
+        if (!roads[c.road].graded) paved = Math.min(paved, c.carriageway)
+      }
+      return { distance, formation, covered, paved }
     },
     // Which road's surface a point is on or beside, if any.
     surfaceAt: (point: Point): RoadSurfacePoint | undefined => {
@@ -283,5 +311,7 @@ function createRaster(roads: readonly GradedRoad[], evaluate: (point: Point) => 
     const node = j * nodes + i
     return (delta[node] * (1 - fx) + delta[node + 1] * fx) * (1 - fz) + (delta[node + nodes] * (1 - fx) + delta[node + nodes + 1] * fx) * fz
   }
-  return { at, changed }
+  // Whether a point lies in a tile the grading built, near some graded road.
+  const near = ({ x, z }: Point) => tiles.has(keyOf(Math.floor(x / tileM), Math.floor(z / tileM)))
+  return { at, changed, near }
 }

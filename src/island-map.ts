@@ -97,6 +97,7 @@ function drawIslandPaths(drawRoute: (points: readonly { x: number, z: number }[]
   const { pavement, road, dirt } = look.paths
   for (const { points } of walkways) drawRoute(points, pavement.width, pavement.color)
   for (const path of roads) drawRoute(path, road.width, road.color)
+  for (const { profile } of gradedRoads()) drawRoute(profile, dirt.edge.width, dirt.edge.color)
   for (const { profile } of gradedRoads()) drawRoute(profile, dirt.width, dirt.color)
 }
 

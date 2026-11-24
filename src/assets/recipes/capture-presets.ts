@@ -80,6 +80,36 @@ export const capturePresets = {
     weather: 'clear',
     overlays: ['sightlines', 'wildfire', 'protected'],
   },
+  // Road junctions, from a few metres up, to check the network joins without seams: the
+  // trailhead off the harbor road, the summit spur leaving the fire road, and the ridge road
+  // leaving the Pine Draw road.
+  'road-trailhead': {
+    label: 'Fire road trailhead off the harbor road',
+    kind: 'landscape',
+    eye: { x: 26, z: 2, height: 6 },
+    look: { x: 4, z: 18, height: 0 },
+    fov: 0.8,
+    hour: 11,
+    weather: 'clear',
+  },
+  'road-spur-junction': {
+    label: 'Summit spur leaving the fire road',
+    kind: 'landscape',
+    eye: { x: -230, z: 212, height: 7 },
+    look: { x: -250, z: 232, height: 0 },
+    fov: 0.8,
+    hour: 11,
+    weather: 'clear',
+  },
+  'road-ridge-junction': {
+    label: 'Cairn ridge road leaving the Pine Draw road',
+    kind: 'landscape',
+    eye: { x: -300, z: 392, height: 7 },
+    look: { x: -318, z: 372, height: 0 },
+    fov: 0.8,
+    hour: 11,
+    weather: 'clear',
+  },
   // Cairn from the village: the landmark has to read as a mountain from home.
   'landmark-cairn-from-village': {
     label: 'Cairn Summit from the village',

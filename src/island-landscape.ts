@@ -14,7 +14,8 @@ import { seededRandom } from './seeded-random'
 import { distanceToRoads, distanceToRoute, footpaths, walkways } from './routes'
 import { inFerryYard } from './worlds/starter/ferry-terminal'
 import { driftwoodStrand, fernfallChannel, shoreStations } from './worlds/starter/layout/terrain'
-import { coastPoint, coastRadius, coastSegments, coastalSurface, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, originalCoastPoint, originalCoastRadius, pool, roadClearance, shoreProfile, streamX, waterLevel } from './terrain'
+import { roadSurfaceModel } from './assets/geometry/route-profiles'
+import { coastPoint, coastRadius, coastSegments, coastalSurface, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, originalCoastPoint, originalCoastRadius, pool, roadClearance, shoreProfile, streamX, underGradedRoad, waterLevel } from './terrain'
 import { authoredShare } from './worlds/starter/generation/protection'
 import { highwoodHeightmap } from './assets/geometry/highwood-heightmap'
 import { bakedSurface } from './worlds/starter/highwood-terrain'
@@ -91,7 +92,7 @@ function buildGround(meshes: MeshFactory, angles: readonly number[], rings: read
       const point = originalCoastPoint(angle, ring)
       const { x, z } = point
       const height = groundHeight(point)
-      positions.push(x, height, z)
+      positions.push(x, height - (underGradedRoad(point) ? roadSurfaceModel.terrainSinkM : 0), z)
       owned.push(authoredShare(point, originalCoastRadius(point)) < fullyAuthored)
       uvs.push(x, z)
       appendMeadowColor(colors, point, wear)
@@ -179,7 +180,9 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
           const height = groundHeight(point)
           keep.push(share < fullyAuthored)
           wet ||= height > deepSeaFloor
-          positions.push(point.x, height - (share > 0 ? seamDip : 0), point.z)
+          // Under a graded road the terrain sinks out of sight, so it never pokes through the road's edge.
+          const sink = (share > 0 ? seamDip : 0) + (underGradedRoad(point) ? roadSurfaceModel.terrainSinkM : 0)
+          positions.push(point.x, height - sink, point.z)
           uvs.push(point.x, point.z)
           appendMeadowColor(colors, point, wear)
           beach.push(...beachVertex(point, coastalSurface(point, height)))

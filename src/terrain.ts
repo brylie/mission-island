@@ -214,10 +214,18 @@ export function groundHeight(point: Point) {
 }
 
 export const gradedRoads = () => roadGrading.roads()
+// What the road surface is built from: the graded roads, the network and its carriageway shape.
+export const roadSurfaceSource = {
+  roads: () => roadGrading.roads(),
+  network: () => roadGrading.network(),
+  carriagewayAt: (point: Point) => roadGrading.carriagewayAt(point),
+}
 // Where the graded roads need culverts, so their hollows drain.
 export const roadCulverts = () => roadGrading.culverts()
 // Metres from a point to the nearest graded road's edge: scenery and plants keep clear of the formation.
 export const roadClearance = (point: Point) => roadGrading.clearance(point)
+// Whether a point is under a graded road's ribbon, answered quickly far from any road.
+export const underGradedRoad = (point: Point) => roadGrading.near(point) && roadGrading.underRibbon(point)
 
 function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {
   if (Math.abs(radius - shoreStations.sandEdge.radius) > slopeSampleRadius) return 0
