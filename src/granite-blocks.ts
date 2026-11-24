@@ -23,9 +23,6 @@ const toneSeedSpan = 1e6
 const blockSeedStride = 7919
 const square = 2
 const turn = Math.PI * square
-// Rings are shrunk by the most the waves and jitter can add, so a block stays inside its
-// slab's footprint, and so inside its walking solid.
-const envelope = 1 + form.ringJitter + form.jitter + form.waves.reduce((sum, wave) => sum + wave.share, 0)
 
 const between = (random: () => number, [least, most]: readonly [number, number]) => least + random() * (most - least)
 const spread = (random: () => number, share: number) => (random() - half) * (share + share)
@@ -64,17 +61,20 @@ function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: boolean,
   const angles = Array.from({ length: sides }, (_, k) => (k + random() * half) / sides * turn)
   const jitters = angles.map(() => 1 + spread(random, form.jitter))
   const place = (u: number, v: number, y: number): Corner => [cx + u * cos - v * sin, y + u * tiltU + v * tiltV, cz + u * sin + v * cos]
-  const ring = (share: number, radius: number) => {
-    const size = radius * (1 + spread(random, form.ringJitter)) / envelope
-    return angles.map((angle, k) => {
-      const wave = waves.reduce((sum, w) => sum + w.share * Math.sin(w.lobes * angle + w.phase + w.drift * share), 0)
-      const [along, across] = superellipse(angle, n)
-      const r = size * (1 + wave) * jitters[k]
-      const dip = sag * share * share * (1 + Math.cos(angle - sagAngle)) * half
-      return place(along * r * slab.length * half, across * r * slab.width * half, baseY + share * slab.height - dip)
-    })
-  }
-  const layers = rings.map(([share, radius]) => ring(share, radius))
+  // Every point's distance out, as a share of the superellipse, before fitting.
+  const radii = rings.map(([share, radius]) => {
+    const size = radius * (1 + spread(random, form.ringJitter))
+    return angles.map((angle, k) => size * jitters[k] * (1 + waves.reduce((sum, w) => sum + w.share * Math.sin(w.lobes * angle + w.phase + w.drift * share), 0)))
+  })
+  // The block is scaled so its widest point just meets its footprint, and so its walking solid.
+  const fit = 1 / Math.max(...radii.flat())
+  const ring = ([share]: readonly [number, number], level: number) => angles.map((angle, k) => {
+    const [along, across] = superellipse(angle, n)
+    const r = radii[level][k] * fit
+    const dip = sag * share * share * (1 + Math.cos(angle - sagAngle)) * half
+    return place(along * r * slab.length * half, across * r * slab.width * half, baseY + share * slab.height - dip)
+  })
+  const layers = rings.map(ring)
   if (foot) {
     // The foot spreads into the ground under each point and sinks below it, or below the ring
     // where the ground is higher. Where the ground falls away downhill, the face down to it is
