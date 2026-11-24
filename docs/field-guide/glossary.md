@@ -12,6 +12,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Catkin** | A slim, hanging cluster of tiny flowers, as on birch, alder and willow. Many catkins spread their pollen on the wind. |
 | **Clitter** | A Dartmoor word for loose granite boulders strewn across a slope, usually below a tor. Many were prised off by frost in the Ice Age. See [granite uplands](places/granite-uplands.md#clitter-boulders-on-the-slopes). |
 | **Clonal stand** | A group of stems that grew from one plant's roots, so they share the same genes, as in aspen. |
+| **Cross drain** | A drain built across a road to catch water running along its surface and carry it, and ditch water, off the road. The FAO manual names three kinds: rolling (intercepting) dips, open-top culverts and cross ditches (`fao-road-drainage-watersheds`). The island has none yet. See [forest roads](practices/forest-roads.md#water). |
 | **Crossfall** | The slope across a road, from one edge to the other, as a percentage. A crown, an outslope and an inslope are all kinds of crossfall. See [forest roads](practices/forest-roads.md#water). |
 | **Crown (road)** | The raised middle of a road, which falls to both sides so rain runs off. It is measured as a crossfall, a percentage. On the island the fire road's crown rises 5 cm over each 2 m half in a curve: flat at the centre, 5% at the edge, averaging 2.5%. See [forest roads](practices/forest-roads.md#water). |
 | **Crown (tree)** | The branches and foliage of a tree above its trunk. In the code, a template's foliage mesh is its `crown`. |
@@ -21,6 +22,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Deadfall** | A fallen dead tree or limb lying on the ground. |
 | **Declination** | The angle between magnetic north, where a compass points, and true north. It changes with place and over the years. The island has none. |
 | **Dioecious** | Having male and female flowers on separate plants, as in juniper, willow and aspen. |
+| **Drop inlet, catch basin** | A culvert inlet set into the ground: a box, usually capped with a grate, that water falls into before it runs through the pipe. Used where water gathers in a sag with no bank to set a headwall in. On the island, a culvert inlet in a cut or on the road is a stone drop inlet beside the carriageway. See [forest roads](practices/forest-roads.md#water). |
 | **Duff, needle litter** | The layer of fallen needles, leaves and twigs on a forest floor, slowly rotting into soil. *Duff* often means the lower, partly rotted part. In the game, Highwood's ground shows needle litter under pine with the `pine-duff` texture. |
 | **End haul** | Carrying dug earth along the road to a safe place to tip it, instead of pushing it over the downhill edge. Used with a full bench. See [forest roads](practices/forest-roads.md#cut-and-fill). |
 | **Exit pupil** | The small bright disc seen in each eyepiece of binoculars held at arm's length. Its width is the objective diameter divided by the magnification: 5.25 mm for 8×42. |
@@ -31,6 +33,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Grade** | How steeply a road climbs: the rise divided by the horizontal distance, as a percentage. A 10% grade climbs 10 m for every 100 m measured across the map, not along the sloping road. See [forest roads](practices/forest-roads.md#grade). |
 | **Granny pine** | A Scottish name for a very old Scots pine, often broad-crowned with heavy limbs. |
 | **Grus, growan** | Coarse, gritty gravel of quartz and feldspar grains left where granite has weathered apart. *Growan* is the Dartmoor word. In the game, gentler granite ground is drawn as grus, with larger stones than real grus. |
+| **Headwall** | A wall of stone or concrete built round a culvert's end, holding back the fill and guiding water into or out of the pipe. The FAO manual says inlets with headwalls are generally the most efficient (`fao-road-drainage-watersheds`). See [forest roads](practices/forest-roads.md#water). |
 | **Heath** | Open ground of heather and other low shrubs on poor, acid soil. |
 | **Inslope** | A road surface tilted toward its uphill side, so water runs into a ditch at the foot of the cut bank. See [forest roads](practices/forest-roads.md#water). |
 | **Joint** | A crack in rock along which the rock has not slid. Granite usually has sets of joints crossing each other, and weathers into blocks along them. In the game, Highwood's bedrock shows a long set of joints and shorter cross joints. |
@@ -47,6 +50,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Pioneer species** | A plant that colonises open or disturbed ground first, such as birch. |
 | **Regeneration** | New trees growing up in a wood, usually from seed. Natural regeneration needs seed, light and freedom from heavy grazing. In the game, young pines and saplings are placed at edges and in gaps. |
 | **Rhizome** | An underground stem that spreads sideways and sends up new shoots, as in bracken. |
+| **Riprap** | Loose rock laid to protect ground from running water, as at a culvert's inlet and outlet. The FAO manual's rocks should typically weigh 20 kg or more (`fao-road-drainage-watersheds`). On the island, each culvert outlet has a packed riprap apron. See [forest roads](practices/forest-roads.md#water). |
 | **Rolling dip** | A broad, gentle dip built across a road that a vehicle drives through, sloping out to let water off the road. See [forest roads](practices/forest-roads.md#water). |
 | **Root plate** | The flat disc of roots and soil torn out of the ground when a tree is blown over. |
 | **Self-pruning** | The natural loss of shaded lower branches as a tree grows taller in a stand. |

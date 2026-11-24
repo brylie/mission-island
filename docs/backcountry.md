@@ -1,6 +1,6 @@
 # Highwood backcountry
 
-**In progress. Last tended 2026-11-23.** Highwood is the wild country north of Starter Island's settled south: forest, meadow, ridge and creek, with a fire access road and the Fire Watch on Cairn Summit. It is where the crew watches for smoke and drives out to fight it. The land comes from [the island's deep history](design/island-story.md), and it is generated as described in [island generation](design/island-generation.md).
+**In progress. Last tended 2026-11-24.** Highwood is the wild country north of Starter Island's settled south: forest, meadow, ridge and creek, with a fire access road and the Fire Watch on Cairn Summit. It is where the crew watches for smoke and drives out to fight it. The land comes from [the island's deep history](design/island-story.md), and it is generated as described in [island generation](design/island-generation.md).
 
 ## Experience goal
 
@@ -139,12 +139,11 @@ Four graded roads, 1 km in all, give the Fire and Rescue crew vehicle access to 
 - **Shape.** The roads run straight where a straight road holds the grade, and curve only along contours and in switchbacks ([decision](design/decisions.md)). At the centreline, cuts stay under 3 m and fills under 4 m; the banks beside a hairpin or a deep cut stand taller, up to about 9 m on the Pine Draw road.
 - **The summit.** Cairn is an 80 m massif. The spur ends at a pad on the ridge below the crag, and the last 34 m of climb is on foot.
 - **Junctions.** Each branch leaves its road at 30° or more, through a rounded mouth, and the road it leaves is as it would be alone, within 2 cm. At the trailhead the fire road's first 6 m are asphalt, so the village's paving runs into it.
-- **Drainage.** Wherever the grading leaves a hollow that would hold water, a culvert takes it to lower ground: 19 in all (18 with an outlet; the other is a 3 cm puddle on level ground at the trailhead), including two where the Pine Draw road leaves the fire road across the head of Alder Creek, found by [`road-culverts.ts`](../src/road-culverts.ts). Each is drawn as a stone headwall with its pipe's mouth at each end and cobbles below the outlet.
+- **Drainage.** Wherever the grading leaves a hollow that would hold water, a culvert takes it to lower ground: 19 in all (18 with an outlet; the other is a 3 cm puddle on level ground at the trailhead), including two where the Pine Draw road leaves the fire road across the head of Alder Creek, found by [`road-culverts.ts`](../src/road-culverts.ts). An inlet beside the road has a stone headwall, and one in a cut or on the road a drop inlet; the outlet's headwall stands at the fill's toe with packed stone below it: 13 inlet headwalls, 5 drop inlets and 11 outlets, some shared ([`culvert-plan.ts`](../src/assets/culvert-plan.ts)).
 - **Vehicles.** The flatbed, pickup and tractor each climb the spur's steepest straight stretch on full throttle and stay on the 4 m road ([`test/game-fire-road.test.mjs`](../test/game-fire-road.test.mjs)).
-- **Surface.** Packed earth with two darker wheel ruts, distinct from the pale gravel of footpaths, and a paler verge out to the shoulder's edge. Footsteps crunch on the carriageway, sound like bare ground on the verge, and stop sounding like a road past its end. On the map the roads are drawn with a dark edge so they read on every kind of land.
+- **Surface.** Every road, paved and graded, is one continuous surface, so the trailhead and every junction meet without a seam. The graded roads are packed earth with two darker wheel ruts, distinct from the pale gravel of footpaths, and a paler verge out to the shoulder's edge. Footsteps crunch on the carriageway, sound like bare ground on the verge, and stop sounding like a road past its end. On the map the roads are drawn with a dark edge so they read on every kind of land.
 - **Planting.** Plants keep 3 m from a road's edge, and trees, logs and granite outcrops keep off its cut and fill banks, where only ground cover grows.
-- **Surface.** Every road, paved and graded, is one continuous surface, so the trailhead and every junction meet without a seam.
-- **Known gaps.** There are no ditches, cross-drains or rolling dips (so the low side of the fire road's cut carries some of Cairn's runoff down to the village plain), and the crossing of Alder Creek's bed is plain ground until the stone ford is built.
+- **Known gaps.** There are no ditches or surface cross drains, such as rolling dips, open-top culverts or cross ditches, so the low side of the fire road's cut carries some of Cairn's runoff down to the village plain. The crossing of Alder Creek's bed is plain ground until the stone ford is built.
 
 ## Performance
 

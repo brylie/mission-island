@@ -1203,6 +1203,30 @@
       quote: "roads should climb away from channel crossings in both directions wherever practical"
       quote-match: exact (2026-11-23)
       used-in: field-guide/practices/forest-roads.md#fords
+    - claim: A culvert inlet with a headwall is the most efficient, then a mitered inlet, then a projecting one.
+      quote: "Inlets with headwalls are generally the most efficient followed by culverts with mitered inlets and finally culverts with projecting entrances"
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Culvert outlets must be designed to withstand fast flows, or erosion below them can end in road failure.
+      quote: "Outlets need to be properly designed in order to withstand high flow velocities and thus avoid excessive downstream erosion and eventual road failure"
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: The manual's figure shows rip-rap protecting a culvert's inlet and outlet.
+      quote: "Inlet and outlet protection of culvert with rip-rap"
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Rip-rap rocks at a culvert should typically weigh 20 kg or more.
+      quote: "Rocks used should typically weigh 20 kg or more"
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: "Cross drains intercept water running along the road surface, and are of three kinds: intercepting or rolling dips, open-top culverts and cross ditches."
+      quote: "There are three types of cross drains used for intercepting road surface water"
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/glossary.md
+    - claim: Cross-drain spacing depends on road grade, surfacing, rain intensity, and slope and aspect; on a 12% grade on granite, for an unsurfaced logging road high on a north-facing 80% slope, Table 31 (after Packer 1967) gives 27 m.
+      quote: "Spacing requirements for surface cross drains depend on road grade, surfacing material, rain intensities, and slope and aspect."
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/practices/forest-roads.md#where-the-island-differs
 
 - id: fao-road-slope-protection-watersheds
   title: "Watershed management field manual: road design and construction in sensitive watersheds, chapter 5: Surface and slope protective measures"

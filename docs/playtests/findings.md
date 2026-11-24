@@ -18,6 +18,19 @@ For each session, copy the block below. Give each distinct observation a short t
 - Retest — setup, observable pass condition, owner if assigned, and result/build when repeated.
 ```
 
+### 2026-11-24 · Highwood fire road · Trees in the road, sinking feet and torn road edges
+
+- Starting point — The Highwood fire road branch ([PR #291](https://github.com/brylie/mission-island/pull/291)), before the fixes below. A solo playtest of the fire road and its surroundings.
+- Both screens — Solo.
+- Trees in the road — Trees grew in the fire road near Juniper Hollow. The region scatter never asked the roads where they were. Fixed in PR #291: the northern regions' trees and rocks keep 5.2 m from a formation edge ([graded roads: what failed](../craft/graded-roads.md#what-failed), *Trees in the road*).
+- Feet sinking — Feet sank into the ground, sometimes up to the waist. The terrain mesh sampled the ground off the height bake's grid and drew it up to 0.83 m above where players stand. Fixed in PR #291 by drawing Highwood's ground on the bake's own grid ([rendering and detail: what failed](../craft/rendering-and-detail.md#what-failed), *Terrain off the data's grid*).
+- Road edges — The trailhead looked torn, the road texture visibly repeated, the junctions didn't look connected, and from the slope below a fill you could see under the road. Fixed in PR #291 by one mesh over every road, a second texture sample and tone noise against the repeat, and cutting the terrain to the road's outline ([graded roads: what failed](../craft/graded-roads.md#what-failed), *Separate pieces* and *Seeing under the road*).
+- Rock — The granite's texture showed stitched seams, and outcrop rocks looked boxy. The seams were fixed in [PR #292](https://github.com/brylie/mission-island/pull/292), now merged. Rounder, woolsack-shaped granite is on a branch still to come.
+- Culverts — No culverts were visible. They are now drawn in PR #291: headwalls, drop inlets and outlets with riprap ([graded roads: drainage](../craft/graded-roads.md#drainage)).
+- Feet on slopes — The player's feet cut into slopes. Foot placement (inverse kinematics) was dropped in favour of the terrain fix above, which puts the drawn ground where the feet stand.
+- Decision — Change, as above. Rounder granite is still open.
+- Retest — Walk the fire road from the trailhead to Juniper Hollow and back, and look along each junction and from below a fill. Pass: no tree or rock on a road, feet on the ground, no visible seam, gap or underside, and a culvert visible at each hollow. Unverified with other players.
+
 ### 2026-11-23 · Highwood review · Labels, the Crew guide and Go to in the backcountry
 
 - Starting point — Agent reviewers checked the Highwood backcountry branch ([PR #197](https://github.com/brylie/mission-island/pull/197)) in the `fire-watch` playtest, solo, using Playtest events. This was a review, not a session with players.

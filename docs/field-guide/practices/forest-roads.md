@@ -1,6 +1,6 @@
 # Forest roads
 
-**Type: explanation (practice). Real world: draft, sourced, not yet checked by a person. On the island: playable**, see [the fire road](../../backcountry.md#fire-road). Last tended 2026-11-24. Model purpose: **illustrate** how a road is fitted to hilly ground. The game models the road's line, height and earthworks. It finds where culverts are needed, but doesn't model soil, running water or wear.
+**Type: explanation (practice). Real world: draft, sourced, not yet checked by a person. On the island: playable**, see [the fire road](../../backcountry.md#fire-road). Last tended 2026-11-24. Model purpose: **illustrate** how a road is fitted to hilly ground. The game models the road's line, height and earthworks. It finds where culverts are needed and draws them, but doesn't model soil, running water or wear.
 
 A forest road lets the vehicles a job needs reach the places it needs to reach, in most weather, without washing away. Fire crews, foresters, rangers and farmers depend on them. Most of what makes one look the way it does comes from four limits:
 - how steep a loaded vehicle can climb;
@@ -68,6 +68,8 @@ Ruts make all of this harder: "In time, traffic will cause ruts to form, channel
 
 **Ponding.** Where a road crosses a hollow on a fill, water running down the slope can be trapped behind it. The FAO manual's example says water "will pond above the road fill", which can weaken or erode the subgrade (`fao-road-drainage-watersheds`). That is why a fill across a hollow needs a culvert through it.
 
+**Culvert ends.** A culvert's inlet and outlet are built to protect the road. "Inlets with headwalls are generally the most efficient followed by culverts with mitered inlets and finally culverts with projecting entrances" (`fao-road-drainage-watersheds`). Outlets "need to be properly designed in order to withstand high flow velocities and thus avoid excessive downstream erosion and eventual road failure", and the manual's figures show "Inlet and outlet protection of culvert with rip-rap", using rocks that "should typically weigh 20 kg or more" (`fao-road-drainage-watersheds`). Where the outlet sits on a fill, and how a sag in a cut drains through a drop inlet, are still unsourced.
+
 ### Fords
 
 A **ford** carries a road through a stream instead of over it. The FAO manual says fords suit "areas subject to flash floods", seasonal storm peaks or heavy debris, which "will simply wash over the road structure" (`fao-road-drainage-watersheds`). Its simple example uses "rock-filled gabions", wire cages of stone, as a road bed through the channel. For streams prone to torrents it also describes a fill over a small culvert that carries the usual low flow while floods wash over the top, and there "The fill surface has to be hardened either by concrete or large rock" (`fao-road-drainage-watersheds`). Roads "should climb away from channel crossings in both directions wherever practical", so high water won't flow along the road (`fao-road-drainage-watersheds`).
@@ -121,14 +123,14 @@ The island's roads are laid out in the Workbench [road designer](../../workbench
 - **Height.** The road's height follows the ground, averaged across its width and smoothed over 20 m, then held within the grade limit. The smoothing cuts and fills small bumps even where the grade wouldn't need it.
 - **Surface.** Packed earth, with two darker wheel ruts and a paler verge on the shoulders. The footstep sound assumes a thin layer of loose stone on top, the running surface described under [Layers](#layers); that it sheds loose stones and fines underfoot is unsourced. Footsteps crunch on the carriageway and sound like bare ground on the verge.
 - **Junctions.** A branch road leaves at 30° or more, through a mouth rounded over about 8 m, at the other road's height, and the road it leaves is unchanged. Where the fire road leaves the village's harbor road, its first 6 m are asphalt.
-- **Culverts.** Wherever the grading leaves a hollow that would hold water, the island places a culvert running to lower ground: 19 along Highwood's roads, 18 with an outlet; the 19th is a 3 cm puddle on level ground at the trailhead. The Pine Draw road's hairpin fill would pond 0.93 m deep behind it without one, and two more carry the head of Alder Creek past the Pine Draw junction. An inlet beside the road has a stone headwall; one in a cut or on the road drains through a drop inlet, a stone catch basin with a grate, beside the carriageway. The outlet's headwall stands where the pipe leaves the fill, with a packed riprap apron below it so the water doesn't scour the bank.
+- **Culverts.** Wherever the grading leaves a hollow that would hold water, the island places a culvert running to lower ground: 19 along Highwood's roads, 18 with an outlet; the 19th is a 3 cm puddle on level ground at the trailhead. The Pine Draw road's hairpin fill would pond 0.93 m deep behind it without one, and two more carry the head of Alder Creek past the Pine Draw junction. An inlet beside the road has a stone headwall; one in a cut or on the road drains through a drop inlet, a stone catch basin with a grate, beside the carriageway. The outlet's headwall stands where the pipe leaves the fill, with a packed riprap apron below it.
 - **Fords.** The fire road dips into the Alder Creek valley and crosses its bed. A stone ford is still to come.
 
 ## Where the island differs
 
 | Real | On the island | Why we simplified | What a player might wrongly learn |
 | --- | --- | --- | --- |
-| Drainage is the core of road design: ditches on the uphill side, culverts under the road, rolling dips across it, and a minimum 2% fall so water never stands (`fao-road-drainage-watersheds`, `scot-fgs-forest-road`). | Culverts are placed and drawn wherever the grading would trap water. No ditches or dips, and no minimum grade. The island has no running water on its roads. | Water flow isn't simulated, and ditches and culvert pipes need their own models. | That a road is just a graded strip of ground, and water doesn't matter. |
+| Drainage is the core of road design: ditches on the uphill side, culverts under the road, rolling dips across it, and a minimum 2% fall so water never stands (`fao-road-drainage-watersheds`, `scot-fgs-forest-road`). | Culverts are placed and drawn wherever the grading would trap water. No ditches or dips, and no minimum grade. The island has no running water on its roads. | Water flow isn't simulated, and ditches need their own model. Culverts are drawn as inlet, drop inlet and outlet structures, but no water runs through them. | That a road is just a graded strip of ground, and water doesn't matter. |
 | A road is built in layers: formation, capping stone, running surface (`fc-on025-forest-roads-tracks`). | One graded ground surface with a tinted texture. | Nothing on the island sinks or wears, so layers wouldn't show. | That a forest road is bare earth. |
 | Roads wear: ruts deepen, potholes form, stone is lost and has to be replaced (`fao-road-drainage-watersheds`, `fc-on025-forest-roads-tracks`). | The road never changes. Its ruts are painted on. | Wear needs traffic and weather simulation. | That a road, once built, lasts forever with no upkeep. |
 | A forest road meets a public road at a bell-mouth, at right angles where possible (`scot-fgs-bellmouth`). | A branch leaves through a mouth rounded over about 8 m, and the trailhead's first 6 m are asphalt. The mouth isn't sized for any vehicle's turn, and a branch must leave at 30° or more, because a shallower one slides along its host; real guidance asks for right angles where possible. | The island's vehicles are short, and a mouth sized to a swept path needs a turning model. | That a lorry can turn into any junction. |
@@ -143,7 +145,8 @@ The island's roads are laid out in the Workbench [road designer](../../workbench
 | Tall cuts in sound granite are steepened toward a rock face, while weathered granite (grus) needs flatter cuts (unsourced; the FAO slope stability charts may serve). | Any cut that can't meet the ground within 18 m is steepened as far as 0.25 : 1 (about 76°), whatever it is cut through. | The terrain carries no soil depth or rock quality. | That a soil bank can stand at 76°. |
 
 **Real patterns the model misses:**
-- surface water, ponding above fills, and the washouts that follow;
+- running surface water and the washouts that follow (ponding above fills is found, but only to place culverts);
+- cross drains along a long grade, spaced by grade and soil: on a 12% grade on granite the FAO table gives 27 m, for unsurfaced logging roads high on a north-facing 80% slope (`fao-road-drainage-watersheds`, Table 31, after Packer 1967);
 - what stone is used, and where it comes from;
 - the landscape and planning side: grant specifications, consent, and appearance;
 - fire roads that double as firebreaks, with verges cleared wider than a road needs (unsourced; see [wildfire](../processes/wildfire.md));
@@ -176,5 +179,8 @@ All in the [sources register](../../sources.yaml).
 - that a junction usually has a flatter landing before the road climbs;
 - that cuts in sound granite stand steeper than cuts in grus (the FAO slope stability charts may serve);
 - that fire roads often double as firebreaks, with verges cleared wider;
-- that a forest road's running surface sheds loose stones and fines underfoot.
+- that a forest road's running surface sheds loose stones and fines underfoot;
+- that a sag in a cut drains through a drop inlet or catch basin;
+- that a road culvert's outlet sits at the fill's toe, with riprap or a downspout below;
+- that an outlet's riprap apron runs a few pipe diameters and widens downstream (FAO chapter 5, slope protection, or `usfs-low-volume-roads` may serve).
 - **safety review pending:** the flood-water box above needs a person to check it against the current Ready Scotland and SFRS guidance.
