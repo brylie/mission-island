@@ -54,7 +54,7 @@ interface Candidate {
   cutMeetsM: number
   fillMeetsM: number
   // Signed distance to the formation the road's own ribbon covers, before any junction's
-  // rounding, and Infinity past its ends, where its ribbon stops.
+  // rounding; past its ends, to the square end of the strip its ribbon covers.
   ribbon: number
 }
 
@@ -139,6 +139,10 @@ function candidateAt(roads: readonly GradedRoad[], road: number, sample: number,
   let across = Math.abs(side)
   // Past either end the road stops in a round cap at the end's height.
   const pastEnd = (sample === 0 && along < 0) || (sample === graded.profile.length - 1 && along > 0)
+  // The ribbon stops square at the end row: past it, the distance to its covered strip is the
+  // larger of how far beyond the row and how far outside the strip the point lies, so the field
+  // stays continuous and a clip along it lands exactly on the row.
+  const ribbon = pastEnd ? Math.max(Math.abs(along), across - graded.halfFormation) : across - graded.halfFormation
   if (pastEnd) {
     across = Math.hypot(point.x - s.x, point.z - s.z)
     along = 0
@@ -159,7 +163,7 @@ function candidateAt(roads: readonly GradedRoad[], road: number, sample: number,
     fillSlope: banks?.fill ?? kind.fillSlope,
     cutMeetsM: banks?.cutMeetsM ?? 0,
     fillMeetsM: banks?.fillMeetsM ?? 0,
-    ribbon: pastEnd ? Infinity : across - graded.halfFormation,
+    ribbon,
   }
 }
 

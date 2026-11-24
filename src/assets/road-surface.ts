@@ -77,8 +77,20 @@ function clip(polygon: readonly Point[], field: (point: Point) => number) {
   return kept
 }
 
+const mix = (a: readonly number[], b: readonly number[], t: number) => a.map((value, k) => value + (b[k] - value) * Math.min(1, Math.max(0, t)))
+// The lane nearest the edge that the ribbon tints as crown.
+const innerLane = Math.max(...dirtRoadModel.lanes.filter((lane) => lane < 1))
+
+// A patch point's earth tint, blended as the ribbon's lanes are: crown inside, edge at the
+// carriageway's edge, verge at the formation's edge.
+function patchTint({ distance, formation }: { distance: number, formation: number }, halfWidth: number) {
+  const { crown, edge, verge } = dirtRoadModel.tint
+  if (distance > 0) return mix(edge, verge, distance / Math.max(distance - formation, Number.EPSILON))
+  return mix(edge, crown, -distance / ((1 - innerLane) * halfWidth))
+}
+
 // A junction's patch: the junction's formation, rounded corners and all, wherever no ribbon lies.
-function junctionPatch(centre: Point, reach: number, source: RoadSurfaceSource, heightAt: (point: Point) => number) {
+function junctionPatch(centre: Point, reach: number, halfWidth: number, source: RoadSurfaceSource, heightAt: (point: Point) => number) {
   const part = () => ({ positions: [] as number[], indices: [] as number[], uvs: [] as number[], colors: [] as number[] })
   const meshes = { earth: part(), asphalt: part() }
   const { patchCellM, lift } = roadSurfaceModel
@@ -97,8 +109,7 @@ function junctionPatch(centre: Point, reach: number, source: RoadSurfaceSource, 
       for (const point of polygon) {
         target.positions.push(point.x, heightAt(point) + lift, point.z)
         target.uvs.push(point.x * roadSurfaceModel.uvPerMetre, point.z * roadSurfaceModel.uvPerMetre)
-        const onRoad = source.carriagewayAt(point).distance <= 0
-        target.colors.push(...(paved ? plain : onRoad ? dirtRoadModel.tint.crown : dirtRoadModel.tint.verge), 1)
+        target.colors.push(...(paved ? plain : patchTint(source.carriagewayAt(point), halfWidth)), 1)
       }
       for (let k = 1; k < polygon.length - 1; k++) target.indices.push(base, base + k, base + k + 1)
     }
@@ -124,7 +135,7 @@ export function createRoadNetworkSurface(meshes: MeshFactory, source: RoadSurfac
   for (const join of network.junctions) {
     const host = network.roads[join.host], at = host.samples[join.hostSample]
     const reach = roadKinds[host.kind].width * half + roadKinds[host.kind].shoulderWidth + roadNetwork.filletM + roadNetwork.mouthBlendM
-    const patch = junctionPatch(at, reach, source, heightAt)
+    const patch = junctionPatch(at, reach, roadKinds[host.kind].width * half, source, heightAt)
     emit(`${network.roads[join.branch].name} junction`, patch.earth, finishes.earth)
     emit(`${network.roads[join.branch].name} junction`, patch.asphalt, finishes.asphalt)
   }

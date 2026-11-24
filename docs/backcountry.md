@@ -24,6 +24,8 @@ Capture these at every phase with the same camera, hour, weather and quality. Th
 
 The five views are `highwood-*` capture presets in [`src/assets/recipes/capture-presets.ts`](../src/assets/recipes/capture-presets.ts), each an eye, a look point, an hour and a sky. A test keeps every view's line of sight clear of terrain and within the Workbench's orbit range.
 
+The fire road view moved when the roads were laid: it stands on the fire road in the last of the meadow, about 95 m from the trailhead, looking up the road to where it enters the pinewood, so earlier phases' captures of it don't compare like for like.
+
 A sixth preset, `highwood-cairn-southwest`, looks at Cairn Summit's crown from the south-west shore at 15:00 in clear weather. It is a landmark check for Cairn's outline, not a hero view, so it isn't held to the experience goal's feelings. **Go to** lists it with the hero views.
 
 Capture the views with the shared [iteration tooling](iteration-tooling.md#captures):
@@ -161,7 +163,7 @@ Four graded roads, 1 km in all, give the Fire and Rescue crew vehicle access to 
 | View | Frame ms | Draw calls | Triangles |
 | --- | --- | --- | --- |
 | Cairn Summit, north at dawn | 4.9 | 853 | 1.67M |
-| Fire road, midday (on the road since Phase 3) | 4.5 | 793 | 1.58M |
+| Fire road, midday (meadow edge on the road since Phase 3) | 5.1 | 865 | 1.13M |
 | Birch Flats, evening | 4.0 | 651 | 0.69M |
 | Cairn Summit, looking home (the whole village in view) | 6.8 | 1,396 | 1.52M |
 | Alder Creek ford (roads in, Phase 3) | 4.2 | 715 | 1.33M |
