@@ -238,8 +238,9 @@ export function roadSurfaceAt(point: Point): 'asphalt' | 'earth' | 'verge' | und
   if (roadGrading.clearance(point) > 0) return undefined
   return apron ? 'asphalt' : 'verge'
 }
-// Whether a point is under a graded road's ribbon, answered quickly far from any road.
-export const underGradedRoad = (point: Point) => roadGrading.near(point) && roadGrading.underRibbon(point)
+// Whether a point is under a graded road's drawn surface: its ribbons and its junction patches,
+// which together cover the formation, mouths included. Answered quickly far from any road.
+export const underGradedRoad = (point: Point) => roadGrading.near(point) && roadGrading.clearance(point) < 0
 
 function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {
   if (Math.abs(radius - shoreStations.sandEdge.radius) > slopeSampleRadius) return 0

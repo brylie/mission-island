@@ -30,7 +30,7 @@ test('the trailhead sounds like pavement where the fire road\'s apron meets the 
 
 test('the trailhead apron is asphalt out to its shoulders, and the harbor road\'s own shoulder is no road verge', () => {
   const fireRoad = gradedRoads().find((road) => road.id === 'fire-road')
-  const apron = fireRoad.profile[4]
+  const apron = fireRoad.profile[1]
   assert.equal(groundSurface(across(apron, -(fireRoad.halfWidth + fireRoad.halfFormation) / 2)), 'pavement', 'the apron\'s shoulder')
   // Near the junction the harbor road's shoulder sounds as it does elsewhere, not as a road verge.
   const harbor = roadSurfaceSource.network().roads.find((road) => road.id === 'harbor-road')

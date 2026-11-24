@@ -10,8 +10,9 @@ import type { Point } from '../world'
 // The graded roads' surface. Each road is a ribbon draped on the ground it was graded into,
 // with points across it so it follows the crown, and darker wheel ruts. Where a road joins a
 // paved one its first metres are an asphalt apron. Each junction also gets a patch traced from
-// the grading's own formation shape, which fills the mouth and its rounded corners exactly where
-// no ribbon lies, at the same height, so nothing overlaps, flickers or gaps.
+// the grading's own formation shape, which fills the mouth and its rounded corners where no ribbon
+// lies. It tucks a little under the ribbons, a little lower, so the ribbon draws on top where they
+// meet and no hairline crack opens where their edges' vertices don't line up.
 
 interface RoadSurfaceSource {
   roads: () => GradedRoad[]
@@ -89,13 +90,16 @@ function patchTint({ distance, formation }: { distance: number, formation: numbe
   return mix(edge, crown, -distance / ((1 - innerLane) * halfWidth))
 }
 
+// Twice the signed area of a triangle on the ground, positive when it winds as a patch cell does.
+const winding = (a: Point, b: Point, c: Point) => (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x)
+
 // A junction's patch: the junction's formation, rounded corners and all, wherever no ribbon lies.
 function junctionPatch(centre: Point, reach: number, halfWidth: number, source: RoadSurfaceSource, heightAt: (point: Point) => number) {
   const part = () => ({ positions: [] as number[], indices: [] as number[], uvs: [] as number[], colors: [] as number[] })
   const meshes = { earth: part(), asphalt: part() }
-  const { patchCellM, lift } = roadSurfaceModel
+  const { patchCellM, lift, patchTuckM, patchDropM, patchMinAreaM2 } = roadSurfaceModel
   const inFormation = (point: Point) => source.carriagewayAt(point).formation
-  const uncovered = (point: Point) => -source.carriagewayAt(point).covered
+  const uncovered = (point: Point) => -source.carriagewayAt(point).covered - patchTuckM
   for (let z = centre.z - reach; z < centre.z + reach; z += patchCellM) {
     for (let x = centre.x - reach; x < centre.x + reach; x += patchCellM) {
       const cell = corners.map(([i, j]) => ({ x: x + i * patchCellM, z: z + j * patchCellM }))
@@ -107,11 +111,16 @@ function junctionPatch(centre: Point, reach: number, halfWidth: number, source: 
       const target = paved ? meshes.asphalt : meshes.earth
       const base = target.positions.length / coordinates
       for (const point of polygon) {
-        target.positions.push(point.x, heightAt(point) + lift, point.z)
+        target.positions.push(point.x, heightAt(point) + lift - patchDropM, point.z)
         target.uvs.push(point.x * roadSurfaceModel.uvPerMetre, point.z * roadSurfaceModel.uvPerMetre)
         target.colors.push(...(paved ? plain : patchTint(source.carriagewayAt(point), halfWidth)), 1)
       }
-      for (let k = 1; k < polygon.length - 1; k++) target.indices.push(base, base + k, base + k + 1)
+      // A cell clipped against a curved field can come out self-crossing, and clipping leaves
+      // slivers whose normals shade black. A fan triangle that winds against the cell, or is too
+      // thin to light, is left out; the patch's tuck under the ribbon covers what it would have.
+      for (let k = 1; k < polygon.length - 1; k++) {
+        if (winding(polygon[0], polygon[k], polygon[k + 1]) > patchMinAreaM2 + patchMinAreaM2) target.indices.push(base, base + k, base + k + 1)
+      }
     }
   }
   return meshes

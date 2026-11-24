@@ -34,6 +34,9 @@ export interface GradedRoad {
   // Half the width plus the shoulder: the flat part of the cross-section.
   halfFormation: number
   graded: boolean
+  // How far past each end the road's strip carries on square to reach the road it joins (its
+  // host's centreline), or 0 at a free end.
+  joins: { start: number, end: number }
 }
 
 // One road's say at a point.
@@ -93,10 +96,13 @@ function surfaceNear(road: GradedRoad, point: Point, natural: GroundFunction) {
   return sample.y + sample.grade * off - roadKinds[road.kind].crown * Math.min(1, (across / road.halfWidth) ** square)
 }
 
-// A branch's samples without those inside its host's formation, which the host's surface owns.
-function trimmed(samples: readonly RoadSample[], hosts: readonly ({ end: 'start' | 'end', host: GradedRoad } | undefined)[]) {
+// A branch's samples without those whose row across the road touches its host's formation, which
+// the host's surface owns. Testing the whole row, not just the centre, keeps an angled branch's
+// ribbon from overlapping its host's; the junction patch fills the mouth between them.
+function trimmed(samples: readonly RoadSample[], hosts: readonly ({ end: 'start' | 'end', host: GradedRoad } | undefined)[], halfFormation: number) {
   let from = 0, to = samples.length
-  const inside = (sample: RoadSample, host: GradedRoad) => nearest(host.profile, sample).distance < host.halfFormation
+  const inside = (sample: RoadSample, host: GradedRoad) => [-halfFormation, 0, halfFormation].some((t) =>
+    nearest(host.profile, { x: sample.x - sample.dz * t, z: sample.z + sample.dx * t }).distance < host.halfFormation)
   const [start, end] = hosts
   if (start) while (from < to - square && inside(samples[from], start.host)) from++
   if (end) while (to - square > from && inside(samples[to - 1], end.host)) to--
@@ -113,7 +119,7 @@ function gradeNetwork(network: RoadNetwork, natural: GroundFunction): GradedRoad
       return junction && { end, host: graded[junction.host] }
     }
     const hosts = [hostAt('start'), hostAt('end')]
-    const samples = kind.graded ? trimmed(road.samples, hosts) : road.samples
+    const samples = kind.graded ? trimmed(road.samples, hosts, halfFormation) : road.samples
     // A joining end starts level with its host; a free end takes the road's own benched ground.
     const pin = (sample: RoadSample, host: GradedRoad | undefined) => host && surfaceNear(host, sample, natural)
     const profile = kind.graded
@@ -127,7 +133,9 @@ function gradeNetwork(network: RoadNetwork, natural: GroundFunction): GradedRoad
         })
       : samples.map((sample) => ({ ...sample, y: natural(sample), ground: natural(sample), grade: 0, cut: 0 }))
     const banks = kind.graded ? roadBanks(road.kind, profile, halfFormation, kind.crown, natural) : []
-    graded.push({ id: road.id, name: road.name, kind: road.kind, layout: road.layout, profile, banks, halfWidth, halfFormation, graded: kind.graded })
+    const reach = (sample: RoadSample | undefined, host: GradedRoad | undefined) => (sample && host ? nearest(host.profile, sample).distance : 0)
+    const joins = { start: reach(profile[0], hosts[0]?.host), end: reach(profile[profile.length - 1], hosts[1]?.host) }
+    graded.push({ id: road.id, name: road.name, kind: road.kind, layout: road.layout, profile, banks, halfWidth, halfFormation, graded: kind.graded, joins })
   })
   return graded
 }
@@ -143,7 +151,11 @@ function candidateAt(roads: readonly GradedRoad[], road: number, sample: number,
   // larger of how far beyond the row and how far outside the strip the point lies, so the field
   // stays continuous and a clip along it lands exactly on the row.
   const ribbon = pastEnd ? Math.max(Math.abs(along), across - graded.halfFormation) : across - graded.halfFormation
-  if (pastEnd) {
+  // A joined end's strip carries on square back to its host, so an angled mouth has no wedge
+  // outside both roads' formations; a free end stops in a round cap.
+  const joinReach = sample === 0 ? graded.joins.start : graded.joins.end
+  if (pastEnd && Math.abs(along) <= joinReach) along = 0
+  else if (pastEnd) {
     across = Math.hypot(point.x - s.x, point.z - s.z)
     along = 0
   }
@@ -232,11 +244,6 @@ export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural
     // Whether a point is near enough a graded road for its grading raster to cover it: a quick
     // test before asking anything dearer.
     near: (point: Point) => get().raster().near(point),
-    // Whether a point lies under a graded road's own ribbon: its carriageway and shoulders.
-    underRibbon: (point: Point) => {
-      const { candidates } = get().evaluate(point)
-      return candidates.some((c) => get().roads[c.road].graded && c.ribbon < 0)
-    },
     // Metres from a point to the nearest graded road's formation edge (negative on the road).
     clearance: (point: Point) => {
       const { candidates } = get().evaluate(point)

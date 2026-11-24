@@ -62,5 +62,8 @@ export const dirtRoadModel = {
 // ground. Patches are traced on a `patchCellM` grid over the ground no ribbon covers. The finish
 // repeats `uvPerMetre` times a metre, finer than a footpath's, so its stones read as a thin
 // wearing course. Terrain under a road's formation is sunk `terrainSinkM` out of sight, so the
-// terrain mesh's coarser triangles never poke through the road's edge where a bank rises.
-export const roadSurfaceModel = { lift: dirtRoadModel.lift, patchCellM: 0.5, uvPerMetre: 2.5, terrainSinkM: 0.4 } as const
+// terrain mesh's coarser triangles never poke through the road's edge where a bank rises. A
+// junction patch tucks `patchTuckM` under the ribbons it meets, `patchDropM` lower, so the ribbon
+// draws on top where they overlap and no hairline crack shows where their edges meet. Patch
+// triangles smaller than `patchMinAreaM2` are left out: slivers that thin shade black.
+export const roadSurfaceModel = { lift: dirtRoadModel.lift, patchCellM: 0.5, uvPerMetre: 2.5, terrainSinkM: 0.4, patchTuckM: 0.15, patchDropM: 0.02, patchMinAreaM2: 0.0001 } as const
