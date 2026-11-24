@@ -8,9 +8,9 @@ import { groundHeight } from './terrain.ts'
 // by slow waves that twist up the block, then closed by a low, uneven dome. Faces stay
 // flat triangles, so the rock reads faceted like the rest of the island.
 
-export type Corner = [number, number, number]
+type Corner = [number, number, number]
 
-export interface RockFacet {
+interface RockFacet {
   corners: [Corner, Corner, Corner]
   // The outward normal, not normalised.
   normal: Corner
@@ -47,7 +47,7 @@ function facet(a: Corner, b: Corner, c: Corner): RockFacet {
 
 // The flat triangles of one block of a rock. `foot` sinks the block's lowest ring into the
 // ground under it, for the lowest block of a stack; upper blocks get a closed underside.
-export function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: boolean, random: () => number): RockFacet[] {
+function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: boolean, random: () => number): RockFacet[] {
   const kind = slab.form ?? 'block'
   // A lowest block grows straight out of its foot, without the pinch of a joint under it;
   // a boulder keeps its rounded underside.

@@ -171,6 +171,8 @@ Four graded roads, 1 km in all, give the Fire and Rescue crew vehicle access to 
 
 All hold 60 fps here. Most views draw 0.7–1.7 million triangles, mostly near-tier crowns, their shadows, the always-detailed crest trees and close understory, so older computers rely on the Low tier. Its savings are not yet measured on an older computer; that belongs to the two-player playtest.
 
+Highwood's granite adds about 30,000 triangles in 17 tile meshes, one draw call each: about 165 rocks, 88 of them outcrops (up from 61 before the woolsack blocks, whose taller stacks pass the face-height rule more often). The table above was measured before that change.
+
 
 Baseline on main `7a838c0`, in the `fire-watch` playtest, read with `?dev=1&perf=1` in the game address (see [the dev view URL](iteration-tooling.md#the-dev-view-url)). Compare the frame time and the draw calls; the browser pane's FPS is throttled.
 
