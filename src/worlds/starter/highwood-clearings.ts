@@ -9,7 +9,7 @@ import { highwoodBankCoverSlope, highwoodEarthworksM, highwoodSightlines } from 
 
 const half = 0.5
 
-export const highwoodRoutes = [...footpaths.map(({ points }) => points), ...walkways.map(({ points }) => points), ...roads]
+const highwoodRoutes = [...footpaths.map(({ points }) => points), ...walkways.map(({ points }) => points), ...roads]
 
 // Whether a point stands more than `clearanceM` from every route's centreline and every
 // graded road's formation edge (the fire road, summit spur, Pine Draw and ridge roads).
