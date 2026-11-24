@@ -179,7 +179,7 @@ function blockStack(random: () => number, count: number, heading: number, form: 
   let length = width * between(random, form.lengthRatio)
   let base = 0, dx = 0, dz = 0
   for (let k = 0; k < count; k++) {
-    const height = Math.max(outcrop.heightM[0], Math.min(outcrop.heightM[1], width * between(random, outcrop.heightRatio)))
+    const height = Math.max(outcrop.heightM[0], Math.min(outcrop.heightM[1], (width + length) * half * between(random, outcrop.heightRatio)))
     const turn = heading + (random() - half) * (form.twistRad + form.twistRad)
     slabs.push({ dx, dz, base, width, length, height, heading: turn, form: 'block' })
     base += height * (1 - sinkShare)

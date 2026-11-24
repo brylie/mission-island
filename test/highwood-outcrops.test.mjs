@@ -69,7 +69,6 @@ const largestPlaneShare = 0.15
 const uprightShare = 0.08
 const uprightNormalY = 0.005
 const directionStep = 0.02
-const capNormalY = 0.95
 
 test('granite rocks are weathered woolsacks, not bevelled boxes', () => {
   for (const rock of highwoodGraniteRocks()) {
@@ -85,14 +84,22 @@ test('granite rocks are weathered woolsacks, not bevelled boxes', () => {
         const key = normal.map((value) => Math.round(value / length / directionStep)).join(',')
         planes.set(key, (planes.get(key) ?? 0) + areas[k])
         if (Math.abs(normal[1] / length) < uprightNormalY) upright += areas[k]
-        // Outward: a side facet faces away from the block's axis, a cap away from its middle.
-        const [a, b, c] = facets[k].corners
-        const centroid = [0, 1, 2].map((d) => (a[d] + b[d] + c[d]) / 3)
-        const away = Math.abs(normal[1] / length) > capNormalY
-          ? normal[1] * (centroid[1] - (rock.ground + slab.base + slab.height / 2))
-          : normal[0] * (centroid[0] - rock.x - slab.dx) + normal[2] * (centroid[2] - rock.z - slab.dz)
-        assert.ok(away > 0, `${where(rock)} has a facet turned inward`)
       })
+      // Wound one way all round, facing out: no edge is walked twice in the same direction,
+      // and the facets enclose a positive volume about the block's middle.
+      const edges = new Set()
+      let volume = 0
+      const middle = [rock.x + slab.dx, rock.ground + slab.base + slab.height / 2, rock.z + slab.dz]
+      for (const { corners } of facets) {
+        corners.forEach((corner, i) => {
+          const edge = `${corner.join()}>${corners[(i + 1) % 3].join()}`
+          assert.ok(!edges.has(edge), `${where(rock)} block ${index} has a facet wound the wrong way`)
+          edges.add(edge)
+        })
+        const [a, b, c] = corners.map((corner) => corner.map((value, d) => value - middle[d]))
+        volume -= a[0] * (b[1] * c[2] - b[2] * c[1]) + a[1] * (b[2] * c[0] - b[0] * c[2]) + a[2] * (b[0] * c[1] - b[1] * c[0])
+      }
+      assert.ok(volume > 0, `${where(rock)} block ${index} is turned inside out`)
       assert.ok(planes.size >= minimumDirections, `${where(rock)} block ${index} faces only ${planes.size} ways`)
       assert.ok(Math.max(...planes.values()) / total < largestPlaneShare, `${where(rock)} block ${index} has a flat face`)
       assert.ok(upright / total < uprightShare, `${where(rock)} block ${index} has upright walls`)

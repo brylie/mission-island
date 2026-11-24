@@ -63,6 +63,7 @@ Presets are declarative data in [`src/assets/recipes/capture-presets.ts`](../src
 | `ground-cairn-summit` | From 8 m above Cairn Summit's crown down its rocky south-east flank, a ground-texture check for tiling from the overlook. |
 | `ground-cairn-slope` | Standing on bare granite on Cairn's south-east flank at walking height, a close ground-texture check. |
 | `ground-cairn-northeast` | Up Cairn Summit's steep north-east face from the ridge foot, through pines: granite crags, clitter and the rock-to-turf edge at walking height. |
+| `ground-cairn-crag` | Just below a two-block granite crag on Cairn's steep north-east face at walking height, a check that a crag's foot steps out into the slope rather than standing on a stem. |
 | `ground-cairn-tor` | A few metres from a four-block granite tor on Cairn's western flank at walking height, a close check of the outcrop and clitter shapes. |
 | `specimen-tussock` | A grass tussock specimen. Use `--grid` for a four-seed turntable. |
 

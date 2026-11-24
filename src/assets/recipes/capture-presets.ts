@@ -216,6 +216,15 @@ export const capturePresets = {
     hour: 15,
     weather: 'clear',
   },
+  'ground-cairn-crag': {
+    label: 'A two-block granite crag stepping out of Cairn\'s steep north-east face, from just below at walking height',
+    kind: 'landscape',
+    eye: { x: -68.8, z: 256.8, height: 1.7 },
+    look: { x: -77.5, z: 254.1, height: 0.8 },
+    fov: 0.85,
+    hour: 15,
+    weather: 'clear',
+  },
   'specimen-tussock': {
     label: 'Grass tussock specimen',
     kind: 'specimen',

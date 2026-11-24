@@ -12,8 +12,8 @@ export const graniteOutcropShape = {
     loneWidthM: 2.4,
     // Length along the joint grain, as a multiple of the width.
     lengthRatio: [1.1, 1.6],
-    // A block's height is this share of its width, as Dartmoor's woolsacks are about a third
-    // as tall as they are wide, kept within `heightM` so each step up stays one a walker can
+    // A block's height is this share of its mean width and length, as Dartmoor's woolsacks
+    // are about a third as tall as they are broad, kept within `heightM` so each step up stays one a walker can
     // jump. The same rule holds for a steep face's crags.
     heightRatio: [0.36, 0.5],
     heightM: [0.45, 1.3],
@@ -63,7 +63,7 @@ export const graniteBlockForm = {
   // Rings as [share of the height, share of the half length and half width]. The block
   // bulges at mid height and rounds off above and below; the crown dome closes the top.
   rings: {
-    block: [[0, 0.66], [0.12, 0.86], [0.32, 0.95], [0.6, 1], [0.82, 0.92], [0.95, 0.64]],
+    block: [[0, 0.66], [0.12, 0.86], [0.32, 0.95], [0.6, 1], [0.82, 0.92], [0.95, 0.72]],
     boulder: [[0, 0.62], [0.28, 0.95], [0.6, 0.96], [0.84, 0.7], [0.95, 0.38]],
   },
   // Superellipse exponent in plan: 2 is an ellipse, higher is squarer with rounded corners.
@@ -80,10 +80,11 @@ export const graniteBlockForm = {
   jitter: 0.04,
   // The crown sags up to this share of the height toward one side, unevenly.
   crownSag: 0.1,
-  // A lowest block's foot spreads this much wider than its lowest ring where it meets the
-  // ground, past the block's widest ring, so a downhill face slopes out into the hill
-  // instead of standing as a stem under a cap.
-  footFlare: { block: 1.55, boulder: 1.25 },
+  // A lowest block skips its pinched first ring, and a lowest block or boulder spreads from
+  // its lowest ring to this share of its half size where it meets the ground. A block's
+  // foot reaches past its widest ring, so a downhill face slopes out into the hill instead
+  // of standing as a stem under a cap.
+  footRadius: { block: 1.04, boulder: 0.8 },
   // Below a lowest block the face down to the ground is cut into a step every `stepM`
   // metres, at most `maxSteps`. Each step's ring holds back up to `jitter` of its share
   // of the flare, so the steps are uneven but each still reaches out past the one above.

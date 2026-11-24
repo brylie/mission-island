@@ -43,7 +43,10 @@ function facet(a: Corner, b: Corner, c: Corner): RockFacet {
 // ground under it, for the lowest block of a stack; upper blocks get a closed underside.
 export function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: boolean, random: () => number): RockFacet[] {
   const kind = slab.form ?? 'block'
-  const sides = form.sides[kind], rings = form.rings[kind]
+  // A lowest block grows straight out of its foot, without the pinch of a joint under it;
+  // a boulder keeps its rounded underside.
+  const sides = form.sides[kind], rings = foot && kind === 'block' ? form.rings[kind].slice(1) : form.rings[kind]
+  const flare = form.footRadius[kind] / rings[0][1]
   const n = between(random, form.squareness[kind])
   const tilt = shape.tilt[kind]
   const tiltU = spread(random, tilt * half), tiltV = spread(random, tilt * half)
@@ -74,7 +77,7 @@ export function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: b
     const embed = rock.kind === 'outcrop' ? shape.embedM.outcrop : shape.embedM.clitter
     const lowest = layers[0]
     const feet = lowest.map(([x, y, z]) => {
-      const fx = cx + (x - cx) * form.footFlare[kind], fz = cz + (z - cz) * form.footFlare[kind]
+      const fx = cx + (x - cx) * flare, fz = cz + (z - cz) * flare
       return Math.min(y, groundHeight({ x: fx, z: fz })) - embed
     })
     const drop = Math.max(...lowest.map(([, y], k) => y - feet[k]))
@@ -82,7 +85,7 @@ export function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: b
     for (let step = 1; step <= steps; step++) {
       const share = step / steps
       layers.unshift(lowest.map(([x, y, z], k) => {
-        const out = 1 + (form.footFlare[kind] - 1) * (step < steps ? step - random() * form.skirt.jitter : step) / steps
+        const out = 1 + (flare - 1) * (step < steps ? step - random() * form.skirt.jitter : step) / steps
         return [cx + (x - cx) * out, y + (feet[k] - y) * share, cz + (z - cz) * out]
       }))
     }
