@@ -95,8 +95,8 @@ export const capturePresets = {
   'road-spur-junction': {
     label: 'Summit spur leaving the fire road',
     kind: 'landscape',
-    eye: { x: -230, z: 212, height: 7 },
-    look: { x: -250, z: 232, height: 0 },
+    eye: { x: -238, z: 218, height: 7 },
+    look: { x: -258, z: 238, height: 0 },
     fov: 0.8,
     hour: 11,
     weather: 'clear',
@@ -104,8 +104,8 @@ export const capturePresets = {
   'road-ridge-junction': {
     label: 'Cairn ridge road leaving the Pine Draw road',
     kind: 'landscape',
-    eye: { x: -300, z: 392, height: 7 },
-    look: { x: -318, z: 372, height: 0 },
+    eye: { x: -292, z: 311, height: 7 },
+    look: { x: -310, z: 331, height: 0 },
     fov: 0.8,
     hour: 11,
     weather: 'clear',

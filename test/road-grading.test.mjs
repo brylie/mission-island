@@ -121,6 +121,25 @@ test('the shipped roads keep to their grades and bends, never stand in a wall, a
   }
 })
 
+test('a shipped branch leaves its road where the network says it joins, at a steep enough angle not to run along it', async () => {
+  const { roadNetwork } = await import('../src/assets/geometry/road-kinds.ts')
+  const shipped = createRoadGrading(starterRoads, naturalGroundHeight)
+  const { roads, junctions } = shipped.network()
+  const graded = shipped.roads()
+  for (const { branch, host, end, hostSample } of junctions) {
+    const road = graded.find((g) => g.id === roads[branch].id)
+    if (!road) continue
+    // The branch's graded end, after trimming inside its host, is at the junction's mouth. A branch
+    // leaving at 30 degrees or more crosses the host's half formation within twice its width; a
+    // shallower one slides along the host, and a junction should be near a right angle.
+    const at = end === 'start' ? road.profile[0] : road.profile.at(-1)
+    const join = roads[host].samples[hostSample]
+    const gap = Math.hypot(at.x - join.x, at.z - join.z)
+    const halfFormation = graded.find((g) => g.id === roads[host].id)?.halfFormation ?? roadNetwork.mouthBlendM
+    assert.ok(gap <= halfFormation / Math.sin(Math.PI / 6) + 1, `${roads[branch].name} runs ${gap.toFixed(0)} m along ${roads[host].name} before leaving it`)
+  }
+})
+
 test('a road ending on a sharp peak keeps its grade to the end, rather than jumping to the summit', () => {
   // A free end takes the road's own graded height, not the ground at the end dot.
   const peak = ({ x, z }) => Math.max(0, 40 - Math.hypot(x - 100, z) * 2)
