@@ -1,6 +1,6 @@
 # Granite uplands
 
-**Type: explanation (place). Real world: draft. On the island: in progress**, as the bare ground on Highwood's granite hills: Cairn Summit, Fallow Ridge and Windstone. Last tended 2026-11-23. Model purpose: **illustrate** a landform as ground texture and small outcrop meshes. It uses its own headings rather than the framework's place shape. This page owns the granite weathering claims. The [island story](../../design/island-story.md#1-an-old-block-of-granite-and-sandstone) tells how the granite got there.
+**Type: explanation (place). Real world: draft. On the island: in progress**, as the bare ground on Highwood's granite hills: Cairn Summit, Fallow Ridge and Windstone. Last tended 2026-11-24. Model purpose: **illustrate** a landform as ground texture and small outcrop meshes. It uses its own headings rather than the framework's place shape. This page owns the granite weathering claims. The [island story](../../design/island-story.md#1-an-old-block-of-granite-and-sandstone) tells how the granite got there.
 
 Climb a granite hill on Dartmoor, in the Cairngorms or on Arran and the ground changes as you go up. Turf and heather thin out. Grey rock breaks through in slabs crossed by straight cracks, and loose gravel and boulders lie below. Close up, the rock is speckled with crystals and patched with lichen. This page explains why granite looks like that, so the island's hills can look like it too.
 
