@@ -2,7 +2,7 @@ import { plantingLayers, type Planting, type PlantingLayer } from '../highwood-p
 import { fbm } from '../../../math/gradient-noise.ts'
 import { seededRandom } from '../../../seeded-random.ts'
 import { groundHeight, originalCoastRadius, waterLevel } from '../../../terrain.ts'
-import { clearOfEarthworks, clearOfRoutes, sightlineAlong } from '../highwood-clearings.ts'
+import { clearOfEarthworks, clearOfRoutes, coverCanGrow, sightlineAlong } from '../highwood-clearings.ts'
 import type { Point } from '../../../world.ts'
 import { authoredShare } from './protection.ts'
 import { highwoodExposure, highwoodHabitatAt, type HighwoodHabitat } from '../highwood-habitat.ts'
@@ -49,7 +49,7 @@ function clearForPlant(point: Point, layer: PlantingLayer, habitat: HighwoodHabi
   const along = sightlineAlong(point)
   if (along !== undefined && along <= highwoodSightlineEyeClearM) return false
   if (along !== undefined && layer !== 'understory' && !(habitat === 'wet' && layer === 'canopy')) return false
-  if (layer !== 'understory' && !clearOfEarthworks(point)) return false
+  if (!(layer === 'understory' ? coverCanGrow(point) : clearOfEarthworks(point))) return false
   return clearOfRoutes(point, highwoodRouteClearanceM)
 }
 

@@ -16,6 +16,7 @@ import { highwoodGroundCover, highwoodPlanting } from '../src/worlds/starter/hig
 import { groundSurface } from '../src/audio/surface.ts'
 import { nearestCanopies, windExposure } from '../src/audio/wind-model.ts'
 import { highwoodHabitatIds } from '../src/worlds/starter/layout/highwood-habitats.ts'
+import { coverCanGrow } from '../src/worlds/starter/highwood-clearings.ts'
 import { highwoodEarthworksM, highwoodRouteClearanceM } from '../src/worlds/starter/layout/highwood-planting.ts'
 import { highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
 
@@ -97,12 +98,14 @@ test('Highwood plants keep to land, come from the catalog and are mostly pine', 
   assert.ok(canopy.filter((plant) => plant.species === 'scots-pine').length > canopy.length / half, 'Scots pine should be most of the canopy')
 })
 
-test('Highwood plants keep off the graded roads, and trees and logs off their cut and fill banks', () => {
+test('Highwood plants keep off the graded roads, trees and logs off their cut and fill banks, and ground cover off steep banks', () => {
   const plants = highwoodPlanting()
   const onRoad = plants.filter((plant) => roadClearance(plant) <= highwoodRouteClearanceM)
   assert.deepEqual(onRoad.map((plant) => `${plant.species} at (${plant.x.toFixed(1)}, ${plant.z.toFixed(1)})`), [])
   const onBanks = plants.filter((plant) => plant.layer !== 'understory' && roadEarthworks(plant) > highwoodEarthworksM)
   assert.deepEqual(onBanks.map((plant) => `${plant.layer} ${plant.species} at (${plant.x.toFixed(1)}, ${plant.z.toFixed(1)})`), [])
+  const onSteepBanks = plants.filter((plant) => plant.layer === 'understory' && !coverCanGrow(plant))
+  assert.deepEqual(onSteepBanks.map((plant) => `${plant.species} at (${plant.x.toFixed(1)}, ${plant.z.toFixed(1)})`), [])
 })
 
 test('Highwood trunks block walking and soft plants do not', () => {

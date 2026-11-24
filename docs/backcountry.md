@@ -125,20 +125,23 @@ Highwood is planted in three layers from the [stand tables](../src/worlds/starte
 
 ## Fire road
 
-Four graded roads, 1.5 km in all, give the Fire and Rescue crew vehicle access to Highwood. They were laid out with the [road designer](workbench.md#design-roads), starting from Suggest route, and live in [`roads.ts`](../src/worlds/starter/layout/roads.ts).
+Four graded roads, 1.1 km in all, give the Fire and Rescue crew vehicle access to Highwood. They were laid out with the [road designer](workbench.md#design-roads), starting from Suggest route, and live in [`roads.ts`](../src/worlds/starter/layout/roads.ts). They are graded as one network ([architecture](architecture.md#graded-roads)), so every junction meets without a step or seam.
 
 | Road | Route | Length | Grade limit | Tightest bend |
 | --- | --- | --- | --- | --- |
-| Highwood fire road | From the harbor road beside the Fire Watch's lookout trail, straight up the valley west of Cairn to the Alder Creek valley | 434 m | 12% | 13 m |
-| Cairn Summit spur | Leaves the fire road in the valley and climbs round Cairn's shoulders on its contours to a pad about 31 m up, north of the crown | 430 m | 15% | 8.7 m |
-| Pine Draw road | From the end of the fire road across Alder Creek's valley to Pine Draw | 244 m | 12% | 8.3 m |
-| Fallow Ridge road | From Pine Draw back over Fallow Ridge's east side to the fire road, closing the loop | 359 m | 12% | 8.9 m |
+| Highwood fire road | From the harbor road beside the Fire Watch's lookout trail, straight up the valley west of Cairn to the Alder Creek valley | 453 m | 12% | 12.7 m |
+| Cairn Summit spur | Leaves the fire road in the valley and climbs Cairn's south-west flank, with one hairpin, to a pad on the ridge about 46 m up | 256 m | 15% | 8.5 m |
+| Pine Draw road | From the end of the fire road across Alder Creek's valley to Pine Draw, with one hairpin | 210 m | 12% | 10.6 m |
+| Cairn ridge road | Leaves the Pine Draw road and climbs east onto Cairn's ridge, joining the spur below the pad and closing a loop | 193 m | 15% | 8.8 m |
 
-- **Shape.** The roads run straight where a straight road holds the grade, and curve only along contours and in switchbacks ([decision](design/decisions.md)). Cuts and fills stay under 3 m.
-- **The summit.** Cairn's top 10 m is too steep for a road, so the spur ends at a pad below the crown and the last climb is on foot.
+- **Shape.** The roads run straight where a straight road holds the grade, and curve only along contours and in switchbacks ([decision](design/decisions.md)). Cuts stay under 3 m and fills under 4 m.
+- **The summit.** Cairn is an 80 m massif. The spur ends at a pad on the ridge below the crag, and the last 34 m of climb is on foot.
+- **Junctions.** Each branch leaves its road through a rounded mouth, and the road it leaves is exactly as it would be alone. At the trailhead the fire road's first 6 m are asphalt, so the village's paving runs into it.
+- **Drainage.** Wherever the grading leaves a hollow that would hold water, a culvert takes it to lower ground: 23 in all, found by [`road-culverts.ts`](../src/road-culverts.ts). They are not drawn yet.
 - **Vehicles.** The flatbed, pickup and tractor each climb the spur's steepest straight stretch on full throttle and stay on the 4 m road ([`test/game-fire-road.test.mjs`](../test/game-fire-road.test.mjs)).
-- **Surface.** Packed earth with two darker wheel ruts, distinct from the pale gravel of footpaths.
-- **Known gaps.** There is no drainage at the road's low points yet, and the crossing of Alder Creek's bed is plain ground until the stone ford is built.
+- **Surface.** Packed earth with two darker wheel ruts, distinct from the pale gravel of footpaths, and a paler verge out to the shoulder's edge. Footsteps crunch on the carriageway, sound like bare ground on the verge, and stop sounding like a road past its end. On the map the roads are drawn with a dark edge so they read on every kind of land.
+- **Planting.** Plants keep 3 m from a road's edge, and trees, logs and granite outcrops keep off its cut and fill banks, where only ground cover grows.
+- **Known gaps.** The culverts have no pipes or headwalls in the scene, there are no ditches or rolling dips, and the crossing of Alder Creek's bed is plain ground until the stone ford is built.
 
 ## Performance
 

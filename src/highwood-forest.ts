@@ -9,7 +9,7 @@ import { treeCollision } from './assets/trees/tree-collision'
 import { buildTreeTemplate, type TreeTemplate } from './assets/trees/tree-template'
 import type { MeshFactory } from './island-meshes'
 import { groundHeight, roadClearance } from './terrain'
-import { clearOfEarthworks } from './worlds/starter/highwood-clearings'
+import { clearOfEarthworks, coverCanGrow } from './worlds/starter/highwood-clearings'
 import type { Point } from './world'
 import { highwoodPlanting, logRise, plantTemplateOptions, type Planting } from './worlds/starter/highwood-planting'
 import { highwoodRouteClearanceM } from './worlds/starter/layout/highwood-planting'
@@ -120,12 +120,12 @@ export function createHighwoodForest(meshes: MeshFactory) {
   }
 
   const tiles = new Map<string, Tile>()
-  // Plants keep off graded roads, and trees and deadwood off their banks. The bake already does
-  // for the roads in the source tree; this also clears a road the Workbench road designer is
-  // previewing before it is re-planted.
+  // Plants keep off graded roads, trees and deadwood off their banks, and ground cover off steep
+  // banks. The bake already does for the roads in the source tree; this also clears a road the
+  // Workbench road designer is previewing before it is re-planted.
   for (const plant of highwoodPlanting()) {
     if (roadClearance(plant) < highwoodRouteClearanceM) continue
-    if (plant.layer !== 'understory' && !clearOfEarthworks(plant)) continue
+    if (!(plant.layer === 'understory' ? coverCanGrow(plant) : clearOfEarthworks(plant))) continue
     const key = tileKey(plant.x, plant.z)
     let tile = tiles.get(key)
     if (!tile) {

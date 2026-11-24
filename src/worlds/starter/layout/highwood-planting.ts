@@ -27,8 +27,11 @@ export const highwoodPlantingLimits = { treeSlope: 0.9, sand: 0.4 }
 // graded road's formation (its surface and shoulders), so paths and roads stay clear.
 export const highwoodRouteClearanceM = 3
 // Trees and deadwood keep off ground a road's grading moved by more than this many metres: its
-// cut and fill banks, which builders leave to grass and ferns. Understory may grow on them.
+// cut and fill banks, which builders leave to grass and ferns. Understory may grow on a bank
+// no steeper than `highwoodBankCoverSlope` (rise per metre, tan 40 degrees): steeper batters
+// are hard to revegetate (see docs/field-guide/practices/forest-roads.md).
 export const highwoodEarthworksM = 0.15
+export const highwoodBankCoverSlope = 0.84
 // Sight lines kept open through the forest, as gaps on a crest would be, so the
 // views players stop for stay open. Canopy and deadwood keep out of a corridor
 // `halfWidthM` wide at the eye, widening by `spread` per metre, for `reachM` metres
