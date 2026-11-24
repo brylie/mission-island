@@ -107,14 +107,6 @@ function onCrest(point: Point) {
   return true
 }
 
-const crownHeight = () => groundHeight(highwoodPlaces.cairnCrown)
-// On Cairn Summit's brow: near the crown and not far below it.
-function onBrow(point: Point) {
-  const { brow } = placement
-  const crown = highwoodPlaces.cairnCrown
-  return Math.hypot(point.x - crown.x, point.z - crown.z) < brow.reachM && groundHeight(point) > crownHeight() - brow.dropM
-}
-
 // Tree trunks and every metre along fallen logs, in a grid, so rocks don't stand on wood.
 const woodCellM = 8
 function woodGrid() {
@@ -256,11 +248,10 @@ function placeRocks() {
       const point = { x: x + (random() - half) * jitter * cellM, z: z + (random() - half) * jitter * cellM }
       const roll = random(), seed = random()
       const bedrock = bedrockAt(point)
-      const brow = onBrow(point)
-      const crest = brow || (bedrock < placement.bedrockFrom && onCrest(point))
+      const crest = bedrock < placement.bedrockFrom && onCrest(point)
       if ((bedrock < placement.bedrockFrom && !crest) || !onHighwood(point)) continue
       const grouping = ramp((fbm(point.x, point.z, placement.seed, cluster) / noiseRange + 1) * half, cluster.from, cluster.full)
-      const chance = brow ? placement.brow.chance : crest ? placement.crest.chance : placement.outcropChance * ramp(bedrock, placement.bedrockFrom, placement.bedrockFull) * grouping
+      const chance = crest ? placement.crest.chance : placement.outcropChance * ramp(bedrock, placement.bedrockFrom, placement.bedrockFull) * grouping
       if (roll >= chance) continue
       const own = seededRandom(Math.floor(seed * placement.streamSeeds))
       const crag = outcropAt(point, own, crest ? placement.crest.slabs : shape.outcrop.slabs, crest)
