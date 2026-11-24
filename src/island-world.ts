@@ -34,6 +34,8 @@ import { jobBoard } from './jobs'
 import { depotJunction, depotLane, footpaths, harborRoad, walkways } from './routes'
 import { createShellglassTide } from './shellglass-art'
 import { islandRocks, islandTrees } from './scenery'
+import { createGraniteOutcrops } from './assets/granite-outcrops'
+import { highwoodGraniteRocks } from './highwood-outcrops'
 import type { SiteFeature } from './worlds/site-feature'
 import { placeSiteFeatures } from './assets/site-props'
 import { beachUmbrellas, shellRocks, starterFeatures } from './worlds/starter/sites'
@@ -149,6 +151,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const juniper = createBiomeScenery(meshes, juniperLayout, juniperCenter, groundHeight)
   const northernScenery = createNorthernScenery(meshes)
   const highwoodForest = createHighwoodForest(meshes)
+  createGraniteOutcrops(meshes, highwoodGraniteRocks())
   const blades = createGrassTufts(meshes)
   createWildflowers(meshes)
   const { ferns, plants } = createUnderstory(meshes)

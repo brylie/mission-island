@@ -36,6 +36,7 @@ export const plantingSources = [
   'src/terrain.ts',
   'src/worlds/starter/generation/protection.ts',
   'src/worlds/starter/generation/plant-highwood.ts',
+  'src/worlds/starter/highwood-clearings.ts',
   'src/worlds/starter/highwood-habitat.ts',
   'src/worlds/starter/highwood-terrain.ts',
   'src/worlds/starter/layout/highwood-habitats.ts',

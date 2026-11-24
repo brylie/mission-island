@@ -8,7 +8,7 @@ The story is original to Mission Island. Its processes follow real cool-temperat
 
 ## 1. An old block of granite and sandstone
 
-Long before any ice, a body of granite cooled deep underground beneath layers of sand that later hardened into sandstone. Slow uplift and erosion brought both to the surface. Granite is hard, resists weathering and breaks into rounded blocks along its joints. Sandstone is softer, splits along its beds and wears into fins, clefts and pale sand. (Both are still unsourced; `linton-1955` is recorded but unopened.)
+Long before any ice, a body of granite cooled deep underground beneath layers of sand that later hardened into sandstone. Slow uplift and erosion brought both to the surface. Granite is hard, resists weathering and breaks into rounded blocks along its joints ([granite uplands](../field-guide/places/granite-uplands.md#joints-why-granite-breaks-into-blocks)). Sandstone is softer, splits along its beds and wears into fins, clefts and pale sand. (The sandstone half is still unsourced.)
 
 - **Still visible.** The bare crown of Windstone Ridge. The rock bands and tors on Cairn Summit and Fallow Ridge. The sandstone fins and Splitstone cleft at Driftwood. The Shellglass basin cut into a sandstone ledge.
 - **Habitats.** Windstone Ridge, exposed coastal grass and rock, and the Shellglass and Splitstone rocky shore.
@@ -72,7 +72,7 @@ People came by sea and settled the sheltered south. They built the harbor in the
 
 These real-world claims rest on no opened source. The register holds unopened records for some of them.
 
-- Granite breaking into rounded blocks along its joints, and sandstone splitting along its beds (`linton-1955`, unopened).
+- Sandstone splitting along its beds.
 - Side glaciers leaving their valleys hanging; erratics carried by ice; ice-scoured hollows.
 - The size of the sea-level rise since the ice age: around 120 m here, about 134 m in a search summary of `lambeck-2014-pnas` (unopened).
 - Land rebounding after the ice, and raised beaches (`lambeck-2014-pnas`, unopened).

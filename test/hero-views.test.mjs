@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { capturePresets } from '../src/assets/recipes/capture-presets.ts'
 import { studioCamera } from '../src/assets/recipes/workbench-stage.ts'
 import { groundHeight } from '../src/terrain.ts'
-import { inSightline, sightlineAlong } from '../src/worlds/starter/generation/plant-highwood.ts'
+import { inSightline, sightlineAlong } from '../src/worlds/starter/highwood-clearings.ts'
 import { highwoodPlanting } from '../src/worlds/starter/highwood-planting.ts'
 import { highwoodSightlineEyeClearM, highwoodSightlines } from '../src/worlds/starter/layout/highwood-planting.ts'
 

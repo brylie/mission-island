@@ -10,6 +10,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Canopy** | The upper layer of a wood, formed by tree crowns. |
 | **Carr** | Wet woodland on waterlogged ground, usually alder or willow. |
 | **Catkin** | A slim, hanging cluster of tiny flowers, as on birch, alder and willow. Many catkins spread their pollen on the wind. |
+| **Clitter** | A Dartmoor word for loose granite boulders strewn across a slope, usually below a tor. Many were prised off by frost in the Ice Age. See [granite uplands](places/granite-uplands.md#clitter-boulders-on-the-slopes). |
 | **Clonal stand** | A group of stems that grew from one plant's roots, so they share the same genes, as in aspen. |
 | **Crossfall** | The slope across a road, from one edge to the other, as a percentage. A crown, an outslope and an inslope are all kinds of crossfall. See [forest roads](practices/forest-roads.md#water). |
 | **Crown (road)** | The raised middle of a road, which falls to both sides so rain runs off. It is measured as a crossfall, a percentage. On the island the fire road's crown rises 5 cm over each 2 m half in a curve: flat at the centre, 5% at the edge, averaging 2.5%. See [forest roads](practices/forest-roads.md#water). |
@@ -29,11 +30,14 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Full bench** | A road cut wholly into a steep hillside, with no fill below it, used where a fill would not stay put. See [forest roads](practices/forest-roads.md#cut-and-fill). |
 | **Grade** | How steeply a road climbs: the rise divided by the horizontal distance, as a percentage. A 10% grade climbs 10 m for every 100 m measured across the map, not along the sloping road. See [forest roads](practices/forest-roads.md#grade). |
 | **Granny pine** | A Scottish name for a very old Scots pine, often broad-crowned with heavy limbs. |
+| **Grus, growan** | Coarse, gritty gravel of quartz and feldspar grains left where granite has weathered apart. *Growan* is the Dartmoor word. In the game, gentler granite ground is drawn as grus, with larger stones than real grus. |
 | **Heath** | Open ground of heather and other low shrubs on poor, acid soil. |
 | **Inslope** | A road surface tilted toward its uphill side, so water runs into a ditch at the foot of the cut bank. See [forest roads](practices/forest-roads.md#water). |
+| **Joint** | A crack in rock along which the rock has not slid. Granite usually has sets of joints crossing each other, and weathers into blocks along them. In the game, Highwood's bedrock shows a long set of joints and shorter cross joints. |
 | **Leader** | The main upward-growing shoot at the top of a tree. |
 | **Lee, leeward** | The side sheltered from the wind. In the game, exposed forms stream toward +x, their lee side. |
 | **Lenticel** | A small breathing pore in bark, often seen as dark marks or dashes on birch and aspen. |
+| **Lichen** | A partnership of a fungus with algae or bacteria that grows as a crust, leaf or tuft on rock, bark or soil. Many lichens need clean air. |
 | **Long section** | A drawing of a road's line laid out flat, showing the height of the ground and of the road along it, so its grade and its cuts and fills can be read. The road designer's profile is one. See [forest roads](practices/forest-roads.md#skills-and-kit). |
 | **Nitrogen fixation** | Turning nitrogen from the air into a form plants can use. Alder does it with the help of bacteria in its root nodules. |
 | **Objective lens** | The large front lens of binoculars or a telescope, which gathers the light. Its diameter in millimetres is the second number in a size such as 8×42. |
@@ -52,6 +56,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Sucker** | A shoot that grows up from a tree's roots, as in aspen. |
 | **Switchback** | A hairpin turn where a road climbing across a steep slope turns back to climb across it the other way. See [forest roads](practices/forest-roads.md#grade). |
 | **Time of flight** | Measuring distance by timing light, or sound, out to a target and back. Distance is the speed times the time, halved. A laser rangefinder works this way. |
+| **Tor** | A tower or pile of solid rock blocks left standing on a hilltop, where joints were far apart and the rock around them wore away. |
 | **Understory** | The plants growing beneath the canopy, from shrubs and young trees down to the ground layer. |
 | **Whorl** | Several branches or leaves growing from one point around a stem, as in a young Scots pine's tiers of branches. |
 | **Wind flagging** | A tree shape where branches grow mainly on the downwind side because wind damages shoots on the windward side. |

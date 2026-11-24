@@ -8,10 +8,11 @@ import type { TreeTemplateOptions, TreeTier } from './assets/trees/tree-catalog'
 import { treeCollision } from './assets/trees/tree-collision'
 import { buildTreeTemplate, type TreeTemplate } from './assets/trees/tree-template'
 import type { MeshFactory } from './island-meshes'
-import { groundHeight, roadClearance, roadEarthworks } from './terrain'
+import { groundHeight, roadClearance } from './terrain'
+import { clearOfEarthworks } from './worlds/starter/highwood-clearings'
 import type { Point } from './world'
 import { highwoodPlanting, logRise, plantTemplateOptions, type Planting } from './worlds/starter/highwood-planting'
-import { highwoodEarthworksM, highwoodRouteClearanceM } from './worlds/starter/layout/highwood-planting'
+import { highwoodRouteClearanceM } from './worlds/starter/layout/highwood-planting'
 
 // Draws Highwood's forest so it costs little however many plants it holds:
 // - far trees are merged into one static mesh per tile and material, so a tile
@@ -124,7 +125,7 @@ export function createHighwoodForest(meshes: MeshFactory) {
   // previewing before it is re-planted.
   for (const plant of highwoodPlanting()) {
     if (roadClearance(plant) < highwoodRouteClearanceM) continue
-    if (plant.layer !== 'understory' && roadEarthworks(plant) > highwoodEarthworksM) continue
+    if (plant.layer !== 'understory' && !clearOfEarthworks(plant)) continue
     const key = tileKey(plant.x, plant.z)
     let tile = tiles.get(key)
     if (!tile) {

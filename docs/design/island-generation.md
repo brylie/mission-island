@@ -46,6 +46,7 @@ Erosion is what makes the land read as shaped, rather than as bumps.
 - **The generator script.** An offline, seeded script writes a heightmap asset, for example 1024 × 1024 cells at 0.5 to 1 m each. It also writes derived layers for the habitat classifier: flow accumulation or moisture, slope, and exposure.
 - **One source.** `groundHeight`, the coast helpers, host physics, terrain rendering, the map, the ocean's shore-depth texture and the skiff buoy ring all read the same baked data. This retires the duplicated coast formula in `src/ocean.ts`.
 - **Reviewable changes.** The parameters and a preview image are committed beside the asset, so regenerating the island shows up as a diff a person can review.
+- **Exception: granite rocks.** Outcrops are computed at load from the baked height ([granite uplands](../field-guide/places/granite-uplands.md#in-the-game)), so they follow each rebake without one of their own.
 - **Budget.** Measure the asset size and load time against the [performance baseline](../backcountry.md#performance). Use a compressed format, and a coarser grid outside the playable area if needed.
 
 ## Acceptance metrics
@@ -72,7 +73,7 @@ Tested automatically where possible:
   - A shoreline development index of 2.2. A box-counting dimension of 1.09, fitted over the noise's scaling range of 8–64 m.
   - Under a fifth of the land is steep.
   - Cairn Summit's crown, at about 80 m at (−92, 219), is the highest point; Fallow Ridge still hides Pine Draw's ground, but not its smoke, from the tower deck.
-- **Stone.** Upland stone renders as granite above about 7–15 m, blending from the coastal sandstone below. It is projected from three sides, so steep faces aren't streaked.
+- **Stone.** Upland stone renders as granite above about 7–15 m, blending from the coastal sandstone below. The crystal grain is projected from three sides, so steep faces aren't streaked; the joints and grus are drawn from above. The steepest granite is jointed bedrock, and gentler rock is grus gravel, because granite weathers to grit where the slope lets it stay (see [granite uplands](../field-guide/places/granite-uplands.md)). Bare rock breaks into the turf in patches, not along a smooth slope line.
 - **Aspect.** Slopes facing south, toward the midday sun, are tinted drier and straw-coloured; slopes facing north stay cooler and mossier. In the northern hemisphere, south-facing slopes get more direct sun, so they are warmer and drier (unsourced). The tint is a hue shift, so hillsides differ at every hour without baking in a light direction that would disagree with the evening sun.
 - **Still to tune.** The coast dimension is below the 1.2–1.3 target: the dome-plus-noise shape reads near 1 at fine scales. Gully density is still even on most slopes, and the old island's smooth hills sit beside the eroded land in a different style.
 
