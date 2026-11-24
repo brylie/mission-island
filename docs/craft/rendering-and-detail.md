@@ -64,7 +64,13 @@ A texture repeats. Paint a hillside with one granite tile 2 m wide and the eye f
 
 The multiplayer host, which decides where players can walk, must not depend on graphics or texture code. `treeCollision(options)` computes a tree's trunk size from the same seeded numbers the mesh uses, without building the mesh, so host and renderer always agree. Shrubs and bracken report their size but are marked as soft cover rather than solid. The [architecture guide](../architecture.md) describes this split between shared rules and presentation.
 
+## Draw the ground where the feet stand
+
+Highwood's terrain is drawn in 64 m tiles of 1 m cells laid on the height bake's own 2 m grid, so every other vertex is a bake node; beyond 160 m a tile draws every other vertex, a 2 m grid (`terrainTile` in `starter-landscape.ts`). Normals and the slope tint come from the ground function either side of each vertex, so neighbouring tiles agree at their shared edge.
+
 ## What failed
+
+- **Terrain off the data's grid.** Highwood's terrain once sampled the ground every 1.5 m from its own origin, off the bake's 2 m grid. In creases its flat triangles cut across the true surface and drew the ground up to 0.83 m above where players stand: 2.5% of the land by more than 15 cm, so feet sank in, sometimes to the waist. Normals computed per tile also left 63 m seams in the lighting. *Replaced by* the aligned 1 m grid (0.01% over 15 cm) and normals from the ground function, with a test holding the drawn ground within 0.2 m of the walking height.
 
 - **Far crowns vanished.** When the far merged meshes shared a foliage material with the near thin instances, with the scene fog plugin on, the far crowns disappeared once both tiers drew. The cause is still unknown. The far tier now uses its own copies of the tree materials, which works around it. See the [open question](../open-questions.md#questions-to-answer).
 - **Clones drop unregistered plugins.** Cloning a Babylon material keeps its GPU textures, but rebuilds its plugins by class name. A plugin not registered as `BABYLON.<className>` is silently dropped from the copy. The scene fog plugin is registered for this reason; see the [scene fog contract](../architecture.md#highwood-forest).
