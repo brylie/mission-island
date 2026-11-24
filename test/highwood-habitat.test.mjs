@@ -5,7 +5,7 @@ import { test } from 'node:test'
 import { URL } from 'node:url'
 import { treeSpecies } from '../src/assets/trees/tree-catalog.ts'
 import { highwoodSolidTop } from '../src/highwood-solids.ts'
-import { propTop } from '../src/scenery.ts'
+import { islandRocks, islandTrees, northernProps, propTop } from '../src/scenery.ts'
 import { groundHeight, originalCoastRadius, roadClearance, roadEarthworks, waterLevel } from '../src/terrain.ts'
 import { authoredShare } from '../src/worlds/starter/generation/protection.ts'
 import { highwoodPlants } from '../src/assets/geometry/highwood-plants.ts'
@@ -106,6 +106,13 @@ test('Highwood plants keep off the graded roads, trees and logs off their cut an
   assert.deepEqual(onBanks.map((plant) => `${plant.layer} ${plant.species} at (${plant.x.toFixed(1)}, ${plant.z.toFixed(1)})`), [])
   const onSteepBanks = plants.filter((plant) => plant.layer === 'understory' && !coverCanGrow(plant))
   assert.deepEqual(onSteepBanks.map((plant) => `${plant.species} at (${plant.x.toFixed(1)}, ${plant.z.toFixed(1)})`), [])
+})
+
+test('the island\'s other scatters keep off the graded roads too: region trees and rocks, island trees and meadow rocks', () => {
+  const onRoad = (label) => (point) => roadClearance(point) < 0 ? [`${label} at (${point.x.toFixed(1)}, ${point.z.toFixed(1)})`] : []
+  // Region props stand clear of the formation edge, not just off the carriageway.
+  assert.deepEqual(northernProps.filter((prop) => roadClearance(prop) < highwoodRouteClearanceM).map((prop) => `region prop at (${prop.x.toFixed(1)}, ${prop.z.toFixed(1)})`), [])
+  assert.deepEqual([...islandTrees.flatMap(onRoad('tree')), ...islandRocks.flatMap(onRoad('rock'))], [])
 })
 
 test('Highwood trunks block walking and soft plants do not', () => {

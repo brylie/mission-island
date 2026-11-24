@@ -52,7 +52,10 @@ export const northernRegions = [
     const point = { x: region.at.x + Math.cos(angle) * radius, z: region.at.z + Math.sin(angle) * radius }
     if (coastRadius(point) > northernMaxCoastRadius || waterDepth(point) > northernMaxWaterDepth
       || (region.id === 'fernfall' && Math.abs(point.x - falls.x) < fernfallBankClearance)) continue
-    props.push({ ...point, y: groundHeight(point), size: northernScatter.scale.min + northernRandom() * northernScatter.scale.span, angle, index, tree: region.trees })
+    const size = northernScatter.scale.min + northernRandom() * northernScatter.scale.span
+    // Drawn before the road check, so a prop kept off a graded road leaves the others where they were.
+    if (roadClearance(point) < roadTreeClearance) continue
+    props.push({ ...point, y: groundHeight(point), size, angle, index, tree: region.trees })
   }
   const discovery = northernScatter.discoveries
   const site = region.id === 'ridge' ? ridgeViewpoint : { x: region.at.x + (region.id === 'pool' ? discovery.poolX : discovery.x), z: region.at.z + discovery.z }
