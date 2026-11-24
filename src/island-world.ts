@@ -13,6 +13,7 @@ import { residentAt } from './residents/schedule'
 import { starterResidents } from './worlds/starter/residents'
 import { createRoadMarkings, createSidewalk, createTrail } from './assets/routes'
 import { createRoadNetworkSurface } from './assets/road-surface'
+import { createCulverts } from './assets/culverts'
 import { createRoadMaterial } from './road-material'
 import { playerColors } from './assets/crew'
 import { clothingCounter } from './farm'
@@ -44,7 +45,7 @@ import { createSurfaceMaterial } from './materials'
 import { meadowDefaults, shaderPresets, shoreDefaults, type ShaderQuality } from './shader-studies'
 import type { WildlifeFrame } from './wildlife'
 import { createStreetLights } from './street-lights'
-import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, roadSurfaceSource, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
+import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, roadClearance, roadCulverts, roadSurfaceSource, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
 import { buildings, crewHomes, extinguisherStations } from './world'
 import { createFireWatch } from './assets/fire-watch'
 import { createFireStation } from './assets/fire-station'
@@ -67,6 +68,8 @@ const rainPavingWetness = 0.74
 // Every road, paved and graded, is one surface draped on the ground the graded roads cut and fill.
 function createRoads(meshes: MeshFactory) {
   createRoadNetworkSurface(meshes, roadSurfaceSource, groundHeight, createRoadMaterial(meshes.paintRecipe('path-gravel')))
+  // Finding the culverts floods the ground around the roads, so it waits for the first frame.
+  meshes.scene.onAfterRenderObservable.addOnce(() => createCulverts(meshes, roadCulverts(), groundHeight, roadClearance))
 }
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {

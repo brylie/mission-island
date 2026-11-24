@@ -121,6 +121,16 @@ export const capturePresets = {
     hour: 11,
     weather: 'clear',
   },
+  // The outlet of the culvert under the Pine Draw road's hairpin fill, from downstream.
+  'road-culvert': {
+    label: 'Culvert outlet below the Pine Draw hairpin',
+    kind: 'landscape',
+    eye: { x: -347.4, z: 364.7, height: 1.4 },
+    look: { x: -343.9, z: 362.9, height: 0.3 },
+    fov: 0.8,
+    hour: 11,
+    weather: 'clear',
+  },
   // Cairn from the village: the landmark has to read as a mountain from home.
   'landmark-cairn-from-village': {
     label: 'Cairn Summit from the village',
