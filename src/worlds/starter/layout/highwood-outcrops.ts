@@ -34,12 +34,13 @@ export const highwoodOutcropPlacement = {
   // its base, so a crag's downhill face stays a stepped stack, not a pillar; steeper spots
   // stay bare rock.
   faceRatio: 1.3,
-  // Crags on ground steeper than full bedrock: 1–2 slabs, long along the contour (length as
-  // a multiple of width), an upper slab nearly as big as the one below and slipped `slip`
-  // of its width along the contour or into the slope, so it never sits centred like a cairn.
-  // Their width runs down the slope, so it is kept to `widthM`, and they don't twist off the contour.
-  // Their foot is sunk deeper downhill, so they may stand on ground falling `faceRatio` times their height.
-  steep: { slabs: [1, 2], widthM: [1.2, 2.4], lengthRatio: [1.8, 2.8], shrink: [0.85, 1], slip: [0.3, 0.45], twistRad: 0, faceRatio: 1.8 },
+  // Crags on ground steeper than full bedrock: 1–2 woolsacks, long along the contour (length
+  // as a multiple of width). An upper block is about as big as the one below (`resize`), slipped
+  // `slip` of its length along the contour and up to `slipAcross` of its width into the slope,
+  // never out over the downhill face, so it never sits centred like a cairn. Their width runs
+  // down the slope, so it is kept to `widthM`, and they don't twist off the contour. Their foot
+  // is sunk deeper downhill, so they may stand on ground falling `faceRatio` times their height.
+  steep: { slabs: [1, 2], widthM: [1.1, 2.1], lengthRatio: [1.8, 2.8], resize: [0.82, 1.05], slip: [0.14, 0.3], slipAcross: 0.3, twistRad: 0, faceRatio: 1.8 },
   // Clitter per outcrop, and how far below it, in metres; it spreads up to
   // `spreadRad` either side of straight downslope.
   // Each boulder then slides downhill in `slideStepM` steps, up to `slideMaxM`, until the

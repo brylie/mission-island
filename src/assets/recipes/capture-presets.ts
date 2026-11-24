@@ -207,6 +207,15 @@ export const capturePresets = {
     hour: 15,
     weather: 'clear',
   },
+  'ground-cairn-tor': {
+    label: 'A four-block granite tor and its clitter on Cairn\'s western flank, close up at walking height',
+    kind: 'landscape',
+    eye: { x: -223.5, z: 380.5, height: 1.7 },
+    look: { x: -229, z: 385, height: 1.2 },
+    fov: 0.85,
+    hour: 15,
+    weather: 'clear',
+  },
   'specimen-tussock': {
     label: 'Grass tussock specimen',
     kind: 'specimen',
