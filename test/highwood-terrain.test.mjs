@@ -159,3 +159,27 @@ test('the shipped terrain drains: no closed hollow holds water inland', () => {
   assert.ok(traced > 100, `traced ${traced}`)
   assert.ok(stuck / traced < 0.05, `${stuck} of ${traced} traces stopped in a hollow`)
 })
+
+test('Highwood\'s drawn ground follows the ground players stand on, so feet never sink into it', async () => {
+  const { walkingHeight, underGradedRoad } = await import('../src/terrain.ts')
+  const { terrainTile } = await import('../src/assets/geometry/starter-landscape.ts')
+  // The terrain mesh's grid starts at the bake's origin and splits each cell along the diagonal
+  // from its lower corner to its upper one, as `tileMesh` does.
+  const { cellM } = terrainTile, stepM = 3.7, aboveFeetM = 0.2
+  const { west, south, cell, columns, rows } = highwoodHeightmap
+  const east = west + (columns - 1) * cell, north = south + (rows - 1) * cell
+  const found = []
+  for (let z = south + 1.3; z < north - 1; z += stepM) {
+    for (let x = west + 0.6; x < east - 1; x += stepM) {
+      const point = { x, z }
+      if (groundHeight(point) < waterLevel || underGradedRoad(point)) continue
+      const x0 = west + Math.floor((x - west) / cellM) * cellM, z0 = south + Math.floor((z - south) / cellM) * cellM
+      const fx = x - x0, fz = z - z0
+      const a = groundHeight({ x: x0, z: z0 }), b = groundHeight({ x: x0 + cellM, z: z0 })
+      const c = groundHeight({ x: x0, z: z0 + cellM }), d = groundHeight({ x: x0 + cellM, z: z0 + cellM })
+      const drawn = fx >= fz ? a + (b - a) * fx + (d - b) * fz : a + (d - c) * fx + (c - a) * fz
+      if (drawn - walkingHeight(point) > aboveFeetM) found.push(`${(drawn - walkingHeight(point)).toFixed(2)} m at (${x.toFixed(1)}, ${z.toFixed(1)})`)
+    }
+  }
+  assert.deepEqual(found.slice(0, 5), [])
+})

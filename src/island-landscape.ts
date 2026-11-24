@@ -1,6 +1,6 @@
 import { highwoodGroundCover } from './worlds/starter/highwood-planting'
 import type { Material } from '@babylonjs/core/Materials/material'
-import { fernfallSheet, highwoodGroundFinish, starterMeadowFinish, starterOcean } from './assets/geometry/starter-landscape'
+import { fernfallSheet, highwoodGroundFinish, starterMeadowFinish, starterOcean, terrainTile } from './assets/geometry/starter-landscape'
 import { meadowGroundTone } from './assets/surface-patterns'
 import { surfaceRecipe } from './assets/surface-recipes'
 import { dressStrand } from './assets/strand'
@@ -23,9 +23,10 @@ import { buildings, distance, harbor, island, lookout, town } from './world'
 import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
 import { createOceanMaterial } from './ocean'
-import { beachAttribute, beachAttributeSize, beachVertex, groundCoverAttribute, useBeachMaterial } from './beach-material'
+import { beachAttribute, beachAttributeSize, beachVertex, useBeachMaterial } from './beach-material'
 import { createMeadowBlades, createMeadowSurface } from './meadow-shaders'
 import { shoreDefaults, type ShoreSettings } from './shader-studies'
+import { tileMesh } from './terrain-tiles'
 
 const halves = 2
 const fullTurn = halves * Math.PI
@@ -117,9 +118,7 @@ function buildGround(meshes: MeshFactory, angles: readonly number[], rings: read
 }
 
 const fullyAuthored = 0.999
-// A whole number of cells per tile, so neighbouring tiles share their edge vertices.
-const tileMetres = 63
-const tileCell = 1.5
+const { tileMetres, cellM: tileCell, farStride, farTerrainM } = terrainTile
 // Generated tiles dip this far below the ring mesh where both cover the old shore, so they never fight.
 const seamDip = 0.03
 const deepSeaFloor = -3
@@ -133,22 +132,23 @@ function blendTint(color: number[], offset: number, tint: readonly number[], amo
 }
 
 const beachStride = 4
+const slopeStride = 2
 const beachRockChannel = 1
 
 // Colour bare generated ground by its form: bare stone where it is steep (the
 // beach shader's stone texture, not a tint, so it reads as rock), heath where it
 // is high, green where water gathers and paler on dry low shoulders.
-function tintByForm(positions: number[], colors: number[], beach: number[], steps: number) {
+// Slopes come from the ground itself, either side of each vertex, so neighbouring tiles agree
+// along their shared edge.
+function tintByForm(positions: number[], slopes: number[], colors: number[], beach: number[], steps: number) {
   const { rock, heath, wet, dry, aspect } = highwoodGroundFinish
   const row = steps + 1
   const ramp = (value: number, start: number, full: number) => Math.max(0, Math.min(1, (value - start) / (full - start)))
   for (let j = 0; j <= steps; j++) {
     for (let i = 0; i <= steps; i++) {
       const v = j * row + i
-      const at = (k: number) => positions[k * vertexStride + 1]
-      const dx = (at(j * row + Math.min(steps, i + 1)) - at(j * row + Math.max(0, i - 1))) / (tileCell * (Math.min(steps, i + 1) - Math.max(0, i - 1)))
-      const dz = (at(Math.min(steps, j + 1) * row + i) - at(Math.max(0, j - 1) * row + i)) / (tileCell * (Math.min(steps, j + 1) - Math.max(0, j - 1)))
-      const height = at(v)
+      const dx = slopes[v * slopeStride], dz = slopes[v * slopeStride + 1]
+      const height = positions[v * vertexStride + 1]
       const point = { x: positions[v * vertexStride], z: positions[v * vertexStride + depthOffset] }
       const o = v * colorStride
       blendTint(colors, o, wet.tint, bakedSurface(point).moisture)
@@ -170,7 +170,7 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
   const steps = Math.round(tileMetres / tileCell)
   for (let tz = map.south; tz < north; tz += tileMetres) {
     for (let tx = map.west; tx < east; tx += tileMetres) {
-      const positions: number[] = [], uvs: number[] = [], colors: number[] = [], beach: number[] = [], cover: number[] = [], indices: number[] = []
+      const positions: number[] = [], normals: number[] = [], slopes: number[] = [], uvs: number[] = [], colors: number[] = [], beach: number[] = [], cover: number[] = []
       const keep: boolean[] = []
       let wet = false
       for (let j = 0; j <= steps; j++) {
@@ -180,9 +180,15 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
           const height = groundHeight(point)
           keep.push(share < fullyAuthored)
           wet ||= height > deepSeaFloor
-          // Under a graded road the terrain sinks out of sight, so it never pokes through the road's edge.
+          // Under a graded road the terrain sinks a little, so it never shows through the road.
           const sink = (share > 0 ? seamDip : 0) + (underGradedRoad(point) ? roadSurfaceModel.terrainSinkM : 0)
           positions.push(point.x, height - sink, point.z)
+          // The slope and normal of the ground itself, the same on both sides of a tile's edge.
+          const dx = (groundHeight({ x: point.x + tileCell, z: point.z }) - groundHeight({ x: point.x - tileCell, z: point.z })) / (tileCell + tileCell)
+          const dz = (groundHeight({ x: point.x, z: point.z + tileCell }) - groundHeight({ x: point.x, z: point.z - tileCell })) / (tileCell + tileCell)
+          const length = Math.hypot(dx, 1, dz)
+          slopes.push(dx, dz)
+          normals.push(-dx / length, 1 / length, -dz / length)
           uvs.push(point.x, point.z)
           appendMeadowColor(colors, point, wear)
           beach.push(...beachVertex(point, coastalSurface(point, height)))
@@ -190,19 +196,12 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
           cover.push(layers.litter, layers.heath, layers.moss, 1 - layers.bracken)
         }
       }
-      tintByForm(positions, colors, beach, steps)
-      for (let j = 0; j < steps; j++) {
-        for (let i = 0; i < steps; i++) {
-          const a = j * (steps + 1) + i, b = a + 1, c = a + steps + 1, d = c + 1
-          if (keep[a] || keep[b] || keep[c] || keep[d]) indices.push(a, b, d, a, d, c)
-        }
-      }
-      if (!wet || !indices.length) continue
-      const mesh = meshes.surface('Highwood terrain', positions, indices, material, undefined, uvs)
-      mesh.setVerticesData(VertexBuffer.ColorKind, colors)
-      mesh.setVerticesData(beachAttribute, beach, false, beachAttributeSize)
-      mesh.setVerticesData(groundCoverAttribute, cover, false, beachAttributeSize)
-      mesh.freezeWorldMatrix()
+      tintByForm(positions, slopes, colors, beach, steps)
+      if (!wet) continue
+      const near = tileMesh(meshes, material, { positions, normals, uvs, colors, beach, cover }, keep, steps, 1)
+      if (!near) continue
+      const far = tileMesh(meshes, material, { positions, normals, uvs, colors, beach, cover }, keep, steps, farStride)
+      if (far) near.addLODLevel(farTerrainM, far)
     }
   }
 }

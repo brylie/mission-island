@@ -164,3 +164,9 @@ export const fernfallSheet = {
   },
   fade: { outletLength: 2.8, edgeStrength: 0.55, edgePower: 5 },
 } as const
+
+// Highwood's terrain tiles: a whole number of cells per tile, so neighbouring tiles share their edge vertices. Cells are a
+// metre, on the height bake's own grid from its origin, so every other vertex is a bake node and
+// the drawn ground follows the ground players stand on; at 1.5 m off that grid it rose up to 0.8 m
+// above their feet in creases. Beyond `farTerrainM` a tile draws every `farStride`th vertex.
+export const terrainTile = { tileMetres: 64, cellM: 1, farStride: 2, farTerrainM: 160 } as const
