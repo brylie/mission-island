@@ -214,6 +214,8 @@ export function groundHeight(point: Point) {
 }
 
 export const gradedRoads = () => roadGrading.roads()
+// Where the graded roads need culverts, so their hollows drain.
+export const roadCulverts = () => roadGrading.culverts()
 // Metres from a point to the nearest graded road's edge: scenery and plants keep clear of the formation.
 export const roadClearance = (point: Point) => roadGrading.clearance(point)
 

@@ -25,6 +25,7 @@ export const plantingSources = [
   'src/assets/geometry/road-kinds.ts',
   'src/paved-roads.ts',
   'src/road-banks.ts',
+  'src/road-culverts.ts',
   'src/road-grading.ts',
   'src/road-index.ts',
   'src/road-network.ts',

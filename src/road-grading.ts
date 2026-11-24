@@ -1,5 +1,6 @@
 import { roadKinds, roadNetwork } from './assets/geometry/road-kinds.ts'
 import { roadBanks, type SampleBanks } from './road-banks.ts'
+import { findCulverts, type Culvert } from './road-culverts.ts'
 import { createSampleIndex } from './road-index.ts'
 import { buildRoadNetwork, halfFormationOf, halfWidthOf, pavedRoads, type Junction, type NetworkRoad, type RoadNetwork } from './road-network.ts'
 import { solveRoadProfile, type RoadProfileSample } from './road-profile.ts'
@@ -57,6 +58,10 @@ interface Candidate {
 interface RoadSurfacePoint { road: GradedRoad, carriageway: number, formation: number, across: number, along: number, surface: 'asphalt' | 'earth' }
 
 const square = 2
+// A raster node counts as moved by the grading when it changed by more than this.
+const changeM = 1e-3
+// Nodes this many cells from a moved node are looked at too.
+const besideCells = 2
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t))
 // Polynomial smooth minimum: a union of two distance fields with corners rounded over `k` metres.
 function smoothMin(a: number, b: number, k: number) {
@@ -193,15 +198,26 @@ export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural
       const owner = candidates.sort((a, b) => a.formation - b.formation)[0]
       return { height: Math.min(upper, Math.max(ground, lower)), ground, owner, candidates }
     }
-    let raster: ((point: Point) => number) | undefined
+    let built: ReturnType<typeof createRaster> | undefined
     // The raster is built on the first height lookup; profiles and banks alone don't need it.
-    return { network, roads, evaluate, raster: (point: Point) => (raster ??= createRaster(roads, evaluate))(point) }
+    const raster = () => built ??= createRaster(roads, evaluate)
+    return { network, roads, evaluate, raster, culverts: undefined as Culvert[] | undefined }
   }
   const get = () => built ??= build()
   return {
     // How far the roads raise (+) or lower (−) the natural ground at a point.
-    delta: (point: Point) => get().raster(point),
+    delta: (point: Point) => get().raster().at(point),
     roads: () => get().roads.filter((road) => road.graded),
+    // The culverts the graded roads need so no hollow they make holds water, found on first ask.
+    culverts: () => {
+      const built = get()
+      const nearestRoad = (point: Point) => {
+        const { owner } = built.evaluate(point)
+        return { road: owner ? built.roads[owner.road].id : '', along: owner?.along ?? 0 }
+      }
+      built.culverts ??= findCulverts(built.raster().changed(), natural, (point) => natural(point) + built.raster().at(point), nearestRoad)
+      return built.culverts
+    },
     network: () => get().network,
     // Metres from a point to the nearest graded road's formation edge (negative on the road).
     clearance: (point: Point) => {
@@ -247,13 +263,25 @@ function createRaster(roads: readonly GradedRoad[], evaluate: (point: Point) => 
       }
     })
   }
-  return ({ x, z }: Point) => {
+  // Every raster node the grading moved, and those beside them, where a fill's toe can dam
+  // the natural ground: the places to look for the hollows grading makes.
+  const changed = () => [...tiles].flatMap(([key, delta]) => {
+    const tx = Math.round(key / (1 << square * square * square)), tz = key - tx * (1 << square * square * square)
+    const moved = (i: number, j: number) => i >= 0 && j >= 0 && i < nodes && j < nodes && Math.abs(delta[j * nodes + i]) > changeM
+    const near = (i: number, j: number) => {
+      for (let dj = -besideCells; dj <= besideCells; dj++) for (let di = -besideCells; di <= besideCells; di++) if (moved(i + di, j + dj)) return true
+      return false
+    }
+    return [...delta.keys()].filter((at) => near(at % nodes, Math.floor(at / nodes))).map((at) => ({ x: tx * tileM + (at % nodes) * cellM, z: tz * tileM + Math.floor(at / nodes) * cellM }))
+  })
+  const at = ({ x, z }: Point) => {
     const tx = Math.floor(x / tileM), tz = Math.floor(z / tileM)
     const delta = tiles.get(keyOf(tx, tz))
     if (!delta) return 0
     const gx = (x - tx * tileM) / cellM, gz = (z - tz * tileM) / cellM
     const i = Math.min(tileCells - 1, Math.floor(gx)), j = Math.min(tileCells - 1, Math.floor(gz)), fx = gx - i, fz = gz - j
-    const at = j * nodes + i
-    return (delta[at] * (1 - fx) + delta[at + 1] * fx) * (1 - fz) + (delta[at + nodes] * (1 - fx) + delta[at + nodes + 1] * fx) * fz
+    const node = j * nodes + i
+    return (delta[node] * (1 - fx) + delta[node + 1] * fx) * (1 - fz) + (delta[node + nodes] * (1 - fx) + delta[node + nodes + 1] * fx) * fz
   }
+  return { at, changed }
 }

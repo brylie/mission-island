@@ -34,3 +34,10 @@ export const roadProfileSolver = { sampleStepM: 1, groundSmoothM: 20, passSmooth
 // - `benchSideSlope`: side slopes steeper than this (rise per run across the road) bench the
 //   road into the hill, so no fill hangs off the downhill side.
 export const roadNetwork = { mouthBlendM: 8, filletM: 12, reachM: 18, cellM: 1, tileCells: 16, benchSideSlope: 0.6 } as const
+
+// Where water would stand on or beside a road, a culvert takes it away. Hollows are looked for
+// wherever the grading moved the ground, testing neighbours `stepM` away; hollows closer than
+// `groupM` share one culvert, at the lowest. Its outlet is followed down the natural ground, up
+// to `outletSteps` steps, to where the grading changes the ground by less than `sinkM`; a sag in a
+// cut with no way down runs its pipe to the nearest lower ground within `pipeReachM`.
+export const roadDrainage = { stepM: 1, groupM: 12, sinkM: 0.05, outletSteps: 150, pipeReachM: 40 } as const

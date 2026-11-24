@@ -120,3 +120,59 @@ test('the shipped roads keep to their grades and bends, never stand in a wall, a
     }
   }
 })
+
+test('a road ending on a sharp peak keeps its grade to the end, rather than jumping to the summit', () => {
+  // A free end takes the road's own graded height, not the ground at the end dot.
+  const peak = ({ x, z }) => Math.max(0, 40 - Math.hypot(x - 100, z) * 2)
+  const { grading } = grade(peak, [{ id: 'peak', name: 'Peak', kind: 'fire-road', points: [{ x: 0, z: 0 }, { x: 100, z: 0 }], bends: [0] }])
+  const [road] = grading.roads()
+  const steepest = Math.max(...road.profile.map((sample) => Math.abs(sample.grade)))
+  assert.ok(steepest <= kind.maxGrade + 0.005, `steepest grade ${(steepest * 100).toFixed(0)}%`)
+})
+
+test('the shipped roads drain: every hollow their grading makes empties through a culvert', async () => {
+  const { highwoodHeightmap } = await import('../src/assets/geometry/highwood-heightmap.ts')
+  const { groundHeight, originalCoastRadius, roadCulverts, waterLevel } = await import('../src/terrain.ts')
+  const { authoredShare } = await import('../src/worlds/starter/generation/protection.ts')
+  const culverts = roadCulverts()
+  const { west, south, cell, columns, rows } = highwoodHeightmap
+  const { groupM, stepM } = (await import('../src/assets/geometry/road-kinds.ts')).roadDrainage
+  // Steepest descent from a grid of Highwood land points, as the terrain's own drainage test does,
+  // except that water reaching a culvert's inlet carries on from its outlet. Steps are a metre, the
+  // road raster's cell, so water follows a ditch along a road rather than stepping over it.
+  const stuckOn = (ground, useCulverts) => {
+    let stuck = 0, traced = 0
+    for (let z = 4; z < rows - 4; z += 9) {
+      for (let x = 4; x < columns - 4; x += 9) {
+        let point = { x: west + x * cell, z: south + z * cell }
+        if (ground(point) < waterLevel + 0.5 || authoredShare(point, originalCoastRadius(point)) > 0) continue
+        traced++
+        const used = new Set()
+        for (let step = 0; step < 1800; step++) {
+          let best = point, lowest = ground(point)
+          for (let a = 0; a < 8; a++) {
+            const next = { x: point.x + Math.cos(a * Math.PI / 4) * stepM, z: point.z + Math.sin(a * Math.PI / 4) * stepM }
+            if (ground(next) < lowest) [best, lowest] = [next, ground(next)]
+          }
+          if (lowest < waterLevel) break
+          if (best !== point) {
+            point = best
+            continue
+          }
+          const culvert = useCulverts && culverts.find((c) => !used.has(c) && Math.hypot(c.inlet.x - point.x, c.inlet.z - point.z) < groupM)
+          if (culvert) {
+            used.add(culvert)
+            point = culvert.outlet
+            continue
+          }
+          if (ground(point) - waterLevel > 0.3) stuck++
+          break
+        }
+      }
+    }
+    return { stuck, traced }
+  }
+  const natural = stuckOn(naturalGroundHeight, false), graded = stuckOn(groundHeight, true)
+  assert.ok(culverts.length > 0, 'the roads have culverts')
+  assert.ok(graded.stuck <= natural.stuck + 2, `${graded.stuck} of ${graded.traced} traces stop on graded ground with culverts, against ${natural.stuck} on natural ground`)
+})
