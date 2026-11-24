@@ -45,7 +45,7 @@ import { createSurfaceMaterial } from './materials'
 import { meadowDefaults, shaderPresets, shoreDefaults, type ShaderQuality } from './shader-studies'
 import type { WildlifeFrame } from './wildlife'
 import { createStreetLights } from './street-lights'
-import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, roadClearance, roadCulverts, roadSurfaceSource, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
+import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, roadClearance, roadCulverts, roadEarthworks, roadSurfaceSource, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
 import { buildings, crewHomes, extinguisherStations } from './world'
 import { createFireWatch } from './assets/fire-watch'
 import { createFireStation } from './assets/fire-station'
@@ -69,7 +69,11 @@ const rainPavingWetness = 0.74
 function createRoads(meshes: MeshFactory) {
   createRoadNetworkSurface(meshes, roadSurfaceSource, groundHeight, createRoadMaterial(meshes.paintRecipe('path-gravel')))
   // Finding the culverts floods the ground around the roads, so it waits for the first frame.
-  meshes.scene.onAfterRenderObservable.addOnce(() => createCulverts(meshes, roadCulverts(), groundHeight, roadClearance))
+  meshes.scene.onAfterRenderObservable.addOnce(() => createCulverts(meshes, roadCulverts(), groundHeight, {
+    clearance: roadClearance,
+    carriageway: (point) => roadSurfaceSource.fieldsAt(point).carriageway,
+    earthworks: roadEarthworks,
+  }))
 }
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {

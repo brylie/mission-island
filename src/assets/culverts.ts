@@ -44,37 +44,82 @@ function headwall(batch: Batch, at: Point, facing: Point, ground: Ground) {
   batch.face(ring, shade)
 }
 
-// Stones spilled below an outlet: rounded, uneven cobbles half sunk in the ground, each a
-// jittered outline rising to a smaller, tilted top.
+// A packed riprap apron below an outlet: rows of rounded, uneven cobbles half sunk in the ground,
+// widening downstream from the headwall.
 function apron(batch: Batch, at: Point, facing: Point, ground: Ground, random: () => number) {
-  const { stones, sizeM, reachM, spreadM, heightShare, sides, jitter, shoulder, tone } = model.apron
-  for (let k = 0; k < stones; k++) {
-    const reach = model.headwall.thicknessM + random() * reachM, sideways = (random() - half) * spreadM * (1 + reach)
-    const centre = { x: at.x + facing.x * reach - facing.z * sideways, z: at.z + facing.z * reach + facing.x * sideways }
-    const size = sizeM[0] + random() * (sizeM[1] - sizeM[0]), turn = random() * fullTurn
-    const count = sides[0] + Math.floor(random() * (sides[1] - sides[0] + 1))
-    const radii = Array.from({ length: count }, () => size * half * (1 - jitter + random() * (jitter + jitter)))
-    const ring = (scale: number) => radii.map((r, i) => ({ x: centre.x + Math.cos(turn + i * fullTurn / count) * r * scale, z: centre.z + Math.sin(turn + i * fullTurn / count) * r * scale }))
-    const base = ground(centre) - size * heightShare * half
-    const tilt = { x: (random() - half) * size * heightShare, z: (random() - half) * size * heightShare }
-    const top = (p: Point): Corner => [p.x, base + size * heightShare + ((p.x - centre.x) * tilt.x + (p.z - centre.z) * tilt.z) / size, p.z]
-    box(batch, ring(1).map((p): Corner => [p.x, base, p.z]), ring(shoulder).map(top), tone)
+  const { lengthDiameters, widthM, rowM, stoneM, jitter, heightShare, sides, shoulder, tone } = model.apron
+  const length = lengthDiameters * model.pipe.radiusM * (1 + 1)
+  for (let along = model.headwall.thicknessM * half + rowM * half; along < length; along += rowM) {
+    const width = widthM[0] + (widthM[1] - widthM[0]) * along / length
+    const count = Math.max(1, Math.round(width / rowM))
+    for (let k = 0; k < count; k++) {
+      const sideways = (k + half) / count * width - width * half + (random() - half) * rowM * jitter
+      const ahead = along + (random() - half) * rowM * jitter
+      const centre = { x: at.x + facing.x * ahead - facing.z * sideways, z: at.z + facing.z * ahead + facing.x * sideways }
+      cobble(batch, centre, stoneM[0] + random() * (stoneM[1] - stoneM[0]), ground, random, { jitter, heightShare, sides, shoulder, tone })
+    }
   }
 }
 
-// From a culvert's end, back along its pipe's line until clear of the road's formation.
-function clearSpot(from: Point, back: Point, clearance: (point: Point) => number) {
-  for (let d = 0; d <= model.searchM; d += model.searchStepM) {
-    const at = { x: from.x + back.x * d, z: from.z + back.z * d }
-    if (clearance(at) > model.clearOfRoadM) return at
+// One rounded, uneven cobble: a jittered outline rising to a smaller, tilted top.
+function cobble(batch: Batch, centre: Point, size: number, ground: Ground, random: () => number, shape: { jitter: number, heightShare: number, sides: readonly number[], shoulder: number, tone: readonly [number, number, number] }) {
+  const { jitter, heightShare, sides, shoulder, tone } = shape
+  const turn = random() * fullTurn
+  const count = sides[0] + Math.floor(random() * (sides[1] - sides[0] + 1))
+  const radii = Array.from({ length: count }, () => size * half * (1 - jitter + random() * (jitter + jitter)))
+  const ring = (scale: number) => radii.map((r, i) => ({ x: centre.x + Math.cos(turn + i * fullTurn / count) * r * scale, z: centre.z + Math.sin(turn + i * fullTurn / count) * r * scale }))
+  const base = ground(centre) - size * heightShare * half
+  const tilt = { x: (random() - half) * size * heightShare, z: (random() - half) * size * heightShare }
+  const top = (p: Point): Corner => [p.x, base + size * heightShare + ((p.x - centre.x) * tilt.x + (p.z - centre.z) * tilt.z) / size, p.z]
+  box(batch, ring(1).map((p): Corner => [p.x, base, p.z]), ring(shoulder).map(top), tone)
+}
+
+// A drop inlet: a stone catch basin flush with the ground, capped with a dark grate.
+function dropInlet(batch: Batch, at: Point, facing: Point, ground: Ground) {
+  const { sizeM, depthM, riseM, grateInset, grateShade } = model.dropInlet
+  const across = { x: -facing.z, z: facing.x }
+  const corner = (u: number, v: number, scale = 1) => ({ x: at.x + (across.x * u + facing.x * v) * sizeM * half * scale, z: at.z + (across.z * u + facing.z * v) * sizeM * half * scale })
+  const plan = [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)]
+  const rim = ground(at) + riseM
+  box(batch, plan.map((p): Corner => [p.x, rim - depthM, p.z]), plan.map((p): Corner => [p.x, rim, p.z]), model.headwall.tone)
+  const grate = [corner(-1, -1, 1 - grateInset), corner(1, -1, 1 - grateInset), corner(1, 1, 1 - grateInset), corner(-1, 1, 1 - grateInset)]
+  batch.face(grate.map((p): Corner => [p.x, rim + model.pipe.proudM, p.z]), grateShade)
+}
+
+interface RoadQueries {
+  // Metres to the nearest graded road's formation edge, and to any road's carriageway edge
+  // (negative inside); and how far the grading moved the ground.
+  clearance: (point: Point) => number
+  carriageway: (point: Point) => number
+  earthworks: (point: Point) => number
+}
+
+// The nearest spot to `from`, within reach, that is off the carriageway.
+function offCarriageway(from: Point, roads: RoadQueries) {
+  if (roads.carriageway(from) > model.dropClearM) return from
+  for (let r = model.searchStepM; r <= model.dropSearchM; r += model.searchStepM) {
+    for (let k = 0; k < model.dropDirections; k++) {
+      const at = { x: from.x + Math.cos(k * fullTurn / model.dropDirections) * r, z: from.z + Math.sin(k * fullTurn / model.dropDirections) * r }
+      if (roads.carriageway(at) > model.dropClearM) return at
+    }
   }
   return undefined
 }
 
-export function createCulverts(meshes: MeshFactory, culverts: readonly Culvert[], ground: Ground, clearance: (point: Point) => number) {
+// Where the pipe leaves the fill: along its line from the inlet, the first spot clear of the
+// formation where the ground is as nature left it.
+function fillToe(inlet: Point, along: Point, reach: number, roads: RoadQueries) {
+  for (let d = 0; d <= reach; d += model.searchStepM) {
+    const at = { x: inlet.x + along.x * d, z: inlet.z + along.z * d }
+    if (roads.clearance(at) > model.clearOfRoadM && roads.earthworks(at) < model.toeM) return at
+  }
+  return undefined
+}
+
+export function createCulverts(meshes: MeshFactory, culverts: readonly Culvert[], ground: Ground, roads: RoadQueries) {
   const batch = facetBatch(model.repeatsPerMetre)
   const random = seededRandom(model.seed)
-  // Culvert ends sharing a spot share one headwall.
+  // Culvert ends sharing a spot share one structure.
   const built: Point[] = []
   const fresh = (at: Point) => {
     if (built.some((p) => Math.hypot(p.x - at.x, p.z - at.z) < model.shareM)) return false
@@ -88,12 +133,18 @@ export function createCulverts(meshes: MeshFactory, culverts: readonly Culvert[]
     // The pipe runs from inlet to outlet; water meets the inlet's face and leaves the outlet's.
     const along = { x: (outlet.x - inlet.x) / length, z: (outlet.z - inlet.z) / length }
     const up = { x: -along.x, z: -along.z }
-    const top = clearSpot(inlet, up, clearance)
-    if (top && fresh(top)) headwall(batch, top, up, ground)
-    const bottom = clearSpot(outlet, along, clearance)
-    if (!bottom || !fresh(bottom)) continue
-    headwall(batch, bottom, along, ground)
-    apron(batch, bottom, along, ground, random)
+    // An inlet beside the road takes a headwall; one in a cut or on the road, a drop inlet.
+    if (roads.clearance(inlet) > model.clearOfRoadM) {
+      if (fresh(inlet)) headwall(batch, inlet, up, ground)
+    }
+    else {
+      const basin = offCarriageway(inlet, roads)
+      if (basin && fresh(basin)) dropInlet(batch, basin, along, ground)
+    }
+    const toe = fillToe(inlet, along, length + model.searchM, roads) ?? outlet
+    if (!fresh(toe)) continue
+    headwall(batch, toe, along, ground)
+    apron(batch, toe, along, ground, random)
   }
   return batch.mesh(meshes, 'Road culverts', meshes.paintRecipe('granite'))
 }
