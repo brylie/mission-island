@@ -4,9 +4,10 @@ import { seededRandom } from '../seeded-random'
 import type { Point } from '../world'
 import { culvertModel as model } from './geometry/culverts'
 import { facetBatch, type Corner } from './stone-facets'
+import { planCulverts, type RoadQueries } from './culvert-plan'
 
-// The roads' culverts, drawn where `findCulverts` put them: a headwall at each end, and apron
-// stones below the outlet. One batch for them all.
+// The roads' culverts, drawn where `planCulverts` puts their ends: headwalls, drop inlets, and a
+// riprap apron below each outlet. One batch for them all.
 
 const fullTurn = Math.PI + Math.PI
 const half = 0.5
@@ -97,65 +98,13 @@ function dropInlet(batch: Batch, at: Point, facing: Point, ground: Ground) {
   batch.face(grate.map((p): Corner => [p.x, rim + model.pipe.proudM, p.z]), grateShade)
 }
 
-interface RoadQueries {
-  // Metres to the nearest graded road's formation edge, and to any road's carriageway edge
-  // (negative inside); and how far the grading moved the ground.
-  clearance: (point: Point) => number
-  carriageway: (point: Point) => number
-  earthworks: (point: Point) => number
-}
-
-// The nearest spot to `from`, within reach, that is off the carriageway.
-function offCarriageway(from: Point, roads: RoadQueries) {
-  if (roads.carriageway(from) > model.dropClearM) return from
-  for (let r = model.searchStepM; r <= model.dropSearchM; r += model.searchStepM) {
-    for (let k = 0; k < model.dropDirections; k++) {
-      const at = { x: from.x + Math.cos(k * fullTurn / model.dropDirections) * r, z: from.z + Math.sin(k * fullTurn / model.dropDirections) * r }
-      if (roads.carriageway(at) > model.dropClearM) return at
-    }
-  }
-  return undefined
-}
-
-// Where the pipe leaves the fill: along its line from the inlet, the first spot clear of the
-// formation where the ground is as nature left it.
-function fillToe(inlet: Point, along: Point, reach: number, roads: RoadQueries) {
-  for (let d = 0; d <= reach; d += model.searchStepM) {
-    const at = { x: inlet.x + along.x * d, z: inlet.z + along.z * d }
-    if (roads.clearance(at) > model.clearOfRoadM && roads.earthworks(at) < model.toeM) return at
-  }
-  return undefined
-}
-
 export function createCulverts(meshes: MeshFactory, culverts: readonly Culvert[], ground: Ground, roads: RoadQueries) {
   const batch = facetBatch(model.repeatsPerMetre)
   const random = seededRandom(model.seed)
-  // Culvert ends sharing a spot share one structure.
-  const built: Point[] = []
-  const fresh = (at: Point) => {
-    if (built.some((p) => Math.hypot(p.x - at.x, p.z - at.z) < model.shareM)) return false
-    built.push(at)
-    return true
-  }
-  for (const { inlet, outlet } of culverts) {
-    if (!outlet) continue
-    const length = Math.hypot(outlet.x - inlet.x, outlet.z - inlet.z)
-    if (length < Number.EPSILON) continue
-    // The pipe runs from inlet to outlet; water meets the inlet's face and leaves the outlet's.
-    const along = { x: (outlet.x - inlet.x) / length, z: (outlet.z - inlet.z) / length }
-    const up = { x: -along.x, z: -along.z }
-    // An inlet beside the road takes a headwall; one in a cut or on the road, a drop inlet.
-    if (roads.clearance(inlet) > model.clearOfRoadM) {
-      if (fresh(inlet)) headwall(batch, inlet, up, ground)
-    }
-    else {
-      const basin = offCarriageway(inlet, roads)
-      if (basin && fresh(basin)) dropInlet(batch, basin, along, ground)
-    }
-    const toe = fillToe(inlet, along, length + model.searchM, roads) ?? outlet
-    if (!fresh(toe)) continue
-    headwall(batch, toe, along, ground)
-    apron(batch, toe, along, ground, random)
+  for (const { kind, at, facing } of planCulverts(culverts, roads)) {
+    if (kind === 'drop-inlet') dropInlet(batch, at, facing, ground)
+    else headwall(batch, at, facing, ground)
+    if (kind === 'outlet') apron(batch, at, facing, ground, random)
   }
   return batch.mesh(meshes, 'Road culverts', meshes.paintRecipe('granite'))
 }
