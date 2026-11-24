@@ -215,7 +215,11 @@ export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural
     const network = buildRoadNetwork(layouts, paved)
     const roads = gradeNetwork(network, natural)
     const index = createSampleIndex(roads.map((road) => road.profile), roadNetwork.filletM)
-    const radius = Math.max(...roads.map((road) => road.halfFormation + bankReach(road.banks)))
+    // Candidates reach past each road's banks by the most a junction's fillet can lower a
+    // formation, and past its ends by the strip carried on to the road it joins, so a point inside
+    // a fillet or a join always has both roads to blend.
+    const filletDepth = roadNetwork.filletM / (square + square)
+    const radius = Math.max(...roads.map((road) => road.halfFormation + Math.max(bankReach(road.banks), filletDepth) + Math.max(road.joins.start, road.joins.end)))
     function evaluate(point: Point) {
       const ground = natural(point)
       const candidates = index.legsNear(point, radius).map(({ road, sample }) => candidateAt(roads, road, sample, point, natural))

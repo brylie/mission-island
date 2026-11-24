@@ -186,7 +186,7 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
       // The grid's nodes plus one beyond each edge.
       const padded = steps + 1 + paddingNodes + paddingNodes
       const heights = new Float64Array(padded * padded)
-      for (let j = -1; j <= steps + 1; j++) for (let i = -1; i <= steps + 1; i++) heights[(j + 1) * padded + i + 1] = groundHeight({ x: tx + i * tileCell, z: tz + j * tileCell })
+      for (let j = -1; j <= steps + 1; j++) for (let i = -1; i <= steps + 1; i++) heights[(j + 1) * padded + i + 1] = groundHeight({ x: Math.min(east, tx + i * tileCell), z: Math.min(north, tz + j * tileCell) })
       const heightAt = (i: number, j: number) => heights[(j + 1) * padded + i + 1]
       for (let j = 0; j <= steps; j++) {
         for (let i = 0; i <= steps; i++) {

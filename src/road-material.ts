@@ -30,7 +30,7 @@ const vec3Of = (values: readonly number[]) => `vec3(${values.map(f).join(', ')})
 const swing = 2
 
 class RoadMaterial extends MaterialPluginBase {
-  constructor(material: Material, private readonly gravel: BaseTexture | null) {
+  constructor(material: Material, private readonly gravel?: BaseTexture | null) {
     super(material, 'Road network surface', priority)
     this._enable(true)
   }
@@ -38,7 +38,11 @@ class RoadMaterial extends MaterialPluginBase {
   override getClassName() { return 'RoadMaterial' }
   override getAttributes(attributes: string[]) { attributes.push(roadFieldsAttribute, roadRutsAttribute) }
   override getSamplers(samplers: string[]) { samplers.push('roadGravel') }
-  override bindForSubMesh(buffer: UniformBuffer) { if (this.gravel) buffer.setTexture('roadGravel', this.gravel) }
+  // A clone is rebuilt with its material alone, so it takes the gravel from that material.
+  override bindForSubMesh(buffer: UniformBuffer) {
+    const gravel = this.gravel ?? (this._material as Material & { albedoTexture?: BaseTexture | null }).albedoTexture
+    if (gravel) buffer.setTexture('roadGravel', gravel)
+  }
 
   override getCustomCode(type: string): Record<string, string> {
     const varyings = 'varying vec4 roadAt; varying float roadRut;'

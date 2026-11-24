@@ -15,7 +15,8 @@ const half = 0.5
 type Ground = (point: Point) => number
 type Batch = ReturnType<typeof facetBatch>
 
-// A box's six faces from its eight corners: four at the base, four at the top, counter-clockwise.
+// A box's six faces from its eight corners: four at the base, four at the top, counter-clockwise
+// in plan (x east, z north), so every face's normal points out.
 function box(batch: Batch, base: Corner[], top: Corner[], tone: readonly [number, number, number]) {
   for (let k = 0; k < base.length; k++) {
     const j = (k + 1) % base.length
@@ -29,14 +30,14 @@ function headwall(batch: Batch, at: Point, facing: Point, ground: Ground) {
   const { widthM, heightM, thicknessM, embedM, tone } = model.headwall
   const across = { x: -facing.z, z: facing.x }
   const corner = (w: number, t: number) => ({ x: at.x + across.x * w * widthM * half + facing.x * t * thicknessM * half, z: at.z + across.z * w * widthM * half + facing.z * t * thicknessM * half })
-  const plan = [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)]
+  const plan = [corner(-1, 1), corner(1, 1), corner(1, -1), corner(-1, -1)]
   const foot = Math.min(...plan.map(ground)) - embedM
   const crest = ground(at) + heightM
   box(batch, plan.map((p): Corner => [p.x, foot, p.z]), plan.map((p): Corner => [p.x, crest, p.z]), tone)
   // A coping slab along the top, a little wider than the wall, so it reads as laid stone.
   const { copingM, copingOverhangM, copingTone } = model.headwall
   const cap = (w: number, t: number) => ({ x: at.x + across.x * w * (widthM * half + copingOverhangM) + facing.x * t * (thicknessM * half + copingOverhangM), z: at.z + across.z * w * (widthM * half + copingOverhangM) + facing.z * t * (thicknessM * half + copingOverhangM) })
-  const capPlan = [cap(-1, -1), cap(1, -1), cap(1, 1), cap(-1, 1)]
+  const capPlan = [cap(-1, 1), cap(1, 1), cap(1, -1), cap(-1, -1)]
   box(batch, capPlan.map((p): Corner => [p.x, crest, p.z]), capPlan.map((p): Corner => [p.x, crest + copingM, p.z]), copingTone)
   // The pipe: a short barrel standing out of the open face, its rim lighter, its bore dark.
   const { radiusM, sides, centreM, proudM, barrelM, wallM, shade, rimTone } = model.pipe
@@ -91,10 +92,10 @@ function dropInlet(batch: Batch, at: Point, facing: Point, ground: Ground) {
   const { sizeM, depthM, riseM, grateInset, grateShade } = model.dropInlet
   const across = { x: -facing.z, z: facing.x }
   const corner = (u: number, v: number, scale = 1) => ({ x: at.x + (across.x * u + facing.x * v) * sizeM * half * scale, z: at.z + (across.z * u + facing.z * v) * sizeM * half * scale })
-  const plan = [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)]
+  const plan = [corner(-1, 1), corner(1, 1), corner(1, -1), corner(-1, -1)]
   const rim = ground(at) + riseM
   box(batch, plan.map((p): Corner => [p.x, rim - depthM, p.z]), plan.map((p): Corner => [p.x, rim, p.z]), model.headwall.tone)
-  const grate = [corner(-1, -1, 1 - grateInset), corner(1, -1, 1 - grateInset), corner(1, 1, 1 - grateInset), corner(-1, 1, 1 - grateInset)]
+  const grate = [corner(-1, 1, 1 - grateInset), corner(1, 1, 1 - grateInset), corner(1, -1, 1 - grateInset), corner(-1, -1, 1 - grateInset)]
   batch.face(grate.map((p): Corner => [p.x, rim + model.pipe.proudM, p.z]), grateShade)
 }
 
