@@ -78,17 +78,15 @@ test('the outline follows the road\'s edge, and the skirt hangs outside it', () 
     if (uses !== 1) continue
     const [a, b] = key.split(':').map(Number)
     const middle = { x: (at(a).x + at(b).x) / 2, z: (at(a).z + at(b).z) / 2 }
-    const { formation, paved } = roadSurfaceSource.fieldsAt(middle)
-    // The graded roads' outline. A paved road's square end is traced up to about 0.4 m long,
-    // because inside the road its field measures distance from the side, not from the end.
-    if (paved < 2) continue
-    if (Math.abs(formation) > 0.1) off.push(`${formation.toFixed(2)} at (${middle.x.toFixed(1)}, ${middle.z.toFixed(1)})`)
+    const { formation } = roadSurfaceSource.fieldsAt(middle)
+    // Within a few centimetres, a little more where an edge cuts a square end's corner.
+    if (Math.abs(formation) > 0.15) off.push(`${formation.toFixed(2)} at (${middle.x.toFixed(1)}, ${middle.z.toFixed(1)})`)
   }
   assert.deepEqual(off.slice(0, 5), [])
   // Each skirt quad's second and third corners are its feet.
   const inside = []
   for (let i = mesh.surfaceIndices; i < mesh.indices.length; i += 6) {
-    for (const foot of [mesh.indices[i + 1], mesh.indices[i + 2]]) if (roadSurfaceSource.fieldsAt(at(foot)).formation < 0) inside.push(foot)
+    for (const foot of [mesh.indices[i + 1], mesh.indices[i + 2]]) if (roadSurfaceSource.fieldsAt(at(foot)).formation < -0.1) inside.push(foot)
   }
   assert.deepEqual(inside.slice(0, 5), [])
 })

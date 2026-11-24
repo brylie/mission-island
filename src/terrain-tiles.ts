@@ -3,6 +3,7 @@ import { VertexBuffer } from '@babylonjs/core/Buffers/buffer'
 import { beachAttribute, beachAttributeSize, groundCoverAttribute } from './beach-material'
 import type { MeshFactory } from './island-meshes'
 import { clipOutsideRoads } from './clip-under-roads'
+import { roadSurfaceModel } from './assets/geometry/route-profiles'
 
 // Generated terrain tiles: one tile's full vertex grid, drawn whole near the camera and from
 // every other vertex further off.
@@ -70,7 +71,7 @@ export function tileMesh(meshes: MeshFactory, material: Material, data: TileData
     }
   }
   // Cut to the roads' outline, so the ground stops at their edge at its true height.
-  const clipped = clipOutsideRoads(layers, indices, field)
+  const clipped = clipOutsideRoads(layers, indices, field, roadSurfaceModel.terrainTuckM)
   if (!clipped.indices.length) return undefined
   const [positions, uvs, normals, colors, beach, cover] = clipped.layers
   const mesh = meshes.surface('Highwood terrain', positions, clipped.indices, material, undefined, uvs, normals)

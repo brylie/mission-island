@@ -10,13 +10,14 @@ interface VertexLayer { values: number[], size: number }
 const corners3 = 3
 const farM = 1e3
 
-export function clipOutsideRoads(layers: VertexLayer[], indices: readonly number[], field: readonly number[]) {
+export function clipOutsideRoads(layers: VertexLayer[], indices: readonly number[], field: readonly number[], tuckM = 0) {
   const out = layers.map(({ values, size }) => ({ values: values.slice(), size }))
   const kept: number[] = []
   const crossings = new Map<string, number>()
   let count = field.length
   // Far from every road the field is Infinity; any large distance interpolates the same.
-  const values = field.map((value) => (Number.isFinite(value) ? value : farM))
+  // The cut runs `tuckM` inside the road's edge, so the terrain's edge always sits under the road.
+  const values = field.map((value) => (Number.isFinite(value) ? value + tuckM : farM))
   const crossing = (a: number, b: number) => {
     const key = a < b ? `${a}:${b}` : `${b}:${a}`
     let index = crossings.get(key)

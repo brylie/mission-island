@@ -40,7 +40,7 @@ function fillToe(inlet: Point, along: Point, reach: number, roads: RoadQueries) 
   return undefined
 }
 
-export interface CulvertEnd {
+interface CulvertEnd {
   culvert: number
   kind: 'inlet' | 'drop-inlet' | 'outlet'
   at: Point

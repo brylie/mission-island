@@ -246,7 +246,7 @@ export const underGradedRoad = (point: Point) => roadGrading.near(point) && road
 const halfWidth = 0.5
 const pavedReach = roadKinds.paved.width * halfWidth + roadKinds.paved.shoulderWidth
 // Past the paved formation by this much, so the terrain's cells crossing its edge are asked too.
-const pavedMarginM = 2
+const pavedMarginM = 5
 const pavedLines = [harborRoad, depotLane]
 // A box round the paved roads, so most points skip their segments.
 const pavedBox = (() => {

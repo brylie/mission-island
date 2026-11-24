@@ -64,9 +64,10 @@ export const dirtRoadModel = {
 // coarser, turned second sample (`breakup`) keeps that repeat from showing. Edges between asphalt,
 // shoulder, earth and verge are softened over `edgeSoftM`. Ruts lie at `dirtRoadModel.ruts` of the
 // half-width, `rutWidth` wide in half-widths, and fade out over `rutFadeM` toward a junction,
-// where traffic spreads. A skirt hangs `skirtDropM` below every outer edge, `skirtOutM` outward,
-// so the road never shows its underside from a slope below it. The terrain itself is cut to the
-// road's outline (`clipOutsideRoads`), so it stops at the road's edge at its true height.
+// where traffic spreads. A short skirt hangs `skirtDropM` below every outer edge, `skirtOutM` outward,
+// as a lip over the edge. The terrain itself is cut to the road's outline (`clipOutsideRoads`),
+// `terrainTuckM` inside it, so its edge sits under the road at its true height and no crack opens
+// between them.
 export const roadSurfaceModel = {
   lift: dirtRoadModel.lift,
   cellM: 0.5,
@@ -76,8 +77,9 @@ export const roadSurfaceModel = {
   rutWidth: 0.07,
   rutStrength: 0.85,
   rutFadeM: [5, 14],
-  skirtDropM: 0.6,
-  skirtOutM: 0.1,
+  skirtDropM: 0.12,
+  skirtOutM: 0.05,
+  terrainTuckM: 0.25,
   asphalt: { tint: [0.13, 0.15, 0.135], contrast: 0.12, speckleM: 0.09, patches: 0.14 },
   shoulder: { tint: [0.8, 0.78, 0.72] },
   tone: { broadM: 23, midM: 4.1, broad: 0.08, mid: 0.06 },

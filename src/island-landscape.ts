@@ -26,6 +26,7 @@ import { beachAttribute, beachAttributeSize, beachVertex, useBeachMaterial } fro
 import { createMeadowBlades, createMeadowSurface } from './meadow-shaders'
 import { shoreDefaults, type ShoreSettings } from './shader-studies'
 import { tileMesh } from './terrain-tiles'
+import { roadSurfaceModel } from './assets/geometry/route-profiles'
 import { clipOutsideRoads } from './clip-under-roads'
 
 const halves = 2
@@ -114,7 +115,7 @@ function buildGround(meshes: MeshFactory, angles: readonly number[], rings: read
       if (!generated(a, a + segments, next + segments)) indices.push(a, a + segments, next + segments)
     }
   }
-  const clipped = clipOutsideRoads([{ values: positions, size: vertexStride }, { values: uvs, size: uvStride }, { values: colors, size: colorStride }, { values: beach, size: beachAttributeSize }], indices, field)
+  const clipped = clipOutsideRoads([{ values: positions, size: vertexStride }, { values: uvs, size: uvStride }, { values: colors, size: colorStride }, { values: beach, size: beachAttributeSize }], indices, field, roadSurfaceModel.terrainTuckM)
   const [cutPositions, cutUvs, cutColors, cutBeach] = clipped.layers
   const mesh = meshes.surface('Starter Island terrain', cutPositions, clipped.indices, material, undefined, cutUvs)
   mesh.setVerticesData(VertexBuffer.ColorKind, cutColors)

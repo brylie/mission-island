@@ -138,6 +138,21 @@ function gradeNetwork(network: RoadNetwork, natural: GroundFunction): GradedRoad
   return graded
 }
 
+// A paved road's free ends stop square: a box whose distance counts from the end row on both
+// sides of it, so the field has no kink there for a mesh to trace badly. Returns how far across the
+// road a point must be taken to be, and which samples are square ends.
+function squareEnd(graded: GradedRoad, s: RoadProfileSample, point: Point) {
+  const ends = graded.graded ? [] : [graded.joins.start === 0 ? 0 : -1, graded.joins.end === 0 ? graded.profile.length - 1 : -1].filter((end) => end >= 0)
+  let across = 0
+  for (const end of ends) {
+    const e = graded.profile[end], outward = end === 0 ? -1 : 1
+    // Only for the samples near that end; further along, the road may bend back past its plane.
+    if (Math.abs(s.along - e.along) > graded.halfFormation + graded.halfFormation) continue
+    across = Math.max(across, graded.halfFormation + ((point.x - e.x) * e.dx + (point.z - e.z) * e.dz) * outward)
+  }
+  return { across, ends }
+}
+
 function candidateAt(roads: readonly GradedRoad[], road: number, sample: number, point: Point, natural: GroundFunction): Candidate {
   const graded = roads[road], s = graded.profile[sample], kind = roadKinds[graded.kind]
   let along = (point.x - s.x) * s.dx + (point.z - s.z) * s.dz
@@ -150,10 +165,9 @@ function candidateAt(roads: readonly GradedRoad[], road: number, sample: number,
   // strip's far end: the shape is a capsule, so its edge never jumps.
   const joinReach = sample === 0 ? graded.joins.start : graded.joins.end
   // A paved road's free end, as at the ferry ramp, stops square instead.
-  if (pastEnd && !graded.graded && joinReach === 0) {
-    across = Math.max(across, graded.halfFormation + Math.abs(along))
-    along = 0
-  }
+  const box = squareEnd(graded, s, point)
+  across = Math.max(across, box.across)
+  if (pastEnd && box.ends.includes(sample)) along = 0
   else if (pastEnd) {
     across = Math.hypot(Math.max(0, Math.abs(along) - joinReach), across)
     along = 0
