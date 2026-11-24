@@ -30,7 +30,7 @@ In clean, wet air, granite is rarely bare grey. A typical Dartmoor tor has "as m
 
 Highwood's ground shader (`src/beach-material.ts`, numbers in `highwoodGranite` and `groundVariation` in `src/assets/geometry/starter-landscape.ts`) draws bare ground above about 7–15 m as granite. The baked slope decides how much bare rock shows ([island generation](../../design/island-generation.md#the-current-bake)). Within the rock:
 
-- **Bedrock on the steepest ground.** Two sets of joints cut it into blocks. Long joints run along the axis of Cairn Summit's granite core, about 37° north of east, and shorter cross joints lean between them. Most cross joints and some long joints stay shut, so slabs run long. Each block tilts a little, so the faces catch the light differently.
+- **Bedrock on the steepest ground.** Two sets of joints cut it into blocks. Long joints run along the axis of Cairn Summit's granite core, about 37° north of east, and shorter cross joints lean between them. Most cross joints and some long joints stay shut, so slabs run long. A long joint opens and closes block by block along its length, and an open crack thins out at its ends rather than stopping short, as a real joint dies out in sound rock (unsourced). Each block tilts a little and has its own tone, so the faces catch the light differently, but the change shows only behind an open crack. Across a shut joint one block shades into the next, because a joint that hasn't opened leaves the rock one piece (an art-direction choice; unsourced).
 - **Grus on gentler rock.** Gentler rocky ground is drawn as gritty sand with stones a few to twenty centimetres across scattered through it.
 - **Crystals at true size.** The [granite surface](../../surface-catalog.md) texture shows grains about 16 mm across.
 - **Lichen and blotches.** Pale grey-green lichen crusts and dark weathering blotches patch the faces.
@@ -50,6 +50,7 @@ The same noise that draws the joints and stones also tilts the lighting, so they
 | Blocks left balanced on tors (Dartmoor's logan stones) are usually joint blocks of the same granite, as large as their neighbours (unsourced). | A perched stone is always smaller and rounder than the block under it, and sits toward one end. | A large block on top would make the stack too tall to climb, and a small rounded stone reads clearly as perched. | That perched stones are always small boulders. |
 | Clitter comes from frost in the Ice Age, so it lies where it fell long ago, often far downslope. | Clitter starts 2.5–9 m below its outcrop and slides until the ground is gentle enough, up to 24 m further. | Keeping it near its outcrop shows where it came from. | That clitter only lies near a rock. |
 | Joints follow each granite body's own stresses. | One joint direction for all of Highwood, set by Cairn Summit's core. | One direction is enough to stop the pattern looking random. | That joints always run north-east. |
+| Rock can change tone across a tight joint, or with no joint at all, as minerals and weathering vary. | Block tone changes sharply only behind an open crack; across a shut joint it shades from one block into the next. | A sharp change with no crack over it reads as a texture seam, not as rock. | That a change in tone always marks a crack. |
 | Lichen species and colours vary with aspect, height and exposure. | One grey-green crust tint, placed by noise. | Not needed for play yet. | That all granite lichen is grey-green. |
 | Dark streaks run down faces where water flows. | Dark blotches placed by noise, not stretched downslope. | Cheap. | That stains are random. |
 | Grus is sand and grit of single crystals. | Grus is drawn with stones up to about 20 cm in it, larger than real grus grains. | Sand-sized grains would be invisible at walking height; the stones stand in for the clitter and broken blocks mixed in on real slopes. | That grus is cobbly. |
@@ -70,6 +71,7 @@ Source ids in the text point to the [sources register](../../sources.yaml).
 
 **Unsourced, to add before this page leaves draft:**
 - that granite cools slowly from magma deep underground, and that it holds mica;
+- that a joint dies out in sound rock rather than stopping short (needs a joint-termination reference);
 - that granite cracks as it is uplifted and unloaded, and that flatter joints follow the land like the layers of an onion;
 - that water weathers joints from both sides;
 - that frost-loosened blocks slid and tumbled downslope;

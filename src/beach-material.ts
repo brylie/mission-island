@@ -34,47 +34,106 @@ const swing = 2
 // Granite ground: jointed bedrock on the steepest ground, grus gravel on gentler rock,
 // both over the crystal texture. Returns the albedo and writes the surface slope
 // (rise per metre, along x and z) that relief adds to the normal.
+// Rows of blocks lie between long (sheet) joints: row r runs from joint r to joint r + 1.
+// Nothing about a block may change sharply except behind an open crack, or the rock looks stitched.
 const graniteGround = `
+// Where a row's cross joints fall, counted in blocks along the grain. Each row shifts its cross
+// joints and leans them by up to skewDeg its own way, so blocks are uneven quadrilaterals.
+float graniteCross(float row, float sheet, float along) {
+  float lean = (groundHash(vec2(row, 8.1)) - .5) * ${f(swing * Math.tan(blocks.skewDeg * Math.PI / degreesPerHalfTurn) * blocks.sheetSpacingM / blocks.crossSpacingM)};
+  return along * ${f(1 / blocks.crossSpacingM)} + groundHash(vec2(row, 3.1)) * 7. + (sheet - row) * lean;
+}
+// A long joint sits off its even spacing by up to spacingJitter either way.
+float graniteSheet(float joint) {
+  return joint + (groundHash(vec2(joint, 1.7)) - .5) * ${f(swing * blocks.spacingJitter)};
+}
+// A block's own tone and tilt, from its row and its place along the row.
+vec2 graniteBlock(float row, float cell) {
+  float id = groundHash(vec2(row, cell));
+  return vec2(id, fract(id * 7.31));
+}
+// How far a long joint opens along one block of the row below it: shut, or sheetOpenMin to sheetOpenMax of a full crack.
+float sheetBlockOpening(float joint, float cell) {
+  float id = groundHash(vec2(joint, cell) + 9.2);
+  return step(${f(blocks.closedSheetShare)}, id) * (${f(blocks.sheetOpenMin)} + (id - ${f(blocks.closedSheetShare)}) * ${f((blocks.sheetOpenMax - blocks.sheetOpenMin) / (1 - blocks.closedSheetShare))});
+}
+// A long joint's opening here. It changes block by block, easing at each block's ends so cracks thin out.
+// Both rows beside the joint count blocks in the row below it, so they agree on the answer.
+float sheetOpening(float joint, float sheet, float along) {
+  float at = graniteCross(joint - 1., sheet, along);
+  float cell = floor(at), t = fract(at);
+  float here = sheetBlockOpening(joint, cell);
+  float start = mix(sheetBlockOpening(joint, cell - 1.), here, .5);
+  float end = mix(here, sheetBlockOpening(joint, cell + 1.), .5);
+  return t < .5 ? mix(start, here, smoothstep(0., ${f(blocks.jointEndShare)}, t)) : mix(here, end, smoothstep(${f(1 - blocks.jointEndShare)}, 1., t));
+}
+// A crack's profile across it: 1 at its middle, 0 beyond its width.
+float graniteCrack(float gap, float width) {
+  return (1. - smoothstep(0., max(width, 1e-4), gap)) * step(1e-4, width);
+}
+// How strongly a crack shades and shapes the light: a hairline that is about to close fades out
+// rather than ending as a dark point, so its tip doesn't shimmer.
+float crackStrength(float opening) {
+  return smoothstep(0., ${f(blocks.sheetOpenMin)}, opening);
+}
 vec3 graniteGround(vec2 p, float bedrock, float cover, float detail, vec3 crystals, vec3 broad, vec3 mid, float fine, out vec2 slope) {
   // Joints in two sets: long joints along the grain, shorter cross joints between them,
   // staggered row to row. The lines wander with the noise, so no two blocks match.
   mat2 grain = mat2(${f(Math.cos(jointTurn))}, ${f(-Math.sin(jointTurn))}, ${f(Math.sin(jointTurn))}, ${f(Math.cos(jointTurn))});
   // Joints bend only over metres: the broad and mid noise move them, never the fine.
   vec2 g = grain * p + (vec2(mid.x * .7 + broad.x * .3, broad.x * .7 + mid.x * .3) - .5) * ${f(swing * blocks.wanderM)};
-  // Each long joint sits off its even spacing by up to spacingJitter either way.
   float sheet = g.y * ${f(1 / blocks.sheetSpacingM)};
   float k = floor(sheet + .5);
-  float jointK = k + (groundHash(vec2(k, 1.7)) - .5) * ${f(swing * blocks.spacingJitter)};
-  float other = sheet < jointK ? k - 1. : k + 1.;
-  float jointOther = other + (groundHash(vec2(other, 1.7)) - .5) * ${f(swing * blocks.spacingJitter)};
-  float row = sheet < jointK ? k - 1. : k;
-  float nearSheet = abs(sheet - jointK) < abs(sheet - jointOther) ? jointK : jointOther;
-  // Cross joints lean by up to skewDeg, a different way in each row, so blocks are uneven quadrilaterals.
-  float lean = (groundHash(vec2(row, 8.1)) - .5) * ${f(swing * Math.tan(blocks.skewDeg * Math.PI / degreesPerHalfTurn) * blocks.sheetSpacingM / blocks.crossSpacingM)};
-  float crossAt = g.x * ${f(1 / blocks.crossSpacingM)} + groundHash(vec2(row, 3.1)) * 7. + (sheet - row) * lean;
-  float id = groundHash(vec2(row, floor(crossAt)));
-  float crossGap = (fract(crossAt) - .5) * ${f(blocks.crossSpacingM)};
-  vec2 toJoint = vec2(${f(blocks.crossSpacingM / swing)} - abs(crossGap), abs(sheet - nearSheet) * ${f(blocks.sheetSpacingM)});
-  // Joints open by different amounts; some sheet joints and many cross joints stay closed, so slabs run long.
-  float sheetOpen = groundHash(vec2(nearSheet, floor(g.x * ${f(1 / blocks.crossSpacingM)}) + 9.2));
-  float crossOpen = step(${f(blocks.closedCrossShare)}, groundHash(vec2(row, floor(crossAt + .5)) + 5.3));
-  vec2 width = ${f(blocks.jointWidthM)} * (.3 + 1.4 * fine) * (.5 + mid.x)
-    * vec2(crossOpen, step(${f(blocks.closedSheetShare)}, sheetOpen) * (.4 + sheetOpen));
-  vec2 joints = (1. - smoothstep(vec2(0.), max(width, vec2(1e-4)), toJoint)) * step(vec2(1e-4), width);
-  float joint = max(joints.x, joints.y);
-  // A joint's walls slope up toward the middle of each block.
-  vec2 across = joints.x > joints.y ? vec2(-sign(crossGap), 0.) : vec2(0., sign(sheet - nearSheet));
-  vec2 jointSlope = (across * grain) * ${f(blocks.jointRelief)} * joint * (1. - joint) * 4.;
-  vec2 tilt = (vec2(id, fract(id * 7.31)) - .5) * ${f(swing * blocks.tilt)};
+  float row = sheet < graniteSheet(k) ? k - 1. : k;
+  float toBelow = (sheet - graniteSheet(row)) * ${f(blocks.sheetSpacingM)};
+  float toAbove = (graniteSheet(row + 1.) - sheet) * ${f(blocks.sheetSpacingM)};
+  // Far off, where cracks have faded, every use of the openings is multiplied by detail, so skip them.
+  float openBelow = detail > 0. ? sheetOpening(row, sheet, g.x) : 0.;
+  float openAbove = detail > 0. ? sheetOpening(row + 1., sheet, g.x) : 0.;
+  // Near a shut long joint a block's tone and tilt fade to a field both rows share. Beyond the
+  // distance where cracks fade out, every joint counts as shut, so no step shows without its crack.
+  // The step fades with distance exactly as the crack's shade does.
+  float keep = mix(smoothstep(0., ${f(blocks.featherM)}, toBelow), 1., crackStrength(openBelow) * detail)
+    * mix(smoothstep(0., ${f(blocks.featherM)}, toAbove), 1., crackStrength(openAbove) * detail);
+  // A cross crack thins out over a shorter reach, so it still meets a shut long joint nearly full width.
+  float crossReach = mix(smoothstep(0., ${f(blocks.crackTaperM)}, toBelow), 1., crackStrength(openBelow))
+    * mix(smoothstep(0., ${f(blocks.crackTaperM)}, toAbove), 1., crackStrength(openAbove));
+  float crossAt = graniteCross(row, sheet, g.x);
+  float crossJoint = floor(crossAt + .5);
+  // In blocks, from the nearest cross joint: negative before it, positive past it.
+  float fromCross = crossAt - crossJoint;
+  // Many cross joints stay shut, so slabs run long. Across a shut one a block ramps into the next;
+  // an open one steps, behind its crack.
+  float crossOpen = step(${f(blocks.closedCrossShare)}, groundHash(vec2(row, crossJoint) + 5.3));
+  float past = mix(smoothstep(-.5, .5, fromCross), step(0., fromCross), crossOpen * detail);
+  vec2 rowBlock = mix(graniteBlock(row, crossJoint - 1.), graniteBlock(row, crossJoint), past);
+  // The shared field has its own tone and tilt, so a shut joint doesn't level into a groove.
+  vec2 blockScale = g * vec2(${f(1 / blocks.crossSpacingM)}, ${f(1 / blocks.sheetSpacingM)});
+  vec2 field = vec2(groundNoise(blockScale + 4.7).x, groundNoise(blockScale + 21.9).x);
+  vec2 block = mix(field, rowBlock, keep);
+  // Joints open by different amounts. A cross crack thins out where it meets a shut long joint.
+  float crackWidth = ${f(blocks.jointWidthM)} * (.3 + 1.4 * fine) * (.5 + mid.x);
+  float crossOpening = crossOpen * crossReach;
+  float crossCrack = graniteCrack(abs(fromCross) * ${f(blocks.crossSpacingM)}, crackWidth * crossOpening);
+  float crackBelow = graniteCrack(toBelow, crackWidth * openBelow);
+  float crackAbove = graniteCrack(toAbove, crackWidth * openAbove);
+  vec3 strength = vec3(crackStrength(crossOpening), crackStrength(openBelow), crackStrength(openAbove));
+  float joint = max(crossCrack * strength.x, max(crackBelow * strength.y, crackAbove * strength.z));
+  // A joint's walls slope up toward the middle of each block. Every crack adds its own slope,
+  // which is zero at the crack's middle, so the light never switches from one joint to another.
+  vec2 walls = vec2(sign(fromCross) * crossCrack * (1. - crossCrack) * strength.x,
+    crackBelow * (1. - crackBelow) * strength.y - crackAbove * (1. - crackAbove) * strength.z);
+  vec2 jointSlope = (walls * grain) * ${f(blocks.jointRelief)} * 4.;
+  vec2 tilt = (block - .5) * ${f(swing * blocks.tilt)};
   // Weathered faces are rough at a hand's breadth: one more octave, near the eye only.
   vec3 rough = detail > 0. ? groundNoise(p * ${f(1 / blocks.roughM)} + 11.3) : vec3(.5, 0., 0.);
   float roughness = mix(.5, rough.x, detail);
   // Pale grey-green lichen crusts and dark weathering blotches on the open faces.
-  float lichenCover = smoothstep(${f(lichen.start)}, ${f(lichen.full)}, mid.x * .4 + roughness * .2 + fine * .2 + id * .2) * ${f(lichen.cover)};
+  float lichenCover = smoothstep(${f(lichen.start)}, ${f(lichen.full)}, mid.x * .4 + roughness * .2 + fine * .2 + block.x * .2) * ${f(lichen.cover)};
   float stain = smoothstep(${f(stain.start)}, ${f(stain.full)}, fine * .6 + (1. - roughness) * .4) * ${f(stain.cover)};
   // On bedrock the crystals are only grain under the joints, so their speckle is calmed toward its mean.
   vec3 grainOnRock = mix(${vec3Of(highwoodGranite.crystalMean)} * ${vec3Of(highwoodGranite.tint)}, crystals, ${f(blocks.crystalContrast)} * mix(.5, 1., roughness));
-  vec3 bedrockAlbedo = grainOnRock * (1. + (id - .5) * ${f(swing * blocks.toneSpread)} + (roughness - .5) * ${f(swing * blocks.roughTone)})
+  vec3 bedrockAlbedo = grainOnRock * (1. + (block.x - .5) * ${f(swing * blocks.toneSpread)} + (roughness - .5) * ${f(swing * blocks.roughTone)})
     * mix(vec3(1.), ${vec3Of(lichen.tint)}, lichenCover)
     * mix(vec3(1.), ${vec3Of(stain.tint)}, stain)
     * mix(1., ${f(blocks.jointShade)}, joint * detail);

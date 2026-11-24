@@ -198,6 +198,15 @@ export const capturePresets = {
     hour: 15,
     weather: 'clear',
   },
+  'ground-cairn-midrange': {
+    label: 'Cairn\'s bare north-east granite 25 to 45 m off, where joint cracks fade out',
+    kind: 'landscape',
+    eye: { x: -90, z: 272, height: 12 },
+    look: { x: -114, z: 246, height: 0 },
+    fov: 0.6,
+    hour: 15,
+    weather: 'clear',
+  },
   'ground-cairn-northeast': {
     label: 'Cairn Summit\'s steep north-east face, crags and clitter above the ridge foot',
     kind: 'landscape',
