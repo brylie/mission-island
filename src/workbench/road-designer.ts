@@ -107,6 +107,8 @@ function markWarning(warning: RoadWarning) {
   const spot = road && analysis(road)?.graded.profile.find((sample) => sample.along >= warning.along)
   if (spot) showDot(spot)
   panel?.overlay.scrollIntoView({ block: 'nearest' })
+  // Keep the warning that keeps focus in view too.
+  if (document.activeElement instanceof HTMLElement) document.activeElement.scrollIntoView({ block: 'nearest' })
   say(`Marked on the map and long section: ${warning.text}.`)
   render()
 }
@@ -313,6 +315,7 @@ function bindControls(root: HTMLElement) {
     // A picked dot drives the long section's readout, as hovering it would.
     const found = road && analysis(road)
     hoverAlong = found && dot !== undefined ? dotAlongs(found, road.points.length)[dot] : undefined
+    markedWarning = undefined
     if (road && dot !== undefined) showDot(road.points[dot])
   })
   on('.road-move-up', 'click', () => moveRoad(-1))
