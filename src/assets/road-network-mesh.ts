@@ -27,7 +27,7 @@ export interface RoadMeshSource {
   fieldsAt: (point: Point) => RoadFields
 }
 
-export interface RoadNetworkMesh {
+interface RoadNetworkMesh {
   positions: number[]
   indices: number[]
   uvs: number[]

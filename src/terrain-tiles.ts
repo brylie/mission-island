@@ -11,7 +11,7 @@ const uvStride = 2
 const colorStride = 4
 const beachStride = 4
 
-export interface TileData { positions: number[], normals: number[], uvs: number[], colors: number[], beach: number[], cover: number[] }
+interface TileData { positions: number[], normals: number[], uvs: number[], colors: number[], beach: number[], cover: number[] }
 
 // A tile's mesh from every `stride`th vertex of its full grid; a cell is drawn when any of its
 // corners is generated ground.
