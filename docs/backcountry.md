@@ -143,7 +143,7 @@ Four graded roads, 1 km in all, give the Fire and Rescue crew vehicle access to 
 - **Vehicles.** The flatbed, pickup and tractor each climb the spur's steepest straight stretch on full throttle and stay on the 4 m road ([`test/game-fire-road.test.mjs`](../test/game-fire-road.test.mjs)).
 - **Surface.** Packed earth with two darker wheel ruts, distinct from the pale gravel of footpaths, and a paler verge out to the shoulder's edge. Footsteps crunch on the carriageway, sound like bare ground on the verge, and stop sounding like a road past its end. On the map the roads are drawn with a dark edge so they read on every kind of land.
 - **Planting.** Plants keep 3 m from a road's edge, and trees, logs and granite outcrops keep off its cut and fill banks, where only ground cover grows.
-- **Known gaps.** The culverts have no pipes or headwalls in the scene, there are no ditches, cross-drains or rolling dips (so the fire road's ditch carries some of Cairn's runoff down to the village plain), and the crossing of Alder Creek's bed is plain ground until the stone ford is built.
+- **Known gaps.** At the Cairn ridge road's mouth on the Pine Draw road (about −310, 331) the branch's surface shows a raised lip with a thin dark crack below it from 10 m away, and the spur's mouth a thin sliver of grass; the cause is not yet found (the ground itself is continuous there). The culverts have no pipes or headwalls in the scene, there are no ditches, cross-drains or rolling dips (so the fire road's ditch carries some of Cairn's runoff down to the village plain), and the crossing of Alder Creek's bed is plain ground until the stone ford is built.
 
 ## Performance
 
