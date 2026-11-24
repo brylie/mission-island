@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { graniteBlockFacets } from '../src/granite-blocks.ts'
+import { graniteOutcropShape } from '../src/assets/geometry/granite-outcrops.ts'
+import { rockBlockFacets } from '../src/granite-blocks.ts'
 import { highwoodGraniteRocks, slabCorners } from '../src/highwood-outcrops.ts'
-import { seededRandom } from '../src/seeded-random.ts'
 import { highwoodSolidTop } from '../src/highwood-solids.ts'
 import { groundHeight } from '../src/terrain.ts'
 import { jumpGravity, jumpSpeed } from '../src/world.ts'
@@ -69,19 +69,22 @@ const largestPlaneShare = 0.15
 const uprightShare = 0.08
 const uprightNormalY = 0.005
 const directionStep = 0.02
+const planeStepM = 0.05
 
 test('granite rocks are weathered woolsacks, not bevelled boxes', () => {
   for (const rock of highwoodGraniteRocks()) {
-    const random = seededRandom(Math.floor(rock.tone * 1e6))
     rock.slabs.forEach((slab, index) => {
-      const facets = graniteBlockFacets(rock, slab, index === 0, random)
+      // The very facets the mesh draws.
+      const facets = rockBlockFacets(rock, index)
       const areas = facets.map(({ normal }) => Math.hypot(...normal) / 2)
       const total = areas.reduce((sum, area) => sum + area, 0)
       const planes = new Map()
       let upright = 0
-      facets.forEach(({ normal }, k) => {
+      facets.forEach(({ normal, corners }, k) => {
         const length = Math.hypot(...normal)
-        const key = normal.map((value) => Math.round(value / length / directionStep)).join(',')
+        // One plane: the same facing and the same offset along it, so parallel ledges count apart.
+        const offset = normal.reduce((sum, value, d) => sum + value / length * corners[0][d], 0)
+        const key = [...normal.map((value) => Math.round(value / length / directionStep)), Math.round(offset / planeStepM)].join(',')
         planes.set(key, (planes.get(key) ?? 0) + areas[k])
         if (Math.abs(normal[1] / length) < uprightNormalY) upright += areas[k]
       })
@@ -121,6 +124,29 @@ test('tors stack off-centre and never taper like pyramids', () => {
       if (k === 0) return
       const below = Math.max(...rock.slabs.slice(0, k).map((lower) => lower.base + lower.height))
       assert.ok(slab.base + slab.height - below < jumpPeak, `${where(rock)} block ${k} is out of a jump's reach`)
+    })
+  }
+})
+
+// Walkers meet each block as a rounded rectangle on its footprint; the drawn rock above the
+// block's base must stay inside it, or a walker could stand in the air beside a corner.
+const solidToleranceM = 0.02
+
+test('every drawn granite block stays inside its walking solid', () => {
+  for (const rock of highwoodGraniteRocks()) {
+    rock.slabs.forEach((slab, index) => {
+      const halfLength = slab.length / 2, halfWidth = slab.width / 2
+      const radius = Math.min(halfLength, halfWidth) * graniteOutcropShape.solidCornerShare
+      const cos = Math.cos(slab.heading), sin = Math.sin(slab.heading)
+      for (const { corners } of rockBlockFacets(rock, index)) {
+        for (const [x, y, z] of corners) {
+          if (y < rock.ground + slab.base) continue
+          const ox = x - rock.x - slab.dx, oz = z - rock.z - slab.dz
+          const along = Math.max(0, Math.abs(ox * cos + oz * sin) - (halfLength - radius))
+          const across = Math.max(0, Math.abs(oz * cos - ox * sin) - (halfWidth - radius))
+          assert.ok(Math.hypot(along, across) <= radius + solidToleranceM, `${where(rock)} block ${index} pokes out of its solid`)
+        }
+      }
     })
   }
 })

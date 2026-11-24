@@ -1,3 +1,4 @@
+import { graniteOutcropShape } from './assets/geometry/granite-outcrops.ts'
 import type { TreeTemplateOptions } from './assets/trees/tree-catalog.ts'
 import { treeCollision } from './assets/trees/tree-collision.ts'
 import { groundHeight } from './terrain.ts'
@@ -13,7 +14,10 @@ import { highwoodPlanting, logRise, plantTemplateOptions } from './worlds/starte
 
 interface Trunk { kind: 'upright', x: number, z: number, radius: number, top: number }
 interface Log { kind: 'lying', x: number, z: number, dx: number, dz: number, length: number, radius: number, top: number, rise: number }
-type Solid = Trunk | Log
+// A granite block: a level rectangle `halfLength` by `halfWidth` along (dx, dz), its corners
+// rounded by `radius`, so walkers meet its worn corners rather than square ones.
+interface Block { kind: 'block', x: number, z: number, dx: number, dz: number, halfLength: number, halfWidth: number, radius: number, top: number }
+type Solid = Trunk | Log | Block
 
 const cellM = 4
 const half = 0.5
@@ -25,7 +29,7 @@ const needleSpecies = new Set(['scots-pine', 'pine-sapling', 'pine-snag'])
 const key = (i: number, j: number) => `${i},${j}`
 
 function file(solid: Solid, reach: number) {
-  const [x0, z0, x1, z1] = solid.kind === 'upright'
+  const [x0, z0, x1, z1] = solid.kind !== 'lying'
     ? [solid.x - reach, solid.z - reach, solid.x + reach, solid.z + reach]
     : [Math.min(solid.x, solid.x + solid.dx * solid.length) - reach, Math.min(solid.z, solid.z + solid.dz * solid.length) - reach, Math.max(solid.x, solid.x + solid.dx * solid.length) + reach, Math.max(solid.z, solid.z + solid.dz * solid.length) + reach]
   for (let i = Math.floor(x0 / cellM); i <= Math.floor(x1 / cellM); i++) {
@@ -58,23 +62,27 @@ for (const plant of highwoodPlanting()) {
   }
 }
 
-// Granite outcrops and clitter: each slab is a level capsule as wide as the slab, running
-// its length, so a stack steps up slab by slab and the long ends are solid too.
+// Granite outcrops and clitter: each block is a level rounded rectangle on its footprint, so a
+// stack steps up block by block and the drawn rock, which stays inside it, is solid everywhere.
 for (const rock of highwoodGraniteRocks()) {
   for (const slab of rock.slabs) {
-    const radius = Math.min(slab.width, slab.length) * half
-    const length = Math.abs(slab.length - slab.width)
-    const dx = Math.cos(slab.heading), dz = Math.sin(slab.heading)
-    // Run along the slab's longer side from one rounded end to the other.
-    const [ux, uz] = slab.length >= slab.width ? [dx, dz] : [-dz, dx]
-    const x = rock.x + slab.dx - ux * length * half, z = rock.z + slab.dz - uz * length * half
-    file({ kind: 'lying', x, z, dx: ux, dz: uz, length, radius, top: rock.ground + slab.base + slab.height, rise: 0 }, radius)
+    const halfLength = slab.length * half, halfWidth = slab.width * half
+    const radius = Math.min(halfLength, halfWidth) * graniteOutcropShape.solidCornerShare
+    const block: Block = { kind: 'block', x: rock.x + slab.dx, z: rock.z + slab.dz, dx: Math.cos(slab.heading), dz: Math.sin(slab.heading), halfLength, halfWidth, radius, top: rock.ground + slab.base + slab.height }
+    file(block, Math.hypot(halfLength, halfWidth))
   }
 }
 
 // Distance from a point to a solid, and the solid's top there.
 function contact(solid: Solid, point: Point) {
   if (solid.kind === 'upright') return { reach: Math.hypot(point.x - solid.x, point.z - solid.z), top: solid.top }
+  if (solid.kind === 'block') {
+    // Distance to the rectangle shrunk by the corner radius; the radius is added back by the caller.
+    const ox = point.x - solid.x, oz = point.z - solid.z
+    const along = Math.abs(ox * solid.dx + oz * solid.dz) - (solid.halfLength - solid.radius)
+    const across = Math.abs(oz * solid.dx - ox * solid.dz) - (solid.halfWidth - solid.radius)
+    return { reach: Math.hypot(Math.max(0, along), Math.max(0, across)), top: solid.top }
+  }
   const along = Math.max(0, Math.min(solid.length, (point.x - solid.x) * solid.dx + (point.z - solid.z) * solid.dz))
   return { reach: Math.hypot(point.x - solid.x - solid.dx * along, point.z - solid.z - solid.dz * along), top: solid.top + solid.rise * along }
 }

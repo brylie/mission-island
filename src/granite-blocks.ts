@@ -1,5 +1,6 @@
 import { graniteBlockForm as form, graniteOutcropShape as shape } from './assets/geometry/granite-outcrops.ts'
 import type { GraniteRock, GraniteSlab } from './highwood-outcrops.ts'
+import { seededRandom } from './seeded-random.ts'
 import { groundHeight } from './terrain.ts'
 
 // Highwood's granite as weathered blocks ("woolsacks"): each a stack of rings from foot to
@@ -16,10 +17,15 @@ export interface RockFacet {
 }
 
 const half = 0.5
+// Each block's shape draws from its own stream, seeded from its rock's tone and its place in
+// the stack, so the mesh and the tests build the same block whatever else draws numbers.
+const toneSeedSpan = 1e6
+const blockSeedStride = 7919
 const square = 2
 const turn = Math.PI * square
-// Rings are shrunk by the most the waves can add, so a block stays inside its slab's footprint.
-const envelope = 1 + form.waves.reduce((sum, wave) => sum + wave.share, 0)
+// Rings are shrunk by the most the waves and jitter can add, so a block stays inside its
+// slab's footprint, and so inside its walking solid.
+const envelope = 1 + form.ringJitter + form.jitter + form.waves.reduce((sum, wave) => sum + wave.share, 0)
 
 const between = (random: () => number, [least, most]: readonly [number, number]) => least + random() * (most - least)
 const spread = (random: () => number, share: number) => (random() - half) * (share + share)
@@ -49,7 +55,7 @@ export function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: b
   const flare = form.footRadius[kind] / rings[0][1]
   const n = between(random, form.squareness[kind])
   const tilt = shape.tilt[kind]
-  const tiltU = spread(random, tilt * half), tiltV = spread(random, tilt * half)
+  const tiltU = spread(random, tilt), tiltV = spread(random, tilt)
   const waves = form.waves.map((wave) => ({ ...wave, phase: random() * turn, drift: spread(random, wave.driftRad) }))
   const sagAngle = random() * turn, sag = random() * form.crownSag * slab.height
   const cos = Math.cos(slab.heading), sin = Math.sin(slab.heading)
@@ -108,4 +114,10 @@ export function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: b
     for (let k = 0; k < sides; k++) facets.push(facet(under, bottom[(k + 1) % sides], bottom[k]))
   }
   return facets
+}
+
+// The facets of a rock's block at `index`, from that block's own random stream.
+export function rockBlockFacets(rock: GraniteRock, index: number): RockFacet[] {
+  const random = seededRandom(Math.floor(rock.tone * toneSeedSpan) + index * blockSeedStride)
+  return graniteBlockFacets(rock, rock.slabs[index], index === 0, random)
 }

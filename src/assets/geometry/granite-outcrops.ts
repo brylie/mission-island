@@ -12,9 +12,10 @@ export const graniteOutcropShape = {
     loneWidthM: 2.4,
     // Length along the joint grain, as a multiple of the width.
     lengthRatio: [1.1, 1.6],
-    // A block's height is this share of its mean width and length, as Dartmoor's woolsacks
-    // are about a third as tall as they are broad, kept within `heightM` so each step up stays one a walker can
-    // jump. The same rule holds for a steep face's crags.
+    // A block's height is this share of its mean width and length, so blocks read as thick
+    // pillows like those in the Great Staple Tor reference photo (an art choice, unsourced).
+    // It is kept within `heightM` so each step up stays one a walker can jump. The same rule
+    // holds for a steep face's crags.
     heightRatio: [0.36, 0.5],
     heightM: [0.45, 1.3],
     // Each block up is this share of the one below in width and, separately, in length:
@@ -43,15 +44,18 @@ export const graniteOutcropShape = {
     lengthRatio: [1, 1.5],
     heightRatio: [0.45, 0.8],
   },
-  // Each block leans by up to this much rise per metre along and across it, so blocks
-  // don't all lie dead level; boulders, loose or perched, lean further.
-  tilt: { block: 0.12, boulder: 0.22 },
+  // Each block leans by up to this much rise per metre either way, along and across it, so
+  // blocks don't all lie dead level; boulders, loose or perched, lean further.
+  tilt: { block: 0.06, boulder: 0.11 },
   // An outcrop stands this share of the way from the lowest to the highest ground under
   // it, so its uphill side is buried and its downhill face isn't a tall wall, but never
   // with more than `1 - shoulderShare` of its foot block's height below the highest ground.
   standShare: 0.42,
   shoulderShare: 0.3,
   embedM: { outcrop: 0.4, clitter: 0.15 },
+  // Walkers meet each block as its footprint rectangle with corners rounded by this share of
+  // its half width, which holds the squarest woolsack's worn corners (highwood-solids.ts).
+  solidCornerShare: 0.5,
 } as const
 
 // How a woolsack is built (granite-blocks.ts): rings from the foot up, each a superellipse

@@ -1,6 +1,6 @@
 import type { MeshFactory } from '../island-meshes'
 import type { GraniteRock } from '../highwood-outcrops'
-import { graniteBlockFacets } from '../granite-blocks'
+import { rockBlockFacets } from '../granite-blocks'
 import { graniteOutcropFinish as finish } from './geometry/granite-outcrops'
 import { seededRandom } from '../seeded-random'
 import { facetBatch } from './stone-facets'
@@ -25,10 +25,10 @@ export function createGraniteOutcrops(meshes: MeshFactory, rocks: readonly Grani
     const batch = tiles.get(key) ?? facetBatch(finish.repeatsPerMetre)
     tiles.set(key, batch)
     const random = seededRandom(Math.floor(rock.tone * toneSeedSpan))
-    rock.slabs.forEach((slab, index) => {
+    rock.slabs.forEach((_, index) => {
       const tone = 1 + (rock.tone - half + (random() - half) * half) * (finish.toneSpread + finish.toneSpread)
       const side = tinted(finish.side, tone), crown = tinted(finish.top, tone)
-      for (const { corners, normal } of graniteBlockFacets(rock, slab, index === 0, random)) {
+      for (const { corners, normal } of rockBlockFacets(rock, index)) {
         const upward = normal[1] / Math.hypot(...normal)
         batch.face(corners, upward >= finish.topNormalY ? crown : side)
       }
