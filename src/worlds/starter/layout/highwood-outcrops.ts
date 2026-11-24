@@ -21,25 +21,24 @@ export const highwoodOutcropPlacement = {
   // Outcrops gather in groups along a face, not evenly: a smooth noise this wide in
   // metres must climb from `from` to `full` for the full chance.
   cluster: { wavelength: 48, octaves: 2, lacunarity: 2, gain: 0.5, from: 0.38, full: 0.62 },
-  // Tors also stand on crests, whatever the slope: granite ground no more than `toleranceM`
+  // Outcrops also stand on crests, whatever the slope: granite ground no more than `toleranceM`
   // below the highest ground `radiusM` round it, at `chance` per candidate, with 2–3 slabs.
   crest: { radiusM: 6, toleranceM: 0.3, chance: 0.35, slabs: [2, 3] },
-  // Tors on Cairn Summit's brow: within `reachM` of the crown and no more than `dropM`
-  // below it, at `chance` per candidate, so a few break the dome's skyline.
-  brow: { reachM: 40, dropM: 9, chance: 0.25 },
-  // No rock stands within `crownM` of Cairn Summit's crown, where people stand at the top,
+  // No rock stands within `crownM` of Cairn Summit's crown, kept for the Fire Watch tower,
   // or within `padM` of the summit spur's end, the turning pad by the summit.
-  keepClear: { crownM: 10, padM: 15 },
+  keepClear: { crownM: 25, padM: 15 },
   // Under an outcrop the ground may fall at most this many times the stack's height below
   // its base, so a crag's downhill face stays a stepped stack, not a pillar; steeper spots
   // stay bare rock.
   faceRatio: 1.3,
-  // Crags on ground steeper than full bedrock: 1–2 slabs, long along the contour (length as
-  // a multiple of width), an upper slab nearly as big as the one below and slipped `slip`
-  // of its width along the contour or into the slope, so it never sits centred like a cairn.
-  // Their width runs down the slope, so it is kept to `widthM`, and they don't twist off the contour.
-  // Their foot is sunk deeper downhill, so they may stand on ground falling `faceRatio` times their height.
-  steep: { slabs: [1, 2], widthM: [1.2, 2.4], lengthRatio: [1.8, 2.8], shrink: [0.85, 1], slip: [0.3, 0.45], twistRad: 0, faceRatio: 1.8 },
+  // Crags on ground steeper than full bedrock: 1–2 woolsacks, long along the contour (length
+  // as a multiple of width). An upper block is nearly as big as the one below but never
+  // bigger (`resize`), and is slipped `slip` of its length along the contour and up to
+  // `slipAcross` of its width into the slope, never out over the downhill face, so it
+  // neither caps the face nor sits centred like a cairn. Their width runs
+  // down the slope, so it is kept to `widthM`, and they don't twist off the contour. Their foot
+  // is sunk deeper downhill, so they may stand on ground falling `faceRatio` times their height.
+  steep: { slabs: [1, 2], widthM: [1.1, 2.1], lengthRatio: [1.8, 2.8], resize: [0.82, 1], slip: [0.14, 0.3], slipAcross: 0.3, twistRad: 0, faceRatio: 1.5 },
   // Clitter per outcrop, and how far below it, in metres; it spreads up to
   // `spreadRad` either side of straight downslope.
   // Each boulder then slides downhill in `slideStepM` steps, up to `slideMaxM`, until the

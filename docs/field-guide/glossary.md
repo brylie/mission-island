@@ -66,6 +66,7 @@ Terms used in the field guide, design docs and code. Each says what the word mea
 | **Wind flagging** | A tree shape where branches grow mainly on the downwind side because wind damages shoots on the windward side. |
 | **Windthrow** | Trees blown over by wind, roots and all. |
 | **Windward** | The side facing into the wind. |
+| **Woolsack** | A rounded block of granite in a tor, shaped like a stuffed sack because weathering wore its corners first. A Dartmoor word (unsourced). See [granite uplands](places/granite-uplands.md#in-the-game). |
 
 ## Game and development terms
 
