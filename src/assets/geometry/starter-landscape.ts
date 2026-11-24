@@ -88,7 +88,18 @@ export const highwoodGranite = {
   // Joint blocks: long joints run along Cairn Summit's granite core (its bearing comes from the core),
   // cross joints between them; both wander up to `wanderM` either way. `closedCrossShare`
   // of cross joints stay shut. `roughM` is the wavelength of the faces' own roughness.
+  // A block's tone, tilt and lichen change sharply only behind an open crack. Across a closed
+  // cross joint they ramp from one block to the next; within `featherM` of a closed sheet
+  // joint they fade to a shared smooth field. A sheet joint opens or closes block by block
+  // along its length, easing over `jointEndShare` of a block at each end so cracks thin out;
+  // an open one is `sheetOpenMin` to `sheetOpenMax` of a full crack wide. A cross crack thins out over
+  // `crackTaperM` where it meets a shut sheet joint. Shade and relief fade with the opening.
   blocks: {
+    featherM: 0.45,
+    jointEndShare: 0.12,
+    sheetOpenMin: 0.6,
+    sheetOpenMax: 1.4,
+    crackTaperM: 0.15,
     sheetSpacingM: 1.4,
     crossSpacingM: 2.6,
     wanderM: 1.5,
