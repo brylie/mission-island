@@ -156,16 +156,16 @@ Four graded roads, 1 km in all, give the Fire and Rescue crew vehicle access to 
 | Older computers | **Options → Graphics → Detail**: Low renders at two-thirds resolution (about 44% of the pixels), turns off shadows, and pulls the detailed-tree range in from 80 m to 40 m and the understory from 45 m to 20 m. Automatic starts at High and drops to Low once, for the session, when frames average slower than 40 ms for 4 s after a 6 s settle; 40 ms sits clear of a 30 Hz cap. Tiers are in `src/assets/recipes/graphics-quality.ts`. |
 | Guard rails | Draw calls, triangles and frame time per hero view, from `npm run capture`'s perf numbers. #198 tracks checking them in CI. |
 
-**With the forest** (development machine, headless capture, `npm run capture`, High):
+**With the forest and roads** (development machine, headless capture, `npm run capture`, High, measured 2026-11-24 with the granite outcrops in):
 
 | View | Frame ms | Draw calls | Triangles |
 | --- | --- | --- | --- |
-| Cairn Summit, north at dawn | 5.2 | 796 | 1.79M |
-| Fire road, midday (on the road since Phase 3) | 4.6 | 751 | 1.62M |
-| Birch Flats, evening | 4.3 | 627 | 0.68M |
-| Cairn Summit, looking home | to measure | | |
-| Alder Creek ford (roads in, Phase 3) | 4.3 | 688 | 1.41M |
-| Cairn from the south-west | 4.9 | 734 | 1.39M |
+| Cairn Summit, north at dawn | 4.9 | 853 | 1.67M |
+| Fire road, midday (on the road since Phase 3) | 4.5 | 793 | 1.58M |
+| Birch Flats, evening | 4.0 | 651 | 0.69M |
+| Cairn Summit, looking home (the whole village in view) | 6.8 | 1,396 | 1.52M |
+| Alder Creek ford (roads in, Phase 3) | 4.2 | 715 | 1.33M |
+| Cairn from the south-west | 4.5 | 755 | 1.38M |
 
 All hold 60 fps here. Most views draw 1.4–2.4 million triangles, mostly near-tier crowns, their shadows, the always-detailed crest trees and close understory, so older computers rely on the Low tier. Its savings are not yet measured on an older computer; that belongs to the two-player playtest.
 
