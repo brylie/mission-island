@@ -121,6 +121,19 @@ test('the shipped roads keep to their grades and bends, never stand in a wall, a
   }
 })
 
+test('the shipped roads join where they are meant to, so a moved dot or reordered road cannot leave a branch loose', () => {
+  const { roads, junctions } = createRoadGrading(starterRoads, naturalGroundHeight).network()
+  const found = junctions.map(({ branch, host, end }) => `${roads[branch].id}.${end} -> ${roads[host].id}`).sort()
+  assert.deepEqual(found, [
+    'cairn-ridge-road.end -> summit-spur',
+    'cairn-ridge-road.start -> pine-draw-road',
+    'depot-lane.end -> harbor-road',
+    'fire-road.start -> harbor-road',
+    'pine-draw-road.start -> fire-road',
+    'summit-spur.start -> fire-road',
+  ])
+})
+
 test('a shipped branch leaves its road where the network says it joins, at a steep enough angle not to run along it', async () => {
   const { roadNetwork } = await import('../src/assets/geometry/road-kinds.ts')
   const shipped = createRoadGrading(starterRoads, naturalGroundHeight)

@@ -168,8 +168,9 @@ function candidateAt(roads: readonly GradedRoad[], road: number, sample: number,
 function joinMouths(candidates: Candidate[], junctions: readonly Junction[], roads: readonly GradedRoad[]) {
   for (const junction of junctions) {
     const host = candidates.filter((c) => c.road === junction.host).sort((a, b) => a.formation - b.formation)[0]
-    const endSample = junction.end === 'start' ? 0 : roads[junction.branch].profile.length - 1
-    const branch = candidates.find((c) => c.road === junction.branch && Math.abs(c.sample - endSample) * roadNetwork.cellM <= roadNetwork.filletM + roadNetwork.mouthBlendM)
+    const profile = roads[junction.branch].profile
+    const endAlong = (junction.end === 'start' ? profile[0] : profile[profile.length - 1]).along
+    const branch = candidates.find((c) => c.road === junction.branch && Math.abs(profile[c.sample].along - endAlong) <= roadNetwork.filletM + roadNetwork.mouthBlendM)
     if (!host || !branch) continue
     const t = smoothstep(clamp01(Math.max(0, host.formation) / roadNetwork.mouthBlendM))
     branch.surface = host.surface + (branch.surface - host.surface) * t
@@ -263,12 +264,14 @@ export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural
   }
 }
 
+const { tileKeyStride } = roadNetwork
+
 // The height changes over the ground near the graded roads, in square tiles of cells, sampled
 // between nodes. Tiles far from any graded road are never built and read as no change.
 function createRaster(roads: readonly GradedRoad[], evaluate: (point: Point) => { height: number, ground: number }) {
   const { cellM, tileCells } = roadNetwork
   const tileM = cellM * tileCells, nodes = tileCells + 1
-  const keyOf = (tx: number, tz: number) => tx * (1 << square * square * square) + tz
+  const keyOf = (tx: number, tz: number) => tx * tileKeyStride + tz
   const tiles = new Map<number, Float32Array>()
   const buildTile = (tx: number, tz: number) => {
     const delta = new Float32Array(nodes * nodes)
@@ -294,7 +297,7 @@ function createRaster(roads: readonly GradedRoad[], evaluate: (point: Point) => 
   // Every raster node the grading moved, and those beside them, where a fill's toe can dam
   // the natural ground: the places to look for the hollows grading makes.
   const changed = () => [...tiles].flatMap(([key, delta]) => {
-    const tx = Math.round(key / (1 << square * square * square)), tz = key - tx * (1 << square * square * square)
+    const tx = Math.round(key / tileKeyStride), tz = key - tx * tileKeyStride
     const moved = (i: number, j: number) => i >= 0 && j >= 0 && i < nodes && j < nodes && Math.abs(delta[j * nodes + i]) > changeM
     const near = (i: number, j: number) => {
       for (let dj = -besideCells; dj <= besideCells; dj++) for (let di = -besideCells; di <= besideCells; di++) if (moved(i + di, j + dj)) return true

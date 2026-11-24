@@ -32,9 +32,11 @@ export const roadProfileSolver = { sampleStepM: 1, groundSmoothM: 20, passSmooth
 // - `reachM`: how far from a formation edge a bank may run before it must have met the ground.
 // - `cellM`: the grading raster's cell; `tileCells` cells to a raster tile.
 // - `apronM`: how far a road joining a paved one is paved itself, as an apron at the mouth.
+// - `tileKeyStride`: a raster tile's key packs its column and row as column × stride + row, so
+//   rows must stay within half the stride of zero: 2^19 tiles (over 8,000 km) each way.
 // - `benchSideSlope`: side slopes steeper than this (rise per run across the road) bench the
 //   road into the hill, so no fill hangs off the downhill side.
-export const roadNetwork = { mouthBlendM: 8, filletM: 8, reachM: 18, cellM: 1, tileCells: 16, benchSideSlope: 0.6, apronM: 6 } as const
+export const roadNetwork = { mouthBlendM: 8, filletM: 8, reachM: 18, cellM: 1, tileCells: 16, tileKeyStride: 1_048_576, benchSideSlope: 0.6, apronM: 6 } as const
 
 // Where water would stand on or beside a road, a culvert takes it away. Hollows are looked for
 // wherever the grading moved the ground, testing neighbours `stepM` away; hollows closer than
