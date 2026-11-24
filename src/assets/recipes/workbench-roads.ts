@@ -55,7 +55,7 @@ export const roadDesignerLook = {
   // A pointer must move this far before a press becomes a drag.
   dragThreshold: 4,
   // Cut and fill deeper than this many metres at the centreline is flagged for a second look. It is
-  // not a limit: a hairpin benched into a steep shoulder is commonly cut 4–5 m deep.
+  // not a limit: a hairpin benched into a steep shoulder can be cut 4–5 m deep (unsourced).
   deepEarthworkM: 5,
   // The long section: canvas size, padding, and its colours.
   // Line widths of a disc's rim, the chart's ground and road lines, and where its labels sit.

@@ -134,16 +134,16 @@ Four graded roads, 1 km in all, give the Fire and Rescue crew vehicle access to 
 | Highwood fire road | From the harbor road beside the Fire Watch's lookout trail, straight up the valley west of Cairn to the Alder Creek valley | 453 m | 12% | 12.7 m |
 | Cairn Summit spur | Leaves the fire road in the valley and climbs Cairn's south-west flank, with one hairpin, to a pad on the ridge about 46 m up | 242 m | 15% | 8.3 m |
 | Pine Draw road | From the end of the fire road across Alder Creek's valley to Pine Draw, with one hairpin | 210 m | 12% | 10.6 m |
-| Cairn ridge road | Leaves the Pine Draw road before its hairpin and climbs east onto Cairn's ridge, joining the spur's lower leg and closing a loop | 123 m | 15% | 9.5 m |
+| Cairn ridge road | Leaves the Pine Draw road before its hairpin and climbs east onto Cairn's ridge, joining the spur's lower leg and closing a loop | 126 m | 15% | 9.5 m |
 
 - **Shape.** The roads run straight where a straight road holds the grade, and curve only along contours and in switchbacks ([decision](design/decisions.md)). At the centreline, cuts stay under 3 m and fills under 4 m; the banks beside a hairpin or a deep cut stand taller, up to about 9 m on the Pine Draw road.
 - **The summit.** Cairn is an 80 m massif. The spur ends at a pad on the ridge below the crag, and the last 34 m of climb is on foot.
 - **Junctions.** Each branch leaves its road at 30° or more, through a rounded mouth, and the road it leaves is as it would be alone, within 2 cm. At the trailhead the fire road's first 6 m are asphalt, so the village's paving runs into it.
-- **Drainage.** Wherever the grading leaves a hollow that would hold water, a culvert takes it to lower ground: 19 in all, including two where the Pine Draw road leaves the fire road across the head of Alder Creek, found by [`road-culverts.ts`](../src/road-culverts.ts). They are not drawn yet.
+- **Drainage.** Wherever the grading leaves a hollow that would hold water, a culvert takes it to lower ground: 19 in all (18 with an outlet; the other is a 3 cm puddle on level ground at the trailhead), including two where the Pine Draw road leaves the fire road across the head of Alder Creek, found by [`road-culverts.ts`](../src/road-culverts.ts). They are not drawn yet.
 - **Vehicles.** The flatbed, pickup and tractor each climb the spur's steepest straight stretch on full throttle and stay on the 4 m road ([`test/game-fire-road.test.mjs`](../test/game-fire-road.test.mjs)).
 - **Surface.** Packed earth with two darker wheel ruts, distinct from the pale gravel of footpaths, and a paler verge out to the shoulder's edge. Footsteps crunch on the carriageway, sound like bare ground on the verge, and stop sounding like a road past its end. On the map the roads are drawn with a dark edge so they read on every kind of land.
 - **Planting.** Plants keep 3 m from a road's edge, and trees, logs and granite outcrops keep off its cut and fill banks, where only ground cover grows.
-- **Known gaps.** At the Cairn ridge road's mouth on the Pine Draw road (about −310, 331) the branch's surface shows a raised lip with a thin dark crack below it from 10 m away, and the spur's mouth a thin sliver of grass; the cause is not yet found (the ground itself is continuous there). The culverts have no pipes or headwalls in the scene, there are no ditches, cross-drains or rolling dips (so the fire road's ditch carries some of Cairn's runoff down to the village plain), and the crossing of Alder Creek's bed is plain ground until the stone ford is built.
+- **Known gaps.** At the Cairn ridge road's mouth on the Pine Draw road (about −310, 331) the branch's surface shows a raised lip with a thin dark crack below it from 10 m away, and the spur's mouth a thin sliver of grass; the cause is not yet found (the ground itself is continuous there). The culverts have no pipes or headwalls in the scene, there are no ditches, cross-drains or rolling dips (so the low side of the fire road's cut carries some of Cairn's runoff down to the village plain), and the crossing of Alder Creek's bed is plain ground until the stone ford is built.
 
 ## Performance
 
@@ -169,7 +169,7 @@ Four graded roads, 1 km in all, give the Fire and Rescue crew vehicle access to 
 | Alder Creek ford (roads in, Phase 3) | 4.2 | 715 | 1.33M |
 | Cairn from the south-west | 4.5 | 755 | 1.38M |
 
-All hold 60 fps here. Most views draw 1.4–2.4 million triangles, mostly near-tier crowns, their shadows, the always-detailed crest trees and close understory, so older computers rely on the Low tier. Its savings are not yet measured on an older computer; that belongs to the two-player playtest.
+All hold 60 fps here. Most views draw 0.7–1.7 million triangles, mostly near-tier crowns, their shadows, the always-detailed crest trees and close understory, so older computers rely on the Low tier. Its savings are not yet measured on an older computer; that belongs to the two-player playtest.
 
 
 Baseline on main `7a838c0`, in the `fire-watch` playtest, read with `?dev=1&perf=1` in the game address (see [the dev view URL](iteration-tooling.md#the-dev-view-url)). Compare the frame time and the draw calls; the browser pane's FPS is throttled.
@@ -179,4 +179,4 @@ Baseline on main `7a838c0`, in the `fire-watch` playtest, read with `?dev=1&perf
 | Island view | 11.7 | 2,252 | 744k | 352 |
 | Ground, Fire Watch stairs | 6.8 | 1,117 | 531k | 352 |
 
-On the host, island start takes 36 ms and a tick 2.0 ms. A larger island must pad the physics heightfield to at least square: cannon-es clamps both ray-test indices to the heightfield's first dimension, so wheel raycasts would miss the far rows of a field that is longer north–south than east–west.
+On the host, island start took 36 ms and a tick 2.0 ms before Phase 3; since then the host also builds the road raster (about 110 ms) on its first ground lookup, so island start needs re-measuring. A larger island must pad the physics heightfield to at least square: cannon-es clamps both ray-test indices to the heightfield's first dimension, so wheel raycasts would miss the far rows of a field that is longer north–south than east–west.

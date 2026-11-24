@@ -32,7 +32,7 @@ Open **World → Road designer** (`workbench.html#road-designer`) to lay out the
 - Double-click a road to add a dot there. **Delete dot** (or Delete with the map focused) removes the selected dot, and Cmd or Ctrl+Z undoes. **Undo** and **Redo** are greyed out when there is nothing to undo or redo.
 - Drag empty ground to pan, and scroll to zoom.
 
-**By keyboard.** Choosing roads and dots, suggesting routes, deleting, limits, reordering, undo, panning and zooming all work without a mouse. Placing, moving and bending dots, and New road's two points, still need the pointer.
+**By keyboard.** Choosing roads and dots, suggesting routes, deleting, limits, reordering, undo, panning and zooming all work without a mouse. Placing, moving and bending dots, and New road's two points, still need the pointer, a gap against WCAG 2.1.1 (Keyboard) to be closed.
 - **Road** picks the road, and **Dot** picks one of its dots, listed with how many metres along the road it sits; a zoomed-in map pans to it, and the long section's readout reads the road at that dot. With a dot picked, **Suggest route**, **Delete dot** and **Stretch limit** work. Stretch limit stays greyed out, with a hint beside it, until a dot is picked.
 - Tab to the map, then use the arrow keys to pan and + and − to zoom. Delete or Backspace removes the selected dot only while the map has focus, so they never fire from a list or a button.
 - The status line at the foot of the panel says what each action did, for example "Deleted dot 14. Ctrl+Z to undo." It stays in view with **Save to source**, however far the panel scrolls.
