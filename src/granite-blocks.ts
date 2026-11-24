@@ -42,6 +42,16 @@ function facet(a: Corner, b: Corner, c: Corner): RockFacet {
   return { corners: [a, b, c], normal }
 }
 
+// A block's squareness and the lean of its top, per metre along and across it: the first draws
+// of its stream, so the walking solid can lean as the drawn block does.
+function blockLean(random: () => number, kind: NonNullable<GraniteSlab['form']>) {
+  const n = between(random, form.squareness[kind])
+  const tilt = shape.tilt[kind]
+  return { n, tiltU: spread(random, tilt), tiltV: spread(random, tilt) }
+}
+
+const blockStream = (rock: GraniteRock, index: number) => seededRandom(Math.floor(rock.tone * toneSeedSpan) + index * blockSeedStride)
+
 // The flat triangles of one block of a rock. `foot` sinks the block's lowest ring into the
 // ground under it, for the lowest block of a stack; upper blocks get a closed underside.
 function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: boolean, random: () => number): RockFacet[] {
@@ -50,9 +60,7 @@ function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: boolean,
   // a boulder keeps its rounded underside.
   const sides = form.sides[kind], rings = foot && kind === 'block' ? form.rings[kind].slice(1) : form.rings[kind]
   const flare = form.footRadius[kind] / rings[0][1]
-  const n = between(random, form.squareness[kind])
-  const tilt = shape.tilt[kind]
-  const tiltU = spread(random, tilt), tiltV = spread(random, tilt)
+  const { n, tiltU, tiltV } = blockLean(random, kind)
   const waves = form.waves.map((wave) => ({ ...wave, phase: random() * turn, drift: spread(random, wave.driftRad) }))
   const sagAngle = random() * turn, sag = random() * form.crownSag * slab.height
   const cos = Math.cos(slab.heading), sin = Math.sin(slab.heading)
@@ -118,6 +126,11 @@ function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: boolean,
 
 // The facets of a rock's block at `index`, from that block's own random stream.
 export function rockBlockFacets(rock: GraniteRock, index: number): RockFacet[] {
-  const random = seededRandom(Math.floor(rock.tone * toneSeedSpan) + index * blockSeedStride)
-  return graniteBlockFacets(rock, rock.slabs[index], index === 0, random)
+  return graniteBlockFacets(rock, rock.slabs[index], index === 0, blockStream(rock, index))
+}
+
+// How the drawn top of a rock's block at `index` leans, per metre along and across its heading.
+export function rockBlockLean(rock: GraniteRock, index: number) {
+  const { tiltU, tiltV } = blockLean(blockStream(rock, index), rock.slabs[index].form ?? 'block')
+  return { tiltU, tiltV }
 }

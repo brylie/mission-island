@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { rockBlockFacets } from '../src/granite-blocks.ts'
+import { rockBlockFacets, rockBlockLean } from '../src/granite-blocks.ts'
+import { highwoodSolidTop } from '../src/highwood-solids.ts'
 import { highwoodGraniteRocks } from '../src/highwood-outcrops.ts'
 import { stepPlayerOnTerrain } from '../src/simulation/movement.ts'
 import { walkingHeight } from '../src/terrain.ts'
@@ -71,8 +72,24 @@ test('a walker stops at a woolsack\'s drawn side and climbs an outcrop block by 
   // Let the last jump land.
   walk(climber, climber.player, false)
   for (let step = 0; step < walkTicks && !climber.player.grounded; step++) stepPlayerOnTerrain(climber, [], { x: 0, z: 0, spray: false, careful: false, sprint: false }, false, tick, () => -Infinity)
-  // On top of the upper block, or of a higher one it climbed on to.
-  const tops = outcrop.slabs.map((slab) => outcrop.ground + slab.base + slab.height)
+  // On top of the upper block, or of a higher one it climbed on to: within its top's lean of
+  // the top's middle height.
+  const tops = outcrop.slabs.map((slab, index) => {
+    const { tiltU, tiltV } = rockBlockLean(outcrop, index)
+    return { middle: outcrop.ground + slab.base + slab.height, lean: (slab.length * Math.abs(tiltU) + slab.width * Math.abs(tiltV)) / 2 + levelM }
+  })
   const standing = climber.player.y
-  assert.ok(tops.some((top) => Math.abs(standing - top) < levelM) && standing >= tops[1] - levelM, `stands at ${standing.toFixed(2)}, not on a block from the second up`)
+  assert.ok(tops.slice(1).some(({ middle, lean }) => Math.abs(standing - middle) < lean), `stands at ${standing.toFixed(2)}, not on a block from the second up`)
+})
+
+test('no woolsack\'s drawn top stands above the solid a walker stands on there', () => {
+  let worst = -Infinity
+  for (const rock of highwoodGraniteRocks()) {
+    rock.slabs.forEach((slab, index) => {
+      for (const { corners } of rockBlockFacets(rock, index)) {
+        for (const [x, y, z] of corners) if (y > rock.ground + slab.base + slab.height / 2) worst = Math.max(worst, y - highwoodSolidTop({ x, z }, 0))
+      }
+    })
+  }
+  assert.ok(worst <= levelM, `a drawn top stands ${worst.toFixed(3)} m above its walking solid`)
 })
