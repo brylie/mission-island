@@ -26,6 +26,9 @@ export const highwoodPlantingLimits = { treeSlope: 0.9, sand: 0.4 }
 // Plants keep this far, in metres, from the centreline of every path, and from the edge of a
 // graded road's formation (its surface and shoulders), so paths and roads stay clear.
 export const highwoodRouteClearanceM = 3
+// Trees and deadwood keep off ground a road's grading moved by more than this many metres: its
+// cut and fill banks, which builders leave to grass and ferns. Understory may grow on them.
+export const highwoodEarthworksM = 0.15
 // Sight lines kept open through the forest, as gaps on a crest would be, so the
 // views players stop for stay open. Canopy and deadwood keep out of a corridor
 // `halfWidthM` wide at the eye, widening by `spread` per metre, for `reachM` metres

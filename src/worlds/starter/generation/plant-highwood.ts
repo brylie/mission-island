@@ -2,12 +2,12 @@ import { plantingLayers, type Planting, type PlantingLayer } from '../highwood-p
 import { distanceToRoute, footpaths, roads, walkways } from '../../../routes.ts'
 import { fbm } from '../../../math/gradient-noise.ts'
 import { seededRandom } from '../../../seeded-random.ts'
-import { groundHeight, originalCoastRadius, roadClearance, waterLevel } from '../../../terrain.ts'
+import { groundHeight, originalCoastRadius, roadClearance, roadEarthworks, waterLevel } from '../../../terrain.ts'
 import type { Point } from '../../../world.ts'
 import { authoredShare } from './protection.ts'
 import { highwoodExposure, highwoodHabitatAt, type HighwoodHabitat } from '../highwood-habitat.ts'
 import { bakedSurface } from '../highwood-terrain.ts'
-import { highwoodAuthoredLimit, highwoodSightlineEyeClearM, highwoodClumping, highwoodExposedAbove, highwoodLeanJitter, highwoodLogLie, highwoodMaximumCover, highwoodPlantingLayers, highwoodSightlines, highwoodPlantingLimits, highwoodPlantingSeed, highwoodRouteClearanceM, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
+import { highwoodAuthoredLimit, highwoodSightlineEyeClearM, highwoodClumping, highwoodEarthworksM, highwoodExposedAbove, highwoodLeanJitter, highwoodLogLie, highwoodMaximumCover, highwoodPlantingLayers, highwoodSightlines, highwoodPlantingLimits, highwoodPlantingSeed, highwoodRouteClearanceM, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
 import { highwoodGeneration } from '../layout/island-generation.ts'
 import { ridgeWind } from '../ridge-scout.ts'
 
@@ -66,6 +66,7 @@ function clearOfRoutes(point: Point, layer: PlantingLayer, habitat: HighwoodHabi
   const along = sightlineAlong(point)
   if (along !== undefined && along <= highwoodSightlineEyeClearM) return false
   if (along !== undefined && layer !== 'understory' && !(habitat === 'wet' && layer === 'canopy')) return false
+  if (layer !== 'understory' && roadEarthworks(point) > highwoodEarthworksM) return false
   return roadClearance(point) > highwoodRouteClearanceM && routes.every((route) => distanceToRoute(point, route) > highwoodRouteClearanceM)
 }
 

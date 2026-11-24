@@ -225,7 +225,8 @@ export const roadSurfaceSource = {
 export const roadCulverts = () => roadGrading.culverts()
 // Metres from a point to the nearest graded road's edge: scenery and plants keep clear of the formation.
 export const roadClearance = (point: Point) => roadGrading.clearance(point)
-// Whether a point is under a graded road's ribbon, answered quickly far from any road.
+// How far, in metres, the graded roads moved the ground at a point: their cuts, fills and banks.
+export const roadEarthworks = (point: Point) => (roadGrading.near(point) ? Math.abs(roadGrading.delta(point)) : 0)
 // What a graded road's surface is at a point: its asphalt apron where it meets a paved road,
 // its earth carriageway (junction mouths included), its verge over the shoulders, or none.
 export function roadSurfaceAt(point: Point): 'asphalt' | 'earth' | 'verge' | undefined {
@@ -234,6 +235,7 @@ export function roadSurfaceAt(point: Point): 'asphalt' | 'earth' | 'verge' | und
   if (distance <= 0) return paved < roadNetwork.apronM ? 'asphalt' : 'earth'
   return formation <= 0 ? 'verge' : undefined
 }
+// Whether a point is under a graded road's ribbon, answered quickly far from any road.
 export const underGradedRoad = (point: Point) => roadGrading.near(point) && roadGrading.underRibbon(point)
 
 function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {

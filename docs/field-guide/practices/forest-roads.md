@@ -57,6 +57,7 @@ The island's roads are laid out in the Workbench [road designer](../../workbench
 | Curve radius | 8 m for a fire road: the tightest bend the Fire and Rescue pickup turns without shunting. The designer warns about tighter bends. |
 | Route | Suggest route finds a path within the grade, then pulls it straight wherever a straight road holds the grade. Curves are left only where the road follows a contour or switches back. |
 | Cut and fill | The road is cut into rises and built up over hollows, never more than the grade needs. Cut banks stand at 1:1 and fills at 1:1.5. |
+| Batters | Trees and fallen logs keep off any ground the grading moved by more than 15 cm. Grass, ferns and heather grow on the banks, as ground cover would within a few years of building. |
 | Cross-section | A 4 m road with 1 m shoulders, crowned 5 cm, with two darker wheel ruts. |
 | Drainage | Not modelled. Where a road dips, rain has nowhere to go, as there are no culverts or rolling dips yet. |
 | Fords | The fire road dips into the Alder Creek valley and crosses its bed. A stone ford is still to come. |
