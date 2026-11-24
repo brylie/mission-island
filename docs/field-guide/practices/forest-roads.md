@@ -119,7 +119,7 @@ The island's roads are laid out in the Workbench [road designer](../../workbench
 
 - **Route.** Suggest route finds a path within the grade, then pulls it straight wherever a straight road holds the grade. Curves are left only where the road follows a contour or switches back.
 - **Height.** The road's height follows the ground, averaged across its width and smoothed over 20 m, then held within the grade limit. The smoothing cuts and fills small bumps even where the grade wouldn't need it.
-- **Surface.** Packed earth, with two darker wheel ruts and a paler verge on the shoulders. Footsteps crunch on the carriageway and sound like bare ground on the verge.
+- **Surface.** Packed earth, with two darker wheel ruts and a paler verge on the shoulders. Footsteps crunch on the carriageway, as on a thin layer of loose stone over the packed bed, and sound like bare ground on the verge.
 - **Junctions.** A branch road leaves at 30° or more, through a mouth rounded over about 8 m, at the other road's height, and the road it leaves is unchanged. Where the fire road leaves the village's harbor road, its first 6 m are asphalt.
 - **Culverts.** Wherever the grading leaves a hollow that would hold water, the island places a culvert running to lower ground: 23 along Highwood's roads. They aren't drawn yet.
 - **Fords.** The fire road dips into the Alder Creek valley and crosses its bed. A stone ford is still to come.

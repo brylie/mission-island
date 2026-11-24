@@ -228,12 +228,15 @@ export const roadClearance = (point: Point) => roadGrading.clearance(point)
 // How far, in metres, the graded roads moved the ground at a point: their cuts, fills and banks.
 export const roadEarthworks = (point: Point) => (roadGrading.near(point) ? Math.abs(roadGrading.delta(point)) : 0)
 // What a graded road's surface is at a point: its asphalt apron where it meets a paved road,
-// its earth carriageway (junction mouths included), its verge over the shoulders, or none.
+// shoulders included as the surface draws it; its earth carriageway (junction mouths included);
+// its verge over the shoulders; or none. A paved road's own shoulder is not a graded verge.
 export function roadSurfaceAt(point: Point): 'asphalt' | 'earth' | 'verge' | undefined {
   if (!roadGrading.near(point)) return undefined
-  const { distance, formation, paved } = roadGrading.carriagewayAt(point)
-  if (distance <= 0) return paved < roadNetwork.apronM ? 'asphalt' : 'earth'
-  return formation <= 0 ? 'verge' : undefined
+  const { distance, paved } = roadGrading.carriagewayAt(point)
+  const apron = paved < roadNetwork.apronM
+  if (distance <= 0) return apron ? 'asphalt' : 'earth'
+  if (roadGrading.clearance(point) > 0) return undefined
+  return apron ? 'asphalt' : 'verge'
 }
 // Whether a point is under a graded road's ribbon, answered quickly far from any road.
 export const underGradedRoad = (point: Point) => roadGrading.near(point) && roadGrading.underRibbon(point)
