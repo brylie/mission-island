@@ -1,3 +1,4 @@
+import { roadNetwork } from './assets/geometry/road-kinds.ts'
 import { createRoadGrading } from './road-grading.ts'
 import { starterRoads, type StarterRoadLayout } from './worlds/starter/layout/roads.ts'
 import { fireWatch, fireWatchFloor } from './fire-watch.ts'
@@ -225,6 +226,14 @@ export const roadCulverts = () => roadGrading.culverts()
 // Metres from a point to the nearest graded road's edge: scenery and plants keep clear of the formation.
 export const roadClearance = (point: Point) => roadGrading.clearance(point)
 // Whether a point is under a graded road's ribbon, answered quickly far from any road.
+// What a graded road's surface is at a point: its asphalt apron where it meets a paved road,
+// its earth carriageway (junction mouths included), its verge over the shoulders, or none.
+export function roadSurfaceAt(point: Point): 'asphalt' | 'earth' | 'verge' | undefined {
+  if (!roadGrading.near(point)) return undefined
+  const { distance, formation, paved } = roadGrading.carriagewayAt(point)
+  if (distance <= 0) return paved < roadNetwork.apronM ? 'asphalt' : 'earth'
+  return formation <= 0 ? 'verge' : undefined
+}
 export const underGradedRoad = (point: Point) => roadGrading.near(point) && roadGrading.underRibbon(point)
 
 function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {
