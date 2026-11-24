@@ -66,7 +66,7 @@ The multiplayer host, which decides where players can walk, must not depend on g
 
 ## Draw the ground where the feet stand
 
-Highwood's terrain is drawn in 64 m tiles of 1 m cells laid on the height bake's own 2 m grid, so every other vertex is a bake node; beyond 160 m a tile draws every other vertex, a 2 m grid (`terrainTile` in `starter-landscape.ts`). Normals and the slope tint come from the ground function either side of each vertex, so neighbouring tiles agree at their shared edge.
+Highwood's terrain is drawn in 64 m tiles of 1 m cells laid on the height bake's own 2 m grid, so every other vertex is a bake node; beyond 160 m from the tile's centre a tile draws every other vertex, a 2 m grid, and a short skirt round every tile hides any crack where a near tile meets a far one (`terrainTile` in `starter-landscape.ts`). Normals and the slope tint come from the ground function either side of each vertex, so neighbouring tiles agree at their shared edge.
 
 ## What failed
 

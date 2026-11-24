@@ -65,8 +65,8 @@ export const dirtRoadModel = {
 // shoulder, earth and verge are softened over `edgeSoftM`. Ruts lie at `dirtRoadModel.ruts` of the
 // half-width, `rutWidth` wide in half-widths, and fade out over `rutFadeM` toward a junction,
 // where traffic spreads. A skirt hangs `skirtDropM` below every outer edge, `skirtOutM` outward,
-// so the road never shows its underside from a slope below it. Terrain under a road's formation is
-// sunk `terrainSinkM` out of sight, so the terrain's triangles never poke through the road.
+// so the road never shows its underside from a slope below it. The terrain itself is cut to the
+// road's outline (`clipOutsideRoads`), so it stops at the road's edge at its true height.
 export const roadSurfaceModel = {
   lift: dirtRoadModel.lift,
   cellM: 0.5,
@@ -78,8 +78,7 @@ export const roadSurfaceModel = {
   rutFadeM: [5, 14],
   skirtDropM: 0.6,
   skirtOutM: 0.1,
-  terrainSinkM: 0.4,
-  asphalt: { tint: [0.4, 0.43, 0.41], contrast: 0.85, patches: 0.14 },
+  asphalt: { tint: [0.13, 0.15, 0.135], contrast: 0.12, speckleM: 0.09, patches: 0.14 },
   shoulder: { tint: [0.8, 0.78, 0.72] },
   tone: { broadM: 23, midM: 4.1, broad: 0.08, mid: 0.06 },
 } as const

@@ -56,9 +56,6 @@ interface Candidate {
   // How far beyond the formation edge each bank reaches before it meets the ground.
   cutMeetsM: number
   fillMeetsM: number
-  // Signed distance to the formation the road's own ribbon covers, before any junction's
-  // rounding; past its ends, to the square end of the strip its ribbon covers.
-  ribbon: number
 }
 
 interface RoadSurfacePoint { road: GradedRoad, carriageway: number, formation: number, across: number, along: number, surface: 'asphalt' | 'earth' }
@@ -98,7 +95,8 @@ function surfaceNear(road: GradedRoad, point: Point, natural: GroundFunction) {
 
 // A branch's samples without those whose row across the road touches its host's formation, which
 // the host's surface owns. Testing the whole row, not just the centre, keeps an angled branch's
-// ribbon from overlapping its host's; the junction patch fills the mouth between them.
+// formation clear of its host's where it starts; the strip carried back to the host fills the
+// mouth between them.
 function trimmed(samples: readonly RoadSample[], hosts: readonly ({ end: 'start' | 'end', host: GradedRoad } | undefined)[], halfFormation: number) {
   let from = 0, to = samples.length
   const inside = (sample: RoadSample, host: GradedRoad) => [-halfFormation, 0, halfFormation].some((t) =>
@@ -147,15 +145,16 @@ function candidateAt(roads: readonly GradedRoad[], road: number, sample: number,
   let across = Math.abs(side)
   // Past either end the road stops in a round cap at the end's height.
   const pastEnd = (sample === 0 && along < 0) || (sample === graded.profile.length - 1 && along > 0)
-  // The ribbon stops square at the end row: past it, the distance to its covered strip is the
-  // larger of how far beyond the row and how far outside the strip the point lies, so the field
-  // stays continuous and a clip along it lands exactly on the row.
-  const ribbon = pastEnd ? Math.max(Math.abs(along), across - graded.halfFormation) : across - graded.halfFormation
   // Past an end the road stops in a round cap. A joined end's strip first carries on back toward
   // its host, so an angled mouth has no wedge outside both roads' formations, and its cap is at the
   // strip's far end: the shape is a capsule, so its edge never jumps.
   const joinReach = sample === 0 ? graded.joins.start : graded.joins.end
-  if (pastEnd) {
+  // A paved road's free end, as at the ferry ramp, stops square instead.
+  if (pastEnd && !graded.graded && joinReach === 0) {
+    across = Math.max(across, graded.halfFormation + Math.abs(along))
+    along = 0
+  }
+  else if (pastEnd) {
     across = Math.hypot(Math.max(0, Math.abs(along) - joinReach), across)
     along = 0
   }
@@ -175,7 +174,6 @@ function candidateAt(roads: readonly GradedRoad[], road: number, sample: number,
     fillSlope: banks?.fill ?? kind.fillSlope,
     cutMeetsM: banks?.cutMeetsM ?? 0,
     fillMeetsM: banks?.fillMeetsM ?? 0,
-    ribbon,
   }
 }
 
@@ -251,19 +249,17 @@ export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural
       return Math.min(Infinity, ...candidates.filter((c) => roads[c.road].graded).map((c) => c.formation))
     },
     // Signed metres (negative inside) to the edges of the roads' carriageway and formation,
-    // junction corners included; to the formation the roads' ribbons cover; and to the nearest
-    // paved carriageway.
+    // junction corners included, and to the nearest paved carriageway.
     carriagewayAt: (point: Point) => {
       const { candidates } = get().evaluate(point)
       const { roads } = get()
-      let distance = Infinity, formation = Infinity, covered = Infinity, paved = Infinity
+      let distance = Infinity, formation = Infinity, paved = Infinity
       for (const c of candidates) {
         distance = Math.min(distance, c.carriageway)
         formation = Math.min(formation, c.formation)
-        covered = Math.min(covered, c.ribbon)
         if (!roads[c.road].graded) paved = Math.min(paved, c.carriageway)
       }
-      return { distance, formation, covered, paved }
+      return { distance, formation, paved }
     },
     // Everything the road surface's mesh needs at a point, from one evaluation: signed metres
     // (negative inside) to any road's formation and carriageway, to the paved carriageways, and

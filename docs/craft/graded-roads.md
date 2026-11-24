@@ -57,7 +57,7 @@ Order still matters. A road can only join a road listed before it, so order deci
 
 The result is stored as height changes on a 1 m raster (`cellM`) in 16 m tiles (`tileCells`). The raster is built on the first height lookup, and every tile a graded road's formation, banks or mouth reaches is built then. Tiles no road reaches are never made and read as no change. Between nodes the raster is read bilinearly.
 
-The grading object answers a handful of questions: `delta` (how far the ground moved), `clearance` (distance to the nearest graded formation edge), `carriagewayAt` (distances to carriageway, formation, ribbon cover and paved carriageway), `fieldsAt` (all of a point's distances to the road edges, from one evaluation, for the surface mesh), `surfaceAt`, `near` and `culverts`.
+The grading object answers a handful of questions: `delta` (how far the ground moved), `clearance` (distance to the nearest graded formation edge), `carriagewayAt` (distances to carriageway, formation and paved carriageway), `fieldsAt` (all of a point's distances to the road edges, from one evaluation, for the surface mesh), `surfaceAt`, `near` and `culverts`.
 
 ## Drainage
 
@@ -79,7 +79,7 @@ Each vertex carries signed distances to the edges that matter: the carriageway, 
 - earth on a graded carriageway, crown in the middle, a paler edge, and darker ruts at 0.55 of the half-width that fade out within 5–14 m of a junction, where traffic spreads;
 - the verge out to the formation edge.
 
-A second, coarser sample of the gravel, turned and mixed in by noise patches, and broad and mid-scale tone noise keep the texture's repeat from showing. A skirt hangs 0.6 m below every outer edge (`skirtDropM`), so from a slope below a road you see a bank, not its underside. The terrain under any road is sunk 0.4 m (`terrainSinkM`) out of sight; the road's lift and skirt cover the step. Physics and walking still read the true ground. The paved roads keep only their centreline dashes as a separate strip, draped on the ground.
+A second, coarser sample of the gravel, turned and mixed in by noise patches, and broad and mid-scale tone noise keep the texture's repeat from showing. A skirt hangs 0.6 m below every outer edge (`skirtDropM`), so from a slope below a road you see a bank, not its underside. The terrain is cut to the road's outline: each terrain triangle is clipped to where the same formation field is above zero, so the ground stops at the road's edge at its true height, neither poking through the road nor dipping beside it. Physics and walking still read the true ground. The paved roads keep only their centreline dashes as a separate strip, draped on the ground.
 
 ## Suggest route and hairpins
 
@@ -96,7 +96,7 @@ The result is a first draft. A designer then drags and bends it.
 
 There is one ground. `groundHeight` in [`terrain.ts`](../../src/terrain.ts) is `naturalGroundHeight` plus the road grading's `delta`. Everything that stands on the island reads it, so roads are real to everything at once:
 - **Physics and movement**: the cargo physics heightfield (1 m spacing), truck wheels, and walking through `walkingHeight`.
-- **The terrain mesh**: sunk under every road's formation, paved and graded, junction mouths included.
+- **The terrain mesh**: cut to every road's outline, paved and graded, junction mouths included.
 - **Footsteps**: `roadSurfaceAt(point)` asks the network what a foot is on. It returns `asphalt` in a paved junction's apron, shoulders included, `earth` on a carriageway (mouths included), `verge` out to a graded road's formation edge, or nothing. The carriageway plays the footpaths' gravel voice, on the assumption that a forest road carries a thin, loose wearing course of stone over its compacted bed. [`audio/surface.ts`](../../src/audio/surface.ts) plays these as pavement, gravel and bare ground.
 - **Planting**: `roadClearance(point)` is the distance to the nearest graded formation edge. Village trees, grass and Highwood's plants each keep their own distance from it; Highwood's is 3 m (`highwoodRouteClearanceM`). `roadEarthworks(point)` is how far the grading moved the ground. Through `clearOfEarthworks`, every Highwood plant except understory, and every granite outcrop, keeps off ground moved more than 0.15 m (`highwoodEarthworksM`, in [`highwood-planting.ts`](../../src/worlds/starter/layout/highwood-planting.ts)). Understory may grow on a bank no steeper than 40° (`highwoodBankCoverSlope`, through `coverCanGrow`), because steeper batters rarely green over. Banks are left to grass and ferns, as builders leave them.
 
@@ -148,6 +148,7 @@ Anything about the land before roads, such as the terrain bake, its drainage tes
 - **A lip at the Cairn ridge road's mouth.** From 10 m the branch's ribbon read as a raised lip with a thin dark crack below it, and the spur's mouth showed a sliver of grass. Changing the patch tuck, the terrain sink and the triangle filters did not move it. Two causes turned up. The join strip carried back from a branch's end stopped in a hard cut, so the formation field jumped from inside to outside in one step, leaving a sliver outside both roads; it now ends in a rounded cap, a capsule, so the field never jumps. And the separate pieces could never meet cleanly. *Replaced by* one mesh for the whole network ([#282](https://github.com/brylie/mission-island/issues/282)).
 - **Separate pieces.** Ribbons, aprons, junction patches and the paved roads' flat strips each met the next at an edge that could tear, crack, overlap or open onto the sunk terrain, and the trailhead joined two materials at different heights. Each fix moved the seam rather than removing it. *Replaced by* one mesh over every road, with its finishes drawn from distances to the road's edges.
 - **Seeing under the road.** On a fill, the sunk terrain fell away below the road's edge, and from the slope below you could see under it. *Fixed by* the skirt.
+- **A sawtooth beside the road.** Sinking the terrain vertex by vertex left triangles straddling the road's edge sloping down below the true ground, so dark teeth showed along every edge where the ground fell away, and at the trailhead. *Replaced by* cutting the terrain to the road's outline.
 - **Trees on the banks.** Plants kept only 3 m from the formation edge, so trees and logs stood on fill banks. *Now* everything but understory keeps off ground moved more than `highwoodEarthworksM`, and understory keeps off banks steeper than 40°.
 
 ## Not modelled yet

@@ -32,16 +32,27 @@ function headwall(batch: Batch, at: Point, facing: Point, ground: Ground) {
   const foot = Math.min(...plan.map(ground)) - embedM
   const crest = ground(at) + heightM
   box(batch, plan.map((p): Corner => [p.x, foot, p.z]), plan.map((p): Corner => [p.x, crest, p.z]), tone)
-  // The pipe's mouth, a dark disc just proud of the open face.
-  const { radiusM, sides, centreM, proudM, shade } = model.pipe
-  const out = thicknessM * half + proudM
-  const face = { x: at.x + facing.x * out, z: at.z + facing.z * out }
+  // A coping slab along the top, a little wider than the wall, so it reads as laid stone.
+  const { copingM, copingOverhangM, copingTone } = model.headwall
+  const cap = (w: number, t: number) => ({ x: at.x + across.x * w * (widthM * half + copingOverhangM) + facing.x * t * (thicknessM * half + copingOverhangM), z: at.z + across.z * w * (widthM * half + copingOverhangM) + facing.z * t * (thicknessM * half + copingOverhangM) })
+  const capPlan = [cap(-1, -1), cap(1, -1), cap(1, 1), cap(-1, 1)]
+  box(batch, capPlan.map((p): Corner => [p.x, crest, p.z]), capPlan.map((p): Corner => [p.x, crest + copingM, p.z]), copingTone)
+  // The pipe: a short barrel standing out of the open face, its rim lighter, its bore dark.
+  const { radiusM, sides, centreM, proudM, barrelM, wallM, shade, rimTone } = model.pipe
   const centre = ground(at) + centreM
-  const ring = Array.from({ length: sides }, (_, k): Corner => {
+  const ring = (out: number, radius: number) => Array.from({ length: sides }, (_, k): Corner => {
     const angle = k * fullTurn / sides
-    return [face.x + across.x * Math.cos(angle) * radiusM, centre + Math.sin(angle) * radiusM, face.z + across.z * Math.cos(angle) * radiusM]
+    const x = at.x + facing.x * out + across.x * Math.cos(angle) * radius, z = at.z + facing.z * out + across.z * Math.cos(angle) * radius
+    return [x, centre + Math.sin(angle) * radius, z]
   })
-  batch.face(ring, shade)
+  const face = thicknessM * half, end = face + barrelM
+  const base = ring(face, radiusM + wallM), lip = ring(end, radiusM + wallM), bore = ring(end + proudM, radiusM)
+  for (let k = 0; k < sides; k++) {
+    const j = (k + 1) % sides
+    batch.face([base[k], base[j], lip[j], lip[k]], rimTone)
+  }
+  batch.face(lip, rimTone)
+  batch.face(bore, shade)
 }
 
 // A packed riprap apron below an outlet: rows of rounded, uneven cobbles half sunk in the ground,

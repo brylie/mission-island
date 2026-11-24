@@ -14,8 +14,7 @@ import { seededRandom } from './seeded-random'
 import { distanceToRoads, distanceToRoute, footpaths, walkways } from './routes'
 import { inFerryYard } from './worlds/starter/ferry-terminal'
 import { driftwoodStrand, fernfallChannel, shoreStations } from './worlds/starter/layout/terrain'
-import { roadSurfaceModel } from './assets/geometry/route-profiles'
-import { coastPoint, coastRadius, coastSegments, coastalSurface, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, originalCoastPoint, originalCoastRadius, pool, roadClearance, shoreProfile, streamX, underRoad, waterLevel } from './terrain'
+import { coastPoint, coastRadius, coastSegments, coastalSurface, falls, fernfallProfile, fernfallSection, grove, groundHeight, headland, meadowHill, originalCoastPoint, originalCoastRadius, pool, roadClearance, shoreProfile, streamX, roadFormation, waterLevel } from './terrain'
 import { authoredShare } from './worlds/starter/generation/protection'
 import { highwoodHeightmap } from './assets/geometry/highwood-heightmap'
 import { bakedSurface } from './worlds/starter/highwood-terrain'
@@ -27,6 +26,7 @@ import { beachAttribute, beachAttributeSize, beachVertex, useBeachMaterial } fro
 import { createMeadowBlades, createMeadowSurface } from './meadow-shaders'
 import { shoreDefaults, type ShoreSettings } from './shader-studies'
 import { tileMesh } from './terrain-tiles'
+import { clipOutsideRoads } from './clip-under-roads'
 
 const halves = 2
 const fullTurn = halves * Math.PI
@@ -87,13 +87,16 @@ function buildGround(meshes: MeshFactory, angles: readonly number[], rings: read
   const beach: number[] = []
   const indices: number[] = []
   const owned: boolean[] = []
+  // The terrain is cut to the roads' outline, so it stops at their edge at its true height.
+  const field: number[] = []
   const segments = angles.length
   for (const ring of rings) {
     for (const angle of angles) {
       const point = originalCoastPoint(angle, ring)
       const { x, z } = point
       const height = groundHeight(point)
-      positions.push(x, height - (underRoad(point) ? roadSurfaceModel.terrainSinkM : 0), z)
+      positions.push(x, height, z)
+      field.push(roadFormation(point))
       owned.push(authoredShare(point, originalCoastRadius(point)) < fullyAuthored)
       uvs.push(x, z)
       appendMeadowColor(colors, point, wear)
@@ -111,19 +114,23 @@ function buildGround(meshes: MeshFactory, angles: readonly number[], rings: read
       if (!generated(a, a + segments, next + segments)) indices.push(a, a + segments, next + segments)
     }
   }
-  const mesh = meshes.surface('Starter Island terrain', positions, indices, material, undefined, uvs)
-  mesh.setVerticesData(VertexBuffer.ColorKind, colors)
-  mesh.setVerticesData(beachAttribute, beach, false, beachAttributeSize)
+  const clipped = clipOutsideRoads([{ values: positions, size: vertexStride }, { values: uvs, size: uvStride }, { values: colors, size: colorStride }, { values: beach, size: beachAttributeSize }], indices, field)
+  const [cutPositions, cutUvs, cutColors, cutBeach] = clipped.layers
+  const mesh = meshes.surface('Starter Island terrain', cutPositions, clipped.indices, material, undefined, cutUvs)
+  mesh.setVerticesData(VertexBuffer.ColorKind, cutColors)
+  mesh.setVerticesData(beachAttribute, cutBeach, false, beachAttributeSize)
   mesh.freezeWorldMatrix()
 }
 
 const fullyAuthored = 0.999
 const { tileMetres, cellM: tileCell, farStride, farTerrainM } = terrainTile
+const paddingNodes = 1
 // Generated tiles dip this far below the ring mesh where both cover the old shore, so they never fight.
 const seamDip = 0.03
 const deepSeaFloor = -3
 
 const vertexStride = 3
+const uvStride = 2
 const colorStride = 4
 const depthOffset = 2
 
@@ -170,22 +177,28 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
   const steps = Math.round(tileMetres / tileCell)
   for (let tz = map.south; tz < north; tz += tileMetres) {
     for (let tx = map.west; tx < east; tx += tileMetres) {
-      const positions: number[] = [], normals: number[] = [], slopes: number[] = [], uvs: number[] = [], colors: number[] = [], beach: number[] = [], cover: number[] = []
+      const positions: number[] = [], normals: number[] = [], slopes: number[] = [], uvs: number[] = [], colors: number[] = [], beach: number[] = [], cover: number[] = [], field: number[] = []
       const keep: boolean[] = []
       let wet = false
+      // Heights on the tile's grid and one node beyond it, so each vertex's slope comes from its
+      // neighbours' heights without asking the ground again.
+      // The grid's nodes plus one beyond each edge.
+      const padded = steps + 1 + paddingNodes + paddingNodes
+      const heights = new Float64Array(padded * padded)
+      for (let j = -1; j <= steps + 1; j++) for (let i = -1; i <= steps + 1; i++) heights[(j + 1) * padded + i + 1] = groundHeight({ x: tx + i * tileCell, z: tz + j * tileCell })
+      const heightAt = (i: number, j: number) => heights[(j + 1) * padded + i + 1]
       for (let j = 0; j <= steps; j++) {
         for (let i = 0; i <= steps; i++) {
           const point = { x: Math.min(east, tx + i * tileCell), z: Math.min(north, tz + j * tileCell) }
           const share = authoredShare(point, originalCoastRadius(point))
-          const height = groundHeight(point)
+          const height = heightAt(i, j)
           keep.push(share < fullyAuthored)
           wet ||= height > deepSeaFloor
-          // Under a graded road the terrain sinks a little, so it never shows through the road.
-          const sink = (share > 0 ? seamDip : 0) + (underRoad(point) ? roadSurfaceModel.terrainSinkM : 0)
-          positions.push(point.x, height - sink, point.z)
+          positions.push(point.x, height - (share > 0 ? seamDip : 0), point.z)
+          field.push(roadFormation(point))
           // The slope and normal of the ground itself, the same on both sides of a tile's edge.
-          const dx = (groundHeight({ x: point.x + tileCell, z: point.z }) - groundHeight({ x: point.x - tileCell, z: point.z })) / (tileCell + tileCell)
-          const dz = (groundHeight({ x: point.x, z: point.z + tileCell }) - groundHeight({ x: point.x, z: point.z - tileCell })) / (tileCell + tileCell)
+          const dx = (heightAt(i + 1, j) - heightAt(i - 1, j)) / (tileCell + tileCell)
+          const dz = (heightAt(i, j + 1) - heightAt(i, j - 1)) / (tileCell + tileCell)
           const length = Math.hypot(dx, 1, dz)
           slopes.push(dx, dz)
           normals.push(-dx / length, 1 / length, -dz / length)
@@ -198,9 +211,9 @@ function buildGeneratedGround(meshes: MeshFactory, material: Material, wear: num
       }
       tintByForm(positions, slopes, colors, beach, steps)
       if (!wet) continue
-      const near = tileMesh(meshes, material, { positions, normals, uvs, colors, beach, cover }, keep, steps, 1)
+      const near = tileMesh(meshes, material, { positions, normals, uvs, colors, beach, cover, field }, keep, steps, 1)
       if (!near) continue
-      const far = tileMesh(meshes, material, { positions, normals, uvs, colors, beach, cover }, keep, steps, farStride)
+      const far = tileMesh(meshes, material, { positions, normals, uvs, colors, beach, cover, field }, keep, steps, farStride)
       if (far) near.addLODLevel(farTerrainM, far)
     }
   }

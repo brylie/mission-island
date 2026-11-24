@@ -1,4 +1,5 @@
 import { MaterialPluginBase } from '@babylonjs/core/Materials/materialPluginBase'
+import { RegisterClass } from '@babylonjs/core/Misc/typeStore'
 import type { Material } from '@babylonjs/core/Materials/material'
 import type { UniformBuffer } from '@babylonjs/core/Materials/uniformBuffer'
 import type { BaseTexture } from '@babylonjs/core/Materials/Textures/baseTexture'
@@ -68,20 +69,26 @@ class RoadMaterial extends MaterialPluginBase {
         float roadAsphalt = max(onPaved, inApron * onGraded);
         // Earth: crown in the middle, the edge tint at the carriageway's edge, ruts, then the verge.
         float lane = roadAt.w;
-        vec3 earth = mix(${vec3Of(tint.crown)}, ${vec3Of(tint.edge)}, smoothstep(${f(innerLane)}, 1., lane));
+        // Near a junction, where traffic spreads over the mouth, the crown and edge tints fade to one
+        // even earth, as the ruts do, so no road's crown band ends inside another.
+        vec3 earth = mix(mix(${vec3Of(tint.crown)}, ${vec3Of(tint.edge)}, .5), mix(${vec3Of(tint.crown)}, ${vec3Of(tint.edge)}, smoothstep(${f(innerLane)}, 1., lane)), roadRut);
         float rut = exp(-pow((lane - ${f(ruts)}) / ${f(rutWidth)}, 2.)) * roadRut * ${f(rutStrength)};
         earth = mix(earth, ${vec3Of(tint.rut)}, rut);
         earth = mix(${vec3Of(tint.verge)}, earth, onCarriageway);
         // A paved road's shoulder is gravel, not earth.
         vec3 roadTint = mix(earth, ${vec3Of(shoulder.tint)}, (1. - onGraded) * (1. - onPaved));
-        float grey = dot(surfaceAlbedo, vec3(.3, .59, .11));
-        // Asphalt: the gravel's own speckle, darkened and greyed, in broad patches of wear and repair.
-        vec3 roadTar = ${vec3Of(asphalt.tint)} * mix(1., grey * 2., ${f(asphalt.contrast)})
+        // Asphalt: fine world-space speckle of its aggregate, in broad patches of wear and repair. Its
+        // tone comes from noise, not the gravel texture, which streaks at grazing angles.
+        float roadSpeckle = groundNoise(roadPlan * ${f(1 / asphalt.speckleM)} + 2.9).x;
+        vec3 roadTar = ${vec3Of(asphalt.tint)} * (1. + ${f(swing * asphalt.contrast)} * (roadSpeckle - .5))
           * (1. + ${f(swing * asphalt.patches)} * (roadBroad.x * .6 + roadMid.x * .4 - .5));
         surfaceAlbedo = mix(surfaceAlbedo * roadTint, roadTar, roadAsphalt);`,
     }
   }
 }
+
+// Registered, so a clone of the road material keeps its plugin.
+RegisterClass('BABYLON.RoadMaterial', RoadMaterial)
 
 // A road material: the gravel recipe's own material, cloned so footpaths sharing it are untouched.
 export function createRoadMaterial(gravel: Material & { albedoTexture?: BaseTexture | null }) {

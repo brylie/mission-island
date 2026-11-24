@@ -71,3 +71,42 @@ test('the trailhead is asphalt from the harbor road into the fire road\'s apron,
   const inland = roadSurfaceSource.fieldsAt(fireRoad.profile.find((s) => s.along - fireRoad.profile[0].along > 20))
   assert.ok(inland.paved > roadNetwork.apronM && inland.carriageway < 0, 'further in it is earth carriageway')
 })
+
+test('the outline follows the road\'s edge, and the skirt hangs outside it', () => {
+  const off = []
+  for (const [key, uses] of surfaceEdges()) {
+    if (uses !== 1) continue
+    const [a, b] = key.split(':').map(Number)
+    const middle = { x: (at(a).x + at(b).x) / 2, z: (at(a).z + at(b).z) / 2 }
+    const { formation, paved } = roadSurfaceSource.fieldsAt(middle)
+    // The graded roads' outline. A paved road's square end is traced up to about 0.4 m long,
+    // because inside the road its field measures distance from the side, not from the end.
+    if (paved < 2) continue
+    if (Math.abs(formation) > 0.1) off.push(`${formation.toFixed(2)} at (${middle.x.toFixed(1)}, ${middle.z.toFixed(1)})`)
+  }
+  assert.deepEqual(off.slice(0, 5), [])
+  // Each skirt quad's second and third corners are its feet.
+  const inside = []
+  for (let i = mesh.surfaceIndices; i < mesh.indices.length; i += 6) {
+    for (const foot of [mesh.indices[i + 1], mesh.indices[i + 2]]) if (roadSurfaceSource.fieldsAt(at(foot)).formation < 0) inside.push(foot)
+  }
+  assert.deepEqual(inside.slice(0, 5), [])
+})
+
+test('the formation never jumps where a branch\'s strip runs back to its host, so no sliver opens there', () => {
+  const { roads, junctions } = roadSurfaceSource.network()
+  const jumps = []
+  for (const { host, hostSample } of junctions) {
+    const centre = roads[host].samples[hostSample]
+    for (let dz = -12; dz <= 12; dz += 0.5) {
+      for (let dx = -12; dx < 12; dx += 0.05) {
+        const a = roadSurfaceSource.fieldsAt({ x: centre.x + dx, z: centre.z + dz }).formation
+        const b = roadSurfaceSource.fieldsAt({ x: centre.x + dx + 0.05, z: centre.z + dz }).formation
+        // A distance field changes no faster than the distance moved, with slack for the fillet.
+        // Near the edge, where the outline is traced; far outside, a road's distance stops being asked.
+        if (Math.min(Math.abs(a), Math.abs(b)) < 1 && Math.abs(a - b) > 0.1) jumps.push(`(${(centre.x + dx).toFixed(2)}, ${(centre.z + dz).toFixed(2)})`)
+      }
+    }
+  }
+  assert.deepEqual(jumps.slice(0, 5), [])
+})

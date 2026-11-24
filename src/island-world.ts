@@ -69,11 +69,19 @@ const rainPavingWetness = 0.74
 function createRoads(meshes: MeshFactory) {
   createRoadNetworkSurface(meshes, roadSurfaceSource, groundHeight, createRoadMaterial(meshes.paintRecipe('path-gravel')))
   // Finding the culverts floods the ground around the roads, so it waits for the first frame.
-  meshes.scene.onAfterRenderObservable.addOnce(() => createCulverts(meshes, roadCulverts(), groundHeight, {
-    clearance: roadClearance,
-    carriageway: (point) => roadSurfaceSource.fieldsAt(point).carriageway,
-    earthworks: roadEarthworks,
-  }))
+  meshes.scene.onAfterRenderObservable.addOnce(() => {
+    try {
+      createCulverts(meshes, roadCulverts(), groundHeight, {
+        clearance: roadClearance,
+        carriageway: (point) => roadSurfaceSource.fieldsAt(point).carriageway,
+        earthworks: roadEarthworks,
+      })
+    }
+    catch (error) {
+      // A failure here loses only the culverts' drawing, not the frame's other observers.
+      console.error('Could not draw the road culverts', error)
+    }
+  })
 }
 
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {

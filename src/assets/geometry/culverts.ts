@@ -11,8 +11,8 @@
 //   long, widening from `widthM[0]` to `widthM[1]`, so the water doesn't scour the bank.
 // - Ends closer than `shareM` share one structure.
 export const culvertModel = {
-  headwall: { widthM: 1.5, heightM: 0.5, thicknessM: 0.3, embedM: 0.3, tone: [0.78, 0.76, 0.72] },
-  pipe: { radiusM: 0.22, sides: 12, centreM: 0.26, proudM: 0.01, shade: 0.07 },
+  headwall: { widthM: 1.5, heightM: 0.5, thicknessM: 0.3, embedM: 0.3, copingM: 0.06, copingOverhangM: 0.05, tone: [0.78, 0.76, 0.72], copingTone: [0.86, 0.84, 0.8] },
+  pipe: { radiusM: 0.22, sides: 12, centreM: 0.26, proudM: 0.01, barrelM: 0.16, wallM: 0.04, shade: 0.07, rimTone: [0.82, 0.82, 0.8] },
   dropInlet: { sizeM: 0.9, depthM: 0.6, riseM: 0.04, grateInset: 0.15, grateShade: 0.1 },
   dropClearM: 0.3,
   dropSearchM: 4,

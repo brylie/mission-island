@@ -216,11 +216,9 @@ export function groundHeight(point: Point) {
 }
 
 export const gradedRoads = () => roadGrading.roads()
-// What the road surface is built from: the graded roads, the network and its carriageway shape.
+// What the road surface is built from: the road network, and every point's distances to its edges.
 export const roadSurfaceSource = {
-  roads: () => roadGrading.roads(),
   network: () => roadGrading.network(),
-  carriagewayAt: (point: Point) => roadGrading.carriagewayAt(point),
   fieldsAt: (point: Point) => roadGrading.fieldsAt(point),
 }
 // Where the graded roads need culverts, so their hollows drain.
@@ -243,20 +241,29 @@ export function roadSurfaceAt(point: Point): 'asphalt' | 'earth' | 'verge' | und
 // Whether a point is under a graded road's drawn surface, mouths included. Answered quickly far
 // from any road.
 export const underGradedRoad = (point: Point) => roadGrading.near(point) && roadGrading.clearance(point) < 0
-// Whether a point is under any road's drawn surface, paved or graded: the terrain sinks there.
+// Signed metres to any road's formation edge, negative under a road: the terrain is cut to it.
+// Far from every road it answers Infinity without asking the grading.
 const halfWidth = 0.5
 const pavedReach = roadKinds.paved.width * halfWidth + roadKinds.paved.shoulderWidth
+// Past the paved formation by this much, so the terrain's cells crossing its edge are asked too.
+const pavedMarginM = 2
 const pavedLines = [harborRoad, depotLane]
+// A box round the paved roads, so most points skip their segments.
+const pavedBox = (() => {
+  const all = pavedLines.flat(), reach = pavedReach + pavedMarginM
+  return { west: Math.min(...all.map((p) => p.x)) - reach, east: Math.max(...all.map((p) => p.x)) + reach, south: Math.min(...all.map((p) => p.z)) - reach, north: Math.max(...all.map((p) => p.z)) + reach }
+})()
 function nearPavedRoad({ x, z }: Point) {
+  if (x < pavedBox.west || x > pavedBox.east || z < pavedBox.south || z > pavedBox.north) return false
   return pavedLines.some((line) => line.some((a, i) => {
     const b = line[i + 1]
     if (!b) return false
     const dx = b.x - a.x, dz = b.z - a.z
     const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz || 1)))
-    return Math.hypot(x - a.x - dx * t, z - a.z - dz * t) < pavedReach
+    return Math.hypot(x - a.x - dx * t, z - a.z - dz * t) < pavedReach + pavedMarginM
   }))
 }
-export const underRoad = (point: Point) => underGradedRoad(point) || nearPavedRoad(point)
+export const roadFormation = (point: Point) => (roadGrading.near(point) || nearPavedRoad(point) ? roadGrading.fieldsAt(point).formation : Infinity)
 
 function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {
   if (Math.abs(radius - shoreStations.sandEdge.radius) > slopeSampleRadius) return 0
