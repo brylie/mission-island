@@ -137,11 +137,11 @@ Four graded roads, 1 km in all, give the Fire and Rescue crew vehicle access to 
 - **Shape.** The roads run straight where a straight road holds the grade, and curve only along contours and in switchbacks ([decision](design/decisions.md)). At the centreline, cuts stay under 3 m and fills under 4 m; the banks beside a hairpin or a deep cut stand taller, up to about 9 m on the Pine Draw road.
 - **The summit.** Cairn is an 80 m massif. The spur ends at a pad on the ridge below the crag, and the last 34 m of climb is on foot.
 - **Junctions.** Each branch leaves its road at 30° or more, through a rounded mouth, and the road it leaves is as it would be alone, within 2 cm. At the trailhead the fire road's first 6 m are asphalt, so the village's paving runs into it.
-- **Drainage.** Wherever the grading leaves a hollow that would hold water, a culvert takes it to lower ground: 23 in all, found by [`road-culverts.ts`](../src/road-culverts.ts). They are not drawn yet.
+- **Drainage.** Wherever the grading leaves a hollow that would hold water, a culvert takes it to lower ground: 19 in all, including two where the Pine Draw road leaves the fire road across the head of Alder Creek, found by [`road-culverts.ts`](../src/road-culverts.ts). They are not drawn yet.
 - **Vehicles.** The flatbed, pickup and tractor each climb the spur's steepest straight stretch on full throttle and stay on the 4 m road ([`test/game-fire-road.test.mjs`](../test/game-fire-road.test.mjs)).
 - **Surface.** Packed earth with two darker wheel ruts, distinct from the pale gravel of footpaths, and a paler verge out to the shoulder's edge. Footsteps crunch on the carriageway, sound like bare ground on the verge, and stop sounding like a road past its end. On the map the roads are drawn with a dark edge so they read on every kind of land.
 - **Planting.** Plants keep 3 m from a road's edge, and trees, logs and granite outcrops keep off its cut and fill banks, where only ground cover grows.
-- **Known gaps.** The culverts have no pipes or headwalls in the scene, there are no ditches or rolling dips, and the crossing of Alder Creek's bed is plain ground until the stone ford is built.
+- **Known gaps.** The culverts have no pipes or headwalls in the scene, there are no ditches, cross-drains or rolling dips (so the fire road's ditch carries some of Cairn's runoff down to the village plain), and the crossing of Alder Creek's bed is plain ground until the stone ford is built.
 
 ## Performance
 

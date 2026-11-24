@@ -38,9 +38,10 @@ export const roadProfileSolver = { sampleStepM: 1, groundSmoothM: 20, passSmooth
 //   road into the hill, so no fill hangs off the downhill side.
 export const roadNetwork = { mouthBlendM: 8, filletM: 8, reachM: 18, cellM: 1, tileCells: 16, tileKeyStride: 1_048_576, benchSideSlope: 0.6, apronM: 6 } as const
 
-// Where water would stand on or beside a road, a culvert takes it away. Hollows are looked for
-// wherever the grading moved the ground, testing neighbours `stepM` away; hollows closer than
-// `groupM` share one culvert, at the lowest. Its outlet is followed down the natural ground, up
-// to `outletSteps` steps, to where the grading changes the ground by less than `sinkM`; a sag in a
-// cut with no way down runs its pipe to the nearest lower ground within `pipeReachM`.
-export const roadDrainage = { stepM: 1, groupM: 12, sinkM: 0.05, outletSteps: 150, pipeReachM: 40 } as const
+// Where water would stand on or beside a road, a culvert takes it away. Rain is flooded over a
+// lattice of `stepM` cells around the roads; a pond the grading deepens by more than `pondM` is a
+// basin needing a culvert. Its outlet is followed down the natural ground, up to `outletSteps`
+// steps, to where the grading changes the ground by less than `sinkM`; a sag in a cut with no way
+// down runs its pipe to the nearest such ground within `pipeReachM`. A pipe falls at least
+// `minFall` per metre of its length, and at least `sinkM`.
+export const roadDrainage = { stepM: 1, pondM: 0.03, minFall: 0.01, sinkM: 0.05, outletSteps: 150, pipeReachM: 40 } as const

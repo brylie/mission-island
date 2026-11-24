@@ -61,14 +61,13 @@ The grading object answers a handful of questions: `delta` (how far the ground m
 
 ## Drainage
 
-A fill across a hollow becomes a dam, and a road dipping in a cut becomes a basin. Builders put a culvert (a pipe under or past the road) at each one ([forest roads: water](../field-guide/practices/forest-roads.md#water)). [`road-culverts.ts`](../../src/road-culverts.ts) finds them the same way. It looks for a point that is lowest in the graded ground but not lowest in the natural ground: a hollow the grading made.
+A fill across a hollow becomes a dam, and a road dipping in a cut becomes a basin. Builders put a culvert (a pipe under or past the road) at each one ([forest roads: water](../field-guide/practices/forest-roads.md#water)). [`road-culverts.ts`](../../src/road-culverts.ts) finds them by flooding.
 
-- **Where it looks.** Every raster node the grading moved by more than a millimetre, plus every node within two cells of one, because a fill's toe can dam ground it didn't move.
-- **What counts as lowest.** No neighbour lower (`>=`), testing eight directions on a 1 m circle (`stepM`), so a flat-floored hollow counts.
-- **The outlet.** Follow the natural ground downhill, up to 150 steps (`outletSteps`), until the earthworks change the ground by less than 5 cm (`sinkM`) and the ground is below the inlet. A sag inside a cut may have no lower ground that way. Then search outward ring by ring, up to 40 m (`pipeReachM`), for the nearest untouched ground below the inlet.
-- **Grouping.** Hollows within 12 m (`groupM`) share one culvert, at the lowest.
+- **Flooding.** Over a 1 m lattice (`stepM`) covering the roads and 40 m round them, a *priority flood* works inward from the lattice's edge, always raising the lowest unvisited cell to at least the level of the cell it was reached from. The result is the level water would fill each cell to before it spills away: a cell's pond depth is that level less its height. The flood runs twice, once on the natural ground and once on the graded ground.
+- **Basins.** A cell is wet where the graded pond is more than 3 cm (`pondM`) deep and more than 3 cm deeper than the natural pond. Connected wet cells standing at one water level form a basin, and each basin gets one culvert, at its lowest cell. Nothing depends on the order cells are visited, and flat shoulders, which hold no water, don't count.
+- **The outlet.** Follow the natural ground downhill, up to 150 steps (`outletSteps`), until the earthworks change the ground by less than 5 cm (`sinkM`) and the pipe can fall at least 1% of its length (`minFall`), and at least 5 cm. A sag inside a cut may have no lower ground that way. Then search outward ring by ring, up to 40 m (`pipeReachM`), for the nearest untouched ground the pipe can fall to. A basin with no outlet keeps its culvert with no outlet, so a test can see it.
 
-Culverts are found on first ask. Today only the drainage test asks; nothing in the game draws or uses them yet.
+Culverts are found on first ask. Today only the drainage test asks; nothing in the game draws or uses them yet. Two gaps remain. A puddle shallower than 5 cm may stand on a verge on level ground, as at the trailhead. And the fire road's roadside ditch carries water from Cairn's lower slopes all the way down the road to the village plain, where on the natural ground it would have run west to the sea; real roads put cross-drains along a long grade to send water off sooner.
 
 ## Drawing the surface without seams
 
@@ -109,13 +108,13 @@ Anything about the land before roads, such as the terrain bake, its drainage tes
   - It checks that a branch leaves its host within 2 cm of the host graded alone.
   - It checks that a road ending on a peak keeps its grade.
   - A `walls` helper steps every half metre across each corridor. It fails if any step stands steeper than both the natural ground and a rock cut, with 0.5 of slack.
-  - On the shipped roads, it checks for no designer warnings and no walls. It checks that every junction leaves its host as the host alone would be, and that each branch's graded end lies within twice its host's half formation of the recorded junction, which a branch leaving at under 30° fails. It traces rain down the graded ground, through the culverts, and checks that at most two more traces stop short than on natural ground.
+  - On the shipped roads, it checks for no designer warnings and no walls. It checks that every junction leaves its host as the host alone would be, and that each branch's graded end lies within twice its host's half formation of the recorded junction, which a branch leaving at under 30° fails. It traces rain from a grid of Highwood points and from the head of Alder Creek, over the same 1 m lattice as the culverts, and checks that every trace that reaches the sea over the natural ground still does over the graded ground, through the culverts. It also checks that every pond 5 cm or deeper has an outlet.
 - [`test/road-footsteps.test.mjs`](../../test/road-footsteps.test.mjs) checks that the carriageway crunches as gravel, the verge sounds like bare ground, the trailhead apron sounds like pavement, and the ground past a free end stops sounding like a road.
 - [`test/road-design.test.mjs`](../../test/road-design.test.mjs) pins the centreline and the profile solver.
 - [`test/road-designer.test.mjs`](../../test/road-designer.test.mjs) pins Suggest route. It checks that a route is straight where a straight road holds the grade, and that it switches back in hairpins the pickup can take.
 - [`test/game-fire-road.test.mjs`](../../test/game-fire-road.test.mjs) drives each vehicle up the spur's steepest straight stretch.
 
-**Load cost.** In Node on the development machine, the four roads' profiles and banks take about 30 ms. The raster takes about 80 ms on the first height lookup near a road. Finding the culverts takes about 30 ms, paid only when something asks for them. These match the figures in the [architecture guide](../architecture.md#graded-roads). A `groundHeight` call after that is one tile lookup and a bilinear read. Measure again on older hardware before adding many more roads. Baking the road layer is the way out if the network grows.
+**Load cost.** In Node on the development machine, the four roads' profiles and banks take about 30 ms. The raster takes about 80 ms on the first height lookup near a road. Finding the culverts takes about 210 ms, for two floods over the roads' whole box, paid only when something asks for them; they should be baked before the game draws them. These match the figures in the [architecture guide](../architecture.md#graded-roads). A `groundHeight` call after that is one tile lookup and a bilinear read. Measure again on older hardware before adding many more roads. Baking the road layer is the way out if the network grows.
 
 **Seeing it.** The road designer previews a draft's grading live. The `road-trailhead`, `road-spur-junction` and `road-ridge-junction` capture presets ([`capture-presets.ts`](../../src/assets/recipes/capture-presets.ts), see [iteration tooling](../iteration-tooling.md)) frame three of the junctions.
 
@@ -129,7 +128,8 @@ Anything about the land before roads, such as the terrain bake, its drainage tes
 - **Junction seams.** Each road's ribbon overlapped the other's at a junction, and an offset was used to hide the overlap. It showed seams and a bump. *Replaced by* one junction patch traced from the grading's formation field, clipped to where no ribbon lies, at the same lift with no offset.
 - **A sawtooth edge.** The terrain mesh's triangles poked through the ribbon's edge wherever a bank rose. *Fixed by* verge lanes out to the formation edge and by sinking the terrain under ribbons.
 - **A bulging fillet.** A 12 m smooth-minimum fillet bulged the ground along the host's edge. *Reduced to* 8 m.
-- **Culverts missed, one cause at a time.**
+- **Culverts by distance.** At first a culvert was any hollow that was lowest among its neighbours, and hollows within 12 m shared one, keeping the lowest. Which hollows survived depended on the order they were visited, so the junction where Alder Creek's headwater crosses the roads got no culvert in the shipped run. Flat shoulders and cut floors under 5 mm deep each got a culvert. And the test, which compared how many rain traces stopped short, missed the creek, because culverts elsewhere drained natural dimples and evened the count. *Replaced by* basins from a priority flood, a minimum pond depth and pipe fall, and a test that follows each trace: water that reaches the sea over the natural ground must still reach it.
+- **Culverts missed, one cause at a time** (in the first detector).
   - A strict "lowest" test missed flat-floored hollows. It now uses `>=`.
   - The neighbour stencil didn't match the drainage test's. Both now use the same 1 m circle of eight directions.
   - Walking a grid of points skipped some because of rounding. It now walks the raster's own nodes.

@@ -162,49 +162,70 @@ test('a road ending on a sharp peak keeps its grade to the end, rather than jump
   assert.ok(steepest <= kind.maxGrade + 0.005, `steepest grade ${(steepest * 100).toFixed(0)}%`)
 })
 
-test('the shipped roads drain: every hollow their grading makes empties through a culvert', async () => {
+test('the shipped roads drain: water that reaches the sea over the natural ground still does, through the culverts', async () => {
   const { highwoodHeightmap } = await import('../src/assets/geometry/highwood-heightmap.ts')
   const { groundHeight, originalCoastRadius, roadCulverts, waterLevel } = await import('../src/terrain.ts')
   const { authoredShare } = await import('../src/worlds/starter/generation/protection.ts')
+  const { roadDrainage } = await import('../src/assets/geometry/road-kinds.ts')
+  const { highwoodAuthoredLimit } = await import('../src/worlds/starter/layout/highwood-planting.ts')
   const culverts = roadCulverts()
+  assert.ok(culverts.length > 0, 'the roads have culverts')
+  // Every pond deeper than a puddle drains; a shallower one may stand on level ground.
+  assert.deepEqual(culverts.filter((c) => !c.outlet && c.depth >= roadDrainage.sinkM).map((c) => `${c.road} at ${c.along.toFixed(0)} m`), [])
   const { west, south, cell, columns, rows } = highwoodHeightmap
-  const { groupM, stepM } = (await import('../src/assets/geometry/road-kinds.ts')).roadDrainage
-  // Steepest descent from a grid of Highwood land points, as the terrain's own drainage test does,
-  // except that water reaching a culvert's inlet carries on from its outlet. Steps are a metre, the
-  // road raster's cell, so water follows a ditch along a road rather than stepping over it.
-  const stuckOn = (ground, useCulverts) => {
-    let stuck = 0, traced = 0
-    for (let z = 4; z < rows - 4; z += 9) {
-      for (let x = 4; x < columns - 4; x += 9) {
-        let point = { x: west + x * cell, z: south + z * cell }
-        if (ground(point) < waterLevel + 0.5 || authoredShare(point, originalCoastRadius(point)) > 0) continue
-        traced++
-        const used = new Set()
-        for (let step = 0; step < 1800; step++) {
-          let best = point, lowest = ground(point)
-          for (let a = 0; a < 8; a++) {
-            const next = { x: point.x + Math.cos(a * Math.PI / 4) * stepM, z: point.z + Math.sin(a * Math.PI / 4) * stepM }
-            if (ground(next) < lowest) [best, lowest] = [next, ground(next)]
-          }
-          if (lowest < waterLevel) break
-          if (best !== point) {
-            point = best
-            continue
-          }
-          const culvert = useCulverts && culverts.find((c) => !used.has(c) && Math.hypot(c.inlet.x - point.x, c.inlet.z - point.z) < groupM)
-          if (culvert) {
-            used.add(culvert)
-            point = culvert.outlet
-            continue
-          }
-          if (ground(point) - waterLevel > 0.3) stuck++
-          break
-        }
+  // Water moves over the same 1 m lattice the culverts are found on, to any of eight neighbours.
+  const lattice = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]
+  const neighbours = (point) => lattice.map(([dx, dz]) => ({ x: point.x + dx * roadDrainage.stepM, z: point.z + dz * roadDrainage.stepM }))
+  const key = ({ x, z }) => `${x},${z}`
+  // Lower ground reachable without climbing more than a puddle's depth, within a few metres: water
+  // spills out of a dimple shallower than the culverts' pond threshold.
+  const spill = (ground, point) => {
+    const floor = ground(point), seen = new Set([key(point)]), queue = [point]
+    while (queue.length) {
+      const at = queue.shift()
+      for (const next of neighbours(at)) {
+        if (seen.has(key(next)) || Math.hypot(next.x - point.x, next.z - point.z) > 10 || ground(next) > floor + roadDrainage.pondM) continue
+        if (ground(next) < floor) return next
+        seen.add(key(next))
+        queue.push(next)
       }
     }
-    return { stuck, traced }
+    return undefined
   }
-  const natural = stuckOn(naturalGroundHeight, false), graded = stuckOn(groundHeight, true)
-  assert.ok(culverts.length > 0, 'the roads have culverts')
-  assert.ok(graded.stuck <= natural.stuck + 2, `${graded.stuck} of ${graded.traced} traces stop on graded ground with culverts, against ${natural.stuck} on natural ground`)
+  // Steepest descent, so water follows a ditch along a road rather than stepping over it. Water
+  // leaves Highwood at the sea or on the authored village plain, whose own drains take it on.
+  const reachesSea = (ground, start, useCulverts) => {
+    let point = { x: Math.round(start.x), z: Math.round(start.z) }
+    const used = new Set()
+    for (let step = 0; step < 4000; step++) {
+      if (ground(point) <= waterLevel + roadDrainage.pondM || authoredShare(point, originalCoastRadius(point)) >= highwoodAuthoredLimit) return true
+      const best = neighbours(point).reduce((low, next) => (ground(next) < ground(low) ? next : low), point)
+      if (best !== point) {
+        point = best
+        continue
+      }
+      const out = spill(ground, point)
+      if (out) {
+        point = out
+        continue
+      }
+      // A culvert takes water only from its own basin: an inlet beside the stuck point, no higher.
+      const culvert = useCulverts && culverts.find((c) => c.outlet && !used.has(c) && Math.hypot(c.inlet.x - point.x, c.inlet.z - point.z) < 3 && groundHeight(c.inlet) <= ground(point) + roadDrainage.pondM)
+      if (!culvert) return false
+      used.add(culvert)
+      point = { x: Math.round(culvert.outlet.x), z: Math.round(culvert.outlet.z) }
+    }
+    return false
+  }
+  // A grid of Highwood land points, plus the head of Alder Creek, whose headwater crosses the
+  // junction where the fire road meets the Pine Draw road.
+  const starts = [{ x: -255, z: 345 }, { x: -240, z: 352 }, { x: -262, z: 338 }]
+  for (let z = 4; z < rows - 4; z += 9) {
+    for (let x = 4; x < columns - 4; x += 9) {
+      const point = { x: west + x * cell, z: south + z * cell }
+      if (groundHeight(point) > waterLevel + 0.5 && authoredShare(point, originalCoastRadius(point)) <= 0) starts.push(point)
+    }
+  }
+  const cutOff = starts.filter((start) => reachesSea(naturalGroundHeight, start, false) && !reachesSea(groundHeight, start, true))
+  assert.deepEqual(cutOff.map(({ x, z }) => `(${x.toFixed(0)}, ${z.toFixed(0)})`), [], 'water that reaches the sea over natural ground is cut off by the roads')
 })
