@@ -63,6 +63,7 @@ Presets are declarative data in [`src/assets/recipes/capture-presets.ts`](../src
 | `ground-cairn-summit` | From 8 m above Cairn Summit's crown down its rocky south-east flank, a ground-texture check for tiling from the overlook. |
 | `ground-cairn-slope` | Standing on bare granite on Cairn's south-east flank at walking height, a close ground-texture check. |
 | `ground-cairn-northeast` | Up Cairn Summit's steep north-east face from the ridge foot, through pines: granite crags, clitter and the rock-to-turf edge at walking height. |
+| `ground-cairn-midrange` | Cairn's bare north-east granite 25–45 m off, from 12 m up: where joint cracks fade out with distance, the band to check for seams. |
 | `specimen-tussock` | A grass tussock specimen. Use `--grid` for a four-seed turntable. |
 
 The `highwood-*` presets are the [Highwood hero views](backcountry.md#hero-views), plus the Cairn landmark check. Playtest events' **Go to** lists them too, so a tester can stand at each eye. The `ground-cairn-*` presets check Highwood's ground textures on Cairn Summit; they are not hero views, so **Go to** leaves them out. The older landscape presets were the current island's nearest equivalents before Highwood existed. Move a preset's eye and look points rather than adding near-duplicates.
