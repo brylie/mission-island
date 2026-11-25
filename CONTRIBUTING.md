@@ -122,6 +122,7 @@ Name gameplay thresholds, timeouts, and other numeric settings in the module tha
 **Approved locations for authored numeric data**
 
 - `src/assets/geometry/*.ts` for dimensions, support volumes, and vertex or placement tuples in local model coordinates.
+  It also holds the generated bakes: the Highwood heightmap, the planting and the road layer. Their scripts write them, and each records a source hash that a test checks. Rebake with `npm run island:generate`, or with `npm run island:roads` after a road change; never edit them by hand.
 - `src/assets/audio/*.ts`, `src/assets/effects/*.ts`, and `src/assets/recipes/*.ts` for authored sound, particle, shader, and lighting data.
 - The island layout files listed in `eslint.config.mjs` for authored terrain profiles, scenery locations, and routes.
 - `test/` for test inputs and expected values.
@@ -208,7 +209,7 @@ Use typed traits when entities can share behavior with different tuning or equip
 Babylon.js draws the island and vehicle exteriors. Vite serves the game and its development updates. The host runs the shared simulation at 30 ticks per second. Browsers send inputs and receive snapshots over a same-origin WebSocket. The host assigns vehicle seats, tracks item ownership and fishing rewards, and advances the mission for both players. Cannon-es simulates loose crates on the terrain and on the moving flatbed. The clients render the position and rotation the host sends.
 
 - `src/world.ts` holds island coordinates, buildings and mission locations.
-- `src/scenery.ts` shares prop placement between collision and rendering. `src/terrain.ts` defines the shoreline and wading depth.
+- `src/scenery.ts` shares prop placement between collision and rendering. `src/natural-ground.ts` defines the shoreline and wading depth, `src/roads.ts` the graded roads, and `src/terrain.ts` the ground with roads in it.
 - `src/routes.ts` defines road, walkway, and trail centerlines used to draw the terrain and minimap.
 - `src/protocol.ts` defines what clients and the host exchange.
 - `src/actions.ts` shares proximity rules between the game and its prompts.

@@ -4,8 +4,8 @@ export const bakeSources = [
   'scripts/generate-island.mjs',
   'src/math/gradient-noise.ts',
   'src/math/noise.ts',
+  'src/natural-ground.ts',
   'src/seeded-random.ts',
-  'src/terrain.ts',
   'src/worlds/starter/beach-landforms.ts',
   'src/worlds/starter/coastline.ts',
   'src/worlds/starter/generation/erosion.ts',
@@ -15,13 +15,50 @@ export const bakeSources = [
   'src/worlds/starter/layout/terrain.ts',
 ] as const
 
+// Everything the baked road layer depends on: the roads, the code that grades them, and the
+// natural ground they are graded into, the baked heightmap included, so a terrain rebake makes
+// the road bake stale. npm run island:roads rebakes it, then the planting.
+export const roadSources = [
+  'scripts/bake-roads.mjs',
+  'src/assets/geometry/highwood-heightmap.ts',
+  'src/assets/geometry/island-preview.ts',
+  'src/assets/geometry/road-kinds.ts',
+  'src/baked-roads.ts',
+  'src/fingerprint.ts',
+  'src/math/noise.ts',
+  'src/math/smoothstep.ts',
+  'src/natural-ground.ts',
+  'src/paved-roads.ts',
+  'src/road-banks.ts',
+  'src/road-culverts.ts',
+  'src/road-grading.ts',
+  'src/road-index.ts',
+  'src/road-network.ts',
+  'src/road-profile.ts',
+  'src/road-shape.ts',
+  'src/roads.ts',
+  'src/worlds/starter/beach-landforms.ts',
+  'src/worlds/starter/coastline.ts',
+  'src/worlds/starter/generation/protection.ts',
+  'src/worlds/starter/highwood-terrain.ts',
+  'src/worlds/starter/layout/island-generation.ts',
+  'src/worlds/starter/layout/places.ts',
+  'src/worlds/starter/layout/roads.ts',
+  'src/worlds/starter/layout/routes.ts',
+  'src/worlds/starter/layout/terrain.ts',
+] as const
+
 // Everything the baked Highwood planting depends on; npm run island:generate rebakes it after the terrain.
 export const plantingSources = [
   'scripts/plant-highwood.mjs',
   'src/assets/geometry/highwood-heightmap.ts',
   'src/assets/geometry/island-preview.ts',
+  'src/assets/geometry/road-layer.ts',
+  'src/baked-roads.ts',
+  'src/fingerprint.ts',
   'src/math/gradient-noise.ts',
   'src/math/smoothstep.ts',
+  'src/natural-ground.ts',
   'src/assets/geometry/road-kinds.ts',
   'src/paved-roads.ts',
   'src/road-banks.ts',
@@ -31,6 +68,7 @@ export const plantingSources = [
   'src/road-network.ts',
   'src/road-profile.ts',
   'src/road-shape.ts',
+  'src/roads.ts',
   'src/routes.ts',
   'src/seeded-random.ts',
   'src/terrain.ts',

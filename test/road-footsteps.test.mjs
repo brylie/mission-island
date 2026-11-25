@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { groundSurface } from '../src/audio/surface.ts'
 import { roadKinds, roadNetwork } from '../src/assets/geometry/road-kinds.ts'
-import { gradedRoads, roadSurfaceAt, roadSurfaceSource } from '../src/terrain.ts'
+import { gradedRoads, roadSurfaceSource } from '../src/roads.ts'
+import { roadSurfaceAt } from '../src/road-surface-at.ts'
 
 const across = (sample, metres) => ({ x: sample.x - sample.dz * metres, z: sample.z + sample.dx * metres })
 

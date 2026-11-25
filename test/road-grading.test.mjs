@@ -164,7 +164,8 @@ test('a road ending on a sharp peak keeps its grade to the end, rather than jump
 
 test('the shipped roads drain: water that reaches the sea over the natural ground still does, through the culverts', async () => {
   const { highwoodHeightmap } = await import('../src/assets/geometry/highwood-heightmap.ts')
-  const { groundHeight, originalCoastRadius, roadCulverts, waterLevel } = await import('../src/terrain.ts')
+  const { groundHeight, originalCoastRadius, waterLevel } = await import('../src/terrain.ts')
+  const { roadCulverts } = await import('../src/roads.ts')
   const { authoredShare } = await import('../src/worlds/starter/generation/protection.ts')
   const { roadDrainage } = await import('../src/assets/geometry/road-kinds.ts')
   const { highwoodAuthoredLimit } = await import('../src/worlds/starter/layout/highwood-planting.ts')

@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { roadNetwork } from '../src/assets/geometry/road-kinds.ts'
 import { buildRoadNetworkMesh } from '../src/assets/road-network-mesh.ts'
-import { gradedRoads, groundHeight, roadSurfaceSource } from '../src/terrain.ts'
+import { groundHeight } from '../src/terrain.ts'
+import { gradedRoads, roadSurfaceSource } from '../src/roads.ts'
 
 const mesh = buildRoadNetworkMesh(roadSurfaceSource, groundHeight)
 const coordinates = 3

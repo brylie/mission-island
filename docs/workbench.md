@@ -53,7 +53,8 @@ Open **World → Road designer** (`workbench.html#road-designer`) to lay out the
 - **Save to source** writes the layout to [`src/worlds/starter/layout/roads.ts`](../src/worlds/starter/layout/roads.ts) and nothing else. It works only on the development server, from this computer, and from the Workbench page that server serves.
 - The draft remembers which `roads.ts` it started from. If the file has changed since, for example after a pull, the first press of Save says so, and a second press overwrites it. Discard draft starts again from the new roads instead. A draft saved by an older Workbench, before it kept this, warns once on its first save too.
 - `roads.ts` feeds the terrain the dev server bakes into its config, so a save restarts the dev server. Crews connected to it drop and can rejoin, because the island is checkpointed. The page reloads, and the status line still shows the save notice.
-- Then run `npm run island:plant`, because the Highwood planting keeps clear of roads, and commit both files. You don't need `npm run island:generate`, which also rebuilds the terrain.
+- Until the roads are baked, the game grades them on load and says so in the console. Run `npm run island:roads`: it bakes the roads' cut and fill, culverts and outline into `src/assets/geometry/road-layer.ts`, then re-plants Highwood clear of them. Commit `roads.ts` with both bakes. You don't need `npm run island:generate`, which also rebuilds the terrain.
+- Save checks the draft with the same rules the server uses (`src/road-layout-source.ts`) before it sends it, so a draft the server would refuse says why at once. The server writes `roads.ts` whole or not at all, through a temporary file renamed over it.
 
 ## Procedural surfaces
 

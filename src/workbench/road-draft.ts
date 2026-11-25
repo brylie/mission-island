@@ -1,4 +1,5 @@
 import { readStorage, writeStorage } from '../browser-storage.ts'
+import { fingerprint } from '../fingerprint.ts'
 import type { Point } from '../world.ts'
 import { roadSaveDecimals } from '../workbench-save-contract.ts'
 import { starterRoads, type StarterRoadLayout } from '../worlds/starter/layout/roads.ts'
@@ -24,25 +25,19 @@ const half = 0.5
 // A road needs at least two dots; deleting one of the last two deletes the road.
 const minimumDots = 2
 
-// FNV-1a, 32 bits: a short, stable fingerprint of the roads, not a security hash.
-const fnvOffset = 0x811c9dc5, fnvPrime = 0x01000193, hexBase = 16
-
 const rounded = (value: number) => Number(value.toFixed(roadSaveDecimals))
 
 // A fingerprint of roads as Save writes them: rounded and trimmed as the server does,
 // so a draft and the roads.ts saved from it share one.
 export function roadsHash(roads: readonly StarterRoadLayout[]) {
-  const text = JSON.stringify(roads.map((road) => [
+  return fingerprint(JSON.stringify(roads.map((road) => [
     road.id,
     road.name.trim(),
     road.kind,
     road.points.map(({ x, z }) => [rounded(x), rounded(z)]),
     road.bends.map(rounded),
     road.maxGrade ?? [],
-  ]))
-  let hash = fnvOffset
-  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), fnvPrime)
-  return (hash >>> 0).toString(hexBase)
+  ])))
 }
 
 const copy = (roads: readonly StarterRoadLayout[]): RoadDraftRoad[] => roads.map((road) => ({

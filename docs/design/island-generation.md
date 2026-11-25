@@ -63,7 +63,7 @@ Tested automatically where possible:
 
 ## The current bake
 
-`npm run island:generate` runs the generator in about 3 seconds. It writes `src/assets/geometry/highwood-heightmap.ts`, 454 KB of base64 under the repository's 500 KB file limit, and the preview `docs/images/highwood-generated.png`. Its parameters are in `src/worlds/starter/layout/island-generation.ts`, and the code is in `src/worlds/starter/generation/`. The asset stores heights every 2 m and layers every 4 m; the generator works at 1 m.
+`npm run island:generate` runs the generator in about 3 seconds. It writes `src/assets/geometry/highwood-heightmap.ts`, 454 KB of base64 under the repository's 500 KB file limit, and the preview `docs/images/highwood-generated.png`. It then runs `npm run island:roads`, which bakes the road layer and the planting. Its parameters are in `src/worlds/starter/layout/island-generation.ts`, and the code is in `src/worlds/starter/generation/`. The asset stores heights every 2 m and layers every 4 m; the generator works at 1 m.
 
 - **Join.** The bake owns the join: across the old north-west shore, the higher of the authored and generated ground wins, so Highwood's land meets the old island and its sea never drowns old land. At runtime the baked height is the ground beyond protected land, and the exact authored ground takes over only in the last tenth of the join's fade, so the two meet without a step. The land's likelihood fades out well inside the join sector, so its coast is drawn by the noise rather than the sector's edge.
 - **Stale bakes.** The asset records a hash of every file it depends on (`bake-sources.ts`): the generator, its parameters and the authored terrain. A test fails until the island is baked again.

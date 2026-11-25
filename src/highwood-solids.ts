@@ -5,7 +5,9 @@ import { groundHeight } from './terrain.ts'
 import type { Point } from './world.ts'
 import { highwoodGraniteRocks } from './highwood-outcrops.ts'
 import { rockBlockLean } from './granite-blocks.ts'
-import { highwoodPlanting, logRise, plantTemplateOptions } from './worlds/starter/highwood-planting.ts'
+import { standingPlants } from './highwood-standing.ts'
+import { onRoadsChange } from './roads.ts'
+import { logRise, plantTemplateOptions } from './worlds/starter/highwood-planting.ts'
 
 // Highwood's solid trunks, snags, fallen logs and granite rocks for walking, indexed by a grid
 // so each step checks only the few nearby, not every tree in the forest. Soft
@@ -23,14 +25,12 @@ type Solid = Trunk | Log | Block
 
 const cellM = 4
 const half = 0.5
-const cells = new Map<string, Solid[]>()
 // Crowns for sound: pines hush, broadleaves flutter.
 interface Crown { x: number, z: number, height: number, leafy: boolean }
-const crowns = new Map<string, Crown[]>()
 const needleSpecies = new Set(['scots-pine', 'pine-sapling', 'pine-snag'])
 const key = (i: number, j: number) => `${i},${j}`
 
-function file(solid: Solid, reach: number) {
+function file(cells: Map<string, Solid[]>, solid: Solid, reach: number) {
   const [x0, z0, x1, z1] = solid.kind !== 'lying'
     ? [solid.x - reach, solid.z - reach, solid.x + reach, solid.z + reach]
     : [Math.min(solid.x, solid.x + solid.dx * solid.length) - reach, Math.min(solid.z, solid.z + solid.dz * solid.length) - reach, Math.max(solid.x, solid.x + solid.dx * solid.length) + reach, Math.max(solid.z, solid.z + solid.dz * solid.length) + reach]
@@ -43,38 +43,50 @@ function file(solid: Solid, reach: number) {
   }
 }
 
-for (const plant of highwoodPlanting()) {
-  if (plant.layer === 'understory') continue
-  const collision = treeCollision(plantTemplateOptions(plant, 'near') as TreeTemplateOptions)
-  if (!collision.solid) continue
-  if (plant.layer === 'canopy' && collision.shape === 'upright') {
-    const list = crowns.get(key(Math.floor(plant.x / cellM), Math.floor(plant.z / cellM))) ?? []
-    list.push({ x: plant.x, z: plant.z, height: collision.height * plant.scale, leafy: !needleSpecies.has(plant.species) })
-    crowns.set(key(Math.floor(plant.x / cellM), Math.floor(plant.z / cellM)), list)
+// The grids, filed on first use from the standing plants and the granite rocks, and again after
+// the roads change.
+let grids: { cells: Map<string, Solid[]>, crowns: Map<string, Crown[]> } | undefined
+function fileSolids() {
+  const cells = new Map<string, Solid[]>()
+  const crowns = new Map<string, Crown[]>()
+  for (const plant of standingPlants()) {
+    if (plant.layer === 'understory') continue
+    const collision = treeCollision(plantTemplateOptions(plant, 'near') as TreeTemplateOptions)
+    if (!collision.solid) continue
+    if (plant.layer === 'canopy' && collision.shape === 'upright') {
+      const list = crowns.get(key(Math.floor(plant.x / cellM), Math.floor(plant.z / cellM))) ?? []
+      list.push({ x: plant.x, z: plant.z, height: collision.height * plant.scale, leafy: !needleSpecies.has(plant.species) })
+      crowns.set(key(Math.floor(plant.x / cellM), Math.floor(plant.z / cellM)), list)
+    }
+    const ground = groundHeight(plant)
+    const radius = collision.radius * plant.scale
+    if (collision.shape === 'upright') file(cells, { kind: 'upright', x: plant.x, z: plant.z, radius, top: ground + collision.height * plant.scale }, radius)
+    else {
+      // A lying log runs along the template's +x, turned by the plant's heading.
+      const dx = Math.cos(plant.heading), dz = -Math.sin(plant.heading)
+      const length = collision.length * plant.scale
+      // The log follows the ground from its root to its far end, so its top rises along it.
+      file(cells, { kind: 'lying', x: plant.x, z: plant.z, dx, dz, length, radius, top: ground + (collision.axisHeight + collision.radius) * plant.scale, rise: logRise(plant, length) }, radius)
+    }
   }
-  const ground = groundHeight(plant)
-  const radius = collision.radius * plant.scale
-  if (collision.shape === 'upright') file({ kind: 'upright', x: plant.x, z: plant.z, radius, top: ground + collision.height * plant.scale }, radius)
-  else {
-    // A lying log runs along the template's +x, turned by the plant's heading.
-    const dx = Math.cos(plant.heading), dz = -Math.sin(plant.heading)
-    const length = collision.length * plant.scale
-    // The log follows the ground from its root to its far end, so its top rises along it.
-    file({ kind: 'lying', x: plant.x, z: plant.z, dx, dz, length, radius, top: ground + (collision.axisHeight + collision.radius) * plant.scale, rise: logRise(plant, length) }, radius)
-  }
-}
 
-// Granite outcrops and clitter: each block is a rounded rectangle on its footprint, its top
-// leaning as the drawn block's does, so a stack steps up block by block and the drawn rock,
-// which stays inside it, is solid everywhere.
-for (const rock of highwoodGraniteRocks()) {
-  for (const [index, slab] of rock.slabs.entries()) {
-    const halfLength = slab.length * half, halfWidth = slab.width * half
-    const radius = Math.min(halfLength, halfWidth) * graniteOutcropShape.solidCornerShare
-    const block: Block = { kind: 'block', x: rock.x + slab.dx, z: rock.z + slab.dz, dx: Math.cos(slab.heading), dz: Math.sin(slab.heading), halfLength, halfWidth, radius, top: rock.ground + slab.base + slab.height, ...rockBlockLean(rock, index) }
-    file(block, Math.hypot(halfLength, halfWidth))
+  // Granite outcrops and clitter: each block is a rounded rectangle on its footprint, its top
+  // leaning as the drawn block's does, so a stack steps up block by block and the drawn rock,
+  // which stays inside it, is solid everywhere.
+  for (const rock of highwoodGraniteRocks()) {
+    for (const [index, slab] of rock.slabs.entries()) {
+      const halfLength = slab.length * half, halfWidth = slab.width * half
+      const radius = Math.min(halfLength, halfWidth) * graniteOutcropShape.solidCornerShare
+      const block: Block = { kind: 'block', x: rock.x + slab.dx, z: rock.z + slab.dz, dx: Math.cos(slab.heading), dz: Math.sin(slab.heading), halfLength, halfWidth, radius, top: rock.ground + slab.base + slab.height, ...rockBlockLean(rock, index) }
+      file(cells, block, Math.hypot(halfLength, halfWidth))
+    }
   }
+  return { cells, crowns }
 }
+const solidGrids = () => grids ??= fileSolids()
+onRoadsChange(() => {
+  grids = undefined
+})
 
 // Distance from a point to a solid, and the solid's top there.
 function contact(solid: Solid, point: Point) {
@@ -96,6 +108,7 @@ function contact(solid: Solid, point: Point) {
 // The highest Highwood solid under a walker of the given padding, or -Infinity.
 export function highwoodSolidTop(point: Point, padding: number) {
   let top = -Infinity
+  const { cells } = solidGrids()
   const i = Math.floor(point.x / cellM), j = Math.floor(point.z / cellM)
   const reach = Math.ceil(padding / cellM)
   for (let di = -reach; di <= reach; di++) {
@@ -112,6 +125,7 @@ export function highwoodSolidTop(point: Point, padding: number) {
 // Highwood's canopy trees within `reach` metres of a point, from the grid cells around it.
 export function highwoodCrownsWithin(point: Point, reach: number) {
   const found: Crown[] = []
+  const { crowns } = solidGrids()
   const i = Math.floor(point.x / cellM), j = Math.floor(point.z / cellM), span = Math.ceil(reach / cellM)
   for (let di = -span; di <= span; di++) {
     for (let dj = -span; dj <= span; dj++) {

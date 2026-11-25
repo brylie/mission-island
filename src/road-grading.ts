@@ -60,7 +60,12 @@ interface Candidate {
 
 interface RoadSurfacePoint { road: GradedRoad, carriageway: number, formation: number, across: number, along: number, surface: 'asphalt' | 'earth' }
 
-const square = 2
+// The crown falls with the square of the distance across the road.
+const crownPower = 2
+// A smooth minimum over `k` metres dips at most k / 4 below the lower of its two fields.
+const smoothMinDepthShare = 4
+// A trimmed branch keeps at least this many samples, so it still has a direction.
+const minKeptSamples = 2
 // A raster node counts as moved by the grading when it changed by more than this.
 const changeM = 1e-3
 // Nodes this many cells from a moved node are looked at too.
@@ -69,7 +74,7 @@ const clamp01 = (t: number) => Math.min(1, Math.max(0, t))
 // Polynomial smooth minimum: a union of two distance fields with corners rounded over `k` metres.
 function smoothMin(a: number, b: number, k: number) {
   const h = Math.max(k - Math.abs(a - b), 0) / k
-  return Math.min(a, b) - h * h * k / (square + square)
+  return Math.min(a, b) - h * h * k / smoothMinDepthShare
 }
 
 // The furthest any of a road's banks reaches before meeting the ground.
@@ -90,7 +95,7 @@ function surfaceNear(road: GradedRoad, point: Point, natural: GroundFunction) {
   const sample = road.profile[nearest(road.profile, point).index]
   const off = (point.x - sample.x) * sample.dx + (point.z - sample.z) * sample.dz
   const across = Math.abs((point.x - sample.x) * sample.dz - (point.z - sample.z) * sample.dx)
-  return sample.y + sample.grade * off - roadKinds[road.kind].crown * Math.min(1, (across / road.halfWidth) ** square)
+  return sample.y + sample.grade * off - roadKinds[road.kind].crown * Math.min(1, (across / road.halfWidth) ** crownPower)
 }
 
 // A branch's samples without those whose row across the road touches its host's formation, which
@@ -102,8 +107,8 @@ function trimmed(samples: readonly RoadSample[], hosts: readonly ({ end: 'start'
   const inside = (sample: RoadSample, host: GradedRoad) => [-halfFormation, 0, halfFormation].some((t) =>
     nearest(host.profile, { x: sample.x - sample.dz * t, z: sample.z + sample.dx * t }).distance < host.halfFormation)
   const [start, end] = hosts
-  if (start) while (from < to - square && inside(samples[from], start.host)) from++
-  if (end) while (to - square > from && inside(samples[to - 1], end.host)) to--
+  if (start) while (from < to - minKeptSamples && inside(samples[from], start.host)) from++
+  if (end) while (to - minKeptSamples > from && inside(samples[to - 1], end.host)) to--
   return samples.slice(from, to)
 }
 
@@ -173,7 +178,7 @@ function candidateAt(roads: readonly GradedRoad[], road: number, sample: number,
     along = 0
   }
   const centre = s.y + s.grade * along
-  const surface = graded.graded ? centre - kind.crown * Math.min(1, (across / graded.halfWidth) ** square) : natural(point)
+  const surface = graded.graded ? centre - kind.crown * Math.min(1, (across / graded.halfWidth) ** crownPower) : natural(point)
   const banks = graded.banks[sample]?.[side >= 0 ? 'left' : 'right']
   return {
     road,
@@ -218,7 +223,7 @@ export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural
     // Candidates reach past each road's banks by the most a junction's fillet can lower a
     // formation, so a point the blend pulls back within a bank's reach still has both roads, and
     // past its ends by the strip carried on to the road it joins.
-    const filletDepth = roadNetwork.filletM / (square + square)
+    const filletDepth = roadNetwork.filletM / smoothMinDepthShare
     const radius = Math.max(...roads.map((road) => road.halfFormation + bankReach(road.banks) + filletDepth + Math.max(road.joins.start, road.joins.end)))
     function evaluate(point: Point) {
       const ground = natural(point)
@@ -257,6 +262,8 @@ export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural
       return built.culverts
     },
     network: () => get().network,
+    // The raster's tiles by key, for the road bake (scripts/bake-roads.mjs).
+    tiles: () => get().raster().tiles,
     // Whether a point is near enough a graded road for its grading raster to cover it: a quick
     // test before asking anything dearer.
     near: (point: Point) => get().raster().near(point),
@@ -306,13 +313,18 @@ export function createRoadGrading(layouts: readonly StarterRoadLayout[], natural
 }
 
 const { tileKeyStride } = roadNetwork
+const { cellM, tileCells } = roadNetwork
+const tileM = cellM * tileCells, nodes = tileCells + 1
+// A raster tile's key in the map of tiles, from its column and row.
+export const rasterTileKey = (tx: number, tz: number) => tx * tileKeyStride + tz
+const tileOfKey = (key: number) => {
+  const tx = Math.round(key / tileKeyStride)
+  return { tx, tz: key - tx * tileKeyStride }
+}
 
 // The height changes over the ground near the graded roads, in square tiles of cells, sampled
 // between nodes. Tiles far from any graded road are never built and read as no change.
 function createRaster(roads: readonly GradedRoad[], evaluate: (point: Point) => { height: number, ground: number }) {
-  const { cellM, tileCells } = roadNetwork
-  const tileM = cellM * tileCells, nodes = tileCells + 1
-  const keyOf = (tx: number, tz: number) => tx * tileKeyStride + tz
   const tiles = new Map<number, Float32Array>()
   const buildTile = (tx: number, tz: number) => {
     const delta = new Float32Array(nodes * nodes)
@@ -322,7 +334,7 @@ function createRaster(roads: readonly GradedRoad[], evaluate: (point: Point) => 
         delta[j * nodes + i] = height - ground
       }
     }
-    tiles.set(keyOf(tx, tz), delta)
+    tiles.set(rasterTileKey(tx, tz), delta)
   }
   for (const road of roads.filter((graded) => graded.graded)) {
     road.profile.forEach((sample, i) => {
@@ -330,15 +342,21 @@ function createRaster(roads: readonly GradedRoad[], evaluate: (point: Point) => 
       const reach = road.halfFormation + bankReach(road.banks.slice(i, i + 1)) + roadNetwork.filletM * Number(i === 0 || i === road.profile.length - 1) + cellM
       for (let tz = Math.floor((sample.z - reach) / tileM); tz <= Math.floor((sample.z + reach) / tileM); tz++) {
         for (let tx = Math.floor((sample.x - reach) / tileM); tx <= Math.floor((sample.x + reach) / tileM); tx++) {
-          if (!tiles.has(keyOf(tx, tz))) buildTile(tx, tz)
+          if (!tiles.has(rasterTileKey(tx, tz))) buildTile(tx, tz)
         }
       }
     })
   }
+  return rasterLookup(tiles)
+}
+
+// Reads a raster of tiles, built here or decoded from the road bake (src/baked-roads.ts): each
+// tile holds (tileCells + 1)² nodes, row by row, so neighbouring tiles share their edge nodes.
+export function rasterLookup(tiles: ReadonlyMap<number, Float32Array>) {
   // Every raster node the grading moved, and those beside them, where a fill's toe can dam
   // the natural ground: the places to look for the hollows grading makes.
   const changed = () => [...tiles].flatMap(([key, delta]) => {
-    const tx = Math.round(key / tileKeyStride), tz = key - tx * tileKeyStride
+    const { tx, tz } = tileOfKey(key)
     const moved = (i: number, j: number) => i >= 0 && j >= 0 && i < nodes && j < nodes && Math.abs(delta[j * nodes + i]) > changeM
     const near = (i: number, j: number) => {
       for (let dj = -besideCells; dj <= besideCells; dj++) for (let di = -besideCells; di <= besideCells; di++) if (moved(i + di, j + dj)) return true
@@ -348,7 +366,7 @@ function createRaster(roads: readonly GradedRoad[], evaluate: (point: Point) => 
   })
   const at = ({ x, z }: Point) => {
     const tx = Math.floor(x / tileM), tz = Math.floor(z / tileM)
-    const delta = tiles.get(keyOf(tx, tz))
+    const delta = tiles.get(rasterTileKey(tx, tz))
     if (!delta) return 0
     const gx = (x - tx * tileM) / cellM, gz = (z - tz * tileM) / cellM
     const i = Math.min(tileCells - 1, Math.floor(gx)), j = Math.min(tileCells - 1, Math.floor(gz)), fx = gx - i, fz = gz - j
@@ -356,6 +374,6 @@ function createRaster(roads: readonly GradedRoad[], evaluate: (point: Point) => 
     return (delta[node] * (1 - fx) + delta[node + 1] * fx) * (1 - fz) + (delta[node + nodes] * (1 - fx) + delta[node + nodes + 1] * fx) * fz
   }
   // Whether a point lies in a tile the grading built, near some graded road.
-  const near = ({ x, z }: Point) => tiles.has(keyOf(Math.floor(x / tileM), Math.floor(z / tileM)))
-  return { at, changed, near }
+  const near = ({ x, z }: Point) => tiles.has(rasterTileKey(Math.floor(x / tileM), Math.floor(z / tileM)))
+  return { at, changed, near, tiles }
 }

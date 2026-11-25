@@ -14,7 +14,8 @@ import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
 import { distanceToRoads, distanceToRoute, footpaths } from './routes'
 import { islandTrees, seededRandom } from './scenery'
-import { coastPoint, coastRadius, coastalSurface, groundHeight, grove, pool, roadSurfaceAt, waterDepth, waterLevel } from './terrain'
+import { coastPoint, coastRadius, coastalSurface, groundHeight, grove, pool, waterDepth, waterLevel } from './terrain'
+import { roadSurfaceAt } from './road-surface-at'
 import { beachHasSand } from './worlds/starter/beach-landforms'
 import { createFlocks, createSchools } from './wildlife'
 import type { WildlifeFrame } from './wildlife'
@@ -124,7 +125,7 @@ export function createStarterWildlife(meshes: MeshFactory) {
     }
   }))
   const { center, range, count, color, treeHeightRatio, fallbackRoost, treeSearch } = starterBatFlock
-  const tree = islandTrees.find(({ variant, x, z }) =>
+  const tree = islandTrees().find(({ variant, x, z }) =>
     variant % islandTreeGeometry.canopy.broadleafEvery === 0 && x > treeSearch.westX && x < treeSearch.eastX && z > treeSearch.southZ)
   const roost = tree ? { x: tree.x, z: tree.z, y: groundHeight(tree) + tree.height * treeHeightRatio } : fallbackRoost
   const gulls = createGullFlock(meshes, starterGullPerches)

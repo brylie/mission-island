@@ -9,11 +9,12 @@ import { groundHeight, originalCoastRadius, waterLevel } from './terrain.ts'
 import type { Point } from './world.ts'
 import { authoredShare } from './worlds/starter/generation/protection.ts'
 import { clearOfEarthworks, clearOfRoutes, inSightline } from './worlds/starter/highwood-clearings.ts'
-import { highwoodPlanting, plantTemplateOptions } from './worlds/starter/highwood-planting.ts'
+import { plantTemplateOptions } from './worlds/starter/highwood-planting.ts'
+import { standingPlants } from './highwood-standing.ts'
+import { currentRoadLayouts, onRoadsChange } from './roads.ts'
 import { highwoodOutcropPlacement as placement } from './worlds/starter/layout/highwood-outcrops.ts'
 import { highwoodAuthoredLimit } from './worlds/starter/layout/highwood-planting.ts'
 import { highwoodGeneration, highwoodPlaces } from './worlds/starter/layout/island-generation.ts'
-import { starterRoads } from './worlds/starter/layout/roads.ts'
 
 // Highwood's granite outcrops and the clitter boulders below them, worked out once
 // from the terrain, so the host's walking solids and every screen's meshes agree.
@@ -56,8 +57,8 @@ const { granite } = starterShoreFinish
 // Joints, and so the long side of each block, follow Cairn Summit's granite core.
 const [cairnCore] = highwoodGeneration.uplift.cores
 const grain = Math.atan2(cairnCore.to.z - cairnCore.from.z, cairnCore.to.x - cairnCore.from.x)
-// The summit spur ends at the turning pad by Cairn Summit.
-const summitPad = starterRoads.find((road) => road.id === 'summit-spur')?.points.at(-1) ?? highwoodPlaces.cairnCrown
+// The summit spur ends at the turning pad by Cairn Summit, in whichever roads the island has now.
+const summitPad = () => currentRoadLayouts().find((road) => road.id === 'summit-spur')?.points.at(-1) ?? highwoodPlaces.cairnCrown
 const rectangleCorners = [[1, 1], [-1, 1], [-1, -1], [1, -1]] as const
 
 const ramp = (value: number, start: number, full: number) => Math.max(0, Math.min(1, (value - start) / (full - start)))
@@ -118,7 +119,7 @@ function woodGrid() {
     const key = `${Math.floor(point.x / woodCellM)},${Math.floor(point.z / woodCellM)}`
     grid.set(key, [...grid.get(key) ?? [], point])
   }
-  for (const plant of highwoodPlanting()) {
+  for (const plant of standingPlants()) {
     if (plant.layer === 'understory') continue
     const collision = treeCollision(plantTemplateOptions(plant, 'near') as TreeTemplateOptions)
     if (collision.shape !== 'lying') {
@@ -132,10 +133,10 @@ function woodGrid() {
   return grid
 }
 
-function clearOf(point: Point, reach: number, wood: Map<string, Point[]>, placed: GraniteRock[]) {
+function clearOf(point: Point, reach: number, wood: Map<string, Point[]>, placed: GraniteRock[], pad: Point) {
   const crown = highwoodPlaces.cairnCrown
   if (Math.hypot(point.x - crown.x, point.z - crown.z) < placement.keepClear.crownM + reach) return false
-  if (Math.hypot(point.x - summitPad.x, point.z - summitPad.z) < placement.keepClear.padM + reach) return false
+  if (Math.hypot(point.x - pad.x, point.z - pad.z) < placement.keepClear.padM + reach) return false
   // Rocks stay out of the kept-open sight lines, as the canopy does, off routes and off road banks.
   if (inSightline(point, reach)) return false
   if (!clearOfRoutes(point, placement.routeClearanceM + reach) || !clearOfEarthworks(point)) return false
@@ -250,6 +251,7 @@ function clitterAt(point: Point, random: () => number): GraniteRock {
 function placeRocks() {
   const random = seededRandom(placement.seed)
   const wood = woodGrid()
+  const pad = summitPad()
   const placed: GraniteRock[] = []
   const map = highwoodHeightmap
   const east = map.west + (map.columns - 1) * map.cell, north = map.south + (map.rows - 1) * map.cell
@@ -267,7 +269,7 @@ function placeRocks() {
       if (roll >= chance) continue
       const own = seededRandom(Math.floor(seed * placement.streamSeeds))
       const crag = outcropAt(point, own, crest ? placement.crest.slabs : shape.outcrop.slabs, crest)
-      if (!crag || !clearOf(crag, crag.reach, wood, placed)) continue
+      if (!crag || !clearOf(crag, crag.reach, wood, placed, pad)) continue
       placed.push(crag)
       // Clitter: blocks the frost prised off, fallen below the outcrop.
       const fall = gradient(crag), downhill = Math.atan2(-fall.z, -fall.x)
@@ -278,7 +280,7 @@ function placeRocks() {
         const spot = restingPlace({ x: crag.x + Math.cos(angle) * reach, z: crag.z + Math.sin(angle) * reach })
         const boulder = spot && { ...clitterAt(spot, own), source: crag }
         // A block that came to rest no lower than its outcrop would have had to roll uphill.
-        if (boulder && boulder.ground < crag.ground && onHighwood(boulder) && clearOf(boulder, boulder.reach, wood, placed)) placed.push(boulder)
+        if (boulder && boulder.ground < crag.ground && onHighwood(boulder) && clearOf(boulder, boulder.reach, wood, placed, pad)) placed.push(boulder)
       }
     }
   }
@@ -287,8 +289,11 @@ function placeRocks() {
 
 let rocks: readonly GraniteRock[] | undefined
 
-// Highwood's outcrops and clitter, worked out on first use.
+// Highwood's outcrops and clitter, worked out on first use and again after the roads change.
 export function highwoodGraniteRocks(): readonly GraniteRock[] {
   rocks ??= placeRocks()
   return rocks
 }
+onRoadsChange(() => {
+  rocks = undefined
+})

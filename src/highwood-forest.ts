@@ -8,11 +8,10 @@ import type { TreeTemplateOptions, TreeTier } from './assets/trees/tree-catalog'
 import { treeCollision } from './assets/trees/tree-collision'
 import { buildTreeTemplate, type TreeTemplate } from './assets/trees/tree-template'
 import type { MeshFactory } from './island-meshes'
-import { groundHeight, roadClearance } from './terrain'
-import { clearOfEarthworks, coverCanGrow } from './worlds/starter/highwood-clearings'
+import { groundHeight } from './terrain'
+import { standingPlants } from './highwood-standing'
 import type { Point } from './world'
-import { highwoodPlanting, logRise, plantTemplateOptions, type Planting } from './worlds/starter/highwood-planting'
-import { highwoodRouteClearanceM } from './worlds/starter/layout/highwood-planting'
+import { logRise, plantTemplateOptions, type Planting } from './worlds/starter/highwood-planting'
 
 // Draws Highwood's forest so it costs little however many plants it holds:
 // - far trees are merged into one static mesh per tile and material, so a tile
@@ -120,12 +119,9 @@ export function createHighwoodForest(meshes: MeshFactory) {
   }
 
   const tiles = new Map<string, Tile>()
-  // Plants keep off graded roads, trees and deadwood off their banks, and ground cover off steep
-  // banks. The bake already does for the roads in the source tree; this also clears a road the
-  // Workbench road designer is previewing before it is re-planted.
-  for (const plant of highwoodPlanting()) {
-    if (roadClearance(plant) < highwoodRouteClearanceM) continue
-    if (!(plant.layer === 'understory' ? coverCanGrow(plant) : clearOfEarthworks(plant))) continue
+  // The plants standing with the island's roads: the bake's, or with a previewed draft road
+  // cleared the same way the bake clears (src/highwood-standing.ts).
+  for (const plant of standingPlants()) {
     const key = tileKey(plant.x, plant.z)
     let tile = tiles.get(key)
     if (!tile) {

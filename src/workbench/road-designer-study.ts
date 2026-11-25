@@ -1,4 +1,4 @@
-import { previewRoadLayouts } from '../terrain'
+import { previewRoadLayouts } from '../roads'
 import { landscapeStudy } from './landscape-study'
 import { designerRoads, openRoadDesigner } from './road-designer'
 import type { Entry } from './subject'

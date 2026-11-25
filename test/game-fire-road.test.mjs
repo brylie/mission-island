@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { learnerVehicles } from '../src/learner-vehicles.ts'
-import { gradedRoads } from '../src/terrain.ts'
+import { gradedRoads } from '../src/roads.ts'
 import { player, setup, tokens } from './support/game-harness.mjs'
 
 // The fire roads are for the island's vehicles. Each one is set at the foot of the

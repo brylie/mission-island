@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { fromThisComputer, fromThisSite, readRoadLayouts, roadsSource, workbenchSave } from '../server/workbench-save.ts'
+import { fromThisComputer, fromThisSite, workbenchSave, writeFileAtomically } from '../server/workbench-save.ts'
+import { readRoadLayouts, roadsSource } from '../src/road-layout-source.ts'
 import { gradedRoadKinds } from '../src/assets/geometry/road-kinds.ts'
 import { roadSavePath, workbenchSaveHeader } from '../src/workbench-save-contract.ts'
 
@@ -103,4 +104,18 @@ test('only this computer, from the Workbench page, with the Workbench header, ca
   assert.equal((await call(handler, { body: '[{"id":"x"}]' })).status, 400)
   assert.equal((await call(handler, { body: JSON.stringify([road]) })).status, 204)
   assert.match(readFileSync(join(root, 'src/worlds/starter/layout/roads.ts'), 'utf8'), /id: 'fire-road'/)
+  assert.deepEqual(readdirSync(join(root, 'src/worlds/starter/layout')), ['roads.ts'], 'the save leaves no temporary file behind')
+})
+
+test('roads.ts is written whole or not at all', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'atomic-'))
+  const file = join(dir, 'roads.ts')
+  writeFileSync(file, 'old')
+  writeFileAtomically(file, 'new')
+  assert.equal(readFileSync(file, 'utf8'), 'new')
+  assert.deepEqual(readdirSync(dir), ['roads.ts'])
+  // A write that fails leaves the old file and no temporary file.
+  assert.throws(() => writeFileAtomically(join(dir, 'missing-folder', 'roads.ts'), 'lost'))
+  assert.equal(readFileSync(file, 'utf8'), 'new')
+  assert.deepEqual(readdirSync(dir), ['roads.ts'])
 })

@@ -2,12 +2,12 @@ import { plantingLayers, type Planting, type PlantingLayer } from '../highwood-p
 import { fbm } from '../../../math/gradient-noise.ts'
 import { seededRandom } from '../../../seeded-random.ts'
 import { groundHeight, originalCoastRadius, waterLevel } from '../../../terrain.ts'
-import { clearOfEarthworks, clearOfRoutes, coverCanGrow, sightlineAlong } from '../highwood-clearings.ts'
+import { plantFits, sightlineAlong } from '../highwood-clearings.ts'
 import type { Point } from '../../../world.ts'
 import { authoredShare } from './protection.ts'
 import { highwoodExposure, highwoodHabitatAt, type HighwoodHabitat } from '../highwood-habitat.ts'
 import { bakedSurface } from '../highwood-terrain.ts'
-import { highwoodAuthoredLimit, highwoodSightlineEyeClearM, highwoodClumping, highwoodExposedAbove, highwoodLeanJitter, highwoodLogLie, highwoodMaximumCover, highwoodPlantingLayers, highwoodPlantingLimits, highwoodPlantingSeed, highwoodRouteClearanceM, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
+import { highwoodAuthoredLimit, highwoodSightlineEyeClearM, highwoodClumping, highwoodExposedAbove, highwoodLeanJitter, highwoodLogLie, highwoodMaximumCover, highwoodPlantingLayers, highwoodPlantingLimits, highwoodPlantingSeed, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
 import { highwoodGeneration } from '../layout/island-generation.ts'
 import { ridgeWind } from '../ridge-scout.ts'
 
@@ -49,8 +49,7 @@ function clearForPlant(point: Point, layer: PlantingLayer, habitat: HighwoodHabi
   const along = sightlineAlong(point)
   if (along !== undefined && along <= highwoodSightlineEyeClearM) return false
   if (along !== undefined && layer !== 'understory' && !(habitat === 'wet' && layer === 'canopy')) return false
-  if (!(layer === 'understory' ? coverCanGrow(point) : clearOfEarthworks(point))) return false
-  return clearOfRoutes(point, highwoodRouteClearanceM)
+  return plantFits(point, layer)
 }
 
 // How much a clump raises or lowers a layer's cover at a point, as a multiplier.

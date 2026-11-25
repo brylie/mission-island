@@ -151,20 +151,20 @@ function addIslandColliders(world: World) {
     shape: new Box(new Vec3(harborDock.width * half, plankHalfThickness, (harborDock.firstZ - dockEndZ + harborDock.plankDepth) * half)),
   }))
 
-  for (const tree of islandTrees) {
+  for (const tree of islandTrees()) {
     const halfHeight = tree.height * islandTreeGeometry.trunkHeightRatio * half
     world.addBody(new Body({
       position: new Vec3(tree.x, groundHeight(tree) + halfHeight, tree.z),
       shape: new Box(new Vec3(islandTreeGeometry.trunkRadius, halfHeight, islandTreeGeometry.trunkRadius)),
     }))
   }
-  for (const rock of islandRocks) {
+  for (const rock of islandRocks()) {
     world.addBody(new Body({
       position: new Vec3(rock.x, rock.ground + rock.size * islandRockGeometry.centerHeightRatio, rock.z),
       shape: new Sphere(rock.size * islandRockGeometry.cargoRadiusRatio),
     }))
   }
-  for (const { x, y, z, size, angle, tree } of northernProps) {
+  for (const { x, y, z, size, angle, tree } of northernProps()) {
     const { cargoHalfWidth, cargoHalfDepth, trunkHeightRatio } = northernTreeGeometry
     const { centerHeightRatio, cargoHalfExtents } = northernRockGeometry
     const trunkHalfHeight = size * trunkHeightRatio * half

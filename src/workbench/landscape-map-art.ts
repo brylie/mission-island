@@ -62,8 +62,8 @@ export function paintLandscapeMap(ink: CanvasRenderingContext2D) {
     ink.arc(...project(point), radius, 0, fullTurn)
     ink.fill()
   }
-  for (const tree of islandTrees) dot(tree, Math.max(treeMark.minRadius, tree.height * scale * treeMark.sizeScale), treeMark.color)
-  for (const prop of northernProps) dot(prop, Math.max(propMark.minRadius, prop.size * scale * propMark.sizeScale), prop.tree ? propMark.tree : propMark.rock)
+  for (const tree of islandTrees()) dot(tree, Math.max(treeMark.minRadius, tree.height * scale * treeMark.sizeScale), treeMark.color)
+  for (const prop of northernProps()) dot(prop, Math.max(propMark.minRadius, prop.size * scale * propMark.sizeScale), prop.tree ? propMark.tree : propMark.rock)
 
   ink.lineCap = ink.lineJoin = 'round'
   function route(points: readonly Point[], widthMetres: number, color: string) {

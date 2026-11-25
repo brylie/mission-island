@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { culvertModel } from '../src/assets/geometry/culverts.ts'
 import { planCulverts } from '../src/assets/culvert-plan.ts'
-import { roadClearance, roadCulverts, roadEarthworks, roadSurfaceSource } from '../src/terrain.ts'
+import { roadClearance, roadCulverts, roadEarthworks, roadSurfaceSource } from '../src/roads.ts'
 
 const roads = { clearance: roadClearance, carriageway: (point) => roadSurfaceSource.fieldsAt(point).carriageway, earthworks: roadEarthworks }
 
