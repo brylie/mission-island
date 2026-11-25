@@ -1,4 +1,5 @@
 import { highwoodHeightmap } from './assets/geometry/highwood-heightmap.ts'
+import { roadLayerEncoding } from './assets/geometry/island-preview.ts'
 import { roadDrainage, roadKinds, roadNetwork, roadProfileSolver } from './assets/geometry/road-kinds.ts'
 import { roadLayer } from './assets/geometry/road-layer.ts'
 import { decodeRoadLayer } from './baked-roads.ts'
@@ -65,8 +66,8 @@ function roadQueries(grading: RoadGrading, baked?: BakedRoadLayer) {
 }
 
 // What the bake was made from: the roads, the rules they are graded by, and the ground they are
-// graded into. A bake made from anything else has fallen behind and is not used.
-export const roadLayoutKey = (layouts: readonly StarterRoadLayout[]) => fingerprint(JSON.stringify([layouts, pavedLines, roadKinds, roadNetwork, roadProfileSolver, roadDrainage, highwoodHeightmap.sourceHash]))
+// graded into, and how the bake encodes them. A bake made from anything else has fallen behind and is not used.
+export const roadLayoutKey = (layouts: readonly StarterRoadLayout[]) => fingerprint(JSON.stringify([layouts, pavedLines, roadKinds, roadNetwork, roadProfileSolver, roadDrainage, roadLayerEncoding, highwoodHeightmap.sourceHash]))
 
 let shipped: BakedRoadLayer | undefined
 function shippedLayer() {

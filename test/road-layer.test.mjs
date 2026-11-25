@@ -37,6 +37,19 @@ test('the baked road layer is up to date', () => {
   assert.equal(roadLayer.layoutKey, roadLayoutKey(starterRoads), 'the bake was made from the roads and heightmap in the source tree')
 })
 
+test('a change to the bake encoding sets the bake aside until it is made again', () => {
+  const key = roadLayoutKey(starterRoads)
+  const step = roadLayerEncoding.formationStepM
+  try {
+    roadLayerEncoding.formationStepM = step + step
+    assert.notEqual(roadLayoutKey(starterRoads), key, 'a bake read with another step would scale every formation distance')
+  }
+  finally {
+    roadLayerEncoding.formationStepM = step
+  }
+  assert.equal(roadLayoutKey(starterRoads), key)
+})
+
 test('the baked grading raster is the live one, node for node and between nodes', () => {
   assert.deepEqual([...baked.raster.tiles.keys()].sort((a, b) => a - b), [...live.tiles.keys()].sort((a, b) => a - b))
   for (const [key, delta] of live.tiles) assert.deepEqual(baked.raster.tiles.get(key), delta)

@@ -9,6 +9,7 @@ import type { TreeTemplateOptions, TreeTier } from './assets/trees/tree-catalog'
 import { buildTreeTemplate, type TreeTemplate } from './assets/trees/tree-template'
 import type { MeshFactory } from './island-meshes'
 import { plantMatrix, plantNormalMatrix } from './plant-matrix'
+import { shearedNormalsMaterial } from './sheared-normals'
 import { standingPlants } from './highwood-standing'
 import type { Point } from './world'
 import { plantTemplateOptions, type Planting } from './worlds/starter/highwood-planting'
@@ -112,6 +113,16 @@ export function createHighwoodForest(meshes: MeshFactory) {
     }
     return copy
   }
+  // Near batches draw with copies that light sheared shrubs by their inverse transpose.
+  const nearMaterials = new Map<Material, Material>()
+  const nearMaterial = (material: Material) => {
+    let copy = nearMaterials.get(material)
+    if (!copy) {
+      copy = shearedNormalsMaterial(material)
+      nearMaterials.set(material, copy)
+    }
+    return copy
+  }
   function template(plant: Planting, tier: TreeTier = 'far') {
     const key = comboKey(plant, tier)
     let found = templates.get(key)
@@ -154,13 +165,11 @@ export function createHighwoodForest(meshes: MeshFactory) {
         batch.parent = null
         batch.setEnabled(false)
         batch.receiveShadows = true
-        // Sheared shrubs aren't a uniform scale, so the shader must light them by the inverse
-        // transpose; Babylon's thin instance docs switch this on by hand. Babylon resets the flag
-        // whenever it recomputes the world matrix, so the batch's matrix (it stays at the origin;
-        // its instances place the plants) is frozen first, and the flag set after. The flag's setter is
-        // internal (checked against @babylonjs/core 9.37.1); recheck it in the Workbench after an upgrade.
+        // Sheared shrubs aren't a uniform scale. Babylon's thin-instance shader ignores the
+        // non-uniform scaling flag, so their copy of the material relights them (src/sheared-normals.ts).
+        if (batch.material) batch.material = nearMaterial(batch.material)
+        // The batch stays at the origin; its instances place the plants.
         batch.freezeWorldMatrix()
-        batch._updateNonUniformScalingState(true)
         // Low shrubs and bracken cast little shade; leaving them out of the shadow map saves a pass of triangles.
         if (plant.layer !== 'understory') meshes.shadows.addShadowCaster(batch, false)
         return batch
