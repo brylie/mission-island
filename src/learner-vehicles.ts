@@ -4,10 +4,12 @@ import { responsePickupColliders, responsePickupSpec } from './assets/geometry/r
 import { compactTractorDrive, responsePickupDrive } from './vehicles/learner-drives.ts'
 import { distance, offset, type Point, type Pose } from './world.ts'
 import { learnerVehicleLayout } from './worlds/starter/layout/places.ts'
+import { rescueTourIntro, rescueTourStops, type PracticeStop } from './rescue-tour.ts'
 
 // Starter Island learner vehicles. The flatbed teaches hauling; these teach the
-// first driving of the emergency and farm careers. Each finished practice run
-// earns the driver career XP toward Saltwind vehicles.
+// first driving of the emergency and farm careers. Each vehicle's practice tour
+// visits its stops once each, in order, and pays the driver career XP at each one
+// toward Saltwind vehicles. A finished tour waits until the crew starts it again.
 export const drivingCareers = {
   rescue: {
     name: 'Emergency driving',
@@ -29,7 +31,28 @@ export type DrivingXp = Partial<Record<DrivingCareer, number>>
 export type LearnerNotice =
   | { type: 'crew-signal', signal: CrewSignal, playerId: number, x: number, z: number, place?: string }
   | { type: 'first-aid-check', helperId: number, patientId: number | null }
-  | { type: 'practice-run', vehicle: LearnerVehicleId, career: DrivingCareer, stop: string, playerId: number, xp: number, qualified: boolean }
+  // The last stop of a tour carries the tour's summary: its stops, what each driver earned
+  // on it, and who qualified during it.
+  | { type: 'practice-run', vehicle: LearnerVehicleId, career: DrivingCareer, stop: string, playerId: number, xp: number, qualified: boolean, finished?: PracticeTourSummary }
+  | { type: 'practice-tour', event: 'restarted', vehicle: LearnerVehicleId, playerId: number }
+  | { type: 'practice-tour', event: 'intro', vehicle: LearnerVehicleId, stops: number }
+
+export interface PracticeTourSummary {
+  stops: number
+  earned: PracticeTourEarning[]
+  qualified: number[]
+}
+export interface PracticeTourEarning {
+  playerId: number
+  xp: number
+}
+// The host's record of the tour in progress, saved beside its stop index. `key` names the
+// tour's stops; a save whose key differs was made for another list and starts the tour over.
+export interface PracticeTourRecord {
+  key: string
+  earned: PracticeTourEarning[]
+  qualified: number[]
+}
 
 export const practiceStopXp = 10
 export const careerUnlockXp = 100
@@ -78,6 +101,8 @@ export const learnerVehicles = {
     ],
     labelHeight: pickupLabelHeightM,
     ...learnerVehicleLayout.pickup,
+    get stops() { return rescueTourStops() },
+    tour: { name: 'Rescue tour', route: rescueTourIntro },
   },
   tractor: {
     name: compactTractorSpec.name,
@@ -97,6 +122,7 @@ export const learnerVehicles = {
     ],
     labelHeight: tractorLabelHeightM,
     ...learnerVehicleLayout.tractor,
+    tour: { name: 'Farm tour', route: 'Seabrook Market, the meadow slope and the farm lane' },
   },
 } as const
 
@@ -122,10 +148,33 @@ export function flatbedHasSeat(players: readonly Rider[]) {
   return (['driver', 'passenger'] as const).some((seat) => !players.some((entry) => entry.seat === seat && !entry.vehicle))
 }
 
+// Whether a crewmate on foot is in reach of a stopped learner vehicle.
+export function besideStoppedLearner(vehicle: Point & { speed: number }, player: Point) {
+  return distance(vehicle, player) < boardingRangeM && Math.abs(vehicle.speed) <= practiceStopSpeedMps
+}
+
+// How a crewmate starts a finished tour again, for prompts and the mission card.
+export function practiceTourRestartHint(id: LearnerVehicleId) {
+  return `At the ${learnerVehicles[id].noun}’s driver’s door, press E to start the tour again, or aim at its cab`
+}
+
+// Within this of the driver's door, E with nothing aimed starts a finished tour again.
+const driverDoorReachM = 1.3
+
+export function atDriverDoor(id: LearnerVehicleId, vehicle: Pose, player: Point) {
+  const [door] = learnerVehicles[id].exits
+  return distance(offset(vehicle, door.x, door.z), player) < driverDoorReachM
+}
+
+// A stopped learner vehicle in reach whose tour is finished, so its card can say how to go again.
+export function finishedTourBeside(state: { vehicles: Record<LearnerVehicleId, Point & { speed: number }>, practice: Record<LearnerVehicleId, number> }, player: Point) {
+  return learnerVehicleIds.find((id) => practiceTourFinished(id, state.practice[id]) && besideStoppedLearner(state.vehicles[id], player))
+}
+
 // The nearest learner vehicle that is stopped, in reach and has a free seat.
 export function nearestBoardableLearner(vehicles: Record<LearnerVehicleId, Point & { speed: number }>, players: readonly Rider[], player: Point) {
   return learnerVehicleIds
-    .filter((id) => distance(vehicles[id], player) < boardingRangeM && Math.abs(vehicles[id].speed) <= practiceStopSpeedMps && openLearnerSeat(players, id))
+    .filter((id) => besideStoppedLearner(vehicles[id], player) && openLearnerSeat(players, id))
     .sort((a, b) => distance(vehicles[a], player) - distance(vehicles[b], player))[0] as LearnerVehicleId | undefined
 }
 
@@ -138,9 +187,37 @@ export function practiceStatus(vehicle: Point & { speed: number }, stop: Point) 
   return away <= practiceStopRadiusM * nearMissRadii ? 'close' : 'away'
 }
 
-export function practiceStop(id: LearnerVehicleId, index: number) {
-  const { stops } = learnerVehicles[id]
-  return stops[index % stops.length]
+// The stop a vehicle's tour is heading for, or nothing once the tour is finished.
+export function practiceStop(id: LearnerVehicleId, index: number): PracticeStop | undefined {
+  const stops: readonly PracticeStop[] = learnerVehicles[id].stops
+  return stops[index]
+}
+
+export function practiceTourFinished(id: LearnerVehicleId, index: number) {
+  return index >= learnerVehicles[id].stops.length
+}
+
+// Names a tour by its stops, so a save made for another list of stops is recognised.
+export function practiceTourKey(id: LearnerVehicleId) {
+  const stops: readonly PracticeStop[] = learnerVehicles[id].stops
+  return stops.map(({ name }) => name).join(' / ')
+}
+
+export function freshPracticeTour(id: LearnerVehicleId): PracticeTourRecord {
+  return { key: practiceTourKey(id), earned: [], qualified: [] }
+}
+
+// Where a saved tour resumes. A save for the same stops keeps its place, and an index past
+// the last stop reads as finished. A save with no key, or one for another list of stops,
+// such as a save from before the tour, starts the tour over.
+export function savedPracticeTour(id: LearnerVehicleId, index: number | undefined, record: PracticeTourRecord | undefined) {
+  if (!record || record.key !== practiceTourKey(id) || index === undefined) return { index: 0, record: freshPracticeTour(id) }
+  return { index: Math.min(index, learnerVehicles[id].stops.length), record }
+}
+
+// A tour that has not paid its first stop yet.
+export function practiceTourUnstarted(index: number, record: PracticeTourRecord) {
+  return index === 0 && record.earned.length === 0
 }
 
 function careerXp(xp: DrivingXp | undefined, career: DrivingCareer) {

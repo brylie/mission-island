@@ -9,12 +9,13 @@ type Brush = Point & { kind: FoliageKind, strength: number }
 
 type Walker = { plants: Set<number>, trunks: Set<number>, lastBrush: number }
 
-const starterTrunks: Point[] = [...islandTrees, ...northernProps.filter((prop) => prop.tree)]
+// Read when contacts are made, so they follow the trees standing with the island's roads now.
+const starterTrunks = (): Point[] => [...islandTrees(), ...northernProps().filter((prop) => prop.tree)]
 
 // Which plants and trunks each walker is touching. A rustle plays when a walker moving at a fair pace
 // first reaches a plant; leaving needs a clear step past its reach, so standing still or skimming an
 // edge stays quiet. Bark has a per-tree cooldown, and each walker gets at most one brush in a short window.
-export function createFoliageContacts(plants: readonly UnderstoryPlant[], trunks: readonly Point[] = starterTrunks) {
+export function createFoliageContacts(plants: readonly UnderstoryPlant[], trunks: readonly Point[] = starterTrunks()) {
   const walkers = new Map<number, Walker>()
   const trunkTouched = new Map<number, number>()
 

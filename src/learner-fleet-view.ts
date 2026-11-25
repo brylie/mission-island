@@ -58,9 +58,9 @@ export function createLearnerFleetView(meshes: MeshFactory) {
       }
       // Driver and passenger both see where the run ends.
       const riding = local?.seat ? local.vehicle : undefined
-      marker.setEnabled(Boolean(riding))
-      if (riding) {
-        const stop = practiceStop(riding, state.practice[riding])
+      const stop = riding && practiceStop(riding, state.practice[riding])
+      marker.setEnabled(Boolean(stop))
+      if (stop) {
         marker.position.set(stop.x, groundHeight(stop) + objectiveMarkerLook.groundOffset, stop.z)
       }
     },

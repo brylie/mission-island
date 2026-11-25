@@ -1,4 +1,5 @@
-import { careerUnlockXp, drivingCareers, practiceStopXp, type LearnerNotice } from './learner-vehicles'
+import { careerUnlockXp, drivingCareers, learnerVehicles, practiceStopXp, type LearnerNotice, type PracticeTourSummary } from './learner-vehicles'
+import type { PracticeStop } from './rescue-tour'
 import type { Snapshot } from './protocol'
 
 // On-screen feedback for practice runs and rescue gear, kept beside the
@@ -6,6 +7,9 @@ import type { Snapshot } from './protocol'
 const practiceRunDurationMs = 3600
 const rescueFeedbackDurationMs = 4200
 const qualificationDurationMs = 6000
+const tourSummaryDurationMs = 9000
+// Long enough to read a stop's lesson once the vehicle has stopped.
+const lessonDurationMs = 9000
 
 function crewName(snapshot: Snapshot | undefined, id: number) {
   return snapshot?.players.find((player) => player.id === id)?.name || `Crew ${id + 1}`
@@ -40,17 +44,42 @@ function rescueFeedback(incoming: Extract<LearnerNotice, { type: 'crew-signal' |
   return `${crewName(snapshot, helperId)} checked on ${crewName(snapshot, patientId)} · all good`
 }
 
-// The crewmate who was not driving still sees the run finish and the stop move on.
+// What each viewer earned on a finished tour, themselves first, and who qualified on it.
+function tourSummary(incoming: Extract<LearnerNotice, { type: 'practice-run' }>, finished: PracticeTourSummary, localId: number, snapshot: Snapshot | undefined) {
+  const { name } = drivingCareers[incoming.career]
+  const who = (playerId: number) => (playerId === localId ? 'you' : crewName(snapshot, playerId))
+  const earned = [...finished.earned].sort((a, b) => Number(b.playerId === localId) - Number(a.playerId === localId))
+    .map(({ playerId, xp }) => `${who(playerId)} earned ${xp}`)
+  const qualified = finished.qualified.map((playerId) => (playerId === localId ? 'You qualified' : `${crewName(snapshot, playerId)} qualified`))
+  const label = [`${finished.stops} stops`, `${earned.join(', ')} ${name} XP`, ...qualified].join(' · ')
+  return { key: `${learnerVehicles[incoming.vehicle].tour.name} complete`, label, until: performance.now() + tourSummaryDurationMs }
+}
+
+// A stop's lesson shows as the vehicle stops in its ring, to driver and passenger alike.
+// The last stop's notice is the tour's summary instead.
 function practiceFeedback(incoming: Extract<LearnerNotice, { type: 'practice-run' }>, localId: number, snapshot: Snapshot | undefined) {
   const { name } = drivingCareers[incoming.career]
-  const until = performance.now() + (incoming.qualified ? qualificationDurationMs : practiceRunDurationMs)
-  if (incoming.playerId !== localId) return { key: '', label: `${crewName(snapshot, incoming.playerId)} stopped at ${incoming.stop} · +${practiceStopXp} ${name}`, until }
-  return incoming.qualified
-    ? { key: `+${practiceStopXp} XP`, label: `${name} qualified · ready for Saltwind driving jobs`, until }
-    : { key: `+${practiceStopXp} XP`, label: `${incoming.stop} · ${name} ${incoming.xp}/${careerUnlockXp}`, until }
+  if (incoming.finished) return tourSummary(incoming, incoming.finished, localId, snapshot)
+  const stops: readonly PracticeStop[] = learnerVehicles[incoming.vehicle].stops
+  const lesson = stops.find((stop) => stop.name === incoming.stop)?.lesson
+  const place = lesson ? `${incoming.stop}: ${lesson}` : incoming.stop
+  const until = performance.now() + (lesson ? lessonDurationMs : incoming.qualified ? qualificationDurationMs : practiceRunDurationMs)
+  if (incoming.playerId !== localId) return { key: '', label: `${crewName(snapshot, incoming.playerId)} stopped at ${place} · +${practiceStopXp} ${name}`, until }
+  if (incoming.qualified) return { key: `+${practiceStopXp} XP`, label: `${name} qualified · ready for Saltwind driving jobs · ${place}`, until }
+  return { key: `+${practiceStopXp} XP`, label: lesson ? place : `${place} · ${name} ${incoming.xp}/${careerUnlockXp}`, until }
+}
+
+// The tour's opening line for whoever boards before its first stop, and who started a
+// finished tour again.
+function tourFeedback(incoming: Extract<LearnerNotice, { type: 'practice-tour' }>, localId: number, snapshot: Snapshot | undefined) {
+  const { noun, tour } = learnerVehicles[incoming.vehicle]
+  if (incoming.event === 'intro') return { key: tour.name, label: `${incoming.stops} stops, ${tour.route}`, until: performance.now() + lessonDurationMs }
+  const who = incoming.playerId === localId ? 'You' : crewName(snapshot, incoming.playerId)
+  return { key: '', label: `${who} started the ${noun} practice tour again`, until: performance.now() + practiceRunDurationMs }
 }
 
 export function learnerFeedback(incoming: LearnerNotice, localId: number, snapshot: Snapshot | undefined) {
   if (incoming.type === 'practice-run') return practiceFeedback(incoming, localId, snapshot)
+  if (incoming.type === 'practice-tour') return tourFeedback(incoming, localId, snapshot)
   return { key: '', label: rescueFeedback(incoming, localId, snapshot), until: performance.now() + rescueFeedbackDurationMs }
 }

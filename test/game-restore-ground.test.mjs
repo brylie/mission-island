@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { restingHeight } from '../server/items.ts'
-import { gradedRoads, groundHeight, naturalGroundHeight } from '../src/terrain.ts'
+import { groundHeight, naturalGroundHeight } from '../src/terrain.ts'
+import { gradedRoads } from '../src/roads.ts'
 import { setup } from './support/game-harness.mjs'
 
 const toleranceM = 0.05

@@ -35,7 +35,7 @@ test('the freight yard sits beside the lane, clear of buildings, scenery and the
     const overlapsLane = Math.abs(x - ferryTerminal.x) < w / 2 + roadEdge && z - d / 2 < harborRoad[1].z && z + d / 2 > ferryTerminal.z
     assert.ok(!overlapsLane, `building at ${x}, ${z} stays off the ramp lane`)
   }
-  for (const thing of [...islandTrees, ...islandRocks]) assert.ok(!inFerryYard(thing), `scenery at ${thing.x}, ${thing.z}`)
+  for (const thing of [...islandTrees(), ...islandRocks()]) assert.ok(!inFerryYard(thing), `scenery at ${thing.x}, ${thing.z}`)
   assert.ok(inFerryYard(yardDrop) && distance(yardDrop, { x: harborDock.x, z: harborDock.firstZ }) > 20, 'the timber stack is not the fishing dock')
 })
 

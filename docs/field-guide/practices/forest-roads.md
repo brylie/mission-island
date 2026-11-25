@@ -1,6 +1,6 @@
 # Forest roads
 
-**Type: explanation (practice). Real world: draft, sourced, not yet checked by a person. On the island: playable**, see [the fire road](../../backcountry.md#fire-road). Last tended 2026-11-24. Model purpose: **illustrate** how a road is fitted to hilly ground. The game models the road's line, height and earthworks. It finds where culverts are needed and draws them, but doesn't model soil, running water or wear.
+**Type: explanation (practice). Real world: draft, sourced, not yet checked by a person. On the island: playable**, see [the fire road](../../backcountry.md#fire-road). Last tended 2026-11-25. Model purpose: **illustrate** how a road is fitted to hilly ground. The game models the road's line, height and earthworks. It finds where culverts are needed and draws them, but doesn't model soil, running water or wear.
 
 A forest road lets the vehicles a job needs reach the places it needs to reach, in most weather, without washing away. Fire crews, foresters, rangers and farmers depend on them. Most of what makes one look the way it does comes from four limits:
 - how steep a loaded vehicle can climb;
@@ -123,7 +123,7 @@ The island's roads are laid out in the Workbench [road designer](../../workbench
 - **Height.** The road's height follows the ground, averaged across its width and smoothed over 20 m, then held within the grade limit. The smoothing cuts and fills small bumps even where the grade wouldn't need it.
 - **Surface.** Packed earth, with two darker wheel ruts and a paler verge on the shoulders. The footstep sound assumes a thin layer of loose stone on top, the running surface described under [Layers](#layers); that it sheds loose stones and fines underfoot is unsourced. Footsteps crunch on the carriageway and sound like bare ground on the verge.
 - **Junctions.** A branch road leaves at 30° or more, through a mouth rounded over about 8 m, at the other road's height, and the road it leaves is unchanged. Where the fire road leaves the village's harbor road, its first 6 m are asphalt.
-- **Culverts.** Wherever the grading leaves a hollow that would hold water, the island places a culvert running to lower ground: 19 along Highwood's roads, 18 with an outlet; the 19th is a 3 cm puddle on level ground at the trailhead. The Pine Draw road's hairpin fill would pond 0.93 m deep behind it without one, and two more carry the head of Alder Creek past the Pine Draw junction. An inlet beside the road has a stone headwall; one in a cut or on the road drains through a drop inlet, a stone catch basin with a grate, beside the carriageway. The outlet's headwall stands where the pipe leaves the fill, with a packed riprap apron below it.
+- **Culverts.** Wherever the grading leaves a hollow that would hold water, the island places a culvert running to lower ground: 18 along Highwood's roads, 17 with an outlet; the 18th is a 3 cm puddle on level ground at the trailhead. The Pine Draw road's hairpin fill would pond 0.93 m deep behind it without one, and another carries the head of Alder Creek past the Pine Draw junction. An inlet beside the road has a stone headwall; one in a cut or on the road drains through a drop inlet, a stone catch basin with a grate, beside the carriageway. The outlet's headwall stands where the pipe leaves the fill, with a packed riprap apron below it.
 - **Fords.** The fire road dips into the Alder Creek valley and crosses its bed. A stone ford is still to come.
 
 ## Where the island differs
@@ -141,7 +141,7 @@ The island's roads are laid out in the Workbench [road designer](../../workbench
 | English tractor and forwarder tracks have a 5% cross fall, and the lower spill of a track should not exceed 1 in 2 (`fc-on025-forest-roads-tracks`). | Track fills, like the fire road's, are 1.5 : 1, and its crown averages 2%. | Not set from a source. Both road kinds share one fill slope. | That a track's fill can be as steep as a road's. |
 | Scottish grant rules prefer under 8%, accept 10%, and allow 12.5% only on lengths under 200 m (`scot-fgs-forest-road`). These are rules for timber lorries. | The whole fire road may climb at 12%, close to the short-length limit. The Cairn Summit spur and the Cairn ridge road climb at up to 15%, beyond it. | The island is small and steep, and its vehicles are a pickup, a flatbed and a tractor, not 44-tonne lorries. | That 12–15% is a normal grade for a long forest road. |
 | A survey bends the line around bogs, rock, old trees, streams and boundaries, and avoids long straight routes in the landscape (`fc-on025-forest-roads-tracks`). | Suggest route avoids nothing but steep ground, and pulls the road straight wherever the grade allows. | The island has no bogs or boundaries for the road to miss yet. See the [design decision](../../design/decisions.md). | That a good road is always as straight as the slope allows. |
-| A junction usually has a flatter landing, so a vehicle can stop and turn before it climbs (unsourced). | All three branches leave their hosts at their full limit: the summit spur and the Cairn ridge road at 15%, the Pine Draw road at 12%. | The grade solver holds a limit per stretch, with no landing rule at a junction yet. | That a road can climb at its steepest straight out of a junction. |
+| Highway practice keeps a junction's approach under 3% within stopping sight distance of it, and under 6% where that can't be done (`txdot-roadway-design`). That forest roads keep a flatter landing too is unsourced. | Every branch's solved first 12 m stay within 6% (6.5–10% as built, where the mouth blends into the host). Beyond them the summit spur and the Cairn ridge road climb at up to 15%, the Pine Draw road at up to 12%. | 3% would push the climb into steeper pitches further up the branch, so the island takes the highway's 6% fallback. The 12 m is set by eye, not from a stopping distance. | That 12 m is enough landing for every vehicle, or that a forest road's landing follows highway figures. |
 | Tall cuts in sound granite are steepened toward a rock face, while weathered granite (grus) needs flatter cuts (unsourced; the FAO slope stability charts may serve). | Any cut that can't meet the ground within 18 m is steepened as far as 0.25 : 1 (about 76°), whatever it is cut through. | The terrain carries no soil depth or rock quality. | That a soil bank can stand at 76°. |
 
 **Real patterns the model misses:**
@@ -166,6 +166,7 @@ All in the [sources register](../../sources.yaml).
 - **Design, earthworks and drainage:** `fao-road-design-watersheds` (chapter 3, road design), `fao-road-drainage-watersheds` (chapter 4, drainage design), `fao-road-slope-protection-watersheds` (chapter 5, slope protection), all from the FAO's *Watershed management field manual: road design and construction in sensitive watersheds*, Conservation Guide 13/5, 1998 (tier 1, international, drawing largely on North American research).
 - **Scottish specifications:** `scot-fgs-forest-road`, `scot-fgs-bellmouth` (Scottish Government Rural Payments and Services, Forestry Grant Scheme, tier 1).
 - **English guidance:** `fc-on025-forest-roads-tracks` (Forestry Commission Operations Note 25, version 1.0, 2011, tier 1).
+- **Junction approaches (highway practice):** `txdot-roadway-design` (Texas Department of Transportation, Roadway Design Manual, section 4.8.5, tier 1).
 - **Flood safety:** `ready-scot-rain-flooding` (Scottish Government, Ready Scotland, tier 1); `sfrs-floodwater-2023` (Scottish Fire and Rescue Service, tier 1).
 
 **Registered but not opened**, so not used for any claim: `usfs-low-volume-roads` (USDA Forest Service), `nydec-unpaved-forest-roads` (New York State DEC), and `fc-bulletin-43-forest-roads` (Forestry Commission, 1976, a scanned PDF with no text layer).
@@ -176,7 +177,8 @@ All in the [sources register](../../sources.yaml).
 - the size of a typical bell-mouth;
 - that unused roads green over between the ruts first;
 - who does road maintenance in practice;
-- that a junction usually has a flatter landing before the road climbs;
+- that forest roads, like highways, keep a flatter landing at a junction before the road climbs (`scot-fgs-bellmouth` was checked and gives no figure);
+- that a branch's runoff is cross-drained before it reaches the host road;
 - that cuts in sound granite stand steeper than cuts in grus (the FAO slope stability charts may serve);
 - that fire roads often double as firebreaks, with verges cleared wider;
 - that a forest road's running surface sheds loose stones and fines underfoot;

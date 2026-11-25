@@ -1,4 +1,4 @@
-import { learnerVehicles, type LearnerVehicleId } from '../../src/learner-vehicles.ts'
+import { freshPracticeTour, learnerVehicles, type LearnerVehicleId } from '../../src/learner-vehicles.ts'
 import { offset } from '../../src/world.ts'
 import { standAt, type Scenario } from './scenario.ts'
 
@@ -18,6 +18,7 @@ function learnerScenario(id: LearnerVehicleId, title: string): Scenario {
       state.mission = 'complete'
       state.fire = 0
       state.practice[id] = 0
+      state.practiceTours[id] = freshPracticeTour(id)
     },
     placePlayer(player) {
       const [driverDoor, otherDoor] = vehicle.exits

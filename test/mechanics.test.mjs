@@ -83,7 +83,7 @@ test('expanded ground supports crates and northern scenery blocks crew movement'
   for (let i = 0; i < 120; i++) truck = physics.step([crate], truck, { x: 0, z: 0 }, 1 / 30)
   assert.ok(Math.hypot(crate.x - p.x, crate.z - p.z) < 1, JSON.stringify(crate))
   assert.ok(Math.abs(crate.y - ground - crateSize / 2) < 0.13)
-  const rock = northernProps.find(({ tree }) => !tree)
+  const rock = northernProps().find(({ tree }) => !tree)
   assert.ok(rock)
   assert.equal(canOccupyGround(rock, 0.4, -2), false)
 })

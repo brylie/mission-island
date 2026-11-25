@@ -1,6 +1,6 @@
 # Procedural flora
 
-**Type: explanation (craft). Status: preview** (Workbench). **Last tended 2026-11-22.** Model purpose: **illustrate** recognisable species and their growth, not predict real tree architecture.
+**Type: explanation (craft). Status: preview** (Workbench). **Last tended 2026-11-25.** Model purpose: **illustrate** recognisable species and their growth, not predict real tree architecture.
 
 How Mission Island grows trees, shrubs and groundcover from rules and seeds. It also covers why each technique was chosen, what it stands in for in a real plant, and what we learned building the Highwood species generator. Code lives in `src/assets/trees/`, and the species tables are in `src/assets/geometry/tree-species.ts` and `shrub-species.ts`. You can watch everything here in **Ecology → Plants → Highwood species** in the [Workbench](../workbench.md#compare-highwood-tree-species). For the real species, see the [field guide](../field-guide/highwood-plants.md).
 
@@ -28,7 +28,7 @@ A naive generator draws all its random numbers from one sequence, so changing an
 
 ### Trunk: taper, flare and sweep
 
-A trunk is a tube along a curved spine (`addTube` in `tree-mesh.ts`). Its radius tapers toward the top, and a *flare* widens it at the ground, as real trunks swell into their root collar. It continues a little below ground, so it never floats on a slope.
+A trunk is a tube along a curved spine (`addTube` in `tree-mesh.ts`). Its radius tapers toward the top, and a *flare* widens it at the ground, as real trunks swell into their root collar. It continues a little below ground, and the forest stands it on the lowest ground under its base (see Standing on a slope), so it never floats on a slope.
 
 Real trunks are rarely perfectly straight:
 - **Sweep.** Each seed gives a gentle bow in a random direction.
@@ -93,6 +93,18 @@ The same parts make other forms:
 - **Mounds** (juniper, heather, bilberry) are clumps in an envelope. Low clumps sit toward the rim and tall ones near the middle. Stretch the clumps upward and raise their tops and you get a juniper flame; flatten them and you get a heather cushion.
 - **Fronds** (bracken) are double-sided ribbons. Each one is an upright stipe then a nearly level blade, rising from separate points as real bracken does from its *rhizome*. The blade's width alternates along its length to suggest leaflets.
 - **Snags and logs** reuse the tube with a ragged *cap* for a broken end, and stubby branches for snapped limbs. A log adds a root plate and moss on its upper side.
+
+### Standing on a slope
+
+A template is grown on level ground, but Highwood's plants stand on slopes up to about 65° ([`plant-seat.ts`](../../src/plant-seat.ts)). Placed at the ground under its centre, a plant's downhill side hung in the air: up to 0.55 m under an old Scots pine's root flare on a slope of 0.87, and more under the rim of a wide juniper ([#263](https://github.com/brylie/mission-island/issues/263)).
+- **Trunks and snags** stand upright on the lowest ground under their base, sampled in 16 directions round the trunk's girth, and sink 8 cm more. Their uphill side runs into the hill, as soil banks against a real trunk on a slope (unsourced).
+- **Shrubs** can't do that: a heather cushion 0.4 m tall would lose most of itself into the hill. Instead each is *sheared*: every point of the template rises by the slope times its offset, so its stems stay upright and its base follows the plane of the ground under three-quarters of its spread, as a heather mat lies on a bank (unsourced). The plane is lowered until no part of that ring stands below it. The shear stops at a slope of 0.7 (`maxShear`, about 35°): the Art Director found shrubs sheared further read as boards leaning on the cliff, their leaf texture stretched and a juniper's lower lobe pale and flat. Past it a shrub leans only so far, and its uphill side runs into the hill.
+- **Too steep or broken.** A low mat under 0.6 m (`matHeightM`), heather and bilberry, is always planted: they hold steep banks (unsourced), and a mat that low barely shows being buried on its uphill side. A taller shrub whose base would be buried more than 35 cm (`shrubBuryM`), judged where the bake stores it, is left out of the planting bake: about 85 junipers on crags. Common juniper also grows as low, spreading mats on exposed ground ([Highwood's plants](../field-guide/highwood-plants.md#common-juniper-juniperus-communis)); the island has no prostrate form yet, so this is a simplification: a crag loses its juniper rather than growing a mat. A road draft previewed live re-checks burial too. Two stricter rules were tried first. Leaving out every shrub buried 35 cm dropped 484, on a median slope of 1.3 (52°), and the Art Director found Cairn's steep heath then read as bare rock; a limit as a share of each shrub's height dropped 1,600, as an ordinary hollow buries a heather cushion that much.
+- **Bracken** rises from one crown, and **logs** follow the ground along their length, so neither changes.
+
+A shear isn't a rotation, so normals carried by the same matrix tilt the wrong way, up to 35° under the steepest shear. The far merge carries each plant's normals by the inverse transpose of its matrix ([`plant-matrix.ts`](../../src/plant-matrix.ts)), and the near thin instances draw with copies of the tree materials that do the same in the vertex shader ([`sheared-normals.ts`](../../src/sheared-normals.ts)). Babylon's own non-uniform scaling flag doesn't help here: its thin-instance shader path ignores the flag and divides each normal by the squared lengths of the matrix's columns, which equals the inverse transpose only when the columns are at right angles, so a sheared shrub came out lit as if it stood upright (checked against `@babylonjs/core` 9.37.1; caught in review on #295). Seating a plant asks the ground 17 times, so each plant's matrix is worked out once and kept until the roads change, rather than every time a tile changes tier.
+
+Tests (`test/plant-seat.test.mjs`) sample every planted base between the seat's own directions and hold it to the ground, with no tall shrub buried deeper than the limit, and check that a sheared shrub's matrix puts its base on its slope and tilts its upward normals with it.
 
 ### Age and exposure as visible traits
 

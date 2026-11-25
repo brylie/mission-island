@@ -8,6 +8,7 @@ import { mergeDisjoint } from './interactions/definition.ts'
 import { fireWatchActions, fireWatchInteractions } from './interactions/fire-watch.ts'
 import type { InteractionChoice as Choice, InteractionOption } from './interactions/definition.ts'
 import { homeActions, homeInteractions, welcomeNote } from './interactions/home.ts'
+import { practiceTourActions, practiceTourInteractions } from './interactions/practice-tour.ts'
 import { orderActions, orderInteractions, plotActions, plotInteractions } from './interactions/work.ts'
 import { besideRange, journalInteractions, sightingActions } from './journal/sightings.ts'
 import { materialsActions, materialsInteractions } from './materials-interactions.ts'
@@ -25,6 +26,7 @@ const actionPolicies = mergeDisjoint(
   materialsActions,
   cargoActions,
   fireWatchActions,
+  practiceTourActions,
   homeActions,
   orderActions,
   plotActions,
@@ -59,6 +61,7 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
   const gate = gateInteractions(state, player)
   const residents = residentInteractions(starterResidents, state, player)
   const field = fieldInteractions(state, player)
+  const tour = practiceTourInteractions(state, player)
   const sightings = journalInteractions(state, player).filter(({ at }) =>
     !field.some((inspection) => inspection.at.x === at?.x && inspection.at.z === at?.z))
   return [
@@ -70,6 +73,7 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
     ...farm,
     ...orderInteractions(state, player),
     ...plotInteractions(state, player),
+    ...tour.first,
     ...(held ? [] : pickupOptions(state, player)),
     ...ferryInteractions(state, player),
     ...welcomeNote(state, player),
@@ -79,6 +83,7 @@ export function interactions(state: Snapshot, player: Player): Interaction[] {
     ...residents.accept,
     ...field,
     ...sightings,
+    ...tour.last,
   ]
 }
 

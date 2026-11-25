@@ -2,7 +2,8 @@ import { groundSurfaces } from '../assets/audio/ground.ts'
 import type { Player } from '../protocol.ts'
 import { distanceToRoads, distanceToRoute, footpaths, walkways } from '../routes.ts'
 import { islandTrees, northernRegions } from '../scenery.ts'
-import { coastalSurface, roadSurfaceAt, waterDepth } from '../terrain.ts'
+import { coastalSurface, waterDepth } from '../terrain.ts'
+import { roadSurfaceAt } from '../road-surface-at.ts'
 import { beachHasSand } from '../worlds/starter/beach-landforms.ts'
 import { onDock, type Point } from '../world.ts'
 import { highwoodGroundCover } from '../worlds/starter/highwood-planting.ts'
@@ -25,7 +26,7 @@ function wooded(point: Point) {
   if (cover.litter > highwoodCover && cover.litter >= Math.max(cover.heath, cover.moss, cover.bracken)) return true
   if (northernRegions.some((region) => region.trees && Math.hypot(point.x - region.at.x, point.z - region.at.z) < region.spread)) return true
   let near = 0
-  for (const tree of islandTrees) {
+  for (const tree of islandTrees()) {
     if (Math.hypot(tree.x - point.x, tree.z - point.z) < treeReachMetres && ++near >= nearbyTrees) return true
   }
   return false

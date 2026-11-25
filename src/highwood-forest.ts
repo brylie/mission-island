@@ -1,18 +1,18 @@
 import type { Material } from '@babylonjs/core/Materials/material'
-import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
+import { type Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector'
+import type { FloatArray } from '@babylonjs/core/types'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData'
 import '@babylonjs/core/Meshes/thinInstanceMesh'
 import { highwoodForestLook as look } from './assets/recipes/highwood-forest'
 import type { TreeTemplateOptions, TreeTier } from './assets/trees/tree-catalog'
-import { treeCollision } from './assets/trees/tree-collision'
 import { buildTreeTemplate, type TreeTemplate } from './assets/trees/tree-template'
 import type { MeshFactory } from './island-meshes'
-import { groundHeight, roadClearance } from './terrain'
-import { clearOfEarthworks, coverCanGrow } from './worlds/starter/highwood-clearings'
+import { plantMatrix, plantNormalMatrix } from './plant-matrix'
+import { shearedNormalsMaterial } from './sheared-normals'
+import { standingPlants } from './highwood-standing'
 import type { Point } from './world'
-import { highwoodPlanting, logRise, plantTemplateOptions, type Planting } from './worlds/starter/highwood-planting'
-import { highwoodRouteClearanceM } from './worlds/starter/layout/highwood-planting'
+import { plantTemplateOptions, type Planting } from './worlds/starter/highwood-planting'
 
 // Draws Highwood's forest so it costs little however many plants it holds:
 // - far trees are merged into one static mesh per tile and material, so a tile
@@ -34,15 +34,17 @@ interface Tile { key: string, centre: Point, canopy: Planting[], understory: Pla
 const comboKey = (plant: Planting, tier: TreeTier) => `${plant.species} ${plant.age} ${plant.exposure} ${plant.variant} ${tier}`
 const tileKey = (x: number, z: number) => `${Math.floor(x / look.tileM)},${Math.floor(z / look.tileM)}`
 
-// A fallen log tilts to follow the ground from its root to its far end, as the walking solids do.
-function logTilt(plant: Planting) {
-  const collision = treeCollision(plantTemplateOptions(plant, 'near') as TreeTemplateOptions)
-  return collision.shape === 'lying' ? Math.atan(logRise(plant, collision.length * plant.scale)) : 0
-}
+const normal = new Vector3()
 
-function plantMatrix(plant: Planting) {
-  const y = groundHeight(plant) - look.sinkM
-  return Matrix.Compose(new Vector3(plant.scale, plant.scale, plant.scale), Quaternion.RotationYawPitchRoll(plant.heading, 0, logTilt(plant)), new Vector3(plant.x, y, plant.z))
+// Normals carried by a normal matrix and made unit length again, into `out`.
+function transformNormals(normals: Float32Array, matrix: Matrix, out: FloatArray) {
+  for (let i = 0; i < normals.length; i += vec3Stride) {
+    Vector3.TransformNormalFromFloatsToRef(normals[i], normals[i + 1], normals[i + vec3Stride - 1], matrix, normal)
+    normal.normalize()
+    out[i] = normal.x
+    out[i + 1] = normal.y
+    out[i + vec3Stride - 1] = normal.z
+  }
 }
 
 interface FarGroup { parts: VertexData[], vertices: number, indices: number }
@@ -52,14 +54,17 @@ interface FarGroup { parts: VertexData[], vertices: number, indices: number }
 function mergeFar(meshes: MeshFactory, tile: Tile, template: (plant: Planting) => TreeTemplate, farMaterial: (material: Material) => Material) {
   const groups = new Map<Material, FarGroup>()
   for (const plant of tile.canopy) {
-    const matrix = plantMatrix(plant)
+    const matrix = plantMatrix(plant), normalMatrix = plantNormalMatrix(plant)
     for (const part of template(plant).parts) {
       const material = farMaterial(part.material!)
       const group = groups.get(material) ?? { parts: [], vertices: 0, indices: 0 }
       groups.set(material, group)
       // Copy, or transforming the data would move the shared template too.
       const data = VertexData.ExtractFromMesh(part, true, true)
+      const normals = data.normals ? Float32Array.from(data.normals) : undefined
       data.transform(matrix)
+      // A sheared shrub's normals follow the inverse transpose, which `transform` doesn't use.
+      if (normals && data.normals) transformNormals(normals, normalMatrix, data.normals)
       group.parts.push(data)
       group.vertices += data.positions!.length / vec3Stride
       group.indices += data.indices!.length
@@ -108,6 +113,16 @@ export function createHighwoodForest(meshes: MeshFactory) {
     }
     return copy
   }
+  // Near batches draw with copies that light sheared shrubs by their inverse transpose.
+  const nearMaterials = new Map<Material, Material>()
+  const nearMaterial = (material: Material) => {
+    let copy = nearMaterials.get(material)
+    if (!copy) {
+      copy = shearedNormalsMaterial(material)
+      nearMaterials.set(material, copy)
+    }
+    return copy
+  }
   function template(plant: Planting, tier: TreeTier = 'far') {
     const key = comboKey(plant, tier)
     let found = templates.get(key)
@@ -120,12 +135,9 @@ export function createHighwoodForest(meshes: MeshFactory) {
   }
 
   const tiles = new Map<string, Tile>()
-  // Plants keep off graded roads, trees and deadwood off their banks, and ground cover off steep
-  // banks. The bake already does for the roads in the source tree; this also clears a road the
-  // Workbench road designer is previewing before it is re-planted.
-  for (const plant of highwoodPlanting()) {
-    if (roadClearance(plant) < highwoodRouteClearanceM) continue
-    if (!(plant.layer === 'understory' ? coverCanGrow(plant) : clearOfEarthworks(plant))) continue
+  // The plants standing with the island's roads: the bake's, or with a previewed draft road
+  // cleared the same way the bake clears (src/highwood-standing.ts).
+  for (const plant of standingPlants()) {
     const key = tileKey(plant.x, plant.z)
     let tile = tiles.get(key)
     if (!tile) {
@@ -153,6 +165,11 @@ export function createHighwoodForest(meshes: MeshFactory) {
         batch.parent = null
         batch.setEnabled(false)
         batch.receiveShadows = true
+        // Sheared shrubs aren't a uniform scale. Babylon's thin-instance shader ignores the
+        // non-uniform scaling flag, so their copy of the material relights them (src/sheared-normals.ts).
+        if (batch.material) batch.material = nearMaterial(batch.material)
+        // The batch stays at the origin; its instances place the plants.
+        batch.freezeWorldMatrix()
         // Low shrubs and bracken cast little shade; leaving them out of the shadow map saves a pass of triangles.
         if (plant.layer !== 'understory') meshes.shadows.addShadowCaster(batch, false)
         return batch

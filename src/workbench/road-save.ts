@@ -1,4 +1,5 @@
 import { readStorage, writeStorage } from '../browser-storage'
+import { readRoadLayouts } from '../road-layout-source'
 import { roadSavePath, workbenchSaveHeader } from '../workbench-save-contract'
 import type { createRoadDraft } from './road-draft'
 
@@ -10,7 +11,7 @@ type Draft = ReturnType<typeof createRoadDraft>
 type Say = (text: string) => void
 
 const noticeKey = 'mission-island-road-save-notice'
-const savedNotice = 'Saved to src/worlds/starter/layout/roads.ts. The dev server restarts to load it, which drops connected crews; the island is checkpointed, so they can rejoin. Next, run npm run island:plant to re-plant Highwood clear of the roads, and commit both files.'
+const savedNotice = 'Saved to src/worlds/starter/layout/roads.ts. The dev server restarts to load it, which drops connected crews; the island is checkpointed, so they can rejoin. Until the roads are baked the island grades them on load. Next, run npm run island:roads to bake them and re-plant Highwood clear of them, and commit roads.ts with both bakes.'
 
 let confirmOverwrite = false
 
@@ -26,9 +27,16 @@ export async function saveRoads(draft: Draft, say: Say) {
     return
   }
   confirmOverwrite = false
+  // The server checks the roads the same way; checking here first says what is wrong at once.
+  const body = JSON.stringify(draft.roads())
+  const checked = readRoadLayouts(body)
+  if (typeof checked === 'string') {
+    say(`Not saved: ${checked}`)
+    return
+  }
   say('Saving…')
   try {
-    const response = await fetch(roadSavePath, { method: 'POST', headers: { 'content-type': 'application/json', [workbenchSaveHeader]: 'save' }, body: JSON.stringify(draft.roads()) })
+    const response = await fetch(roadSavePath, { method: 'POST', headers: { 'content-type': 'application/json', [workbenchSaveHeader]: 'save' }, body })
     if (!response.ok) {
       say(`Not saved: ${await response.text()}`)
       return

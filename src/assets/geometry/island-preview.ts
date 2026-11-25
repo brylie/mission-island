@@ -66,3 +66,12 @@ export const plantingEncoding = {
   groundCellM: 8,
   groundChannels: 4,
 } as const
+
+// How the baked road layer (src/assets/geometry/road-layer.ts, from scripts/bake-roads.mjs) is
+// encoded. Tiles are listed as i16 column and row pairs. The grading raster's tiles are f32
+// little-endian, exactly as graded. The formation distance, on the terrain tiles' 1 m grid, is i16
+// steps of `formationStepM` metres, with `formationFar` where no road is near.
+export const roadLayerEncoding = {
+  formationStepM: 0.005,
+  formationFar: 32767,
+} as const

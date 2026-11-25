@@ -1,7 +1,9 @@
 import { distanceToRoute, footpaths, roads, walkways } from '../../routes.ts'
-import { groundHeight, roadClearance, roadEarthworks } from '../../terrain.ts'
+import { groundHeight } from '../../terrain.ts'
+import { roadClearance, roadEarthworks } from '../../roads.ts'
 import type { Point } from '../../world.ts'
-import { highwoodBankCoverSlope, highwoodEarthworksM, highwoodSightlines } from './layout/highwood-planting.ts'
+import type { PlantingLayer } from './highwood-planting.ts'
+import { highwoodBankCoverSlope, highwoodEarthworksM, highwoodRouteClearanceM, highwoodSightlines } from './layout/highwood-planting.ts'
 
 // What Highwood keeps clear: its routes, its graded roads and its kept-open sight lines.
 // The planting bake and the granite outcrops both read these, so a new road or view
@@ -29,6 +31,15 @@ function gradedSlope({ x, z }: Point) {
 
 // Whether ground cover can grow at a point: off the banks, or on a bank gentle enough to green over.
 export const coverCanGrow = (point: Point) => clearOfEarthworks(point) || gradedSlope(point) <= highwoodBankCoverSlope
+
+// Whether a plant of a layer may stand at a point beside the roads: off every route and graded
+// road by the planting clearance, a tree or deadwood off the road banks, ground cover off banks
+// too steep to green over. The planting bake keeps only plants that fit, and the forest, its
+// solids and the granite outcrops read the same test (src/highwood-standing.ts) when a draft
+// road is previewed, so all of them agree on which plants stand.
+export function plantFits(point: Point, layer: PlantingLayer) {
+  return (layer === 'understory' ? coverCanGrow(point) : clearOfEarthworks(point)) && clearOfRoutes(point, highwoodRouteClearanceM)
+}
 
 // How far along a kept-open sight line's corridor a point lies, or undefined outside every
 // corridor. `padM` widens the corridor, for something with a footprint of that reach.

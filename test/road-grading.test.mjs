@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { roadKinds } from '../src/assets/geometry/road-kinds.ts'
+import { roadKinds, roadProfileSolver } from '../src/assets/geometry/road-kinds.ts'
 import { createRoadGrading } from '../src/road-grading.ts'
 import { naturalGroundHeight } from '../src/terrain.ts'
 import { analyseRoad } from '../src/workbench/road-analysis.ts'
@@ -121,6 +121,38 @@ test('the shipped roads keep to their grades and bends, never stand in a wall, a
   }
 })
 
+// The deepest centreline cut and fill the shipped roads may have; the landings deepened the cuts.
+const maxCentreCutM = 4.5
+const maxCentreFillM = 4
+// The shipped roads' culverts, and how many of them have an outlet.
+const shippedCulverts = { all: 18, withOutlet: 17 }
+
+test('the shipped roads keep their centreline cuts and fills within limits', () => {
+  const shipped = createRoadGrading(starterRoads, naturalGroundHeight)
+  for (const road of shipped.roads()) {
+    const cut = Math.max(...road.profile.map((s) => s.cut)), fill = Math.max(...road.profile.map((s) => -s.cut))
+    assert.ok(cut <= maxCentreCutM, `${road.name} cuts ${cut.toFixed(2)} m deep`)
+    assert.ok(fill <= maxCentreFillM, `${road.name} fills ${fill.toFixed(2)} m high`)
+  }
+})
+
+test('every shipped branch leaves the road it joins on a gentle landing before it climbs', () => {
+  const { lengthM, maxGrade } = roadProfileSolver.landing
+  const shipped = createRoadGrading(starterRoads, naturalGroundHeight)
+  const { roads, junctions } = shipped.network()
+  let landings = 0
+  for (const { branch, end } of junctions) {
+    const graded = shipped.roads().find((road) => road.id === roads[branch].id)
+    if (!graded) continue
+    const { profile } = graded
+    const near = end === 'start' ? profile.filter((s) => s.along - profile[0].along < lengthM) : profile.filter((s) => profile.at(-1).along - s.along < lengthM)
+    const steepest = Math.max(...near.map((s) => Math.abs(s.grade)))
+    assert.ok(steepest <= maxGrade + 1e-9, `${graded.name} leaves its road at ${(steepest * 100).toFixed(1)}%`)
+    landings++
+  }
+  assert.ok(landings >= 4, `checked ${landings} landings`)
+})
+
 test('the shipped roads join where they are meant to, so a moved dot or reordered road cannot leave a branch loose', () => {
   const { roads, junctions } = createRoadGrading(starterRoads, naturalGroundHeight).network()
   const found = junctions.map(({ branch, host, end }) => `${roads[branch].id}.${end} -> ${roads[host].id}`).sort()
@@ -164,12 +196,15 @@ test('a road ending on a sharp peak keeps its grade to the end, rather than jump
 
 test('the shipped roads drain: water that reaches the sea over the natural ground still does, through the culverts', async () => {
   const { highwoodHeightmap } = await import('../src/assets/geometry/highwood-heightmap.ts')
-  const { groundHeight, originalCoastRadius, roadCulverts, waterLevel } = await import('../src/terrain.ts')
+  const { groundHeight, originalCoastRadius, waterLevel } = await import('../src/terrain.ts')
+  const { roadCulverts } = await import('../src/roads.ts')
   const { authoredShare } = await import('../src/worlds/starter/generation/protection.ts')
   const { roadDrainage } = await import('../src/assets/geometry/road-kinds.ts')
   const { highwoodAuthoredLimit } = await import('../src/worlds/starter/layout/highwood-planting.ts')
   const culverts = roadCulverts()
-  assert.ok(culverts.length > 0, 'the roads have culverts')
+  // Pinned so a regrade that adds or drops a culvert is noticed; update the counts in
+  // docs/backcountry.md and the forest roads page with it.
+  assert.deepEqual([culverts.length, culverts.filter((c) => c.outlet).length], [shippedCulverts.all, shippedCulverts.withOutlet], 'the shipped culvert count changed')
   // Every pond deeper than a puddle drains; a shallower one may stand on level ground.
   assert.deepEqual(culverts.filter((c) => !c.outlet && c.depth >= roadDrainage.sinkM).map((c) => `${c.road} at ${c.along.toFixed(0)} m`), [])
   const { west, south, cell, columns, rows } = highwoodHeightmap

@@ -1,6 +1,6 @@
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
 import { northernRockGeometry, northernTreeGeometry } from './assets/geometry/starter-scenery'
-import { northernRegions } from './scenery'
+import { northernRegionProps, northernRegions } from './scenery'
 import { distance } from './world'
 import type { Point } from './world'
 import type { MeshFactory } from './island-meshes'
@@ -9,10 +9,11 @@ const detailDistance = 66
 const closeSilhouetteDistance = 146
 
 export function createNorthernScenery(meshes: MeshFactory) {
-  const zones = northernRegions.map((zone) => {
+  const regionProps = northernRegionProps()
+  const zones = northernRegions.map((zone, zoneIndex) => {
     const near = new TransformNode(zone.name + ' detail', meshes.scene)
     const far = new TransformNode(zone.name + ' silhouette', meshes.scene)
-    for (const { x, y, z, size, angle, index, tree } of zone.props) {
+    for (const { x, y, z, size, angle, index, tree } of regionProps[zoneIndex]) {
       if (tree) {
         const { trunkWidth, trunkDepth, trunkHeightRatio, trunkColor, crown, silhouette } = northernTreeGeometry
         meshes.box(x, y + size, z, trunkWidth, size * trunkHeightRatio, trunkDepth, trunkColor, near, false)

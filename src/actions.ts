@@ -72,6 +72,10 @@ function learnerHint(state: Snapshot, player: Player): [string, string] {
   const { noun } = learnerVehicles[id]
   const stopped = Math.abs(state.vehicles[id].speed) <= truckSeatSpeed
   const stop = practiceStop(id, state.practice[id])
+  if (!stop) {
+    if (stopped) return ['F', `Exit ${noun} · tour complete · then E at the driver’s door to go again`]
+    return player.seat === 'driver' ? ['Space', 'Tour complete · brake to step out'] : ['', 'Tour complete']
+  }
   if (player.seat !== 'driver') return stopped ? ['F', `Exit ${noun} · heading for ${stop.name}`] : ['', `Riding to ${stop.name}`]
   const status = practiceStatus(state.vehicles[id], stop)
   if (status === 'rolling') return ['Space', `Brake to a full stop in the ring at ${stop.name}`]

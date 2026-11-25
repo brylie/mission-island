@@ -17,7 +17,7 @@ test('the ridge and the shore are exposed, the woods are sheltered', () => {
   const ridge = windExposure(headland)
   const shore = windExposure(coastPoint(5.3, 0.97))
   const woods = windExposure(grove)
-  const forestFloor = windExposure(islandTrees[5])
+  const forestFloor = windExposure(islandTrees()[5])
   assert.ok(ridge > windExposure(town), 'high ground is windier than the village')
   assert.ok(shore > forestFloor * 1.5, 'the beach is windier than the forest floor')
   for (const value of [ridge, shore, woods, forestFloor]) assert.ok(value >= 0 && value <= 1)
@@ -49,7 +49,7 @@ test('crowns are heard close by and fade smoothly at the edge of earshot', () =>
   assert.equal(canopyGain(0), 1)
   assert.equal(canopyGain(windMix.canopy.reachMetres + 1), 0)
   for (let d = 0; d < windMix.canopy.reachMetres; d += 0.5) assert.ok(canopyGain(d + 0.5) <= canopyGain(d))
-  const near = nearestCanopies(islandTrees[5], 3)
+  const near = nearestCanopies(islandTrees()[5], 3)
   assert.ok(near.length > 0 && near.length <= 3)
   assert.ok(near.some((tree) => tree.leafy) || near.some((tree) => !tree.leafy))
 })
@@ -59,7 +59,7 @@ test('walking through the woods moves canopy voices only while they are silent',
   const engine = createAudioEngine(() => context, { makeRenderer: inlineRenderer })
   const wind = createWindPlayer(engine)
   await engine.resumeFromGesture()
-  const start = islandTrees[5]
+  const start = islandTrees()[5]
   wind.frame(start, 0, 0, 1 / 60)
   await setImmediate()
   for (let frame = 0; frame < 900; frame++) wind.frame({ x: start.x + frame * 0.05, z: start.z }, frame / 60, 0, 1 / 60)

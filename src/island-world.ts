@@ -45,7 +45,8 @@ import { createSurfaceMaterial } from './materials'
 import { meadowDefaults, shaderPresets, shoreDefaults, type ShaderQuality } from './shader-studies'
 import type { WildlifeFrame } from './wildlife'
 import { createStreetLights } from './street-lights'
-import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, roadClearance, roadCulverts, roadEarthworks, roadSurfaceSource, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
+import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
+import { roadClearance, roadCulverts, roadEarthworks, roadSurfaceSource } from './roads'
 import { buildings, crewHomes, extinguisherStations } from './world'
 import { createFireWatch } from './assets/fire-watch'
 import { createFireStation } from './assets/fire-station'
@@ -159,8 +160,8 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const boat = createHarborBoat(meshes)
   const buoys = boundaryBuoys.map(({ x, z }) => createBuoy(meshes, x, z))
 
-  for (const tree of islandTrees) createTree(meshes, tree.x, tree.z, tree.height, tree.variant, groundHeight(tree))
-  for (const { x, z, size, angle, light, ground } of islandRocks) {
+  for (const tree of islandTrees()) createTree(meshes, tree.x, tree.z, tree.height, tree.variant, groundHeight(tree))
+  for (const { x, z, size, angle, light, ground } of islandRocks()) {
     createRock(meshes, x, z, size, angle, light, ground)
   }
   const juniper = createBiomeScenery(meshes, juniperLayout, juniperCenter, groundHeight)

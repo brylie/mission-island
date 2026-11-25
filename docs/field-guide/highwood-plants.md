@@ -238,6 +238,7 @@ Each species is a table in `src/assets/geometry/tree-species.ts` or `src/assets/
 **In the game**
 - `juniper` in `shrub-species.ts`. Sheltered plants are flame-shaped columns or spreading vases; the 45% vase share is a game setting, not a field figure. Exposed plants are low and streamed downwind.
 - Juniper is soft cover: players and animals pass through it.
+- On crags too steep to seat it, a tall juniper is left out rather than grown as a low mat; real juniper can grow prostrate on exposed ground ([standing on a slope](../craft/procedural-flora.md#standing-on-a-slope)).
 - **Not yet modelled:** berries on female plants ([#211](https://github.com/brylie/mission-island/issues/211)).
 
 **Notice this:** compare a juniper in a sheltered hollow with one on the ridge. Same species, different shape.
@@ -262,6 +263,7 @@ Each species is a table in `src/assets/geometry/tree-species.ts` or `src/assets/
 
 **In the game**
 - `heather` in `shrub-species.ts`: a low, purple-brown cushion of clumps whose tops flower purple on mature plants.
+- On slopes up to about 35° the cushion is sheared to lie on the bank ([standing on a slope](../craft/procedural-flora.md#standing-on-a-slope)); that heather holds steep banks is unsourced.
 - **Not yet modelled:** the open-centred old phase ([#214](https://github.com/brylie/mission-island/issues/214)).
 
 **Notice this:** look for a heather bush with a gap in the middle. It is an old plant.
@@ -285,6 +287,7 @@ Each species is a table in `src/assets/geometry/tree-species.ts` or `src/assets/
 
 **In the game**
 - `bilberry` in `shrub-species.ts`: a bright green mound.
+- On slopes up to about 35° the mound is sheared to lie on the bank ([standing on a slope](../craft/procedural-flora.md#standing-on-a-slope)); that bilberry holds steep banks is unsourced.
 - Mature plants carry small dark berries, which will become seasonal ([#211](https://github.com/brylie/mission-island/issues/211)).
 
 **Notice this:** look for bilberry under pines where light reaches the ground, and see where it stops in deep shade.

@@ -13,7 +13,7 @@ const easeBetween = (from: number, to: number, value: number) => smoothstep((val
 
 // The authored island's trees plus Highwood's canopy, from its grid rather than a scan of every tree.
 const treesWithin = (point: Point, reach: number): CanopyTree[] => [
-  ...islandTrees.filter((tree) => Math.hypot(tree.x - point.x, tree.z - point.z) < reach)
+  ...islandTrees().filter((tree) => Math.hypot(tree.x - point.x, tree.z - point.z) < reach)
     .map((tree) => ({ x: tree.x, z: tree.z, height: tree.height, leafy: tree.variant % islandTreeGeometry.canopy.broadleafEvery === 0 })),
   ...highwoodCrownsWithin(point, reach),
 ]

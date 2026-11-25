@@ -10,7 +10,7 @@ import type { ChargeKind } from './charged-actions'
 import type { InventoryItem } from './inventory'
 import type { Goods, PlotStage } from './farm'
 import type { Truck } from './truck-pose'
-import type { DrivingXp, LearnerNotice, LearnerVehicleId } from './learner-vehicles'
+import type { DrivingXp, LearnerNotice, LearnerVehicleId, PracticeTourRecord } from './learner-vehicles'
 import type { ItemKind } from './rescue-gear'
 import type { JobBoardState, JobId } from './jobs'
 import type { GardenGate, GateRepair, GateStep } from './gate-repair'
@@ -119,6 +119,8 @@ export interface Snapshot {
   vehicles: Record<LearnerVehicleId, Truck>
   // Each learner vehicle's next practice stop, shared by the crew.
   practice: Record<LearnerVehicleId, number>
+  // The tour each index belongs to, and what its drivers have earned on it so far.
+  practiceTours: Record<LearnerVehicleId, PracticeTourRecord>
   skiff: Skiff
   items: Item[]
   mission: Mission

@@ -6,7 +6,7 @@ import { materialsGuide, materialsOpen, repairQuantity } from './materials-work'
 import type { Player, Snapshot } from './protocol'
 import { activeFavor, isCustom, residentFavorGuide } from './residents/favors'
 import { distance } from './world'
-import { careerUnlockXp, drivingCareers, learnerVehicles, practiceStop, practiceStopXp } from './learner-vehicles'
+import { careerUnlockXp, drivingCareers, finishedTourBeside, learnerVehicles, practiceStop, practiceStopXp, practiceTourRestartHint, type LearnerVehicleId } from './learner-vehicles'
 import { starterResidents } from './worlds/starter/residents'
 import { wildfireCard } from './wildfire-card'
 
@@ -45,16 +45,22 @@ function materialsCard(state: Snapshot, player: Player) {
 }
 
 // The mission panel: the current shift, order or neighbor favor, with its progress and next step.
-// While aboard a learner vehicle the card follows the practice run.
-function learnerCard(state: Snapshot, local: Player) {
-  const id = local.vehicle!
+// While aboard a learner vehicle the card follows the practice tour. It names only the
+// next stop while driving; each stop's lesson shows as a notice once the vehicle stops.
+// On foot beside a vehicle whose tour is finished, it says how to start the tour again.
+function learnerCard(state: Snapshot, local: Player, id: LearnerVehicleId) {
   const { name, career } = learnerVehicles[id]
+  const { stops } = learnerVehicles[id]
   const stop = practiceStop(id, state.practice[id])
   const value = Math.min(local.drivingXp?.[career] ?? 0, careerUnlockXp)
+  const careerName = drivingCareers[career].name
+  const detail = stop
+    ? `Stop ${state.practice[id] + 1} of ${stops.length}: ${stop.name}. Stop inside the ring of cones; the driver earns ${practiceStopXp} ${careerName} XP.`
+    : `${learnerVehicles[id].tour.name} complete: ${stops.length} stops. ${practiceTourRestartHint(id)}.`
   return {
     label: 'LEARNER DRIVING',
     title: name,
-    detail: `Drive to ${stop.name} and stop inside the ring of cones. The driver earns ${practiceStopXp} ${drivingCareers[career].name} XP per stop.`,
+    detail,
     progress: `${drivingCareers[career].name} XP`,
     value,
     max: careerUnlockXp,
@@ -82,8 +88,8 @@ function deliveryCard(state: Snapshot) {
 }
 
 export function missionCard(state: Snapshot, id: number) {
-  const aboard = state.players.find((entry) => entry.id === id && entry.seat && entry.vehicle)
-  if (aboard) return learnerCard(state, aboard)
+  const local = state.players.find((entry) => entry.id === id)
+  if (local?.seat && local.vehicle) return learnerCard(state, local, local.vehicle)
   const job = activeJob(state)
   const delivery = deliveryCard(state)
   if (delivery) return delivery
@@ -102,7 +108,12 @@ export function missionCard(state: Snapshot, id: number) {
   }
   // An order the crew already took keeps its card. A fire then shows in notices and on the map.
   if (job?.kind === 'market') return marketCard(job, state.jobs.active?.progress ?? 0)
-  return wildfireCard(state) ?? serviceCard(state, id)
+  const wildfire = wildfireCard(state)
+  if (wildfire) return wildfire
+  // A finished tour's restart card, beside its vehicle, never hides an active job or fire.
+  const finished = local && !local.seat ? finishedTourBeside(state, local) : undefined
+  if (local && finished) return learnerCard(state, local, finished)
+  return serviceCard(state, id)
 }
 
 function marketCard(job: Extract<NonNullable<ReturnType<typeof activeJob>>, { kind: 'market' }>, value: number) {

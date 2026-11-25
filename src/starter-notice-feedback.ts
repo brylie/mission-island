@@ -56,7 +56,7 @@ export function starterNoticeFeedback(incoming: ServerMessage, localId: number, 
       return wildfireFeedback(incoming, localId)
     case 'crew-mark':
       return crewMarkFeedback(incoming, localId, snapshot)
-    case 'crew-signal': case 'first-aid-check': case 'practice-run':
+    case 'crew-signal': case 'first-aid-check': case 'practice-run': case 'practice-tour':
       return learnerFeedback(incoming, localId, snapshot)
     case 'starter-seed':
       return { key: '+1 seed', label: 'Plant it at Island Farm', until: performance.now() + seedPurchaseDurationMs }

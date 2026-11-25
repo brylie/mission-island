@@ -8,7 +8,7 @@ import type { Snapshot } from '../src/protocol.ts'
 import type { createCargoPhysics } from '../src/simulation/cargo.ts'
 import { weatherAt } from '../src/weather.ts'
 import { truckStart } from '../src/world.ts'
-import { learnerVehicleIds, learnerVehicles, type LearnerVehicleId } from '../src/learner-vehicles.ts'
+import { learnerVehicleIds, learnerVehicles, savedPracticeTour, type LearnerVehicleId } from '../src/learner-vehicles.ts'
 import { initialGateRepair } from '../src/gate-repair.ts'
 import { initialFerryRepair } from '../src/ferry-repair.ts'
 import { initialResidents } from '../src/residents/trust.ts'
@@ -59,7 +59,8 @@ export function restoreIsland(
     skiff: restoreSkiff(save?.world.skiff),
     truck: physics.parkTruck(save?.world.truck ?? truckStart),
     vehicles: learnerRecord((id) => physics.parkLearner(id, save?.world.vehicles?.[id] ?? learnerVehicles[id].park)),
-    practice: learnerRecord((id) => save?.world.practice?.[id] ?? 0),
+    practice: learnerRecord((id) => savedPracticeTour(id, save?.world.practice?.[id], save?.world.practiceTours?.[id]).index),
+    practiceTours: learnerRecord((id) => structuredClone(savedPracticeTour(id, save?.world.practice?.[id], save?.world.practiceTours?.[id]).record)),
     weather: weatherAt(islandTime),
     islandTime,
     driftwood,
@@ -113,7 +114,7 @@ export function saveIsland(state: Snapshot, growth: number[], crew: IslandSave['
     islandTime: state.islandTime,
     growth: growth.slice(),
     ...(state.lastStarterPay && { lastStarterPay: state.lastStarterPay }),
-    world: structuredClone({ truck: { x, z, heading }, vehicles, practice: state.practice, skiff, items, mission, fire, events, farm, jobs, aviation: { qualified, surveyed, aerial }, gate, gateRepair, residents, journal, materialsWork, ferryRepair, produce: state.farmWork.progress, ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
+    world: structuredClone({ truck: { x, z, heading }, vehicles, practice: state.practice, practiceTours: state.practiceTours, skiff, items, mission, fire, events, farm, jobs, aviation: { qualified, surveyed, aerial }, gate, gateRepair, residents, journal, materialsWork, ferryRepair, produce: state.farmWork.progress, ...(lookoutFireClearedAt !== undefined && { lookoutFireClearedAt }), ...(lastFavorPay && { lastFavorPay }) }),
     crew,
   }
 }

@@ -20,8 +20,12 @@ export const gradedRoadKinds = ['fire-road', 'track'] as const satisfies readonl
 // ground is averaged across the road's width, smoothed over `groundSmoothM`, then held within the
 // grade limit by forward and backward passes, smoothing over `passSmoothM` between them. On a
 // side slope the road benches into the hill, blending in from `benchBlend.from` of the bench slope
-// to fully benched `benchBlend.span` of it above that.
-export const roadProfileSolver = { sampleStepM: 1, groundSmoothM: 20, passSmoothM: 6, passes: 6, benchBlend: { from: 0.75, span: 0.5 } } as const
+// to fully benched `benchBlend.span` of it above that. Where a branch leaves the road it joins, its
+// first `landing.lengthM` stay within `landing.maxGrade`, so a vehicle can stop and look before it
+// turns out or climbs: highway practice keeps approaches under 3% within stopping sight distance of
+// a junction and under 6% where that can't be done (TxDOT Roadway Design Manual 4.8.5). Over the
+// next `landing.taperM` the limit eases up to the road's own, so the grade doesn't break at once.
+export const roadProfileSolver = { sampleStepM: 1, groundSmoothM: 20, passSmoothM: 6, passes: 6, benchBlend: { from: 0.75, span: 0.5 }, landing: { lengthM: 12, taperM: 10, maxGrade: 0.06 } } as const
 
 // How roads meet each other and the ground.
 // - A road end within its host's carriageway joins that road (a junction).

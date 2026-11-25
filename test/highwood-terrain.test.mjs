@@ -161,7 +161,8 @@ test('the shipped terrain drains: no closed hollow holds water inland', () => {
 })
 
 test('Highwood\'s drawn ground follows the ground players stand on, so feet never sink into it', async () => {
-  const { walkingHeight, underGradedRoad } = await import('../src/terrain.ts')
+  const { walkingHeight } = await import('../src/terrain.ts')
+  const { underGradedRoad } = await import('../src/roads.ts')
   const { terrainTile } = await import('../src/assets/geometry/starter-landscape.ts')
   // The terrain mesh's grid starts at the bake's origin and splits each cell along the diagonal
   // from its lower corner to its upper one, as `tileMesh` does.
