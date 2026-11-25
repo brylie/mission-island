@@ -118,6 +118,7 @@ function drawLearners(ink: CanvasRenderingContext2D, state: Snapshot, local: Pla
   }
   if (!local?.seat || !local.vehicle) return
   const stop = practiceStop(local.vehicle, state.practice[local.vehicle])
+  if (!stop) return
   ink.lineWidth = ring.lineWidth
   for (const [color, grow] of [[ring.outline, ring.lineWidth], [ring.color, 0]] as const) {
     ink.strokeStyle = color

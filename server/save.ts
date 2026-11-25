@@ -32,7 +32,7 @@ export type IslandSave = {
   islandTime: number
   growth: number[]
   world: Pick<Snapshot, 'skiff' | 'items' | 'mission' | 'fire' | 'events' | 'farm' | 'lookoutFireClearedAt' | 'gate' | 'gateRepair' | 'residents' | 'lastFavorPay' | 'ferryRepair'>
-    & { truck: Pose, vehicles?: Partial<Record<LearnerVehicleId, Pose>>, practice?: Partial<Snapshot['practice']>, jobs?: JobBoardState, aviation?: AviationProgress, journal?: Journal, produce?: FarmProgress, materialsWork?: Snapshot['materialsWork'] }
+    & { truck: Pose, vehicles?: Partial<Record<LearnerVehicleId, Pose>>, practice?: Partial<Snapshot['practice']>, practiceTours?: Partial<Snapshot['practiceTours']>, jobs?: JobBoardState, aviation?: AviationProgress, journal?: Journal, produce?: FarmProgress, materialsWork?: Snapshot['materialsWork'] }
   crew: { token: string, player: Player, reserved: boolean }[]
 }
 

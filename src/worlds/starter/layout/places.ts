@@ -135,17 +135,11 @@ export const harborJobSites = {
 } as const
 
 // Learner vehicles park beside the place that teaches them. A practice run ends
-// when the driver stops inside a stop's circle; stops are visited in order.
+// when the driver stops inside a stop's circle; stops are visited in order, once each.
+// The pickup's stops come from the island's places and roads (src/rescue-tour.ts).
 export const learnerVehicleLayout = {
   pickup: {
     park: { x: 20, z: 14.5, heading: Math.PI / 2 },
-    stops: [
-      { name: 'Forest Lookout trailhead', x: 7, z: 22 },
-      { name: 'Harbor Depot', x: -36, z: -12 },
-      { name: 'Beach trail', x: 32, z: -27 },
-      { name: 'Ferry terminal approach', x: -30, z: -16 },
-      { name: 'Seabrook square', x: 30, z: 12 },
-    ],
   },
   tractor: {
     park: { x: 24, z: -7, heading: 0 },

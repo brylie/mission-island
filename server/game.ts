@@ -127,6 +127,13 @@ function releaseCrewmate(member: CrewMember, held: Pick<ReturnType<typeof create
   held.marks.drop(member.player.id)
 }
 
+// Boarding a learner vehicle before its tour's first stop introduces the tour.
+function changeSeat(state: Snapshot, member: CrewMember, fleet: ReturnType<typeof createLearnerFleet>) {
+  const wasSeated = Boolean(member.player.seat)
+  toggleSeat(state, member)
+  if (!wasSeated && member.player.seat) fleet.boarded(member)
+}
+
 function observeCrewNotices(state: Snapshot, notifyCrew: CrewBroadcast, metrics?: PlaytestMetricsRun): CrewBroadcast {
   if (!metrics) return notifyCrew
   return (notice, slot) => {
@@ -224,7 +231,7 @@ export function createGame({ clock = Date.now, random = Math.random, save, check
         checkpoint?.()
         break
       case 'seat':
-        if (!member.player.sleeping) toggleSeat(state, member)
+        if (!member.player.sleeping) changeSeat(state, member, fleet)
         break
       case 'jump':
         jump(member)

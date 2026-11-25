@@ -47,5 +47,5 @@ export function createLearnerFleet(
     updateStowedItems(state)
   }
 
-  return { gear, fleetStep, afterStep, park }
+  return { gear, fleetStep, afterStep, park, boarded: (member: CrewMember) => practice.boarded(member) }
 }

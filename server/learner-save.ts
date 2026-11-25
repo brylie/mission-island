@@ -28,11 +28,18 @@ export function migrateRescueGear(value: unknown): unknown {
   return { ...value, version: saveVersions.rescueGear, world: { ...value.world, items } }
 }
 
-// Learner fleet records are optional, so saves from before the fleet still load.
+const isEarning = (value: unknown) => isRecord(value) && isCount(value.playerId) && isCount(value.xp)
+const isTour = (value: unknown) => isRecord(value) && typeof value.key === 'string'
+  && Array.isArray(value.earned) && value.earned.every(isEarning)
+  && Array.isArray(value.qualified) && value.qualified.every(isCount)
+
+// Learner fleet records are optional, so saves from before the fleet, or from before
+// practice tours had keys, still load.
 export function isSavedLearnerFleet(world: Record<string, unknown>) {
-  const { vehicles, practice } = world
+  const { vehicles, practice, practiceTours } = world
   return (vehicles === undefined || (isRecord(vehicles) && Object.entries(vehicles).every(([id, pose]) => isLearnerId(id) && isPose(pose))))
     && (practice === undefined || (isRecord(practice) && Object.entries(practice).every(([id, stop]) => isLearnerId(id) && isCount(stop))))
+    && (practiceTours === undefined || (isRecord(practiceTours) && Object.entries(practiceTours).every(([id, tour]) => isLearnerId(id) && isTour(tour))))
 }
 
 // A crewmate's career driving XP, and a learner vehicle only with a seat that vehicle has.

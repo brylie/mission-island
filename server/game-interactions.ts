@@ -5,6 +5,7 @@ import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { repairSupplyFavor, wren } from '../src/worlds/starter/residents/wren.ts'
 import { cargoInteractions } from './cargo-interactions.ts'
 import type { CrewBroadcast } from './crew.ts'
+import { practiceTourHandlers } from './driving-practice.ts'
 import { createFarmOrders } from './farm-orders.ts'
 import { createFerryRepair } from './ferry-repair.ts'
 import { fireWatchInteractions } from './fire-watch-interactions.ts'
@@ -62,6 +63,7 @@ export function createGameInteractions(
     materials.interactions,
     cargo,
     fireWatchInteractions(state, wildfire),
+    practiceTourHandlers(state, notifyCrew),
     homeInteractions,
     orders.interactions,
     plotInteractions(state, growth),
