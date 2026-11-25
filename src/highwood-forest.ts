@@ -1,17 +1,17 @@
 import type { Material } from '@babylonjs/core/Materials/material'
-import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
+import { type Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector'
+import type { FloatArray } from '@babylonjs/core/types'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData'
 import '@babylonjs/core/Meshes/thinInstanceMesh'
 import { highwoodForestLook as look } from './assets/recipes/highwood-forest'
 import type { TreeTemplateOptions, TreeTier } from './assets/trees/tree-catalog'
-import { treeCollision } from './assets/trees/tree-collision'
 import { buildTreeTemplate, type TreeTemplate } from './assets/trees/tree-template'
 import type { MeshFactory } from './island-meshes'
-import { groundHeight } from './terrain'
+import { plantMatrix, plantNormalMatrix } from './plant-matrix'
 import { standingPlants } from './highwood-standing'
 import type { Point } from './world'
-import { logRise, plantTemplateOptions, type Planting } from './worlds/starter/highwood-planting'
+import { plantTemplateOptions, type Planting } from './worlds/starter/highwood-planting'
 
 // Draws Highwood's forest so it costs little however many plants it holds:
 // - far trees are merged into one static mesh per tile and material, so a tile
@@ -33,15 +33,17 @@ interface Tile { key: string, centre: Point, canopy: Planting[], understory: Pla
 const comboKey = (plant: Planting, tier: TreeTier) => `${plant.species} ${plant.age} ${plant.exposure} ${plant.variant} ${tier}`
 const tileKey = (x: number, z: number) => `${Math.floor(x / look.tileM)},${Math.floor(z / look.tileM)}`
 
-// A fallen log tilts to follow the ground from its root to its far end, as the walking solids do.
-function logTilt(plant: Planting) {
-  const collision = treeCollision(plantTemplateOptions(plant, 'near') as TreeTemplateOptions)
-  return collision.shape === 'lying' ? Math.atan(logRise(plant, collision.length * plant.scale)) : 0
-}
+const normal = new Vector3()
 
-function plantMatrix(plant: Planting) {
-  const y = groundHeight(plant) - look.sinkM
-  return Matrix.Compose(new Vector3(plant.scale, plant.scale, plant.scale), Quaternion.RotationYawPitchRoll(plant.heading, 0, logTilt(plant)), new Vector3(plant.x, y, plant.z))
+// Normals carried by a normal matrix and made unit length again, into `out`.
+function transformNormals(normals: Float32Array, matrix: Matrix, out: FloatArray) {
+  for (let i = 0; i < normals.length; i += vec3Stride) {
+    Vector3.TransformNormalFromFloatsToRef(normals[i], normals[i + 1], normals[i + vec3Stride - 1], matrix, normal)
+    normal.normalize()
+    out[i] = normal.x
+    out[i + 1] = normal.y
+    out[i + vec3Stride - 1] = normal.z
+  }
 }
 
 interface FarGroup { parts: VertexData[], vertices: number, indices: number }
@@ -51,14 +53,17 @@ interface FarGroup { parts: VertexData[], vertices: number, indices: number }
 function mergeFar(meshes: MeshFactory, tile: Tile, template: (plant: Planting) => TreeTemplate, farMaterial: (material: Material) => Material) {
   const groups = new Map<Material, FarGroup>()
   for (const plant of tile.canopy) {
-    const matrix = plantMatrix(plant)
+    const matrix = plantMatrix(plant), normalMatrix = plantNormalMatrix(plant)
     for (const part of template(plant).parts) {
       const material = farMaterial(part.material!)
       const group = groups.get(material) ?? { parts: [], vertices: 0, indices: 0 }
       groups.set(material, group)
       // Copy, or transforming the data would move the shared template too.
       const data = VertexData.ExtractFromMesh(part, true, true)
+      const normals = data.normals ? Float32Array.from(data.normals) : undefined
       data.transform(matrix)
+      // A sheared shrub's normals follow the inverse transpose, which `transform` doesn't use.
+      if (normals && data.normals) transformNormals(normals, normalMatrix, data.normals)
       group.parts.push(data)
       group.vertices += data.positions!.length / vec3Stride
       group.indices += data.indices!.length
@@ -149,6 +154,13 @@ export function createHighwoodForest(meshes: MeshFactory) {
         batch.parent = null
         batch.setEnabled(false)
         batch.receiveShadows = true
+        // Sheared shrubs aren't a uniform scale, so the shader must light them by the inverse
+        // transpose; Babylon's thin instance docs switch this on by hand. Babylon resets the flag
+        // whenever it recomputes the world matrix, so the batch's matrix (it stays at the origin;
+        // its instances place the plants) is frozen first, and the flag set after. The flag's setter is
+        // internal (checked against @babylonjs/core 9.37.1); recheck it in the Workbench after an upgrade.
+        batch.freezeWorldMatrix()
+        batch._updateNonUniformScalingState(true)
         // Low shrubs and bracken cast little shade; leaving them out of the shadow map saves a pass of triangles.
         if (plant.layer !== 'understory') meshes.shadows.addShadowCaster(batch, false)
         return batch

@@ -3,12 +3,14 @@ import { fbm } from '../../../math/gradient-noise.ts'
 import { seededRandom } from '../../../seeded-random.ts'
 import { groundHeight, originalCoastRadius, waterLevel } from '../../../terrain.ts'
 import { plantFits, sightlineAlong } from '../highwood-clearings.ts'
+import { plantRests } from '../../../plant-seat.ts'
 import type { Point } from '../../../world.ts'
 import { authoredShare } from './protection.ts'
 import { highwoodExposure, highwoodHabitatAt, type HighwoodHabitat } from '../highwood-habitat.ts'
 import { bakedSurface } from '../highwood-terrain.ts'
 import { highwoodAuthoredLimit, highwoodSightlineEyeClearM, highwoodClumping, highwoodExposedAbove, highwoodLeanJitter, highwoodLogLie, highwoodMaximumCover, highwoodPlantingLayers, highwoodPlantingLimits, highwoodPlantingSeed, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
 import { highwoodGeneration } from '../layout/island-generation.ts'
+import { plantingEncoding } from '../../../assets/geometry/island-preview.ts'
 import { ridgeWind } from '../ridge-scout.ts'
 
 // Plants Highwood: every tree, shrub and piece of deadwood, from the habitat
@@ -91,6 +93,7 @@ function logHeading(point: Point, roll: number, scale: number) {
 function plantLayer(layer: PlantingLayer, out: Planting[]) {
   const { cellM, stands } = highwoodPlantingLayers[layer]
   const { west, south, cell, columns, rows } = highwoodGeneration.grid
+  const { positionStepM } = plantingEncoding
   const random = seededRandom(highwoodPlantingSeed * (plantingLayers.indexOf(layer) + 1))
   for (let z = south; z < south + rows * cell; z += cellM) {
     for (let x = west; x < west + columns * cell; x += cellM) {
@@ -106,7 +109,7 @@ function plantLayer(layer: PlantingLayer, out: Planting[]) {
       const scale = 1 + (rolls.scale - half) * (scaleSpread(layer) + scaleSpread(layer))
       const lying = choice.species === highwoodLogLie.species ? logHeading(point, rolls.heading, scale) : undefined
       if (choice.species === highwoodLogLie.species && lying === undefined) continue
-      out.push({
+      const plant: Planting = {
         ...point,
         layer,
         species: choice.species,
@@ -115,7 +118,11 @@ function plantLayer(layer: PlantingLayer, out: Planting[]) {
         variant: Math.floor(rolls.variant * highwoodTemplateVariants),
         heading: lying ?? (exposed ? downwind + (rolls.heading - half) * (highwoodLeanJitter + highwoodLeanJitter) : rolls.heading * fullTurn),
         scale,
-      })
+      }
+      // A shrub on ground too broken to lie on is left out (plant-seat.ts), judged where the bake
+      // stores it, in steps of `positionStepM`, which is where it is drawn.
+      const stored = { ...plant, x: west + Math.round((plant.x - west) / positionStepM) * positionStepM, z: south + Math.round((plant.z - south) / positionStepM) * positionStepM }
+      if (plantRests(stored)) out.push(plant)
     }
   }
 }
