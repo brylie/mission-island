@@ -101,6 +101,25 @@ export const capturePresets = {
     hour: 11,
     weather: 'clear',
   },
+  // The two branch mouths at walking height, where a lip or crack once showed (#282).
+  'road-ridge-mouth-low': {
+    label: 'The Cairn ridge road\'s mouth on the Pine Draw road at walking height',
+    kind: 'landscape',
+    eye: { x: -300.8, z: 334.9, height: 1.7 },
+    look: { x: -310, z: 331, height: 0 },
+    fov: 0.9,
+    hour: 11,
+    weather: 'clear',
+  },
+  'road-spur-mouth-low': {
+    label: 'The summit spur\'s mouth on the fire road at walking height',
+    kind: 'landscape',
+    eye: { x: -254.1, z: 228.8, height: 1.7 },
+    look: { x: -258, z: 238, height: 0 },
+    fov: 0.9,
+    hour: 11,
+    weather: 'clear',
+  },
   'road-ridge-junction': {
     label: 'Cairn ridge road leaving the Pine Draw road',
     kind: 'landscape',
