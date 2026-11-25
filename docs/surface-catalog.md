@@ -22,6 +22,8 @@ Run `npm run dev` on the default port to open the setups below. Each link restor
 | Metal | [Brass][brass] · [Steel][steel] · [Copper][copper] |
 | Cloth | [Canvas][canvas] · [Wool][wool] · [Workwear twill][workwear-twill] |
 
+On Highwood's terrain the granite tile is only the crystal grain. The ground shader draws the joints, grus, lichen and relief over it at landscape scale; see [granite uplands](field-guide/places/granite-uplands.md#in-the-game).
+
 Orbit and zoom to inspect the normal detail. Choose **Overcast** to compare the structure under diffuse light. For a curved comparison, open a cylinder and rotate all the way around its side.
 
 - Timber · [Fresh cut][fresh-cut-timber-cylinder] · [Weathered board][weathered-board-cylinder] · [Bark][bark-cylinder]

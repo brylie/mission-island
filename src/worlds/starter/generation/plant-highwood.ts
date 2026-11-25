@@ -1,13 +1,13 @@
 import { plantingLayers, type Planting, type PlantingLayer } from '../highwood-planting.ts'
-import { distanceToRoute, footpaths, roads, walkways } from '../../../routes.ts'
 import { fbm } from '../../../math/gradient-noise.ts'
 import { seededRandom } from '../../../seeded-random.ts'
 import { groundHeight, originalCoastRadius, waterLevel } from '../../../terrain.ts'
+import { clearOfEarthworks, clearOfRoutes, coverCanGrow, sightlineAlong } from '../highwood-clearings.ts'
 import type { Point } from '../../../world.ts'
 import { authoredShare } from './protection.ts'
 import { highwoodExposure, highwoodHabitatAt, type HighwoodHabitat } from '../highwood-habitat.ts'
 import { bakedSurface } from '../highwood-terrain.ts'
-import { highwoodAuthoredLimit, highwoodSightlineEyeClearM, highwoodClumping, highwoodExposedAbove, highwoodLeanJitter, highwoodLogLie, highwoodMaximumCover, highwoodPlantingLayers, highwoodSightlines, highwoodPlantingLimits, highwoodPlantingSeed, highwoodRouteClearanceM, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
+import { highwoodAuthoredLimit, highwoodSightlineEyeClearM, highwoodClumping, highwoodExposedAbove, highwoodLeanJitter, highwoodLogLie, highwoodMaximumCover, highwoodPlantingLayers, highwoodPlantingLimits, highwoodPlantingSeed, highwoodRouteClearanceM, highwoodScaleSpread, highwoodTemplateVariants } from '../layout/highwood-planting.ts'
 import { highwoodGeneration } from '../layout/island-generation.ts'
 import { ridgeWind } from '../ridge-scout.ts'
 
@@ -22,7 +22,6 @@ const fullTurn = Math.PI + Math.PI
 const slopeSpanM = 1
 // Exposed forms lean toward +x; this heading turns +x to point the way the wind blows.
 const downwind = Math.atan2(ridgeWind.x, ridgeWind.z) - Math.PI * half
-const routes = [...footpaths.map(({ points }) => points), ...walkways.map(({ points }) => points), ...roads]
 
 function pick<T extends string>(random: () => number, weights: Partial<Record<T, number>>) {
   const entries = Object.entries(weights) as [T, number][]
@@ -43,30 +42,15 @@ function onHighwoodLand(point: Point) {
     && bakedSurface(point).sand <= highwoodPlantingLimits.sand
 }
 
-// How far along a kept-open sight line's corridor a point lies, or undefined outside every corridor.
-export function sightlineAlong(point: Point) {
-  let nearest: number | undefined
-  for (const { eye, look, reachM, halfWidthM, spread } of highwoodSightlines) {
-    const dx = look.x - eye.x, dz = look.z - eye.z
-    const length = Math.hypot(dx, dz)
-    const along = ((point.x - eye.x) * dx + (point.z - eye.z) * dz) / length
-    if (along < 0 || along > reachM) continue
-    const across = Math.abs((point.x - eye.x) * dz - (point.z - eye.z) * dx) / length
-    if (across < halfWidthM + along * spread) nearest = Math.min(nearest ?? along, along)
-  }
-  return nearest
-}
-
-export const inSightline = (point: Point) => sightlineAlong(point) !== undefined
-
-function clearOfRoutes(point: Point, layer: PlantingLayer, habitat: HighwoodHabitat) {
+function clearForPlant(point: Point, layer: PlantingLayer, habitat: HighwoodHabitat) {
   if (layer !== 'understory' && slope(point) > highwoodPlantingLimits.treeSlope) return false
   // Nothing stands in a corridor right by the viewpoint. Further along, low plants may, and so
   // may a creek bank's alders and willows.
   const along = sightlineAlong(point)
   if (along !== undefined && along <= highwoodSightlineEyeClearM) return false
   if (along !== undefined && layer !== 'understory' && !(habitat === 'wet' && layer === 'canopy')) return false
-  return routes.every((route) => distanceToRoute(point, route) > highwoodRouteClearanceM)
+  if (!(layer === 'understory' ? coverCanGrow(point) : clearOfEarthworks(point))) return false
+  return clearOfRoutes(point, highwoodRouteClearanceM)
 }
 
 // How much a clump raises or lowers a layer's cover at a point, as a multiplier.
@@ -117,7 +101,7 @@ function plantLayer(layer: PlantingLayer, out: Planting[]) {
       if (!onHighwoodLand(point)) continue
       const habitat = pick<HighwoodHabitat>(() => rolls.habitat, highwoodHabitatAt(point))
       const stand = stands[habitat]
-      if (rolls.cover >= Math.min(highwoodMaximumCover, stand.cover * clumpCover(layer, point)) || !stand.mix.length || !clearOfRoutes(point, layer, habitat)) continue
+      if (rolls.cover >= Math.min(highwoodMaximumCover, stand.cover * clumpCover(layer, point)) || !stand.mix.length || !clearForPlant(point, layer, habitat)) continue
       const choice = stand.mix[Number(pick(() => rolls.species, Object.fromEntries(stand.mix.map((entry, index) => [index, entry.weight]))))]
       const exposed = highwoodExposure(point) > highwoodExposedAbove
       const scale = 1 + (rolls.scale - half) * (scaleSpread(layer) + scaleSpread(layer))

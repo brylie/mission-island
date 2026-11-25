@@ -67,15 +67,15 @@
   supports:
     - claim: Someone who finds a wildfire should move away from the fire, smoke and vegetation, and call 999 for the fire service.
       quote: "Position yourself away from the fire, smoke, and any vegetation."
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/processes/wildfire.md#if-you-find-a-fire
     - claim: Members of the public shouldn't try to fight a wildfire.
       quote: "Leave the firefighting to us, it's what we are trained to do."
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/processes/wildfire.md#if-you-find-a-fire
     - claim: A wildfire can keep smouldering or spread underground.
       quote: "The fire can smoulder or spread underground."
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/processes/wildfire.md#if-you-find-a-fire
 
 - id: naturescot-caledonian-pinewood
@@ -146,11 +146,11 @@
   supports:
     - claim: "Red squirrel, crossbill (including the Scottish crossbill), crested tit, wood ants and capercaillie live in Caledonian pinewood."
       quote: "check the deep crowns for crossbills (including the endemic Scottish crossbill"
-      quote-match: unfetchable (2026-11-22)
+      quote-match: unfetchable (2026-11-23)
       used-in: field-guide/highwood-habitats.md#pinewood-interior
     - claim: "Crested tits use holes in standing deadwood."
       quote: "Crested tits like holes in standing deadwood"
-      quote-match: unfetchable (2026-11-22)
+      quote-match: unfetchable (2026-11-23)
       used-in: field-guide/highwood-habitats.md#pinewood-interior
 
 - id: woodtrust-caledonian
@@ -166,7 +166,7 @@
   supports:
     - claim: "Crested tits flourish in Caledonian pinewood."
       quote: "crested tits flourish in this habitat"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/highwood-habitats.md#pinewood-interior
 
 - id: fc-rides-edges
@@ -182,7 +182,7 @@
   supports:
     - claim: "Woodland edges and glades are valuable habitats, for songbirds and for butterflies in sunny clearings."
       quote: "Open glades allow sunlight to reach the ground and create warm patches for butterflies"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/highwood-habitats.md#edges-and-gaps
 
 - id: fls-deer-management
@@ -198,7 +198,7 @@
   supports:
     - claim: "Deer browse young trees."
       quote: "Deer will also eat young trees, killing or deforming them"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/highwood-habitats.md#edges-and-gaps
 
 - id: woodtrust-juniper
@@ -214,11 +214,11 @@
   supports:
     - claim: "Juniper has declined across the UK."
       quote: "has been declining throughout the UK in range and abundance"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
     - claim: "Browsing by deer and rabbits is partly to blame for juniper's decline."
       quote: "partially attributed to browsing of foliage by deer and rabbits"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
 
 - id: plantlife-lowland-juniper
@@ -234,7 +234,7 @@
   supports:
     - claim: "Juniper regeneration needs early-successional, open ground."
       quote: "Early successional habitat suitable for Juniper regeneration has been created"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
 
 - id: wt-heather
@@ -250,7 +250,7 @@
   supports:
     - claim: "Heather attracts nectar-feeding insects."
       quote: "attract all kinds of nectar-loving insects"
-      quote-match: unfetchable (2026-11-22)
+      quote-match: unfetchable (2026-11-23)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
 
 - id: woodtrust-heathland
@@ -266,7 +266,7 @@
   supports:
     - claim: "Heath supports ground-nesting birds."
       quote: "home to specialist insects and ground-nesting birds"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
 
 - id: rspb-heathland
@@ -282,7 +282,7 @@
   supports:
     - claim: "Heath supports common lizards."
       quote: "basking reptiles, such as Common lizards"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/highwood-habitats.md#heath-and-juniper-scrub-juniper-hollow
 
 - id: jncc-h4060
@@ -298,7 +298,7 @@
   supports:
     - claim: "Exposed heath holds low, wind-pruned plants, with lichens. Describes montane heath, higher than the island's ridge."
       quote: "low-growing or prostrate owing to exposure to high winds"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/highwood-habitats.md#exposed-ridge-toward-windstone-ridge
 
 - id: wt-meadow-pipit
@@ -314,7 +314,7 @@
   supports:
     - claim: "Meadow pipits nest on moorland, heath and rough grassland."
       quote: "a common nesting bird of moorland, heathland and rough grassland"
-      quote-match: unfetchable (2026-11-22)
+      quote-match: unfetchable (2026-11-23)
       used-in: field-guide/highwood-habitats.md#exposed-ridge-toward-windstone-ridge
 
 - id: woodtrust-alder
@@ -330,15 +330,15 @@
   supports:
     - claim: "Alder roots have nitrogen-fixing nodules that condition the soil."
       quote: "The roots have nitrogen-fixing nodules, conditioning the soil"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
     - claim: "Siskin, redpoll and goldfinch eat alder seeds."
       quote: "the seeds are eaten by the siskin, redpoll and goldfinch"
-      quote-match: not-found (2026-11-22)
+      quote-match: not-found (2026-11-23)
       used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
     - claim: "Otters nest among alder roots."
       quote: "Alder roots make the perfect nest sites for otters."
-      quote-match: not-found (2026-11-22)
+      quote-match: not-found (2026-11-23)
       used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
 
 - id: wt-wet-woodland
@@ -354,7 +354,7 @@
   supports:
     - claim: "Wet, decaying wood is good habitat for invertebrates."
       quote: "Wet, decaying wood and seepages make good habitat for invertebrates"
-      quote-match: unfetchable (2026-11-22)
+      quote-match: unfetchable (2026-11-23)
       used-in: field-guide/places/wet-woodland.md#why-wet-woods-matter
 
 - id: tfl-bracken
@@ -370,11 +370,11 @@
   supports:
     - claim: "Bracken fronds contain toxic compounds."
       quote: "fronds contain toxic compounds"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/places/bracken-slopes.md
     - claim: "Bracken and dog violets growing together on sunny hillsides are important habitat for the pearl-bordered fritillary."
       quote: "The combination of bracken and dog violets growing together"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/places/bracken-slopes.md
 
 - id: scotgov-bracken-2025
@@ -390,7 +390,7 @@
   supports:
     - claim: "Bracken is directly toxic to livestock."
       quote: "direct toxicity from bracken"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/places/bracken-slopes.md#bracken-and-people
 
 - id: lakedistrict-lyme
@@ -406,7 +406,7 @@
   supports:
     - claim: "People are most at risk of picking up ticks brushing through tall vegetation, especially bracken."
       quote: "most at risk of picking up ticks when brushing through tall vegetation, especially bracken"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/places/bracken-slopes.md#bracken-and-people
 
 - id: bto-whinchat
@@ -422,7 +422,7 @@
   supports:
     - claim: "Whinchats nest in grass tussocks and use bracken as perches."
       quote: "tussocks for nest sites"
-      quote-match: exact (2026-11-22)
+      quote-match: exact (2026-11-23)
       used-in: field-guide/places/bracken-slopes.md#how-bracken-changes-a-place
 
 # Added 2026-11-23 by the Knowledge Keeper's review of the Highwood backcountry (PR #197).
@@ -443,9 +443,11 @@
   supports:
     - claim: A glacier deepens and widens an earlier V-shaped valley into a U-shaped trough.
       quote: "The glacier flows through an earlier 'V' shaped valley, scouring the sides and the floor as it does so."
+      quote-match: unfetchable (2026-11-23)
       used-in: design/island-story.md#2-ice-carves-the-valleys
     - claim: A waterfall flowing into the main glacial valley is a good sign of a hanging valley.
       quote: "A good sign of a hanging valley is a waterfall or several waterfalls flowing into the main glacial valley."
+      quote-match: unfetchable (2026-11-23)
       used-in: design/island-story.md#2-ice-carves-the-valleys
 
 - id: lambeck-2014-pnas
@@ -1033,3 +1035,665 @@
       quote: "radioed dispatch with a report of a highly active fire"
       quote-match: exact (2026-11-23)
       used-in: field-guide/practices/spotting-and-ranging.md#how-its-organised
+
+- id: usfs-low-volume-roads
+  title: "Low-Volume Roads Engineering: Best Management Practices Field Guide"
+  publisher: USDA Forest Service and USAID (Gordon Keller and James Sherar)
+  url: https://www.fs.usda.gov/t-d/programs/forest_mgmt/projects/lowvolroads
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: International (written for low-volume roads worldwide)
+  note: 2003. On 2026-11-23 the Forest Service pages and chapter PDFs returned 403 to automated reading, and the full PDF on waterboards.ca.gov was over the fetcher's 10 MB limit. Not cited for any claim. The forest roads page now rests on the FAO, Scottish Government and Forestry Commission entries, which suit Highwood's Scottish character better.
+  supports: []
+
+- id: nydec-unpaved-forest-roads
+  title: Standards for unpaved forest access roads
+  publisher: New York State Department of Environmental Conservation
+  url: https://extapps.dec.ny.gov/docs/lands_forests_pdf/sfunpavedroad.pdf
+  archived:
+  accessed:
+  opened: false
+  tier: 1
+  region: United States (New York)
+  note: The PDF timed out twice on 2026-11-23. Not cited for any claim; the forest roads page uses Scottish and UK standards instead.
+  supports: []
+
+- id: fao-road-design-watersheds
+  title: "Watershed management field manual: road design and construction in sensitive watersheds, chapter 3: Road design"
+  publisher: Food and Agriculture Organization of the United Nations (FAO Conservation Guide 13/5)
+  url: https://www.fao.org/4/t0099e/T0099e03.htm
+  archived: https://web.archive.org/web/20261123192907/https://www.fao.org/4/t0099e/T0099e03.htm
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: International; the manual draws largely on research from the US Pacific Northwest
+  note: Rome, 1998. Contents page https://www.fao.org/4/t0099e/T0099E00.htm (archived https://web.archive.org/web/20261123192843/https://www.fao.org/4/t0099e/T0099E00.htm). The manual's chapters are separate pages, so each chapter has its own entry; see fao-road-drainage-watersheds and fao-road-slope-protection-watersheds. Read directly with curl, not through a fetcher. Quotes avoid the degree sign, which the page encodes as Latin-1.
+  supports:
+    - claim: The road engineer's usual goal is to balance earthwork, so the fill equals the cut allowing for bulking and shrinkage.
+      quote: "the goal of the road engineer is to balance earthwork so that the volume of fill equals the volume of cut"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+    - claim: Where side slopes exceed about 50–55%, or are unstable, a road may need full bench construction, with the excavated material end hauled away.
+      quote: "When sideslopes exceed 50 - 55 percent or when unstable slope conditions are present, it may be necessary to consider full bench construction"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+    - claim: In full bench construction the excavated material is carried to a safe place.
+      quote: "Excavated material in this case must be end hauled to a safe location."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+    - claim: Fill slopes can be built up to 36–38°, but common practice keeps them to about 34°.
+      quote: "Fill slopes can be constructed up to a maximum slope angle of 36"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+    - claim: Common practice keeps fill slopes to about 34°.
+      quote: "Common practice is to restrict fill slopes to 34"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+    - claim: For common earth a fill slope should typically not exceed 33.6°, which the manual writes as a rise-to-run ratio of 1:1.5, that is 1.5 horizontal to 1 vertical.
+      quote: "Fill slope angle for common earth (a mixture of fragmented rock and soil) should typically not exceed 33.6"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+    - claim: The manual writes the 33.6° fill as a rise-to-run ratio of 1:1.5.
+      quote: "which corresponds to a rise: run ratio of 1:1.5"
+      quote-match: exact (2026-11-23)
+      used-in: conventions.md#space
+    - claim: "The manual also writes the 34° fill as 1 : 1.5, calling it run over rise, so it gives the ratio in both orders."
+      quote: "This corresponds to a ratio of 1 : 1.5 (run over rise)"
+      quote-match: exact (2026-11-23)
+      used-in: conventions.md#space
+    - claim: Fill slopes erode and slough more readily than cut slopes.
+      quote: "Fill slopes are more succeptible to erosion and sloughing than cut slopes."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+    - claim: The tightest curve a road can have depends on the vehicles that use it.
+      quote: "Minimum curve radius is vehicle dependent"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#grade
+    - claim: On level ground a minimum grade of 2% keeps water from ponding.
+      quote: "This can be accomplished by establishing a minimum grade of 2 percent and by rolling the grade."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#grade
+    - claim: The road surfacing section gives a crown of 3 to 5 cm per metre of half-width.
+      quote: "A crowned surface of 3 to 5 cm/m of half-width will ensure adequate movement of surface water"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Rutted road surfaces yield about twice the sediment of unrutted ones.
+      quote: "Sediment yield from rutted surfaces is about twice that of unrutted road surfaces"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+    - claim: Seepage at the toe of a fill can cause a slump failure.
+      quote: "Rotational or Slump fill failure brought about by seepage at the toe of the fill"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+    - claim: Backward erosion of the toe leaves a face prone to slumping, which can end in complete fill failure.
+      quote: "will result in a vertical face or bank prone to slumping"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+    - claim: Published slope stability charts guide the design of cut and fill slopes.
+      quote: "slope stability charts for the design of cut and fill slopes"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+
+- id: fao-road-drainage-watersheds
+  title: "Watershed management field manual: road design and construction in sensitive watersheds, chapter 4: Drainage design"
+  publisher: Food and Agriculture Organization of the United Nations (FAO Conservation Guide 13/5)
+  url: https://www.fao.org/4/t0099e/T0099e04.htm
+  archived: https://web.archive.org/web/20261123192954/https://www.fao.org/4/t0099e/T0099e04.htm
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: International; the manual draws largely on research from the US Pacific Northwest
+  note: Rome, 1998. Chapter 4 of the manual in fao-road-design-watersheds. Read directly with curl, not through a fetcher.
+  supports:
+    - claim: Drainage is the most important part of road design.
+      quote: "Provision for adequate drainage is of paramount importance in road design and cannot be overemphasized."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Cut and fill failures, surface erosion and weakened subgrades come from poor drainage.
+      quote: "are all products of inadequate or poorly designed drainage"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: A crowned road falls at 3 to 10 percent to each side of the centreline.
+      quote: "The crowned surface slopes at 3 to 10 percent from either side of the road centerline."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Crowned roads shed water fastest.
+      quote: "Crowned surfaces provide the fastest water removal"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: An outsloped road falls at 3 to 5 percent toward its downhill side.
+      quote: "Outsloping is achieved by grading the surface at 3 to 5 percent cross slope toward the downhill side of the road."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Outsloped roads are simple to build and maintain.
+      quote: "Outsloped roads are simple to build and to maintain."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: An insloped road falls at 3 to 5 percent toward its uphill side.
+      quote: "Insloping is achieved by grading the road surface towards the uphill side of the road at a 3 to 5 percent grade."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Intercepting (rolling) dips are useful only on grades under 10%.
+      quote: "their usefulness is limited to road grades less than 10 percent"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Traffic forms ruts, which carry water down the road.
+      quote: "In time, traffic will cause ruts to form, channeling surface water longitudinally down the road."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Water can pond above a road fill, weakening or eroding the subgrade.
+      quote: "water will pond above the road fill"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Fords suit crossings subject to flash floods, storm peaks or heavy debris, which wash over the road.
+      quote: "Fords are a convenient way to provide waterway crossing in areas subject to flash floods"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#fords
+    - claim: The manual's simple ford uses rock-filled gabions as a road bed through the channel.
+      quote: "a very simple ford construction where rock-filled gabions are used to provide a road bed through the stream channel"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#fords
+    - claim: For torrent-prone streams, a fill over a small culvert lets floods wash over, and its surface has to be hardened with concrete or large rock.
+      quote: "The fill surface has to be hardened either by concrete or large rock"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#fords
+    - claim: Roads should climb away from stream crossings in both directions, so high water doesn't run along the road.
+      quote: "roads should climb away from channel crossings in both directions wherever practical"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#fords
+    - claim: A culvert inlet with a headwall is the most efficient, then a mitered inlet, then a projecting one.
+      quote: "Inlets with headwalls are generally the most efficient followed by culverts with mitered inlets and finally culverts with projecting entrances"
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Culvert outlets must be designed to withstand fast flows, or erosion below them can end in road failure.
+      quote: "Outlets need to be properly designed in order to withstand high flow velocities and thus avoid excessive downstream erosion and eventual road failure"
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: The manual's figure shows rip-rap protecting a culvert's inlet and outlet.
+      quote: "Inlet and outlet protection of culvert with rip-rap"
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Rip-rap rocks at a culvert should typically weigh 20 kg or more.
+      quote: "Rocks used should typically weigh 20 kg or more"
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: "Cross drains intercept water running along the road surface, and are of three kinds: intercepting or rolling dips, open-top culverts and cross ditches."
+      quote: "There are three types of cross drains used for intercepting road surface water"
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/glossary.md
+    - claim: Cross-drain spacing depends on road grade, surfacing, rain intensity, and slope and aspect; on a 12% grade on granite, for an unsurfaced logging road high on a north-facing 80% slope, Table 31 (after Packer 1967) gives 27 m.
+      quote: "Spacing requirements for surface cross drains depend on road grade, surfacing material, rain intensities, and slope and aspect."
+      quote-match: exact (2026-11-24)
+      used-in: field-guide/practices/forest-roads.md#where-the-island-differs
+
+- id: fao-road-slope-protection-watersheds
+  title: "Watershed management field manual: road design and construction in sensitive watersheds, chapter 5: Surface and slope protective measures"
+  publisher: Food and Agriculture Organization of the United Nations (FAO Conservation Guide 13/5)
+  url: https://www.fao.org/4/t0099e/T0099e05.htm
+  archived: https://web.archive.org/web/20261123193018/https://www.fao.org/4/t0099e/T0099e05.htm
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: International; the manual draws largely on research from the US Pacific Northwest
+  note: Rome, 1998. Chapter 5 of the manual in fao-road-design-watersheds. Read directly with curl, not through a fetcher.
+  supports:
+    - claim: Seeding alone may not stabilise disturbed slopes quickly; transplanting, fertilizing or mulching help.
+      quote: "merely seeding disturbed areas may not provide much relief"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#skills-and-kit
+    - claim: Surface erosion on road fills is highest just after construction and falls quickly.
+      quote: "surface erosion on severely disturbed soils such as road fills is highest immediately following disturbance and decreases rapidly over time"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+    - claim: Slopes steeper than 40 degrees are often hard to revegetate.
+      quote: "slope angles greater than 40 degrees are often difficult to revegetate"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+
+- id: scot-fgs-forest-road
+  title: "Forestry Grant Scheme capital items: Construction of Forest Road"
+  publisher: Scottish Government, Rural Payments and Services
+  url: https://www.ruralpayments.org/topics/all-schemes/forestry-grant-scheme/forestry-grant-scheme-capital-items/construction-of-forest-road/
+  archived: https://web.archive.org/web/20251014153956/https://www.ruralpayments.org/topics/all-schemes/forestry-grant-scheme/forestry-grant-scheme-capital-items/construction-of-forest-road/
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: Scotland
+  note: Published 7 October 2024. A minimum specification for grant-funded roads into small woodlands, based on the Forestry Commission Standard Road Specification. Quotes avoid the page's "<" signs, which the quote checker doesn't decode. Read directly with curl. Save Page Now returned an error (520) for this site on 2026-11-23, so the archived link is the newest existing snapshot, from 14 October 2025.
+  supports:
+    - claim: The preferred maximum gradient for a new forest road is under 8%, with up to 10% acceptable.
+      quote: "8 per cent preferred, up to 10 per cent acceptable"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#grade
+    - claim: Short lengths under 200 m may reach 12.5%.
+      quote: "200 metres) up to 12.5 per cent"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#grade
+    - claim: The minimum gradient is 2%, except over short crests and sags.
+      quote: "minimum gradient: two per cent except over short sections on crests and sags"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#grade
+    - claim: The specification's running width is 3.4 m.
+      quote: "3.4 metres running width"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#where-the-island-differs
+    - claim: Road stone must be durable, because stone that breaks down can cause diffuse pollution.
+      quote: "durable stone that will not readily break down under wheel loading that may then cause diffuse pollution"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#layers
+    - claim: A roadside ditch is required on the uphill side, or both sides where the road is at or below the adjacent ground.
+      quote: "A roadside ditch must be provided on the uphill side of the road or on both sides where the road is at or below the adjacent ground level."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Drains are at least 150 mm below the formation edge, with a fall of at least 2%.
+      quote: "Drains must have a depth of not less than 150 millimetres below the formation edge and a longitudinal gradient of not less than two per cent."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Ditches and drains must not lead directly into watercourses.
+      quote: "Ditches and drains shall not lead directly into watercourses."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#water
+    - claim: Grant-funded roads are only for reaching small, unmanaged woodlands under 50 ha.
+      quote: "only eligible for accessing small, unmanaged woodlands of less than 50 hectares in size"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
+    - claim: The minimum specification is based on the Forestry Commission Standard Road Specification.
+      quote: "is based on the Forestry Commission Standard Road Specification"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
+    - claim: Groundwork adjoining a public road, and up to 25 m from it, needs planning permission.
+      quote: "Any groundwork adjoining a public road (A, B, or C categories) and up to 25 metres from the public road will require planning permission."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
+    - claim: Forest roads may need consent under the Forestry EIA (Scotland) Regulations 2017.
+      quote: "Forest roads and quarries may need consent under the Forestry Environmental Impact Assessment (Scotland) Regulations 2017."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
+    - claim: New forestry tracks need prior notification to the local planning authority.
+      quote: "prior notification to the local planning authority will also be required"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
+    - claim: Tree clearance for a road needs approved felling permission.
+      quote: "If tree clearance is required you must have an approved felling permission prior to starting work."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
+
+- id: scot-fgs-bellmouth
+  title: "Forestry Grant Scheme capital items: Construction of Bell-mouth Junction"
+  publisher: Scottish Government, Rural Payments and Services
+  url: https://www.ruralpayments.org/topics/all-schemes/forestry-grant-scheme/forestry-grant-scheme-capital-items/bell-mouth-junction/
+  archived: https://web.archive.org/web/20240611224203/https://www.ruralpayments.org/topics/all-schemes/forestry-grant-scheme/forestry-grant-scheme-capital-items/bell-mouth-junction/
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: Scotland
+  note: Published 7 October 2024. Read directly with curl. It gives no bell-mouth dimensions. Save Page Now returned an error (520) for this site on 2026-11-23. The newest existing snapshot, used as the archived link, is from 11 June 2024, before the current version was published, so it may differ from the quotes.
+  supports:
+    - claim: Grant-funded bell-mouths are only for reaching small, unmanaged woodlands under 50 ha.
+      quote: "only eligible for accessing small, unmanaged woodlands of less than 50 hectares in size"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
+    - claim: Road junctions should be at right angles where conditions permit.
+      quote: "Road junctions should be right angles where conditions permit."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#junctions
+    - claim: Vegetation is kept back from a junction's sight lines.
+      quote: "Vegetation must be kept back from sight lines."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#junctions
+    - claim: A grant-funded bell-mouth is surfaced with bitumen macadam base and surfacing layers to full highway standard.
+      quote: "bitumen macadam road, base and surfacing layers to full highway standard"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#junctions
+    - claim: Groundwork adjoining a public road, and up to 25 m from it, needs planning permission.
+      quote: "Any groundwork adjoining a public road (A, B, or C categories) and up to 25 metres from the public road will require planning permission."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
+
+- id: fc-on025-forest-roads-tracks
+  title: "Operations Note 25: Forest roads and tracks"
+  publisher: Forestry Commission (England)
+  url: https://assets.publishing.service.gov.uk/media/5b3611b1e5274a0bbef01fb2/ON025-ForestRoadsandTracksv1.0issued110809__1_.pdf
+  archived: https://web.archive.org/web/20261123193106/https://assets.publishing.service.gov.uk/media/5b3611b1e5274a0bbef01fb2/ON025-ForestRoadsandTracksv1.0issued110809__1_.pdf
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: England
+  note: Version 1.0, issued 19 August 2011, 58 pages. Still listed on its GOV.UK publication page (https://www.gov.uk/government/publications/roads-and-tracks-operations-note-25, archived at https://web.archive.org/web/20261123193337/https://www.gov.uk/government/publications/roads-and-tracks-operations-note-25) on 2026-11-23 with no newer version. Text was extracted from the PDF's content streams with a script, not through a fetcher. The extraction splits some words with stray spaces ("fore st"), so the quotes below join them back; a person should check them against the PDF. The quote checker reports PDFs as unfetchable.
+  supports:
+    - claim: A forest road, usually built for 44-tonne lorries, should not exceed a 10% gradient.
+      quote: "Gradient not to exceed 10%."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#grade
+    - claim: Tractor and forwarder tracks reach a 20% maximum gradient but are usually 10–15%.
+      quote: "Max. gradient 20%, but usually 10–15%"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#grade
+    - claim: A tractor track's bends have at least a 6 m radius.
+      quote: "widening to 4.0m on bends with a minimum radius of 6.0m"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#grade
+    - claim: A forwarder track's bends have at least an 8 m radius.
+      quote: "Bends, min. radius 8.0m with 5.0m running width."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#grade
+    - claim: A track should avoid hairpin bends, especially on steep slopes, and unnecessary travel up and down slopes.
+      quote: "should avoid hairpin bends, especially on steep slopes"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#grade
+    - claim: The field survey records rock outcrops, marshy ground, soft soil, watercourses and other features the route must work around.
+      quote: "rock outcrops, marshy ground and soft soil"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#where-the-line-goes
+    - claim: A track should avoid wet areas.
+      quote: "The track should avoid wet areas"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#where-the-line-goes
+    - claim: A track should avoid unnecessary travel up and down slopes.
+      quote: "avoid unnecessary travel up and down slopes"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#where-the-line-goes
+    - claim: For appearance in the landscape, avoid long straight routes, especially along external boundaries.
+      quote: "Follow the land form and avoid long straight routes, especially along external boundaries."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#where-the-line-goes
+    - claim: The formation should be shaped to mirror the final running surface.
+      quote: "the Formation should be shaped to mirror the final running surface"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#layers
+    - claim: A capping layer of crushed stone on the formation protects it from wear.
+      quote: "Adding a Capping layer of crushed stone or recycled material on top of the Formation, for the full width of the running surface, will help protect the Formation from wear."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#layers
+    - claim: On clay, a finer top layer seals the surface.
+      quote: "A finer top layer is then needed to seal the surface well."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#layers
+    - claim: Wheeled machines working a clay formation can sink and make deep ruts.
+      quote: "Never use wheeled machinery for formation work on clay as it may sink and create huge ruts."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+    - claim: Ruts, potholes and adverse camber develop, and surfaces need recarpetting from time to time.
+      quote: "Recarpetting will be necessary from time to time to replace lost material and ensure a smooth running surface."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+    - claim: Grass and woody growth on the carriageway are kept down by spraying or flail mowing.
+      quote: "Herbicide spraying is an effective means of keeping down grasses and non-established woody growth"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+    - claim: Gentle batters vegetate more easily than steep faces, which can stay as scars for years.
+      quote: "can remain as scars in the landscape for many years"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#what-goes-wrong
+    - claim: The lower spill of a track should not exceed 1 in 2.
+      quote: "the gradient of the spill on the lower side should not exceed 1 in 2"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#cut-and-fill
+    - claim: Tractor and forwarder tracks have a 5% cross fall.
+      quote: "with a cross fall of 5%"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#where-the-island-differs
+    - claim: A forest road is normally single lane.
+      quote: "is the forest road normally single lane"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#where-the-island-differs
+    - claim: An English forest road has a 3.2 m running width, wider on bends.
+      quote: "Running width 3.2m, wider on bends."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#where-the-island-differs
+    - claim: Surfaced forest roads should be designed by a civil engineer.
+      quote: "they should therefore be designed by a civil engineer"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
+    - claim: The note aims to set minimum standards for building, repairing and maintaining woodland roads and tracks in England.
+      quote: "aims to define the minimum appropriate standards for their construction, repair and maintenance, in England"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
+    - claim: Routine maintenance should follow need, not a fixed schedule.
+      quote: "should be determined by need and not necessarily by time span"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#how-its-organised
+    - claim: Cross-sectional drawings show gradients and crossfalls.
+      quote: "Cross sectional drawings should be undertaken showing gradients and crossfalls."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#skills-and-kit
+    - claim: A large excavator is ideal for cutting forest roads.
+      quote: "Ideal for cutting forest roads"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#skills-and-kit
+    - claim: A bulldozer has no back-acter, so it can't lay culverts or grade batters.
+      quote: "No Backacter means unable to lay culverts or grade batters."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#skills-and-kit
+    - claim: On a busy public road, a lorry turning left shouldn't have to cross the centreline; infilling the turning corner helps.
+      quote: "Infilling the turning corner will help the lorry turn into or out of the junction."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#junctions
+
+- id: fc-bulletin-43-forest-roads
+  title: Forestry Commission Bulletin 43 (forest roads)
+  publisher: Forestry Commission
+  url: https://cdn.forestresearch.gov.uk/1976/03/fcbk043.pdf
+  archived: https://web.archive.org/web/20261123193324/https://cdn.forestresearch.gov.uk/1976/03/fcbk043.pdf
+  accessed: 2026-11-23
+  opened: false
+  tier: 1
+  region: Great Britain
+  note: 1976, historical. The PDF downloads, but its pages are scanned images with no text layer, so nothing could be read or quoted on 2026-11-23. Its title and authors are unconfirmed. Wanted for ruts, surfacing layers and bell-mouth size; it needs OCR or a person to read it.
+  supports: []
+
+- id: ready-scot-rain-flooding
+  title: Rain and flooding
+  publisher: Scottish Government, Ready Scotland
+  url: https://ready.campaign.gov.scot/flooding
+  archived: https://web.archive.org/web/20261123193141/https://ready.campaign.gov.scot/flooding
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: Scotland
+  note: Current public guidance, undated on the page. The old address https://ready.scot/respond/severe-weather/rain-and-flooding redirects here. Read directly with curl. Safety-gate source for the ford box; a person must check it before the box is verified.
+  supports:
+    - claim: Do not drive through flood water.
+      quote: "Do not drive through flood water."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#fords
+    - claim: Do not walk or cycle through standing or flowing flood water.
+      quote: "Do not walk or cycle through standing or flowing flood water."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#fords
+
+- id: sfrs-floodwater-2023
+  title: Scottish Fire and Rescue Service urge the public not to enter floodwater or play in flooded areas
+  publisher: Scottish Fire and Rescue Service
+  url: https://www.firescotland.gov.uk/news/scottish-fire-and-rescue-service-urge-the-public-not-to-enter-floodwater-or-play-in-flooded-areas/
+  archived: https://web.archive.org/web/20261123193300/https://www.firescotland.gov.uk/news/scottish-fire-and-rescue-service-urge-the-public-not-to-enter-floodwater-or-play-in-flooded-areas/
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: Scotland
+  note: News release dated 8 October 2023. Read directly with curl. Safety-gate source for the ford box, with ready-scot-rain-flooding as the standing guidance.
+  supports:
+    - claim: Do not enter floodwater.
+      quote: "Do not enter into floodwater."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#fords
+    - claim: Even shallow moving water can knock a person over.
+      quote: "Even a few inches of moving water can knock you off your feet"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#fords
+    - claim: Floodwater can hide sharp debris, branches and rocks.
+      quote: "Floodwaters can hide numerous dangers beneath the surface, including sharp debris, branches, rocks"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#fords
+    - claim: In an emergency, call 999.
+      quote: "In an emergency always call 999."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/practices/forest-roads.md#fords
+
+# Granite uplands: joints, tors, grus, clitter and lichen. Added 2026-11-23. Read by an agent that copied the
+# quotes from page text; the Dartmoor pages refused automated reading, so they were read from the archived copies.
+
+- id: dnpa-geology-landforms-factsheet
+  title: Geology and Landforms – Dartmoor Factsheet (March 2005)
+  publisher: Dartmoor National Park Authority
+  url: https://www.dartmoor.gov.uk/__data/assets/pdf_file/0019/72109/lab-geology.pdf
+  archived: https://web.archive.org/web/20251206123638/https://www.dartmoor.gov.uk/__data/assets/pdf_file/0019/72109/lab-geology.pdf
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: United Kingdom (Dartmoor)
+  note: Read from the archived copy; the live site returned 403 to automated reading.
+  supports:
+    - claim: Granite has fairly large crystals.
+      quote: "Granites are composed of fairly large crystals and have an irregular granular or granitoid texture."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#what-granite-is
+    - claim: Exposed granite shows vertical and horizontal joints.
+      quote: "The exposed granite generally displays both vertical and horizontal jointing."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#joints-why-granite-breaks-into-blocks
+    - claim: Tors form by differential erosion set by joint spacing.
+      quote: "Tors are a product of differential erosion determined by the spacing of the joints within the granite."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#joints-why-granite-breaks-into-blocks
+    - claim: Weathered granite breaks down to a gravel of crystals, called growan on Dartmoor.
+      quote: "Weathering eventually causes the disintegration of the granite down to individual crystal level. The resultant gravel is called growan."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#grus-granite-that-has-turned-to-gravel
+    - claim: In cold glacial phases, frost in the joints prised blocks off, forming clitter.
+      quote: "during the cold glacial phases, water froze in the joints and prised bits off the rock, forming clitter on the ground."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#clitter-boulders-on-the-slopes
+
+- id: dnpa-tors-rocky-outcrops
+  title: Tors and Rocky Outcrops
+  publisher: Dartmoor National Park Authority
+  url: https://www.dartmoor.gov.uk/wildlife-and-heritage/habitats2/caves,-mines-and-rocky-outcrops/tors-and-rocky-outcrops
+  archived: https://web.archive.org/web/20251110004521/https://www.dartmoor.gov.uk/wildlife-and-heritage/habitats2/caves,-mines-and-rocky-outcrops/tors-and-rocky-outcrops
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: United Kingdom (Dartmoor)
+  note: Read from the archived copy; the live site returned 403 to automated reading.
+  supports:
+    - claim: Clitter is boulders strewn across sloping ground, usually below tors.
+      quote: "clitter (boulders strewn across sloping ground, usually below tors)"
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#clitter-boulders-on-the-slopes
+    - claim: Lichens cover much of a typical tor's surface.
+      quote: "a typical tor has as many as 60 species of lichen covering much of the rock surface."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#lichen-and-stains
+
+- id: bgs-understanding-cairngorms
+  title: Understanding the Cairngorms (Planet Earth, Spring 2005)
+  publisher: NERC / British Geological Survey
+  url: https://nora.nerc.ac.uk/id/eprint/504829/1/spr05-cairngorms.pdf
+  archived: https://web.archive.org/web/20260713055316/https://nora.nerc.ac.uk/id/eprint/504829/1/spr05-cairngorms.pdf
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: United Kingdom (Cairngorms)
+  note: Thomas and Gillespie, BGS.
+  supports:
+    - claim: Upland granite plateaux carry boulder-strewn ground.
+      quote: "The boulder-strewn terrain in the foreground is typical of the upland plateaux."
+      quote-match: unfetchable (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#clitter-boulders-on-the-slopes
+
+- id: nps-jotr-geologic-formations
+  title: Geologic Formations – Joshua Tree National Park
+  publisher: US National Park Service
+  url: https://www.nps.gov/jotr/learn/nature/geologicformations.htm
+  archived: https://web.archive.org/web/20261025163928/https://www.nps.gov/jotr/learn/nature/geologicformations.htm
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: United States (Mojave Desert)
+  note: A desert granite, cited only for the joint pattern.
+  supports:
+    - claim: Granite can develop a rectangular system of joints.
+      quote: "The monzogranite developed a system of rectangular joints."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#joints-why-granite-breaks-into-blocks
+
+- id: nps-ciro-geological-trail-1
+  title: Geological Trail Station 1 – City of Rocks National Reserve
+  publisher: US National Park Service
+  url: https://www.nps.gov/places/geological-trail-station-1.htm
+  archived: https://web.archive.org/web/20260214044452/https://www.nps.gov/places/geological-trail-station-1.htm
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: United States (Idaho)
+  supports:
+    - claim: Granitic sand at the base of outcrops is called grus.
+      quote: "The detrital material (granitic sand) that is found at the base of most outcrops is called grus."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#grus-granite-that-has-turned-to-gravel
+
+- id: usgs-mojave-granitic-landforms
+  title: Granitic Rocks and Associated Landforms (Open-File Report 2004-1007)
+  publisher: US Geological Survey
+  url: https://pubs.usgs.gov/of/2004/1007/granite.html
+  archived: https://web.archive.org/web/20261025170416/https://pubs.usgs.gov/of/2004/1007/granite.html
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: United States (Mojave Desert)
+  supports:
+    - claim: Granite breaks down to coarse, sandy sediment rich in quartz and feldspar.
+      quote: "granite typically breaks down to form fairly uniform quartz- and feldspar-rich, coarse-sandy sediment"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#grus-granite-that-has-turned-to-gravel
+    - claim: Sharp corners where fractures meet break down first.
+      quote: "Sharp corners at the intersection of fractures tend to break down first."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#joints-why-granite-breaks-into-blocks
+
+- id: geology-com-granite
+  title: "Granite: Igneous Rock - Pictures, Definition & More"
+  publisher: Geology.com
+  url: https://geology.com/rocks/granite.shtml
+  archived:
+  accessed: 2026-11-23
+  opened: true
+  tier: 3
+  region: General
+  supports:
+    - claim: Granite is usually red, pink, grey or white.
+      quote: "This mineral composition usually gives granite a red, pink, gray, or white color"
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#what-granite-is
+
+- id: nps-sapu-lichens
+  title: Lichens – Salinas Pueblo Missions National Monument
+  publisher: US National Park Service
+  url: https://www.nps.gov/sapu/learn/nature/lichens.htm
+  archived: https://web.archive.org/web/20260417063505/https://www.nps.gov/sapu/learn/nature/lichens.htm
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: United States (New Mexico)
+  supports:
+    - claim: Lichens on rock come in orange, yellow, grey and green.
+      quote: "You can observe striking lichens in vibrant hues of orange, yellow, gray, and green, embellishing rocks and trees."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#lichen-and-stains
+
+- id: nhm-lichens-toxic-air
+  title: "Nature and pollution: what lichens tell us about toxic air"
+  publisher: Natural History Museum, London
+  url: https://www.nhm.ac.uk/discover/nature-and-pollution-what-lichens-tell-us-about-toxic-air.html
+  archived:
+  accessed: 2026-11-23
+  opened: true
+  tier: 1
+  region: United Kingdom
+  supports:
+    - claim: Lichens are sensitive to air pollution and indicate air quality.
+      quote: "Lichens love clean air too – in fact, their sensitivity to air pollution means they make good air quality indicators."
+      quote-match: exact (2026-11-23)
+      used-in: field-guide/places/granite-uplands.md#lichen-and-stains

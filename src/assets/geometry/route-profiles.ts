@@ -45,3 +45,42 @@ export const wornTrailModel = {
   color: [0.58, 0.46, 0.29],
   opacityEdgeCurve: 1.6,
 } as const
+
+// A graded dirt road's ribbon: points across the road, as shares of half its width, so the
+// ribbon follows the crown. The gravel finish is tinted toward packed earth, darker in the two
+// wheel ruts (the lanes at `ruts`) and at the edges where loose stone gathers. Past the edges the
+// ribbon carries on over the shoulders as a `verge` of soil and stone. The ribbon floats `lift`
+// metres over the graded ground.
+export const dirtRoadModel = {
+  lanes: [-1, -0.8, -0.66, -0.55, -0.44, -0.2, 0, 0.2, 0.44, 0.55, 0.66, 0.8, 1],
+  ruts: 0.55,
+  lift: 0.07,
+  tint: { crown: [0.86, 0.76, 0.62], rut: [0.58, 0.48, 0.38], edge: [0.78, 0.71, 0.6], verge: [0.56, 0.5, 0.38] },
+} as const
+
+// The road network's surface: one mesh over every road's formation, paved and graded, traced on a
+// `cellM` grid and floating `lift` metres over the ground. The gravel finish repeats `uvPerMetre`
+// times a metre, finer than a footpath's, so its stones read as a thin wearing course, and a
+// coarser, turned second sample (`breakup`) keeps that repeat from showing. Edges between asphalt,
+// shoulder, earth and verge are softened over `edgeSoftM`. Ruts lie at `dirtRoadModel.ruts` of the
+// half-width, `rutWidth` wide in half-widths, and fade out over `rutFadeM` toward a junction,
+// where traffic spreads. A short skirt hangs `skirtDropM` below every outer edge, `skirtOutM` outward,
+// as a lip over the edge. The terrain itself is cut to the road's outline (`clipOutsideRoads`),
+// `terrainTuckM` inside it, so its edge sits under the road at its true height and no crack opens
+// between them.
+export const roadSurfaceModel = {
+  lift: dirtRoadModel.lift,
+  cellM: 0.5,
+  uvPerMetre: 2.5,
+  breakup: { repeatsPerMetre: 0.37, turn: 0.6, strength: [0.25, 0.6] },
+  edgeSoftM: 0.08,
+  rutWidth: 0.07,
+  rutStrength: 0.85,
+  rutFadeM: [5, 14],
+  skirtDropM: 0.12,
+  skirtOutM: 0.05,
+  terrainTuckM: 0.25,
+  asphalt: { tint: [0.13, 0.15, 0.135], contrast: 0.12, speckleM: 0.09, patches: 0.14 },
+  shoulder: { tint: [0.8, 0.78, 0.72] },
+  tone: { broadM: 23, midM: 4.1, broad: 0.08, mid: 0.06 },
+} as const

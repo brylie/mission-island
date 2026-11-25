@@ -80,6 +80,67 @@ export const capturePresets = {
     weather: 'clear',
     overlays: ['sightlines', 'wildfire', 'protected'],
   },
+  // Road junctions, from a few metres up, to check the network joins without seams: the
+  // trailhead off the harbor road, the summit spur leaving the fire road, and the ridge road
+  // leaving the Pine Draw road.
+  'road-trailhead': {
+    label: 'Fire road trailhead off the harbor road',
+    kind: 'landscape',
+    eye: { x: 26, z: 2, height: 6 },
+    look: { x: 4, z: 18, height: 0 },
+    fov: 0.8,
+    hour: 11,
+    weather: 'clear',
+  },
+  'road-spur-junction': {
+    label: 'Summit spur leaving the fire road',
+    kind: 'landscape',
+    eye: { x: -238, z: 218, height: 7 },
+    look: { x: -258, z: 238, height: 0 },
+    fov: 0.8,
+    hour: 11,
+    weather: 'clear',
+  },
+  'road-ridge-junction': {
+    label: 'Cairn ridge road leaving the Pine Draw road',
+    kind: 'landscape',
+    eye: { x: -292, z: 311, height: 7 },
+    look: { x: -310, z: 331, height: 0 },
+    fov: 0.8,
+    hour: 11,
+    weather: 'clear',
+  },
+  // Below the summit spur's deepest fill, looking up at the road's edge: the road must meet the
+  // bank, with no underside showing.
+  'road-spur-downhill': {
+    label: 'Summit spur from the slope below its fill',
+    kind: 'landscape',
+    eye: { x: -253, z: 299, height: 1.2 },
+    look: { x: -248, z: 296.5, height: 0.4 },
+    fov: 0.8,
+    hour: 11,
+    weather: 'clear',
+  },
+  // The outlet of the culvert under the Pine Draw road's hairpin fill, from downstream.
+  'road-culvert': {
+    label: 'Culvert outlet below the Pine Draw hairpin',
+    kind: 'landscape',
+    eye: { x: -347.4, z: 364.7, height: 1.4 },
+    look: { x: -343.9, z: 362.9, height: 0.3 },
+    fov: 0.8,
+    hour: 11,
+    weather: 'clear',
+  },
+  // Cairn from the village: the landmark has to read as a mountain from home.
+  'landmark-cairn-from-village': {
+    label: 'Cairn Summit from the village',
+    kind: 'landscape',
+    eye: { x: -20, z: 30, height: 2 },
+    look: { x: -110, z: 225, height: 30 },
+    fov: 0.8,
+    hour: 16.5,
+    weather: 'clear',
+  },
   // Highwood's hero views (docs/backcountry.md#hero-views), captured at every phase to compare like for like.
   'highwood-tower-north': {
     label: 'Cairn Summit looking north at dawn',
@@ -93,8 +154,9 @@ export const capturePresets = {
   'highwood-fire-road': {
     label: 'Into the Highwood forest at midday',
     kind: 'landscape',
-    eye: { x: -128, z: 252, height: 1.7 },
-    look: { x: -160, z: 290, height: 4 },
+    // On the fire road in the last of the meadow, looking up it to where it enters the trees.
+    eye: { x: -73, z: 56, height: 1.7 },
+    look: { x: -114, z: 110, height: 5 },
     fov: 0.8,
     hour: 12,
     weather: 'clear',
@@ -118,22 +180,78 @@ export const capturePresets = {
     hour: 17.4,
     weather: 'clear',
   },
-  'highwood-ridge-home': {
-    label: 'Fallow Ridge looking home',
+  // From Cairn Summit, beside the Fire Watch's site, south over the massif's flank to the settled south.
+  'highwood-summit-home': {
+    label: 'Home from Cairn Summit',
     kind: 'landscape',
-    eye: { x: -220, z: 310, height: 2 },
+    eye: { x: -95, z: 210, height: 1.7 },
     look: { x: -35, z: -5, height: 2 },
     fov: 0.8,
     hour: 16.5,
     weather: 'clear',
   },
-  // The landmark from the side: Cairn Summit's long shoulder and steep north-west face.
+  // The landmark from the side: Cairn Summit's crag on its ridge, whose broad south-west flank carries the summit road.
   'highwood-cairn-southwest': {
     label: 'Cairn Summit from the south-west shore',
     kind: 'landscape',
     eye: { x: -212, z: 129, height: 1.7 },
     look: { x: -92, z: 219, height: 12 },
     fov: 0.8,
+    hour: 15,
+    weather: 'clear',
+  },
+  // Ground texture checks: the summit overlook down Cairn's rocky north-east face, the same face at walking height, and the face from the ridge foot below.
+  'ground-cairn-summit': {
+    label: 'Overlook of Cairn Summit\'s rocky north-east face from above the ridge foot',
+    kind: 'landscape',
+    eye: { x: -52, z: 292, height: 32 },
+    look: { x: -104, z: 238, height: 0 },
+    fov: 0.85,
+    hour: 15,
+    weather: 'clear',
+  },
+  'ground-cairn-slope': {
+    label: 'Bare granite and crags on Cairn\'s north-east face at walking height',
+    kind: 'landscape',
+    eye: { x: -104, z: 252, height: 1.7 },
+    look: { x: -122, z: 240, height: 2 },
+    fov: 0.85,
+    hour: 15,
+    weather: 'clear',
+  },
+  'ground-cairn-midrange': {
+    label: 'Cairn\'s bare north-east granite 25 to 45 m off, where joint cracks fade out',
+    kind: 'landscape',
+    eye: { x: -90, z: 272, height: 12 },
+    look: { x: -114, z: 246, height: 0 },
+    fov: 0.6,
+    hour: 15,
+    weather: 'clear',
+  },
+  'ground-cairn-northeast': {
+    label: 'Cairn Summit\'s steep north-east face, crags and clitter above the ridge foot',
+    kind: 'landscape',
+    eye: { x: -84, z: 288, height: 1.7 },
+    look: { x: -102, z: 256, height: 4 },
+    fov: 0.85,
+    hour: 15,
+    weather: 'clear',
+  },
+  'ground-cairn-outcrop': {
+    label: 'A three-block granite outcrop and its clitter on Cairn\'s western flank, close up at walking height',
+    kind: 'landscape',
+    eye: { x: -223.5, z: 380.5, height: 1.7 },
+    look: { x: -229, z: 385, height: 1.2 },
+    fov: 0.85,
+    hour: 15,
+    weather: 'clear',
+  },
+  'ground-cairn-crag': {
+    label: 'A two-block granite crag stepping out of Cairn\'s steep north-east face, from just below at walking height',
+    kind: 'landscape',
+    eye: { x: -68.8, z: 256.8, height: 1.7 },
+    look: { x: -77.5, z: 254.1, height: 0.8 },
+    fov: 0.85,
     hour: 15,
     weather: 'clear',
   },

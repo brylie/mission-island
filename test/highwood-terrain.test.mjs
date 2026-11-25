@@ -7,7 +7,7 @@ import { RaycastVehicle } from 'cannon-es'
 import { fireWatchGeometry } from '../src/assets/geometry/fire-watch.ts'
 import { highwoodHeightmap } from '../src/assets/geometry/highwood-heightmap.ts'
 import { createCargoPhysics } from '../src/simulation/cargo.ts'
-import { authoredGroundHeight, coastBounds, coastRadius, groundHeight, originalCoastRadius, waterLevel } from '../src/terrain.ts'
+import { authoredGroundHeight, coastBounds, coastRadius, groundHeight, naturalGroundHeight, originalCoastRadius, waterLevel } from '../src/terrain.ts'
 import { authoredShare } from '../src/worlds/starter/generation/protection.ts'
 import { highwoodGeneration, highwoodPlaces } from '../src/worlds/starter/layout/island-generation.ts'
 import { coastlineDimension, shorelineStatistics, slopeShares } from '../src/worlds/starter/generation/island-metrics.ts'
@@ -44,7 +44,9 @@ test('the generated island reads like a real coast', () => {
   assert.ok(development > 1.8, `shoreline development ${development}`)
   assert.ok(coastlineDimension(grid, land) > 1.03, 'a coast rougher than a smooth curve')
   const { steep } = slopeShares(grid, land)
-  assert.ok(steep < 0.3, `most land is walkable, steep share ${steep}`)
+  // Cairn is a mountain massif: an 80 m crag on a ridge with steep flanks adds steep ground (rising
+  // more than 0.6 per metre) to the island's 28 %. About two-thirds of the land stays walkable.
+  assert.ok(steep < 0.37, `most land is walkable, steep share ${steep}`)
   const bounds = coastBounds()
   assert.ok(bounds.east - bounds.west > 500 && bounds.north - bounds.south > 600, JSON.stringify(bounds))
 })
@@ -120,7 +122,7 @@ test('beyond the seam, the ground is the baked terrain', () => {
       const keep = authoredShare(point, originalCoastRadius(point))
       if (keep <= 0 || keep >= 0.9) continue
       checked++
-      assert.ok(Math.abs(groundHeight(point) - Math.max(bakedHeight(point), highwoodGeneration.seabed)) < 0.01, JSON.stringify(point))
+      assert.ok(Math.abs(naturalGroundHeight(point) - Math.max(bakedHeight(point), highwoodGeneration.seabed)) < 0.01, JSON.stringify(point))
     }
   }
   assert.ok(checked > 20, `checked ${checked} join-band nodes`)
@@ -128,19 +130,20 @@ test('beyond the seam, the ground is the baked terrain', () => {
 
 test('the shipped terrain drains: no closed hollow holds water inland', () => {
   // Steepest descent from a grid of Highwood land points must reach the sea or a flat spill.
+  // This checks the baked land; graded roads have sags that real roads drain with culverts.
   const { west, south, cell, columns, rows } = highwoodHeightmap
   let stuck = 0, traced = 0
   for (let z = 4; z < rows - 4; z += 9) {
     for (let x = 4; x < columns - 4; x += 9) {
       let point = { x: west + x * cell, z: south + z * cell }
-      if (groundHeight(point) < waterLevel + 0.5 || authoredShare(point, originalCoastRadius(point)) > 0) continue
+      if (naturalGroundHeight(point) < waterLevel + 0.5 || authoredShare(point, originalCoastRadius(point)) > 0) continue
       traced++
       for (let step = 0; step < 600; step++) {
-        const here = groundHeight(point)
+        const here = naturalGroundHeight(point)
         let best = point, lowest = here
         for (let a = 0; a < 8; a++) {
           const next = { x: point.x + Math.cos(a * Math.PI / 4) * cell, z: point.z + Math.sin(a * Math.PI / 4) * cell }
-          const h = groundHeight(next)
+          const h = naturalGroundHeight(next)
           if (h < lowest) [best, lowest] = [next, h]
         }
         if (lowest < waterLevel) break
@@ -155,4 +158,28 @@ test('the shipped terrain drains: no closed hollow holds water inland', () => {
   }
   assert.ok(traced > 100, `traced ${traced}`)
   assert.ok(stuck / traced < 0.05, `${stuck} of ${traced} traces stopped in a hollow`)
+})
+
+test('Highwood\'s drawn ground follows the ground players stand on, so feet never sink into it', async () => {
+  const { walkingHeight, underGradedRoad } = await import('../src/terrain.ts')
+  const { terrainTile } = await import('../src/assets/geometry/starter-landscape.ts')
+  // The terrain mesh's grid starts at the bake's origin and splits each cell along the diagonal
+  // from its lower corner to its upper one, as `tileMesh` does.
+  const { cellM } = terrainTile, stepM = 3.7, aboveFeetM = 0.2
+  const { west, south, cell, columns, rows } = highwoodHeightmap
+  const east = west + (columns - 1) * cell, north = south + (rows - 1) * cell
+  const found = []
+  for (let z = south + 1.3; z < north - 1; z += stepM) {
+    for (let x = west + 0.6; x < east - 1; x += stepM) {
+      const point = { x, z }
+      if (groundHeight(point) < waterLevel || underGradedRoad(point)) continue
+      const x0 = west + Math.floor((x - west) / cellM) * cellM, z0 = south + Math.floor((z - south) / cellM) * cellM
+      const fx = x - x0, fz = z - z0
+      const a = groundHeight({ x: x0, z: z0 }), b = groundHeight({ x: x0 + cellM, z: z0 })
+      const c = groundHeight({ x: x0, z: z0 + cellM }), d = groundHeight({ x: x0 + cellM, z: z0 + cellM })
+      const drawn = fx >= fz ? a + (b - a) * fx + (d - b) * fz : a + (d - c) * fx + (c - a) * fz
+      if (drawn - walkingHeight(point) > aboveFeetM) found.push(`${(drawn - walkingHeight(point)).toFixed(2)} m at (${x.toFixed(1)}, ${z.toFixed(1)})`)
+    }
+  }
+  assert.deepEqual(found.slice(0, 5), [])
 })

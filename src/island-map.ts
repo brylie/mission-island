@@ -10,7 +10,7 @@ import { learnerVehicleIds, practiceStop } from './learner-vehicles'
 import { drawRidgeMap } from './ridge-ui'
 import { footpaths, roads, walkways } from './routes'
 import { northernRegions, starterDiscoveries } from './scenery'
-import { boundaryBuoys, buoyBoundaryPoint, coastBounds, coastSegments, coastalSurface, groundHeight, offshoreLimitMetres, waterLevel } from './terrain'
+import { gradedRoads, boundaryBuoys, buoyBoundaryPoint, coastBounds, coastSegments, coastalSurface, groundHeight, offshoreLimitMetres, waterLevel } from './terrain'
 import { crewHomes, ferryTerminal, harbor, lookout } from './world'
 import { fireCentre } from './wildfire'
 import { playerColors } from './assets/crew'
@@ -94,9 +94,11 @@ function drawIslandPaths(drawRoute: (points: readonly { x: number, z: number }[]
     const { width, color } = look.paths[surface]
     drawRoute(points, width, color)
   }
-  const { pavement, road } = look.paths
+  const { pavement, road, dirt } = look.paths
   for (const { points } of walkways) drawRoute(points, pavement.width, pavement.color)
   for (const path of roads) drawRoute(path, road.width, road.color)
+  for (const { profile } of gradedRoads()) drawRoute(profile, dirt.edge.width, dirt.edge.color)
+  for (const { profile } of gradedRoads()) drawRoute(profile, dirt.width, dirt.color)
 }
 
 // Learner vehicles carry a letter as well as their paint, and the stop for

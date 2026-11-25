@@ -41,7 +41,7 @@ export const shellRockSites = [[0.63, -0.98, 0.68, 0.9], [1.14, -1.55, 0.41, 1.6
 export const starterDecorationOffsets = {
   wardrobeZ: 0.49,
   clothingCounterZ: -0.65,
-  depotRoad: { width: 6, lift: -0.003, markingEndX: -4 },
+  depotRoad: { markingEndX: -4 },
 } as const
 
 export const starterResidentSites = {

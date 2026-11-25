@@ -51,9 +51,33 @@ function cragShare(pin: Pin, dx: number, dz: number) {
   return smooth((1 - Math.hypot(along / reach, across / pin.radius)) / (1 - pin.plateau))
 }
 
+type Ridge = (typeof highwoodGeneration.ridges)[number]
+
+// How much of a ridge's height reaches a point, and that height: the crest's height level with
+// the point, falling to nothing over the width of the side the point is on. Heights and widths
+// run smoothly between crest points. `round` blends the flank from an even slope (0) to a
+// rounded one (1); an even flank is what a road switches back up.
+function ridgeShare(ridge: Ridge, p: Point) {
+  let best = Infinity, height = 0, width = 1
+  const { crest } = ridge
+  for (let i = 1; i < crest.length; i++) {
+    const a = crest[i - 1], b = crest[i]
+    const dx = b.x - a.x, dz = b.z - a.z
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / (dx * dx + dz * dz)))
+    const d = Math.hypot(p.x - a.x - dx * t, p.z - a.z - dz * t)
+    if (d >= best) continue
+    const left = dx * (p.z - a.z) - dz * (p.x - a.x) > 0
+    best = d
+    height = a.height + (b.height - a.height) * t
+    width = left ? a.leftWidth + (b.leftWidth - a.leftWidth) * t : a.rightWidth + (b.rightWidth - a.rightWidth) * t
+  }
+  const even = Math.max(0, 1 - best / width)
+  return { share: even + (smooth(even) - even) * ridge.round, height }
+}
+
 // Metres above sea level before erosion, and how hard the rock is (0 to 1).
 function rawLand(p: Point) {
-  const { seed, masses, continent, warp, detail, roughness, edgeMargin, edgeSink, grid, uplift, valleys, pins } = highwoodGeneration
+  const { seed, masses, continent, warp, detail, roughness, edgeMargin, edgeSink, grid, uplift, valleys, ridges, pins } = highwoodGeneration
   // Domain warping folds the land so ridges and bays flow rather than line up.
   const q = {
     x: p.x + warp.amplitude * fbm(p.x, p.z, seed + warpSeedX, warp) / noiseRange,
@@ -75,6 +99,11 @@ function rawLand(p: Point) {
   land += rough * roughness.amplitude * fbm(q.x, q.z, seed + roughSeed, roughness) / noiseRange
   for (const { points, floorWidth, wallWidth, depth } of valleys) {
     land -= depth * (1 - smooth((polylineDistance(p, points) - floorWidth * half) / wallWidth))
+  }
+  // Ridges stand before the pinned crowns, so a summit crag rises from its ridge.
+  for (const ridge of ridges) {
+    const { share, height } = ridgeShare(ridge, p)
+    land = Math.max(land, land + (height - land) * share)
   }
   for (const pin of pins) {
     // Measured half in warped space, so the crown leans and lobes.
@@ -260,6 +289,7 @@ export function generateIsland(authored: AuthoredIsland): GeneratedIsland {
     const p = nodePoint(i)
     let keep = 0
     for (const pin of highwoodGeneration.pins) keep = Math.max(keep, pin.shield * cragShare(pin, p.x - pin.x, p.z - pin.z))
+    for (const ridge of highwoodGeneration.ridges) keep = Math.max(keep, ridge.shield * ridgeShare(ridge, p).share)
     return own * (1 - keep)
   })
   const strength = (i: number) => shield[i]

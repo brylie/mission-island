@@ -67,8 +67,10 @@ const authoredWorldLayouts = [
   'src/worlds/starter/layout/island-generation.ts',
   'src/worlds/starter/layout/fire-sites.ts',
   'src/worlds/starter/layout/highwood-habitats.ts',
+  'src/worlds/starter/layout/highwood-outcrops.ts',
   'src/worlds/starter/layout/highwood-planting.ts',
   'src/worlds/starter/layout/places.ts',
+  'src/worlds/starter/layout/roads.ts',
   'src/worlds/starter/layout/routes.ts',
   'src/worlds/starter/layout/scenery.ts',
   'src/worlds/starter/layout/sites.ts',
@@ -260,7 +262,7 @@ export default defineConfig(
   },
   {
     files: ['server/**/*.ts'],
-    ignores: ['server/multiplayer.ts', 'server/socket-sessions.ts', 'server/save.ts'],
+    ignores: ['server/multiplayer.ts', 'server/socket-sessions.ts', 'server/save.ts', 'server/workbench-save.ts'],
     rules: {
       'no-restricted-imports': ['error', { patterns: [
         platformImports,

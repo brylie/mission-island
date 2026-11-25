@@ -8,9 +8,9 @@ The story is original to Mission Island. Its processes follow real cool-temperat
 
 ## 1. An old block of granite and sandstone
 
-Long before any ice, a body of granite cooled deep underground beneath layers of sand that later hardened into sandstone. Slow uplift and erosion brought both to the surface. Granite is hard, resists weathering and breaks into rounded blocks along its joints. Sandstone is softer, splits along its beds and wears into fins, clefts and pale sand. (Both are still unsourced; `linton-1955` is recorded but unopened.)
+Long before any ice, a body of granite cooled deep underground beneath layers of sand that later hardened into sandstone. Slow uplift and erosion brought both to the surface. Granite is hard, resists weathering and breaks into rounded blocks along its joints ([granite uplands](../field-guide/places/granite-uplands.md#joints-why-granite-breaks-into-blocks)). Sandstone is softer, splits along its beds and wears into fins, clefts and pale sand. (The sandstone half is still unsourced.)
 
-- **Still visible.** The bare crown of Windstone Ridge. The rock bands and tors on Cairn Summit and Fallow Ridge. The sandstone fins and Splitstone cleft at Driftwood. The Shellglass basin cut into a sandstone ledge.
+- **Still visible.** The bare crown of Windstone Ridge. The rock bands and crags on Cairn Summit and Fallow Ridge. The sandstone fins and Splitstone cleft at Driftwood. The Shellglass basin cut into a sandstone ledge.
 - **Habitats.** Windstone Ridge, exposed coastal grass and rock, and the Shellglass and Splitstone rocky shore.
 
 ## 2. Ice carves the valleys
@@ -25,7 +25,7 @@ During the last cold stage, an ice cap covered the island. Glaciers flowed from 
   - Scree fans under the crags, where frost kept prising the rock apart.
 - **Habitats.** The Fernfall stream corridor and the Mirror Pool wetland, plus Highwood's draws and creek.
 
-**Divergence: scale.** Real glacial troughs and fjards are usually kilometres long (still unsourced). Starter Island is about 0.2 km², its highest point is Cairn Summit at 49.9 m, and its two glacial valleys are carved 13–16 m deep (see [erosion](island-generation.md#erosion-turns-noise-into-land) and [the current bake](island-generation.md#the-current-bake)). The island compresses the landforms so a player can walk through all of them in one outing. Its model purpose is to **illustrate** what glaciers leave behind, not their size or how long they took. A player might wrongly learn that glacial valleys and fjords can be small; the [misconceptions](../misconceptions.md) page records that. The model also misses features real glaciated land has, such as moraines and the wide spread of erratics across a whole landscape.
+**Divergence: scale.** Real glacial troughs and fjards are usually kilometres long (still unsourced). Starter Island is about 0.2 km², its highest point is Cairn Summit at about 80 m (see [pinned control points](island-generation.md)), and its two glacial valleys are carved 13–16 m deep (see [erosion](island-generation.md#erosion-turns-noise-into-land) and [the current bake](island-generation.md#the-current-bake)). The island compresses the landforms so a player can walk through all of them in one outing. Its model purpose is to **illustrate** what glaciers leave behind, not their size or how long they took. A player might wrongly learn that glacial valleys and fjords can be small; the [misconceptions](../misconceptions.md) page records that. The model also misses features real glaciated land has, such as moraines and the wide spread of erratics across a whole landscape.
 
 ## 3. The sea rises and drowns the valley mouths
 
@@ -72,7 +72,7 @@ People came by sea and settled the sheltered south. They built the harbor in the
 
 These real-world claims rest on no opened source. The register holds unopened records for some of them.
 
-- Granite breaking into rounded blocks along its joints, and sandstone splitting along its beds (`linton-1955`, unopened).
+- Sandstone splitting along its beds.
 - Side glaciers leaving their valleys hanging; erratics carried by ice; ice-scoured hollows.
 - The size of the sea-level rise since the ice age: around 120 m here, about 134 m in a search summary of `lambeck-2014-pnas` (unopened).
 - Land rebounding after the ice, and raised beaches (`lambeck-2014-pnas`, unopened).

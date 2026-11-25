@@ -451,3 +451,67 @@ body.dev-capture #viewport > :not(#stage) {
   border: 0;
   border-radius: 6px;
 }
+
+/* Road designer: a panel over the live island, like the island map. */
+.road-designer {
+  position: absolute;
+  inset: 12px auto auto 12px;
+  z-index: 2;
+  width: min(420px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  padding: 13px;
+  border: 1px solid #526766;
+  border-radius: 9px;
+  background: #1a292a;
+  box-shadow: 0 12px 35px #0d181aa8;
+  color: #e9f0e6;
+  font-size: 13px;
+}
+.road-designer h2 { margin: 0; font-size: 15px; }
+.road-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.road-header .road-summary { flex-basis: 100%; }
+.road-collapse { margin-left: auto; }
+.road-collapsed .road-body { display: none; }
+.road-summary, .road-help, .road-status { margin: 4px 0 8px; color: #c7d4cc; }
+.road-help { font-size: 12px; }
+.road-toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+.road-toolbar label { display: flex; gap: 4px; align-items: center; }
+.road-toolbar input, .road-toolbar select { padding: 3px 5px; color: #17211f; background: #fffbec; border: 1px solid #c9c3ac; border-radius: 4px; font: inherit; }
+.road-toolbar input[type="number"] { width: 4.5em; }
+.road-toolbar button { padding: 4px 8px; border: 1px solid #6c8580; border-radius: 4px; color: #e9f0e6; background: #2b3f3e; font: inherit; cursor: pointer; }
+.road-toolbar button:disabled, .road-toolbar input:disabled, .road-toolbar select:disabled { opacity: 0.5; cursor: default; }
+.road-designer button:focus-visible, .road-designer input:focus-visible, .road-designer select:focus-visible, .road-map-overlay:focus-visible { outline: 2px solid #ffd166; outline-offset: 2px; }
+.road-map-surface { position: relative; width: 100%; }
+.road-map-surface canvas { display: block; width: 100%; height: auto; border-radius: 6px; }
+.road-map-overlay { position: absolute; inset: 0; cursor: crosshair; touch-action: none; }
+.road-section-figure { margin: 8px 0; }
+.road-section { display: block; width: 100%; height: auto; background: #f3efe2; border-radius: 6px; }
+.road-section-figure figcaption { margin-top: 3px; font-size: 11px; color: #c7d4cc; }
+.road-warnings { margin: 4px 0; padding: 0; list-style: none; }
+.road-warnings button { width: 100%; margin: 2px 0; padding: 3px 6px; text-align: left; color: #ffe2d6; background: #4a2a26; border: 1px solid #8a4a40; border-radius: 4px; font: inherit; cursor: pointer; }
+.road-warnings button[aria-pressed="true"] { color: #1a292a; background: #ffffff; border-color: #ffffff; }
+.road-hint { flex-basis: 100%; font-size: 12px; color: #c7d4cc; }
+.road-legend { display: flex; flex-wrap: wrap; gap: 2px 10px; margin: 6px 0 0; font-size: 12px; color: #c7d4cc; }
+.road-legend-item { display: inline-flex; align-items: center; gap: 4px; }
+.road-swatch { display: inline-block; width: 18px; height: 5px; border-radius: 2px; background: var(--swatch); }
+.road-swatch-over { background: repeating-linear-gradient(90deg, var(--swatch) 0 var(--dash-on), transparent var(--dash-on) calc(var(--dash-on) + var(--dash-gap))); }
+.road-readout { margin: 3px 0 0; font-size: 12px; color: #e9f0e6; font-variant-numeric: tabular-nums; }
+/* Save and the status line stay in view at the foot of the scrolling panel. The footer
+   reaches the panel's edge with negative margins, not a negative `bottom`, which the panel
+   (its own scroll container) would clip; the shadow fills the padding strip under it. */
+.road-footer { position: sticky; bottom: 0; margin: 0 -13px -13px; padding: 4px 13px 6px; border-top: 1px solid #526766; background: #1a292a; box-shadow: 0 13px 0 #1a292a; }
+.road-footer .road-status { margin: 2px 0 0; min-height: 1.4em; max-height: 4.4em; overflow-y: auto; }
+.road-collapsed .road-footer .road-toolbar { display: none; }
+/* Folded away, the designer moves to the top-right corner, clear of the Island map panel. */
+.road-designer.road-collapsed { inset: 12px 12px auto auto; width: auto; max-width: min(420px, calc(100% - 24px)); }
+.road-collapsed .road-summary { display: none; }
+.road-collapsed .road-footer { position: static; margin: 0; padding: 0; border: 0; }
+.road-collapsed .road-status:empty { display: none; }
+/* Keeps a control focused by Tab clear of the sticky footer. */
+.road-designer { scroll-padding-bottom: 120px; }
+/* On a narrow screen the Island map panel fills the stage, and its header row of controls
+   sits under the top-right corner, so the folded designer waits at the bottom right instead. */
+@media (max-width: 600px) {
+  .road-designer.road-collapsed { inset: auto 12px 12px auto; }
+}

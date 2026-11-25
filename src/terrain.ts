@@ -1,3 +1,7 @@
+import { roadKinds, roadNetwork } from './assets/geometry/road-kinds.ts'
+import { depotLane, harborRoad } from './paved-roads.ts'
+import { createRoadGrading } from './road-grading.ts'
+import { starterRoads, type StarterRoadLayout } from './worlds/starter/layout/roads.ts'
 import { fireWatch, fireWatchFloor } from './fire-watch.ts'
 import { harborDock, island, onDock } from './world.ts'
 import type { Point } from './world.ts'
@@ -185,7 +189,9 @@ export function authoredGroundHeight(point: Point) {
 // across the join), so beyond protected ground the baked height is the ground.
 // In the last `seamBlend` of the join's fade the exact authored ground takes over,
 // so the 2 m bake meets the authored surface without a step.
-export function groundHeight(point: Point) {
+// The island's ground before roads are cut and filled into it: the authored south,
+// the baked Highwood terrain and the seam between them.
+export function naturalGroundHeight(point: Point) {
   const original = originalCoastRadius(point)
   const keep = authoredShare(point, original)
   if (keep >= 1) return baseGroundHeight(point, original) + duneRelief(point)
@@ -194,6 +200,70 @@ export function groundHeight(point: Point) {
   const authored = baseGroundHeight(point, original) + duneRelief(point)
   return baked + (authored - baked) * (keep - 1 + seamBlend) / seamBlend
 }
+
+// Graded roads (src/worlds/starter/layout/roads.ts) cut and fill the natural ground.
+let roadGrading = createRoadGrading(starterRoads, naturalGroundHeight)
+
+// The Workbench road designer previews a draft by grading its roads instead; the
+// meshes built afterwards show them. The game always uses the roads in the source tree.
+export function previewRoadLayouts(layouts: readonly StarterRoadLayout[]) {
+  roadGrading = createRoadGrading(layouts, naturalGroundHeight)
+}
+
+// The ground players, wheels and physics stand on: the natural ground with its roads graded in.
+export function groundHeight(point: Point) {
+  return naturalGroundHeight(point) + roadGrading.delta(point)
+}
+
+export const gradedRoads = () => roadGrading.roads()
+// What the road surface is built from: the road network, and every point's distances to its edges.
+export const roadSurfaceSource = {
+  network: () => roadGrading.network(),
+  fieldsAt: (point: Point) => roadGrading.fieldsAt(point),
+}
+// Where the graded roads need culverts, so their hollows drain.
+export const roadCulverts = () => roadGrading.culverts()
+// Metres from a point to the nearest graded road's edge: scenery and plants keep clear of the formation.
+export const roadClearance = (point: Point) => roadGrading.clearance(point)
+// How far, in metres, the graded roads moved the ground at a point: their cuts, fills and banks.
+export const roadEarthworks = (point: Point) => (roadGrading.near(point) ? Math.abs(roadGrading.delta(point)) : 0)
+// What a graded road's surface is at a point: its asphalt apron where it meets a paved road,
+// shoulders included as the surface draws it; its earth carriageway (junction mouths included);
+// its verge over the shoulders; or none. A paved road's own shoulder is not a graded verge.
+export function roadSurfaceAt(point: Point): 'asphalt' | 'earth' | 'verge' | undefined {
+  if (!roadGrading.near(point)) return undefined
+  const { distance, paved } = roadGrading.carriagewayAt(point)
+  const apron = paved < roadNetwork.apronM
+  if (distance <= 0) return apron ? 'asphalt' : 'earth'
+  if (roadGrading.clearance(point) > 0) return undefined
+  return apron ? 'asphalt' : 'verge'
+}
+// Whether a point is under a graded road's drawn surface, mouths included. Answered quickly far
+// from any road.
+export const underGradedRoad = (point: Point) => roadGrading.near(point) && roadGrading.clearance(point) < 0
+// Signed metres to any road's formation edge, negative under a road: the terrain is cut to it.
+// Far from every road it answers Infinity without asking the grading.
+const halfWidth = 0.5
+const pavedReach = roadKinds.paved.width * halfWidth + roadKinds.paved.shoulderWidth
+// Past the paved formation by this much, so the terrain's cells crossing its edge are asked too.
+const pavedMarginM = 5
+const pavedLines = [harborRoad, depotLane]
+// A box round the paved roads, so most points skip their segments.
+const pavedBox = (() => {
+  const all = pavedLines.flat(), reach = pavedReach + pavedMarginM
+  return { west: Math.min(...all.map((p) => p.x)) - reach, east: Math.max(...all.map((p) => p.x)) + reach, south: Math.min(...all.map((p) => p.z)) - reach, north: Math.max(...all.map((p) => p.z)) + reach }
+})()
+function nearPavedRoad({ x, z }: Point) {
+  if (x < pavedBox.west || x > pavedBox.east || z < pavedBox.south || z > pavedBox.north) return false
+  return pavedLines.some((line) => line.some((a, i) => {
+    const b = line[i + 1]
+    if (!b) return false
+    const dx = b.x - a.x, dz = b.z - a.z
+    const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz || 1)))
+    return Math.hypot(x - a.x - dx * t, z - a.z - dz * t) < pavedReach + pavedMarginM
+  }))
+}
+export const roadFormation = (point: Point) => (roadGrading.near(point) || nearPavedRoad(point) ? roadGrading.fieldsAt(point).formation : Infinity)
 
 function crossShoreSlope(point: Point, radius: number, rayLengthM: number) {
   if (Math.abs(radius - shoreStations.sandEdge.radius) > slopeSampleRadius) return 0

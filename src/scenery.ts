@@ -7,7 +7,7 @@ import { nearFireWatch } from './fire-watch.ts'
 import { distanceToRoads, distanceToRoute, footpaths, shellglassPoint, splitstone } from './routes.ts'
 import { inFerryYard } from './worlds/starter/ferry-terminal.ts'
 import { northernScatter, starterScatter } from './worlds/starter/layout/scenery.ts'
-import { coastRadius, falls, grove, groundHeight, headland, originalCoastRadius, pool, waterDepth } from './terrain.ts'
+import { coastRadius, falls, grove, groundHeight, headland, originalCoastRadius, pool, roadClearance, waterDepth } from './terrain.ts'
 import { beach, distance, forest, harbor, island, lookout, town } from './world.ts'
 import type { Point } from './world.ts'
 
@@ -52,7 +52,10 @@ export const northernRegions = [
     const point = { x: region.at.x + Math.cos(angle) * radius, z: region.at.z + Math.sin(angle) * radius }
     if (coastRadius(point) > northernMaxCoastRadius || waterDepth(point) > northernMaxWaterDepth
       || (region.id === 'fernfall' && Math.abs(point.x - falls.x) < fernfallBankClearance)) continue
-    props.push({ ...point, y: groundHeight(point), size: northernScatter.scale.min + northernRandom() * northernScatter.scale.span, angle, index, tree: region.trees })
+    const size = northernScatter.scale.min + northernRandom() * northernScatter.scale.span
+    // Drawn before the road check, so a prop kept off a graded road leaves the others where they were.
+    if (roadClearance(point) < roadTreeClearance) continue
+    props.push({ ...point, y: groundHeight(point), size, angle, index, tree: region.trees })
   }
   const discovery = northernScatter.discoveries
   const site = region.id === 'ridge' ? ridgeViewpoint : { x: region.at.x + (region.id === 'pool' ? discovery.poolX : discovery.x), z: region.at.z + discovery.z }
@@ -82,7 +85,7 @@ export const islandTrees = Array.from({ length: trees.count }, (_, variant) => {
   // The old island's scatter stays on the old island; Highwood gets its own stands.
   return originalCoastRadius(tree) <= treeMaxCoastRadius && !(x < trees.harborClear.x && z < trees.harborClear.z)
     && !(x > trees.townClear.x && z > trees.townClear.z) && !(x > trees.beachClear.x && z < trees.beachClear.z)
-    && distance(tree, lookout) >= lookoutTreeClearance && !nearFireWatch(tree) && distanceToRoads(tree) >= roadTreeClearance && !inFerryYard(tree, ferryTreeClearance)
+    && distance(tree, lookout) >= lookoutTreeClearance && !nearFireWatch(tree) && distanceToRoads(tree) >= roadTreeClearance && roadClearance(tree) >= roadTreeClearance && !inFerryYard(tree, ferryTreeClearance)
     && footpaths.every(({ points }) => distanceToRoute(tree, points) >= pathTreeClearance)
 })
 
@@ -98,6 +101,7 @@ export const islandRocks = Array.from({ length: rocks.count }, (_, index) => {
 }).filter((rock) =>
   distance(rock, harbor) >= harborRockClearance && distance(rock, town) >= townRockClearance && distance(rock, beach) >= beachRockClearance
   && distance(rock, lookout) >= lookoutRockClearance && !nearFireWatch(rock) && distanceToRoads(rock) >= roadRockClearance + rock.size * islandRockHalfDepthRatio
+  && roadClearance(rock) >= roadRockClearance + rock.size * islandRockHalfDepthRatio
   && !inFerryYard(rock, 1 + rock.size * half)
   && footpaths.every(({ points, width }) => distanceToRoute(rock, points) >= width * half + rock.size * pathRockRadiusRatio + pathRockClearance))
 

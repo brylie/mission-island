@@ -14,7 +14,9 @@ import { initialFerryRepair } from '../src/ferry-repair.ts'
 import { initialResidents } from '../src/residents/trust.ts'
 import { starterResidents } from '../src/worlds/starter/residents.ts'
 import { makeItems, restingHeight, updateStowedItems } from './items.ts'
-import { walkingHeight } from '../src/terrain.ts'
+import { originalCoastRadius, walkingHeight } from '../src/terrain.ts'
+import { authoredShare } from '../src/worlds/starter/generation/protection.ts'
+import { highwoodAuthoredLimit } from '../src/worlds/starter/layout/highwood-planting.ts'
 import { initialEvents } from './wildfire.ts'
 import { restoreJournal } from './journal.ts'
 import type { IslandSave } from './save.ts'
@@ -80,13 +82,20 @@ export function restoreIsland(
   return { state, growth }
 }
 
+// How far above its resting height a restored Highwood item may sit before it settles.
+const settleToleranceM = 0.25
+
 function restoreItems(state: Snapshot, physics: Pick<ReturnType<typeof createCargoPhysics>, 'restore' | 'relocate'>, saved: boolean) {
   for (const item of state.items) {
     item.spraying = false
     if (saved) physics.restore(item)
     else physics.relocate(item, item)
-    // Ground that has risen since the save (Highwood) lifts loose gear back onto it.
-    if (saved && item.kind !== 'crate' && item.holder === null && !item.stowed && item.y < walkingHeight(item)) item.y = restingHeight(item)
+    if (!saved || item.kind === 'crate' || item.holder !== null || item.stowed || item.onBed) continue
+    // Ground that has risen since the save (Highwood) lifts loose gear back onto it. Highwood's
+    // ground can also have dropped, under a road cut or the reshaped Cairn, so gear left there
+    // settles back down; elsewhere gear may rest on a dock or a crate above the ground.
+    const sunk = authoredShare(item, originalCoastRadius(item)) < highwoodAuthoredLimit && item.y > restingHeight(item) + settleToleranceM
+    if (item.y < walkingHeight(item) || sunk) item.y = restingHeight(item)
   }
 }
 

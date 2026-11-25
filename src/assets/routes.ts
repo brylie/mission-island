@@ -35,6 +35,12 @@ export function createRoad(meshes: MeshFactory, points: readonly Point[], width:
   }
 }
 
+// A paved road's centreline dashes, draped on the ground. The road itself is part of the road
+// network's one surface (`createRoadNetworkSurface`).
+export function createRoadMarkings(meshes: MeshFactory, points: readonly Point[], heightAt: (p: Point) => number) {
+  return ribbon(meshes, 'Centerline', laneMarkings(points), laneMarkingModel.width, laneMarkingModel.y, laneMarkingModel.color, roadFinish.lineTile, heightAt)
+}
+
 function trailSamples(points: readonly Point[]) {
   return points.flatMap((p, i) => {
     const next = points[i + 1]

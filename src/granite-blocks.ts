@@ -1,0 +1,136 @@
+import { graniteBlockForm as form, graniteOutcropShape as shape } from './assets/geometry/granite-outcrops.ts'
+import type { GraniteRock, GraniteSlab } from './highwood-outcrops.ts'
+import { seededRandom } from './seeded-random.ts'
+import { groundHeight } from './terrain.ts'
+
+// Highwood's granite as weathered blocks ("woolsacks"): each a stack of rings from foot to
+// crown, every ring a superellipse in plan (a rectangle with its corners worn round), bent
+// by slow waves that twist up the block, then closed by a low, uneven dome. Faces stay
+// flat triangles, so the rock reads faceted like the rest of the island.
+
+type Corner = [number, number, number]
+
+interface RockFacet {
+  corners: [Corner, Corner, Corner]
+  // The outward normal, not normalised.
+  normal: Corner
+}
+
+const half = 0.5
+// Each block's shape draws from its own stream, seeded from its rock's tone and its place in
+// the stack, so the mesh and the tests build the same block whatever else draws numbers.
+const toneSeedSpan = 1e6
+const blockSeedStride = 7919
+const square = 2
+const turn = Math.PI * square
+
+const between = (random: () => number, [least, most]: readonly [number, number]) => least + random() * (most - least)
+const spread = (random: () => number, share: number) => (random() - half) * (share + share)
+
+// A point on a superellipse of exponent `n` at `angle`, as (along, across) in units of the half size.
+function superellipse(angle: number, n: number): [number, number] {
+  const c = Math.cos(angle), s = Math.sin(angle), power = square / n
+  return [Math.sign(c) * Math.abs(c) ** power, Math.sign(s) * Math.abs(s) ** power]
+}
+
+const minus = (a: Corner, b: Corner): Corner => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+
+// The faces are wound as the old slab mesh was, so the outward normal is the reversed cross product.
+function facet(a: Corner, b: Corner, c: Corner): RockFacet {
+  const ab = minus(b, a), ac = minus(c, a)
+  const normal: Corner = [ab[2] * ac[1] - ab[1] * ac[2], ab[0] * ac[2] - ab[2] * ac[0], ab[1] * ac[0] - ab[0] * ac[1]]
+  return { corners: [a, b, c], normal }
+}
+
+// A block's squareness and the lean of its top, per metre along and across it: the first draws
+// of its stream, so the walking solid can lean as the drawn block does.
+function blockLean(random: () => number, kind: NonNullable<GraniteSlab['form']>) {
+  const n = between(random, form.squareness[kind])
+  const tilt = shape.tilt[kind]
+  return { n, tiltU: spread(random, tilt), tiltV: spread(random, tilt) }
+}
+
+const blockStream = (rock: GraniteRock, index: number) => seededRandom(Math.floor(rock.tone * toneSeedSpan) + index * blockSeedStride)
+
+// The flat triangles of one block of a rock. `foot` sinks the block's lowest ring into the
+// ground under it, for the lowest block of a stack; upper blocks get a closed underside.
+function graniteBlockFacets(rock: GraniteRock, slab: GraniteSlab, foot: boolean, random: () => number): RockFacet[] {
+  const kind = slab.form ?? 'block'
+  // A lowest block grows straight out of its foot, without the pinch of a joint under it;
+  // a boulder keeps its rounded underside.
+  const sides = form.sides[kind], rings = foot && kind === 'block' ? form.rings[kind].slice(1) : form.rings[kind]
+  const flare = form.footRadius[kind] / rings[0][1]
+  const { n, tiltU, tiltV } = blockLean(random, kind)
+  const waves = form.waves.map((wave) => ({ ...wave, phase: random() * turn, drift: spread(random, wave.driftRad) }))
+  const sagAngle = random() * turn, sag = random() * form.crownSag * slab.height
+  const cos = Math.cos(slab.heading), sin = Math.sin(slab.heading)
+  const cx = rock.x + slab.dx, cz = rock.z + slab.dz, baseY = rock.ground + slab.base
+  // Each angle keeps its own jitter up the block, so a bump runs from foot to crown.
+  const angles = Array.from({ length: sides }, (_, k) => (k + random() * half) / sides * turn)
+  const jitters = angles.map(() => 1 + spread(random, form.jitter))
+  const place = (u: number, v: number, y: number): Corner => [cx + u * cos - v * sin, y + u * tiltU + v * tiltV, cz + u * sin + v * cos]
+  // Every point's distance out, as a share of the superellipse, before fitting.
+  const radii = rings.map(([share, radius]) => {
+    const size = radius * (1 + spread(random, form.ringJitter))
+    return angles.map((angle, k) => size * jitters[k] * (1 + waves.reduce((sum, w) => sum + w.share * Math.sin(w.lobes * angle + w.phase + w.drift * share), 0)))
+  })
+  // The block is scaled so its widest point just meets its footprint, and so its walking solid.
+  const fit = 1 / Math.max(...radii.flat())
+  const ring = ([share]: readonly [number, number], level: number) => angles.map((angle, k) => {
+    const [along, across] = superellipse(angle, n)
+    const r = radii[level][k] * fit
+    const dip = sag * share * share * (1 + Math.cos(angle - sagAngle)) * half
+    return place(along * r * slab.length * half, across * r * slab.width * half, baseY + share * slab.height - dip)
+  })
+  const layers = rings.map(ring)
+  if (foot) {
+    // The foot spreads into the ground under each point and sinks below it, or below the ring
+    // where the ground is higher. Where the ground falls away downhill, the face down to it is
+    // broken into rough steps of bedrock, each ring flaring out further than the one above by
+    // an uneven amount, so the face slopes out into the hill rather than standing as a wall.
+    const embed = rock.kind === 'outcrop' ? shape.embedM.outcrop : shape.embedM.clitter
+    const lowest = layers[0]
+    const feet = lowest.map(([x, y, z]) => {
+      const fx = cx + (x - cx) * flare, fz = cz + (z - cz) * flare
+      return Math.min(y, groundHeight({ x: fx, z: fz })) - embed
+    })
+    const drop = Math.max(...lowest.map(([, y], k) => y - feet[k]))
+    const steps = Math.min(form.skirt.maxSteps, Math.ceil(drop / form.skirt.stepM))
+    for (let step = 1; step <= steps; step++) {
+      const share = step / steps
+      layers.unshift(lowest.map(([x, y, z], k) => {
+        const out = 1 + (flare - 1) * (step < steps ? step - random() * form.skirt.jitter : step) / steps
+        return [cx + (x - cx) * out, y + (feet[k] - y) * share, cz + (z - cz) * out]
+      }))
+    }
+  }
+  const facets: RockFacet[] = []
+  for (let level = 0; level + 1 < layers.length; level++) {
+    const low = layers[level], high = layers[level + 1]
+    for (let k = 0; k < sides; k++) {
+      const j = (k + 1) % sides
+      // Alternate the diagonal, so the facets don't all lean the same way.
+      if ((k + level) % square === 0) facets.push(facet(low[k], low[j], high[j]), facet(low[k], high[j], high[k]))
+      else facets.push(facet(low[k], low[j], high[k]), facet(low[j], high[j], high[k]))
+    }
+  }
+  const crown = place(0, 0, baseY + slab.height - sag * half), top = layers.at(-1) ?? []
+  for (let k = 0; k < sides; k++) facets.push(facet(crown, top[k], top[(k + 1) % sides]))
+  if (!foot) {
+    // A shallow rounded underside, like the crown turned over.
+    const under = place(0, 0, baseY - form.crownSag * slab.height), bottom = layers[0]
+    for (let k = 0; k < sides; k++) facets.push(facet(under, bottom[(k + 1) % sides], bottom[k]))
+  }
+  return facets
+}
+
+// The facets of a rock's block at `index`, from that block's own random stream.
+export function rockBlockFacets(rock: GraniteRock, index: number): RockFacet[] {
+  return graniteBlockFacets(rock, rock.slabs[index], index === 0, blockStream(rock, index))
+}
+
+// How the drawn top of a rock's block at `index` leans, per metre along and across its heading.
+export function rockBlockLean(rock: GraniteRock, index: number) {
+  const { tiltU, tiltV } = blockLean(blockStream(rock, index), rock.slabs[index].form ?? 'block')
+  return { tiltU, tiltV }
+}

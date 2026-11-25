@@ -15,6 +15,9 @@ export const starterMapLook = {
     gravel: { width: 2, color: '#a5a77e' },
     pavement: { width: 2, color: '#c4c9c1' },
     road: { width: 4, color: '#c7bb9a' },
+    // Graded dirt roads, such as Highwood's fire road: a light fill on a dark edge, so the road
+    // reads on every land colour, grass and high ground alike.
+    dirt: { width: 3, color: '#dcbf8a', edge: { width: 5.5, color: '#3b2f1c' } },
   },
   fire: { color: '#f7a17d', radius: 6 },
   // A located wildfire: a pale ring around the fire dot, so it does not rely on colour alone.

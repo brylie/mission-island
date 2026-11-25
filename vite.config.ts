@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import { defaultIslandPort, multiplayer } from './server/multiplayer.ts'
+import { workbenchSave } from './server/workbench-save.ts'
 
 export default defineConfig({
   server: {
@@ -11,5 +12,5 @@ export default defineConfig({
   },
   preview: { host: '0.0.0.0', port: defaultIslandPort, strictPort: true },
   build: { rolldownOptions: { input: ['index.html', 'workbench.html', 'second-island.html'] } },
-  plugins: [multiplayer()],
+  plugins: [multiplayer(), workbenchSave(import.meta.dirname)],
 })

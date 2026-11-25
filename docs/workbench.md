@@ -21,6 +21,40 @@ Open **Construction → Site furnishings → Seabrook village bench**. Select **
 
 Changing a setting keeps your orbit and zoom while the subject stays about the same size, as with a new seed. When a setting makes the subject much larger or smaller than the view was framed for, such as another species or a wider comparison, the camera frames the new subject from the same angle. Several small steps in one direction count together. Select **Crew for scale** to stand the game's crew member beside the subject, and read the subject's width × depth × height in metres in the footer beside its triangle count. Landscape and on-island views leave both out. Use **Saved variations** to build a named, browser-local collection for a subject. Each variation restores its controls, viewport and clock. Use **Copy setup link** to share a specific model, context, parameter set, camera, lighting and paused time. Use a LAN address when sharing between computers. Landscape studies and biome recipes retain their specialized formats. The map’s **Save layout** and **Export JSON** manage additional placed objects. Scene drafts and setups run separately from multiplayer saves.
 
+## Design roads
+
+Open **World → Road designer** (`workbench.html#road-designer`) to lay out the island's graded roads. Each road runs through dots on the island map and finds its own height through the terrain: it cuts into rises and fills hollows only where its grade limit needs it. The [forest roads](field-guide/practices/forest-roads.md) entry explains the real-world practice behind it.
+
+**Draw a road.**
+- **New road** starts one: click two points on the map. Escape cancels it.
+- Click near either end of the selected road to extend it from that end.
+- Drag a dot to move it. Drag the small handle in the middle of a stretch to bend that stretch; there are no Bézier handles to manage.
+- Double-click a road to add a dot there. **Delete dot** (or Delete with the map focused) removes the selected dot, and Cmd or Ctrl+Z undoes. **Undo** and **Redo** are greyed out when there is nothing to undo or redo.
+- Drag empty ground to pan, and scroll to zoom.
+
+**By keyboard.** Choosing roads and dots, suggesting routes, deleting, limits, reordering, undo, panning and zooming all work without a mouse. Placing, moving and bending dots, and New road's two points, still need the pointer, a gap against WCAG 2.1.1 (Keyboard) to be closed ([#283](https://github.com/brylie/mission-island/issues/283)).
+- **Road** picks the road, and **Dot** picks one of its dots, listed with how many metres along the road it sits; a zoomed-in map pans to it, and the long section's readout reads the road at that dot. With a dot picked, **Suggest route**, **Delete dot** and **Stretch limit** work. Stretch limit stays greyed out, with a hint beside it, until a dot is picked.
+- Tab to the map, then use the arrow keys to pan and + and − to zoom. Delete or Backspace removes the selected dot only while the map has focus, so they never fire from a list or a button.
+- The status line at the foot of the panel says what each action did, for example "Deleted dot 14. Ctrl+Z to undo." It stays in view with **Save to source**, however far the panel scrolls.
+
+**Suggest route to next dot** fills in the dots between the selected dot and the next one along a route within the grade limit. It suggests a road a builder would make: straight where a straight road holds the grade, curving only along contours or in switchbacks. Where the slope is too steep to climb across, it turns back on itself in a hairpin of 12 m radius, with at least 24 m of road between hairpins, and never on ground steeper than 50% across. Treat it as a first draft, then drag and bend.
+
+**Read the road.**
+- The legend under the map gives the grade colours. Green is easy, under 6%. Yellow is steady. Orange is near the stretch's own limit, in its top fifth, so it starts at 9.6% on a 12% fire road and at 12% on a 15% stretch, so orange always means little room is left on that stretch, whatever the road's kind. Red is over the limit, and is drawn dashed so it reads without colour (WCAG 1.4.1, Use of Color).
+- The long section under the map shows natural ground as a brown line and the road as a black one, with cut in orange and fill in blue. The line under it reads the steepest point, or the grade, heights and cut or fill at the spot you hover. That spot shows on the map as a white ring.
+- Warnings name what a road builder would query and where: grade over the limit, a bend tighter than the pickup can turn, a crossing of open water, cut or fill deeper than 5 m, and a bank that can't meet the ground even as a rock cut, where the hillside is too steep for the road. Repeats of one kind closer than 25 m count once. The list shows the first 12 along the road, and the summary says "12 shown of 30 problems" when there are more. Activating a warning marks it on the map and the long section, pans the map to it, and says so in the status line.
+- **Kind** sets the road's width and limits (fire road or track). **Stretch limit** overrides the grade limit for the stretch after the selected dot, as on the Cairn Summit spur. The last dot sets the stretch before it.
+
+**Junctions and order.** A road whose end dot lies on an earlier road's carriageway joins that road there. A branch must leave at 30° or more: a shallower one slides along inside its host, and a test refuses it, though the designer doesn't warn yet. The roads are graded together, so the branch leaves through a rounded mouth at the other road's height, and the road it joins is left exactly as it was. A branch must come after the road it joins: **Move up** and **Move down** change a road's place in the list. A road that starts on the village's paved roads gets an asphalt apron at its mouth.
+
+**Check it in 3D and save it.**
+- **Preview roads in 3D** in the inspector rebuilds the island with the draft's roads cut in. **Hide** folds the designer panel into the top-right corner (the bottom right on a phone), clear of the Island map panel's controls, so you can see the stage.
+- The draft is kept in this browser until you save. **Download** saves the layout as JSON. **Discard draft** goes back to the roads in `roads.ts`; it is one more step in the undo history, so Cmd or Ctrl+Z brings the draft back.
+- **Save to source** writes the layout to [`src/worlds/starter/layout/roads.ts`](../src/worlds/starter/layout/roads.ts) and nothing else. It works only on the development server, from this computer, and from the Workbench page that server serves.
+- The draft remembers which `roads.ts` it started from. If the file has changed since, for example after a pull, the first press of Save says so, and a second press overwrites it. Discard draft starts again from the new roads instead. A draft saved by an older Workbench, before it kept this, warns once on its first save too.
+- `roads.ts` feeds the terrain the dev server bakes into its config, so a save restarts the dev server. Crews connected to it drop and can rejoin, because the island is checkpointed. The page reloads, and the status line still shows the save notice.
+- Then run `npm run island:plant`, because the Highwood planting keeps clear of roads, and commit both files. You don't need `npm run island:generate`, which also rebuilds the terrain.
+
 ## Procedural surfaces
 
 Open **Surfaces → Texture gallery** to compare 54 named materials across **Surface catalog** and **Gameplay surfaces**, or select a family in the Library. Use **Grazing light** to reveal relief, **Overcast** for diffuse light, and **Dusk** to see glow algae emit light. Meadow turf, Path gravel, and Weathered board also have an **On island** view. Both collections include contact sheets and reopenable setups. [Surface catalog](surface-catalog.md) · [Gameplay surfaces](gameplay-surfaces.md)

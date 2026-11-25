@@ -23,16 +23,22 @@ export const highwoodLeanJitter = 0.15
 export const highwoodAuthoredLimit = 0.5
 // Trees stay off ground steeper than this rise per metre, and every plant off wetter, sandier ground.
 export const highwoodPlantingLimits = { treeSlope: 0.9, sand: 0.4 }
-// Plants keep this far, in metres, from the centreline of every route so paths stay clear.
-// Phase 3's fire road will need a wider, kind-dependent clearance (half-width, shoulder, crown).
+// Plants keep this far, in metres, from the centreline of every path, and from the edge of a
+// graded road's formation (its surface and shoulders), so paths and roads stay clear.
 export const highwoodRouteClearanceM = 3
+// Trees and deadwood keep off ground a road's grading moved by more than this many metres: its
+// cut and fill banks, which builders leave to grass and ferns. Understory may grow on a bank
+// no steeper than `highwoodBankCoverSlope` (rise per metre, tan 40 degrees): steeper batters
+// are hard to revegetate (see docs/field-guide/practices/forest-roads.md).
+export const highwoodEarthworksM = 0.15
+export const highwoodBankCoverSlope = 0.84
 // Sight lines kept open through the forest, as gaps on a crest would be, so the
 // views players stop for stay open. Canopy and deadwood keep out of a corridor
 // `halfWidthM` wide at the eye, widening by `spread` per metre, for `reachM` metres
 // toward the look point. They match the capture presets of the same id. Wet woodland
 // keeps its alders and willows inside a corridor: a creek bank stays wooded.
 export const highwoodSightlines = [
-  { id: 'highwood-ridge-home', eye: { x: -220, z: 310 }, look: { x: -35, z: -5 }, reachM: 340, halfWidthM: 8, spread: 0.1 },
+  { id: 'highwood-summit-home', eye: { x: -95, z: 210 }, look: { x: -35, z: -5 }, reachM: 235, halfWidthM: 8, spread: 0.1 },
   { id: 'highwood-cairn-southwest', eye: { x: -212, z: 129 }, look: { x: -92, z: 219 }, reachM: 110, halfWidthM: 7, spread: 0.12 },
   { id: 'highwood-creek-ford', eye: { x: -270, z: 300 }, look: { x: -310, z: 280 }, reachM: 30, halfWidthM: 4, spread: 0.15 },
 ] as const

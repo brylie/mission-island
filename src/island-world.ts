@@ -11,7 +11,10 @@ import { createResidentFigures } from './resident-scene'
 import type { ResidentWorld } from './residents/definition'
 import { residentAt } from './residents/schedule'
 import { starterResidents } from './worlds/starter/residents'
-import { createRoad, createSidewalk, createTrail } from './assets/routes'
+import { createRoadMarkings, createSidewalk, createTrail } from './assets/routes'
+import { createRoadNetworkSurface } from './assets/road-surface'
+import { createCulverts } from './assets/culverts'
+import { createRoadMaterial } from './road-material'
 import { playerColors } from './assets/crew'
 import { clothingCounter } from './farm'
 import { createBiomeScenery } from './biome-scenery'
@@ -32,6 +35,8 @@ import { jobBoard } from './jobs'
 import { depotJunction, depotLane, footpaths, harborRoad, walkways } from './routes'
 import { createShellglassTide } from './shellglass-art'
 import { islandRocks, islandTrees } from './scenery'
+import { createGraniteOutcrops } from './assets/granite-outcrops'
+import { highwoodGraniteRocks } from './highwood-outcrops'
 import type { SiteFeature } from './worlds/site-feature'
 import { placeSiteFeatures } from './assets/site-props'
 import { beachUmbrellas, shellRocks, starterFeatures } from './worlds/starter/sites'
@@ -40,7 +45,7 @@ import { createSurfaceMaterial } from './materials'
 import { meadowDefaults, shaderPresets, shoreDefaults, type ShaderQuality } from './shader-studies'
 import type { WildlifeFrame } from './wildlife'
 import { createStreetLights } from './street-lights'
-import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
+import { boundaryBuoys, fireWatchBaseHeight, groundHeight, pool, roadClearance, roadCulverts, roadEarthworks, roadSurfaceSource, streamX, tidePool, walkingHeight, waterLevel } from './terrain'
 import { buildings, crewHomes, extinguisherStations } from './world'
 import { createFireWatch } from './assets/fire-watch'
 import { createFireStation } from './assets/fire-station'
@@ -60,6 +65,25 @@ interface WorldSubstitutions {
 
 const rainPavingWetness = 0.74
 
+// Every road, paved and graded, is one surface draped on the ground the graded roads cut and fill.
+function createRoads(meshes: MeshFactory) {
+  createRoadNetworkSurface(meshes, roadSurfaceSource, groundHeight, createRoadMaterial(meshes.paintRecipe('path-gravel')))
+  // Finding the culverts floods the ground around the roads, so it waits for the first frame.
+  meshes.scene.onAfterRenderObservable.addOnce(() => {
+    try {
+      createCulverts(meshes, roadCulverts(), groundHeight, {
+        clearance: roadClearance,
+        carriageway: (point) => roadSurfaceSource.fieldsAt(point).carriageway,
+        earthworks: roadEarthworks,
+      })
+    }
+    catch (error) {
+      // A failure here loses only the culverts' drawing, not the frame's other observers.
+      console.error('Could not draw the road culverts', error)
+    }
+  })
+}
+
 export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubstitutions = {}) {
   const study = substitutions.surfaceStudy
   const water = createIslandTerrain(meshes, study?.target === 'meadow' ? study : undefined)
@@ -71,9 +95,10 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const paving = createSurfaceMaterial(meshes.scene, 'concrete')
   const wetPaving = createWetPaving(paving)
   for (const path of walkways) createSidewalk(meshes, path, paving)
-  createRoad(meshes, harborRoad)
+  createRoads(meshes)
+  createRoadMarkings(meshes, harborRoad, groundHeight)
   const { depotRoad, wardrobeZ, clothingCounterZ } = starterDecorationOffsets
-  createRoad(meshes, depotLane, depotRoad.width, { lift: depotRoad.lift, marked: [depotLane[0], { x: depotJunction.x + depotRoad.markingEndX, z: depotJunction.z }] })
+  createRoadMarkings(meshes, [depotLane[0], { x: depotJunction.x + depotRoad.markingEndX, z: depotJunction.z }], groundHeight)
 
   const households = buildings.flatMap((building, index) => {
     if (index === substitutions.replaceBuilding) return []
@@ -141,6 +166,7 @@ export function createIslandWorld(meshes: MeshFactory, substitutions: WorldSubst
   const juniper = createBiomeScenery(meshes, juniperLayout, juniperCenter, groundHeight)
   const northernScenery = createNorthernScenery(meshes)
   const highwoodForest = createHighwoodForest(meshes)
+  createGraniteOutcrops(meshes, highwoodGraniteRocks())
   const blades = createGrassTufts(meshes)
   createWildflowers(meshes)
   const { ferns, plants } = createUnderstory(meshes)
