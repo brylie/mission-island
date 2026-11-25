@@ -1697,3 +1697,23 @@
       quote: "Lichens love clean air too – in fact, their sensitivity to air pollution means they make good air quality indicators."
       quote-match: exact (2026-11-23)
       used-in: field-guide/places/granite-uplands.md#lichen-and-stains
+
+- id: txdot-roadway-design
+  title: Roadway Design Manual, 4.8.5 Vertical Alignment at Intersections
+  publisher: Texas Department of Transportation
+  url: https://www.txdot.gov/manuals/des/rdw/chapter-4--basic-design-criteria/4-8-vertical-alignment/4-8-5-vertical-alignment-at-intersections.html
+  archived:
+  accessed: 2026-11-25
+  opened: true
+  tier: 1
+  region: United States (Texas)
+  note: A state highway design manual, for public roads, not forest roads. Quoted for the general practice of a flatter approach at a junction. Not yet archived.
+  supports:
+    - claim: Highway approaches steeper than 3% are avoided within stopping sight distance of an intersection.
+      quote: "Approach grades steeper than 3 percent should be avoided within the stopping sight distance of the intersection."
+      quote-match: exact (2026-11-25)
+      used-in: field-guide/practices/forest-roads.md#where-the-island-differs
+    - claim: Where a 3% approach can't be built, the grade is kept under 6%.
+      quote: "Where conditions make such designs impractical, grades should not exceed 6 percent."
+      quote-match: exact (2026-11-25)
+      used-in: field-guide/practices/forest-roads.md#where-the-island-differs

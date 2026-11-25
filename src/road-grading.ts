@@ -1,4 +1,4 @@
-import { roadKinds, roadNetwork } from './assets/geometry/road-kinds.ts'
+import { roadKinds, roadNetwork, roadProfileSolver } from './assets/geometry/road-kinds.ts'
 import { roadBanks, type SampleBanks } from './road-banks.ts'
 import { findCulverts, type Culvert } from './road-culverts.ts'
 import { createSampleIndex } from './road-index.ts'
@@ -123,13 +123,22 @@ function gradeNetwork(network: RoadNetwork, natural: GroundFunction): GradedRoad
     }
     const hosts = [hostAt('start'), hostAt('end')]
     const samples = kind.graded ? trimmed(road.samples, hosts, halfFormation) : road.samples
+    // A joined end keeps a gentler landing before the road climbs away from its host.
+    const { lengthM, taperM, maxGrade: landingGrade } = roadProfileSolver.landing
+    const first = samples[0]?.along ?? 0, last = samples.at(-1)?.along ?? 0
+    // Metres from the nearest joined end; Infinity when neither end joins.
+    const fromJoin = (sample: RoadSample) => Math.min(hosts[0] ? sample.along - first : Infinity, hosts[1] ? last - sample.along : Infinity)
+    const landed = (sample: RoadSample, limit: number) => {
+      const eased = clamp01((fromJoin(sample) - lengthM) / taperM)
+      return Math.min(limit, landingGrade + (limit - landingGrade) * eased)
+    }
     // A joining end starts level with its host; a free end takes the road's own benched ground.
     const pin = (sample: RoadSample, host: GradedRoad | undefined) => host && surfaceNear(host, sample, natural)
     const profile = kind.graded
       ? solveRoadProfile(samples, {
           groundAt: natural,
           halfWidth: halfFormation,
-          maxGrade: (sample) => road.layout?.maxGrade?.[sample.stretch] ?? kind.maxGrade,
+          maxGrade: (sample) => landed(sample, road.layout?.maxGrade?.[sample.stretch] ?? kind.maxGrade),
           start: pin(samples[0], hosts[0]?.host),
           end: pin(samples[samples.length - 1], hosts[1]?.host),
           benchSideSlope: roadNetwork.benchSideSlope,
