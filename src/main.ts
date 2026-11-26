@@ -30,6 +30,7 @@ import { isNight } from './weather'
 import { createClothingCounter, createWardrobe } from './wardrobe-ui'
 import { showCrewRoster } from './crew-roster-ui'
 import { bindBinoculars } from './binoculars-ui'
+import { createPlaytestMarks } from './playtest-mark-ui'
 
 const clientTokenBytes = 16
 const tokenHexRadix = 16
@@ -108,6 +109,10 @@ const promptKey = element('prompt-key')
 const promptAction = element('prompt-action')
 const ridgeHud = createRidgeHud(element('ridge-hud'))
 const map = element<HTMLCanvasElement>('map')
+// Playtest marks (M) exist only on the dev and playtest servers, which save them; a production build drops them.
+const marks = import.meta.env.DEV || import.meta.env.MODE === 'playtest'
+  ? createPlaytestMarks({ token: () => token, pause: () => pauseControls(), ready: (): boolean => !modalOpen() && !blocksGameKeys(), crew: () => live && snapshot ? { state: snapshot, id, focus: reticle.focus() } : undefined, view: () => renderer })
+  : undefined
 
 let renderer: ReturnType<typeof createRenderer> | undefined
 let id = -1
@@ -428,7 +433,7 @@ function openJobBoard() {
 
 function modalOpen() {
   return optionsDialog.open || boardDialog.open || guideDialog.open || joinNameDialog.open
-    || wardrobeDialog.open || counterDialog.open || journal.dialog.open
+    || wardrobeDialog.open || counterDialog.open || journal.dialog.open || Boolean(marks?.dialog.open)
 }
 
 function openClothing(fromWardrobe: boolean) {

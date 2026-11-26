@@ -1,5 +1,7 @@
 # Review a change in play
 
+**Status:** reference. Last tended 2026-11-26.
+
 Use this workflow across project reviews. Pick a question a player would care about and the smallest harness that can answer it. Move from an isolated trial into the game when the claim depends on the island, the host, or another player.
 
 ## Choose a starting point
@@ -12,6 +14,7 @@ Use this workflow across project reviews. Pick a question a player would care ab
 | Can players hear a sound’s cause and direction? | Use the [Procedural Audio skill](../../.agents/skills/mission-island-procedural-audio/SKILL.md) to audition a fixed recipe, then try the same sound in the game from near and far. | Share listener position, seed and mix settings. Use two browsers for a shared impact or action and check that mute preserves the visible cue. |
 | Can a new player find the action and explain the result? | Start with a [fresh save](starter-island-first-payout.md) for discovery or a live checkpoint for a focused retry. | Record the first unprompted action, cues missed, any help given, and whether the player could use the skill again in a different situation. |
 | Can players finish an action together and recover from an interruption? | Use a [live checkpoint](../../CONTRIBUTING.md#run-a-live-playtest-scenario). Choose the crew size, assign roles, and restart to compare the same starting state. | Hand off the scenario ID, revision, steps for each seat, and expected result. Use two browsers for replication or interaction questions. |
+| What is this thing I'm looking at in play, and where does it come from? | Press **M** (the **,** key on AZERTY) in a dev or playtest game with the reticle on it and add what is wrong and what you expected. See [Playtest marks](../iteration-tooling.md#playtest-marks). | Point the agent to the mark folder. It holds the screenshot, the picked mesh or part, the nearby layout entries with their source files, and links back to the view in the Workbench and the game. |
 | Does the host uphold a rule through simultaneous commands, a restart, or an older save? | Use the [game test harness](../../test/support/game-harness.mjs) and its clock, socket, and save fixtures. Exercise the real command path. | Name the test and expected invariant. Use a playable scenario as well when the question involves feedback or controls. |
 
 ## Set up a fair comparison

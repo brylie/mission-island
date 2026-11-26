@@ -57,6 +57,7 @@ One list of everything we know we don't know: research to do, sources to find, a
 
 ## Questions to answer
 
+- Are the game's notices announced by screen readers? `#notice` and the ridge flight result (`[data-flight-result]`) in `index.html` are `role="status"` regions shown from `hidden` with their text already set, a pattern often not announced. The playtest mark toast keeps its region rendered instead. See the [Playtest and Accessibility skill](../.agents/skills/mission-island-playtest-accessibility/SKILL.md).
 - Is the Highwood near-to-far tree switch, at 80 m to a tile's nearest point with a 16 m dead band, invisible in the game camera? The Workbench suggested about 100 m for one tree. See [rendering and detail](craft/rendering-and-detail.md#hiding-the-switch).
 - Why did far crowns vanish when the far merged meshes shared a foliage material with the near thin instances, once the scene fog plugin was on? Far material copies work around it, but the cause is unknown. See [rendering and detail](craft/rendering-and-detail.md#what-failed).
 - Does the Low graphics tier hold 30 fps on an older computer? It is not yet measured on one; that belongs to the two-player playtest. See [Highwood backcountry](backcountry.md#performance).

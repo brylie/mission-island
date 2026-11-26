@@ -138,6 +138,8 @@ Some colors look like family members but do a different job. Don't merge them in
 - **Skin tones and faces.** These follow the [crew character art](crew-character-art.md).
 - **State colors.** Ash, wet soil, a repaired stage. Each shows progress and has to read as different.
 - **UI and map canvas colors.** These belong to the interface, not the world.
+  - Already in the game: in dialogs the primary action is green `#31584c` with cream text. A dismissive or secondary button (Skip, Respawn, Close, Discard) is tan `#e8d9b4` with ink text (`src/style.css`).
+  - Already in the game: a short notice, such as the playtest mark's "Mark saved", sits at the bottom centre above the action prompt, in the dark HUD-panel teal `#1b3635` with cream text. It is one line, cut with an ellipsis, so it never covers the mission card or the crew panel at the top corners. At 800×600 those panels start about 71 px down.
 
 ## How it fits the code
 

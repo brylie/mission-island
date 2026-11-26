@@ -28,6 +28,8 @@ Press **O → Live playtest** or open **Live checkpoints** in the Workbench on t
 
 **Playtest events** in the same menu start an island event without waiting for the host's schedule. **Start wildfire** lights a fire of the chosen size, site and heat, or a random one for each choice left on **Random**. **Start it already located** skips the search. **End wildfire** ends the current fire as a burnout, with no pay and a burn scar. Events start only after the checkpoint has started and the starter shift is complete. The host refuses them in a regular game. **Go to** moves you to a named place, such as the Fire Watch deck, Cairn Summit or a [Highwood hero view](docs/backcountry.md#hero-views); you must not be seated, flying or pushing the barrow.
 
+To show a code agent what you see, put the reticle on it and press **M** (the **,** key on AZERTY). Add what is wrong and what you expected, then press **Enter**. The host saves a screenshot and what the reticle was on into `playtest-notes/`. See [Playtest marks](docs/iteration-tooling.md#playtest-marks).
+
 | Scenario ID | Starting condition |
 | --- | --- |
 | `dock-fishing` | Each angler stands at the end of the fishing dock, facing open water with a rod equipped. Cast immediately to test the current fishing mechanic. |
@@ -124,7 +126,7 @@ Name gameplay thresholds, timeouts, and other numeric settings in the module tha
 - `src/assets/geometry/*.ts` for dimensions, support volumes, and vertex or placement tuples in local model coordinates.
   It also holds the generated bakes: the Highwood heightmap, the planting and the road layer. Their scripts write them, and each records a source hash that a test checks. Rebake with `npm run island:generate`, or with `npm run island:roads` after a road change; never edit them by hand.
 - `src/assets/audio/*.ts`, `src/assets/effects/*.ts`, and `src/assets/recipes/*.ts` for authored sound, particle, shader, and lighting data.
-- The island layout files listed in `eslint.config.mjs` for authored terrain profiles, scenery locations, and routes.
+- The island layout files listed in `eslint.config.mjs` for authored terrain profiles, scenery locations, and routes. Name a point that is an offset from another point `…Offset` or `…Offsets`. Tools such as [playtest marks](docs/iteration-tooling.md#playtest-marks) treat any other `{ x, z }` as a map point.
 - `test/` for test inputs and expected values.
 
 Keep the approved production modules to constants and types. ESLint rejects functions, calls, and mutations there. Geometry, audio, effects, and world layouts have no imports. Recipe modules can import types and compose values from neighboring recipe files. Runtime code imports the data and names its own settings. ESLint uses the repository configuration for all source files, including exceptions.

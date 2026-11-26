@@ -74,8 +74,11 @@ function crewBrowColor(hairColor: CrewAppearance['hairColor']) {
   return Color3.FromHexString(hairColors[hairColor ?? 'chestnut']).scale(browShade).toHexString()
 }
 
+// The crew member's root node name, which a playtest mark uses to skip the player's own body.
+export const crewNodeName = (id: number) => `Crew ${id + 1}`
+
 export function createCrew(meshes: MeshFactory, id: number) {
-  const root = new TransformNode(`Crew ${id + 1}`, meshes.scene)
+  const root = new TransformNode(crewNodeName(id), meshes.scene)
   const kit = createCrewClothes(meshes, root)
   const knees = kit.legs.map(rigCrewKnee)
   const head = createCrewHead(meshes, root, kit.skin)

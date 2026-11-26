@@ -15,6 +15,8 @@ import { createPlaytestMetrics } from './playtest-metrics.ts'
 import { createSocketSessions } from './socket-sessions.ts'
 import { millisecondsPerSecond } from './host-time.ts'
 import { readPlaytestEvent } from '../src/playtest-events.ts'
+import { playtestMarkPath } from '../src/playtest-mark.ts'
+import { playtestMarkHandler } from './playtest-marks.ts'
 
 const httpOk = 200
 const httpBadRequest = 400
@@ -118,7 +120,8 @@ function initialTrial(): TrialRun {
   return { ...settings, revision: 1 }
 }
 
-function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middlewares: ViteDevServer['middlewares'], root: string, port: number, trialMode: boolean) {
+// `marks` is set only for the dev server, so `vite preview` never writes playtest marks.
+function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middlewares: ViteDevServer['middlewares'], root: string, port: number, trialMode: boolean, marks = false) {
   const archive = trialMode ? undefined : islandSaveFile(root, port, process.env.MISSION_ISLAND_SAVE)
   const metrics = process.env.MISSION_ISLAND_PLAYTEST_METRICS === '1' ? openPlaytestMetrics(root, port) : undefined
   let saveFailed = false
@@ -162,6 +165,7 @@ function attachGame(server: NonNullable<ViteDevServer['httpServer']>, middleware
     const token = seats.find((seat) => req.headers.authorization === 'Bearer ' + seat.token)?.token
     return { stop, seats, token, args: new URL(req.url ?? '/', 'http://localhost').searchParams }
   }
+  if (marks) middlewares.use(playtestMarkPath, playtestMarkHandler(root, (authorization) => sessions.seats().some((seat) => authorization === 'Bearer ' + seat.token)))
   if (trialMode) middlewares.use('/api/playtest-event', (req, res) => {
     const request = crewRequest(req, res)
     if (!request) return
@@ -235,7 +239,7 @@ export function multiplayer(): Plugin {
     name: 'mission-island-multiplayer',
     configureServer(server) {
       serveLanInvites(server)
-      if (server.httpServer) attachGame(server.httpServer, server.middlewares, server.config.root, server.config.server.port ?? defaultIslandPort, server.config.mode === 'playtest')
+      if (server.httpServer) attachGame(server.httpServer, server.middlewares, server.config.root, server.config.server.port ?? defaultIslandPort, server.config.mode === 'playtest', true)
     },
     configurePreviewServer(server) {
       serveLanInvites(server)

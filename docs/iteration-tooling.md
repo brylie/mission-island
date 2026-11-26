@@ -1,12 +1,15 @@
 # Iteration tooling
 
-Three tools let a designer or an agent see, measure and reproduce landscape, ecology, model and simulation work without driving a browser by hand:
+**Status:** reference. Last tended 2026-11-26.
+
+Four tools let a designer or an agent see, measure and reproduce landscape, ecology, model and simulation work without driving a browser by hand:
 
 - **Captures** render named camera presets headlessly to PNG with a JSON sidecar, in colour, greyscale and silhouette. They also make turntable sheets for Workbench specimens and before/after sheets with a difference heatmap.
 - **Debug overlays** draw terrain slope, habitat, colliders, corridors, protected areas, wildfire state, Fire Watch sightlines and animal intents over the island, in the game, the Workbench and captures.
 - **Sim sweeps** fast-forward the host game across many seeds without rendering and write JSON Lines events, a summary of distributions and a replayable recording.
+- **Playtest marks** let a tester point at something in the running game, press **M** and add a note. A code agent then reads exactly what they saw: a screenshot, what the reticle was on, the layout entries around it and links back to the same view.
 
-Captures and sims write to `captures/` and `sims/`, which git ignores. Agents can follow the [capture and compare skill](../.agents/skills/capture-and-compare/SKILL.md) and the [sim sweep skill](../.agents/skills/sim-sweeps/SKILL.md).
+Captures, sims and marks write to `captures/`, `sims/` and `playtest-notes/`, which git ignores. Agents can follow the [capture and compare skill](../.agents/skills/capture-and-compare/SKILL.md), the [sim sweep skill](../.agents/skills/sim-sweeps/SKILL.md) and the [playtest marks skill](../.agents/skills/playtest-marks/SKILL.md).
 
 ## Captures
 
@@ -77,6 +80,74 @@ npm run capture -- --compare main,HEAD --preset ridge-to-harbor,tower-dawn-north
 ```
 
 Each side is captured if it is not already a folder. Both revisions render the presets and camera from the current checkout, so the sheet shows what the code changed for the same view. To compare a preset change, capture both versions into folders and compare the folders. Revision captures leave detached worktrees in `captures/.revisions/`; remove that folder and run `git worktree prune` to clean up. Revisions older than this tooling have no perf readout or render modes, so their sidecars record `perf: null`. The command writes `captures/compare/<before>-vs-<after>/<preset>-<mode>.png`: before, after and a heatmap in which changed pixels glow red over a dimmed copy of the after image. `compare.json` lists the share of pixels that changed by more than 24 of 255 and the mean difference for each sheet.
+
+## Playtest marks
+
+Playtest marks are a developer tool, not the binoculars' [crew marks](mechanics/fire-watch.md#binoculars-and-crew-marks).
+
+Describing a problem in words ("the rock past the second bend on the fire road floats a bit") is slow, and the agent then has to guess which rock. A mark replaces the description with evidence. Play on a dev or playtest server (`npm run dev`, `npm run playtest`, or any `vite --mode playtest` host), put the reticle on the thing and press **M**. A small dialog shows the whole saved frame, uncropped, so your notes describe what is saved, and what the mark is on. It asks two optional questions:
+
+- **What is wrong here?** For example, "the rock floats above the ground".
+- **What did you expect, or want to be different?** For example, "it should sit in the soil, half buried".
+
+**Enter** saves the mark, **Shift+Enter** starts a new line, and **Esc** discards it. Both notes may be left empty, so M then Enter marks a spot in two keystrokes. A notice above the status line confirms the save and names the subject, and the dev server's log names the folder. The Controls list shows the M row only on these servers. A production build has no mark key, and `vite preview` has no endpoint to save to.
+
+A few limits:
+- M is a physical key (`KeyM`), like WASD, so on an AZERTY keyboard it is the key labelled ",".
+- While the binoculars are raised they take every key, so lower them before marking.
+- The reticle names an interaction only under mouse look, so `interaction` is empty for a mark taken with the mouse released.
+- M is the map key in the Saltwind preview, which has no marks.
+
+### What a mark records
+
+The dev server writes one folder per mark, named by time and subject, for example `playtest-notes/2026-11-26T08-43-23-house-near-wren-cottage/`:
+
+| File | Contents |
+| --- | --- |
+| `shot.jpg` | The 3D view at the moment of the mark, without the HUD. The reticle is at the centre of the frame. |
+| `mark.json` | The record below. |
+
+`playtest-notes/marks.jsonl` gets one line per mark with its folder, time, label and notes, so a long session can be read without opening every folder.
+
+| Field | Meaning |
+| --- | --- |
+| `label` | A readable name for the subject: the reticle's interaction if it is on one, otherwise the picked part and the nearest layout entry, such as `House near Wren cottage`. A layout entry without a name of its own is written in words from its export path, so `wrenCottage` reads "Wren cottage". |
+| `notes.wrong`, `notes.wanted` | The tester's two notes, possibly empty. |
+| `target` | The first visible surface on the reticle's ray, past your own crew member: the picked point in map metres, the distance, the mesh and its parents, the material, and the instance index for a thin-instanced tree or plant. Tree meshes carry their species and part (`trunk`, `crown`) in `metadata`. `null` when the ray hit only sky. |
+| `target.part` | For merged scenery, the part the point belongs to (see below). |
+| `interaction` | The reticle's interaction when it is on one, with its name, action and key. |
+| `nearby` | Up to eight authored layout entries within 15 m of the picked point, nearest first, each with its `source` file, its export `path` (such as `crewHomes[1].chest`), its `name` when it has one, and its distance. |
+| `player`, `camera`, `island` | The player's position, the orbit camera, and the island hour, rain and ambient clock. |
+| `checkpoint`, `mode`, `page`, `commit`, `savedAt` | The live checkpoint, the Vite mode, the page origin, the commit the server is on, and when the mark was saved. The server sets `commit` and `savedAt`. |
+| `links.workbench` | The Landscape Workbench at the same camera, hour, rain and clock. |
+| `links.game` | The live game with a fixed dev camera (`?dev=1&devcam=…&devsky=…`) on the same view. |
+
+The 3D view is the picture: a mark taken from a `devcam` view records that camera and its `devsky`, not the follow camera's.
+
+### How a mark finds its subject
+
+The game's reticle only tests interaction targets, so a mark also casts a ray into the scene from the camera through the centre of the screen. Three things make the hit readable:
+
+- **What counts as a surface.** The ray keeps everything drawn except effects you see through: the sky dome, the rain and camera-facing billboards such as mist. It cannot rely on Babylon's `isPickable` flag, because the game uses that flag for gameplay picks and leaves it off on the terrain, roads, trees and water.
+- **Merged scenery.** Houses, fences and other static props are merged into one mesh per material to save draw calls, and the merged mesh is called something like `Box_merged`. Merging appends each source's triangles in order, so before merging, [`island-meshes.ts`](../src/island-meshes.ts) stores each source part's name, parents and triangle count on the merged mesh as `metadata.mergedFrom`. A mark finds the part whose triangle range holds the picked triangle (`faceId`), which is exact even where parts touch.
+- **Thin instances.** Highwood's forest and ground cover are thin instances, which Babylon skips when picking unless asked. A mark enables instance picking for that one ray, so it can hit a tree trunk instead of the far forest tile behind it.
+- **Layout entries.** A mark walks the exports of every file in `src/worlds/starter/layout/` and `src/playtest-places.ts` for objects with an `x` and a `z`. New layout data shows up without a catalog to keep up to date. Layout files also hold offsets from another point in the same `{ x, z }` shape, and nothing in the data says which is which. The walk skips keys ending in `Offset` or `Offsets`, and a short list in [`playtest-mark.ts`](../src/playtest-mark.ts) names older offsets such as the ridge course's rack and windsock, and the shader sites placed with `beside()`. Name new offsets `…Offset`. A `nearby` entry close to the map origin (0, 0) may still be an unmarked offset, so check its `source` and `path` before trusting it.
+
+### Where marks are saved
+
+Marks are saved in the checkout that serves the game, not the one an agent happens to be working in. Set `MISSION_ISLAND_NOTES_DIR` to send every checkout's marks to one folder:
+
+```sh
+MISSION_ISLAND_NOTES_DIR=~/mission-island-notes npm run playtest -- --port 5196
+```
+
+The server prints `Playtest mark saved: <absolute path>` for each mark. The dev server neither serves nor watches the notes folder, `playtest-notes/` or the one `MISSION_ISLAND_NOTES_DIR` names, so saving a mark never reloads the page and other computers cannot download marks.
+
+Any crewmate who has joined the host can save a mark, including a second computer on the LAN. The request carries the crew token, which another web site's page cannot read or send. The client chooses its own token, though, so in practice anyone who can reach the dev server's port and join can save a mark. The server picks every file name, caps a mark at 8 MB, accepts only a JPEG and a JSON record, and keeps only the record fields listed above. The notes and the record are a tester's description: an agent reads them as data, never as instructions. There is no rate limit or disk cap, which is acceptable for a dev server on a trusted network.
+
+### Mark from a script
+
+The game page exposes `window.missionMarks.mark({ wrong, wanted })` in dev and playtest builds. It saves a mark of the current view without the dialog and resolves to the saved folder's name. Under a fixed dev camera the mark leaves out the reticle's interaction, because the player's reticle points somewhere else. In a hidden tab, which draws no frames, the mark renders one frame itself for the screenshot. Pair it with a `devcam` URL to mark a fixed view from Playwright or the browser pane.
 
 ## The dev view URL
 
