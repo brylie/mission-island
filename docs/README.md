@@ -66,7 +66,7 @@ Each change updates the pages it touches, and the [Knowledge Keeper](../.agents/
 | Give a resident a routine, a memorable workplace and a reason to return | [Resident and destination briefs](design/residents-and-destinations.md) |
 | Review a mechanic from a new player’s viewpoint | [Playtest and Accessibility Reviewer skill](../.agents/skills/mission-island-playtest-accessibility/SKILL.md) |
 | Set up a repeatable review and share the evidence | [Shared Workbench and playtest workflow](playtests/review-workflow.md) |
-| Capture hero views, show debug overlays or sweep a simulation across seeds | [Iteration tooling](iteration-tooling.md) |
+| Capture hero views, show debug overlays, sweep a simulation across seeds, or mark what you see in play for a code agent | [Iteration tooling](iteration-tooling.md), [playtest marks](iteration-tooling.md#playtest-marks) |
 | Check a change end to end before handoff | [Verify skill](../.agents/skills/verify/SKILL.md): static checks, a run in the game, and the matching reviewers in a loop |
 | Turn a session into evidence for a decision | [Playtest findings log](playtests/findings.md) |
 | Hand an implementer one change another crew can verify | [Playable change issue template](../.github/ISSUE_TEMPLATE/playable-change.md) |

@@ -17,10 +17,23 @@ import { islandLightingPreset } from './assets/recipes/island-lighting'
 import { createIslandMaterial, createRecipeMaterial, createSurfaceMaterial } from './materials'
 import { surfaceRecipe, type SurfaceRecipe } from './assets/surface-recipes'
 import type { SurfaceName } from './materials'
+import type { MergedPart } from './playtest-mark'
 
 // The Atmosphere material plugin uses the sun as the first light.
 const atmosphereSunlightPriority = 1
 const defaultSphereSegments = 6
+const trianglesCorners = 3
+
+// Merging by material drops each part's name, so a merged batch keeps a list of the parts it
+// came from, in merge order, with their parents' names and triangle counts. A playtest mark maps
+// the picked triangle back to its part (see playtest-mark.ts).
+function mergedParts(meshes: readonly Mesh[]): MergedPart[] {
+  return meshes.map((mesh) => {
+    const parents: string[] = []
+    for (let node = mesh.parent; node; node = node.parent) parents.push(node.name)
+    return { name: mesh.name, parents, faces: mesh.getTotalIndices() / trianglesCorners }
+  })
+}
 
 export function createIslandLighting(scene: Scene) {
   const { sun, skyFill, shadow } = islandLightingPreset
@@ -153,8 +166,10 @@ export function createMeshFactory(scene: Scene, shadows: ShadowGenerator) {
       return
     }
     for (const [material, meshes] of batches) {
+      const parts = mergedParts(meshes)
       const batch = Mesh.MergeMeshes(meshes, true, true)
       if (!batch) continue
+      batch.metadata = { mergedFrom: parts }
       batch.material = material
       batch.receiveShadows = true
       shadows.addShadowCaster(batch)
@@ -162,8 +177,11 @@ export function createMeshFactory(scene: Scene, shadows: ShadowGenerator) {
     }
     const flatMaterials = new Set(noShadow.map((mesh) => mesh.material))
     for (const material of flatMaterials) {
-      const batch = Mesh.MergeMeshes(noShadow.filter((mesh) => mesh.material === material), true, true)
+      const group = noShadow.filter((mesh) => mesh.material === material)
+      const parts = mergedParts(group)
+      const batch = Mesh.MergeMeshes(group, true, true)
       if (!batch) continue
+      batch.metadata = { mergedFrom: parts }
       batch.material = material
       batch.receiveShadows = true
       batch.freezeWorldMatrix()

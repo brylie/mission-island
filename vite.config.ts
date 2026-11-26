@@ -8,7 +8,9 @@ export default defineConfig({
     port: defaultIslandPort,
     strictPort: true,
     // Vite replaces this list when configured, so keep its default exclusions.
-    fs: { deny: ['.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**', '**/.mission-island/metrics/**'] },
+    fs: { deny: ['.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**', '**/.mission-island/metrics/**', '**/playtest-notes/**'] },
+    // Playtest marks are written while the game runs; they are not source.
+    watch: { ignored: ['**/playtest-notes/**'] },
   },
   preview: { host: '0.0.0.0', port: defaultIslandPort, strictPort: true },
   build: { rolldownOptions: { input: ['index.html', 'workbench.html', 'second-island.html'] } },

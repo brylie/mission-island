@@ -5,7 +5,7 @@ import { Matrix, Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { Viewport } from '@babylonjs/core/Maths/math.viewport'
 import { Scene } from '@babylonjs/core/scene'
 import { createAtmosphere, sceneWeather } from './island-atmosphere'
-import { landscapeLink } from './playtest-link'
+import { markLinks } from './playtest-mark-record'
 import { inSkiff } from './actions'
 import { createFarmOrderView } from './farm-order-view'
 import { market } from './farm'
@@ -18,6 +18,7 @@ import { createIslandCamera } from './island-camera'
 import { useSceneFog } from './scene-fog'
 import { createBinocularView, type BinocularLook } from './binocular-view'
 import { createDevTools } from './dev-tools'
+import { createMarkView } from './playtest-mark-view'
 import type { OverlayContext } from './debug-overlays/registry'
 import { createIslandAudio, type CrateImpactNotice } from './audio/island-audio'
 import type { SoundSettings } from './audio/mix'
@@ -86,6 +87,7 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement, 
   const islandCamera = createIslandCamera(scene, canvas)
   const review = createShaderReview(scene, canvas, engine, islandCamera.releaseMouse)
   const dev = createDevTools(scene, canvas)
+  const markView = createMarkView(scene, dev)
   const pinned = (camera: Camera) => dev?.camera ?? camera
 
   const lighting = createIslandLighting(scene)
@@ -315,12 +317,9 @@ export function createRenderer(canvas: HTMLCanvasElement, markers: HTMLElement, 
       viewer = id
       follow = trackPlayer
     },
-    playtestLink() {
-      const camera = islandCamera.inspectionCamera()
-      if (!camera || !last) return
-      return landscapeLink(location.href, { focus: [camera.target[0], camera.target[2]], camera, ...last.weather, time: ambientTime, grid: false, wireframe: false })
-    },
+    playtestLink: () => markLinks(location.href, islandCamera.inspectionCamera(), last?.weather, ambientTime).workbench,
     isReviewing: () => review?.active() ?? false,
+    mark: () => markView.read(viewer, islandCamera.inspectionCamera(), ambientTime),
     walkInput: (x: number, z: number) => islandCamera.walkInput(x, z),
     aimRay: () => islandCamera.aimRay(),
     viewRay: () => islandCamera.viewRay(),
