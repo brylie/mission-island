@@ -10,7 +10,7 @@ A tester presses **M** in a dev or playtest game with the reticle on something, 
 ## Find the mark
 
 1. Marks are saved in the checkout that **serves** the game, which may be another worktree. If the user started the server with `MISSION_ISLAND_NOTES_DIR`, look there. Otherwise find the serving checkout from the port. Get the process with `pid=$(lsof -nP -iTCP:<port> -sTCP:LISTEN -t | head -1)`, then its working directory with `lsof -a -p "$pid" -d cwd -Fn | grep ^n`. Marks are in `<checkout>/playtest-notes/`. The server also prints `Playtest mark saved: <path>` for each mark.
-2. Folder names start with the UTC time, so the newest mark sorts last: `ls playtest-notes | tail -1`. `playtest-notes/marks.jsonl` lists every mark with its label and notes. Use it to find "the one about the fence" in a long session.
+2. Folder names start with the UTC time, so the newest mark sorts last. List folders only, since `marks.jsonl` sits beside them: `ls -d <notes>/*/ | tail -1`, where `<notes>` is the notes folder from step 1. `playtest-notes/marks.jsonl` lists every mark with its label and notes. Use it to find "the one about the fence" in a long session.
 
 ## Read it
 

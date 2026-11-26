@@ -28,7 +28,7 @@ Press **O → Live playtest** or open **Live checkpoints** in the Workbench on t
 
 **Playtest events** in the same menu start an island event without waiting for the host's schedule. **Start wildfire** lights a fire of the chosen size, site and heat, or a random one for each choice left on **Random**. **Start it already located** skips the search. **End wildfire** ends the current fire as a burnout, with no pay and a burn scar. Events start only after the checkpoint has started and the starter shift is complete. The host refuses them in a regular game. **Go to** moves you to a named place, such as the Fire Watch deck, Cairn Summit or a [Highwood hero view](docs/backcountry.md#hero-views); you must not be seated, flying or pushing the barrow.
 
-To show a code agent what you see, put the reticle on it and press **M**. Add what is wrong and what you expected, then press **Enter**. The host saves a screenshot and what the reticle was on into `playtest-notes/`. See [Playtest marks](docs/iteration-tooling.md#playtest-marks).
+To show a code agent what you see, put the reticle on it and press **M** (the **,** key on AZERTY). Add what is wrong and what you expected, then press **Enter**. The host saves a screenshot and what the reticle was on into `playtest-notes/`. See [Playtest marks](docs/iteration-tooling.md#playtest-marks).
 
 | Scenario ID | Starting condition |
 | --- | --- |

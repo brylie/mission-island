@@ -58,8 +58,15 @@ export function createMarkView(scene: Scene, dev?: DevView) {
       // Forest and ground cover are thin instances, which a pick skips unless asked; ask for this one pick.
       const instanced = scene.meshes.filter((mesh): mesh is Mesh => mesh instanceof Mesh && mesh.hasThinInstances && !mesh.thinInstanceEnablePicking)
       for (const mesh of instanced) mesh.thinInstanceEnablePicking = true
-      const picked = scene.multiPickWithRay(ray, visible) ?? []
-      for (const mesh of instanced) mesh.thinInstanceEnablePicking = false
+      let picked: ReturnType<typeof scene.multiPickWithRay>
+      try {
+        picked = scene.multiPickWithRay(ray, visible)
+      }
+      finally {
+        // Gameplay picks never pay for instance picking, even if this pick throws.
+        for (const mesh of instanced) mesh.thinInstanceEnablePicking = false
+      }
+      picked ??= []
       const hits = picked
         .filter((hit) => hit.hit && hit.pickedMesh && hit.pickedPoint && !parentNames(hit.pickedMesh).includes(own))
         .sort((a, b) => a.distance - b.distance)
@@ -100,7 +107,12 @@ export function createMarkView(scene: Scene, dev?: DevView) {
         const grab = () => canvas.toDataURL('image/jpeg', jpegQuality)
         const observer = scene.onAfterRenderObservable.addOnce(() => {
           clearTimeout(timer)
-          resolve(grab())
+          try {
+            resolve(grab())
+          }
+          catch (error) {
+            reject(error instanceof Error ? error : new Error(String(error)))
+          }
         })
         // A hidden tab draws no frames, so a scripted mark renders one itself and reads it in the same task.
         const timer = setTimeout(() => {

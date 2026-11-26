@@ -122,7 +122,13 @@ export function createPlaytestMarks(options: MarkOptions) {
     })
     const text = await response.text()
     if (response.status !== httpCreated) throw new Error(text || `The dev server answered ${response.status}.`)
-    return (JSON.parse(text) as { name: string }).name
+    // The folder name is only for the notice; a saved mark with an odd reply is still saved.
+    try {
+      return (JSON.parse(text) as { name?: string }).name ?? ''
+    }
+    catch {
+      return ''
+    }
   }
 
   async function submit() {

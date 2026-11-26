@@ -124,12 +124,12 @@ test('marks go to playtest-notes in the serving checkout unless a folder is conf
   assert.equal(notesDirectory('/repo', '../notes'), '/notes')
 })
 
-test('a saved mark is a folder with the record and the screenshot, listed in marks.jsonl', () => {
+test('a saved mark is a folder with the record and the screenshot, listed in marks.jsonl', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'marks-'))
   const upload = readMarkUpload(markBody({ ...record, savedAt: 'forged', commit: 'forged' }, { wrong: 'floats', wanted: 'sits in the soil' }, jpeg))
   const now = new Date('2026-11-26T09:41:03Z')
-  const first = saveMark(directory, upload, now, 'abc1234')
-  const second = saveMark(directory, upload, now, 'abc1234')
+  // Saved together, the same subject in the same second still gets two folders.
+  const [first, second] = await Promise.all([saveMark(directory, upload, now, 'abc1234'), saveMark(directory, upload, now, 'abc1234')])
   assert.notEqual(first, second, 'a second mark in the same second gets its own folder')
   assert.deepEqual(readdirSync(first).sort(), ['mark.json', 'shot.jpg'])
   const mark = JSON.parse(readFileSync(join(first, 'mark.json'), 'utf8'))
@@ -138,7 +138,7 @@ test('a saved mark is a folder with the record and the screenshot, listed in mar
   assert.deepEqual(mark.notes, { wrong: 'floats', wanted: 'sits in the soil' })
   assert.deepEqual([...readFileSync(join(first, 'shot.jpg'))], [...Buffer.from('/9j/4AAQ', 'base64')])
   const lines = readFileSync(join(directory, 'marks.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line))
-  assert.deepEqual(lines.map((line) => line.folder), [first, second])
+  assert.deepEqual(lines.map((line) => line.folder).sort(), [first, second].sort())
 })
 
 function call(handler, { method = 'POST', authorization = 'Bearer crew', body = markBody(record, { wrong: '', wanted: '' }, jpeg) } = {}) {
@@ -152,7 +152,7 @@ function call(handler, { method = 'POST', authorization = 'Bearer crew', body = 
       return response
     }, end: (message) => resolve({ status: response.status, message }) }
     handler(request, response)
-    listeners.data?.(body)
+    listeners.data?.(Buffer.from(body))
     listeners.end?.()
   })
 }
@@ -164,6 +164,11 @@ test('only a joined crewmate can save a mark, and only a valid one', async () =>
   assert.equal((await call(handler, { authorization: 'Bearer stranger' })).status, 403)
   assert.equal((await call(handler, { body: '{}' })).status, 400)
   assert.equal((await call(handler, { body: 'x'.repeat(markLimits.bodyBytes + 1) })).status, 413)
+  // The limit counts bytes: three-byte characters exceed it at a third of the length.
+  assert.equal((await call(handler, { body: '€'.repeat(Math.ceil(markLimits.bodyBytes / 3) + 1) })).status, 413)
+  // A record nested deeply enough to overflow the stack is refused, not a crash.
+  const deep = `{"record":{"label":"x","target":${'['.repeat(200_000)}${']'.repeat(200_000)}},"notes":{"wrong":"","wanted":""},"image":"${jpeg}"}`
+  assert.equal((await call(handler, { body: deep })).status, 400)
   assert.deepEqual(readdirSync(directory), [], 'refused marks write nothing')
   const saved = await call(handler)
   assert.equal(saved.status, 201)

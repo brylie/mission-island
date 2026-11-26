@@ -76,6 +76,9 @@ const relativePoints = new Set([
 ])
 const isOffset = (path: string) => /offsets?$/i.test(path.split('.').pop() ?? '') || relativePoints.has(path)
 
+// Byte length as UTF-8, the way the record is stored, not UTF-16 string length.
+const utf8Bytes = (text: string) => new TextEncoder().encode(text).length
+
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
 
 function ownName(value: Record<string, unknown>) {
@@ -151,7 +154,7 @@ export function readMarkUpload(body: string): MarkUpload | string {
   if (!isRecord(parsed)) return 'The mark is not an object.'
   const { record, notes, image } = parsed
   if (!isRecord(record) || typeof record.label !== 'string') return 'The mark has no record.'
-  if (JSON.stringify(record).length > markLimits.recordBytes) return 'The mark record is too large.'
+  if (utf8Bytes(JSON.stringify(record)) > markLimits.recordBytes) return 'The mark record is too large.'
   if (!isRecord(notes)) return 'The mark has no notes.'
   const wrong = cleanNote(notes.wrong)
   const wanted = cleanNote(notes.wanted)
